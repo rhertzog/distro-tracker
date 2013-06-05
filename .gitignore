@@ -1,0 +1,7 @@
+*.py[cod]
+
+*.egg
+*.egg-info
+*.so
+
+*.swp
