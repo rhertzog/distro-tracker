@@ -130,6 +130,12 @@ class ControlBotBasic(TestCase):
         pts@qa.debian.org.
         """
         self.message['X-Loop'] = 'pts@qa.debian.org'
+        payload = (
+            """#command
+            thanks""")
+        self.message.set_payload(payload)
+
+        control.process(self.message.as_string())
 
         self.assertEqual(len(mail.outbox), 0)
 
