@@ -219,8 +219,8 @@ class SubscribeToPackageTest(TestCase):
         control.process(self.message.as_string())
 
         self.assertEqual(len(mail.outbox), 2)
-        response_mail = mail.outbox.pop(0)
-        confirmation_mail = mail.outbox.pop(0)
+        response_mail = mail.outbox.pop()
+        confirmation_mail = mail.outbox.pop()
         wanted_command_output = '\n'.join((
             '>' + commands[0],
             'A confirmation mail has been sent to ' + user_email_address,
@@ -236,7 +236,7 @@ class SubscribeToPackageTest(TestCase):
 
         self.assertEqual(len(mail.outbox), 1)
         response_mail = mail.outbox.pop()
-        self.assertIn(''.join(user_email_address,
+        self.assertIn(''.join((user_email_address,
                               ' has been subscribed to ',
-                              package_name),
+                              package_name)),
                       response_mail.body)
