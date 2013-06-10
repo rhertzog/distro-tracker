@@ -5,3 +5,5 @@
 *.so
 
 *.swp
+
+local_*.py
