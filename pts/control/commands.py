@@ -43,15 +43,13 @@ class SubscribeCommand(Command):
         return self.package and self.user_email
 
     def __call__(self):
-        confirmation_key = 'KEY'
-        CommandConfirmation.objects.create(
+        command_confirmation = CommandConfirmation.objects.create_for_command(
             command='subscribe ' + self.package + ' ' + self.user_email,
-            confirmation_key=confirmation_key
         )
-        confirmation_command = 'CONFIRM ' + confirmation_key
+        confirm_text = 'CONFIRM ' + command_confirmation.confirmation_key
         send_mail(
-            subject=confirmation_command,
-            message=confirmation_command,
+            subject=confirm_text,
+            message=confirm_text,
             from_email='Debian Package Tracking System <pts@qa.debian.org>',
             recipient_list=[self.user_email]
         )
