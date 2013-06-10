@@ -13,6 +13,8 @@ from email.mime.base import MIMEBase
 
 import control
 
+import re
+
 
 class ControlBotBasic(TestCase):
     def setUp(self):
@@ -186,3 +188,55 @@ class ControlBotBasic(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         out_mail = mail.outbox[0]
         self.assertNotIn('>#command', out_mail.body)
+
+
+class SubscribeToPackageTest(TestCase):
+    """
+    Tests for the subscribe to package story.
+    """
+    def setUp(self):
+        self.message = Message()
+        self.message.add_header('From', 'John Doe <john.doe@unknown.com>')
+        self.message.add_header('To', 'pts@qa.debian.org')
+        self.message.add_header('Subject', 'Commands')
+        # Regular expression to extract the confirmation code from the body of
+        # the response mail
+        self.regexp = re.compile(r'^CONFIRM (.*)$', re.MULTILINE)
+
+    def test_subscribe_and_confirm_normal(self):
+        """
+        Tests that the user is subscribed to the pacakge after running
+        subscribe and confirm.
+        """
+        package_name = 'dummy-package'
+        user_email_address = 'dummy-user@domain.com'
+        commands = [
+            "subscribe " + package_name + ' ' + user_email_address + '\n',
+        ]
+        payload = '\n'.join(commands)
+        self.message.set_payload(payload)
+
+        control.process(self.message.as_string())
+
+        self.assertEqual(len(mail.outbox), 2)
+        response_mail = mail.outbox.pop(0)
+        confirmation_mail = mail.outbox.pop(0)
+        wanted_command_output = '\n'.join((
+            '>' + commands[0],
+            'A confirmation mail has been sent to ' + user_email_address,
+        ))
+        self.assertIn(wanted_command_output, response_mail.body)
+
+        # Check that the confirmation mail contains the confirmation code
+        match = self.regexp.search(confirmation_mail.body)
+        self.assertIsNotNone(match)
+        # Extract the code and send a confirmation mail
+        self.message.set_payload(match.group(0))
+        control.process(self.message.as_string())
+
+        self.assertEqual(len(mail.outbox), 1)
+        response_mail = mail.outbox.pop()
+        self.assertIn(''.join(user_email_address,
+                              ' has been subscribed to ',
+                              package_name),
+                      response_mail.body)
