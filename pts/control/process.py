@@ -38,6 +38,8 @@ def send_plain_text_warning(original_message):
 
 def process(message):
     msg = message_from_string(message)
+    if 'X-Loop' in message and 'pts@qa.debian.org' in msg.get_all('X-Loop'):
+        return
     # Get the first plain-text part of the message
     plain_text_part = [part
                        for part in islice(typed_subpart_iterator(msg,
