@@ -124,6 +124,7 @@ INSTALLED_APPS = (
     # 'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
+    'control',
 )
 
 # A sample logging configuration. The only tangible logging
@@ -155,4 +156,4 @@ LOGGING = {
     }
 }
 
-from local_settings import *
+from pts.local_settings import *
