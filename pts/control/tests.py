@@ -1,6 +1,7 @@
 """
 Tests for the control module of the Debian PTS.
 """
+from __future__ import unicode_literals
 from django.test import TestCase
 from django.core import mail
 

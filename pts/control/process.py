@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from email import message_from_string
 from email.iterators import typed_subpart_iterator
 from itertools import islice
