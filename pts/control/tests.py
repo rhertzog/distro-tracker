@@ -211,7 +211,7 @@ class SubscribeToPackageTest(TestCase):
         package_name = 'dummy-package'
         user_email_address = 'dummy-user@domain.com'
         commands = [
-            "subscribe " + package_name + ' ' + user_email_address + '\n',
+            "subscribe " + package_name + ' ' + user_email_address,
         ]
         payload = '\n'.join(commands)
         self.message.set_payload(payload)

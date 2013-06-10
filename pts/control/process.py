@@ -6,12 +6,8 @@ from itertools import islice
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 
-
-ALL_COMMANDS = {
-    'thanks': ('Stops processing commands',),
-    'quit': ('Stops processing commands',),
-    'help': ('Shows all available commands',),
-}
+from control.commands import CommandFactory
+from control.commands import QuitCommand
 
 MAX_ALLOWED_ERRORS = 5
 
@@ -58,29 +54,34 @@ def process(message):
         text = plain_text_part.get_payload(decode=True).decode(charset)
     except UnicodeDecodeError:
         send_plain_text_warning(msg)
+        return
 
     # Process the commands
     out = []
     errors = 0
     processed = 0
     cc = []
+    factory = CommandFactory(msg)
+    # Each line is a separate command
     for line in text.splitlines():
         line = line.strip()
         out.append('>' + line)
-        if line.startswith('#'):
-            continue
 
         args = line.split()
-        command = args[0]
+        command = factory.get_command_function(*args)
 
-        if command not in ALL_COMMANDS:
+        if not command:
             errors += 1
             if errors == MAX_ALLOWED_ERRORS:
                 break
         else:
+            command_output = command()
+            if not command_output:
+                command_output = ''
+            out.append(command_output)
             processed += 1
 
-        if command in ('thanks', 'quit'):
+        if isinstance(command, QuitCommand):
             break
 
     # Send a response only if there were some commands processed
