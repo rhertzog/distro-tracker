@@ -1,0 +1,15 @@
+# A template for the local_settings.py file.
+
+# After modifying the needed parameters, rename the file to local_settings.py
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'pts.db',
+        # The following settings are not used with sqlite3:
+        'USER': '',
+        'PASSWORD': '',
+        'HOST': '',
+        'PORT': '',
+    }
+}
