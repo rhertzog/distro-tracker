@@ -33,19 +33,19 @@ class ControlBotBasic(TestCase):
 
         control.process(self.message.as_string())
 
-        self.assertEquals(len(mail.outbox), 1)
+        self.assertEqual(len(mail.outbox), 1)
         out_mail = mail.outbox[0].message()
-        self.assertEquals(out_mail.get('Subject'),
-                          'Re: ' + self.message.get('Subject'))
-        self.assertEquals(out_mail['X-Loop'],
-                          'pts@qa.debian.org')
-        self.assertEquals(out_mail['To'],
-                          self.message['From'])
-        self.assertEquals(out_mail['From'],
-                          'owner@packages.qa.debian.org')
+        self.assertEqual(out_mail.get('Subject'),
+                         'Re: ' + self.message.get('Subject'))
+        self.assertEqual(out_mail['X-Loop'],
+                         'pts@qa.debian.org')
+        self.assertEqual(out_mail['To'],
+                         self.message['From'])
+        self.assertEqual(out_mail['From'],
+                         'owner@packages.qa.debian.org')
         for line in payload.split('\n'):
             self.assertIn('>' + line.strip(),
-                          out_mail.get_payload(decode=True))
+                          out_mail.get_payload(decode=True).decode('ascii'))
 
     def test_not_plaintext(self):
         """
@@ -55,13 +55,13 @@ class ControlBotBasic(TestCase):
         msg.add_header('From', self.message['from'])
         msg.add_header('Subject', self.message['subject'])
         part1 = MIMEBase('application', 'octet-stream')
-        part1.set_payload('asdf')
+        part1.set_payload(b'asdf')
         encoders.encode_base64(part1)
         msg.attach(part1)
 
         control.process(msg.as_string())
 
-        self.assertEquals(len(mail.outbox), 1)
+        self.assertEqual(len(mail.outbox), 1)
         out_mail = mail.outbox[0]
         self.assertIn('Try again with a simple plain-text message',
                       out_mail.body)
@@ -84,19 +84,19 @@ class ControlBotBasic(TestCase):
 
         control.process(msg.as_string())
 
-        self.assertEquals(len(mail.outbox), 1)
+        self.assertEqual(len(mail.outbox), 1)
         out_mail = mail.outbox[0].message()
-        self.assertEquals(out_mail.get('Subject'),
-                          'Re: ' + self.message.get('Subject'))
-        self.assertEquals(out_mail['X-Loop'],
-                          'pts@qa.debian.org')
-        self.assertEquals(out_mail['To'],
-                          self.message['From'])
-        self.assertEquals(out_mail['From'],
-                          'owner@packages.qa.debian.org')
+        self.assertEqual(out_mail.get('Subject'),
+                         'Re: ' + self.message.get('Subject'))
+        self.assertEqual(out_mail['X-Loop'],
+                         'pts@qa.debian.org')
+        self.assertEqual(out_mail['To'],
+                         self.message['From'])
+        self.assertEqual(out_mail['From'],
+                         'owner@packages.qa.debian.org')
         for line in payload.split('\n'):
             self.assertIn('>' + line.strip(),
-                          out_mail.get_payload(decode=True))
+                          out_mail.get_payload(decode=True).decode('ascii'))
 
     def test_response_subject(self):
         """
@@ -111,10 +111,10 @@ class ControlBotBasic(TestCase):
 
         control.process(self.message.as_string())
 
-        self.assertEquals(len(mail.outbox), 1)
+        self.assertEqual(len(mail.outbox), 1)
         out_mail = mail.outbox[0]
-        self.assertEquals(out_mail.subject,
-                          'Re: Your mail')
+        self.assertEqual(out_mail.subject,
+                         'Re: Your mail')
 
     def test_empty_no_response(self):
         """
@@ -122,7 +122,7 @@ class ControlBotBasic(TestCase):
         """
         control.process(self.message.as_string())
 
-        self.assertEquals(len(mail.outbox), 0)
+        self.assertEqual(len(mail.outbox), 0)
 
     def test_loop_no_response(self):
         """
@@ -131,7 +131,7 @@ class ControlBotBasic(TestCase):
         """
         self.message['X-Loop'] = 'pts@qa.debian.org'
 
-        self.assertEquals(len(mail.outbox), 0)
+        self.assertEqual(len(mail.outbox), 0)
 
     def test_no_valid_command_no_response(self):
         """
@@ -143,7 +143,7 @@ class ControlBotBasic(TestCase):
 
         control.process(self.message.as_string())
 
-        self.assertEquals(len(mail.outbox), 0)
+        self.assertEqual(len(mail.outbox), 0)
 
     def test_stop_after_five_garbage_lines(self):
         """
@@ -161,7 +161,7 @@ class ControlBotBasic(TestCase):
 
         control.process(self.message.as_string())
 
-        self.assertEquals(len(mail.outbox), 1)
+        self.assertEqual(len(mail.outbox), 1)
         out_mail = mail.outbox[0]
         self.assertNotIn('>#command', out_mail.body)
 
@@ -177,6 +177,6 @@ class ControlBotBasic(TestCase):
 
         control.process(self.message.as_string())
 
-        self.assertEquals(len(mail.outbox), 1)
+        self.assertEqual(len(mail.outbox), 1)
         out_mail = mail.outbox[0]
         self.assertNotIn('>#command', out_mail.body)

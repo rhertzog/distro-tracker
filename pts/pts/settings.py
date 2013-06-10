@@ -156,4 +156,4 @@ LOGGING = {
     }
 }
 
-from local_settings import *
+from pts.local_settings import *
