@@ -4,7 +4,7 @@ from email.iterators import typed_subpart_iterator
 from itertools import islice
 
 from django.core.mail import EmailMessage
-from django.core.mail import send_mail
+from django.template.loader import render_to_string
 
 
 ALL_COMMANDS = {
@@ -32,7 +32,7 @@ def send_response(original_message, message_text, cc=None):
 
 
 def send_plain_text_warning(original_message):
-    WARNING_MESSAGE = 'Try again with a simple plain-text message'
+    WARNING_MESSAGE = render_to_string('control/email-plaintext-warning.txt')
     send_response(original_message, WARNING_MESSAGE)
 
 

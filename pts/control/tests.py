@@ -64,7 +64,7 @@ class ControlBotBasic(TestCase):
         self.assertEquals(len(mail.outbox), 1)
         out_mail = mail.outbox[0]
         self.assertIn('Try again with a simple plain-text message',
-                       out_mail.body)
+                      out_mail.body)
 
     def test_multipart_with_plaintext(self):
         """
