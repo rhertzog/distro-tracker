@@ -9,6 +9,10 @@ from django.template.loader import render_to_string
 from core.models import Subscription
 from control.models import CommandConfirmation
 
+from django.conf import settings
+OWNER_EMAIL_ADDRESS = getattr(settings, 'OWNER_EMAIL_ADDRESS')
+CONTROL_EMAIL_ADDRESS = getattr(settings, 'CONTROL_EMAIL_ADDRESS')
+
 
 class Command(object):
     """
@@ -58,7 +62,7 @@ class SubscribeCommand(Command):
         send_mail(
             subject=subject,
             message=message,
-            from_email='Debian Package Tracking System <pts@qa.debian.org>',
+            from_email=CONTROL_EMAIL_ADDRESS,
             recipient_list=[self.user_email]
         )
         return 'A confirmation mail has been sent to ' + self.user_email

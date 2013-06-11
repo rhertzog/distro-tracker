@@ -1,13 +1,16 @@
 from __future__ import unicode_literals
 from email import message_from_string
 from email.iterators import typed_subpart_iterator
-from itertools import islice
 
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 
 from control.commands import CommandFactory
 from control.commands import QuitCommand
+
+from django.conf import settings
+OWNER_EMAIL_ADDRESS = getattr(settings, 'OWNER_EMAIL_ADDRESS')
+CONTROL_EMAIL_ADDRESS = getattr(settings, 'CONTROL_EMAIL_ADDRESS')
 
 MAX_ALLOWED_ERRORS = 5
 
@@ -17,9 +20,9 @@ def send_response(original_message, message_text, cc=None):
         subject='Re: ' + original_message.get('Subject', 'Your mail'),
         to=[original_message['From']],
         cc=cc,
-        from_email='owner@packages.qa.debian.org',
+        from_email=OWNER_EMAIL_ADDRESS,
         headers={
-            'X-Loop': 'pts@qa.debian.org',
+            'X-Loop': CONTROL_EMAIL_ADDRESS,
         },
         body=message_text,
     )
@@ -34,7 +37,7 @@ def send_plain_text_warning(original_message):
 
 def process(message):
     msg = message_from_string(message)
-    if 'X-Loop' in message and 'pts@qa.debian.org' in msg.get_all('X-Loop'):
+    if 'X-Loop' in message and CONTROL_EMAIL_ADDRESS in msg.get_all('X-Loop'):
         return
     # Get the first plain-text part of the message
     plain_text_part = next(typed_subpart_iterator(msg, 'text', 'plain'), None)

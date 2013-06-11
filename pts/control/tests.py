@@ -12,17 +12,19 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 
 from core.models import Package
-
 import control
-
 import re
+
+from django.conf import settings
+OWNER_EMAIL_ADDRESS = getattr(settings, 'OWNER_EMAIL_ADDRESS')
+CONTROL_EMAIL_ADDRESS = getattr(settings, 'CONTROL_EMAIL_ADDRESS')
 
 
 class ControlBotBasic(TestCase):
     def setUp(self):
         self.message = Message()
         self.message.add_header('From', 'John Doe <john.doe@unknown.com>')
-        self.message.add_header('To', 'pts@qa.debian.org')
+        self.message.add_header('To', CONTROL_EMAIL_ADDRESS)
         self.message.add_header('Subject', 'Commands')
 
     def test_basic(self):
@@ -42,11 +44,11 @@ class ControlBotBasic(TestCase):
         self.assertEqual(out_mail.get('Subject'),
                          'Re: ' + self.message.get('Subject'))
         self.assertEqual(out_mail['X-Loop'],
-                         'pts@qa.debian.org')
+                         CONTROL_EMAIL_ADDRESS)
         self.assertEqual(out_mail['To'],
                          self.message['From'])
         self.assertEqual(out_mail['From'],
-                         'owner@packages.qa.debian.org')
+                         OWNER_EMAIL_ADDRESS)
         for line in payload.split('\n'):
             self.assertIn('>' + line.strip(),
                           out_mail.get_payload(decode=True).decode('ascii'))
@@ -93,11 +95,11 @@ class ControlBotBasic(TestCase):
         self.assertEqual(out_mail.get('Subject'),
                          'Re: ' + self.message.get('Subject'))
         self.assertEqual(out_mail['X-Loop'],
-                         'pts@qa.debian.org')
+                         CONTROL_EMAIL_ADDRESS)
         self.assertEqual(out_mail['To'],
                          self.message['From'])
         self.assertEqual(out_mail['From'],
-                         'owner@packages.qa.debian.org')
+                         OWNER_EMAIL_ADDRESS)
         for line in payload.split('\n'):
             self.assertIn('>' + line.strip(),
                           out_mail.get_payload(decode=True).decode('ascii'))
@@ -131,9 +133,9 @@ class ControlBotBasic(TestCase):
     def test_loop_no_response(self):
         """
         Tests that there is no response if the message's X-Loop is set to
-        pts@qa.debian.org.
+       CONTROL_EMAIL_ADDRESS
         """
-        self.message['X-Loop'] = 'pts@qa.debian.org'
+        self.message['X-Loop'] = CONTROL_EMAIL_ADDRESS
         payload = (
             """#command
             thanks""")
@@ -199,7 +201,7 @@ class SubscribeToPackageTest(TestCase):
     def setUp(self):
         self.message = Message()
         self.message.add_header('From', 'John Doe <john.doe@unknown.com>')
-        self.message.add_header('To', 'pts@qa.debian.org')
+        self.message.add_header('To', CONTROL_EMAIL_ADDRESS)
         self.message.add_header('Subject', 'Commands')
         # Regular expression to extract the confirmation code from the body of
         # the response mail

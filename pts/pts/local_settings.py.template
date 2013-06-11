@@ -13,3 +13,6 @@ DATABASES = {
         'PORT': '',
     }
 }
+
+CONTROL_EMAIL_ADDRESS = 'pts@qa.debian.org'
+OWNER_EMAIL_ADDRESS = 'owner@packages.qa.debian.org'
