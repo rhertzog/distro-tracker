@@ -4,6 +4,7 @@ Defines and implements all control commands.
 from __future__ import unicode_literals
 
 from django.core.mail import send_mail
+from django.template.loader import render_to_string
 
 from control.models import CommandConfirmation
 
@@ -46,10 +47,16 @@ class SubscribeCommand(Command):
         command_confirmation = CommandConfirmation.objects.create_for_command(
             command='subscribe ' + self.package + ' ' + self.user_email,
         )
-        confirm_text = 'CONFIRM ' + command_confirmation.confirmation_key
+        message = render_to_string(
+            'control/email-subscription-confirmation.txt', {
+                'package': self.package,
+                'command_confirmation': command_confirmation,
+            }
+        )
+        subject = 'CONFIRM ' + command_confirmation.confirmation_key
         send_mail(
-            subject=confirm_text,
-            message=confirm_text,
+            subject=subject,
+            message=message,
             from_email='Debian Package Tracking System <pts@qa.debian.org>',
             recipient_list=[self.user_email]
         )
