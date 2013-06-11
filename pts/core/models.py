@@ -41,9 +41,22 @@ class EmailUser(models.Model):
         return package in self.package_set.all()
 
 
+class PackageManager(models.Manager):
+    """
+    A custom Manager for the ``Package`` model.
+    """
+    def exists_with_name(self, package_name):
+        """
+        Returns True if a package with the given name exists.
+        """
+        return self.filter(name=package_name).exists()
+
+
 class Package(models.Model):
     name = models.CharField(max_length=100, unique=True)
     subscriptions = models.ManyToManyField(EmailUser, through='Subscription')
+
+    objects = PackageManager()
 
     def __unicode__(self):
         return self.name
@@ -76,3 +89,33 @@ class Subscription(models.Model):
 
     def __str__(self):
         return self.email_user + ' ' + self.package
+
+
+class BinaryPackageManager(models.Manager):
+    """
+    A custom Manager for the ``BinaryPackage`` model.
+    """
+    def exists_with_name(self, package_name):
+        """
+        Returns True if a package with the given name exists.
+        """
+        return self.filter(name=package_name).exists()
+
+    def get_by_name(self, package_name):
+        """
+        Returns a ``BinaryPackage`` object for the given package name.
+        """
+        return self.get(name=package_name)
+
+
+class BinaryPackage(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    source_package = models.ForeignKey(Package)
+
+    objects = BinaryPackageManager()
+
+    def __unicode__(self):
+        return self.name
+
+    def __str__(self):
+        return self.name

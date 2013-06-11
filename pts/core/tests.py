@@ -3,7 +3,7 @@ Tests for the PTS core module.
 """
 from __future__ import unicode_literals
 from django.test import TestCase
-from core.models import Subscription, EmailUser, Package
+from core.models import Subscription, EmailUser, Package, BinaryPackage
 
 
 class SubscriptionTest(TestCase):
@@ -80,3 +80,30 @@ class EmailUserManagerTest(TestCase):
         self.assertFalse(
             EmailUser.objects.is_user_subscribed_to(self.email_user.email,
                                                     self.package.name))
+
+
+class PackageManagerTest(TestCase):
+    def setUp(self):
+        self.package = Package.objects.create(name='dummy-package')
+
+    def test_package_exists(self):
+        self.assertTrue(Package.objects.exists_with_name(self.package.name))
+
+    def test_package_exists_false(self):
+        self.assertFalse(Package.objects.exists_with_name('unexisting'))
+
+
+class BinaryPackageManagerTest(TestCase):
+    def setUp(self):
+        self.package = Package.objects.create(name='dummy-package')
+        self.binary_package = BinaryPackage.objects.create(
+            name='binary-package',
+            source_package=self.package)
+
+    def test_package_exists(self):
+        self.assertTrue(
+            BinaryPackage.objects.exists_with_name(self.binary_package.name))
+
+    def test_package_exists_false(self):
+        self.assertFalse(
+            BinaryPackage.objects.exists_with_name('unexisting'))
