@@ -14,7 +14,7 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 
 from core.utils import extract_email_address_from_header
-from core.models import Package
+from core.models import Package, BinaryPackage
 from core.models import Subscription
 import control
 import re
@@ -304,7 +304,9 @@ class SubscribeToPackageTest(EmailControlTest):
         Helper method which creates a binary package for the given source
         package.
         """
-        pass
+        BinaryPackage.objects.create(
+            name=binary_package,
+            source_package=source_package)
 
     def add_subscribe_command(self, package, email=None):
         """
@@ -405,7 +407,7 @@ class SubscribeToPackageTest(EmailControlTest):
         source package.
         """
         binary_package = 'binary-package'
-        self.add_binary_package(self.package.name, binary_package)
+        self.add_binary_package(self.package, binary_package)
         self.add_subscribe_command(binary_package)
 
         self.control_process()

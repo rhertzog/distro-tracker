@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 
-from core.models import Subscription, EmailUser
+from core.models import Subscription, EmailUser, Package, BinaryPackage
 from control.models import CommandConfirmation
 
 from core.utils import extract_email_address_from_header
@@ -69,6 +69,22 @@ class SubscribeCommand(Command):
                 email=self.user_email,
                 package=self.package)
 
+        out = []
+        if not Package.objects.exists_with_name(self.package):
+            if BinaryPackage.objects.exists_with_name(self.package):
+                binary_package = BinaryPackage.objects.get_by_name(self.package)
+                out.append('Warning: {package} is not a source package.'.format(
+                    package=self.package))
+                out.append('{package} is the source package '
+                           'for the {binary} binary package'.format(
+                               package=binary_package.source_package.name,
+                               binary=binary_package.name))
+                self.package = binary_package.source_package.name
+            else:
+                return (
+                    '{package} is neither a source package '
+                    'nor a binary package.'.format(package=self.package))
+
         command_confirmation = CommandConfirmation.objects.create_for_command(
             command='subscribe ' + self.package + ' ' + self.user_email,
         )
@@ -85,7 +101,8 @@ class SubscribeCommand(Command):
             from_email=CONTROL_EMAIL_ADDRESS,
             recipient_list=[self.user_email]
         )
-        return 'A confirmation mail has been sent to ' + self.user_email
+        out.append('A confirmation mail has been sent to ' + self.user_email)
+        return '\n'.join(out)
 
     description = """subscribe <srcpackage> [<email>]
   Subscribes <email> to all messages regarding <srcpackage>. If
