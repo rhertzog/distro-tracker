@@ -9,6 +9,8 @@ from django.template.loader import render_to_string
 from core.models import Subscription
 from control.models import CommandConfirmation
 
+from core.utils import extract_email_address_from_header
+
 from django.conf import settings
 OWNER_EMAIL_ADDRESS = getattr(settings, 'OWNER_EMAIL_ADDRESS')
 CONTROL_EMAIL_ADDRESS = getattr(settings, 'CONTROL_EMAIL_ADDRESS')
@@ -39,7 +41,8 @@ class SubscribeCommand(Command):
         elif len(args) < 2:
             # Subscriber email not given
             self.package = args[0]
-            self.user_email = message.get('From')
+            self.user_email = extract_email_address_from_header(
+                message.get('From'))
         else:
             # Superfluous arguments are ignored.
             self.package = args[0]
