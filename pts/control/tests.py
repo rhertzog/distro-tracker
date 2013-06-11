@@ -11,6 +11,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 
+from core.models import Package
+
 import control
 
 import re
@@ -202,13 +204,14 @@ class SubscribeToPackageTest(TestCase):
         # Regular expression to extract the confirmation code from the body of
         # the response mail
         self.regexp = re.compile(r'^CONFIRM (.*)$', re.MULTILINE)
+        self.package = Package.objects.create(name='dummy-package')
 
     def test_subscribe_and_confirm_normal(self):
         """
         Tests that the user is subscribed to the pacakge after running
         subscribe and confirm.
         """
-        package_name = 'dummy-package'
+        package_name = self.package.name
         user_email_address = 'dummy-user@domain.com'
         commands = [
             "subscribe " + package_name + ' ' + user_email_address,
@@ -226,6 +229,9 @@ class SubscribeToPackageTest(TestCase):
             'A confirmation mail has been sent to ' + user_email_address,
         ))
         self.assertIn(wanted_command_output, response_mail.body)
+        self.assertNotIn(user_email_address,
+                         [user_email.email
+                          for user_email in self.package.subscriptions.all()])
 
         # Check that the confirmation mail contains the confirmation code
         match = self.regexp.search(confirmation_mail.body)
@@ -240,3 +246,6 @@ class SubscribeToPackageTest(TestCase):
                               ' has been subscribed to ',
                               package_name)),
                       response_mail.body)
+        self.assertIn(user_email_address,
+                      [user_email.email
+                       for user_email in self.package.subscriptions.all()])
