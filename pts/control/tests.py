@@ -5,6 +5,8 @@ from __future__ import unicode_literals
 from django.test import TestCase
 from django.core import mail
 
+from django.template.loader import render_to_string
+
 from email import encoders
 from email.message import Message
 from email.mime.multipart import MIMEMultipart
@@ -84,6 +86,10 @@ class EmailControlTest(TestCase):
         out_mail = mail.outbox[response_number]
         self.assertNotIn(text, out_mail.body)
 
+    def assert_response_equal(self, text, response_number=0):
+        out_mail = mail.outbox[response_number]
+        self.assertEqual(text, out_mail.body)
+
     def assert_header_equal(self, header_name, header_value,
                             response_number=0):
         out_mail = mail.outbox[response_number].message()
@@ -135,7 +141,8 @@ class ControlBotBasic(EmailControlTest):
         self.control_process()
 
         self.assert_response_sent()
-        self.assert_in_response('Try again with a simple plain-text message')
+        self.assert_response_equal(render_to_string(
+            'control/email-plaintext-warning.txt'))
 
     def test_multipart_with_plaintext(self):
         """
