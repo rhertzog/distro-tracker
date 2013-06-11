@@ -16,8 +16,11 @@ MAX_ALLOWED_ERRORS = 5
 
 
 def send_response(original_message, message_text, cc=None):
+    subject = original_message.get('Subject')
+    if not subject:
+        subject = 'Your mail'
     message = EmailMessage(
-        subject='Re: ' + original_message.get('Subject', 'Your mail'),
+        subject='Re: ' + subject,
         to=[original_message['From']],
         cc=cc,
         from_email=OWNER_EMAIL_ADDRESS,
