@@ -1,4 +1,5 @@
 # Django settings for pts project.
+from __future__ import unicode_literals
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG

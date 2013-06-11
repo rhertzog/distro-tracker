@@ -1,3 +1,6 @@
+from __future__ import unicode_literals
+
+
 def get_or_none(model, **kwargs):
     """
     Gets a Django Model object from the database or returns None if it

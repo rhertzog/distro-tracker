@@ -1,6 +1,7 @@
 # A template for the local_settings.py file.
 
 # After modifying the needed parameters, rename the file to local_settings.py
+from __future__ import unicode_literals
 
 DATABASES = {
     'default': {
