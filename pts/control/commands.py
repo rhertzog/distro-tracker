@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 
-from core.models import Subscription
+from core.models import Subscription, EmailUser
 from control.models import CommandConfirmation
 
 from core.utils import extract_email_address_from_header
@@ -63,6 +63,12 @@ class SubscribeCommand(Command):
             email=self.user_email).lower()
 
     def __call__(self):
+        if EmailUser.objects.is_user_subscribed_to(self.user_email,
+                                                   self.package):
+            return '{email} is already subscribed to {package}'.format(
+                email=self.user_email,
+                package=self.package)
+
         command_confirmation = CommandConfirmation.objects.create_for_command(
             command='subscribe ' + self.package + ' ' + self.user_email,
         )

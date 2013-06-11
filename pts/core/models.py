@@ -3,14 +3,42 @@ from django.db import models
 from core.utils import get_or_none
 
 
+class EmailUserManager(models.Manager):
+    """
+    A custom Manager for the ``EmailUser`` model.
+    """
+    def is_user_subscribed_to(self, user_email, package_name):
+        """
+        Checks if the given user is subscribed to the given package.
+        """
+        user = get_or_none(EmailUser, email=user_email)
+        if not user:
+            return False
+        else:
+            return user.is_subscribed_to(package_name)
+
+
 class EmailUser(models.Model):
     email = models.EmailField(max_length=254, unique=True)
+
+    objects = EmailUserManager()
 
     def __unicode__(self):
         return self.email
 
     def __str__(self):
         return self.email
+
+    def is_subscribed_to(self, package):
+        """
+        Checks if the user is subscribed to the given package.
+        ``package`` can be either a str representing the name of the package
+        or a ``Package`` instance.
+        """
+        if not isinstance(package, Package):
+            package = Package.objects.get(name=package)
+
+        return package in self.package_set.all()
 
 
 class Package(models.Model):
