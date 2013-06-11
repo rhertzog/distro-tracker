@@ -70,6 +70,41 @@ class EmailControlTest(TestCase):
         self.multipart = False
         self.set_default_headers()
 
+    def assert_response_sent(self, number_of_responses=1):
+        self.assertEqual(len(mail.outbox), number_of_responses)
+
+    def assert_response_not_sent(self):
+        self.assertEqual(len(mail.outbox), 0)
+
+    def assert_in_response(self, text, response_number=0):
+        out_mail = mail.outbox[response_number]
+        self.assertIn(text, out_mail.body)
+
+    def assert_not_in_response(self, text, response_number=0):
+        out_mail = mail.outbox[response_number]
+        self.assertNotIn(text, out_mail.body)
+
+    def assert_header_equal(self, header_name, header_value,
+                            response_number=0):
+        out_mail = mail.outbox[response_number].message()
+        self.assertEqual(out_mail[header_name], header_value)
+
+    def assert_correct_response_headers(self, response_number=0):
+        self.assert_header_equal('X-Loop', CONTROL_EMAIL_ADDRESS)
+        self.assert_header_equal('To', self.message['From'])
+        self.assert_header_equal('From', OWNER_EMAIL_ADDRESS)
+        if not self.message['Subject']:
+            self.assert_header_equal('Subject', 'Re: Your mail')
+        else:
+            self.assert_header_equal('Subject',
+                                     'Re: ' + self.message['Subject'])
+
+    def reset_outbox(self):
+        mail.outbox = []
+
+    def regex_search_in_response(self, regexp, response_number=0):
+        return regexp.search(mail.outbox[response_number].body)
+
 
 class ControlBotBasic(EmailControlTest):
     def test_basic(self):
@@ -85,19 +120,10 @@ class ControlBotBasic(EmailControlTest):
 
         self.control_process()
 
-        self.assertEqual(len(mail.outbox), 1)
-        out_mail = mail.outbox[0].message()
-        self.assertEqual(out_mail.get('Subject'),
-                         'Re: ' + self.message.get('Subject'))
-        self.assertEqual(out_mail['X-Loop'],
-                         CONTROL_EMAIL_ADDRESS)
-        self.assertEqual(out_mail['To'],
-                         self.message['From'])
-        self.assertEqual(out_mail['From'],
-                         OWNER_EMAIL_ADDRESS)
+        self.assert_response_sent()
+        self.assert_correct_response_headers()
         for line in input_lines:
-            self.assertIn('>' + line.strip(),
-                          out_mail.get_payload(decode=True).decode('ascii'))
+            self.assert_in_response('>' + line.strip())
 
     def test_not_plaintext(self):
         """
@@ -108,10 +134,8 @@ class ControlBotBasic(EmailControlTest):
 
         self.control_process()
 
-        self.assertEqual(len(mail.outbox), 1)
-        out_mail = mail.outbox[0]
-        self.assertIn('Try again with a simple plain-text message',
-                      out_mail.body)
+        self.assert_response_sent()
+        self.assert_in_response('Try again with a simple plain-text message')
 
     def test_multipart_with_plaintext(self):
         """
@@ -128,19 +152,10 @@ class ControlBotBasic(EmailControlTest):
 
         self.control_process()
 
-        self.assertEqual(len(mail.outbox), 1)
-        out_mail = mail.outbox[0].message()
-        self.assertEqual(out_mail.get('Subject'),
-                         'Re: ' + self.message.get('Subject'))
-        self.assertEqual(out_mail['X-Loop'],
-                         CONTROL_EMAIL_ADDRESS)
-        self.assertEqual(out_mail['To'],
-                         self.message['From'])
-        self.assertEqual(out_mail['From'],
-                         OWNER_EMAIL_ADDRESS)
+        self.assert_response_sent()
+        self.assert_correct_response_headers()
         for line in input_lines:
-            self.assertIn('>' + line.strip(),
-                          out_mail.get_payload(decode=True).decode('ascii'))
+            self.assert_in_response('>' + line.strip())
 
     def test_response_subject(self):
         """
@@ -152,10 +167,8 @@ class ControlBotBasic(EmailControlTest):
 
         self.control_process()
 
-        self.assertEqual(len(mail.outbox), 1)
-        out_mail = mail.outbox[0]
-        self.assertEqual(out_mail.subject,
-                         'Re: Your mail')
+        self.assert_response_sent()
+        self.assert_correct_response_headers()
 
     def test_empty_no_response(self):
         """
@@ -163,7 +176,7 @@ class ControlBotBasic(EmailControlTest):
         """
         self.control_process()
 
-        self.assertEqual(len(mail.outbox), 0)
+        self.assert_response_not_sent()
 
     def test_loop_no_response(self):
         """
@@ -175,7 +188,7 @@ class ControlBotBasic(EmailControlTest):
 
         self.control_process()
 
-        self.assertEqual(len(mail.outbox), 0)
+        self.assert_response_not_sent()
 
     def test_no_valid_command_no_response(self):
         """
@@ -186,7 +199,7 @@ class ControlBotBasic(EmailControlTest):
 
         self.control_process()
 
-        self.assertEqual(len(mail.outbox), 0)
+        self.assert_response_not_sent()
 
     def test_stop_after_five_garbage_lines(self):
         """
@@ -196,9 +209,8 @@ class ControlBotBasic(EmailControlTest):
 
         self.control_process()
 
-        self.assertEqual(len(mail.outbox), 1)
-        out_mail = mail.outbox[0]
-        self.assertNotIn('>#command', out_mail.body)
+        self.assert_response_sent()
+        self.assert_not_in_response('>#command')
 
     def test_stop_on_thanks_or_quit(self):
         """
@@ -209,9 +221,8 @@ class ControlBotBasic(EmailControlTest):
 
         self.control_process()
 
-        self.assertEqual(len(mail.outbox), 1)
-        out_mail = mail.outbox[0]
-        self.assertNotIn('>#command', out_mail.body)
+        self.assert_response_sent()
+        self.assert_not_in_response('>#command')
 
 
 class SubscribeToPackageTest(EmailControlTest):
@@ -239,32 +250,33 @@ class SubscribeToPackageTest(EmailControlTest):
 
         self.control_process()
 
-        self.assertEqual(len(mail.outbox), 2)
-        response_mail = mail.outbox.pop()
-        confirmation_mail = mail.outbox.pop()
+        self.assert_response_sent(2)
+        command_response_number = 1
+        confirmation_mail_number = 0
         wanted_command_output = '\n'.join((
             '>' + commands[0],
             'A confirmation mail has been sent to ' + user_email_address,
         ))
-        self.assertIn(wanted_command_output, response_mail.body)
+        self.assert_in_response(wanted_command_output,
+                                response_number=command_response_number)
         self.assertNotIn(user_email_address,
                          [user_email.email
                           for user_email in self.package.subscriptions.all()])
         # Check that the confirmation mail contains the confirmation code
-        match = self.regexp.search(confirmation_mail.body)
+        match = self.regex_search_in_response(
+            self.regexp,
+            response_number=confirmation_mail_number)
         self.assertIsNotNone(match)
 
         # Extract the code and send a confirmation mail
         self.reset_message()
+        self.reset_outbox()
         self.set_input_lines([match.group(0)])
         self.control_process()
 
-        self.assertEqual(len(mail.outbox), 1)
-        response_mail = mail.outbox.pop()
-        self.assertIn(''.join((user_email_address,
-                              ' has been subscribed to ',
-                              package_name)),
-                      response_mail.body)
+        self.assert_response_sent()
+        self.assert_in_response(
+            user_email_address + ' has been subscribed to ' + package_name)
         self.assertIn(user_email_address,
                       [user_email.email
                        for user_email in self.package.subscriptions.all()])
