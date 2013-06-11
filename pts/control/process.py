@@ -82,6 +82,9 @@ def process(message):
                 if not command_output:
                     command_output = ''
                 out.append(command_output)
+                # Send a CC of the response message to any email address that
+                # the command sent a mail to.
+                cc.extend(command.sent_mails)
                 processed.add(command.get_command_text())
 
         if isinstance(command, QuitCommand):
@@ -89,4 +92,4 @@ def process(message):
 
     # Send a response only if there were some commands processed
     if processed:
-        send_response(msg, '\n'.join(out), cc)
+        send_response(msg, '\n'.join(out), set(cc))

@@ -22,7 +22,7 @@ class Command(object):
     commands.
     """
     def __init__(self, *args):
-        pass
+        self._sent_mails = []
 
     def __call__(self):
         pass
@@ -36,9 +36,23 @@ class Command(object):
         """
         return '#'
 
+    @property
+    def sent_mails(self):
+        return self._sent_mails
+
+    def _send_mail(self, subject, message, recipient_list):
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=CONTROL_EMAIL_ADDRESS,
+            recipient_list=recipient_list
+        )
+        self._sent_mails.extend(recipient_list)
+
 
 class SubscribeCommand(Command):
     def __init__(self, message, *args):
+        Command.__init__(self)
         self.package = None
         self.user_email = None
         if len(args) < 1:
@@ -61,6 +75,24 @@ class SubscribeCommand(Command):
         return 'subscribe {package} {email}'.format(
             package=self.package,
             email=self.user_email).lower()
+
+    def _send_confirmation_mail(self):
+        command_confirmation = CommandConfirmation.objects.create_for_command(
+            command='subscribe ' + self.package + ' ' + self.user_email,
+        )
+        message = render_to_string(
+            'control/email-subscription-confirmation.txt', {
+                'package': self.package,
+                'command_confirmation': command_confirmation,
+            }
+        )
+        subject = 'CONFIRM ' + command_confirmation.confirmation_key
+
+        self._send_mail(
+            subject=subject,
+            message=message,
+            recipient_list=[self.user_email]
+        )
 
     def __call__(self):
         if EmailUser.objects.is_user_subscribed_to(self.user_email,
@@ -85,22 +117,7 @@ class SubscribeCommand(Command):
                     '{package} is neither a source package '
                     'nor a binary package.'.format(package=self.package))
 
-        command_confirmation = CommandConfirmation.objects.create_for_command(
-            command='subscribe ' + self.package + ' ' + self.user_email,
-        )
-        message = render_to_string(
-            'control/email-subscription-confirmation.txt', {
-                'package': self.package,
-                'command_confirmation': command_confirmation,
-            }
-        )
-        subject = 'CONFIRM ' + command_confirmation.confirmation_key
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=CONTROL_EMAIL_ADDRESS,
-            recipient_list=[self.user_email]
-        )
+        self._send_confirmation_mail()
         out.append('A confirmation mail has been sent to ' + self.user_email)
         return '\n'.join(out)
 
@@ -114,6 +131,7 @@ class SubscribeCommand(Command):
 
 class ConfirmCommand(Command):
     def __init__(self, message, *args):
+        Command.__init__(self)
         self.confirmation_key = None
         if len(args) >= 1:
             self.confirmation_key = args[0]
