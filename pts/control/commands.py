@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 
+from core.models import Subscription
 from control.models import CommandConfirmation
 
 
@@ -88,7 +89,13 @@ class ConfirmCommand(Command):
             return self._subscribe(package=args[1], user_email=args[2])
 
     def _subscribe(self, package, user_email):
-        return user_email + ' has been subscribed to ' + package
+        subscription = Subscription.objects.create_for(
+            package_name=package,
+            email=user_email)
+        if subscription:
+            return user_email + ' has been subscribed to ' + package
+        else:
+            return 'Error subscribing ' + user_email + ' to ' + package
 
 
 class HelpCommand(Command):
