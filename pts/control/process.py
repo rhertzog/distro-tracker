@@ -37,18 +37,13 @@ def process(message):
     if 'X-Loop' in message and 'pts@qa.debian.org' in msg.get_all('X-Loop'):
         return
     # Get the first plain-text part of the message
-    plain_text_part = [part
-                       for part in islice(typed_subpart_iterator(msg,
-                                                                 'text',
-                                                                 'plain'),
-                                          1)]
+    plain_text_part = next(typed_subpart_iterator(msg, 'text', 'plain'), None)
     if not plain_text_part:
         # There is no plain text in the email
         send_plain_text_warning(msg)
         return
 
     # Decode the plain text into a unicode string
-    plain_text_part = plain_text_part[0]
     charset = plain_text_part.get_content_charset('ascii')
     try:
         text = plain_text_part.get_payload(decode=True).decode(charset)
