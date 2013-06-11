@@ -20,24 +20,70 @@ OWNER_EMAIL_ADDRESS = getattr(settings, 'OWNER_EMAIL_ADDRESS')
 CONTROL_EMAIL_ADDRESS = getattr(settings, 'CONTROL_EMAIL_ADDRESS')
 
 
-class ControlBotBasic(TestCase):
+class EmailControlTest(TestCase):
+    def control_process(self):
+        """
+        Helper method. Passes the constructed control message to the control
+        processor.
+        """
+        control.process(self.message.as_string())
+
     def setUp(self):
-        self.message = Message()
+        self.reset_message()
+
+    def set_default_headers(self):
         self.message.add_header('From', 'John Doe <john.doe@unknown.com>')
         self.message.add_header('To', CONTROL_EMAIL_ADDRESS)
         self.message.add_header('Subject', 'Commands')
 
+    def set_header(self, header_name, header_value):
+        if header_name in self.message:
+            del self.message[header_name]
+        self.message.add_header(header_name, header_value)
+
+    def set_input_lines(self, lines):
+        payload = '\n'.join(lines)
+        if self.multipart:
+            plain_text = MIMEText('plain')
+            plain_text.set_payload(payload)
+            self.message.attach(plain_text)
+        else:
+            self.message.set_payload(payload)
+
+    def make_multipart(self, alternative=False):
+        if alternative:
+            self.message = MIMEMultipart('alternative')
+        else:
+            self.message = MIMEMultipart()
+        self.set_default_headers()
+        self.multipart = True
+
+    def add_part(self, mime_type, subtype, data):
+        part = MIMEBase(mime_type, subtype)
+        part.set_payload(data)
+        if mime_type != 'text':
+            encoders.encode_base64(part)
+        self.message.attach(part)
+
+    def reset_message(self):
+        self.message = Message()
+        self.multipart = False
+        self.set_default_headers()
+
+
+class ControlBotBasic(EmailControlTest):
     def test_basic(self):
         """
         Tests if the proper headers are set for the reply message, that the
         output contains original lines prepended with '>'
         """
-        payload = (
-            """#command
-            thanks""")
-        self.message.set_payload(payload)
+        input_lines = [
+            "#command",
+            "   thanks",
+        ]
+        self.set_input_lines(input_lines)
 
-        control.process(self.message.as_string())
+        self.control_process()
 
         self.assertEqual(len(mail.outbox), 1)
         out_mail = mail.outbox[0].message()
@@ -49,7 +95,7 @@ class ControlBotBasic(TestCase):
                          self.message['From'])
         self.assertEqual(out_mail['From'],
                          OWNER_EMAIL_ADDRESS)
-        for line in payload.split('\n'):
+        for line in input_lines:
             self.assertIn('>' + line.strip(),
                           out_mail.get_payload(decode=True).decode('ascii'))
 
@@ -57,15 +103,10 @@ class ControlBotBasic(TestCase):
         """
         Tests that the response to a non-plaintext message is a warning email.
         """
-        msg = MIMEMultipart()
-        msg.add_header('From', self.message['from'])
-        msg.add_header('Subject', self.message['subject'])
-        part1 = MIMEBase('application', 'octet-stream')
-        part1.set_payload(b'asdf')
-        encoders.encode_base64(part1)
-        msg.attach(part1)
+        self.make_multipart()
+        self.add_part('application', 'octet-stream', b'asdf')
 
-        control.process(msg.as_string())
+        self.control_process()
 
         self.assertEqual(len(mail.outbox), 1)
         out_mail = mail.outbox[0]
@@ -77,18 +118,15 @@ class ControlBotBasic(TestCase):
         Tests that the response to a multipart message which contains a
         text/plain part is correct.
         """
-        msg = MIMEMultipart('alternative')
-        msg.add_header('From', self.message['from'])
-        msg.add_header('Subject', self.message['subject'])
-        payload = (
-            """#command
-            thanks""")
-        text = MIMEText(payload, 'plain')
-        html = MIMEText(payload, 'html')
-        msg.attach(text)
-        msg.attach(html)
+        self.make_multipart(alternative=True)
+        input_lines = [
+            '#command',
+            'thanks',
+        ]
+        self.set_input_lines(input_lines)
+        self.add_part('text', 'html', "#command\nthanks")
 
-        control.process(msg.as_string())
+        self.control_process()
 
         self.assertEqual(len(mail.outbox), 1)
         out_mail = mail.outbox[0].message()
@@ -100,7 +138,7 @@ class ControlBotBasic(TestCase):
                          self.message['From'])
         self.assertEqual(out_mail['From'],
                          OWNER_EMAIL_ADDRESS)
-        for line in payload.split('\n'):
+        for line in input_lines:
             self.assertIn('>' + line.strip(),
                           out_mail.get_payload(decode=True).decode('ascii'))
 
@@ -109,13 +147,10 @@ class ControlBotBasic(TestCase):
         Tests that the subject of the response when there is no subject set in
         the request is correct.
         """
-        del self.message['Subject']
-        payload = (
-            """#command
-            thanks""")
-        self.message.set_payload(payload)
+        self.set_input_lines(['#command', "thanks"])
+        self.set_header('Subject', '')
 
-        control.process(self.message.as_string())
+        self.control_process()
 
         self.assertEqual(len(mail.outbox), 1)
         out_mail = mail.outbox[0]
@@ -126,7 +161,7 @@ class ControlBotBasic(TestCase):
         """
         Tests that there is no response to an empty message.
         """
-        control.process(self.message.as_string())
+        self.control_process()
 
         self.assertEqual(len(mail.outbox), 0)
 
@@ -135,13 +170,10 @@ class ControlBotBasic(TestCase):
         Tests that there is no response if the message's X-Loop is set to
        CONTROL_EMAIL_ADDRESS
         """
-        self.message['X-Loop'] = CONTROL_EMAIL_ADDRESS
-        payload = (
-            """#command
-            thanks""")
-        self.message.set_payload(payload)
+        self.set_header('X-Loop', CONTROL_EMAIL_ADDRESS)
+        self.set_input_lines(['#command', 'thanks'])
 
-        control.process(self.message.as_string())
+        self.control_process()
 
         self.assertEqual(len(mail.outbox), 0)
 
@@ -150,10 +182,9 @@ class ControlBotBasic(TestCase):
         Tests that there is no response for a message which does not contain
         any valid commands.
         """
-        payload = "Some text\nSome more text"
-        self.message.set_payload(payload)
+        self.set_input_lines(['Some text', 'Some more text'])
 
-        control.process(self.message.as_string())
+        self.control_process()
 
         self.assertEqual(len(mail.outbox), 0)
 
@@ -161,17 +192,9 @@ class ControlBotBasic(TestCase):
         """
         Tests that processing stops after encountering five garbage lines.
         """
-        payload = (
-            """help
-            garbage1
-            garbage2
-            garbage3
-            garbage4
-            garbage5
-            #command""")
-        self.message.set_payload(payload)
+        self.set_input_lines(['help'] + ['garbage'] * 5 + ['#command'])
 
-        control.process(self.message.as_string())
+        self.control_process()
 
         self.assertEqual(len(mail.outbox), 1)
         out_mail = mail.outbox[0]
@@ -182,27 +205,21 @@ class ControlBotBasic(TestCase):
         Tests that processing stops after encountering the thanks or quit
         command.
         """
-        payload = (
-            """thanks
-            #command""")
-        self.message.set_payload(payload)
+        self.set_input_lines(['thanks', '#command'])
 
-        control.process(self.message.as_string())
+        self.control_process()
 
         self.assertEqual(len(mail.outbox), 1)
         out_mail = mail.outbox[0]
         self.assertNotIn('>#command', out_mail.body)
 
 
-class SubscribeToPackageTest(TestCase):
+class SubscribeToPackageTest(EmailControlTest):
     """
     Tests for the subscribe to package story.
     """
     def setUp(self):
-        self.message = Message()
-        self.message.add_header('From', 'John Doe <john.doe@unknown.com>')
-        self.message.add_header('To', CONTROL_EMAIL_ADDRESS)
-        self.message.add_header('Subject', 'Commands')
+        EmailControlTest.setUp(self)
         # Regular expression to extract the confirmation code from the body of
         # the response mail
         self.regexp = re.compile(r'^CONFIRM (.*)$', re.MULTILINE)
@@ -218,10 +235,9 @@ class SubscribeToPackageTest(TestCase):
         commands = [
             "subscribe " + package_name + ' ' + user_email_address,
         ]
-        payload = '\n'.join(commands)
-        self.message.set_payload(payload)
+        self.set_input_lines(commands)
 
-        control.process(self.message.as_string())
+        self.control_process()
 
         self.assertEqual(len(mail.outbox), 2)
         response_mail = mail.outbox.pop()
@@ -234,13 +250,14 @@ class SubscribeToPackageTest(TestCase):
         self.assertNotIn(user_email_address,
                          [user_email.email
                           for user_email in self.package.subscriptions.all()])
-
         # Check that the confirmation mail contains the confirmation code
         match = self.regexp.search(confirmation_mail.body)
         self.assertIsNotNone(match)
+
         # Extract the code and send a confirmation mail
-        self.message.set_payload(match.group(0))
-        control.process(self.message.as_string())
+        self.reset_message()
+        self.set_input_lines([match.group(0)])
+        self.control_process()
 
         self.assertEqual(len(mail.outbox), 1)
         response_mail = mail.outbox.pop()
