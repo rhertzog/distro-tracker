@@ -30,6 +30,12 @@ class Command(object):
     def is_valid(self):
         return True
 
+    def get_command_text(self):
+        """
+        Returns a string representation of the command.
+        """
+        return '#'
+
 
 class SubscribeCommand(Command):
     def __init__(self, message, *args):
@@ -50,6 +56,11 @@ class SubscribeCommand(Command):
 
     def is_valid(self):
         return self.package and self.user_email
+
+    def get_command_text(self):
+        return 'subscribe {package} {email}'.format(
+            package=self.package,
+            email=self.user_email).lower()
 
     def __call__(self):
         command_confirmation = CommandConfirmation.objects.create_for_command(
@@ -87,6 +98,9 @@ class ConfirmCommand(Command):
     def is_valid(self):
         return self.confirmation_key is not None
 
+    def get_command_text(self):
+        return 'confirm {key}'.format(key=self.confirmation_key)
+
     def __call__(self):
         command_confirmation = CommandConfirmation.objects.get(
             confirmation_key=self.confirmation_key)
@@ -111,9 +125,15 @@ class HelpCommand(Command):
     """
     description = 'Shows all available commands'
 
+    def get_command_text(self):
+        return 'help'
+
 
 class QuitCommand(Command):
     description = 'Stops processing commands'
+
+    def get_command_text(self):
+        return 'quit'
 
 
 ALL_COMMANDS = {

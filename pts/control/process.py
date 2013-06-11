@@ -60,7 +60,7 @@ def process(message):
     # Process the commands
     out = []
     errors = 0
-    processed = 0
+    processed = set()
     cc = []
     factory = CommandFactory(msg)
     # Each line is a separate command
@@ -76,11 +76,13 @@ def process(message):
             if errors == MAX_ALLOWED_ERRORS:
                 break
         else:
-            command_output = command()
-            if not command_output:
-                command_output = ''
-            out.append(command_output)
-            processed += 1
+            if command.get_command_text() not in processed:
+                # Only process the command if it was not previously processed.
+                command_output = command()
+                if not command_output:
+                    command_output = ''
+                out.append(command_output)
+                processed.add(command.get_command_text())
 
         if isinstance(command, QuitCommand):
             break
