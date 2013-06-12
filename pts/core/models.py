@@ -36,7 +36,9 @@ class EmailUser(models.Model):
         or a ``Package`` instance.
         """
         if not isinstance(package, Package):
-            package = Package.objects.get(name=package)
+            package = get_or_none(Package, name=package)
+            if not package:
+                return False
 
         return package in self.package_set.all()
 
@@ -76,6 +78,17 @@ class SubscriptionManager(models.Manager):
         return self.create(
             email_user=email_user,
             package=package)
+
+    def unsubscribe(self, package_name, email):
+        package = get_or_none(Package, name=package_name)
+        email_user = get_or_none(EmailUser, email=email)
+        if not package or not email_user:
+            return False
+        subscription = get_or_none(
+            Subscription, email_user=email_user, package=package)
+        if subscription:
+            subscription.delete()
+        return True
 
 
 class Subscription(models.Model):
