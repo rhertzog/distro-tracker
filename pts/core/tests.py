@@ -81,6 +81,24 @@ class EmailUserManagerTest(TestCase):
             EmailUser.objects.is_user_subscribed_to(self.email_user.email,
                                                     self.package.name))
 
+    def test_is_subscribed_to_user_doesnt_exist(self):
+        """
+        Tests that the is_user_subscribed_to method returns False when the
+        given user does not exist.
+        """
+        self.assertFalse(
+            EmailUser.objects.is_user_subscribed_to('unknown-user@foo.com',
+                                                    self.package.name))
+
+    def test_is_subscribed_to_package_doesnt_exist(self):
+        """
+        Tests that the is_user_subscribed_to method returns False when the
+        given package does not exist.
+        """
+        self.assertFalse(
+            EmailUser.objects.is_user_subscribed_to(self.email_user.email,
+                                                    'unknown-package'))
+
 
 class PackageManagerTest(TestCase):
     def setUp(self):
