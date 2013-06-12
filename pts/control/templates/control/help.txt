@@ -1,0 +1,59 @@
+Debian Package Tracking System
+------------------------------
+
+The Package Tracking System (PTS) has the following commands:
+
+subscribe <srcpackage> [<email>]
+  Subscribes <email> to all messages regarding <srcpackage>. If
+  <email> is not given, it subscribes the From address. If the
+  <srcpackage> is not a valid source package, you'll get a warning.
+  If it's a valid binary package, the mapping will automatically be
+  done for you.
+
+unsubscribe <srcpackage> [<email>]
+  Unsubscribes <email> from <srcpackage>. Like the subscribe command,
+  it will use the From address if <email> is not given.
+
+unsubscribeall [<email>]
+  Cancel all subscriptions of <email>. Like the subscribe command,
+  it will use the From address if <email> is not given.
+
+which [<email>]
+  Tells you which packages <email> is subscribed to.
+
+keyword [<email>]
+  Tells you the keywords that you are accepting. Each mail sent through
+  the Package Tracking System is associated to a keyword and you receive
+  only the mails associated to keywords that you are accepting. Here is
+  the list of available keywords :
+  * bts: mails coming from the Debian Bug Tracking System
+  * bts-control: mails sent to control@bugs.debian.org
+  * summary: automatic summary mails about the state of a package
+  * cvs: notification of cvs commits
+  * ddtp: notification of translations from the DDTP (cf ddtp.debian.org)
+  * derivatives: notification of changes in derivative distributions
+  * derivatives-bugs: bug traffic in derivative distributions
+  * upload-source: announce of a new source upload that has been installed
+  * upload-binary: announce of a new binary-only upload (porting)
+  * katie-other: other mails from ftpmasters (override disparity, etc.)
+  * contact: mails sent to the maintainer via <pkg>@packages.debian.org
+  * buildd: notification of build failures on build daemons
+  * default: all the other mails (those which aren't "automatic")
+  By default you have the following keywords : bts, bts-control, summary,
+  upload-source, katie-other, buildd, default.
+  
+keyword <srcpackage> [<email>]
+  Same as previous item but for the given source package since
+  you may select a different set of keywords for each source package.
+
+keyword [<email>] {+|-|=} <list of keywords>
+  Accept (+) or refuse (-) mails associated to the given keyword(s).
+  Define the list (=) of accepted keywords.
+  
+keyword <srcpackage> [<email>] {+|-|=} <list of keywords>
+  Same as previous item but overrides the keywords list for the indicated
+  source package.
+  
+quit
+thanks
+  Stops processing commands.
