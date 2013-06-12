@@ -283,6 +283,9 @@ class HelpCommand(Command):
     def get_command_text(self):
         return 'help'
 
+    def __call__(self):
+        return render_to_string('control/help.txt')
+
 
 class QuitCommand(Command):
     description = 'Stops processing commands'
