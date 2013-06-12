@@ -205,6 +205,33 @@ class UnsubscribeCommand(Command):
   it will use the From address if <email> is not given."""
 
 
+class WhichCommand(Command):
+    def __init__(self, message, *args):
+        Command.__init__(self)
+        self.user_email = None
+        if len(args) >= 1:
+            self.user_email = args[0]
+        else:
+            self.user_email = extract_email_address_from_header(
+                message.get('From'))
+
+    def get_command_text(self):
+        return 'which ' + self.user_email.lower()
+
+    def __call__(self):
+        user_subscriptions = Subscription.objects.get_for_email(
+            self.user_email)
+        if not user_subscriptions:
+            return 'No subscriptions found'
+        return '\n'.join((
+            '* {package_name}'.format(package_name=sub.package.name)
+            for sub in user_subscriptions
+        ))
+
+    description = """which [<email>]
+  Tells you which packages <email> is subscribed to."""
+
+
 class ConfirmCommand(Command):
     def __init__(self, message, *args):
         Command.__init__(self)
@@ -247,7 +274,6 @@ class ConfirmCommand(Command):
             return 'Error unsubscribing'
 
 
-
 class HelpCommand(Command):
     """
     Not yet implemented.
@@ -272,6 +298,7 @@ ALL_COMMANDS = {
     'subscribe': SubscribeCommand,
     'unsubscribe': UnsubscribeCommand,
     'confirm': ConfirmCommand,
+    'which': WhichCommand,
 }
 
 
