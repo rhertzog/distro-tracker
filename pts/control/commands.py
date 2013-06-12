@@ -129,6 +129,82 @@ class SubscribeCommand(Command):
   done for you."""
 
 
+class UnsubscribeCommand(Command):
+    def __init__(self, message, *args):
+        Command.__init__(self)
+        self.package = None
+        self.user_email = None
+        if len(args) < 1:
+            # Invalid command
+            pass
+        elif len(args) < 2:
+            # Subscriber email not given
+            self.package = args[0]
+            self.user_email = extract_email_address_from_header(
+                message.get('From'))
+        else:
+            # Superfluous arguments are ignored.
+            self.package = args[0]
+            self.user_email = args[1]
+
+    def is_valid(self):
+        return self.package and self.user_email
+
+    def get_command_text(self):
+        return 'unsubscribe {package} {email}'.format(
+            package=self.package,
+            email=self.user_email).lower()
+
+    def _send_confirmation_mail(self):
+        command_confirmation = CommandConfirmation.objects.create_for_command(
+            command='unsubscribe ' + self.package + ' ' + self.user_email,
+        )
+        message = render_to_string(
+            'control/email-unsubscribe-confirmation.txt', {
+                'package': self.package,
+                'command_confirmation': command_confirmation,
+            }
+        )
+        subject = 'CONFIRM ' + command_confirmation.confirmation_key
+
+        self._send_mail(
+            subject=subject,
+            message=message,
+            recipient_list=[self.user_email]
+        )
+
+    def __call__(self):
+        out = []
+        if not Package.objects.exists_with_name(self.package):
+            if BinaryPackage.objects.exists_with_name(self.package):
+                binary_package = BinaryPackage.objects.get_by_name(self.package)
+                out.append('Warning: {package} is not a source package.'.format(
+                    package=self.package))
+                out.append('{package} is the source package '
+                           'for the {binary} binary package'.format(
+                               package=binary_package.source_package.name,
+                               binary=binary_package.name))
+                self.package = binary_package.source_package.name
+            else:
+                return (
+                    '{package} is neither a source package '
+                    'nor a binary package.'.format(package=self.package))
+        if not EmailUser.objects.is_user_subscribed_to(self.user_email,
+                                                       self.package):
+            return (
+                "{email} is not subscribed, you can't unsubscribe.".format(
+                    email=self.user_email)
+            )
+
+        self._send_confirmation_mail()
+        out.append('A confirmation mail has been sent to ' + self.user_email)
+        return '\n'.join(out)
+
+    description = """unsubscribe <srcpackage> [<email>]
+  Unsubscribes <email> from <srcpackage>. Like the subscribe command,
+  it will use the From address if <email> is not given."""
+
+
 class ConfirmCommand(Command):
     def __init__(self, message, *args):
         Command.__init__(self)
@@ -149,6 +225,8 @@ class ConfirmCommand(Command):
         args = command_confirmation.command.split()
         if args[0].lower() == 'subscribe':
             return self._subscribe(package=args[1], user_email=args[2])
+        elif args[0].lower() == 'unsubscribe':
+            return self._unsubscribe(package=args[1], user_email=args[2])
 
     def _subscribe(self, package, user_email):
         subscription = Subscription.objects.create_for(
@@ -158,6 +236,16 @@ class ConfirmCommand(Command):
             return user_email + ' has been subscribed to ' + package
         else:
             return 'Error subscribing ' + user_email + ' to ' + package
+
+    def _unsubscribe(self, package, user_email):
+        success = Subscription.objects.unsubscribe(package, user_email)
+        if success:
+            return '{user} has been unsubscribed from {package}'.format(
+                user=user_email,
+                package=package)
+        else:
+            return 'Error unsubscribing'
+
 
 
 class HelpCommand(Command):
@@ -182,6 +270,7 @@ ALL_COMMANDS = {
     'thanks': QuitCommand,
     'quit': QuitCommand,
     'subscribe': SubscribeCommand,
+    'unsubscribe': UnsubscribeCommand,
     'confirm': ConfirmCommand,
 }
 
