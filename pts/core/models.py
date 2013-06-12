@@ -90,6 +90,12 @@ class SubscriptionManager(models.Manager):
             subscription.delete()
         return True
 
+    def get_for_email(self, email):
+        email_user = get_or_none(EmailUser, email=email)
+        if not email_user:
+            return []
+        return email_user.subscription_set.all()
+
 
 class Subscription(models.Model):
     email_user = models.ForeignKey(EmailUser)

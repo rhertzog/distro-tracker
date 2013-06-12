@@ -11,10 +11,18 @@ class SubscriptionTest(TestCase):
         self.package = Package.objects.create(name='dummy-package')
         self.email_user = EmailUser.objects.create(email='email@domain.com')
 
+    def create_subscription(self, package, email):
+        """
+        Helper method which creates a subscription for the given user to the
+        given package.
+        """
+        return Subscription.objects.create_for(
+            package_name=package,
+            email=email)
+
     def test_create_for_existing_email(self):
-        subscription = Subscription.objects.create_for(
-            package_name=self.package.name,
-            email=self.email_user.email)
+        subscription = self.create_subscription(
+            self.package.name, self.email_user.email)
 
         self.assertEqual(subscription.email_user, self.email_user)
         self.assertEqual(subscription.package, self.package)
@@ -28,6 +36,32 @@ class SubscriptionTest(TestCase):
 
         self.assertEqual(EmailUser.objects.count(), previous_count + 1)
         self.assertEqual(subscription.package, self.package)
+
+    def test_get_for_email(self):
+        """
+        Tests the get_for_email method when the user is subscribed to multiple
+        packages.
+        """
+        self.create_subscription(self.package.name, self.email_user.email)
+        p = Package.objects.create(name='temp')
+        self.create_subscription(p.name, self.email_user.email)
+        package_not_subscribed_to = Package.objects.create(name='qwer')
+
+        l = Subscription.objects.get_for_email(self.email_user.email)
+        l = [sub.package for sub in l]
+
+        self.assertIn(self.package, l)
+        self.assertIn(p, l)
+        self.assertNotIn(package_not_subscribed_to, l)
+
+    def test_get_for_email_no_subsriptions(self):
+        """
+        Tests the get_for_email method when the user is not subscribed to any
+        packages.
+        """
+        l = Subscription.objects.get_for_email(self.email_user.email)
+
+        self.assertEqual(len(l), 0)
 
 
 class EmailUserTest(TestCase):
