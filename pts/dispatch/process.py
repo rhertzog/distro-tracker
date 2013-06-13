@@ -22,6 +22,7 @@ from core.models import Package
 from django.conf import settings
 OWNER_EMAIL_ADDRESS = getattr(settings, 'OWNER_EMAIL_ADDRESS')
 CONTROL_EMAIL_ADDRESS = getattr(settings, 'CONTROL_EMAIL_ADDRESS')
+PTS_FQDN = settings.PTS_FQDN
 
 
 def process(message, local_part=None):
@@ -47,8 +48,9 @@ def prepare_message(received_message, to_email):
 
 def add_new_headers(received_message, package_name):
     new_headers = [
-        ('X-Loop', '{package}@packages.qa.debian.org'.format(
-            package=package_name)),
+        ('X-Loop', '{package}@{pts_fqdn}'.format(
+            package=package_name,
+            pts_fqdn=PTS_FQDN)),
         ('X-PTS-Package', package_name),
         ('X-Debian-Package', package_name),
         ('X-Debian', 'PTS'),

@@ -25,6 +25,7 @@ import dispatch
 from django.conf import settings
 OWNER_EMAIL_ADDRESS = getattr(settings, 'OWNER_EMAIL_ADDRESS')
 CONTROL_EMAIL_ADDRESS = getattr(settings, 'CONTROL_EMAIL_ADDRESS')
+PTS_FQDN = settings.PTS_FQDN
 
 
 class DispatchBaseTest(TestCase):
@@ -46,8 +47,9 @@ class DispatchBaseTest(TestCase):
 
     def set_package_name(self, package_name):
         self.package_name = package_name
-        self.add_header('To', '{package}@packages.qa.debian.org'.format(
-            package=self.package_name))
+        self.add_header('To', '{package}@{pts_fqdn}'.format(
+            package=self.package_name,
+            pts_fqdn=PTS_FQDN))
 
     def set_message_content(self, content):
         self.message.set_payload(content)
@@ -84,8 +86,9 @@ class DispatchBaseTest(TestCase):
         all the forwarded messages.
         """
         headers = [
-            ('X-Loop', '{package}@packages.qa.debian.org'.format(
-                package=self.package_name)),
+            ('X-Loop', '{package}@{pts_fqdn}'.format(
+                package=self.package_name,
+                pts_fqdn=PTS_FQDN)),
             ('X-PTS-Package', self.package_name),
             ('X-Debian-Package', self.package_name),
             ('X-Debian', 'PTS'),
