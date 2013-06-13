@@ -60,19 +60,13 @@ class DispatchBaseTest(TestCase):
     def assert_all_old_headers_found(self):
         """
         Helper method checks if all the headers of the received message are
-        found in all the forwarded messages.
+        found in all the forwarded messages and in the identical order.
         """
         for msg in mail.outbox:
             msg = msg.message()
-            for header_name, header_value in self.headers:
-                if header_name.lower() == 'to':
-                    continue
-                self.assertIn(
-                    header_value, msg.get_all(header_name),
-                    '{header_name}: {header_value} not found in {all}'.format(
-                        header_name=header_name,
-                        header_value=header_value,
-                        all=msg.get_all(header_name)))
+            fwd_headers = msg.items()
+            for original_header, fwd_header in zip(self.headers, fwd_headers):
+                self.assertEqual(original_header, fwd_header)
 
     def assert_all_new_headers_found(self):
         """
@@ -106,10 +100,6 @@ class DispatchBaseTest(TestCase):
         Helper method checks if the mail was forwarded to all users who are
         subscribed to the package.
         """
-        all_forwards = [
-            extract_email_address_from_header(msg.message()['To'])
-            for msg in mail.outbox
-        ]
         package = get_or_none(Package, name=self.package_name)
         if not package:
             subscriptions = []
@@ -117,6 +107,12 @@ class DispatchBaseTest(TestCase):
             subscriptions = package.subscriptions.all()
         self.assertEqual(
             len(mail.outbox), len(subscriptions))
+        # Extract addresses from the sent mails envelope headers
+        all_forwards = [
+            extract_email_address_from_header(message.to[0])
+            for message in mail.outbox
+            if len(message.to) == 1
+        ]
         for email_user in subscriptions:
             self.assertIn(
                 email_user.email, all_forwards)
