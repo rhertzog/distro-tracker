@@ -79,6 +79,8 @@ def process(message):
         out.append('>' + line)
 
         args = line.split()
+        if not args:
+            continue
         command = factory.get_command_function(*args)
 
         if not command:

@@ -133,3 +133,16 @@ class ControlBotBasic(EmailControlTest):
 
         self.assert_response_sent()
         self.assert_not_in_response('>#command')
+
+    def test_blank_line_skip(self):
+        """
+        Tests that processing skips any blank lines in the message. They are
+        not considered garbage.
+        """
+        self.set_input_lines(['help', ''] + ['   '] * 5 + ['#comment'])
+
+        self.control_process()
+
+        self.assert_response_sent()
+        self.assert_in_response('>help')
+        self.assert_in_response('>#comment')
