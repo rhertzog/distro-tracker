@@ -47,6 +47,17 @@ class SubscriptionTest(TestCase):
         self.assertEqual(EmailUser.objects.count(), previous_count + 1)
         self.assertEqual(subscription.package, self.package)
 
+    def test_create_for_twice(self):
+        """
+        Tests that the create_for method creates only one Subscription for a
+        user, package pair.
+        """
+        prev_cnt_subs = Subscription.objects.count()
+        self.create_subscription(self.package.name, self.email_user.email)
+        self.create_subscription(self.package.name, self.email_user.email)
+
+        self.assertEqual(Subscription.objects.count(), prev_cnt_subs + 1)
+
     def test_get_for_email(self):
         """
         Tests the get_for_email method when the user is subscribed to multiple

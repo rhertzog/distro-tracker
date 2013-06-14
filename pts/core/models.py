@@ -85,9 +85,9 @@ class SubscriptionManager(models.Manager):
         email_user, created = EmailUser.objects.get_or_create(
             email=email)
 
-        return self.create(
+        return self.get_or_create(
             email_user=email_user,
-            package=package)
+            package=package)[0]
 
     def unsubscribe(self, package_name, email):
         package = get_or_none(Package, name=package_name)
