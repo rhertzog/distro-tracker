@@ -10,6 +10,7 @@
 
 from __future__ import unicode_literals
 from django.db import models
+from django.utils.encoding import python_2_unicode_compatible
 from pts.core.utils import get_or_none
 
 
@@ -28,13 +29,11 @@ class EmailUserManager(models.Manager):
             return user.is_subscribed_to(package_name)
 
 
+@python_2_unicode_compatible
 class EmailUser(models.Model):
     email = models.EmailField(max_length=254, unique=True)
 
     objects = EmailUserManager()
-
-    def __unicode__(self):
-        return self.email
 
     def __str__(self):
         return self.email
@@ -64,14 +63,12 @@ class PackageManager(models.Manager):
         return self.filter(name=package_name).exists()
 
 
+@python_2_unicode_compatible
 class Package(models.Model):
     name = models.CharField(max_length=100, unique=True)
     subscriptions = models.ManyToManyField(EmailUser, through='Subscription')
 
     objects = PackageManager()
-
-    def __unicode__(self):
-        return self.name
 
     def __str__(self):
         return self.name
@@ -107,17 +104,15 @@ class SubscriptionManager(models.Manager):
         return email_user.subscription_set.all()
 
 
+@python_2_unicode_compatible
 class Subscription(models.Model):
     email_user = models.ForeignKey(EmailUser)
     package = models.ForeignKey(Package)
 
     objects = SubscriptionManager()
 
-    def __unicode__(self):
-        return self.email_user + ' ' + self.package
-
     def __str__(self):
-        return self.email_user + ' ' + self.package
+        return str(self.email_user) + ' ' + str(self.package)
 
 
 class BinaryPackageManager(models.Manager):
@@ -137,14 +132,12 @@ class BinaryPackageManager(models.Manager):
         return self.get(name=package_name)
 
 
+@python_2_unicode_compatible
 class BinaryPackage(models.Model):
     name = models.CharField(max_length=100, unique=True)
     source_package = models.ForeignKey(Package)
 
     objects = BinaryPackageManager()
-
-    def __unicode__(self):
-        return self.name
 
     def __str__(self):
         return self.name

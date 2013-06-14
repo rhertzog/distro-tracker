@@ -12,6 +12,7 @@ from __future__ import unicode_literals
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+from django.utils.encoding import python_2_unicode_compatible
 
 import hashlib
 import string
@@ -46,15 +47,13 @@ class CommandConfirmationManager(models.Manager):
         return instance if not instance.is_expired() else None
 
 
+@python_2_unicode_compatible
 class CommandConfirmation(models.Model):
     command = models.CharField(max_length=120)
     confirmation_key = models.CharField(max_length=40)
     date_created = models.DateTimeField(auto_now_add=True)
 
     objects = CommandConfirmationManager()
-
-    def __unicode__(self):
-        return self.command
 
     def __str__(self):
         return self.command
