@@ -57,8 +57,8 @@ class DispatchBaseTest(TestCase):
         self.message.add_header(header_name, header_value)
         self.headers.append((header_name, header_value))
 
-    def run_dispatch(self):
-        dispatch.process(self.message.as_string())
+    def run_dispatch(self, sent_to_address=None):
+        dispatch.process(self.message.as_string(), None)
 
     def subscribe_user_to_package(self, user_email, package):
         """
@@ -176,6 +176,27 @@ class DispatchBaseTest(TestCase):
         any subscribers.
         """
         self.run_dispatch()
+
+        self.assert_correct_response()
+
+    def test_dispatch_package_email_in_environment(self):
+        """
+        Tests the dispatch functionality when the envelope to address differs
+        from the message to address.
+        """
+        self.clear_message()
+        self.from_email = 'dummy-email@domain.com'
+        self.add_header('From', 'Real Name <{from_email}>'.format(
+            from_email=self.from_email))
+        self.add_header('To', 'Someone <someone@domain.com>')
+        address = '{package}@{pts_fqdn}'.format(package=self.package_name,
+                                                pts_fqdn=PTS_FQDN)
+        self.add_header('Cc', address)
+        self.add_header('Subject', 'Some subject')
+        self.add_header('X-Loop', 'owner@bugs.debian.org')
+        self.set_message_content('message content')
+
+        self.run_dispatch(address)
 
         self.assert_correct_response()
 

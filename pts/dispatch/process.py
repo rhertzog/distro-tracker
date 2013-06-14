@@ -24,15 +24,17 @@ PTS_CONTROL_EMAIL = settings.PTS_CONTROL_EMAIL
 PTS_FQDN = settings.PTS_FQDN
 
 
-def process(message, local_part=None):
+def process(message, sent_to_address=None):
     """
     Handles the dispatching of received messages.
     """
     msg = message_from_string(message)
 
-    if local_part is None:
-        from_email = extract_email_address_from_header(msg['To'])
-        local_part = from_email.split('@')[0]
+    if sent_to_address is None:
+        # No MTA was recognized, the last resort is to try and use the message
+        # To header.
+        sent_to_address = extract_email_address_from_header(msg['To'])
+    local_part = sent_to_address.split('@')[0]
 
     package_name = local_part
 
