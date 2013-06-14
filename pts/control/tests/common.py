@@ -17,6 +17,7 @@ from email.message import Message
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
+from email.utils import make_msgid
 
 from pts import control
 
@@ -40,6 +41,7 @@ class EmailControlTest(TestCase):
         self.message.add_header('From', 'John Doe <john.doe@unknown.com>')
         self.message.add_header('To', CONTROL_EMAIL_ADDRESS)
         self.message.add_header('Subject', 'Commands')
+        self.message.add_header('Message-ID', make_msgid())
 
     def set_header(self, header_name, header_value):
         if header_name in self.message:
@@ -103,6 +105,12 @@ class EmailControlTest(TestCase):
         self.assert_header_equal('X-Loop', CONTROL_EMAIL_ADDRESS)
         self.assert_header_equal('To', self.message['From'])
         self.assert_header_equal('From', OWNER_EMAIL_ADDRESS)
+        self.assert_header_equal('In-Reply-To', self.message['Message-ID'])
+        self.assert_header_equal(
+            'References',
+            ' '.join((self.message.get('References', ''),
+                      self.message['Message-ID']))
+        )
         if not self.message['Subject']:
             self.assert_header_equal('Subject', 'Re: Your mail')
         else:

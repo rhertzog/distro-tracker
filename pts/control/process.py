@@ -36,6 +36,9 @@ def send_response(original_message, message_text, cc=None):
         from_email=OWNER_EMAIL_ADDRESS,
         headers={
             'X-Loop': CONTROL_EMAIL_ADDRESS,
+            'References': ' '.join((original_message.get('References', ''),
+                                    original_message.get('Message-ID', ''))),
+            'In-Reply-To': original_message.get('Message-ID', ''),
         },
         body=message_text,
     )
