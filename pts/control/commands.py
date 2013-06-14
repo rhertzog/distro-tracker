@@ -24,6 +24,9 @@ from pts.control.models import CommandConfirmation
 from pts.core.utils import extract_email_address_from_header
 from pts.core.utils import get_or_none
 
+import sys
+import inspect
+
 from django.conf import settings
 OWNER_EMAIL_ADDRESS = getattr(settings, 'OWNER_EMAIL_ADDRESS')
 CONTROL_EMAIL_ADDRESS = getattr(settings, 'CONTROL_EMAIL_ADDRESS')
@@ -34,6 +37,8 @@ class Command(object):
     Base class for commands. Instances of this class can be used for NOP
     commands.
     """
+    META = {}
+
     def __init__(self, *args):
         self._sent_mails = []
 
@@ -64,6 +69,17 @@ class Command(object):
 
 
 class SubscribeCommand(Command):
+    META = {
+        'description': """subscribe <srcpackage> [<email>]
+  Subscribes <email> to all messages regarding <srcpackage>. If
+  <email> is not given, it subscribes the From address. If the
+  <srcpackage> is not a valid source package, you'll get a warning.
+  If it's a valid binary package, the mapping will automatically be
+  done for you.""",
+        'name': 'subscribe',
+        'position': 1,
+    }
+
     def __init__(self, message, *args):
         Command.__init__(self)
         self.package = None
@@ -134,15 +150,16 @@ class SubscribeCommand(Command):
         out.append('A confirmation mail has been sent to ' + self.user_email)
         return '\n'.join(out)
 
-    description = """subscribe <srcpackage> [<email>]
-  Subscribes <email> to all messages regarding <srcpackage>. If
-  <email> is not given, it subscribes the From address. If the
-  <srcpackage> is not a valid source package, you'll get a warning.
-  If it's a valid binary package, the mapping will automatically be
-  done for you."""
-
 
 class UnsubscribeCommand(Command):
+    META = {
+        'description': """unsubscribe <srcpackage> [<email>]
+  Unsubscribes <email> from <srcpackage>. Like the subscribe command,
+  it will use the From address if <email> is not given.""",
+        'name': 'unsubscribe',
+        'position': 2,
+    }
+
     def __init__(self, message, *args):
         Command.__init__(self)
         self.package = None
@@ -213,39 +230,16 @@ class UnsubscribeCommand(Command):
         out.append('A confirmation mail has been sent to ' + self.user_email)
         return '\n'.join(out)
 
-    description = """unsubscribe <srcpackage> [<email>]
-  Unsubscribes <email> from <srcpackage>. Like the subscribe command,
-  it will use the From address if <email> is not given."""
-
-
-class WhichCommand(Command):
-    def __init__(self, message, *args):
-        Command.__init__(self)
-        self.user_email = None
-        if len(args) >= 1:
-            self.user_email = args[0]
-        else:
-            self.user_email = extract_email_address_from_header(
-                message.get('From'))
-
-    def get_command_text(self):
-        return 'which ' + self.user_email.lower()
-
-    def __call__(self):
-        user_subscriptions = Subscription.objects.get_for_email(
-            self.user_email)
-        if not user_subscriptions:
-            return 'No subscriptions found'
-        return '\n'.join((
-            '* {package_name}'.format(package_name=sub.package.name)
-            for sub in user_subscriptions
-        ))
-
-    description = """which [<email>]
-  Tells you which packages <email> is subscribed to."""
-
 
 class ConfirmCommand(Command):
+    META = {
+        'description': """unsubscribe <srcpackage> [<email>]
+  Unsubscribes <email> from <srcpackage>. Like the subscribe command,
+  it will use the From address if <email> is not given.""",
+        'name': 'confirm',
+        'position': 3,
+    }
+
     def __init__(self, message, *args):
         Command.__init__(self)
         self.confirmation_key = None
@@ -290,16 +284,48 @@ class ConfirmCommand(Command):
         else:
             return 'Error unsubscribing'
 
-    description = '''confirm <confirmation-key>
-  Confirms a previously sent command.'''
+
+class WhichCommand(Command):
+    META = {
+        'description': """which [<email>]
+  Tells you which packages <email> is subscribed to.""",
+        'name': 'which',
+        'position': 4,
+    }
+
+    def __init__(self, message, *args):
+        Command.__init__(self)
+        self.user_email = None
+        if len(args) >= 1:
+            self.user_email = args[0]
+        else:
+            self.user_email = extract_email_address_from_header(
+                message.get('From'))
+
+    def get_command_text(self):
+        return 'which ' + self.user_email.lower()
+
+    def __call__(self):
+        user_subscriptions = Subscription.objects.get_for_email(
+            self.user_email)
+        if not user_subscriptions:
+            return 'No subscriptions found'
+        return '\n'.join((
+            '* {package_name}'.format(package_name=sub.package.name)
+            for sub in user_subscriptions
+        ))
 
 
 class HelpCommand(Command):
     """
     Not yet implemented.
     """
-    description = '''help
-  Shows all available commands'''
+    META = {
+        'description': '''help
+  Shows all available commands''',
+        'name': 'help',
+        'position': 5,
+    }
 
     def get_command_text(self):
         return 'help'
@@ -307,30 +333,37 @@ class HelpCommand(Command):
     def __call__(self):
         return render_to_string('control/help.txt', {
             'descriptions': [
-                command.description for command in UNIQUE_COMMANDS
+                command.META.get('description', '')
+                for command in UNIQUE_COMMANDS
             ]
         })
 
 
 class QuitCommand(Command):
-    description = '''quit
-  Stops processing commands'''
+    META = {
+        'description': '''quit
+  Stops processing commands''',
+        'name': 'quit',
+        'aliases': ['thanks'],
+        'position': 6
+    }
 
     def get_command_text(self):
         return 'quit'
 
 
-ALL_COMMANDS = OrderedDict([
-    ('subscribe', SubscribeCommand),
-    ('unsubscribe', UnsubscribeCommand),
-    ('confirm', ConfirmCommand),
-    ('which', WhichCommand),
-    ('help', HelpCommand),
-    ('thanks', QuitCommand),
-    ('quit', QuitCommand),
-])
+UNIQUE_COMMANDS = sorted(
+    (klass
+     for _, klass in inspect.getmembers(sys.modules[__name__], inspect.isclass)
+     if klass != Command and issubclass(klass, Command)),
+    key=lambda cmd: cmd.META.get('position', float('inf'))
+)
 
-UNIQUE_COMMANDS = OrderedDict.fromkeys(ALL_COMMANDS.values()).keys()
+ALL_COMMANDS = OrderedDict((
+    (alias, cmd)
+    for cmd in UNIQUE_COMMANDS
+    for alias in [cmd.META['name']] + cmd.META.get('aliases', list())
+))
 
 
 class CommandFactory(object):

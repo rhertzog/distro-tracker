@@ -30,7 +30,7 @@ class HelpCommandTest(EmailControlTest):
         """
         out = render_to_string('control/help.txt', {
             'descriptions': [
-                cmd.description for cmd in UNIQUE_COMMANDS
+                cmd.META.get('description', '') for cmd in UNIQUE_COMMANDS
             ]
         })
         self.assert_in_response(out)
