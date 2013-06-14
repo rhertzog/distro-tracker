@@ -15,8 +15,8 @@ from email.iterators import typed_subpart_iterator
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 
-from control.commands import CommandFactory
-from control.commands import QuitCommand
+from pts.control.commands import CommandFactory
+from pts.control.commands import QuitCommand
 
 from django.conf import settings
 OWNER_EMAIL_ADDRESS = getattr(settings, 'OWNER_EMAIL_ADDRESS')

@@ -8,4 +8,4 @@
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
 
-from control.process import process
+from pts.control.process import process

@@ -11,8 +11,8 @@
 from __future__ import unicode_literals
 from django.template.loader import render_to_string
 
-from control.tests.common import EmailControlTest
-from control.tests.common import CONTROL_EMAIL_ADDRESS
+from pts.control.tests.common import EmailControlTest
+from pts.control.tests.common import CONTROL_EMAIL_ADDRESS
 
 
 class ControlBotBasic(EmailControlTest):

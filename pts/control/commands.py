@@ -16,10 +16,10 @@ from __future__ import unicode_literals
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 
-from core.models import Subscription, EmailUser, Package, BinaryPackage
-from control.models import CommandConfirmation
+from pts.core.models import Subscription, EmailUser, Package, BinaryPackage
+from pts.control.models import CommandConfirmation
 
-from core.utils import extract_email_address_from_header
+from pts.core.utils import extract_email_address_from_header
 
 from django.conf import settings
 OWNER_EMAIL_ADDRESS = getattr(settings, 'OWNER_EMAIL_ADDRESS')

@@ -10,10 +10,10 @@
 
 from __future__ import unicode_literals
 
-from core.models import Package, EmailUser
-from core.models import Subscription
+from pts.core.models import Package, EmailUser
+from pts.core.models import Subscription
 
-from control.tests.common import EmailControlTest
+from pts.control.tests.common import EmailControlTest
 
 
 class WhichCommandTest(EmailControlTest):

@@ -10,7 +10,7 @@
 
 from django.core.management.base import BaseCommand
 
-import control
+from pts import control
 
 import sys
 import logging

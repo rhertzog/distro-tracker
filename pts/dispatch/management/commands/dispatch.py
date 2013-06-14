@@ -10,7 +10,7 @@
 
 from django.core.management.base import BaseCommand
 
-import dispatch
+from pts import dispatch
 
 import sys
 import logging

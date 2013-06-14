@@ -11,12 +11,12 @@
 from __future__ import unicode_literals
 from django.core import mail
 
-from core.utils import extract_email_address_from_header
-from core.models import Package, BinaryPackage
-from core.models import Subscription
+from pts.core.utils import extract_email_address_from_header
+from pts.core.models import Package, BinaryPackage
+from pts.core.models import Subscription
 import re
 
-from control.tests.common import EmailControlTest
+from pts.control.tests.common import EmailControlTest
 
 
 class UnsubscribeFromPackageTest(EmailControlTest):

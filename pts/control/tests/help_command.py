@@ -12,7 +12,7 @@ from __future__ import unicode_literals
 
 from django.template.loader import render_to_string
 
-from control.tests.common import EmailControlTest
+from pts.control.tests.common import EmailControlTest
 
 
 class HelpCommandTest(EmailControlTest):

@@ -17,10 +17,10 @@ from django.core import mail
 
 from email.message import Message
 
-from core.models import Package, Subscription
-from core.utils import extract_email_address_from_header
-from core.utils import get_or_none
-import dispatch
+from pts.core.models import Package, Subscription
+from pts.core.utils import extract_email_address_from_header
+from pts.core.utils import get_or_none
+from pts import dispatch
 
 from django.conf import settings
 OWNER_EMAIL_ADDRESS = getattr(settings, 'OWNER_EMAIL_ADDRESS')
@@ -181,7 +181,7 @@ class DispatchBaseTest(TestCase):
         self.assert_correct_response()
 
 
-from dispatch.custom_email_message import CustomEmailMessage
+from pts.dispatch.custom_email_message import CustomEmailMessage
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders

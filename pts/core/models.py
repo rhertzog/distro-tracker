@@ -10,7 +10,7 @@
 
 from __future__ import unicode_literals
 from django.db import models
-from core.utils import get_or_none
+from pts.core.utils import get_or_none
 
 
 class EmailUserManager(models.Manager):

@@ -13,12 +13,12 @@ from django.core.mail import get_connection
 
 from email import message_from_string
 
-from core.utils import extract_email_address_from_header
-from core.utils import get_or_none
+from pts.core.utils import extract_email_address_from_header
+from pts.core.utils import get_or_none
 
-from dispatch.custom_email_message import CustomEmailMessage
+from pts.dispatch.custom_email_message import CustomEmailMessage
 
-from core.models import Package
+from pts.core.models import Package
 from django.conf import settings
 OWNER_EMAIL_ADDRESS = getattr(settings, 'OWNER_EMAIL_ADDRESS')
 CONTROL_EMAIL_ADDRESS = getattr(settings, 'CONTROL_EMAIL_ADDRESS')

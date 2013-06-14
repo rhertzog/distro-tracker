@@ -13,7 +13,7 @@ Tests for the PTS core module.
 """
 from __future__ import unicode_literals
 from django.test import TestCase
-from core.models import Subscription, EmailUser, Package, BinaryPackage
+from pts.core.models import Subscription, EmailUser, Package, BinaryPackage
 
 
 class SubscriptionTest(TestCase):

@@ -113,10 +113,10 @@ MIDDLEWARE_CLASSES = (
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
-ROOT_URLCONF = 'pts.urls'
+ROOT_URLCONF = 'pts.pts.urls'
 
 # Python dotted path to the WSGI application used by Django's runserver.
-WSGI_APPLICATION = 'pts.wsgi.application'
+WSGI_APPLICATION = 'pts.pts.wsgi.application'
 
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
@@ -135,9 +135,9 @@ INSTALLED_APPS = (
     # 'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
-    'core',
-    'control',
-    'dispatch',
+    'pts.core',
+    'pts.control',
+    'pts.dispatch',
 )
 
 # A sample logging configuration. The only tangible logging
@@ -180,12 +180,12 @@ LOGGING = {
             'level': 'ERROR',
             'propagate': True,
         },
-        'control': {
+        'pts.control': {
             'handlers': ['console'],
             'level': DEBUG,
             'propagate': True,
         },
-        'dispatch': {
+        'pts.dispatch': {
             'handlers': ['console'],
             'level': DEBUG,
             'propagate': True,
@@ -193,4 +193,4 @@ LOGGING = {
     }
 }
 
-from pts.local_settings import *
+from pts.pts.local_settings import *

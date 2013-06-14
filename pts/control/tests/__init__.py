@@ -8,8 +8,8 @@
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
 
-from control.tests.bot_basic import *
-from control.tests.subscribe_command import *
-from control.tests.unsubscribe_command import *
-from control.tests.which_command import *
-from control.tests.help_command import *
+from pts.control.tests.bot_basic import *
+from pts.control.tests.subscribe_command import *
+from pts.control.tests.unsubscribe_command import *
+from pts.control.tests.which_command import *
+from pts.control.tests.help_command import *
