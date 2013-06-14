@@ -10,10 +10,14 @@
 
 from __future__ import unicode_literals
 from django.db import models
+from django.conf import settings
+from django.utils import timezone
 
 import hashlib
 import string
 import random
+
+CONFIRMATION_EXPIRATION_DAYS = settings.CONFIRMATION_EXPIRATION_DAYS
 
 
 class CommandConfirmationManager(models.Manager):
@@ -29,11 +33,23 @@ class CommandConfirmationManager(models.Manager):
             command=command,
             confirmation_key=confirmation_key)
 
+    def clean_up_expired(self):
+        """
+        Removes all expired confirmation keys.
+        """
+        for confirmation in self.all():
+            if confirmation.is_expired():
+                confirmation.delete()
+
+    def get(self, *args, **kwargs):
+        instance = models.Manager.get(self, *args, **kwargs)
+        return instance if not instance.is_expired() else None
+
 
 class CommandConfirmation(models.Model):
     command = models.CharField(max_length=120)
     confirmation_key = models.CharField(max_length=40)
-    date_sent = models.DateTimeField(auto_now_add=True)
+    date_created = models.DateTimeField(auto_now_add=True)
 
     objects = CommandConfirmationManager()
 
@@ -42,3 +58,7 @@ class CommandConfirmation(models.Model):
 
     def __str__(self):
         return self.command
+
+    def is_expired(self):
+        delta = timezone.now() - self.date_created
+        return delta.days >= CONFIRMATION_EXPIRATION_DAYS

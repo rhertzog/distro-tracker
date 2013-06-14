@@ -10,6 +10,8 @@
 
 from __future__ import unicode_literals
 from django.core import mail
+from django.conf import settings
+from datetime import datetime, timedelta
 
 from pts.core.utils import extract_email_address_from_header
 from pts.core.models import Package, BinaryPackage
@@ -17,6 +19,7 @@ from pts.core.models import Subscription
 import re
 
 from pts.control.tests.common import EmailControlTest
+from pts.control.models import CommandConfirmation
 
 
 class SubscribeToPackageTest(EmailControlTest):
@@ -238,3 +241,20 @@ class SubscribeToPackageTest(EmailControlTest):
         self.assert_correct_response_for_command(self.user_email_address,
                                                  self.user_email_address)
         self.assert_confirmation_sent_to(self.user_email_address)
+
+    def test_confirm_expired(self):
+        """
+        Tests that an expired confirmation does not subscribe the user.
+        """
+        c = CommandConfirmation.objects.create_for_command(
+            'subscribe {package} {user}'.format(user=self.user_email_address,
+                                                package=self.package.name))
+        delta = timedelta(days=settings.CONFIRMATION_EXPIRATION_DAYS + 1)
+        c.date_created = c.date_created - delta
+        c.save()
+        self.set_input_lines(['confirm ' + c.confirmation_key])
+
+        self.control_process()
+
+        self.assert_response_sent()
+        self.assert_in_response('Confirmation failed')

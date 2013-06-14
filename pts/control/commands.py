@@ -20,6 +20,7 @@ from pts.core.models import Subscription, EmailUser, Package, BinaryPackage
 from pts.control.models import CommandConfirmation
 
 from pts.core.utils import extract_email_address_from_header
+from pts.core.utils import get_or_none
 
 from django.conf import settings
 OWNER_EMAIL_ADDRESS = getattr(settings, 'OWNER_EMAIL_ADDRESS')
@@ -256,10 +257,14 @@ class ConfirmCommand(Command):
         return 'confirm {key}'.format(key=self.confirmation_key)
 
     def __call__(self):
-        command_confirmation = CommandConfirmation.objects.get(
+        command_confirmation = get_or_none(
+            CommandConfirmation,
             confirmation_key=self.confirmation_key)
+        if not command_confirmation:
+            return 'Confirmation failed'
 
         args = command_confirmation.command.split()
+        command_confirmation.delete()
         if args[0].lower() == 'subscribe':
             return self._subscribe(package=args[1], user_email=args[2])
         elif args[0].lower() == 'unsubscribe':
