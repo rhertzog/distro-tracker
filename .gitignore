@@ -7,3 +7,5 @@
 *.swp
 
 local_*.py
+
+docs/_build/
