@@ -13,6 +13,7 @@ from __future__ import unicode_literals
 from django.template.loader import render_to_string
 
 from pts.control.tests.common import EmailControlTest
+from pts.control.commands import UNIQUE_COMMANDS
 
 
 class HelpCommandTest(EmailControlTest):
@@ -27,7 +28,11 @@ class HelpCommandTest(EmailControlTest):
         Helper method checks if all the commands and their descriptions are in
         the response.
         """
-        out = render_to_string('control/help.txt')
+        out = render_to_string('control/help.txt', {
+            'descriptions': [
+                cmd.description for cmd in UNIQUE_COMMANDS
+            ]
+        })
         self.assert_in_response(out)
 
     def test_help_command(self):

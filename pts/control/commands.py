@@ -13,6 +13,8 @@ Defines and implements all control commands.
 """
 from __future__ import unicode_literals
 
+from collections import OrderedDict
+
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 
@@ -288,36 +290,47 @@ class ConfirmCommand(Command):
         else:
             return 'Error unsubscribing'
 
+    description = '''confirm <confirmation-key>
+  Confirms a previously sent command.'''
+
 
 class HelpCommand(Command):
     """
     Not yet implemented.
     """
-    description = 'Shows all available commands'
+    description = '''help
+  Shows all available commands'''
 
     def get_command_text(self):
         return 'help'
 
     def __call__(self):
-        return render_to_string('control/help.txt')
+        return render_to_string('control/help.txt', {
+            'descriptions': [
+                command.description for command in UNIQUE_COMMANDS
+            ]
+        })
 
 
 class QuitCommand(Command):
-    description = 'Stops processing commands'
+    description = '''quit
+  Stops processing commands'''
 
     def get_command_text(self):
         return 'quit'
 
 
-ALL_COMMANDS = {
-    'help': HelpCommand,
-    'thanks': QuitCommand,
-    'quit': QuitCommand,
-    'subscribe': SubscribeCommand,
-    'unsubscribe': UnsubscribeCommand,
-    'confirm': ConfirmCommand,
-    'which': WhichCommand,
-}
+ALL_COMMANDS = OrderedDict([
+    ('subscribe', SubscribeCommand),
+    ('unsubscribe', UnsubscribeCommand),
+    ('confirm', ConfirmCommand),
+    ('which', WhichCommand),
+    ('help', HelpCommand),
+    ('thanks', QuitCommand),
+    ('quit', QuitCommand),
+])
+
+UNIQUE_COMMANDS = OrderedDict.fromkeys(ALL_COMMANDS.values()).keys()
 
 
 class CommandFactory(object):
