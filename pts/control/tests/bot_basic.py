@@ -12,7 +12,7 @@ from __future__ import unicode_literals
 from django.template.loader import render_to_string
 
 from pts.control.tests.common import EmailControlTest
-from pts.control.tests.common import CONTROL_EMAIL_ADDRESS
+from pts.control.tests.common import PTS_CONTROL_EMAIL
 
 
 class ControlBotBasic(EmailControlTest):
@@ -91,9 +91,9 @@ class ControlBotBasic(EmailControlTest):
     def test_loop_no_response(self):
         """
         Tests that there is no response if the message's X-Loop is set to
-       CONTROL_EMAIL_ADDRESS
+       PTS_CONTROL_EMAIL
         """
-        self.set_header('X-Loop', CONTROL_EMAIL_ADDRESS)
+        self.set_header('X-Loop', PTS_CONTROL_EMAIL)
         self.set_input_lines(['#command', 'thanks'])
 
         self.control_process()

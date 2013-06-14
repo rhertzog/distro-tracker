@@ -28,8 +28,7 @@ import sys
 import inspect
 
 from django.conf import settings
-OWNER_EMAIL_ADDRESS = getattr(settings, 'OWNER_EMAIL_ADDRESS')
-CONTROL_EMAIL_ADDRESS = getattr(settings, 'CONTROL_EMAIL_ADDRESS')
+PTS_CONTROL_EMAIL = settings.PTS_CONTROL_EMAIL
 
 
 class Command(object):
@@ -62,7 +61,7 @@ class Command(object):
         send_mail(
             subject=subject,
             message=message,
-            from_email=CONTROL_EMAIL_ADDRESS,
+            from_email=PTS_CONTROL_EMAIL,
             recipient_list=recipient_list
         )
         self._sent_mails.extend(recipient_list)

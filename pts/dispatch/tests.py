@@ -23,8 +23,7 @@ from pts.core.utils import get_or_none
 from pts import dispatch
 
 from django.conf import settings
-OWNER_EMAIL_ADDRESS = getattr(settings, 'OWNER_EMAIL_ADDRESS')
-CONTROL_EMAIL_ADDRESS = getattr(settings, 'CONTROL_EMAIL_ADDRESS')
+PTS_CONTROL_EMAIL = settings.PTS_CONTROL_EMAIL
 PTS_FQDN = settings.PTS_FQDN
 
 
@@ -95,7 +94,7 @@ class DispatchBaseTest(TestCase):
             ('Precedence', 'list'),
             ('List-Unsubscribe',
                 '<mailto:{control_email}?body=unsubscribe%20{package}>'.format(
-                    control_email=CONTROL_EMAIL_ADDRESS,
+                    control_email=PTS_CONTROL_EMAIL,
                     package=self.package_name)),
         ]
         for msg in mail.outbox:

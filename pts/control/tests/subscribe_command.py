@@ -11,7 +11,7 @@
 from __future__ import unicode_literals
 from django.core import mail
 from django.conf import settings
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from pts.core.utils import extract_email_address_from_header
 from pts.core.models import Package, BinaryPackage
@@ -249,7 +249,7 @@ class SubscribeToPackageTest(EmailControlTest):
         c = CommandConfirmation.objects.create_for_command(
             'subscribe {package} {user}'.format(user=self.user_email_address,
                                                 package=self.package.name))
-        delta = timedelta(days=settings.CONFIRMATION_EXPIRATION_DAYS + 1)
+        delta = timedelta(days=settings.PTS_CONFIRMATION_EXPIRATION_DAYS + 1)
         c.date_created = c.date_created - delta
         c.save()
         self.set_input_lines(['confirm ' + c.confirmation_key])

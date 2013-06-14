@@ -15,8 +15,9 @@ DATABASES = {
     }
 }
 
-CONFIRMATION_EXPIRATION_DAYS = 3
+PTS_CONFIRMATION_EXPIRATION_DAYS = 3
 
-CONTROL_EMAIL_ADDRESS = 'pts@qa.debian.org'
-OWNER_EMAIL_ADDRESS = 'owner@packages.qa.debian.org'
-PTS_FQDN = 'packages.qa.debian.org'
+import socket
+PTS_FQDN = socket.getfqdn()
+PTS_CONTROL_EMAIL = 'control@' + PTS_FQDN
+PTS_OWNER_EMAIL = 'owner@' + PTS_FQDN

@@ -22,8 +22,8 @@ from email.utils import make_msgid
 from pts import control
 
 from django.conf import settings
-OWNER_EMAIL_ADDRESS = getattr(settings, 'OWNER_EMAIL_ADDRESS')
-CONTROL_EMAIL_ADDRESS = getattr(settings, 'CONTROL_EMAIL_ADDRESS')
+PTS_OWNER_EMAIL = settings.PTS_OWNER_EMAIL
+PTS_CONTROL_EMAIL = settings.PTS_CONTROL_EMAIL
 
 
 class EmailControlTest(TestCase):
@@ -39,7 +39,7 @@ class EmailControlTest(TestCase):
 
     def set_default_headers(self):
         self.message.add_header('From', 'John Doe <john.doe@unknown.com>')
-        self.message.add_header('To', CONTROL_EMAIL_ADDRESS)
+        self.message.add_header('To', PTS_CONTROL_EMAIL)
         self.message.add_header('Subject', 'Commands')
         self.message.add_header('Message-ID', make_msgid())
 
@@ -102,9 +102,9 @@ class EmailControlTest(TestCase):
 
     def assert_correct_response_headers(self):
         # The last message sent should always be the response
-        self.assert_header_equal('X-Loop', CONTROL_EMAIL_ADDRESS)
+        self.assert_header_equal('X-Loop', PTS_CONTROL_EMAIL)
         self.assert_header_equal('To', self.message['From'])
-        self.assert_header_equal('From', OWNER_EMAIL_ADDRESS)
+        self.assert_header_equal('From', PTS_OWNER_EMAIL)
         self.assert_header_equal('In-Reply-To', self.message['Message-ID'])
         self.assert_header_equal(
             'References',

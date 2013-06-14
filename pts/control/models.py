@@ -17,7 +17,7 @@ import hashlib
 import string
 import random
 
-CONFIRMATION_EXPIRATION_DAYS = settings.CONFIRMATION_EXPIRATION_DAYS
+PTS_CONFIRMATION_EXPIRATION_DAYS = settings.PTS_CONFIRMATION_EXPIRATION_DAYS
 
 
 class CommandConfirmationManager(models.Manager):
@@ -61,4 +61,4 @@ class CommandConfirmation(models.Model):
 
     def is_expired(self):
         delta = timezone.now() - self.date_created
-        return delta.days >= CONFIRMATION_EXPIRATION_DAYS
+        return delta.days >= PTS_CONFIRMATION_EXPIRATION_DAYS

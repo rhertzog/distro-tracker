@@ -19,8 +19,8 @@ from pts.control.commands import CommandFactory
 from pts.control.commands import QuitCommand
 
 from django.conf import settings
-OWNER_EMAIL_ADDRESS = getattr(settings, 'OWNER_EMAIL_ADDRESS')
-CONTROL_EMAIL_ADDRESS = getattr(settings, 'CONTROL_EMAIL_ADDRESS')
+PTS_OWNER_EMAIL = settings.PTS_OWNER_EMAIL
+PTS_CONTROL_EMAIL = settings.PTS_CONTROL_EMAIL
 
 MAX_ALLOWED_ERRORS = 5
 
@@ -33,9 +33,9 @@ def send_response(original_message, message_text, cc=None):
         subject='Re: ' + subject,
         to=[original_message['From']],
         cc=cc,
-        from_email=OWNER_EMAIL_ADDRESS,
+        from_email=PTS_OWNER_EMAIL,
         headers={
-            'X-Loop': CONTROL_EMAIL_ADDRESS,
+            'X-Loop': PTS_CONTROL_EMAIL,
             'References': ' '.join((original_message.get('References', ''),
                                     original_message.get('Message-ID', ''))),
             'In-Reply-To': original_message.get('Message-ID', ''),
@@ -53,7 +53,7 @@ def send_plain_text_warning(original_message):
 
 def process(message):
     msg = message_from_string(message)
-    if 'X-Loop' in message and CONTROL_EMAIL_ADDRESS in msg.get_all('X-Loop'):
+    if 'X-Loop' in message and PTS_CONTROL_EMAIL in msg.get_all('X-Loop'):
         return
     # Get the first plain-text part of the message
     plain_text_part = next(typed_subpart_iterator(msg, 'text', 'plain'), None)
