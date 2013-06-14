@@ -107,7 +107,7 @@ class SubscribeCommand(Command):
 
     def _send_confirmation_mail(self):
         command_confirmation = CommandConfirmation.objects.create_for_command(
-            command='subscribe ' + self.package + ' ' + self.user_email,
+            command=self.get_command_text()
         )
         message = render_to_string(
             'control/email-subscription-confirmation.txt', {
@@ -187,7 +187,7 @@ class UnsubscribeCommand(Command):
 
     def _send_confirmation_mail(self):
         command_confirmation = CommandConfirmation.objects.create_for_command(
-            command='unsubscribe ' + self.package + ' ' + self.user_email,
+            command=self.get_command_text()
         )
         message = render_to_string(
             'control/email-unsubscribe-confirmation.txt', {
