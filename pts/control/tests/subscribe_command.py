@@ -14,7 +14,6 @@ from django.conf import settings
 from datetime import timedelta
 
 from pts.core.utils import extract_email_address_from_header
-from pts.core.utils import get_or_none
 from pts.core.models import Package, BinaryPackage, EmailUser, Subscription
 import re
 

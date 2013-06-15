@@ -18,12 +18,14 @@ from collections import OrderedDict
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 
-from pts.core.models import Subscription, EmailUser, Package, BinaryPackage
+from pts.core.models import (
+    Subscription, EmailUser, Package, BinaryPackage, Keyword)
 from pts.control.models import CommandConfirmation
 
 from pts.core.utils import extract_email_address_from_header
 from pts.core.utils import get_or_none
 
+import re
 import sys
 import inspect
 
@@ -355,6 +357,127 @@ class QuitCommand(Command):
 
     def get_command_text(self):
         return 'quit'
+
+
+class KeywordCommand(Command):
+    META = {
+        'description': '''desc''',
+        'name': 'keyword',
+        'aliases': ['tag'],
+    }
+
+    REGEX_LIST = (
+        (re.compile(
+            r'^(\S+)(?:\s+(\S+@\S+))?\s+([-+=])\s+(\S+(?:\s+\S+)*)\s*$'),
+         'subscription_keywords'),
+    )
+
+    def __init__(self, message, *args):
+        Command.__init__(self)
+        self.line = ' '.join(args).lower()
+        self.match = None
+        self.email = extract_email_address_from_header(message.get('From'))
+        for regex, name in self.REGEX_LIST:
+            match = regex.match(self.line)
+            if match:
+                self.method = getattr(self, '_' + name)
+                self.match = match
+                break
+
+    def is_valid(self):
+        return self.match is not None
+
+    def get_command_text(self):
+        return self.line
+
+    def __call__(self):
+        # This method only delegates to the implementation of one of the
+        # versions of the keyword command.
+        if not self.is_valid():
+            return 'Invalid command'
+        return self.method(self.match)
+
+    def _subscription_keywords(self, match):
+        """
+        Actual implementation of the keyword command version which handles
+        subscription specific keywords.
+        """
+        package_name, email, operation, keywords = match.groups()
+        if not email:
+            email = self.email
+
+        self.out = []
+        keywords = re.split('[,\s]+', keywords)
+
+        email_user = get_or_none(EmailUser, email=email)
+        if not email_user:
+            return 'User is not subscribed to any package'
+        package = get_or_none(Package, name=package_name)
+        if not package:
+            return 'Package {package} does not exist'.format(
+                package=package_name)
+        subscription = get_or_none(Subscription,
+                                   package=package,
+                                   email_user=email_user)
+        if not subscription:
+            return (
+                'The user is not subscribed to the package {package}'.format(
+                    package=package_name)
+            )
+
+        operations = {
+            '+': self._add_keywords,
+            '-': self._remove_keywords,
+            '=': self._set_keywords,
+        }
+        operations[operation](keywords, subscription.keywords)
+        self.out.append(
+            "Here's the new list of accepted keywords associated to package")
+        self.out.append('{package} for {user} :'.format(package=package_name,
+                                                        user=email))
+        self.out.extend(sorted(
+            '* ' + keyword.name
+            for keyword in subscription.keywords.all()))
+
+        return '\n'.join(self.out)
+
+    def _keyword_name_to_object(self, keyword_name):
+        """
+        Takes a keyword name and returns a keyword object with the given name
+        if it exists.
+        """
+        keyword = get_or_none(Keyword, name=keyword_name)
+        if not keyword:
+            self.out.append('Warning: {keyword} is not a valid keyword'.format(
+                keyword=keyword_name))
+        return keyword
+
+    def _add_keywords(self, keywords, manager):
+        """
+        Adds the keywords given in the iterable ``keywords`` to the ``manager``
+        """
+        for keyword_name in keywords:
+            keyword = self._keyword_name_to_object(keyword_name)
+            if keyword:
+                manager.add(keyword)
+
+    def _remove_keywords(self, keywords, manager):
+        """
+        Removes the keywords given in the iterable ``keywords`` from the
+        ``manager``.
+        """
+        for keyword_name in keywords:
+            keyword = self._keyword_name_to_object(keyword_name)
+            if keyword:
+                manager.remove(keyword)
+
+    def _set_keywords(self, keywords, manager):
+        """
+        Sets the keywords given in the iterable ``keywords`` to the ``manager``
+        so that they are the only keywords it contains.
+        """
+        manager.clear()
+        self._add_keywords(keywords, manager)
 
 
 UNIQUE_COMMANDS = sorted(
