@@ -14,6 +14,14 @@ from django.utils.encoding import python_2_unicode_compatible
 from pts.core.utils import get_or_none
 
 
+@python_2_unicode_compatible
+class Keyword(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
 class EmailUserManager(models.Manager):
     """
     A custom Manager for the ``EmailUser`` model.
@@ -32,6 +40,7 @@ class EmailUserManager(models.Manager):
 @python_2_unicode_compatible
 class EmailUser(models.Model):
     email = models.EmailField(max_length=254, unique=True)
+    default_keywords = models.ManyToManyField(Keyword)
 
     objects = EmailUserManager()
 
@@ -121,8 +130,63 @@ class Subscription(models.Model):
     email_user = models.ForeignKey(EmailUser)
     package = models.ForeignKey(Package)
     active = models.BooleanField(default=True)
+    _keywords = models.ManyToManyField(Keyword)
+    _use_user_default_keywords = models.BooleanField(default=True)
 
     objects = SubscriptionManager()
+
+    class KeywordsAdapter(object):
+        """
+        An adapter for accessing a Subscription's keywords.
+
+        When a Subscription is initially created, it uses the default keywords
+        of the user. Only after modifying the subscription-specific keywords,
+        should it use a different set of keywords.
+
+        This class allows the clients of the ``Subscription`` class to access
+        the keywords field without having to think about whether the
+        subscription is using the user's keywords or not, rather the whole
+        process is handled automatically and seamlessly.
+        """
+        def __init__(self, subscription):
+            #: Keep a reference to the original subscription object
+            self._subscription = subscription
+
+        def __getattr__(self, name):
+            # Methods which modify the set should cause it to become unlinked
+            # from the user.
+            if name in ('add', 'remove', 'create', 'clear', 'bulk_create'):
+                self._unlink_from_user()
+            return getattr(self._get_manager(), name)
+
+        def _get_manager(self):
+            """
+            Helper method which returns the appropriate manager depending on
+            whether the subscription is still using the user's keywords or not.
+            """
+            if self._subscription._use_user_default_keywords:
+                manager = self._subscription.email_user.default_keywords
+            else:
+                manager = self._subscription._keywords
+            return manager
+
+        def _unlink_from_user(self):
+            """
+            Helper method which unlinks the subscription from the user's
+            default keywords.
+            """
+            if self._subscription._use_user_default_keywords:
+                # Do not use the user's keywords anymore
+                self._subscription._use_user_default_keywords = False
+                # Copy the user's keywords
+                user = self._subscription.email_user
+                for keyword in user.default_keywords.all():
+                    self._subscription._keywords.add(keyword)
+                self._subscription.save()
+
+    def __init__(self, *args, **kwargs):
+        models.Model.__init__(self, *args, **kwargs)
+        self.keywords = Subscription.KeywordsAdapter(self)
 
     def __str__(self):
         return str(self.email_user) + ' ' + str(self.package)

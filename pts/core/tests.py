@@ -14,6 +14,7 @@ Tests for the PTS core module.
 from __future__ import unicode_literals
 from django.test import TestCase
 from pts.core.models import Subscription, EmailUser, Package, BinaryPackage
+from pts.core.models import Keyword
 
 
 class SubscriptionTest(TestCase):
@@ -101,6 +102,53 @@ class SubscriptionTest(TestCase):
         l = Subscription.objects.get_for_email(self.email_user.email)
 
         self.assertEqual(len(l), 0)
+
+
+class KeywordsTest(TestCase):
+    def setUp(self):
+        self.package = Package.objects.create(name='dummy-package')
+        self.email_user = EmailUser.objects.create(email='email@domain.com')
+        self.email_user.default_keywords.create(name='cvs')
+        self.email_user.default_keywords.create(name='bts')
+        self.subscription = Subscription.objects.create(
+            package=self.package,
+            email_user=self.email_user)
+        self.new_keyword = Keyword.objects.create(name='new')
+
+    def test_keywords_add_to_subscription(self):
+        """
+        Test adding a new keyword to the subscription.
+        """
+        self.subscription.keywords.add(self.new_keyword)
+
+        self.assertIn(self.new_keyword, self.subscription.keywords.all())
+        self.assertNotIn(
+            self.new_keyword, self.email_user.default_keywords.all())
+        for keyword in self.email_user.default_keywords.all():
+            self.assertIn(keyword, self.subscription.keywords.all())
+
+    def test_keywords_remove_from_subscription(self):
+        """
+        Tests removing a keyword from the subscription.
+        """
+        keyword = self.email_user.default_keywords.all()[0]
+        self.subscription.keywords.remove(keyword)
+
+        self.assertNotIn(keyword, self.subscription.keywords.all())
+        self.assertIn(keyword, self.email_user.default_keywords.all())
+
+    def test_get_keywords_when_default(self):
+        """
+        Tests that the subscription uses the user's default keywords if none
+        have explicitly been set for the subscription.
+        """
+        self.assertEqual(len(self.email_user.default_keywords.all()),
+                         len(self.subscription.keywords.all()))
+        self.assertEqual(self.email_user.default_keywords.count(),
+                         self.subscription.keywords.count())
+        for kw1, kw2 in zip(self.email_user.default_keywords.all(),
+                            self.subscription.keywords.all()):
+            self.assertEqual(kw1, kw2)
 
 
 class EmailUserTest(TestCase):
