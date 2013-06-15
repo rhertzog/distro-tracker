@@ -28,18 +28,22 @@ class WhichCommandTest(EmailControlTest):
         ]
         self.users = [
             EmailUser.objects.create(email='email' + str(i))
-            for i in range(2)
+            for i in range(3)
         ]
         for i in range(5):
             Subscription.objects.create(
                 package=self.packages[i],
                 email_user=self.users[0]
             )
+        Subscription.objects.create_for(
+            package_name=self.packages[0].name,
+            email=self.users[2].email,
+            active=False)
 
     def get_subscriptions_for_user(self, user):
         return [
             subscription.package.name
-            for subscription in user.subscription_set.all()
+            for subscription in user.subscription_set.all_active()
         ]
 
     def assert_correct_packages_output(self, user):
@@ -90,3 +94,14 @@ class WhichCommandTest(EmailControlTest):
         self.control_process()
 
         self.assert_correct_packages_output(self.users[1])
+
+    def test_list_packages_no_active_subscriptions(self):
+        """
+        Tests the which command when the user does not have any active
+        subscriptions.
+        """
+        self.set_input_lines(['which ' + self.users[2].email])
+
+        self.control_process()
+
+        self.assert_correct_packages_output(self.users[2])

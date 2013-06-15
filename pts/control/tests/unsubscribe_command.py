@@ -95,6 +95,13 @@ class UnsubscribeFromPackageTest(EmailControlTest):
         if from_email != subscribe_email:
             self.assert_cc_contains_address(subscribe_email)
 
+    def assert_is_not_subscribed_response(self, email):
+        self.assert_response_sent()
+        self.assert_correct_response_headers()
+        self.assert_in_response(
+            "{email} is not subscribed, you can't unsubscribe.".format(
+                email=email))
+
     def add_binary_package(self, source_package, binary_package):
         """
         Helper method which creates a binary package for the given source
@@ -157,11 +164,23 @@ class UnsubscribeFromPackageTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_response_sent()
-        self.assert_correct_response_headers()
-        self.assert_in_response(
-            "{email} is not subscribed, you can't unsubscribe.".format(
-                email=self.user_email_address))
+        self.assert_is_not_subscribed_response(self.user_email_address)
+
+    def test_unsubscribe_inactive_subscription(self):
+        """
+        Tests the unsubscribe command when the user's subscription is not
+        active.
+        """
+        Subscription.objects.create_for(
+            package_name=self.other_package.name,
+            email=self.user_email_address,
+            active=False)
+        self.add_unsubscribe_command(self.other_package.name,
+                                     self.user_email_address)
+
+        self.control_process()
+
+        self.assert_is_not_subscribed_response(self.user_email_address)
 
     def test_unsubscribe_no_email_given(self):
         """

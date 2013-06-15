@@ -14,8 +14,8 @@ from django.conf import settings
 from datetime import timedelta
 
 from pts.core.utils import extract_email_address_from_header
-from pts.core.models import Package, BinaryPackage
-from pts.core.models import Subscription
+from pts.core.utils import get_or_none
+from pts.core.models import Package, BinaryPackage, EmailUser, Subscription
 import re
 
 from pts.control.tests.common import EmailControlTest
@@ -42,10 +42,9 @@ class SubscribeToPackageTest(EmailControlTest):
         Helper method checks whether the given email is subscribed to the
         package.
         """
-        return email_address in (
-            user_email.email
-            for user_email in self.package.subscriptions.all()
-        )
+        return EmailUser.objects.is_user_subscribed_to(
+            user_email=email_address,
+            package_name=self.package.name)
 
     def assert_confirmation_sent_to(self, email_address):
         """

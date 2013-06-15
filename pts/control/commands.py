@@ -128,6 +128,11 @@ class SubscribeCommand(Command):
             return '{email} is already subscribed to {package}'.format(
                 email=self.user_email,
                 package=self.package)
+        else:
+            Subscription.objects.create_for(
+                email=self.user_email,
+                package_name=self.package,
+                active=False)
 
         out = []
         if not Package.objects.exists_with_name(self.package):
@@ -268,7 +273,8 @@ class ConfirmCommand(Command):
     def _subscribe(self, package, user_email):
         subscription = Subscription.objects.create_for(
             package_name=package,
-            email=user_email)
+            email=user_email,
+            active=True)
         if subscription:
             return user_email + ' has been subscribed to ' + package
         else:

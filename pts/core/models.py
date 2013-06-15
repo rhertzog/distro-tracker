@@ -49,7 +49,10 @@ class EmailUser(models.Model):
             if not package:
                 return False
 
-        return package in self.package_set.all()
+        return package in (
+            subscription.package
+            for subscription in self.subscription_set.all_active()
+        )
 
 
 class PackageManager(models.Manager):
@@ -75,16 +78,19 @@ class Package(models.Model):
 
 
 class SubscriptionManager(models.Manager):
-    def create_for(self, package_name, email):
+    def create_for(self, package_name, email, active=True):
         package = get_or_none(Package, name=package_name)
         if not package:
             return None
         email_user, created = EmailUser.objects.get_or_create(
             email=email)
 
-        return self.get_or_create(
-            email_user=email_user,
-            package=package)[0]
+        subscription, _ = self.get_or_create(email_user=email_user,
+                                             package=package)
+        subscription.active = active
+        subscription.save()
+
+        return subscription
 
     def unsubscribe(self, package_name, email):
         package = get_or_none(Package, name=package_name)
@@ -101,13 +107,20 @@ class SubscriptionManager(models.Manager):
         email_user = get_or_none(EmailUser, email=email)
         if not email_user:
             return []
-        return email_user.subscription_set.all()
+        return email_user.subscription_set.all_active()
+
+    def all_active(self):
+        """
+        Returns all active subscriptions
+        """
+        return self.filter(active=True)
 
 
 @python_2_unicode_compatible
 class Subscription(models.Model):
     email_user = models.ForeignKey(EmailUser)
     package = models.ForeignKey(Package)
+    active = models.BooleanField(default=True)
 
     objects = SubscriptionManager()
 

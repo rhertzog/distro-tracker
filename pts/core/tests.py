@@ -21,14 +21,15 @@ class SubscriptionTest(TestCase):
         self.package = Package.objects.create(name='dummy-package')
         self.email_user = EmailUser.objects.create(email='email@domain.com')
 
-    def create_subscription(self, package, email):
+    def create_subscription(self, package, email, active=True):
         """
         Helper method which creates a subscription for the given user to the
         given package.
         """
         return Subscription.objects.create_for(
             package_name=package,
-            email=email)
+            email=email,
+            active=active)
 
     def test_create_for_existing_email(self):
         subscription = self.create_subscription(
@@ -37,6 +38,19 @@ class SubscriptionTest(TestCase):
         self.assertEqual(subscription.email_user, self.email_user)
         self.assertEqual(subscription.package, self.package)
         self.assertIn(self.email_user, self.package.subscriptions.all())
+        self.assertTrue(subscription.active)
+
+    def test_create_for_existing_email_inactive(self):
+        """
+        Tests the create_for method when creating an inactive subscription.
+        """
+        subscription = self.create_subscription(
+            self.package.name, self.email_user.email, active=False)
+
+        self.assertEqual(subscription.email_user, self.email_user)
+        self.assertEqual(subscription.package, self.package)
+        self.assertIn(self.email_user, self.package.subscriptions.all())
+        self.assertFalse(subscription.active)
 
     def test_create_for_unexisting_email(self):
         previous_count = EmailUser.objects.count()
@@ -46,6 +60,7 @@ class SubscriptionTest(TestCase):
 
         self.assertEqual(EmailUser.objects.count(), previous_count + 1)
         self.assertEqual(subscription.package, self.package)
+        self.assertTrue(subscription.active)
 
     def test_create_for_twice(self):
         """
@@ -67,6 +82,9 @@ class SubscriptionTest(TestCase):
         p = Package.objects.create(name='temp')
         self.create_subscription(p.name, self.email_user.email)
         package_not_subscribed_to = Package.objects.create(name='qwer')
+        self.create_subscription(package_not_subscribed_to.name,
+                                 self.email_user.email,
+                                 active=False)
 
         l = Subscription.objects.get_for_email(self.email_user.email)
         l = [sub.package for sub in l]
@@ -108,6 +126,17 @@ class EmailUserTest(TestCase):
         """
         self.assertFalse(self.email_user.is_subscribed_to(self.package))
         self.assertFalse(self.email_user.is_subscribed_to(self.package.name))
+
+    def test_is_subscribed_to_false_inactive(self):
+        """
+        Tests that the ``is_subscribed_to`` method returns False when the user
+        has not confirmed the subscription (the subscription is inactive)
+        """
+        Subscription.objects.create_for(
+            package_name=self.package.name,
+            email=self.email_user.email,
+            active=False)
+        self.assertFalse(self.email_user.is_subscribed_to(self.package))
 
 
 class EmailUserManagerTest(TestCase):

@@ -60,13 +60,14 @@ class DispatchBaseTest(TestCase):
     def run_dispatch(self, sent_to_address=None):
         dispatch.process(self.message.as_string(), None)
 
-    def subscribe_user_to_package(self, user_email, package):
+    def subscribe_user_to_package(self, user_email, package, active=True):
         """
         Helper method which subscribes the given user to the given package.
         """
         Subscription.objects.create_for(
             package_name=package,
-            email=user_email)
+            email=user_email,
+            active=active)
 
     def assert_all_old_headers_found(self):
         """
@@ -116,7 +117,7 @@ class DispatchBaseTest(TestCase):
         if not package:
             subscriptions = []
         else:
-            subscriptions = package.subscriptions.all()
+            subscriptions = package.subscription_set.all_active()
         self.assertEqual(
             len(mail.outbox), len(subscriptions))
         # Extract addresses from the sent mails envelope headers
@@ -125,9 +126,9 @@ class DispatchBaseTest(TestCase):
             for message in mail.outbox
             if len(message.to) == 1
         ]
-        for email_user in subscriptions:
+        for subscription in subscriptions:
             self.assertIn(
-                email_user.email, all_forwards)
+                subscription.email_user.email, all_forwards)
 
     def assert_correct_forward_content(self):
         """
@@ -175,6 +176,19 @@ class DispatchBaseTest(TestCase):
         Tests the dispatch functionality when the given package does not have
         any subscribers.
         """
+        self.run_dispatch()
+
+        self.assert_correct_response()
+
+    def test_dispatch_inactive_subscription(self):
+        """
+        Tests the dispatch functionality when the subscriber's subscription
+        is inactive.
+        """
+        self.subscribe_user_to_package('user@domain.com', self.package_name,
+                                       active=False)
+        self.subscribe_user_to_package('user2@domain.com', self.package_name)
+
         self.run_dispatch()
 
         self.assert_correct_response()

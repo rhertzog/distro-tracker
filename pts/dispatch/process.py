@@ -71,8 +71,8 @@ def send_to_subscribers(received_message, package_name):
         return
     # Build a list of all messages to be sent
     messages_to_send = [
-        prepare_message(received_message, subscriber.email)
-        for subscriber in package.subscriptions.all()
+        prepare_message(received_message, subscription.email_user.email)
+        for subscription in package.subscription_set.all_active()
     ]
     # Send all messages over a single SMTP connection
     connection = get_connection()
