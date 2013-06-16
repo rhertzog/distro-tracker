@@ -64,6 +64,12 @@ class EmailUser(models.Model):
             for subscription in self.subscription_set.all_active()
         )
 
+    def save(self, *args, **kwargs):
+        new_object = not self.id
+        models.Model.save(self, *args, **kwargs)
+        if new_object:
+            self.default_keywords = Keyword.objects.filter(default=True)
+
 
 class PackageManager(models.Manager):
     """

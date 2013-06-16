@@ -11,12 +11,15 @@
 from __future__ import unicode_literals
 
 from pts.core.models import Package, EmailUser, Subscription
-from pts.core.models import Keyword
 
 from pts.control.tests.common import EmailControlTest
 
 
-class KeywordCommandTest(EmailControlTest):
+class KeywordCommandSubscriptionSpecificTest(EmailControlTest):
+    """
+    Tests for the keyword command when modifying subscription specific
+    keywords.
+    """
     def setUp(self):
         EmailControlTest.setUp(self)
 
@@ -27,8 +30,9 @@ class KeywordCommandTest(EmailControlTest):
             package=self.package,
             email_user=self.user
         )
-        self.subscription.keywords.add(
-            Keyword.objects.get_or_create(name='bts')[0])
+        self.default_keywords = set(
+            keyword.name
+            for keyword in self.subscription.keywords.filter(default=True))
 
         self.commands = []
         self.set_header('From', self.user.email)
@@ -58,19 +62,13 @@ class KeywordCommandTest(EmailControlTest):
         self.set_input_lines(self._to_command_string(command)
                              for command in self.commands)
 
-    def _get_previous_keywords(self):
-        """
-        Helper method returns all keywords the user's current subscription is
-        associated with.
-        """
-        return tuple(
-            str(keyword)
-            for keyword in self.subscription.keywords.all()
-        )
-
     def assert_correct_response(self, new_keywords, user=None):
         if not user:
             user = self.user
+        self.subscription = Subscription.objects.get(
+            package=self.package,
+            email_user=self.user
+        )
         self.assert_response_sent()
         self.assert_correct_response_headers()
         self.assertEqual(self.subscription.keywords.count(), len(new_keywords))
@@ -87,42 +85,45 @@ class KeywordCommandTest(EmailControlTest):
         Tests the keyword command version which should add a keyword to the
         subscription.
         """
+        keywords = ['cvs', 'contact']
         self.add_keyword_command(self.package.name,
                                  '+',
-                                 ['cvs', 'contact'],
+                                 keywords,
                                  self.user.email)
 
         self.control_process()
 
-        self.assert_correct_response(['cvs', 'contact', 'bts'])
+        self.assert_correct_response(self.default_keywords | set(keywords))
 
     def test_remove_keyword_from_subscription(self):
         """
         Tests the keyword command version which should remove a keyword from a
         subscription.
         """
+        keywords = ['bts']
         self.add_keyword_command(self.package.name,
                                  '-',
-                                 ['bts'],
+                                 keywords,
                                  self.user.email)
 
         self.control_process()
 
-        self.assert_correct_response([])
+        self.assert_correct_response(self.default_keywords - set(keywords))
 
     def test_set_keywords_for_subscription(self):
         """
         Tests the keyword command version which should set a new keyword list
         for a subscription.
         """
+        keywords = ['cvs']
         self.add_keyword_command(self.package.name,
                                  '=',
-                                 ['cvs'],
+                                 keywords,
                                  self.user.email)
 
         self.control_process()
 
-        self.assert_correct_response(['cvs'])
+        self.assert_correct_response(keywords)
 
     def test_keyword_email_not_given(self):
         """
@@ -132,7 +133,7 @@ class KeywordCommandTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response(['cvs', 'bts'])
+        self.assert_correct_response(self.default_keywords | set(['cvs']))
 
     def test_keyword_doesnt_exist(self):
         """
@@ -143,8 +144,7 @@ class KeywordCommandTest(EmailControlTest):
         self.control_process()
 
         self.assert_correct_response([])
-        self.assert_in_response(
-            'Warning: no-exist is not a valid keyword')
+        self.assert_in_response('Warning: no-exist is not a valid keyword')
 
     def test_keyword_add_subscription_not_confirmed(self):
         """
@@ -157,7 +157,7 @@ class KeywordCommandTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response(['cvs', 'bts'])
+        self.assert_correct_response(self.default_keywords | set(['cvs']))
 
     def test_keyword_add_package_doesnt_exist(self):
         """
@@ -214,12 +214,13 @@ class KeywordCommandTest(EmailControlTest):
         """
         Tests that tag works as an alias for keyword.
         """
+        keywords = ['cvs', 'contact']
         self.add_keyword_command(self.package.name,
                                  '+',
-                                 ['cvs', 'contact'],
+                                 keywords,
                                  self.user.email,
                                  use_tag=True)
 
         self.control_process()
 
-        self.assert_correct_response(['cvs', 'contact', 'bts'])
+        self.assert_correct_response(self.default_keywords | set(keywords))

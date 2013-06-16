@@ -227,6 +227,16 @@ class EmailUserTest(TestCase):
             active=False)
         self.assertFalse(self.email_user.is_subscribed_to(self.package))
 
+    def test_new_user_has_default_keywords(self):
+        """
+        Tests that newly created users always have all the default keywords.
+        """
+        all_default_keywords = Keyword.objects.filter(default=True)
+        self.assertEqual(self.email_user.default_keywords.count(),
+                         all_default_keywords.count())
+        for keyword in self.email_user.default_keywords.all():
+            self.assertIn(keyword, all_default_keywords)
+
 
 class EmailUserManagerTest(TestCase):
     def setUp(self):
