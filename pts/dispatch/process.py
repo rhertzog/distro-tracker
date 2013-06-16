@@ -23,6 +23,11 @@ from django.conf import settings
 PTS_CONTROL_EMAIL = settings.PTS_CONTROL_EMAIL
 PTS_FQDN = settings.PTS_FQDN
 
+import re
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 def process(message, sent_to_address=None):
     """
@@ -36,10 +41,82 @@ def process(message, sent_to_address=None):
         sent_to_address = extract_email_address_from_header(msg['To'])
     local_part = sent_to_address.split('@')[0]
 
-    package_name = local_part
+    # Extract package name
+    package_name = get_package_name(local_part)
+    # Check loop
+    package_email = '{package}@{pts_fqdn}'.format(package=package_name,
+                                                  pts_fqdn=PTS_FQDN)
+    if package_email in msg.get_all('X-Loop', ()):
+        # Bad X-Loop, discard the message
+        logger.info('Bad X-Loop, message discarded')
+        return
 
-    add_new_headers(msg, package_name)
-    send_to_subscribers(msg, package_name)
+    # Extract keyword
+    keyword = get_keyword(local_part, msg)
+    # Default keywords require special approvement
+    if keyword == 'default' and not approved_default(msg):
+        logger.info('Discarding default keyword message')
+        return
+
+    # Now send the message to subscribers
+    add_new_headers(msg, package_name, keyword)
+    send_to_subscribers(msg, package_name, keyword)
+
+
+def approved_default(msg):
+    if msg['X-Bugzilla-Product']:
+        return True
+    else:
+        return msg['X-PTS-Approved'] is not None
+
+
+def get_keyword(local_part, msg):
+    split = re.split(r'(\S+)_(\S+)', local_part)
+    if len(split) > 1:
+        # Keyword found in the address
+        return split[2]
+
+    re_accepted_installed = re.compile('^Accepted|INSTALLED|ACCEPTED')
+    re_comments_regarding = re.compile(r'^Comments regarding .*\.changes$')
+
+    body = get_message_body(msg)
+    xloop = msg.get_all('X-Loop', ())
+    subject = msg.get('Subject', '')
+    xdak = msg.get_all('X-DAK', '')
+    debian_pr_message = msg.get('X-Debian-PR-Message', '')
+
+    owner_match = 'owner@bugs.debian.org' in xloop
+
+    if owner_match and debian_pr_message.startswith('transcript'):
+        return 'bts-control'
+    elif owner_match and debian_pr_message:
+        return 'bts'
+    elif xdak and re_accepted_installed.match(subject):
+        if re.search(r'\.dsc\s*$', body, flags=re.MULTILINE):
+            return 'upload-source'
+        else:
+            return 'upload-binary'
+    elif xdak or re_comments_regarding.match(subject):
+        return 'katie-other'
+
+    return 'default'
+
+
+def get_message_body(msg):
+    """
+    Returns the message body, undecoded.
+    """
+    return '\n'.join(part.as_string()
+                     for part in msg.walk() if not part.is_multipart())
+
+
+def get_package_name(local_part):
+    split = re.split(r'(\S+)_(\S+)', local_part)
+    if len(split) > 1:
+        package_name = split[1]
+    else:
+        package_name = local_part
+    return package_name
 
 
 def prepare_message(received_message, to_email):
@@ -47,12 +124,13 @@ def prepare_message(received_message, to_email):
     return message
 
 
-def add_new_headers(received_message, package_name):
+def add_new_headers(received_message, package_name, keyword):
     new_headers = [
         ('X-Loop', '{package}@{pts_fqdn}'.format(
             package=package_name,
             pts_fqdn=PTS_FQDN)),
         ('X-PTS-Package', package_name),
+        ('X-PTS-Keyword', keyword),
         ('X-Debian-Package', package_name),
         ('X-Debian', 'PTS'),
         ('Precedence', 'list'),
@@ -65,14 +143,14 @@ def add_new_headers(received_message, package_name):
         received_message[header_name] = header_value
 
 
-def send_to_subscribers(received_message, package_name):
+def send_to_subscribers(received_message, package_name, keyword):
     package = get_or_none(Package, name=package_name)
     if not package:
         return
     # Build a list of all messages to be sent
     messages_to_send = [
         prepare_message(received_message, subscription.email_user.email)
-        for subscription in package.subscription_set.all_active()
+        for subscription in package.subscription_set.all_active(keyword)
     ]
     # Send all messages over a single SMTP connection
     connection = get_connection()
