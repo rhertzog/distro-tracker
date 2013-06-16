@@ -358,3 +358,147 @@ class KeywordCommandListSubscriptionSpecific(EmailControlTest):
         self.control_process()
 
         self.assert_correct_response()
+
+
+class KeywordCommandModifyDefault(EmailControlTest):
+    """
+    Tests the keyword command version which modifies a user's list of default
+    keywords.
+    """
+    def setUp(self):
+        EmailControlTest.setUp(self)
+
+        # Setup a subscription
+        self.user = EmailUser.objects.create(email='user@domain.com')
+        self.default_keywords = set([
+            keyword.name
+            for keyword in self.user.default_keywords.all()
+        ])
+        self.commands = []
+        self.set_header('From', self.user.email)
+
+    def _to_command_string(self, command):
+        """
+        Helper method turning a tuple representing a keyword command into a
+        string.
+        """
+        return ' '.join(
+            command[:-1] + (', '.join(command[-1]),)
+        )
+
+    def add_keyword_command(self, operator, keywords, email='', use_tag=False):
+        command = 'keyword' if not use_tag else 'tag'
+        self.commands.append((
+            command,
+            email,
+            operator,
+            keywords,
+        ))
+        self.set_input_lines(self._to_command_string(command)
+                             for command in self.commands)
+
+    def assert_correct_response(self, new_keywords, user=None):
+        if not user:
+            user = self.user
+        self.assert_response_sent()
+        self.assert_correct_response_headers()
+        self.assertEqual(user.default_keywords.count(), len(new_keywords))
+        self.assert_in_response(
+            "Here's the new default list of accepted "
+            "keywords for {email} :".format(email=user.email))
+        self.assert_in_response('\n'.join(sorted(
+            '* ' + keyword for keyword in new_keywords
+        )))
+
+    def test_keyword_add_default(self):
+        """
+        Tests that the keyword command adds a new keyword to the user's list of
+        default keywords.
+        """
+        keywords = [
+            keyword.name
+            for keyword in Keyword.objects.filter(default=False)[:3]
+        ]
+        self.add_keyword_command('+', keywords, self.user.email)
+
+        self.control_process()
+
+        self.assert_correct_response(self.default_keywords | set(keywords))
+
+    def test_keyword_remove_default(self):
+        """
+        Tests that the keyword command removes keywords from the user's list of
+        default keywords.
+        """
+        keywords = [
+            keyword.name
+            for keyword in Keyword.objects.filter(default=True)[:3]
+        ]
+        self.add_keyword_command('-', keywords, self.user.email)
+
+        self.control_process()
+
+        self.assert_correct_response(self.default_keywords - set(keywords))
+
+    def test_keyword_set_default(self):
+        """
+        Tests that the keyword command sets a new list of the user's default
+        keywords.
+        """
+        keywords = [
+            keyword.name
+            for keyword in Keyword.objects.filter(default=False)[:5]
+        ]
+        keywords.extend(
+            keyword.name
+            for keyword in Keyword.objects.filter(default=True)[:2]
+        )
+        self.add_keyword_command(' = ', keywords, self.user.email)
+
+        self.control_process()
+
+        self.assert_correct_response(set(keywords))
+
+    def test_keyword_email_not_given(self):
+        """
+        Tests the keyword command when the email is not given.
+        """
+        keywords = [
+            keyword.name
+            for keyword in Keyword.objects.filter(default=False)[:3]
+        ]
+        self.add_keyword_command('   +', keywords)
+
+        self.control_process()
+
+        self.assert_correct_response(self.default_keywords | set(keywords))
+
+    def test_keyword_doesnt_exist(self):
+        """
+        Tests the keyword command when a nonexistant keyword is given.
+        """
+        self.add_keyword_command('+', ['no-exist'])
+
+        self.control_process()
+
+        self.assert_correct_response(self.default_keywords)
+        self.assert_in_response('Warning: no-exist is not a valid keyword')
+
+    def test_user_doesnt_exist(self):
+        """
+        Tests adding a keyword to a user's default list of subscriptions when
+        the given user is not subscribed to any package (it does not exist yet)
+        """
+        all_default_keywords = set([
+            keyword.name
+            for keyword in Keyword.objects.filter(default=True)
+        ])
+        new_user = 'doesnt-exist@domain.com'
+        keywords = [Keyword.objects.filter(default=False)[0].name]
+        self.add_keyword_command('+', keywords, new_user)
+
+        self.control_process()
+
+        self.assertEqual(EmailUser.objects.filter(email=new_user).count(), 1)
+        self.assert_correct_response(all_default_keywords | set(keywords),
+                                     EmailUser.objects.get(email=new_user))

@@ -367,6 +367,8 @@ class KeywordCommand(Command):
     }
 
     REGEX_LIST = (
+        (re.compile(r'^(\S+@\S+\s+)?([-+=])\s+(\S+(?:\s+\S+)*)$'),
+         'subscription_default_keywords'),
         (re.compile(
             r'^(\S+)(?:\s+(\S+@\S+))?\s+([-+=])\s+(\S+(?:\s+\S+)*)\s*$'),
          'subscription_keywords'),
@@ -386,6 +388,12 @@ class KeywordCommand(Command):
                 self.match = match
                 break
 
+        self.OPERATIONS = {
+            '+': self._add_keywords,
+            '-': self._remove_keywords,
+            '=': self._set_keywords,
+        }
+
     def is_valid(self):
         return self.match is not None
 
@@ -397,7 +405,9 @@ class KeywordCommand(Command):
         # versions of the keyword command.
         if not self.is_valid():
             return 'Invalid command'
-        return self.method(self.match)
+        self.out = []
+        self.method(self.match)
+        return '\n'.join(self.out)
 
     def _get_subscription(self, email, package_name):
         email_user = get_or_none(EmailUser, email=email)
@@ -422,6 +432,36 @@ class KeywordCommand(Command):
 
         return subscription
 
+    def _include_keywords(self, keywords):
+        """
+        Include the keywords found in the given iterable to the output of the
+        command.
+        """
+        self.out.extend(sorted(
+            '* ' + keyword.name
+            for keyword in keywords
+        ))
+
+    def _subscription_default_keywords(self, match):
+        """
+        Implementation of the keyword command which handles modifying a user's
+        list of default keywords.
+        """
+        email, operation, keywords = match.groups()
+        if not email:
+            email = self.email
+        email = email.strip()
+
+        keywords = re.split('[,\s]+', keywords)
+
+        email_user, _ = EmailUser.objects.get_or_create(email=email)
+        self.OPERATIONS[operation](keywords, email_user.default_keywords)
+
+        self.out.append(
+            "Here's the new default list of accepted keywords for "
+            "{user} :".format(user=email))
+        self._include_keywords(email_user.default_keywords.all())
+
     def _subscription_keywords_list(self, match):
         """
         Implementation of the keyword command version which handles listing
@@ -431,21 +471,15 @@ class KeywordCommand(Command):
         if not email:
             email = self.email
 
-        self.out = []
-
         subscription = self._get_subscription(email, package_name)
         if not subscription:
-            return '\n'.join(self.out)
+            return
 
         self.out.append(
             "Here's the list of accepted keywords associated to package")
         self.out.append('{package} for {user}'.format(package=package_name,
                                                       user=email))
-        self.out.extend(sorted(
-            '* ' + keyword.name
-            for keyword in subscription.keywords.all()
-        ))
-        return '\n'.join(self.out)
+        self._include_keywords(subscription.keywords.all())
 
     def _subscription_keywords(self, match):
         """
@@ -455,29 +489,18 @@ class KeywordCommand(Command):
         package_name, email, operation, keywords = match.groups()
         if not email:
             email = self.email
-
-        self.out = []
         keywords = re.split('[,\s]+', keywords)
 
         subscription = self._get_subscription(email, package_name)
         if not subscription:
-            return '\n'.join(self.out)
+            return
 
-        operations = {
-            '+': self._add_keywords,
-            '-': self._remove_keywords,
-            '=': self._set_keywords,
-        }
-        operations[operation](keywords, subscription.keywords)
+        self.OPERATIONS[operation](keywords, subscription.keywords)
         self.out.append(
             "Here's the new list of accepted keywords associated to package")
         self.out.append('{package} for {user} :'.format(package=package_name,
                                                         user=email))
-        self.out.extend(sorted(
-            '* ' + keyword.name
-            for keyword in subscription.keywords.all()))
-
-        return '\n'.join(self.out)
+        self._include_keywords(subscription.keywords.all())
 
     def _keyword_name_to_object(self, keyword_name):
         """
