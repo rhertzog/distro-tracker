@@ -502,3 +502,75 @@ class KeywordCommandModifyDefault(EmailControlTest):
         self.assertEqual(EmailUser.objects.filter(email=new_user).count(), 1)
         self.assert_correct_response(all_default_keywords | set(keywords),
                                      EmailUser.objects.get(email=new_user))
+
+
+class KeywordCommandShowDefault(EmailControlTest):
+    def setUp(self):
+        EmailControlTest.setUp(self)
+        self.user = EmailUser.objects.create(email='user@domain.com')
+        self.user.default_keywords.add(
+            Keyword.objects.filter(default=False)[0])
+        self.set_header('From', self.user.email)
+
+    def assert_correct_response(self, user=None):
+        if not user:
+            user = self.user
+        self.assert_response_sent()
+        self.assert_correct_response_headers()
+        self.assert_in_response(
+            "Here's the default list of accepted keywords for {email}:".format(
+                email=user.email))
+        self.assert_in_response('\n'.join(sorted(
+            '* ' + keyword.name for keyword in user.default_keywords.all()
+        )))
+
+    def test_show_default_keywords(self):
+        """
+        Tests that the keyword command outputs all default keywords of a user.
+        """
+        self.set_input_lines(['keyword ' + self.user.email])
+
+        self.control_process()
+
+        self.assert_correct_response()
+
+    def test_show_default_keywords_email_not_given(self):
+        """
+        Tests that the keyword command shows all default keywords of a user
+        when the email is not given in the command.
+        """
+        self.set_input_lines(['keyword'])
+
+        self.control_process()
+
+        self.assert_correct_response()
+
+    def test_show_default_keywords_email_no_subscriptions(self):
+        """
+        Tests that the keyword command returns a list of default keywords for
+        users that are not subscribed to any package.
+        """
+        email = 'no-exist@domain.com'
+        all_default_keywords = Keyword.objects.filter(default=True)
+        self.set_input_lines(['keyword ' + email])
+
+        self.control_process()
+
+        self.assertEqual(EmailUser.objects.filter(email=email).count(), 1)
+        user = EmailUser.objects.get(email=email)
+        self.assertEqual(user.default_keywords.count(),
+                         all_default_keywords.count())
+        self.assertSequenceEqual(
+            sorted(user.default_keywords.all(), key=lambda x: x.name),
+            sorted(all_default_keywords.all(), key=lambda x: x.name))
+        self.assert_correct_response(user=user)
+
+    def test_tag_alias_for_default(self):
+        """
+        Tests that "tag" is an alias for "keyword"
+        """
+        self.set_input_lines(['tag ' + self.user.email])
+
+        self.control_process()
+
+        self.assert_correct_response()

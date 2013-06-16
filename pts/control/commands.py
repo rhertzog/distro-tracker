@@ -367,10 +367,12 @@ class KeywordCommand(Command):
     }
 
     REGEX_LIST = (
+        (re.compile(r'^(\S+@\S+)?$'),
+         'subscription_default_keywords_list'),
         (re.compile(r'^(\S+@\S+\s+)?([-+=])\s+(\S+(?:\s+\S+)*)$'),
          'subscription_default_keywords'),
         (re.compile(
-            r'^(\S+)(?:\s+(\S+@\S+))?\s+([-+=])\s+(\S+(?:\s+\S+)*)\s*$'),
+            r'^(\S+)(?:\s+(\S+@\S+))?\s+([-+=])\s+(\S+(?:\s+\S+)*)$'),
          'subscription_keywords'),
         (re.compile(r'^(\S+)(?:\s+(\S+@\S+))?$'),
          'subscription_keywords_list'),
@@ -441,6 +443,23 @@ class KeywordCommand(Command):
             '* ' + keyword.name
             for keyword in keywords
         ))
+
+    def _subscription_default_keywords_list(self, match):
+        """
+        Implementation of the keyword command which handles displaying a list
+        of the user's default keywords.
+        """
+        email = match.group(1)
+
+        if not email:
+            email = self.email
+        email = email.strip()
+
+        email_user, _ = EmailUser.objects.get_or_create(email=email)
+        self.out.append(
+            "Here's the default list of accepted keywords for {email}:".format(
+                email=email))
+        self._include_keywords(email_user.default_keywords.all())
 
     def _subscription_default_keywords(self, match):
         """
