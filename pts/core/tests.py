@@ -108,8 +108,11 @@ class KeywordsTest(TestCase):
     def setUp(self):
         self.package = Package.objects.create(name='dummy-package')
         self.email_user = EmailUser.objects.create(email='email@domain.com')
-        self.email_user.default_keywords.create(name='cvs')
-        self.email_user.default_keywords.create(name='bts')
+        Keyword.objects.all().delete()
+        self.email_user.default_keywords.add(
+            Keyword.objects.get_or_create(name='cvs')[0])
+        self.email_user.default_keywords.add(
+            Keyword.objects.get_or_create(name='bts')[0])
         self.subscription = Subscription.objects.create(
             package=self.package,
             email_user=self.email_user)

@@ -17,6 +17,7 @@ from pts.core.utils import get_or_none
 @python_2_unicode_compatible
 class Keyword(models.Model):
     name = models.CharField(max_length=50, unique=True)
+    default = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name

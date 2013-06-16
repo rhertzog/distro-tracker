@@ -1,0 +1,106 @@
+[
+    {
+        "fields": {
+            "default": true,
+            "name": "default"
+        },
+        "model": "core.keyword",
+        "pk": 1
+    },
+    {
+        "fields": {
+            "default": true,
+            "name": "bts"
+        },
+        "model": "core.keyword",
+        "pk": 2
+    },
+    {
+        "fields": {
+            "default": true,
+            "name": "bts-control"
+        },
+        "model": "core.keyword",
+        "pk": 3
+    },
+    {
+        "fields": {
+            "default": true,
+            "name": "summary"
+        },
+        "model": "core.keyword",
+        "pk": 4
+    },
+    {
+        "fields": {
+            "default": true,
+            "name": "upload-source"
+        },
+        "model": "core.keyword",
+        "pk": 5
+    },
+    {
+        "fields": {
+            "default": true,
+            "name": "katie-other"
+        },
+        "model": "core.keyword",
+        "pk": 6
+    },
+    {
+        "fields": {
+            "default": true,
+            "name": "contact"
+        },
+        "model": "core.keyword",
+        "pk": 7
+    },
+    {
+        "fields": {
+            "default": true,
+            "name": "buildd"
+        },
+        "model": "core.keyword",
+        "pk": 8
+    },
+    {
+        "fields": {
+            "default": false,
+            "name": "cvs"
+        },
+        "model": "core.keyword",
+        "pk": 9
+    },
+    {
+        "fields": {
+            "default": false,
+            "name": "ddtp"
+        },
+        "model": "core.keyword",
+        "pk": 10
+    },
+    {
+        "fields": {
+            "default": false,
+            "name": "upload-binary"
+        },
+        "model": "core.keyword",
+        "pk": 11
+    },
+    {
+        "fields": {
+            "default": false,
+            "name": "derivatives"
+        },
+        "model": "core.keyword",
+        "pk": 12
+    },
+    {
+        "fields": {
+            "default": false,
+            "name": "derivatives-bugs"
+        },
+        "model": "core.keyword",
+        "pk": 13
+    }
+]

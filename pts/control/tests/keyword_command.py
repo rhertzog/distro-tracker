@@ -27,9 +27,8 @@ class KeywordCommandTest(EmailControlTest):
             package=self.package,
             email_user=self.user
         )
-        self.subscription.keywords.create(name='bts')
-        Keyword.objects.create(name='cvs')
-        Keyword.objects.create(name='contact')
+        self.subscription.keywords.add(
+            Keyword.objects.get_or_create(name='bts')[0])
 
         self.commands = []
         self.set_header('From', self.user.email)
