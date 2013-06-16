@@ -370,6 +370,8 @@ class KeywordCommand(Command):
         (re.compile(
             r'^(\S+)(?:\s+(\S+@\S+))?\s+([-+=])\s+(\S+(?:\s+\S+)*)\s*$'),
          'subscription_keywords'),
+        (re.compile(r'^(\S+)(?:\s+(\S+@\S+))?$'),
+         'subscription_keywords_list'),
     )
 
     def __init__(self, message, *args):
@@ -397,6 +399,54 @@ class KeywordCommand(Command):
             return 'Invalid command'
         return self.method(self.match)
 
+    def _get_subscription(self, email, package_name):
+        email_user = get_or_none(EmailUser, email=email)
+        if not email_user:
+            self.out.append('User is not subscribed to any package')
+            return
+
+        package = get_or_none(Package, name=package_name)
+        if not package:
+            self.out.append('Package {package} does not exist'.format(
+                package=package_name))
+            return
+
+        subscription = get_or_none(Subscription,
+                                   package=package,
+                                   email_user=email_user)
+        if not subscription:
+            self.out.append(
+                'The user is not subscribed to the package {package}'.format(
+                    package=package_name)
+            )
+
+        return subscription
+
+    def _subscription_keywords_list(self, match):
+        """
+        Implementation of the keyword command version which handles listing
+        all keywords associated to a package for a particular user.
+        """
+        package_name, email = match.groups()
+        if not email:
+            email = self.email
+
+        self.out = []
+
+        subscription = self._get_subscription(email, package_name)
+        if not subscription:
+            return '\n'.join(self.out)
+
+        self.out.append(
+            "Here's the list of accepted keywords associated to package")
+        self.out.append('{package} for {user}'.format(package=package_name,
+                                                      user=email))
+        self.out.extend(sorted(
+            '* ' + keyword.name
+            for keyword in subscription.keywords.all()
+        ))
+        return '\n'.join(self.out)
+
     def _subscription_keywords(self, match):
         """
         Actual implementation of the keyword command version which handles
@@ -409,21 +459,9 @@ class KeywordCommand(Command):
         self.out = []
         keywords = re.split('[,\s]+', keywords)
 
-        email_user = get_or_none(EmailUser, email=email)
-        if not email_user:
-            return 'User is not subscribed to any package'
-        package = get_or_none(Package, name=package_name)
-        if not package:
-            return 'Package {package} does not exist'.format(
-                package=package_name)
-        subscription = get_or_none(Subscription,
-                                   package=package,
-                                   email_user=email_user)
+        subscription = self._get_subscription(email, package_name)
         if not subscription:
-            return (
-                'The user is not subscribed to the package {package}'.format(
-                    package=package_name)
-            )
+            return '\n'.join(self.out)
 
         operations = {
             '+': self._add_keywords,

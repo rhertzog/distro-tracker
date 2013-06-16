@@ -10,7 +10,7 @@
 
 from __future__ import unicode_literals
 
-from pts.core.models import Package, EmailUser, Subscription
+from pts.core.models import Package, EmailUser, Subscription, Keyword
 
 from pts.control.tests.common import EmailControlTest
 
@@ -224,3 +224,137 @@ class KeywordCommandSubscriptionSpecificTest(EmailControlTest):
         self.control_process()
 
         self.assert_correct_response(self.default_keywords | set(keywords))
+
+
+class KeywordCommandListSubscriptionSpecific(EmailControlTest):
+    """
+    Tests the keyword command when used to list keywords associated with a
+    subscription.
+    """
+    def setUp(self):
+        EmailControlTest.setUp(self)
+
+        # Setup a subscription
+        self.package = Package.objects.create(name='dummy-package')
+        self.user = EmailUser.objects.create(email='user@domain.com')
+        self.subscription = Subscription.objects.create(
+            package=self.package,
+            email_user=self.user
+        )
+
+        self.commands = []
+        self.set_header('From', self.user.email)
+
+    def _to_command_string(self, command):
+        return ' '.join(command)
+
+    def add_keyword_command(self, package, email='', use_tag=False):
+        command = 'keyword' if not use_tag else 'tag'
+        self.commands.append((
+            command,
+            package,
+            email,
+        ))
+        self.set_input_lines(self._to_command_string(command)
+                             for command in self.commands)
+
+    def assert_correct_response(self):
+        self.assert_response_sent()
+        self.assert_correct_response_headers()
+        self.subscription = Subscription.objects.get(
+            package=self.package,
+            email_user=self.user
+        )
+        self.assert_in_response(
+            "Here's the list of accepted keywords associated to package")
+        self.assert_in_response("{package} for {user}".format(
+            package=self.package.name, user=self.user.email))
+        self.assert_in_response('\n'.join(sorted(
+            '* ' + keyword.name
+            for keyword in self.subscription.keywords.all()
+        )))
+
+    def test_keyword_user_default(self):
+        """
+        Tests the keyword command when the subscription is using the user's
+        default keywords.
+        """
+        self.user.default_keywords.add(
+            Keyword.objects.create(name='new-keyword'))
+        self.add_keyword_command(self.package.name, self.user.email)
+
+        self.control_process()
+
+        self.assert_correct_response()
+
+    def test_keyword_subscription_specific(self):
+        """
+        Tests the keyword command when the subscription has specific keywords
+        associated with it.
+        """
+        self.subscription.keywords.add(Keyword.objects.get(name='cvs'))
+        self.add_keyword_command(self.package.name, self.user.email)
+
+        self.control_process()
+
+        self.assert_correct_response()
+
+    def test_keyword_package_doesnt_exist(self):
+        """
+        Tests the keyword command when the given package does not exist.
+        """
+        self.add_keyword_command('no-exist', self.user.email)
+
+        self.control_process()
+
+        self.assert_response_sent()
+        self.assert_correct_response_headers()
+        self.assert_in_response('Package no-exist does not exist')
+        self.assert_not_in_response("Here's the list of accepted keywords")
+
+    def test_keyword_subscription_not_active(self):
+        """
+        Tests the keyword command when the user has not yet confirmed the
+        subscription to the given package.
+        """
+        self.subscription.active = False
+        self.subscription.save()
+        self.add_keyword_command(self.package.name, self.user.email)
+
+        self.control_process()
+
+        self.assert_correct_response()
+
+    def test_keyword_user_not_subscribed(self):
+        """
+        Tests the keyword command when the given user is not subscribed to the
+        given package.
+        """
+        self.subscription.delete()
+        self.add_keyword_command(self.package.name, self.user.email)
+
+        self.control_process()
+
+        self.assert_response_sent()
+        self.assert_in_response('The user is not subscribed to the package')
+        self.assert_not_in_response("Here's the list of accepted keywords")
+
+    def test_keyword_email_not_given(self):
+        """
+        Tests the keyword command when the email is not given in the command.
+        """
+        self.add_keyword_command(self.package.name)
+
+        self.control_process()
+
+        self.assert_correct_response()
+
+    def test_tag_same_as_keyword(self):
+        """
+        Tests that "tag" acts as an alias for "keyword"
+        """
+        self.add_keyword_command(self.package.name, self.user.email)
+
+        self.control_process()
+
+        self.assert_correct_response()
