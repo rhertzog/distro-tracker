@@ -374,7 +374,7 @@ class KeywordCommand(Command):
     META = {
         'description': '''desc''',
         'name': 'keyword',
-        'aliases': ['tag'],
+        'aliases': ['tag', 'keywords', 'tags'],
         'position': 7,
     }
 

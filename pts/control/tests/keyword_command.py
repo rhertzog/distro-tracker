@@ -565,11 +565,31 @@ class KeywordCommandShowDefault(EmailControlTest):
             sorted(all_default_keywords.all(), key=lambda x: x.name))
         self.assert_correct_response(user=user)
 
-    def test_tag_alias_for_default(self):
+    def test_tag_alias_for_keyword(self):
         """
         Tests that "tag" is an alias for "keyword"
         """
         self.set_input_lines(['tag ' + self.user.email])
+
+        self.control_process()
+
+        self.assert_correct_response()
+
+    def test_tags_alias_for_keyword(self):
+        """
+        Tests that 'tags' is an alias for 'keyword'
+        """
+        self.set_input_lines(['tags ' + self.user.email])
+
+        self.control_process()
+
+        self.assert_correct_response()
+
+    def test_keywords_alias_for_keyword(self):
+        """
+        Tests that 'keywords' is an alias for 'keyword'
+        """
+        self.set_input_lines(['keywords ' + self.user.email])
 
         self.control_process()
 
