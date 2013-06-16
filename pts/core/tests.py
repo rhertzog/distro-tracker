@@ -17,7 +17,7 @@ from pts.core.models import Subscription, EmailUser, Package, BinaryPackage
 from pts.core.models import Keyword
 
 
-class SubscriptionTest(TestCase):
+class SubscriptionManagerTest(TestCase):
     def setUp(self):
         self.package = Package.objects.create(name='dummy-package')
         self.email_user = EmailUser.objects.create(email='email@domain.com')
@@ -102,6 +102,44 @@ class SubscriptionTest(TestCase):
         l = Subscription.objects.get_for_email(self.email_user.email)
 
         self.assertEqual(len(l), 0)
+
+    def test_all_active(self):
+        active_subs = [
+            self.create_subscription(self.package.name, self.email_user.email),
+            self.create_subscription(self.package.name, 'email@d.com')
+        ]
+        inactive_subs = [
+            self.create_subscription(self.package.name, 'email2@d.com', False),
+            self.create_subscription(self.package.name, 'email3@d.com', False),
+        ]
+
+        for active in active_subs:
+            self.assertIn(active, Subscription.objects.all_active())
+        for inactive in inactive_subs:
+            self.assertNotIn(inactive, Subscription.objects.all_active())
+
+    def test_all_active_filter_keyword(self):
+        """
+        Tests the all_active method when it should filter based on a keyword
+        """
+        active_subs = [
+            self.create_subscription(self.package.name, self.email_user.email),
+            self.create_subscription(self.package.name, 'email1@a.com')
+        ]
+        sub_no_kw = self.create_subscription(self.package.name, 'email2@a.com')
+        for active in active_subs:
+            active.keywords.add(Keyword.objects.get_or_create(name='cvs')[0])
+        sub_no_kw.keywords.remove(Keyword.objects.get(name='cvs'))
+        inactive_subs = [
+            self.create_subscription(self.package.name, 'email2@d.com', False),
+            self.create_subscription(self.package.name, 'email3@d.com', False),
+        ]
+
+        for active in active_subs:
+            self.assertIn(active, Subscription.objects.all_active('cvs'))
+        self.assertNotIn(sub_no_kw, Subscription.objects.all_active('cvs'))
+        for inactive in inactive_subs:
+            self.assertNotIn(inactive, Subscription.objects.all_active('cvs'))
 
 
 class KeywordsTest(TestCase):

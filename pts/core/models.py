@@ -119,11 +119,24 @@ class SubscriptionManager(models.Manager):
             return []
         return email_user.subscription_set.all_active()
 
-    def all_active(self):
+    def all_active(self, keyword=None):
         """
-        Returns all active subscriptions
+        Returns all active subscriptions, optionally filtered on having the
+        given keyword.
+        This method is not guaranteed to return a ``QuerySet`` object so
+        clients should not count on chaining additional filters to the result.
         """
-        return self.filter(active=True)
+        actives = self.filter(active=True)
+        if keyword:
+            keyword = get_or_none(Keyword, name=keyword)
+            if not keyword:
+                return self.none()
+            actives = [
+                subscription
+                for subscription in actives
+                if keyword in subscription.keywords.all()
+            ]
+        return actives
 
 
 @python_2_unicode_compatible
