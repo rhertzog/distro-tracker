@@ -89,6 +89,7 @@ def process(message):
         if not command:
             errors += 1
             if errors == MAX_ALLOWED_ERRORS:
+                out.append('{MAX_ALLOWED_ERRORS} lines contain errors: stopping.')
                 break
         else:
             if command.get_command_text() not in processed:

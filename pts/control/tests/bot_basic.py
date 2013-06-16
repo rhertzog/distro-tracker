@@ -132,6 +132,7 @@ class ControlBotBasic(EmailControlTest):
         self.control_process()
 
         self.assert_response_sent()
+        self.assert_in_response(">thanks\nStopping processing here.")
         self.assert_not_in_response('>#command')
 
     def test_blank_line_skip(self):

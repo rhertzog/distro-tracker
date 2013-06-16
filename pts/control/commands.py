@@ -369,6 +369,9 @@ class QuitCommand(Command):
     def get_command_text(self):
         return 'quit'
 
+    def __call__(self):
+        return 'Stopping processing here.'
+
 
 class KeywordCommand(Command):
     META = {
