@@ -20,6 +20,7 @@ from email.message import Message
 from pts.core.models import Package, Subscription, Keyword
 from pts.core.utils import extract_email_address_from_header
 from pts.core.utils import get_or_none
+from pts.core.utils import verp
 from pts import dispatch
 
 from django.conf import settings
@@ -134,6 +135,16 @@ class DispatchTestHelperMixin(object):
             fwd = msg.message().get_payload(decode=True).decode('ascii')
             self.assertEqual(original, fwd)
 
+    def assert_correct_verp(self):
+        """
+        Helper method which checks that the VERP header is correctly set in all
+        outgoing messages.
+        """
+        for msg in mail.outbox:
+            bounce_address, user_address = verp.decode(msg.from_email)
+            self.assertTrue(bounce_address.startswith('bounces+'))
+            self.assertEqual(user_address, msg.to[0])
+
     def assert_correct_response(self, keyword='default'):
         """
         Helper method checks the result of running the dispatch processor.
@@ -142,6 +153,7 @@ class DispatchTestHelperMixin(object):
         self.assert_all_old_headers_found()
         self.assert_all_new_headers_found(keyword=keyword)
         self.assert_correct_forward_content()
+        self.assert_correct_verp()
 
 
 class DispatchBaseTest(TestCase, DispatchTestHelperMixin):

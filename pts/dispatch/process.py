@@ -10,11 +10,13 @@
 
 from __future__ import unicode_literals
 from django.core.mail import get_connection
+from django.utils import timezone
 
 from email import message_from_string
 
 from pts.core.utils import extract_email_address_from_header
 from pts.core.utils import get_or_none
+from pts.core.utils import verp
 
 from pts.dispatch.custom_email_message import CustomEmailMessage
 
@@ -120,7 +122,13 @@ def get_package_name(local_part):
 
 
 def prepare_message(received_message, to_email):
-    message = CustomEmailMessage(msg=received_message, to=[to_email])
+    bounce_address = 'bounces+{date}@{pts_fqdn}'.format(
+        date=timezone.now().strftime('%Y%m%d'),
+        pts_fqdn=PTS_FQDN)
+    message = CustomEmailMessage(
+        msg=received_message,
+        from_email=verp.encode(bounce_address, to_email),
+        to=[to_email])
     return message
 
 
