@@ -17,6 +17,7 @@ from collections import OrderedDict
 
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
+from django.utils import six
 
 from pts.core.models import (
     Subscription, EmailUser, Package, BinaryPackage, Keyword)
@@ -34,27 +35,124 @@ PTS_CONTROL_EMAIL = settings.PTS_CONTROL_EMAIL
 PTS_FQDN = settings.PTS_FQDN
 
 
-class Command(object):
+class MetaCommand(type):
+    """
+    Meta class for PTS Commands.
+
+    Transforms the ``REGEX_LIST`` given in the Command to include all aliases
+    of the command so when implementing a Command subclass, it is not necessary
+    to include a separate regex for each command or a long one listing every
+    option.
+    """
+    def __init__(cls, name, bases, dct):
+        if not getattr(cls, 'META', None):
+            return
+        joined_aliases = '|'.join(
+            alias
+            for alias in [cls.META['name']] + cls.META.get('aliases', [])
+        )
+        cls.REGEX_LIST = tuple(
+            '^(?:' + joined_aliases + ')' + regex
+            for regex in cls.REGEX_LIST
+        )
+
+
+class Command(six.with_metaclass(MetaCommand)):
     """
     Base class for commands. Instances of this class can be used for NOP
     commands.
     """
+    __metaclass__ = MetaCommand
+
+    """
+    Meta information about the command, such as:
+     - Description
+     - Name
+     - List of aliases
+     - Preferred position in the help output
+    """
     META = {}
+    """
+    A list of regular expressions which, when matched to a string, identify
+    a command. Additionally, any named group in the regular expression should
+    exactly match the name of the parameter in the constructor of the command.
+    If unnamed groups are used, their order must be the same as the order of
+    parameters in the constructor of the command.
+
+    It is only necessary to list the part of the command's syntax to
+    capture the parameters, while the name and all aliases given in the META
+    dict are automatically assumed when matching a string to the command.
+    """
+    REGEX_LIST = ()
 
     def __init__(self, *args):
         self._sent_mails = []
+        self.out = []
 
     def __call__(self):
+        """
+        The base class delegates execution to the appropriate handle method
+        and handles the reply.
+        """
+        self.handle()
+        return self.compile_reply()
+
+    def handle(self):
+        """
+        Performs the necessary steps to execute the command.
+        """
         pass
 
     def is_valid(self):
         return True
 
-    def get_command_text(self):
+    def get_command_text(self, *args):
         """
         Returns a string representation of the command.
         """
-        return '#'
+        return ' '.join((self.META.get('name', '#'), ) + args)
+
+    @classmethod
+    def match_line(cls, line):
+        """
+        Class method to check whether the given line matches the command.
+        """
+        for pattern in cls.REGEX_LIST:
+            match = re.match(pattern, line)
+            if match:
+                return match
+
+    def compile_reply(self):
+        """
+        Returns a string representing the command's reply.
+        """
+        return '\n'.join(self.out)
+
+    def reply(self, message):
+        """
+        Adds a message to the command's reply.
+        """
+        self.out.append(message)
+
+    def warn(self, message):
+        """
+        Adds a warning to the command's reply.
+        """
+        self.out.append('Warning: ' + message)
+
+    def error(self, message):
+        """
+        Adds an error message to the command's reply.
+        """
+        self.out.append("Error: " + message)
+
+    def list_reply(self, items, bullet='*'):
+        """
+        Includes a list of items in the reply. Each item is converted to a
+        string before being output.
+        """
+        for item in items:
+            self.reply(bullet + ' ' + str(item))
 
     @property
     def sent_mails(self):
@@ -104,65 +202,52 @@ class SubscribeCommand(Command, SendConfirmationCommandMixin):
         'position': 1,
     }
 
-    def __init__(self, message, *args):
-        Command.__init__(self)
-        self.package = None
-        self.user_email = None
-        if len(args) < 1:
-            # Invalid command
-            pass
-        elif len(args) < 2:
-            # Subscriber email not given
-            self.package = args[0]
-            self.user_email = extract_email_address_from_header(
-                message.get('From'))
-        else:
-            # Superfluous arguments are ignored.
-            self.package = args[0]
-            self.user_email = args[1]
+    REGEX_LIST = (
+        r'\s+(?P<package>\S+)(?:\s+(?P<email>\S+))?$',
+    )
 
-    def is_valid(self):
-        return self.package and self.user_email
+    def __init__(self, package, email):
+        Command.__init__(self)
+        self.package = package
+        self.user_email = email
 
     def get_command_text(self):
-        return 'subscribe {package} {email}'.format(
-            package=self.package,
-            email=self.user_email).lower()
+        return Command.get_command_text(self, self.package, self.user_email)
 
-    def __call__(self):
+    def handle(self):
         if EmailUser.objects.is_user_subscribed_to(self.user_email,
                                                    self.package):
-            return '{email} is already subscribed to {package}'.format(
+            self.reply('{email} is already subscribed to {package}'.format(
                 email=self.user_email,
-                package=self.package)
+                package=self.package))
+            return
         else:
             Subscription.objects.create_for(
                 email=self.user_email,
                 package_name=self.package,
                 active=False)
 
-        out = []
         if not Package.objects.exists_with_name(self.package):
             if BinaryPackage.objects.exists_with_name(self.package):
                 binary_package = BinaryPackage.objects.get_by_name(self.package)
-                out.append('Warning: {package} is not a source package.'.format(
+                self.warn('{package} is not a source package.'.format(
                     package=self.package))
-                out.append('{package} is the source package '
+                self.reply('{package} is the source package '
                            'for the {binary} binary package'.format(
                                package=binary_package.source_package.name,
                                binary=binary_package.name))
                 self.package = binary_package.source_package.name
             else:
-                return (
+                self.reply(
                     '{package} is neither a source package '
                     'nor a binary package.'.format(package=self.package))
+                return
 
         self._send_confirmation_mail(
             user_email=self.user_email,
             template='control/email-subscription-confirmation.txt',
             context={'package': self.package})
-        out.append('A confirmation mail has been sent to ' + self.user_email)
-        return '\n'.join(out)
+        self.reply('A confirmation mail has been sent to ' + self.user_email)
 
 
 class UnsubscribeCommand(Command, SendConfirmationCommandMixin):
@@ -174,60 +259,47 @@ class UnsubscribeCommand(Command, SendConfirmationCommandMixin):
         'position': 2,
     }
 
-    def __init__(self, message, *args):
-        Command.__init__(self)
-        self.package = None
-        self.user_email = None
-        if len(args) < 1:
-            # Invalid command
-            pass
-        elif len(args) < 2:
-            # Subscriber email not given
-            self.package = args[0]
-            self.user_email = extract_email_address_from_header(
-                message.get('From'))
-        else:
-            # Superfluous arguments are ignored.
-            self.package = args[0]
-            self.user_email = args[1]
+    REGEX_LIST = (
+        r'\s+(?P<package>\S+)(?:\s+(?P<email>\S+))?$',
+    )
 
-    def is_valid(self):
-        return self.package and self.user_email
+    def __init__(self, package, email):
+        Command.__init__(self)
+        self.package = package
+        self.user_email = email
 
     def get_command_text(self):
-        return 'unsubscribe {package} {email}'.format(
-            package=self.package,
-            email=self.user_email).lower()
+        return Command.get_command_text(self, self.package, self.user_email)
 
-    def __call__(self):
-        out = []
+    def handle(self):
         if not Package.objects.exists_with_name(self.package):
             if BinaryPackage.objects.exists_with_name(self.package):
                 binary_package = BinaryPackage.objects.get_by_name(self.package)
-                out.append('Warning: {package} is not a source package.'.format(
+                self.warn('{package} is not a source package.'.format(
                     package=self.package))
-                out.append('{package} is the source package '
+                self.reply('{package} is the source package '
                            'for the {binary} binary package'.format(
                                package=binary_package.source_package.name,
                                binary=binary_package.name))
                 self.package = binary_package.source_package.name
             else:
-                return (
+                self.reply(
                     '{package} is neither a source package '
                     'nor a binary package.'.format(package=self.package))
+                return
         if not EmailUser.objects.is_user_subscribed_to(self.user_email,
                                                        self.package):
-            return (
+            self.reply(
                 "{email} is not subscribed, you can't unsubscribe.".format(
                     email=self.user_email)
             )
+            return
 
         self._send_confirmation_mail(
             user_email=self.user_email,
             template='control/email-unsubscribe-confirmation.txt',
             context={'package': self.package})
-        out.append('A confirmation mail has been sent to ' + self.user_email)
-        return '\n'.join(out)
+        self.reply('A confirmation mail has been sent to ' + self.user_email)
 
 
 class ConfirmCommand(Command):
@@ -239,24 +311,24 @@ class ConfirmCommand(Command):
         'position': 3,
     }
 
-    def __init__(self, message, *args):
-        Command.__init__(self)
-        self.confirmation_key = None
-        if len(args) >= 1:
-            self.confirmation_key = args[0]
+    REGEX_LIST = (
+        r'\s+(?P<confirmation_key>\S+)$',
+    )
 
-    def is_valid(self):
-        return self.confirmation_key is not None
+    def __init__(self, confirmation_key):
+        Command.__init__(self)
+        self.confirmation_key = confirmation_key
 
     def get_command_text(self):
-        return 'confirm {key}'.format(key=self.confirmation_key)
+        return Command.get_command_text(self, self.confirmation_key)
 
-    def __call__(self):
+    def handle(self):
         command_confirmation = get_or_none(
             CommandConfirmation,
             confirmation_key=self.confirmation_key)
         if not command_confirmation:
-            return 'Confirmation failed'
+            self.reply('Confirmation failed')
+            return
 
         args = command_confirmation.command.split()
         command_confirmation.delete()
@@ -273,37 +345,35 @@ class ConfirmCommand(Command):
             email=user_email,
             active=True)
         if subscription:
-            return user_email + ' has been subscribed to ' + package
+            self.reply(user_email + ' has been subscribed to ' + package)
         else:
-            return 'Error subscribing ' + user_email + ' to ' + package
+            self.reply('Error subscribing ' + user_email + ' to ' + package)
 
     def _unsubscribe(self, package, user_email):
         success = Subscription.objects.unsubscribe(package, user_email)
         if success:
-            return '{user} has been unsubscribed from {package}'.format(
+            self.reply('{user} has been unsubscribed from {package}'.format(
                 user=user_email,
-                package=package)
+                package=package))
         else:
-            return 'Error unsubscribing'
+            self.reply('Error unsubscribing')
 
     def _unsubscribeall(self, user_email):
         user = get_or_none(EmailUser, email=user_email)
         if user is None:
-            return True
+            return
         packages = [
             subscription.package.name
             for subscription in user.subscription_set.all()
         ]
         user.subscription_set.all().delete()
-        out = []
-        out.append('All your subscriptions have been terminated:')
-        out.extend(
-            '* {email} has been unsubscribed from {package}@{fqdn}'.format(
+        self.reply('All your subscriptions have been terminated:')
+        self.list_reply(
+            '{email} has been unsubscribed from {package}@{fqdn}'.format(
                 email=user_email,
                 package=package,
                 fqdn=PTS_FQDN)
             for package in sorted(packages))
-        return '\n'.join(out)
 
 
 class WhichCommand(Command):
@@ -314,27 +384,24 @@ class WhichCommand(Command):
         'position': 4,
     }
 
-    def __init__(self, message, *args):
+    REGEX_LIST = (
+        r'(?:\s+(?P<email>\S+))?$',
+    )
+
+    def __init__(self, email):
         Command.__init__(self)
-        self.user_email = None
-        if len(args) >= 1:
-            self.user_email = args[0]
-        else:
-            self.user_email = extract_email_address_from_header(
-                message.get('From'))
+        self.user_email = email
 
     def get_command_text(self):
-        return 'which ' + self.user_email.lower()
+        return Command.get_command_text(self, self.user_email)
 
-    def __call__(self):
+    def handle(self):
         user_subscriptions = Subscription.objects.get_for_email(
             self.user_email)
         if not user_subscriptions:
-            return 'No subscriptions found'
-        return '\n'.join((
-            '* {package_name}'.format(package_name=sub.package.name)
-            for sub in user_subscriptions
-        ))
+            self.reply('No subscriptions found')
+            return
+        self.list_reply(sub.package for sub in user_subscriptions)
 
 
 class HelpCommand(Command):
@@ -345,16 +412,17 @@ class HelpCommand(Command):
         'position': 5,
     }
 
-    def get_command_text(self):
-        return 'help'
+    REGEX_LIST = (
+        r'$',
+    )
 
-    def __call__(self):
-        return render_to_string('control/help.txt', {
+    def handle(self):
+        self.reply(render_to_string('control/help.txt', {
             'descriptions': [
                 command.META.get('description', '')
                 for command in UNIQUE_COMMANDS
             ]
-        })
+        }))
 
 
 class QuitCommand(Command):
@@ -366,75 +434,85 @@ class QuitCommand(Command):
         'position': 6
     }
 
-    def get_command_text(self):
-        return 'quit'
-
-    def __call__(self):
-        return 'Stopping processing here.'
-
-
-class KeywordCommand(Command):
-    META = {
-        'description': '''desc''',
-        'name': 'keyword',
-        'aliases': ['tag', 'keywords', 'tags'],
-        'position': 7,
-    }
-
     REGEX_LIST = (
-        (re.compile(r'^(\S+@\S+)?$'),
-         'subscription_default_keywords_list'),
-        (re.compile(r'^(\S+@\S+\s+)?([-+=])\s+(\S+(?:\s+\S+)*)$'),
-         'subscription_default_keywords'),
-        (re.compile(
-            r'^(\S+)(?:\s+(\S+@\S+))?\s+([-+=])\s+(\S+(?:\s+\S+)*)$'),
-         'subscription_keywords'),
-        (re.compile(r'^(\S+)(?:\s+(\S+@\S+))?$'),
-         'subscription_keywords_list'),
+        r'$',
+        r'^thanks$',
     )
 
-    def __init__(self, message, *args):
+    def handle(self):
+        self.reply('Stopping processing here.')
+
+
+class ViewDefaultKeywordsCommand(Command):
+    """
+    Implementation of the keyword command which handles displaying a list
+    of the user's default keywords.
+    """
+    META = {
+        'position': 10,
+        'name': 'view-default-keywords',
+        'aliases': ['keyword', 'tag', 'keywords', 'tags'],
+        'description': '''keyword [<email>]
+  Tells you the keywords you are accepting by default for packages
+  with no specific keywords set.
+
+  Each mail sent through the Package Tracking System is associated
+  to a keyword and you receive only the mails associated to keywords
+  you are accepting.
+  You may select a different set of keywords for each package.'''
+    }
+    REGEX_LIST = (
+        r'(?:\s+(?P<email>\S+@\S+))?$',
+    )
+
+    def __init__(self, email):
         Command.__init__(self)
-        self.line = ' '.join(args).lower()
-        self.match = None
-        self.email = extract_email_address_from_header(message.get('From'))
-        for regex, name in self.REGEX_LIST:
-            match = regex.match(self.line)
-            if match:
-                self.method = getattr(self, '_' + name)
-                self.match = match
-                break
+        self.email = email
 
-        self.OPERATIONS = {
-            '+': self._add_keywords,
-            '-': self._remove_keywords,
-            '=': self._set_keywords,
-        }
+    def handle(self):
+        email_user, _ = EmailUser.objects.get_or_create(email=self.email)
+        self.reply(
+            "Here's the default list of accepted keywords for {email}:".format(
+                email=self.email))
+        self.list_reply(sorted(
+            keyword.name for keyword in email_user.default_keywords.all()))
 
-    def is_valid(self):
-        return self.match is not None
 
-    def get_command_text(self):
-        return self.line
+class ViewPackageKeywordsCommand(Command):
+    """
+    Implementation of the keyword command version which handles listing
+    all keywords associated to a package for a particular user.
+    """
+    META = {
+        'position': 11,
+        'name': 'view-package-keywords',
+        'aliases': ['keyword', 'keywords', 'tag', 'tags'],
+        'description': '''keyword <srcpackage> [<email>]
+  Tells you the keywords you are accepting for the given package.
 
-    def __call__(self):
-        # This method only delegates to the implementation of one of the
-        # versions of the keyword command.
-        if not self.is_valid():
-            return 'Invalid command'
-        self.out = []
-        self.method(self.match)
-        return '\n'.join(self.out)
+  Each mail sent through the Package Tracking System is associated
+  to a keyword and you receive only the mails associated to keywords
+  you are accepting.
+  You may select a different set of keywords for each package.'''
+    }
+    REGEX_LIST = (
+        r'\s+(?P<package>\S+)(?:\s+(?P<email>\S+@\S+))?$',
+    )
+
+    def __init__(self, package, email):
+        Command.__init__(self)
+        self.package = package
+        self.email = email
 
     def _get_subscription(self, email, package_name):
         email_user = get_or_none(EmailUser, email=email)
         if not email_user:
-            self.out.append('User is not subscribed to any package')
+            self.reply('User is not subscribed to any package')
             return
 
         package = get_or_none(Package, name=package_name)
         if not package:
-            self.out.append('Package {package} does not exist'.format(
+            self.reply('Package {package} does not exist'.format(
                 package=package_name))
             return
 
@@ -442,99 +520,56 @@ class KeywordCommand(Command):
                                    package=package,
                                    email_user=email_user)
         if not subscription:
-            self.out.append(
+            self.reply(
                 'The user is not subscribed to the package {package}'.format(
                     package=package_name)
             )
 
         return subscription
 
-    def _include_keywords(self, keywords):
-        """
-        Include the keywords found in the given iterable to the output of the
-        command.
-        """
-        self.out.extend(sorted(
-            '* ' + keyword.name
-            for keyword in keywords
-        ))
-
-    def _subscription_default_keywords_list(self, match):
-        """
-        Implementation of the keyword command which handles displaying a list
-        of the user's default keywords.
-        """
-        email = match.group(1)
-
-        if not email:
-            email = self.email
-        email = email.strip()
-
-        email_user, _ = EmailUser.objects.get_or_create(email=email)
-        self.out.append(
-            "Here's the default list of accepted keywords for {email}:".format(
-                email=email))
-        self._include_keywords(email_user.default_keywords.all())
-
-    def _subscription_default_keywords(self, match):
-        """
-        Implementation of the keyword command which handles modifying a user's
-        list of default keywords.
-        """
-        email, operation, keywords = match.groups()
-        if not email:
-            email = self.email
-        email = email.strip()
-
-        keywords = re.split('[,\s]+', keywords)
-
-        email_user, _ = EmailUser.objects.get_or_create(email=email)
-        self.OPERATIONS[operation](keywords, email_user.default_keywords)
-
-        self.out.append(
-            "Here's the new default list of accepted keywords for "
-            "{user} :".format(user=email))
-        self._include_keywords(email_user.default_keywords.all())
-
-    def _subscription_keywords_list(self, match):
-        """
-        Implementation of the keyword command version which handles listing
-        all keywords associated to a package for a particular user.
-        """
-        package_name, email = match.groups()
-        if not email:
-            email = self.email
-
-        subscription = self._get_subscription(email, package_name)
+    def handle(self):
+        subscription = self._get_subscription(self.email, self.package)
         if not subscription:
             return
 
-        self.out.append(
+        self.reply(
             "Here's the list of accepted keywords associated to package")
-        self.out.append('{package} for {user}'.format(package=package_name,
-                                                      user=email))
-        self._include_keywords(subscription.keywords.all())
+        self.reply('{package} for {user}'.format(package=self.package,
+                                                 user=self.email))
+        self.list_reply(sorted(
+            keyword.name for keyword in subscription.keywords.all()))
 
-    def _subscription_keywords(self, match):
-        """
-        Actual implementation of the keyword command version which handles
-        subscription specific keywords.
-        """
-        package_name, email, operation, keywords = match.groups()
-        if not email:
-            email = self.email
-        keywords = re.split('[,\s]+', keywords)
 
-        subscription = self._get_subscription(email, package_name)
-        if not subscription:
-            return
+class SetDefaultKeywordsCommand(Command):
+    """
+    Implementation of the keyword command which handles modifying a user's
+    list of default keywords.
+    """
+    META = {
+        'position': 12,
+        'name': 'set-default-keywords',
+        'aliases': ['keyword', 'keywords', 'tag', 'tags'],
+        'description': '''keyword [<email>] {+|-|=} <list of keywords>
+  Accept (+) or refuse (-) mails associated to the given keyword(s).
+  Define the list (=) of accepted keywords.
+  These keywords are applied for subscriptions where no specific
+  keyword set is given.'''
+    }
+    REGEX_LIST = (
+        r'(?:\s+(?P<email>\S+@\S+))?\s+(?P<operation>[-+=])\s+(?P<keywords>\S+(?:\s+\S+)*)$',
+    )
 
-        self.OPERATIONS[operation](keywords, subscription.keywords)
-        self.out.append(
-            "Here's the new list of accepted keywords associated to package")
-        self.out.append('{package} for {user} :'.format(package=package_name,
-                                                        user=email))
-        self._include_keywords(subscription.keywords.all())
+    def __init__(self, email, operation, keywords):
+        Command.__init__(self)
+        self.email = email
+        self.operation = operation
+        self.keywords = keywords
+
+        self.OPERATIONS = {
+            '+': self._add_keywords,
+            '-': self._remove_keywords,
+            '=': self._set_keywords,
+        }
 
     def _keyword_name_to_object(self, keyword_name):
         """
@@ -543,9 +578,22 @@ class KeywordCommand(Command):
         """
         keyword = get_or_none(Keyword, name=keyword_name)
         if not keyword:
-            self.out.append('Warning: {keyword} is not a valid keyword'.format(
+            self.warn('{keyword} is not a valid keyword'.format(
                 keyword=keyword_name))
         return keyword
+
+    def handle(self):
+        keywords = re.split('[,\s]+', self.keywords)
+
+        email_user, _ = EmailUser.objects.get_or_create(email=self.email)
+        self.OPERATIONS[self.operation](keywords, email_user.default_keywords)
+
+        self.reply(
+            "Here's the new default list of accepted keywords for "
+            "{user} :".format(user=self.email))
+        self.list_reply(sorted(
+            keyword.name for keyword in email_user.default_keywords.all()
+        ))
 
     def _add_keywords(self, keywords, manager):
         """
@@ -575,6 +623,118 @@ class KeywordCommand(Command):
         self._add_keywords(keywords, manager)
 
 
+class SetPackageKeywordsCommand(Command):
+    """
+    Implementation of the keyword command version which modifies subscription
+    specific keywords.
+    """
+    META = {
+        'name': 'set-package-keywords',
+        'aliases': ['keyword', 'keywords', 'tag', 'tags'],
+        'description': (
+            '''keyword <srcpackage> [<email>] {+|-|=} <list of keywords>
+  Accept (+) or refuse (-) mails associated to the given keyword(s) for the
+  given package..
+  Define the list (=) of accepted keywords.
+  These keywords take precendence to default keywords.''')
+    }
+    REGEX_LIST = (
+        r'\s+(?P<package>\S+)(?:\s+(?P<email>\S+@\S+))?\s+(?P<operation>[-+=])\s+(?P<keywords>\S+(?:\s+\S+)*)$',
+    )
+
+    def _keyword_name_to_object(self, keyword_name):
+        """
+        Takes a keyword name and returns a keyword object with the given name
+        if it exists.
+        """
+        keyword = get_or_none(Keyword, name=keyword_name)
+        if not keyword:
+            self.warn('{keyword} is not a valid keyword'.format(
+                keyword=keyword_name))
+        return keyword
+
+    def __init__(self, package, email, operation, keywords):
+        Command.__init__(self)
+        self.package = package
+        self.email = email
+        self.operation = operation
+        self.keywords = keywords
+        self.OPERATIONS = {
+            '+': self._add_keywords,
+            '-': self._remove_keywords,
+            '=': self._set_keywords,
+        }
+
+    def _add_keywords(self, keywords, manager):
+        """
+        Adds the keywords given in the iterable ``keywords`` to the ``manager``
+        """
+        for keyword_name in keywords:
+            keyword = self._keyword_name_to_object(keyword_name)
+            if keyword:
+                manager.add(keyword)
+
+    def _remove_keywords(self, keywords, manager):
+        """
+        Removes the keywords given in the iterable ``keywords`` from the
+        ``manager``.
+        """
+        for keyword_name in keywords:
+            keyword = self._keyword_name_to_object(keyword_name)
+            if keyword:
+                manager.remove(keyword)
+
+    def _set_keywords(self, keywords, manager):
+        """
+        Sets the keywords given in the iterable ``keywords`` to the ``manager``
+        so that they are the only keywords it contains.
+        """
+        manager.clear()
+        self._add_keywords(keywords, manager)
+
+    def _get_subscription(self, email, package_name):
+        email_user = get_or_none(EmailUser, email=email)
+        if not email_user:
+            self.reply('User is not subscribed to any package')
+            return
+
+        package = get_or_none(Package, name=package_name)
+        if not package:
+            self.reply('Package {package} does not exist'.format(
+                package=package_name))
+            return
+
+        subscription = get_or_none(Subscription,
+                                   package=package,
+                                   email_user=email_user)
+        if not subscription:
+            self.reply(
+                'The user is not subscribed to the package {package}'.format(
+                    package=package_name)
+            )
+
+        return subscription
+
+    def handle(self):
+        """
+        Actual implementation of the keyword command version which handles
+        subscription specific keywords.
+        """
+        keywords = re.split('[,\s]+', self.keywords)
+
+        subscription = self._get_subscription(self.email, self.package)
+        if not subscription:
+            return
+
+        self.OPERATIONS[self.operation](keywords, subscription.keywords)
+        self.reply(
+            "Here's the new list of accepted keywords associated to package")
+        self.reply('{package} for {user} :'.format(package=self.package,
+                                                   user=self.email))
+        self.list_reply(sorted(
+            keyword.name for keyword in subscription.keywords.all()))
+
+
 class UnsubscribeallCommand(Command, SendConfirmationCommandMixin):
     META = {
         'description': '''unsubscribeall [<email>]
@@ -584,31 +744,30 @@ class UnsubscribeallCommand(Command, SendConfirmationCommandMixin):
         'position': 8,
     }
 
-    def __init__(self, message, *args):
-        Command.__init__(self)
-        if len(args) >= 1:
-            self.email = args[0]
-        else:
-            self.email = extract_email_address_from_header(message['From'])
+    REGEX_LIST = (
+        r'(?:\s+(?P<email>\S+))?$',
+    )
 
-    def is_valid(self):
-        return self.email is not None
+    def __init__(self, email):
+        Command.__init__(self)
+        self.email = email
 
     def get_command_text(self):
-        return 'unsubscribeall {email}'.format(email=self.email).lower()
+        return Command.get_command_text(self, self.email)
 
-    def __call__(self):
+    def handle(self):
         user = get_or_none(EmailUser, email=self.email)
         if not user or user.subscription_set.count() == 0:
-            return 'User {email} is not subscribed to any packages'.format(
-                email=self.email)
+            self.reply('User {email} is not subscribed to any packages'.format(
+                email=self.email))
+            return
 
         self._send_confirmation_mail(
             user_email=self.email,
             template='control/email-unsubscribeall-confirmation.txt',
             context={})
-        return 'A confirmation mail has been sent to {email}'.format(
-            email=self.email)
+        self.reply('A confirmation mail has been sent to {email}'.format(
+            email=self.email))
 
 
 UNIQUE_COMMANDS = sorted(
@@ -618,32 +777,46 @@ UNIQUE_COMMANDS = sorted(
     key=lambda cmd: cmd.META.get('position', float('inf'))
 )
 
-ALL_COMMANDS = OrderedDict((
-    (alias, cmd)
-    for cmd in UNIQUE_COMMANDS
-    for alias in [cmd.META['name']] + cmd.META.get('aliases', list())
-))
-
 
 class CommandFactory(object):
     """
-    Creates instances of Command classes based on the request message.
-    """
-    def __init__(self, msg):
-        self.msg = msg
+    Creates instances of Command classes based on the given context.
 
-    def get_command_function(self, *args):
+    Context is used to fill in parameters when the command has not found
+    it in the given command line.
+    """
+    def __init__(self, context):
+        self.context = context
+
+    def get_command_function(self, line):
         """
         Returns a function which executes the functionality of the command
         which corresponds to the given arguments.
         """
-        cmd = args[0].lower()
-        args = args[1:]
-        if cmd.startswith('#'):
-            return Command()
-        if cmd in ALL_COMMANDS:
+        for cmd in UNIQUE_COMMANDS:
             # Command exists
-            command_function = ALL_COMMANDS[cmd](self.msg, *args)
-            if command_function.is_valid():
-                # All required parameters passed to the command
-                return command_function
+            match = cmd.match_line(line)
+            if not match:
+                continue
+            kwargs = match.groupdict()
+            if not kwargs:
+                # No named patterns found, pass them in the order they were
+                # matched.
+                args = match.groups()
+                return cmd(*args)
+            else:
+                # Update the arguments which weren't matched from the given
+                # context, if available.
+                kwargs.update({
+                    key: value
+                    for key, value in self.context.items()
+                    if key in kwargs and not kwargs[key] and value
+                })
+                return cmd(**kwargs)
+
+"""
+Export only the relevant Command classes, the factory and list of commands.
+"""
+__all__ = (tuple(
+    klass.__name__
+    for klass in UNIQUE_COMMANDS) + ('CommandFactory', 'UNIQUE_COMMANDS'))

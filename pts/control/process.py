@@ -17,6 +17,7 @@ from django.template.loader import render_to_string
 
 from pts.control.commands import CommandFactory
 from pts.control.commands import QuitCommand
+from pts.core.utils import extract_email_address_from_header
 
 from django.conf import settings
 PTS_OWNER_EMAIL = settings.PTS_OWNER_EMAIL
@@ -75,16 +76,17 @@ def process(message):
     errors = 0
     processed = set()
     cc = []
-    factory = CommandFactory(msg)
+    factory = CommandFactory({
+        'email': extract_email_address_from_header(msg['From']),
+    })
     # Each line is a separate command
     for line in text.splitlines():
-        line = line.strip()
+        line = line.strip().lower()
         out.append('>' + line)
 
-        args = line.split()
-        if not args:
+        if not line:
             continue
-        command = factory.get_command_function(*args)
+        command = factory.get_command_function(line)
 
         if not command:
             errors += 1
