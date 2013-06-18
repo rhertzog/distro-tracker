@@ -115,6 +115,12 @@ class EmailControlTest(TestCase):
         out_mail = mail.outbox[response_number].message()
         self.assertEqual(out_mail[header_name], header_value)
 
+    def assert_command_echo_in_response(self, command):
+        self.assert_in_response('>' + command)
+
+    def assert_command_echo_not_in_response(self, command):
+        self.assert_not_in_response('>' + command)
+
     def assert_correct_response_headers(self):
         # The last message sent should always be the response
         self.assert_header_equal('X-Loop', PTS_CONTROL_EMAIL)

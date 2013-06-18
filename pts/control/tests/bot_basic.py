@@ -33,7 +33,7 @@ class ControlBotBasic(EmailControlTest):
         self.assert_response_sent()
         self.assert_correct_response_headers()
         for line in input_lines:
-            self.assert_in_response('>' + line.strip())
+            self.assert_command_echo_in_response(line.strip())
 
     def test_not_plaintext(self):
         """
@@ -66,7 +66,7 @@ class ControlBotBasic(EmailControlTest):
         self.assert_response_sent()
         self.assert_correct_response_headers()
         for line in input_lines:
-            self.assert_in_response('>' + line.strip())
+            self.assert_command_echo_in_response(line.strip())
 
     def test_response_subject(self):
         """
@@ -123,7 +123,7 @@ class ControlBotBasic(EmailControlTest):
         self.control_process()
 
         self.assert_response_sent()
-        self.assert_not_in_response('>#command')
+        self.assert_command_echo_not_in_response('#command')
 
     def test_stop_on_thanks_or_quit(self):
         """
@@ -135,8 +135,9 @@ class ControlBotBasic(EmailControlTest):
         self.control_process()
 
         self.assert_response_sent()
-        self.assert_in_response(">thanks\nStopping processing here.")
-        self.assert_not_in_response('>#command')
+        self.assert_command_echo_in_response('thanks')
+        self.assert_in_response("Stopping processing here.")
+        self.assert_command_echo_not_in_response('#command')
 
     def test_blank_line_skip(self):
         """
@@ -148,5 +149,5 @@ class ControlBotBasic(EmailControlTest):
         self.control_process()
 
         self.assert_response_sent()
-        self.assert_in_response('>help')
-        self.assert_in_response('>#comment')
+        self.assert_command_echo_in_response('help')
+        self.assert_command_echo_in_response('#comment')
