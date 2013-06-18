@@ -13,6 +13,7 @@ from __future__ import unicode_literals
 from pts.core.models import Package, EmailUser, Subscription, Keyword
 
 from pts.control.tests.common import EmailControlTest
+from operator import attrgetter
 
 
 class KeywordCommandSubscriptionSpecificTest(EmailControlTest):
@@ -76,9 +77,7 @@ class KeywordCommandSubscriptionSpecificTest(EmailControlTest):
             "Here's the new list of accepted keywords associated to package\n"
             "{package} for {address} :".format(package=self.package.name,
                                                address=user.email))
-        self.assert_in_response('\n'.join(sorted(
-            '* ' + keyword for keyword in new_keywords
-        )))
+        self.assert_list_in_response(sorted(new_keywords))
 
     def test_add_keyword_to_subscription(self):
         """
@@ -269,10 +268,8 @@ class KeywordCommandListSubscriptionSpecific(EmailControlTest):
             "Here's the list of accepted keywords associated to package")
         self.assert_in_response("{package} for {user}".format(
             package=self.package.name, user=self.user.email))
-        self.assert_in_response('\n'.join(sorted(
-            '* ' + keyword.name
-            for keyword in self.subscription.keywords.all()
-        )))
+        self.assert_list_in_response(
+            sorted(self.subscription.keywords.all(), key=attrgetter('name')))
 
     def test_keyword_user_default(self):
         """
@@ -406,9 +403,7 @@ class KeywordCommandModifyDefault(EmailControlTest):
         self.assert_in_response(
             "Here's the new default list of accepted "
             "keywords for {email} :".format(email=user.email))
-        self.assert_in_response('\n'.join(sorted(
-            '* ' + keyword for keyword in new_keywords
-        )))
+        self.assert_list_in_response(sorted(new_keywords))
 
     def test_keyword_add_default(self):
         """
@@ -520,9 +515,8 @@ class KeywordCommandShowDefault(EmailControlTest):
         self.assert_in_response(
             "Here's the default list of accepted keywords for {email}:".format(
                 email=user.email))
-        self.assert_in_response('\n'.join(sorted(
-            '* ' + keyword.name for keyword in user.default_keywords.all()
-        )))
+        self.assert_list_in_response(
+            sorted(user.default_keywords.all(), key=attrgetter('name')))
 
     def test_show_default_keywords(self):
         """

@@ -89,13 +89,13 @@ class UnsubscribeallCommandTest(EmailControlTest):
         self.assert_correct_response_headers()
         self.assertEqual(self.user.subscription_set.count(), 0)
         self.assert_in_response('All your subscriptions have been terminated')
-        self.assert_in_response('\n'.join(
-            '* {email} has been unsubscribed from {pkg}@{fqdn}'.format(
+        self.assert_list_in_response(
+            '{email} has been unsubscribed from {pkg}@{fqdn}'.format(
                 email=self.user.email,
                 pkg=package,
                 fqdn=settings.PTS_FQDN)
             for package in sorted(old_subscriptions)
-        ))
+        )
 
     def test_unsubscribeall_and_confirm(self):
         """

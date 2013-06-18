@@ -87,6 +87,21 @@ class EmailControlTest(TestCase):
         out_mail = mail.outbox[response_number]
         self.assertIn(text, out_mail.body)
 
+    def get_list_item(self, item, bullet='>'):
+        return bullet + ' ' + str(item)
+
+    def assert_list_in_response(self, items, bullet='*'):
+        self.assert_in_response('\n'.join(
+            self.get_list_item(item, bullet)
+            for item in items
+        ))
+
+    def assert_list_item_in_response(self, item, bullet='*'):
+        self.assert_in_response(self.get_list_item(item, bullet))
+
+    def assert_list_item_not_in_response(self, item, bullet='*'):
+        self.assert_not_in_response(self.get_list_item(item, bullet))
+
     def assert_not_in_response(self, text, response_number=-1):
         out_mail = mail.outbox[response_number]
         self.assertNotIn(text, out_mail.body)

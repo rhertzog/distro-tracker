@@ -57,11 +57,11 @@ class WhichCommandTest(EmailControlTest):
             # This user is not subscribed to any packages
             # Make sure that no package was output.
             for package in Package.objects.all():
-                self.assert_not_in_response('* ' + package.name)
+                self.assert_list_item_not_in_response(package.name)
             self.assert_in_response('No subscriptions found')
         else:
             for package_name in package_names:
-                self.assert_in_response('* ' + package_name)
+                self.assert_list_item_in_response(package_name)
 
     def test_list_packages_subscribed_to(self):
         """
