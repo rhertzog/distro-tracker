@@ -10,6 +10,7 @@
 
 from __future__ import unicode_literals
 from django.template.loader import render_to_string
+from django.conf import settings
 
 from pts.control.tests.common import EmailControlTest
 from pts.control.tests.common import PTS_CONTROL_EMAIL
@@ -115,7 +116,9 @@ class ControlBotBasic(EmailControlTest):
         """
         Tests that processing stops after encountering five garbage lines.
         """
-        self.set_input_lines(['help'] + ['garbage'] * 5 + ['#command'])
+        MAX_ALLOWED_ERRORS = settings.PTS_MAX_ALLOWED_ERRORS_CONTROL_COMMANDS
+        self.set_input_lines(
+            ['help'] + ['garbage'] * MAX_ALLOWED_ERRORS + ['#command'])
 
         self.control_process()
 

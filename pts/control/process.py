@@ -22,8 +22,7 @@ from pts.core.utils import extract_email_address_from_header
 from django.conf import settings
 PTS_OWNER_EMAIL = settings.PTS_OWNER_EMAIL
 PTS_CONTROL_EMAIL = settings.PTS_CONTROL_EMAIL
-
-MAX_ALLOWED_ERRORS = 5
+MAX_ALLOWED_ERRORS = settings.PTS_MAX_ALLOWED_ERRORS_CONTROL_COMMANDS
 
 
 def send_response(original_message, message_text, cc=None):
