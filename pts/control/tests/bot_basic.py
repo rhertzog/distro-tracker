@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Copyright 2013 The Debian Package Tracking System Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/ptsauthors
@@ -92,7 +94,7 @@ class ControlBotBasic(EmailControlTest):
     def test_loop_no_response(self):
         """
         Tests that there is no response if the message's X-Loop is set to
-       PTS_CONTROL_EMAIL
+        PTS_CONTROL_EMAIL
         """
         self.set_header('X-Loop', PTS_CONTROL_EMAIL)
         self.set_input_lines(['#command', 'thanks'])
@@ -151,3 +153,17 @@ class ControlBotBasic(EmailControlTest):
         self.assert_response_sent()
         self.assert_command_echo_in_response('help')
         self.assert_command_echo_in_response('#comment')
+
+    def test_utf8_message(self):
+        """
+        Tests that the bot sends replies to utf-8 encoded messages.
+        """
+        lines = ['ü', 'šß', 'č', '한글', 'help']
+        self.set_input_lines(lines)
+        self.message.set_charset('utf-8')
+
+        self.control_process()
+
+        self.assert_response_sent()
+        for line in lines:
+            self.assert_command_echo_in_response(line)

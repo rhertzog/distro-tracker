@@ -18,6 +18,7 @@ from django.template.loader import render_to_string
 from pts.control.commands import CommandFactory
 from pts.control.commands import QuitCommand
 from pts.core.utils import extract_email_address_from_header
+from pts.core.utils import get_decoded_message_payload
 
 from django.conf import settings
 PTS_OWNER_EMAIL = settings.PTS_OWNER_EMAIL
@@ -53,7 +54,7 @@ def send_plain_text_warning(original_message):
 
 def process(message):
     msg = message_from_string(message)
-    if 'X-Loop' in message and PTS_CONTROL_EMAIL in msg.get_all('X-Loop'):
+    if 'X-Loop' in msg and PTS_CONTROL_EMAIL in msg.get_all('X-Loop'):
         return
     # Get the first plain-text part of the message
     plain_text_part = next(typed_subpart_iterator(msg, 'text', 'plain'), None)
@@ -63,9 +64,8 @@ def process(message):
         return
 
     # Decode the plain text into a unicode string
-    charset = plain_text_part.get_content_charset('ascii')
     try:
-        text = plain_text_part.get_payload(decode=True).decode(charset)
+        text = get_decoded_message_payload(plain_text_part)
     except UnicodeDecodeError:
         send_plain_text_warning(msg)
         return
