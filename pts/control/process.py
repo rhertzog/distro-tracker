@@ -85,7 +85,7 @@ def process(message):
     # Each line is a separate command
     for line in lines:
         line = line.strip()
-        out.append('>' + line)
+        out.append('> ' + line)
 
         if not line or line.startswith('#'):
             continue

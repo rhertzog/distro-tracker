@@ -122,10 +122,10 @@ class EmailControlTest(TestCase):
         self.assertEqual(out_mail[header_name], header_value)
 
     def assert_command_echo_in_response(self, command):
-        self.assert_in_response('>' + command)
+        self.assert_in_response('> ' + command)
 
     def assert_command_echo_not_in_response(self, command):
-        self.assert_not_in_response('>' + command)
+        self.assert_not_in_response('> ' + command)
 
     def assert_warning_in_response(self, text):
         self.assert_in_response("Warning: " + text)

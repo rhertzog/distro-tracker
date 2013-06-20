@@ -195,3 +195,14 @@ class ControlBotBasic(EmailControlTest):
         self.assert_response_sent()
         self.assert_command_echo_in_response('# Message subject')
         self.assert_command_echo_in_response('help')
+
+    def test_end_processing_on_signature_delimiter(self):
+        """
+        Tests that processing commands halts when the signature delimiter is
+        reached (--)
+        """
+        self.set_input_lines(['help', '--', '# command'])
+
+        self.control_process()
+
+        self.assert_command_echo_not_in_response('# command')

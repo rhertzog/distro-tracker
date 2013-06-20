@@ -240,13 +240,12 @@ class QuitCommand(Command):
         'description': '''quit
   Stops processing commands''',
         'name': 'quit',
-        'aliases': ['thanks'],
+        'aliases': ['thanks', '--'],
         'position': 5
     }
 
     REGEX_LIST = (
         r'$',
-        r'^thanks$',
     )
 
     def handle(self):

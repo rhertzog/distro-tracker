@@ -234,7 +234,7 @@ class SetPackageKeywordsCommand(Command, KeywordCommandMixin):
   Accept (+) or refuse (-) mails associated to the given keyword(s) for the
   given package.
   Define the list (=) of accepted keywords.
-  These keywords take precendence to default keywords.''')
+  These keywords take precedence over default keywords.''')
     }
     REGEX_LIST = (
         (r'\s+(?P<package>\S+)(?:\s+(?P<email>\S+@\S+))?\s+'
