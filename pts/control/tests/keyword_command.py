@@ -490,7 +490,7 @@ class KeywordCommandModifyDefault(EmailControlTest):
     def test_user_doesnt_exist(self):
         """
         Tests adding a keyword to a user's default list of subscriptions when
-        the given user is not subscribed to any package (it does not exist yet)
+        the given user is not subscribed to any packages (it does not exist yet)
         """
         all_default_keywords = set([
             keyword.name
@@ -550,7 +550,7 @@ class KeywordCommandShowDefault(EmailControlTest):
     def test_show_default_keywords_email_no_subscriptions(self):
         """
         Tests that the keyword command returns a list of default keywords for
-        users that are not subscribed to any package.
+        users that are not subscribed to any packages.
         """
         email = 'no-exist@domain.com'
         all_default_keywords = Keyword.objects.filter(default=True)

@@ -123,7 +123,7 @@ class UnsubscribeallCommandTest(EmailControlTest):
         self.assert_response_sent()
         self.assert_correct_response_headers()
         self.assert_warning_in_response(
-            'User {email} is not subscribed to any package'.format(
+            'User {email} is not subscribed to any packages'.format(
                 email=self.user.email))
 
     def test_unsubscribeall_email_different_than_from(self):
