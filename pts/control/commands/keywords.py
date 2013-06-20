@@ -30,11 +30,20 @@ class KeywordCommandMixin(object):
     """
     A mixin including some utility methods for commands which handle keywords.
     """
+    def error_not_subscribed(self, email, package_name):
+        """
+        Helper returns an error saying the user is not subscribed to the
+        package.
+        """
+        self.error('{email} is not subscribed to the package {package}'.format(
+            email=email,
+            package=package_name)
+        )
+
     def get_subscription(self, email, package_name):
         email_user = get_or_none(EmailUser, email=email)
         if not email_user:
-            self.error('{email} is not subscribed to any package'.format(
-                email=email))
+            self.error_not_subscribed(email, package_name)
             return
 
         package = get_or_none(Package, name=package_name)
@@ -47,11 +56,7 @@ class KeywordCommandMixin(object):
                                    package=package,
                                    email_user=email_user)
         if not subscription:
-            self.error(
-                '{email} is not subscribed to the package {package}'.format(
-                    email=email,
-                    package=package_name)
-            )
+            self.error_not_subscribed(email, package_name)
 
         return subscription
 

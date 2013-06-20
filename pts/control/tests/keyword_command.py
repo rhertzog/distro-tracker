@@ -63,6 +63,16 @@ class KeywordCommandSubscriptionSpecificTest(EmailControlTest):
         self.set_input_lines(self._to_command_string(command)
                              for command in self.commands)
 
+    def assert_error_user_not_subscribed_in_response(self, email, package):
+        """
+        Checks whether an error saying the user is not subscribed to a package
+        is in the response.
+        """
+        self.assert_error_in_response(
+            '{email} is not subscribed to the package {package}'.format(
+                email=email, package=package)
+        )
+
     def assert_correct_response(self, new_keywords, user=None):
         if not user:
             user = self.user
@@ -184,10 +194,8 @@ class KeywordCommandSubscriptionSpecificTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_error_in_response(
-            '{email} is not subscribed to the package {pkg}'.format(
-                email='other-user@domain.com',
-                pkg=self.package.name))
+        self.assert_error_user_not_subscribed_in_response(other_user.email,
+                                                          self.package.name)
         self.assert_not_in_response("Here's the new list of accepted keywords")
 
     def test_keyword_user_doesnt_exist(self):
@@ -203,8 +211,8 @@ class KeywordCommandSubscriptionSpecificTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_error_in_response(
-            'other-user@domain.com is not subscribed to any package')
+        self.assert_error_user_not_subscribed_in_response(email,
+                                                          self.package.name)
         self.assert_not_in_response("Here's the new list of accepted keywords")
 
     def test_keyword_alias_tag(self):
