@@ -152,7 +152,7 @@ class SubscribeToPackageTest(EmailControlTest):
 
         self.assert_response_sent()
         self.assert_correct_response_headers()
-        self.assert_in_response(
+        self.assert_warning_in_response(
             '{email} is already subscribed to {package}'.format(
                 email=self.user_email_address,
                 package=self.package.name))
@@ -199,8 +199,8 @@ class SubscribeToPackageTest(EmailControlTest):
 
         self.assert_correct_response_for_command(self.user_email_address,
                                                  self.user_email_address)
-        self.assert_in_response(
-            'Warning: {package} is not a source package.'.format(
+        self.assert_warning_in_response(
+            '{package} is not a source package.'.format(
                 package=binary_package))
         self.assert_in_response(
             '{package} is the source package '
@@ -219,7 +219,7 @@ class SubscribeToPackageTest(EmailControlTest):
         self.control_process()
 
         self.assert_response_sent()
-        self.assert_in_response(
+        self.assert_warning_in_response(
             '{package} is neither a source package '
             'nor a binary package.'.format(package=binary_package))
 
@@ -255,4 +255,4 @@ class SubscribeToPackageTest(EmailControlTest):
         self.control_process()
 
         self.assert_response_sent()
-        self.assert_in_response('Confirmation failed')
+        self.assert_error_in_response('Confirmation failed')

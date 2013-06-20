@@ -33,12 +33,13 @@ class KeywordCommandMixin(object):
     def get_subscription(self, email, package_name):
         email_user = get_or_none(EmailUser, email=email)
         if not email_user:
-            self.reply('User is not subscribed to any package')
+            self.error('{email} is not subscribed to any package'.format(
+                email=email))
             return
 
         package = get_or_none(Package, name=package_name)
         if not package:
-            self.reply('Package {package} does not exist'.format(
+            self.error('Package {package} does not exist'.format(
                 package=package_name))
             return
 
@@ -46,8 +47,9 @@ class KeywordCommandMixin(object):
                                    package=package,
                                    email_user=email_user)
         if not subscription:
-            self.reply(
-                'The user is not subscribed to the package {package}'.format(
+            self.error(
+                '{email} is not subscribed to the package {package}'.format(
+                    email=email,
                     package=package_name)
             )
 

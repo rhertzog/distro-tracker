@@ -98,7 +98,7 @@ class UnsubscribeFromPackageTest(EmailControlTest):
     def assert_is_not_subscribed_response(self, email):
         self.assert_response_sent()
         self.assert_correct_response_headers()
-        self.assert_in_response(
+        self.assert_error_in_response(
             "{email} is not subscribed, you can't unsubscribe.".format(
                 email=email))
 
@@ -239,7 +239,7 @@ class UnsubscribeFromPackageTest(EmailControlTest):
         self.control_process()
 
         self.assert_response_sent()
-        self.assert_in_response(
+        self.assert_warning_in_response(
             '{package} is neither a source package '
             'nor a binary package.'.format(package=binary_package))
 

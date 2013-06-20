@@ -46,7 +46,7 @@ class SubscribeCommand(Command, SendConfirmationCommandMixin):
     def handle(self):
         if EmailUser.objects.is_user_subscribed_to(self.user_email,
                                                    self.package):
-            self.reply('{email} is already subscribed to {package}'.format(
+            self.warn('{email} is already subscribed to {package}'.format(
                 email=self.user_email,
                 package=self.package))
             return
@@ -67,7 +67,7 @@ class SubscribeCommand(Command, SendConfirmationCommandMixin):
                                binary=binary_package.name))
                 self.package = binary_package.source_package.name
             else:
-                self.reply(
+                self.warn(
                     '{package} is neither a source package '
                     'nor a binary package.'.format(package=self.package))
                 return
@@ -112,13 +112,13 @@ class UnsubscribeCommand(Command, SendConfirmationCommandMixin):
                                binary=binary_package.name))
                 self.package = binary_package.source_package.name
             else:
-                self.reply(
+                self.warn(
                     '{package} is neither a source package '
                     'nor a binary package.'.format(package=self.package))
                 return
         if not EmailUser.objects.is_user_subscribed_to(self.user_email,
                                                        self.package):
-            self.reply(
+            self.error(
                 "{email} is not subscribed, you can't unsubscribe.".format(
                     email=self.user_email)
             )
@@ -156,7 +156,7 @@ class ConfirmCommand(Command):
             CommandConfirmation,
             confirmation_key=self.confirmation_key)
         if not command_confirmation:
-            self.reply('Confirmation failed')
+            self.error('Confirmation failed')
             return
 
         args = command_confirmation.command.split()
@@ -176,7 +176,7 @@ class ConfirmCommand(Command):
         if subscription:
             self.reply(user_email + ' has been subscribed to ' + package)
         else:
-            self.reply('Error subscribing ' + user_email + ' to ' + package)
+            self.error('Could not subscribe ' + user_email + ' to ' + package)
 
     def _unsubscribe(self, package, user_email):
         success = Subscription.objects.unsubscribe(package, user_email)
@@ -185,7 +185,9 @@ class ConfirmCommand(Command):
                 user=user_email,
                 package=package))
         else:
-            self.reply('Error unsubscribing')
+            self.error('Could not unsubscribe {email} from {package}'.format(
+                email=user_email,
+                package=package))
 
     def _unsubscribeall(self, user_email):
         user = get_or_none(EmailUser, email=user_email)
@@ -274,7 +276,7 @@ class UnsubscribeallCommand(Command, SendConfirmationCommandMixin):
     def handle(self):
         user = get_or_none(EmailUser, email=self.email)
         if not user or user.subscription_set.count() == 0:
-            self.reply('User {email} is not subscribed to any packages'.format(
+            self.warn('User {email} is not subscribed to any packages'.format(
                 email=self.email))
             return
 
