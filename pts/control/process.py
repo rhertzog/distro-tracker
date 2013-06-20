@@ -20,6 +20,8 @@ from pts.control.commands import QuitCommand
 from pts.core.utils import extract_email_address_from_header
 from pts.core.utils import get_decoded_message_payload
 
+import re
+
 from django.conf import settings
 PTS_OWNER_EMAIL = settings.PTS_OWNER_EMAIL
 PTS_CONTROL_EMAIL = settings.PTS_CONTROL_EMAIL
@@ -70,6 +72,8 @@ def process(message):
         send_plain_text_warning(msg)
         return
 
+    lines = extract_command_from_subject(msg) + text.splitlines()
+
     # Process the commands
     out = []
     errors = 0
@@ -79,7 +83,7 @@ def process(message):
         'email': extract_email_address_from_header(msg['From']),
     })
     # Each line is a separate command
-    for line in text.splitlines():
+    for line in lines:
         line = line.strip()
         out.append('>' + line)
 
@@ -113,3 +117,16 @@ def process(message):
     # Send a response only if there were some commands processed
     if processed:
         send_response(msg, '\n'.join(out), set(cc))
+
+
+def extract_command_from_subject(message):
+    """
+    Returns a command found in the subject of the email.
+    """
+    subject = message['Subject']
+    if not subject:
+        return []
+    match = re.match(r'(?:Re\s*:\s*)?(.*)$',
+                     message.get('Subject', ''),
+                     re.IGNORECASE)
+    return ['# Message subject', match.group(1)]

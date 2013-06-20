@@ -158,7 +158,7 @@ class ControlBotBasic(EmailControlTest):
         """
         Tests that the bot sends replies to utf-8 encoded messages.
         """
-        lines = ['ü', 'šß', 'č', '한글', 'help']
+        lines = ['üšßč', '한글ᥡ╥ສए', 'help']
         self.set_input_lines(lines)
         self.message.set_charset('utf-8')
 
@@ -167,3 +167,15 @@ class ControlBotBasic(EmailControlTest):
         self.assert_response_sent()
         for line in lines:
             self.assert_command_echo_in_response(line)
+
+    def test_subject_command(self):
+        """
+        Tests that a command given in the subject of the message is executed.
+        """
+        self.set_header('Subject', 'help')
+
+        self.control_process()
+
+        self.assert_response_sent()
+        self.assert_command_echo_in_response('# Message subject')
+        self.assert_command_echo_in_response('help')
