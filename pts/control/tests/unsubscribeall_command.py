@@ -47,47 +47,39 @@ class UnsubscribeallCommandTest(EmailControlTest):
         # the response mail
         self.regexp = re.compile(r'^CONFIRM (.*)$', re.MULTILINE)
 
-    def assert_correct_response(self, number_of_messages=2, user=None):
-        if not user:
-            user = self.user
-
-        self.assert_response_sent(number_of_messages)
-        self.assert_correct_response_headers()
-        self.assert_in_response(
-            "A confirmation mail has been sent to " + user.email)
-
-    def assert_correct_confirmation(self, confirmation_number=0):
-        match = self.regex_search_in_response(self.regexp, confirmation_number)
-        self.assertIsNotNone(match)
-
-    def assert_cc_contains_address(self, email_address):
+    def assert_confirmation_sent_to(self, email_address):
         """
-        Helper method which checks that the Cc header of the response contains
-        the given email address.
+        Helper method checks whether a confirmation mail was sent to the
+        given email address.
         """
-        response_mail = mail.outbox[-1]
         self.assertIn(
-            email_address, (
-                extract_email_address_from_header(email)
-                for email in response_mail.cc
+            True, (
+                extract_email_address_from_header(msg.to[0]) == email_address
+                for msg in mail.outbox[:-1]
             )
         )
 
-    def confirm_unsubscribeall(self, confirmation_number=0):
-        match = self.regex_search_in_response(self.regexp, confirmation_number)
-        self.reset_message()
-        self.reset_outbox()
-        self.set_input_lines([match.group(0)])
-        old_subscriptions = [
-            package.name
-            for package in self.user.package_set.all()
-        ]
+    def test_unsubscribeall_and_confirm(self):
+        """
+        Tests the unsubscribeall command with the confirmation.
+        """
+        old_subscriptions = [pkg.name for pkg in self.user.package_set.all()]
+        self.set_input_lines(['unsubscribeall ' + self.user.email])
 
         self.control_process()
 
-        self.assert_response_sent()
-        self.assert_correct_response_headers()
-        self.assertEqual(self.user.subscription_set.count(), 0)
+        self.assert_in_response(
+            "A confirmation mail has been sent to " + self.user.email)
+        self.assert_confirmation_sent_to(self.user.email)
+        match = self.regex_search_in_response(self.regexp)
+        self.assertIsNotNone(match)
+
+        self.reset_message()
+        self.reset_outbox()
+        self.set_input_lines([match.group(0)])
+
+        self.control_process()
+
         self.assert_in_response('All your subscriptions have been terminated')
         self.assert_list_in_response(
             '{email} has been unsubscribed from {pkg}@{fqdn}'.format(
@@ -96,19 +88,6 @@ class UnsubscribeallCommandTest(EmailControlTest):
                 fqdn=settings.PTS_FQDN)
             for package in sorted(old_subscriptions)
         )
-
-    def test_unsubscribeall_and_confirm(self):
-        """
-        Tests the unsubscribeall command with the confirmation.
-        """
-        self.set_input_lines(['unsubscribeall ' + self.user.email])
-
-        self.control_process()
-
-        self.assert_correct_response()
-        self.assert_correct_confirmation()
-
-        self.confirm_unsubscribeall()
 
     def test_unsubscribeall_no_subscriptions(self):
         """
@@ -120,8 +99,6 @@ class UnsubscribeallCommandTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_response_sent()
-        self.assert_correct_response_headers()
         self.assert_warning_in_response(
             'User {email} is not subscribed to any packages'.format(
                 email=self.user.email))
@@ -136,11 +113,10 @@ class UnsubscribeallCommandTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response()
         self.assert_cc_contains_address(self.user.email)
-        self.assert_header_equal('To', self.user.email, 0)
+        self.assert_confirmation_sent_to(self.user.email)
 
-    def test_unsubscribeall_and_confirm_no_email_given(self):
+    def test_unsubscribeall_no_email_given(self):
         """
         Tests the unsubscribeall command when no email is given in the message.
         """
@@ -148,7 +124,4 @@ class UnsubscribeallCommandTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response()
-        self.assert_correct_confirmation()
-
-        self.confirm_unsubscribeall()
+        self.assert_confirmation_sent_to(self.user.email)

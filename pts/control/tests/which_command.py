@@ -26,82 +26,68 @@ class WhichCommandTest(EmailControlTest):
             Package.objects.create(name='package' + str(i))
             for i in range(10)
         ]
-        self.users = [
-            EmailUser.objects.create(email='email' + str(i))
-            for i in range(3)
-        ]
-        for i in range(5):
-            Subscription.objects.create(
-                package=self.packages[i],
-                email_user=self.users[0]
-            )
-        Subscription.objects.create_for(
-            package_name=self.packages[0].name,
-            email=self.users[2].email,
-            active=False)
+        self.user = EmailUser.objects.create(email='user@domain.com')
 
-    def get_subscriptions_for_user(self, user):
-        return [
-            subscription.package.name
-            for subscription in user.subscription_set.all_active()
-        ]
-
-    def assert_correct_packages_output(self, user):
-        """
-        Helper method tests whether the response contains the correct output
-        for the given user.
-        """
-        self.assert_response_sent()
-        package_names = self.get_subscriptions_for_user(user)
-        if not package_names:
-            # This user is not subscribed to any packages
-            # Make sure that no package was output.
-            for package in Package.objects.all():
-                self.assert_list_item_not_in_response(package.name)
-            self.assert_in_response('No subscriptions found')
-        else:
-            for package_name in package_names:
-                self.assert_list_item_in_response(package_name)
+    def assert_no_subscriptions_in_response(self):
+        self.assert_in_response('No subscriptions found')
 
     def test_list_packages_subscribed_to(self):
         """
         Tests that the which command lists the right packages.
         """
-        self.set_input_lines(['which ' + self.users[0].email])
+        subscriptions = [
+            Subscription.objects.create(
+                package=self.packages[i],
+                email_user=self.user
+            )
+            for i in range(5)
+        ]
+        self.set_input_lines(['which ' + self.user.email])
 
         self.control_process()
 
-        self.assert_correct_packages_output(self.users[0])
+        self.assert_list_in_response(sub.package.name for sub in subscriptions)
 
     def test_list_packages_no_email_given(self):
         """
         Tests that the which command lists the right packages when no email is
         given.
         """
-        self.set_header('From', self.users[0].email)
+        subscriptions = [
+            Subscription.objects.create(
+                package=self.packages[i],
+                email_user=self.user
+            )
+            for i in range(5)
+        ]
+        self.set_header('From', self.user.email)
         self.set_input_lines(['which'])
 
         self.control_process()
 
-        self.assert_correct_packages_output(self.users[0])
+        self.assert_list_in_response(sub.package.name for sub in subscriptions)
 
     def test_list_packages_no_subscriptions(self):
         """
         Tests the which command when the user is not subscribed to any packages.
         """
-        self.set_input_lines(['which ' + self.users[1].email])
+        self.set_input_lines(['which ' + self.user.email])
 
         self.control_process()
 
-        self.assert_correct_packages_output(self.users[1])
+        self.assert_no_subscriptions_in_response()
 
     def test_list_packages_no_active_subscriptions(self):
         """
         Tests the which command when the user does not have any active
         subscriptions.
         """
-        self.set_input_lines(['which ' + self.users[2].email])
+        Subscription.objects.create(
+            package=self.packages[0],
+            email_user=self.user,
+            active=False)
+        self.set_input_lines(['which ' + self.user.email])
 
         self.control_process()
 
-        self.assert_correct_packages_output(self.users[2])
+        self.assert_no_subscriptions_in_response()

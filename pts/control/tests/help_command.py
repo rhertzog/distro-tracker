@@ -23,17 +23,11 @@ class HelpCommandTest(EmailControlTest):
     def setUp(self):
         EmailControlTest.setUp(self)
 
-    def assert_correct_help_commands(self):
+    def get_all_help_command_descriptions(self):
         """
-        Helper method checks if all the commands and their descriptions are in
-        the response.
+        Helper method returning the description of all commands.
         """
-        out = render_to_string('control/help.txt', {
-            'descriptions': [
-                cmd.META.get('description', '') for cmd in UNIQUE_COMMANDS
-            ]
-        })
-        self.assert_in_response(out)
+        return (cmd.META.get('description', '') for cmd in UNIQUE_COMMANDS)
 
     def test_help_command(self):
         """
@@ -44,4 +38,6 @@ class HelpCommandTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_help_commands()
+        self.assert_in_response(render_to_string('control/help.txt', {
+            'descriptions': self.get_all_help_command_descriptions()
+        }))

@@ -19,6 +19,8 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email.utils import make_msgid
 
+from pts.core.utils import extract_email_address_from_header
+
 from pts import control
 
 from django.conf import settings
@@ -90,10 +92,21 @@ class EmailControlTest(TestCase):
         self.assertEqual(len(mail.outbox), 0)
 
     def assert_in_response(self, text, response_number=-1):
+        self.assertTrue(mail.outbox)
         out_mail = mail.outbox[response_number]
         self.assertIn(text, out_mail.body)
 
-    def get_list_item(self, item, bullet='>'):
+    def assert_line_in_response(self, line, response_number=-1):
+        self.assertTrue(mail.outbox)
+        out_mail = mail.outbox[response_number]
+        self.assertIn(line, out_mail.body.splitlines())
+
+    def assert_line_not_in_response(self, line, response_number=-1):
+        self.assertTrue(mail.outbox)
+        out_mail = mail.outbox[response_number]
+        self.assertNotIn(line, out_mail.body.splitlines())
+
+    def get_list_item(self, item, bullet='*'):
         return bullet + ' ' + str(item)
 
     def assert_list_in_response(self, items, bullet='*'):
@@ -103,10 +116,10 @@ class EmailControlTest(TestCase):
         ))
 
     def assert_list_item_in_response(self, item, bullet='*'):
-        self.assert_in_response(self.get_list_item(item, bullet))
+        self.assert_line_in_response(self.get_list_item(item, bullet))
 
     def assert_list_item_not_in_response(self, item, bullet='*'):
-        self.assert_not_in_response(self.get_list_item(item, bullet))
+        self.assert_line_not_in_response(self.get_list_item(item, bullet))
 
     def assert_not_in_response(self, text, response_number=-1):
         out_mail = mail.outbox[response_number]
@@ -144,11 +157,19 @@ class EmailControlTest(TestCase):
             ' '.join((self.message.get('References', ''),
                       self.message['Message-ID']))
         )
-        if not self.message['Subject']:
-            self.assert_header_equal('Subject', 'Re: Your mail')
-        else:
-            self.assert_header_equal('Subject',
-                                     'Re: ' + self.message['Subject'])
+
+    def assert_cc_contains_address(self, email_address):
+        """
+        Helper method which checks that the Cc header of the response contains
+        the given email address.
+        """
+        response_mail = mail.outbox[-1]
+        self.assertIn(
+            email_address, (
+                extract_email_address_from_header(email)
+                for email in response_mail.cc
+            )
+        )
 
     def reset_outbox(self):
         mail.outbox = []

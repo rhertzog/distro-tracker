@@ -57,33 +57,6 @@ class SubscribeToPackageTest(EmailControlTest):
             )
         )
 
-    def assert_cc_contains_address(self, email_address):
-        """
-        Helper method which checks that the Cc header of the response contains
-        the given email address.
-        """
-        response_mail = mail.outbox[-1]
-        self.assertIn(
-            email_address, (
-                extract_email_address_from_header(email)
-                for email in response_mail.cc
-            )
-        )
-
-    def assert_correct_response_for_command(self, from_email, subscribe_email):
-        """
-        Helper method which checks that a subscribe command which came from
-        ``from_email`` and subscribed ``subscribe_email`` has successfully
-        executed.
-        """
-        self.assert_correct_response_headers()
-        self.assert_in_response(
-            'A confirmation mail has been sent to {email}'.format(
-                email=subscribe_email))
-        self.assert_confirmation_sent_to(subscribe_email)
-        if from_email != subscribe_email:
-            self.assert_cc_contains_address(subscribe_email)
-
     def add_binary_package(self, source_package, binary_package):
         """
         Helper method which creates a binary package for the given source
@@ -114,8 +87,10 @@ class SubscribeToPackageTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response_for_command(self.user_email_address,
-                                                 self.user_email_address)
+        self.assert_in_response(
+            'A confirmation mail has been sent to {email}'.format(
+                email=self.user_email_address))
+        self.assert_confirmation_sent_to(self.user_email_address)
         # User still not actually subscribed
         self.assertFalse(self.user_subscribed(self.user_email_address))
         # Check that the confirmation mail contains the confirmation code
@@ -128,7 +103,6 @@ class SubscribeToPackageTest(EmailControlTest):
         self.set_input_lines([match.group(0)])
         self.control_process()
 
-        self.assert_response_sent()
         self.assert_in_response(
             '{email} has been subscribed to {package}'.format(
                 email=self.user_email_address,
@@ -150,8 +124,6 @@ class SubscribeToPackageTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_response_sent()
-        self.assert_correct_response_headers()
         self.assert_warning_in_response(
             '{email} is already subscribed to {package}'.format(
                 email=self.user_email_address,
@@ -165,8 +137,7 @@ class SubscribeToPackageTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response_for_command(self.user_email_address,
-                                                 self.user_email_address)
+        self.assert_confirmation_sent_to(self.user_email_address)
 
     def test_subscribe_email_different_than_from(self):
         """
@@ -183,8 +154,8 @@ class SubscribeToPackageTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response_for_command(self.user_email_address,
-                                                 subscribe_email_address)
+        self.assert_cc_contains_address(subscribe_email_address)
+        self.assert_confirmation_sent_to(subscribe_email_address)
 
     def test_subscribe_unexisting_source_package(self):
         """
@@ -197,8 +168,6 @@ class SubscribeToPackageTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response_for_command(self.user_email_address,
-                                                 self.user_email_address)
         self.assert_warning_in_response(
             '{package} is not a source package.'.format(
                 package=binary_package))
@@ -207,6 +176,7 @@ class SubscribeToPackageTest(EmailControlTest):
             'for the {binary} binary package'.format(
                 package=self.package.name,
                 binary=binary_package))
+        self.assert_confirmation_sent_to(self.user_email_address)
 
     def test_subscribe_unexisting_source_or_binary_package(self):
         """
@@ -218,7 +188,6 @@ class SubscribeToPackageTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_response_sent()
         self.assert_warning_in_response(
             '{package} is neither a source package '
             'nor a binary package.'.format(package=binary_package))
@@ -236,14 +205,12 @@ class SubscribeToPackageTest(EmailControlTest):
         # Only one confirmation email required as the subscribe commands are
         # equivalent.
         self.assert_response_sent(2)
-        self.assert_correct_response_for_command(self.user_email_address,
-                                                 self.user_email_address)
-        self.assert_confirmation_sent_to(self.user_email_address)
 
     def test_confirm_expired(self):
         """
         Tests that an expired confirmation does not subscribe the user.
         """
+        # Set up an expired CommandConfirmation object.
         c = CommandConfirmation.objects.create_for_command(
             'subscribe {package} {user}'.format(user=self.user_email_address,
                                                 package=self.package.name))
@@ -254,5 +221,4 @@ class SubscribeToPackageTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_response_sent()
         self.assert_error_in_response('Confirmation failed')

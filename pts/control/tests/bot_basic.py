@@ -15,11 +15,11 @@ from django.template.loader import render_to_string
 from django.conf import settings
 
 from pts.control.tests.common import EmailControlTest
-from pts.control.tests.common import PTS_CONTROL_EMAIL
+from pts.control.tests.common import PTS_CONTROL_EMAIL, PTS_OWNER_EMAIL
 
 
 class ControlBotBasic(EmailControlTest):
-    def test_basic(self):
+    def test_basic_headers(self):
         """
         Tests if the proper headers are set for the reply message, that the
         output contains original lines prepended with '>'
@@ -28,12 +28,48 @@ class ControlBotBasic(EmailControlTest):
             "#command",
             "   thanks",
         ]
+        self.set_header('Subject', 'Commands')
         self.set_input_lines(input_lines)
 
         self.control_process()
 
         self.assert_response_sent()
-        self.assert_correct_response_headers()
+        self.assert_header_equal('Subject', 'Re: Commands')
+        self.assert_header_equal('X-Loop', PTS_CONTROL_EMAIL)
+        self.assert_header_equal('To', self.message['From'])
+        self.assert_header_equal('From', PTS_OWNER_EMAIL)
+        self.assert_header_equal('In-Reply-To', self.message['Message-ID'])
+        self.assert_header_equal(
+            'References',
+            ' '.join((self.message.get('References', ''),
+                      self.message['Message-ID']))
+        )
+
+    def test_response_when_no_subject(self):
+        """
+        Tests that the subject of the response when there is no subject set in
+        the request is correct.
+        """
+        self.set_input_lines(["thanks"])
+        self.set_header('Subject', '')
+
+        self.control_process()
+
+        self.assert_header_equal('Subject', 'Re: Your mail')
+
+    def test_basic_echo_commands(self):
+        """
+        Tests that commands are echoed in the response.
+        """
+        input_lines = [
+            "#command",
+            "   thanks",
+        ]
+        self.set_header('Subject', 'Commands')
+        self.set_input_lines(input_lines)
+
+        self.control_process()
+
         for line in input_lines:
             self.assert_command_echo_in_response(line.strip())
 
@@ -66,22 +102,8 @@ class ControlBotBasic(EmailControlTest):
         self.control_process()
 
         self.assert_response_sent()
-        self.assert_correct_response_headers()
         for line in input_lines:
             self.assert_command_echo_in_response(line.strip())
-
-    def test_response_subject(self):
-        """
-        Tests that the subject of the response when there is no subject set in
-        the request is correct.
-        """
-        self.set_input_lines(['#command', "thanks"])
-        self.set_header('Subject', '')
-
-        self.control_process()
-
-        self.assert_response_sent()
-        self.assert_correct_response_headers()
 
     def test_empty_no_response(self):
         """
@@ -96,8 +118,9 @@ class ControlBotBasic(EmailControlTest):
         Tests that there is no response if the message's X-Loop is set to
         PTS_CONTROL_EMAIL
         """
+        self.set_header('X-Loop', 'something-else')
         self.set_header('X-Loop', PTS_CONTROL_EMAIL)
-        self.set_input_lines(['#command', 'thanks'])
+        self.set_input_lines(['thanks'])
 
         self.control_process()
 
@@ -151,7 +174,6 @@ class ControlBotBasic(EmailControlTest):
         self.control_process()
 
         self.assert_response_sent()
-        self.assert_command_echo_in_response('help')
         self.assert_command_echo_in_response('#comment')
 
     def test_comment_line_skip(self):
@@ -162,8 +184,7 @@ class ControlBotBasic(EmailControlTest):
         MAX_ALLOWED_ERRORS = settings.PTS_MAX_ALLOWED_ERRORS_CONTROL_COMMANDS
         self.set_input_lines(
             [self.make_comment(command)
-             for command in ['comment'] * MAX_ALLOWED_ERRORS]
-            + ['help']
+             for command in ['comment'] * MAX_ALLOWED_ERRORS] + ['help']
         )
 
         self.control_process()

@@ -16,7 +16,28 @@ from pts.control.tests.common import EmailControlTest
 from operator import attrgetter
 
 
-class KeywordCommandSubscriptionSpecificTest(EmailControlTest):
+class KeywordCommandHelperMixin(object):
+    """
+    Contains some methods which are used for testing all forms of the keyword
+    command.
+    """
+    def assert_keywords_in_response(self, keywords):
+        """
+        Checks if the given keywords are found in the response.
+        """
+        for keyword in keywords:
+            self.assert_list_item_in_response(keyword)
+
+    def assert_keywords_not_in_response(self, keywords):
+        """
+        Checks that the given keywords are not found in the response.
+        """
+        for keyword in keywords:
+            self.assert_list_item_not_in_response(keyword)
+
+
+class KeywordCommandSubscriptionSpecificTest(EmailControlTest,
+                                             KeywordCommandHelperMixin):
     """
     Tests for the keyword command when modifying subscription specific
     keywords.
@@ -63,6 +84,16 @@ class KeywordCommandSubscriptionSpecificTest(EmailControlTest):
         self.set_input_lines(self._to_command_string(command)
                              for command in self.commands)
 
+    def get_new_list_of_keywords_text(self, package, email):
+        """
+        Returns the status text which should precede a new list of keywords.
+        """
+        return (
+            "Here's the new list of accepted keywords associated to package\n"
+            "{package} for {address} :".format(package=package,
+                                               address=self.user.email)
+        )
+
     def assert_error_user_not_subscribed_in_response(self, email, package):
         """
         Checks whether an error saying the user is not subscribed to a package
@@ -73,21 +104,45 @@ class KeywordCommandSubscriptionSpecificTest(EmailControlTest):
                 email=email, package=package)
         )
 
-    def assert_correct_response(self, new_keywords, user=None):
-        if not user:
-            user = self.user
+    def assert_subscription_keywords_equal(self, keywords):
+        """
+        Asserts that the subscription of the test user to the test package is
+        equal to the given keywords.
+        """
         self.subscription = Subscription.objects.get(
             package=self.package,
             email_user=self.user
         )
-        self.assert_response_sent()
-        self.assert_correct_response_headers()
-        self.assertEqual(self.subscription.keywords.count(), len(new_keywords))
-        self.assert_in_response(
-            "Here's the new list of accepted keywords associated to package\n"
-            "{package} for {address} :".format(package=self.package.name,
-                                               address=user.email))
-        self.assert_list_in_response(sorted(new_keywords))
+        all_keywords = self.subscription.keywords.all()
+        self.assertEqual(all_keywords.count(), len(keywords))
+        for keyword in all_keywords:
+            self.assertIn(keyword.name, keywords)
+
+    def assert_subscription_has_keywords(self, keywords):
+        """
+        Check if the subscription of the test user to the test package has the
+        given keywords.
+        """
+        self.subscription = Subscription.objects.get(
+            package=self.package,
+            email_user=self.user
+        )
+        all_keywords = self.subscription.keywords.all()
+        for keyword in keywords:
+            self.assertIn(Keyword.objects.get(name=keyword), all_keywords)
+
+    def assert_subscription_not_has_keywords(self, keywords):
+        """
+        Assert that the subscription of the test user to the test package does
+        not have the given keywords.
+        """
+        self.subscription = Subscription.objects.get(
+            package=self.package,
+            email_user=self.user
+        )
+        all_keywords = self.subscription.keywords.all()
+        for keyword in keywords:
+            self.assertNotIn(Keyword.objects.get(name=keyword), all_keywords)
 
     def test_add_keyword_to_subscription(self):
         """
@@ -102,7 +157,8 @@ class KeywordCommandSubscriptionSpecificTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response(self.default_keywords | set(keywords))
+        self.assert_keywords_in_response(keywords)
+        self.assert_subscription_has_keywords(keywords)
 
     def test_remove_keyword_from_subscription(self):
         """
@@ -117,14 +173,15 @@ class KeywordCommandSubscriptionSpecificTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response(self.default_keywords - set(keywords))
+        self.assert_keywords_not_in_response(keywords)
+        self.assert_subscription_not_has_keywords(keywords)
 
     def test_set_keywords_for_subscription(self):
         """
         Tests the keyword command version which should set a new keyword list
         for a subscription.
         """
-        keywords = ['cvs']
+        keywords = ['cvs', 'bts']
         self.add_keyword_command(self.package.name,
                                  '=',
                                  keywords,
@@ -132,7 +189,10 @@ class KeywordCommandSubscriptionSpecificTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response(keywords)
+        self.assert_in_response(self.get_new_list_of_keywords_text(
+            self.package.name, self.user.email))
+        self.assert_keywords_in_response(keywords)
+        self.assert_subscription_keywords_equal(keywords)
 
     def test_keyword_email_not_given(self):
         """
@@ -142,18 +202,23 @@ class KeywordCommandSubscriptionSpecificTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response(self.default_keywords | set(['cvs']))
+        self.assert_in_response(self.get_new_list_of_keywords_text(
+            self.package.name, self.user.email))
+        self.assert_keywords_in_response(['cvs'])
+        self.assert_subscription_has_keywords(['cvs'])
 
     def test_keyword_doesnt_exist(self):
         """
         Tests the keyword command when the given keyword does not exist.
         """
-        self.add_keyword_command(self.package.name, '=', ['no-exist'])
+        self.add_keyword_command(self.package.name, '+', ['no-exist'])
 
         self.control_process()
 
-        self.assert_correct_response([])
         self.assert_warning_in_response('no-exist is not a valid keyword')
+        # Subscription has not changed.
+        self.assert_keywords_in_response(self.default_keywords)
+        self.assert_subscription_keywords_equal(self.default_keywords)
 
     def test_keyword_add_subscription_not_confirmed(self):
         """
@@ -166,7 +231,10 @@ class KeywordCommandSubscriptionSpecificTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response(self.default_keywords | set(['cvs']))
+        self.assert_in_response(self.get_new_list_of_keywords_text(
+            self.package.name, self.user.email))
+        self.assert_keywords_in_response(['cvs'])
+        self.assert_subscription_has_keywords(['cvs'])
 
     def test_keyword_add_package_doesnt_exist(self):
         """
@@ -176,10 +244,9 @@ class KeywordCommandSubscriptionSpecificTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_response_sent()
-        self.assert_correct_response_headers()
         self.assert_in_response('Package package-no-exist does not exist')
-        self.assert_not_in_response("Here's the new list of accepted keywords")
+        self.assert_not_in_response(self.get_new_list_of_keywords_text(
+            self.package.name, self.user.email))
 
     def test_keyword_user_not_subscribed(self):
         """
@@ -196,7 +263,8 @@ class KeywordCommandSubscriptionSpecificTest(EmailControlTest):
 
         self.assert_error_user_not_subscribed_in_response(other_user.email,
                                                           self.package.name)
-        self.assert_not_in_response("Here's the new list of accepted keywords")
+        self.assert_not_in_response(self.get_new_list_of_keywords_text(
+            self.package.name, other_user.email))
 
     def test_keyword_user_doesnt_exist(self):
         """
@@ -213,7 +281,8 @@ class KeywordCommandSubscriptionSpecificTest(EmailControlTest):
 
         self.assert_error_user_not_subscribed_in_response(email,
                                                           self.package.name)
-        self.assert_not_in_response("Here's the new list of accepted keywords")
+        self.assert_not_in_response(self.get_new_list_of_keywords_text(
+            self.package.name, self.user.email))
 
     def test_keyword_alias_tag(self):
         """
@@ -228,10 +297,12 @@ class KeywordCommandSubscriptionSpecificTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response(self.default_keywords | set(keywords))
+        self.assert_keywords_in_response(keywords)
+        self.assert_subscription_has_keywords(keywords)
 
 
-class KeywordCommandListSubscriptionSpecific(EmailControlTest):
+class KeywordCommandListSubscriptionSpecific(EmailControlTest,
+                                             KeywordCommandHelperMixin):
     """
     Tests the keyword command when used to list keywords associated with a
     subscription.
@@ -263,19 +334,12 @@ class KeywordCommandListSubscriptionSpecific(EmailControlTest):
         self.set_input_lines(self._to_command_string(command)
                              for command in self.commands)
 
-    def assert_correct_response(self):
-        self.assert_response_sent()
-        self.assert_correct_response_headers()
-        self.subscription = Subscription.objects.get(
-            package=self.package,
-            email_user=self.user
+    def get_list_of_keywords(self, package, email):
+        return (
+            "Here's the list of accepted keywords associated to package\n"
+            "{package} for {user}".format(
+                package=self.package.name, user=self.user.email)
         )
-        self.assert_in_response(
-            "Here's the list of accepted keywords associated to package")
-        self.assert_in_response("{package} for {user}".format(
-            package=self.package.name, user=self.user.email))
-        self.assert_list_in_response(
-            sorted(self.subscription.keywords.all(), key=attrgetter('name')))
 
     def test_keyword_user_default(self):
         """
@@ -288,7 +352,10 @@ class KeywordCommandListSubscriptionSpecific(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response()
+        self.assert_in_response(
+            self.get_list_of_keywords(self.package.name, self.user.email))
+        self.assert_keywords_in_response(
+            keyword.name for keyword in self.subscription.keywords.all())
 
     def test_keyword_subscription_specific(self):
         """
@@ -300,7 +367,10 @@ class KeywordCommandListSubscriptionSpecific(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response()
+        self.assert_in_response(
+            self.get_list_of_keywords(self.package.name, self.user.email))
+        self.assert_keywords_in_response(
+            keyword.name for keyword in self.subscription.keywords.all())
 
     def test_keyword_package_doesnt_exist(self):
         """
@@ -310,9 +380,7 @@ class KeywordCommandListSubscriptionSpecific(EmailControlTest):
 
         self.control_process()
 
-        self.assert_response_sent()
-        self.assert_correct_response_headers()
-        self.assert_in_response('Package no-exist does not exist')
+        self.assert_error_in_response('Package no-exist does not exist')
         self.assert_not_in_response("Here's the list of accepted keywords")
 
     def test_keyword_subscription_not_active(self):
@@ -326,7 +394,10 @@ class KeywordCommandListSubscriptionSpecific(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response()
+        self.assert_in_response(
+            self.get_list_of_keywords(self.package.name, self.user.email))
+        self.assert_keywords_in_response(
+            keyword.name for keyword in self.subscription.keywords.all())
 
     def test_keyword_user_not_subscribed(self):
         """
@@ -340,8 +411,10 @@ class KeywordCommandListSubscriptionSpecific(EmailControlTest):
 
         self.assert_response_sent()
         self.assert_error_in_response(
-            '{email} is not subscribed to the package'.format(
-                email=self.user.email))
+            '{email} is not subscribed to the package {pkg}'.format(
+                email=self.user.email,
+                pkg=self.package.name)
+        )
         self.assert_not_in_response("Here's the list of accepted keywords")
 
     def test_keyword_email_not_given(self):
@@ -352,7 +425,10 @@ class KeywordCommandListSubscriptionSpecific(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response()
+        self.assert_in_response(
+            self.get_list_of_keywords(self.package.name, self.user.email))
+        self.assert_keywords_in_response(
+            keyword.name for keyword in self.subscription.keywords.all())
 
     def test_tag_same_as_keyword(self):
         """
@@ -362,10 +438,13 @@ class KeywordCommandListSubscriptionSpecific(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response()
+        self.assert_in_response(
+            self.get_list_of_keywords(self.package.name, self.user.email))
+        self.assert_keywords_in_response(
+            keyword.name for keyword in self.subscription.keywords.all())
 
 
-class KeywordCommandModifyDefault(EmailControlTest):
+class KeywordCommandModifyDefault(EmailControlTest, KeywordCommandHelperMixin):
     """
     Tests the keyword command version which modifies a user's list of default
     keywords.
@@ -391,6 +470,16 @@ class KeywordCommandModifyDefault(EmailControlTest):
             command[:-1] + (', '.join(command[-1]),)
         )
 
+    def get_new_default_list_output_message(self, email):
+        """
+        Returns the message which should precede the list of new default
+        keywords.
+        """
+        return (
+            "Here's the new default list of accepted "
+            "keywords for {email} :".format(email=email)
+        )
+
     def add_keyword_command(self, operator, keywords, email='', use_tag=False):
         command = 'keyword' if not use_tag else 'tag'
         self.commands.append((
@@ -402,16 +491,34 @@ class KeywordCommandModifyDefault(EmailControlTest):
         self.set_input_lines(self._to_command_string(command)
                              for command in self.commands)
 
-    def assert_correct_response(self, new_keywords, user=None):
-        if not user:
-            user = self.user
-        self.assert_response_sent()
-        self.assert_correct_response_headers()
-        self.assertEqual(user.default_keywords.count(), len(new_keywords))
-        self.assert_in_response(
-            "Here's the new default list of accepted "
-            "keywords for {email} :".format(email=user.email))
-        self.assert_list_in_response(sorted(new_keywords))
+    def assert_keywords_in_user_default_list(self, keywords):
+        """
+        Asserts that the given keywords are found in the user's list of default
+        keywords.
+        """
+        default_keywords = self.user.default_keywords.all()
+        for keyword in keywords:
+            self.assertIn(Keyword.objects.get(name=keyword), default_keywords)
+
+    def assert_keywords_not_in_user_default_list(self, keywords):
+        """
+        Asserts that the given keywords are not found in the user's list of
+        default keywords.
+        """
+        default_keywords = self.user.default_keywords.all()
+        for keyword in keywords:
+            self.assertNotIn(
+                Keyword.objects.get(name=keyword), default_keywords)
+
+    def assert_keywords_user_default_list_equal(self, keywords):
+        """
+        Asserts that the user's list of default keywords exactly matches the
+        given keywords.
+        """
+        default_keywords = self.user.default_keywords.all()
+        self.assertEqual(default_keywords.count(), len(keywords))
+        for keyword in default_keywords:
+            self.assertIn(keyword.name, keywords)
 
     def test_keyword_add_default(self):
         """
@@ -426,7 +533,10 @@ class KeywordCommandModifyDefault(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response(self.default_keywords | set(keywords))
+        self.assert_in_response(
+            self.get_new_default_list_output_message(self.user.email))
+        self.assert_keywords_in_response(keywords)
+        self.assert_keywords_in_user_default_list(keywords)
 
     def test_keyword_remove_default(self):
         """
@@ -441,7 +551,10 @@ class KeywordCommandModifyDefault(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response(self.default_keywords - set(keywords))
+        self.assert_in_response(
+            self.get_new_default_list_output_message(self.user.email))
+        self.assert_keywords_not_in_response(keywords)
+        self.assert_keywords_not_in_user_default_list(keywords)
 
     def test_keyword_set_default(self):
         """
@@ -460,7 +573,10 @@ class KeywordCommandModifyDefault(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response(set(keywords))
+        self.assert_in_response(
+            self.get_new_default_list_output_message(self.user.email))
+        self.assert_keywords_in_response(keywords)
+        self.assert_keywords_user_default_list_equal(keywords)
 
     def test_keyword_email_not_given(self):
         """
@@ -474,7 +590,10 @@ class KeywordCommandModifyDefault(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response(self.default_keywords | set(keywords))
+        self.assert_in_response(
+            self.get_new_default_list_output_message(self.user.email))
+        self.assert_keywords_in_response(keywords)
+        self.assert_keywords_in_user_default_list(keywords)
 
     def test_keyword_doesnt_exist(self):
         """
@@ -484,30 +603,32 @@ class KeywordCommandModifyDefault(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response(self.default_keywords)
-        self.assert_in_response('Warning: no-exist is not a valid keyword')
+        self.assert_warning_in_response('no-exist is not a valid keyword')
+        self.assert_keywords_not_in_response(['no-exist'])
 
     def test_user_doesnt_exist(self):
         """
         Tests adding a keyword to a user's default list of subscriptions when
         the given user is not subscribed to any packages (it does not exist yet)
         """
-        all_default_keywords = set([
+        all_default_keywords = [
             keyword.name
             for keyword in Keyword.objects.filter(default=True)
-        ])
+        ]
         new_user = 'doesnt-exist@domain.com'
         keywords = [Keyword.objects.filter(default=False)[0].name]
         self.add_keyword_command('+', keywords, new_user)
 
         self.control_process()
 
+        # User created
         self.assertEqual(EmailUser.objects.filter(email=new_user).count(), 1)
-        self.assert_correct_response(all_default_keywords | set(keywords),
-                                     EmailUser.objects.get(email=new_user))
+        self.assert_in_response(
+            self.get_new_default_list_output_message(new_user))
+        self.assert_keywords_in_response(keywords + all_default_keywords)
 
 
-class KeywordCommandShowDefault(EmailControlTest):
+class KeywordCommandShowDefault(EmailControlTest, KeywordCommandHelperMixin):
     def setUp(self):
         EmailControlTest.setUp(self)
         self.user = EmailUser.objects.create(email='user@domain.com')
@@ -515,16 +636,15 @@ class KeywordCommandShowDefault(EmailControlTest):
             Keyword.objects.filter(default=False)[0])
         self.set_header('From', self.user.email)
 
-    def assert_correct_response(self, user=None):
-        if not user:
-            user = self.user
-        self.assert_response_sent()
-        self.assert_correct_response_headers()
-        self.assert_in_response(
+    def get_default_keywords_list_message(self, email):
+        """
+        Returns the message which should precede the list of all default
+        keywords in the output of the command.
+        """
+        return (
             "Here's the default list of accepted keywords for {email}:".format(
-                email=user.email))
-        self.assert_list_in_response(
-            sorted(user.default_keywords.all(), key=attrgetter('name')))
+                email=email)
+        )
 
     def test_show_default_keywords(self):
         """
@@ -534,7 +654,11 @@ class KeywordCommandShowDefault(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response()
+        self.assert_in_response(
+            self.get_default_keywords_list_message(self.user.email))
+        self.assert_keywords_in_response(
+            keyword.name for keyword in self.user.default_keywords.all()
+        )
 
     def test_show_default_keywords_email_not_given(self):
         """
@@ -545,7 +669,11 @@ class KeywordCommandShowDefault(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response()
+        self.assert_in_response(
+            self.get_default_keywords_list_message(self.user.email))
+        self.assert_keywords_in_response(
+            keyword.name for keyword in self.user.default_keywords.all()
+        )
 
     def test_show_default_keywords_email_no_subscriptions(self):
         """
@@ -553,19 +681,18 @@ class KeywordCommandShowDefault(EmailControlTest):
         users that are not subscribed to any packages.
         """
         email = 'no-exist@domain.com'
-        all_default_keywords = Keyword.objects.filter(default=True)
         self.set_input_lines(['keyword ' + email])
 
         self.control_process()
 
+        # User created first...
         self.assertEqual(EmailUser.objects.filter(email=email).count(), 1)
         user = EmailUser.objects.get(email=email)
-        self.assertEqual(user.default_keywords.count(),
-                         all_default_keywords.count())
-        self.assertSequenceEqual(
-            sorted(user.default_keywords.all(), key=lambda x: x.name),
-            sorted(all_default_keywords.all(), key=lambda x: x.name))
-        self.assert_correct_response(user=user)
+        self.assert_in_response(
+            self.get_default_keywords_list_message(user.email))
+        self.assert_keywords_in_response(
+            keyword.name for keyword in user.default_keywords.all()
+        )
 
     def test_tag_alias_for_keyword(self):
         """
@@ -575,7 +702,11 @@ class KeywordCommandShowDefault(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response()
+        self.assert_in_response(
+            self.get_default_keywords_list_message(self.user.email))
+        self.assert_keywords_in_response(
+            keyword.name for keyword in self.user.default_keywords.all()
+        )
 
     def test_tags_alias_for_keyword(self):
         """
@@ -585,7 +716,11 @@ class KeywordCommandShowDefault(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response()
+        self.assert_in_response(
+            self.get_default_keywords_list_message(self.user.email))
+        self.assert_keywords_in_response(
+            keyword.name for keyword in self.user.default_keywords.all()
+        )
 
     def test_keywords_alias_for_keyword(self):
         """
@@ -595,4 +730,8 @@ class KeywordCommandShowDefault(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response()
+        self.assert_in_response(
+            self.get_default_keywords_list_message(self.user.email))
+        self.assert_keywords_in_response(
+            keyword.name for keyword in self.user.default_keywords.all()
+        )

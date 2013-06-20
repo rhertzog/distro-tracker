@@ -66,38 +66,7 @@ class UnsubscribeFromPackageTest(EmailControlTest):
             )
         )
 
-    def assert_cc_contains_address(self, email_address):
-        """
-        Helper method which checks that the Cc header of the response contains
-        the given email address.
-        """
-        response_mail = mail.outbox[-1]
-        self.assertIn(
-            email_address, (
-                extract_email_address_from_header(email)
-                for email in response_mail.cc
-            )
-        )
-
-    def assert_correct_response_for_command(self, from_email, subscribe_email):
-        """
-        Helper method which checks that an unsubscribe command which came from
-        ``from_email`` and unsubscribed ``subscribe_email`` has successfully
-        executed.
-        """
-        self.assertTrue(len(mail.outbox) >= 1,
-                        'No response email sent when one was expected.')
-        self.assert_correct_response_headers()
-        self.assert_in_response(
-            'A confirmation mail has been sent to {email}'.format(
-                email=subscribe_email))
-        self.assert_confirmation_sent_to(subscribe_email)
-        if from_email != subscribe_email:
-            self.assert_cc_contains_address(subscribe_email)
-
-    def assert_is_not_subscribed_response(self, email):
-        self.assert_response_sent()
-        self.assert_correct_response_headers()
+    def assert_not_subscribed_error_in_response(self, email):
         self.assert_error_in_response(
             "{email} is not subscribed, you can't unsubscribe.".format(
                 email=email))
@@ -132,8 +101,10 @@ class UnsubscribeFromPackageTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response_for_command(self.user_email_address,
-                                                 self.user_email_address)
+        self.assert_in_response(
+            'A confirmation mail has been sent to {email}'.format(
+                email=self.user_email_address))
+        self.assert_confirmation_sent_to(self.user_email_address)
         # User still not actually unsubscribed
         self.assertTrue(self.user_subscribed(self.user_email_address))
         # Check that the confirmation mail contains the confirmation code
@@ -146,7 +117,6 @@ class UnsubscribeFromPackageTest(EmailControlTest):
         self.set_input_lines([match.group(0)])
         self.control_process()
 
-        self.assert_response_sent()
         self.assert_in_response(
             '{email} has been unsubscribed from {package}'.format(
                 email=self.user_email_address,
@@ -164,7 +134,7 @@ class UnsubscribeFromPackageTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_is_not_subscribed_response(self.user_email_address)
+        self.assert_not_subscribed_error_in_response(self.user_email_address)
 
     def test_unsubscribe_inactive_subscription(self):
         """
@@ -180,7 +150,7 @@ class UnsubscribeFromPackageTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_is_not_subscribed_response(self.user_email_address)
+        self.assert_not_subscribed_error_in_response(self.user_email_address)
 
     def test_unsubscribe_no_email_given(self):
         """
@@ -190,8 +160,7 @@ class UnsubscribeFromPackageTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response_for_command(self.user_email_address,
-                                                 self.user_email_address)
+        self.assert_confirmation_sent_to(self.user_email_address)
 
     def test_unsubscribe_email_different_than_from(self):
         """
@@ -203,8 +172,8 @@ class UnsubscribeFromPackageTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response_for_command(self.user_email_address,
-                                                 self.other_user)
+        self.assert_cc_contains_address(self.other_user)
+        self.assert_confirmation_sent_to(self.other_user)
 
     def test_unsubscribe_unexisting_source_package(self):
         """
@@ -217,8 +186,6 @@ class UnsubscribeFromPackageTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_correct_response_for_command(self.user_email_address,
-                                                 self.user_email_address)
         self.assert_in_response(
             'Warning: {package} is not a source package.'.format(
                 package=binary_package))
@@ -238,7 +205,6 @@ class UnsubscribeFromPackageTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_response_sent()
         self.assert_warning_in_response(
             '{package} is neither a source package '
             'nor a binary package.'.format(package=binary_package))
@@ -255,6 +221,3 @@ class UnsubscribeFromPackageTest(EmailControlTest):
 
         # Only one confirmation email required as the commands are equivalent
         self.assert_response_sent(2)
-        self.assert_correct_response_for_command(self.user_email_address,
-                                                 self.user_email_address)
-        self.assert_confirmation_sent_to(self.user_email_address)
