@@ -17,6 +17,7 @@ from email import message_from_string
 from pts.core.utils import extract_email_address_from_header
 from pts.core.utils import get_or_none
 from pts.core.utils import verp
+from pts.core.utils import get_decoded_message_payload
 
 from pts.dispatch.custom_email_message import CustomEmailMessage
 
@@ -106,9 +107,9 @@ def get_keyword(local_part, msg):
 
 def get_message_body(msg):
     """
-    Returns the message body, undecoded.
+    Returns the message body, joining together all parts into one string.
     """
-    return '\n'.join(part.as_string()
+    return '\n'.join(get_decoded_message_payload(part)
                      for part in msg.walk() if not part.is_multipart())
 
 

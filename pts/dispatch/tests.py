@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Copyright 2013 The Debian Package Tracking System Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/ptsauthors
@@ -21,7 +23,9 @@ from pts.core.models import Package, Subscription, Keyword
 from pts.core.utils import extract_email_address_from_header
 from pts.core.utils import get_or_none
 from pts.core.utils import verp
+from pts.core.utils import get_decoded_message_payload
 from pts import dispatch
+
 
 from django.conf import settings
 PTS_CONTROL_EMAIL = settings.PTS_CONTROL_EMAIL
@@ -145,6 +149,10 @@ class DispatchTestHelperMixin(object):
             self.assertTrue(bounce_address.startswith('bounces+'))
             self.assertEqual(user_address, msg.to[0])
 
+    def assert_in_sent_messages(self, text):
+        for msg in mail.outbox:
+            self.assertIn(text, get_decoded_message_payload(msg.message()))
+
     def assert_correct_response(self, keyword='default'):
         """
         Helper method checks the result of running the dispatch processor.
@@ -235,6 +243,18 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         self.run_dispatch(address)
 
         self.assert_correct_response()
+
+    def test_utf8_message_dispatch(self):
+        """
+        Tests that a message is properly dispatched if it was utf-8 encoded.
+        """
+        self.subscribe_user_to_package('user@domain.com', self.package_name)
+        self.set_message_content('üößšđžčć한글')
+        self.message.set_charset('utf-8')
+
+        self.run_dispatch()
+
+        self.assert_in_sent_messages('üößšđžčć한글')
 
 
 class DispatchKeywordTest(TestCase, DispatchTestHelperMixin):
