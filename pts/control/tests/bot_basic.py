@@ -154,6 +154,22 @@ class ControlBotBasic(EmailControlTest):
         self.assert_command_echo_in_response('help')
         self.assert_command_echo_in_response('#comment')
 
+    def test_comment_line_skip(self):
+        """
+        Tests that processing skips commented lines and that they are not
+        considered garbage.
+        """
+        MAX_ALLOWED_ERRORS = settings.PTS_MAX_ALLOWED_ERRORS_CONTROL_COMMANDS
+        self.set_input_lines(
+            [self.make_comment(command)
+             for command in ['comment'] * MAX_ALLOWED_ERRORS]
+            + ['help']
+        )
+
+        self.control_process()
+
+        self.assert_command_echo_in_response('help')
+
     def test_utf8_message(self):
         """
         Tests that the bot sends replies to utf-8 encoded messages.

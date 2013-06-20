@@ -77,6 +77,12 @@ class EmailControlTest(TestCase):
         self.multipart = False
         self.set_default_headers()
 
+    def make_comment(self, text):
+        """
+        Helper function which creates a comment from the given text.
+        """
+        return '# ' + text
+
     def assert_response_sent(self, number_of_responses=1):
         self.assertEqual(len(mail.outbox), number_of_responses)
 

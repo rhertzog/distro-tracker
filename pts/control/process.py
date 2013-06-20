@@ -87,7 +87,7 @@ def process(message):
         line = line.strip()
         out.append('>' + line)
 
-        if not line:
+        if not line or line.startswith('#'):
             continue
         command = factory.get_command_function(line)
 
