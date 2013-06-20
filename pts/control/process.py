@@ -80,7 +80,7 @@ def process(message):
     })
     # Each line is a separate command
     for line in text.splitlines():
-        line = line.strip().lower()
+        line = line.strip()
         out.append('>' + line)
 
         if not line:
@@ -90,7 +90,10 @@ def process(message):
         if not command:
             errors += 1
             if errors == MAX_ALLOWED_ERRORS:
-                out.append('{MAX_ALLOWED_ERRORS} lines contain errors: stopping.')
+                out.append(
+                    '{MAX_ALLOWED_ERRORS} lines '
+                    'contain errors: stopping.'.format(
+                        MAX_ALLOWED_ERRORS=MAX_ALLOWED_ERRORS))
                 break
         else:
             if command.get_command_text() not in processed:

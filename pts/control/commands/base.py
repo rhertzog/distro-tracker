@@ -105,7 +105,7 @@ class Command(six.with_metaclass(MetaCommand)):
         Class method to check whether the given line matches the command.
         """
         for pattern in cls.REGEX_LIST:
-            match = re.match(pattern, line)
+            match = re.match(pattern, line, re.IGNORECASE)
             if match:
                 return match
 
