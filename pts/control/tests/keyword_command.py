@@ -43,7 +43,7 @@ class KeywordCommandSubscriptionSpecificTest(EmailControlTest,
     keywords.
     """
     def setUp(self):
-        EmailControlTest.setUp(self)
+        super(KeywordCommandSubscriptionSpecificTest, self).setUp()
 
         # Setup a subscription
         self.package = Package.objects.create(name='dummy-package')
@@ -308,7 +308,7 @@ class KeywordCommandListSubscriptionSpecific(EmailControlTest,
     subscription.
     """
     def setUp(self):
-        EmailControlTest.setUp(self)
+        super(KeywordCommandListSubscriptionSpecific, self).setUp()
 
         # Setup a subscription
         self.package = Package.objects.create(name='dummy-package')
@@ -450,7 +450,7 @@ class KeywordCommandModifyDefault(EmailControlTest, KeywordCommandHelperMixin):
     keywords.
     """
     def setUp(self):
-        EmailControlTest.setUp(self)
+        super(KeywordCommandModifyDefault, self).setUp()
 
         # Setup a subscription
         self.user = EmailUser.objects.create(email='user@domain.com')
@@ -630,7 +630,7 @@ class KeywordCommandModifyDefault(EmailControlTest, KeywordCommandHelperMixin):
 
 class KeywordCommandShowDefault(EmailControlTest, KeywordCommandHelperMixin):
     def setUp(self):
-        EmailControlTest.setUp(self)
+        super(KeywordCommandShowDefault, self).setUp()
         self.user = EmailUser.objects.create(email='user@domain.com')
         self.user.default_keywords.add(
             Keyword.objects.filter(default=False)[0])

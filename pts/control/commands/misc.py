@@ -36,7 +36,7 @@ class SubscribeCommand(Command, SendConfirmationCommandMixin):
     )
 
     def __init__(self, package, email):
-        Command.__init__(self)
+        super(SubscribeCommand, self).__init__()
         self.package = package
         self.user_email = email
 
@@ -93,7 +93,7 @@ class UnsubscribeCommand(Command, SendConfirmationCommandMixin):
     )
 
     def __init__(self, package, email):
-        Command.__init__(self)
+        super(UnsubscribeCommand, self).__init__()
         self.package = package
         self.user_email = email
 
@@ -145,7 +145,7 @@ class ConfirmCommand(Command):
     )
 
     def __init__(self, confirmation_key):
-        Command.__init__(self)
+        super(ConfirmCommand, self).__init__()
         self.confirmation_key = confirmation_key
 
     def get_command_text(self):
@@ -220,7 +220,7 @@ class WhichCommand(Command):
     )
 
     def __init__(self, email):
-        Command.__init__(self)
+        super(WhichCommand, self).__init__()
         self.user_email = email
 
     def get_command_text(self):
@@ -266,7 +266,7 @@ class UnsubscribeallCommand(Command, SendConfirmationCommandMixin):
     )
 
     def __init__(self, email):
-        Command.__init__(self)
+        super(UnsubscribeallCommand, self).__init__()
         self.email = email
 
     def get_command_text(self):

@@ -26,7 +26,7 @@ class UnsubscribeallCommandTest(EmailControlTest):
     Tests for the unsubscribeall command.
     """
     def setUp(self):
-        EmailControlTest.setUp(self)
+        super(UnsubscribeallCommandTest, self).setUp()
         self.user_email_address = 'dummy-user@domain.com'
         self.set_header('From',
                         'Dummy User <{user_email}>'.format(

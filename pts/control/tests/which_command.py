@@ -21,7 +21,7 @@ class WhichCommandTest(EmailControlTest):
     Tests for the which command.
     """
     def setUp(self):
-        EmailControlTest.setUp(self)
+        super(WhichCommandTest, self).setUp()
         self.packages = [
             Package.objects.create(name='package' + str(i))
             for i in range(10)

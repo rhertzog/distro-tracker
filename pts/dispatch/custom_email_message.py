@@ -36,7 +36,7 @@ class CustomEmailMessage(EmailMessage):
         If no ``msg`` is set, the object's behaviour is identical to
         ``EmailMessage``.
         """
-        EmailMessage.__init__(self, *args, **kwargs)
+        super(CustomEmailMessage, self).__init__(*args, **kwargs)
         self.msg = msg
 
     def message(self):

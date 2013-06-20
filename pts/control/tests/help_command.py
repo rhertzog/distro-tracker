@@ -20,9 +20,6 @@ class HelpCommandTest(EmailControlTest):
     """
     Tests for the help command.
     """
-    def setUp(self):
-        EmailControlTest.setUp(self)
-
     def get_all_help_command_descriptions(self):
         """
         Helper method returning the description of all commands.

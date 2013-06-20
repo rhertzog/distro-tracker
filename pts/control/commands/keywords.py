@@ -128,7 +128,7 @@ class ViewDefaultKeywordsCommand(Command, KeywordCommandMixin):
     )
 
     def __init__(self, email):
-        Command.__init__(self)
+        super(ViewDefaultKeywordsCommand, self).__init__()
         self.email = email
 
     def handle(self):
@@ -162,7 +162,7 @@ class ViewPackageKeywordsCommand(Command, KeywordCommandMixin):
     )
 
     def __init__(self, package, email):
-        Command.__init__(self)
+        super(ViewPackageKeywordsCommand, self).__init__()
         self.package = package
         self.email = email
 
@@ -200,7 +200,7 @@ class SetDefaultKeywordsCommand(Command, KeywordCommandMixin):
     )
 
     def __init__(self, email, operation, keywords):
-        Command.__init__(self)
+        super(SetDefaultKeywordsCommand, self).__init__()
         self.email = email
         self.operation = operation
         self.keywords = keywords
@@ -242,7 +242,7 @@ class SetPackageKeywordsCommand(Command, KeywordCommandMixin):
     )
 
     def __init__(self, package, email, operation, keywords):
-        Command.__init__(self)
+        super(SetPackageKeywordsCommand, self).__init__()
         self.package = package
         self.email = email
         self.operation = operation

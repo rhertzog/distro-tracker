@@ -24,7 +24,7 @@ class UnsubscribeFromPackageTest(EmailControlTest):
     Tests for the unsubscribe from package story.
     """
     def setUp(self):
-        EmailControlTest.setUp(self)
+        super(UnsubscribeFromPackageTest, self).setUp()
         self.user_email_address = 'dummy-user@domain.com'
         self.set_header('From',
                         'Dummy User <{user_email}>'.format(

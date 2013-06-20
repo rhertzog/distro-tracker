@@ -205,7 +205,7 @@ class Subscription(models.Model):
                 self._subscription.save()
 
     def __init__(self, *args, **kwargs):
-        models.Model.__init__(self, *args, **kwargs)
+        super(Subscription, self).__init__(*args, **kwargs)
         self.keywords = Subscription.KeywordsAdapter(self)
 
     def __str__(self):
