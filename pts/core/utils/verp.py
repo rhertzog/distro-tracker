@@ -33,12 +33,8 @@ _RETURN_ADDRESS_TEMPLATE = (
 
 _CHARACTERS = ('@', ':', '%', '!', '-', '[', ']', '+')
 _ENCODE_MAPPINGS = {
-    char: '+' + hex(ord(char)).lstrip('0x').upper()
+    char: '+{val:0X}'.format(val=ord(char))
     for char in _CHARACTERS
-}
-_DECODE_MAPPINGS = {
-    encode_as: char
-    for char, encode_as in _ENCODE_MAPPINGS.items()
 }
 
 
@@ -111,8 +107,8 @@ def _decode_chars(address):
     Helper function to replace the encoded special characters with their
     regular character representation.
     """
-    for encoded_as, char in _DECODE_MAPPINGS.items():
-        address = address.replace(encoded_as, char)
+    for char in _CHARACTERS:
+        address = address.replace(_ENCODE_MAPPINGS[char], char)
     return address
 
 

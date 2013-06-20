@@ -12,9 +12,10 @@
 Tests for the PTS core module.
 """
 from __future__ import unicode_literals
-from django.test import TestCase
+from django.test import TestCase, SimpleTestCase
 from pts.core.models import Subscription, EmailUser, Package, BinaryPackage
 from pts.core.models import Keyword
+from pts.core.utils import verp
 
 
 class SubscriptionManagerTest(TestCase):
@@ -308,3 +309,57 @@ class BinaryPackageManagerTest(TestCase):
     def test_package_exists_false(self):
         self.assertFalse(
             BinaryPackage.objects.exists_with_name('unexisting'))
+
+
+class VerpModuleTest(SimpleTestCase):
+    """
+    Tests for the ``pts.core.utils.verp`` module.
+    """
+    def test_encode(self):
+        """
+        Tests for the encode method.
+        """
+        self.assertEqual(
+            verp.encode('itny-out@domain.com', 'node42!ann@old.example.com'),
+            'itny-out-node42+21ann=old.example.com@domain.com')
+
+        self.assertEqual(
+            verp.encode('itny-out@domain.com', 'tom@old.example.com'),
+            'itny-out-tom=old.example.com@domain.com')
+
+        self.assertEqual(
+            verp.encode('itny-out@domain.com', 'dave+priority@new.example.com'),
+            'itny-out-dave+2Bpriority=new.example.com@domain.com')
+
+        self.assertEqual(
+            verp.encode('bounce@dom.com', 'user+!%-:@[]+@other.com'),
+            'bounce-user+2B+21+25+2D+3A+40+5B+5D+2B=other.com@dom.com')
+
+    def test_decode(self):
+        """
+        Tests the decode method.
+        """
+        self.assertEqual(
+            verp.decode('itny-out-dave+2Bpriority=new.example.com@domain.com'),
+            ('itny-out@domain.com', 'dave+priority@new.example.com'))
+
+        self.assertEqual(
+            verp.decode('itny-out-node42+21ann=old.example.com@domain.com'),
+            ('itny-out@domain.com', 'node42!ann@old.example.com'))
+
+        self.assertEqual(
+            verp.decode('bounce-addr+2B40=dom.com@asdf.com'),
+            ('bounce@asdf.com', 'addr+40@dom.com'))
+
+        self.assertEqual(
+            verp.decode('bounce-user+2B+21+25+2D+3A+40+5B+5D+2B=other.com@dom.com'),
+            ('bounce@dom.com', 'user+!%-:@[]+@other.com'))
+
+    def test_invariant_encode_decode(self):
+        """
+        Tests that decoding an encoded address returns the original pair.
+        """
+        from_email, to_email = 'bounce@domain.com', 'user@other.com'
+        self.assertEqual(
+            verp.decode(verp.encode(from_email, to_email)),
+            (from_email, to_email))
