@@ -14,10 +14,12 @@ from pts.control.management.commands.pts_unsubscribe_all import (
     Command as UnsubscribeCommand)
 from pts.control.management.commands.pts_dump_subscribers import (
     Command as DumpCommand)
+from pts.control.management.commands.pts_stats import Command as StatsCommand
 
 from pts.core.models import Package, EmailUser, Subscription
 
 from django.utils import six
+from django.utils import timezone
 import json
 
 
@@ -185,3 +187,50 @@ class DumpSubscribersManagementCommandTest(TestCase):
         self.call_command('does-not-exist')
 
         self.assert_warning_in_output('does-not-exist does not exist')
+
+
+class StatsCommandTest(TestCase):
+    def setUp(self):
+        self.package_count = 5
+        for i in range(self.package_count):
+            Package.objects.create(name='package' + str(i))
+        self.user_count = 2
+        for i in range(self.user_count):
+            EmailUser.objects.create(email='email' + str(i) + '@domain.com')
+        # Subscribe all users to all packages
+        self.subscription_count = self.package_count * self.user_count
+        for user in EmailUser.objects.all():
+            for package in Package.objects.all():
+                Subscription.objects.create(email_user=user, package=package)
+
+    def call_command(self, *args, **kwargs):
+        if 'json' not in kwargs:
+            kwargs['json'] = False
+        cmd = StatsCommand()
+        cmd.stdout = six.StringIO()
+        cmd.handle(*args, **kwargs)
+        self.out = cmd.stdout.getvalue()
+
+    def test_legacy_output(self):
+        self.call_command()
+
+        self.assertIn('Src pkg\tSubscr.\tDate\t\tNb email', self.out)
+        expected = '\t'.join(map(str, (
+            self.package_count,
+            self.subscription_count,
+            timezone.now().strftime('%Y-%m-%d'),
+            self.user_count,
+        )))
+        self.assertIn(expected, self.out)
+
+    def test_json_output(self):
+        self.call_command(json=True)
+
+        output = json.loads(self.out)
+        expected = {
+            'package_number': self.package_count,
+            'subscription_number': self.subscription_count,
+            'date': timezone.now().strftime('%Y-%m-%d'),
+            'unique_emails_number': self.user_count,
+        }
+        self.assertDictEqual(expected, output)
