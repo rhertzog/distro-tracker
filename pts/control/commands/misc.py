@@ -237,13 +237,65 @@ class WhichCommand(Command):
         self.list_reply(sub.package for sub in user_subscriptions)
 
 
+class WhoCommand(Command):
+    META = {
+        'description': """who <package>
+  Outputs all the subscriber emails for the given package in
+  an obfuscated form.""",
+        'name': 'who',
+        'position': 5,
+    }
+
+    REGEX_LIST = (
+        r'(?:\s+(?P<package>\S+))$',
+    )
+
+    def __init__(self, package):
+        super(WhoCommand, self).__init__()
+        self.package_name = package
+
+    def handle(self):
+        package = get_or_none(Package, name=self.package_name)
+        if not package:
+            self.error('Package {package} does not exist'.format(
+                package=self.package_name))
+            return
+
+        if package.subscriptions.count() == 0:
+            self.reply(
+                'Package {package} does not have any subscribers'.format(
+                    package=package.name))
+            return
+
+        self.reply(
+            "Here's the list of subscribers to package {package}:".format(
+                package=self.package_name))
+        self.list_reply(
+            self.obfuscate(subscriber)
+            for subscriber in package.subscriptions.all()
+        )
+
+    def obfuscate(self, email_user):
+        """
+        Helper method which obfuscates the given email.
+        """
+        email = email_user.email
+        local_part, domain = email.rsplit('@', 1)
+        domain_parts = domain.split('.')
+        obfuscated_domain = '.'.join(
+            part[0] + '.' * (len(part) - 1)
+            for part in domain_parts
+        )
+        return local_part + '@' + obfuscated_domain
+
+
 class QuitCommand(Command):
     META = {
         'description': '''quit
   Stops processing commands''',
         'name': 'quit',
         'aliases': ['thanks', '--'],
-        'position': 5
+        'position': 6
     }
 
     REGEX_LIST = (
@@ -260,7 +312,7 @@ class UnsubscribeallCommand(Command, SendConfirmationCommandMixin):
   Cancel all subscriptions of <email>. Like the subscribe command,
   it will use the From address if <email> is not given.''',
         'name': 'unsubscribeall',
-        'position': 6,
+        'position': 7,
     }
 
     REGEX_LIST = (

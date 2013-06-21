@@ -15,5 +15,6 @@ from pts.control.tests.which_command import *
 from pts.control.tests.help_command import *
 from pts.control.tests.keyword_command import *
 from pts.control.tests.unsubscribeall_command import *
+from pts.control.tests.who_command import *
 
 from pts.control.tests.management_commands import *
