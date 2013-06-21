@@ -238,6 +238,17 @@ class EmailUserTest(TestCase):
         for keyword in self.email_user.default_keywords.all():
             self.assertIn(keyword, all_default_keywords)
 
+    def test_unsubscribe_all(self):
+        """
+        Tests the unsubscribe all method.
+        """
+        Subscription.objects.create(email_user=self.email_user,
+                                    package=self.package)
+
+        self.email_user.unsubscribe_all()
+
+        self.assertEqual(self.email_user.subscription_set.count(), 0)
+
 
 class EmailUserManagerTest(TestCase):
     def setUp(self):

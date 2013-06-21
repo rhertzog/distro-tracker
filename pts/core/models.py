@@ -64,6 +64,12 @@ class EmailUser(models.Model):
             for subscription in self.subscription_set.all_active()
         )
 
+    def unsubscribe_all(self):
+        """
+        Terminates all of the user's subscriptions.
+        """
+        self.subscription_set.all().delete()
+
     def save(self, *args, **kwargs):
         new_object = not self.id
         models.Model.save(self, *args, **kwargs)

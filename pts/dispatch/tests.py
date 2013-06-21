@@ -16,18 +16,25 @@ This module contains the tests for the dispatch functionality of PTS.
 from __future__ import unicode_literals
 from django.test import TestCase
 from django.core import mail
+from django.utils import timezone
 
 from email.message import Message
+from datetime import timedelta
 
-from pts.core.models import Package, Subscription, Keyword
+from pts.core.models import Package, Subscription, Keyword, EmailUser
 from pts.core.utils import verp
 from pts.core.utils import get_decoded_message_payload
 from pts import dispatch
+
+from pts.dispatch.models import UserBounceInformation
 
 
 from django.conf import settings
 PTS_CONTROL_EMAIL = settings.PTS_CONTROL_EMAIL
 PTS_FQDN = settings.PTS_FQDN
+
+import logging
+logging.disable(logging.CRITICAL)
 
 
 class DispatchTestHelperMixin(object):
@@ -253,6 +260,104 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
 
         self.assert_forward_content_equal('üößšđžčć한글')
 
+    def test_forwarded_mail_recorded(self):
+        """
+        Tests that when a mail is forwarded it is logged in the user's bounce
+        information structure.
+        """
+        self.subscribe_user_to_package('user@domain.com', self.package_name)
+        user = EmailUser.objects.get(email='user@domain.com')
+
+        self.run_dispatch()
+
+        bounce_info = user.userbounceinformation.bounceinformation_set.all()
+        self.assertEqual(bounce_info.count(), 1)
+        self.assertEqual(bounce_info[0].date, timezone.now().date())
+        self.assertEqual(bounce_info[0].mails_sent_number, 1)
+
+    def test_xloop_already_set(self):
+        """
+        Tests that the message is dropped when the X-Loop header is already
+        set.
+        """
+        self.set_header('X-Loop', 'somevalue')
+        self.set_header('X-Loop', self.package_name + '@' + PTS_FQDN)
+        self.subscribe_user_to_package('user@domain.com', self.package_name)
+
+        self.run_dispatch()
+
+        self.assertEqual(len(mail.outbox), 0)
+
+
+class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
+    """
+    Tests the proper handling of bounced emails.
+    """
+    def setUp(self):
+        super(BounceMessagesTest, self).setUp()
+        self.message = Message()
+        self.message.add_header('Subject', 'bounce')
+        Package.objects.create(name='dummy-package')
+        self.subscribe_user_to_package('user@domain.com', 'dummy-package')
+        self.user = EmailUser.objects.get(email='user@domain.com')
+
+    def create_bounce_address(self, to):
+        """
+        Helper method creating a bounce address for the given destination email
+        """
+        bounce_address = 'bounces+{date}@{pts_fqdn}'.format(
+            date=timezone.now().date().strftime('%Y%m%d'),
+            pts_fqdn=PTS_FQDN)
+        return verp.encode(bounce_address, to)
+
+    def add_sent(self, user, date):
+        """
+        Adds a sent mail record for the given user.
+        """
+        UserBounceInformation.objects.add_sent_for_user(email=user.email,
+                                                        date=date)
+
+    def add_bounce(self, user, date):
+        """
+        Adds a bounced mail record for the given user.
+        """
+        UserBounceInformation.objects.add_bounce_for_user(email=user.email,
+                                                          date=date)
+
+    def test_bounce_recorded(self):
+        """
+        Tests that a received bounce is recorded.
+        """
+        self.run_dispatch(self.create_bounce_address(self.user.email))
+
+        user = self.user
+        bounce_info = user.userbounceinformation.bounceinformation_set.all()
+
+        self.assertEqual(bounce_info.count(), 1)
+        self.assertEqual(bounce_info[0].date, timezone.now().date())
+        self.assertEqual(bounce_info[0].mails_bounced_number, 1)
+        self.assertEqual(self.user.subscription_set.count(), 1)
+
+    def test_bounce_over_limit(self):
+        """
+        Tests that all the user's subscriptions are dropped when too many
+        bounces are received.
+        """
+        # Set up some prior bounces - one each day.
+        for days in range(1, settings.PTS_MAX_DAYS_TOLERATE_BOUNCE):
+            self.add_sent(
+                self.user, timezone.now().date() - timedelta(days=days))
+            self.add_bounce(
+                self.user, timezone.now().date() - timedelta(days=days))
+        # Set up a sent mail today.
+        self.add_sent(self.user, timezone.now().date())
+
+        # Receive a bounce message.
+        self.run_dispatch(self.create_bounce_address(self.user.email))
+
+        # Assert that the user's subscriptions have been dropped.
+        self.assertEqual(self.user.subscription_set.count(), 0)
+
 
 class DispatchKeywordTest(TestCase, DispatchTestHelperMixin):
     def setUp(self):
@@ -370,6 +475,16 @@ class DispatchKeywordTest(TestCase, DispatchTestHelperMixin):
 
         self.assertEqual(len(mail.outbox), 0)
 
+    def test_default_not_trusted(self):
+        """
+        Tests that a non-trusted default message is dropped.
+        """
+        self.subscribe_user_to_package('user@domain.com', self.package_name)
+
+        self.run_dispatch()
+
+        self.assertEqual(len(mail.outbox), 0)
+
 
 from pts.dispatch.custom_email_message import CustomEmailMessage
 from email.mime.multipart import MIMEMultipart
@@ -420,3 +535,65 @@ class CustomEmailMessageTest(TestCase):
         custom_message.send()
 
         self.assertIn(attachment, mail.outbox[0].message().get_payload())
+
+
+class BounceInformationTests(TestCase):
+    """
+    Tests for the ``pts.dispatch.models`` handling users' bounce information.
+    """
+    def setUp(self):
+        self.user = EmailUser.objects.create(email='user@domain.com')
+        self.package = Package.objects.create(name='dummy-package')
+
+    def test_add_sent_message(self):
+        """
+        Tests that a new sent message record is correctly added.
+        """
+        date = timezone.now().date()
+        UserBounceInformation.objects.add_sent_for_user(
+            self.user.email, date)
+
+        user = self.user
+        bounce_info = user.userbounceinformation.bounceinformation_set.all()
+        self.assertEqual(bounce_info.count(), 1)
+        self.assertEqual(bounce_info[0].date, timezone.now().date())
+        self.assertEqual(bounce_info[0].mails_sent_number, 1)
+
+    def test_add_bounce_message(self):
+        """
+        Tests that a new bounced message record is correctly added.
+        """
+        date = timezone.now().date()
+        UserBounceInformation.objects.add_bounce_for_user(
+            self.user.email, date)
+
+        user = self.user
+        bounce_info = user.userbounceinformation.bounceinformation_set.all()
+        self.assertEqual(bounce_info.count(), 1)
+        self.assertEqual(bounce_info[0].date, timezone.now().date())
+        self.assertEqual(bounce_info[0].mails_bounced_number, 1)
+
+    def test_number_of_records_limited(self):
+        """
+        Tests that only as many records as the number of tolerated bounce days
+        are kept.
+        """
+        days = settings.PTS_MAX_DAYS_TOLERATE_BOUNCE
+        dates = [
+            timezone.now().date() + timedelta(days=delta)
+            for delta in range(1, days + 5)
+        ]
+        
+        for date in dates:
+            UserBounceInformation.objects.add_bounce_for_user(
+                self.user.email, date)
+
+        user = self.user
+        bounce_info = user.userbounceinformation.bounceinformation_set.all()
+        # Limited number
+        self.assertEqual(bounce_info.count(),
+                         settings.PTS_MAX_DAYS_TOLERATE_BOUNCE)
+        # Only the most recent dates are kept.
+        bounce_info_dates = [info.date for info in bounce_info]
+        for date in dates[-days:]:
+            self.assertIn(date, bounce_info_dates)

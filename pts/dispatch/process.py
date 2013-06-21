@@ -13,6 +13,7 @@ from django.core.mail import get_connection
 from django.utils import timezone
 
 from email import message_from_string
+from datetime import datetime
 
 from pts.core.utils import extract_email_address_from_header
 from pts.core.utils import get_or_none
@@ -20,6 +21,7 @@ from pts.core.utils import verp
 from pts.core.utils import get_decoded_message_payload
 
 from pts.dispatch.custom_email_message import CustomEmailMessage
+from pts.dispatch.models import UserBounceInformation
 
 from pts.core.models import Package
 from django.conf import settings
@@ -42,6 +44,10 @@ def process(message, sent_to_address=None):
         # No MTA was recognized, the last resort is to try and use the message
         # To header.
         sent_to_address = extract_email_address_from_header(msg['To'])
+
+    if sent_to_address.startswith('bounces+'):
+        return handle_bounces(sent_to_address)
+
     local_part = sent_to_address.split('@')[0]
 
     # Extract package name
@@ -122,9 +128,9 @@ def get_package_name(local_part):
     return package_name
 
 
-def prepare_message(received_message, to_email):
+def prepare_message(received_message, to_email, date):
     bounce_address = 'bounces+{date}@{pts_fqdn}'.format(
-        date=timezone.now().strftime('%Y%m%d'),
+        date=date.strftime('%Y%m%d'),
         pts_fqdn=PTS_FQDN)
     message = CustomEmailMessage(
         msg=received_message,
@@ -157,10 +163,41 @@ def send_to_subscribers(received_message, package_name, keyword):
     if not package:
         return
     # Build a list of all messages to be sent
+    date = timezone.now().date()
     messages_to_send = [
-        prepare_message(received_message, subscription.email_user.email)
+        prepare_message(received_message, subscription.email_user.email, date)
         for subscription in package.subscription_set.all_active(keyword)
     ]
     # Send all messages over a single SMTP connection
     connection = get_connection()
     connection.send_messages(messages_to_send)
+
+    for message in messages_to_send:
+        UserBounceInformation.objects.add_sent_for_user(email=message.to[0],
+                                                        date=date)
+
+
+def handle_bounces(sent_to_address):
+    """
+    Handles a received bounce message.
+    """
+    bounce_email, user_email = verp.decode(sent_to_address)
+    match = re.match(r'^bounces\+(\d{8})@' + PTS_FQDN, bounce_email)
+    if not match:
+        # Invalid bounce address
+        logger.error('Invalid bounce address ' + bounce_email)
+        return
+    try:
+        date = datetime.strptime(match.group(1), '%Y%m%d')
+    except ValueError:
+        # Invalid bounce address
+        logger.error('Invalid bounce address ' + bounce_email)
+        return
+    UserBounceInformation.objects.add_bounce_for_user(email=user_email,
+                                                      date=date)
+
+    logger.info('Logged bounce for {email} on {date}'.format(email=user_email,
+                                                             date=date))
+    info = UserBounceInformation.objects.get(email_user__email=user_email)
+    if info.has_too_many_bounces():
+        info.email_user.unsubscribe_all()
