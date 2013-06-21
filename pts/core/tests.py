@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Copyright 2013 The Debian Package Tracking System Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/ptsauthors
@@ -13,9 +15,13 @@ Tests for the PTS core module.
 """
 from __future__ import unicode_literals
 from django.test import TestCase, SimpleTestCase
+from django.test.utils import override_settings
+from django.utils import six
 from pts.core.models import Subscription, EmailUser, Package, BinaryPackage
 from pts.core.models import Keyword
 from pts.core.utils import verp
+from pts.core.utils import message_from_bytes
+from pts.dispatch.custom_email_message import CustomEmailMessage
 
 
 class SubscriptionManagerTest(TestCase):
@@ -374,3 +380,81 @@ class VerpModuleTest(SimpleTestCase):
         self.assertEqual(
             verp.decode(verp.encode(from_email, to_email)),
             (from_email, to_email))
+
+
+@override_settings(EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend')
+class CustomMessageFromBytesTest(TestCase):
+    """
+    Tests the ``pts.core.utils.message_from_bytes`` function.
+    """
+    def setUp(self):
+        self.message_bytes = b"""MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+
+"""
+        self.body = "üßščć한글ᥡ╥ສए"
+        self.message_bytes = self.message_bytes + self.body.encode('utf-8')
+
+    def get_mock_connection(self):
+        """
+        Helper method returning a mock SMTP connection object.
+        """
+        if six.PY3:
+            from unittest.mock import create_autospec
+        else:
+            from mock import create_autospec
+        import smtplib
+        return create_autospec(smtplib.SMTP('localhost'), return_value={})
+
+    def test_as_string_returns_bytes(self):
+        """
+        Tests that the as_string message returns bytes.
+        """
+        message = message_from_bytes(self.message_bytes)
+
+        self.assertEqual(self.message_bytes, message.as_string())
+        self.assertTrue(isinstance(message.as_string(), six.binary_type))
+
+    def test_get_payload_decode_idempotent(self):
+        """
+        Tests that the get_payload method returns bytes which can be decoded
+        using the message's encoding and that they are identical to the
+        ones given to the function in the first place.
+        """
+        message = message_from_bytes(self.message_bytes)
+
+        self.assertEqual(self.body,
+                         message.get_payload(decode=True).decode('utf-8'))
+
+    def test_integrate_with_django(self):
+        """
+        Tests that the message obtained by the message_from_bytes function can
+        be sent out using the Django email API.
+
+        In the same time, this test makes sure that Django keeps using
+        the as_string method as expected.
+        """
+        from django.core.mail import get_connection
+        backend = get_connection()
+        backend.open()
+        # Replace the backend's SMTP connection with a mock.
+        mock_connection = self.get_mock_connection()
+        backend.connection.quit()
+        backend.connection = mock_connection
+        # Send the message over the backend
+        message = message_from_bytes(self.message_bytes)
+        custom_message = CustomEmailMessage(
+            msg=message,
+            from_email='from@domain.com',
+            to=['to@domain.com'])
+
+        backend.send_messages([custom_message])
+        backend.close()
+
+        # The backend sent the mail over SMTP & it is not corrupted
+        mock_connection.sendmail.assert_called_with(
+            'from@domain.com',
+            ['to@domain.com'],
+            message.as_string())

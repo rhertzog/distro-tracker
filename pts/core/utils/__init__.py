@@ -15,6 +15,7 @@ from django.contrib.sites.models import Site
 
 from .email_messages import extract_email_address_from_header
 from .email_messages import get_decoded_message_payload
+from .email_messages import message_from_bytes
 
 
 def get_or_none(model, **kwargs):
