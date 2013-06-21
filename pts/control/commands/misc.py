@@ -199,7 +199,7 @@ class ConfirmCommand(Command):
             subscription.package.name
             for subscription in user.subscription_set.all()
         ]
-        user.subscription_set.all().delete()
+        user.unsubscribe_all()
         self.reply('All your subscriptions have been terminated:')
         self.list_reply(
             '{email} has been unsubscribed from {package}@{fqdn}'.format(
