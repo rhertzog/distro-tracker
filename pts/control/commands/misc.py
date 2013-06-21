@@ -72,13 +72,11 @@ class SubscribeCommand(Command, SendConfirmationCommandMixin):
                     'nor a binary package.'.format(package=self.package))
                 return
 
-        success = self.send_confirmation_mail(
+        self.send_confirmation_mail(
             user_email=self.user_email,
             template='control/email-subscription-confirmation.txt',
             context={'package': self.package})
-        if not success:
-            self.error(
-                'Unable to generate a subscription key. Please try again.')
+
         self.reply('A confirmation mail has been sent to ' + self.user_email)
 
 
@@ -127,13 +125,11 @@ class UnsubscribeCommand(Command, SendConfirmationCommandMixin):
             )
             return
 
-        success = self.send_confirmation_mail(
+        self.send_confirmation_mail(
             user_email=self.user_email,
             template='control/email-unsubscribe-confirmation.txt',
             context={'package': self.package})
-        if not success:
-            self.error(
-                'Unable to generate a subscription key. Please try again.')
+
         self.reply('A confirmation mail has been sent to ' + self.user_email)
 
 
@@ -285,12 +281,10 @@ class UnsubscribeallCommand(Command, SendConfirmationCommandMixin):
                 email=self.email))
             return
 
-        success = self.send_confirmation_mail(
+        self.send_confirmation_mail(
             user_email=self.email,
             template='control/email-unsubscribeall-confirmation.txt',
             context={})
-        if not success:
-            self.error(
-                'Unable to generate a subscription key. Please try again.')
+
         self.reply('A confirmation mail has been sent to {email}'.format(
             email=self.email))

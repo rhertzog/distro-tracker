@@ -22,6 +22,14 @@ import random
 PTS_CONFIRMATION_EXPIRATION_DAYS = settings.PTS_CONFIRMATION_EXPIRATION_DAYS
 
 
+class CommandConfirmationException(Exception):
+    """
+    An exception which is raised when the CommandConfirmationManager is unable
+    to generate a unique key for the given command.
+    """
+    pass
+
+
 class CommandConfirmationManager(models.Manager):
     def generate_key(self, command):
         """
@@ -35,23 +43,25 @@ class CommandConfirmationManager(models.Manager):
         return hashlib.sha1(hash_input).hexdigest()
 
     def create_for_command(self, command):
-        created = False
-        MAX_TRIES = 3
+        """
+        Creates a CommandConfirmation object for the given command.
+
+        If it is unable to generate a unique key, a
+        ``CommandConfirmationException`` is raised.
+        """
+        MAX_TRIES = 10
         errors = 0
-        while not created and errors < MAX_TRIES:
+        while errors < MAX_TRIES:
             confirmation_key = self.generate_key(command)
             try:
-                confirmation = self.create(
+                return self.create(
                     command=command, confirmation_key=confirmation_key)
             except IntegrityError:
                 errors += 1
-            else:
-                created = True
 
-        if not created:
-            return None
-        else:
-            return confirmation
+        raise CommandConfirmationException(
+            'Unable to generate a confirmation key for {command}'.format(
+                command=command))
 
     def clean_up_expired(self):
         """

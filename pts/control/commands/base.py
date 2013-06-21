@@ -164,8 +164,6 @@ class SendConfirmationCommandMixin(object):
         command_confirmation = CommandConfirmation.objects.create_for_command(
             command=self.get_command_text()
         )
-        if not command_confirmation:
-            return False
         context.update({
             'command_confirmation': command_confirmation,
         })
@@ -177,4 +175,3 @@ class SendConfirmationCommandMixin(object):
             message=message,
             recipient_list=[user_email]
         )
-        return True
