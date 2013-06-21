@@ -357,6 +357,9 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
 
         # Assert that the user's subscriptions have been dropped.
         self.assertEqual(self.user.subscription_set.count(), 0)
+        # A notification was sent to the user.
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn(self.user.email, mail.outbox[0].to)
 
 
 class DispatchKeywordTest(TestCase, DispatchTestHelperMixin):
@@ -583,7 +586,7 @@ class BounceInformationTests(TestCase):
             timezone.now().date() + timedelta(days=delta)
             for delta in range(1, days + 5)
         ]
-        
+
         for date in dates:
             UserBounceInformation.objects.add_bounce_for_user(
                 self.user.email, date)

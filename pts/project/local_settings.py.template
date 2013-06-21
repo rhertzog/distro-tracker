@@ -24,3 +24,4 @@ import socket
 PTS_FQDN = socket.getfqdn()
 PTS_CONTROL_EMAIL = 'control@' + PTS_FQDN
 PTS_OWNER_EMAIL = 'owner@' + PTS_FQDN
+PTS_BOUNCE_NO_REPLY_EMAIL = 'bounces-likely-spam@' + PTS_FQDN
