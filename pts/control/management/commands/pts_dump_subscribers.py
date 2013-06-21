@@ -13,6 +13,8 @@ from __future__ import print_function
 from django.core.management.base import BaseCommand
 from optparse import make_option
 
+import json
+
 from pts.core.models import Package
 from pts.core.utils import get_or_none
 
@@ -31,6 +33,11 @@ class Command(BaseCommand):
                     dest='inactive',
                     default=False,
                     help='Show inactive (non-confirmed) subscriptions'),
+        make_option('--json',
+                    action='store_true',
+                    dest='json',
+                    default=False,
+                    help='Output the result encoded as a JSON object'),
     )
 
     help = ("Get the subscribers for the given packages.\n"
@@ -38,16 +45,42 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         inactive = kwargs['inactive']
+        self.out_packages = {}
         if len(args) == 0:
-            self._output(
-                ((package.name, package) for package in Package.objects.all()),
-                inactive)
+            for package in Package.objects.all():
+                self.output_package(package, inactive)
         else:
-            self._output(
-                ((package_name, get_or_none(Package, name=package_name))
-                 for package_name in args),
-                inactive
-            )
+            for package_name in args:
+                package = get_or_none(Package, name=package_name)
+                if package:
+                    self.output_package(package, inactive)
+                else:
+                    self.stdout.write(
+                        "Warning: {package} does not exist.".format(
+                            package=str(package_name)))
+
+        return self.render_packages(use_json=kwargs['json'])
+
+    def output_package(self, package, inactive=False):
+        """
+        Includes the subscribers of the given package in the output.
+        """
+        subscriptions = package.subscription_set.filter(active=not inactive)
+        self.out_packages[package.name] = [
+            str(sub.email_user)
+            for sub in subscriptions
+        ]
+
+    def render_packages(self, use_json=False):
+        """
+        Prints the packages and their subscribers to the output stream.
+        """
+        if use_json:
+            self.stdout.write(json.dumps(self.out_packages))
+        else:
+            for package, subscribers in self.out_packages.items():
+                subscriber_out = ' '.join(str(email) for email in subscribers)
+                self.stdout.write(package + ' => [ ' + subscriber_out + ' ]')
 
     def _output(self, packages, inactive=False):
         """
