@@ -12,6 +12,7 @@ from __future__ import unicode_literals
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+from django.db.utils import IntegrityError
 from django.utils.encoding import python_2_unicode_compatible
 
 import hashlib
@@ -22,17 +23,35 @@ PTS_CONFIRMATION_EXPIRATION_DAYS = settings.PTS_CONFIRMATION_EXPIRATION_DAYS
 
 
 class CommandConfirmationManager(models.Manager):
-    def create_for_command(self, command):
+    def generate_key(self, command):
+        """
+        Generates a random key for the given command.
+        """
         chars = string.ascii_letters + string.digits
         random_string = ''.join(random.choice(chars) for _ in range(16))
         random_string = random_string.encode('ascii')
         salt = hashlib.sha1(random_string).hexdigest()
         hash_input = (salt + command).encode('ascii')
-        confirmation_key = hashlib.sha1(hash_input).hexdigest()
+        return hashlib.sha1(hash_input).hexdigest()
 
-        return self.create(
-            command=command,
-            confirmation_key=confirmation_key)
+    def create_for_command(self, command):
+        created = False
+        MAX_TRIES = 3
+        errors = 0
+        while not created and errors < MAX_TRIES:
+            confirmation_key = self.generate_key(command)
+            try:
+                confirmation = self.create(
+                    command=command, confirmation_key=confirmation_key)
+            except IntegrityError:
+                errors += 1
+            else:
+                created = True
+
+        if not created:
+            return None
+        else:
+            return confirmation
 
     def clean_up_expired(self):
         """
@@ -50,7 +69,7 @@ class CommandConfirmationManager(models.Manager):
 @python_2_unicode_compatible
 class CommandConfirmation(models.Model):
     command = models.CharField(max_length=120)
-    confirmation_key = models.CharField(max_length=40)
+    confirmation_key = models.CharField(max_length=40, unique=True)
     date_created = models.DateTimeField(auto_now_add=True)
 
     objects = CommandConfirmationManager()
