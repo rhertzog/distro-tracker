@@ -1,6 +1,6 @@
 Hello,
 
-you asked to be subscribed to the "mailing list"[1] for the Debian
+you asked to be subscribed to the "mailing list"[1] for the {{ PTS_DERIVATIVE_NAME }}
 source package called {{ package }}. To complete this process, you
 have to reply to this mail by including this command :
 CONFIRM {{ command_confirmation.confirmation_key }}
@@ -11,11 +11,11 @@ If you don't understand why you got this mail, please ignore it,
 you won't be subscribed to anything unless you confirm it.
 
 If you have any problem with this service, please contact
-owner@packages.qa.debian.org.
+{{ PTS_OWNER_EMAIL }}.
 
 Thanks,
 
 [1] This list receives all the bug reports (and the corresponding logs)
-    for the package {{ package }} that are sent to the Debian
+    for the package {{ package }} that are sent to the {{ PTS_DERIVATIVE_NAME }}
     Bug Tracking System.
-    http://packages.qa.debian.org/{{ package }}
+    http://{{ PTS_SITE_DOMAIN }}{% url 'pts-package-page' package %}

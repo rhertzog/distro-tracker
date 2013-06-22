@@ -17,7 +17,6 @@ from __future__ import unicode_literals
 from django.test import TestCase
 from django.core import mail
 from django.utils import timezone
-from django.template.loader import render_to_string
 
 from email.message import Message
 from datetime import timedelta
@@ -25,6 +24,7 @@ from datetime import timedelta
 from pts.core.models import Package, Subscription, Keyword
 from pts.core.utils import verp
 from pts.core.utils import get_decoded_message_payload
+from pts.core.utils import render_template_to_string
 from pts import dispatch
 
 from pts.dispatch.models import EmailUserBounceStats
@@ -368,7 +368,7 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn(self.user.email, mail.outbox[0].to)
         # Check that the content of the email is correct.
-        self.assertEqual(mail.outbox[0].body, render_to_string(
+        self.assertEqual(mail.outbox[0].body, render_template_to_string(
             'dispatch/unsubscribed-due-to-bounces-email.txt', {
                 'email': self.user.email,
                 'packages': packages_subscribed_to

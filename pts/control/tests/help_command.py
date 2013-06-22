@@ -10,8 +10,8 @@
 
 from __future__ import unicode_literals
 
-from django.template.loader import render_to_string
 
+from pts.core.utils import render_template_to_string
 from pts.control.tests.common import EmailControlTest
 from pts.control.commands import UNIQUE_COMMANDS
 
@@ -35,6 +35,6 @@ class HelpCommandTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_in_response(render_to_string('control/help.txt', {
+        self.assert_in_response(render_template_to_string('control/help.txt', {
             'descriptions': self.get_all_help_command_descriptions()
         }))

@@ -1,4 +1,4 @@
-Debian Package Tracking System
+{{ PTS_DERIVATIVE_NAME }} Package Tracking System
 ------------------------------
 
 The Package Tracking System (PTS) has the following commands:

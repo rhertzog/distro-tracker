@@ -15,6 +15,7 @@ DATABASES = {
     }
 }
 
+PTS_DERIVATIVE_NAME = "Debian"
 """The number of days to tolerate bounced messages for subscribers."""
 PTS_MAX_DAYS_TOLERATE_BOUNCE = 4
 PTS_MAX_ALLOWED_ERRORS_CONTROL_COMMANDS = 5

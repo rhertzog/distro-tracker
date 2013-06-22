@@ -13,9 +13,12 @@ Defines and implements all Package Tracking System control commands.
 """
 from __future__ import unicode_literals
 
+from django.conf import settings
+
 import sys
 import inspect
 
+from pts.core.utils import render_template_to_string
 from pts.control.commands.base import *
 from pts.control.commands.keywords import *
 from pts.control.commands.misc import *
@@ -37,11 +40,11 @@ class HelpCommand(Command):
     )
 
     def handle(self):
-        self.reply(render_to_string('control/help.txt', {
+        self.reply(render_template_to_string('control/help.txt', {
             'descriptions': [
                 command.META.get('description', '')
                 for command in UNIQUE_COMMANDS
-            ]
+            ],
         }))
 
 

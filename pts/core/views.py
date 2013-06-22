@@ -8,4 +8,6 @@
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
 
-# Create your views here.
+
+def package_page(request, package_name):
+    pass

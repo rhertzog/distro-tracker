@@ -12,13 +12,13 @@ from __future__ import unicode_literals
 from django.core.mail import get_connection
 from django.utils import timezone
 from django.core.mail import EmailMessage
-from django.template.loader import render_to_string
 
 from email import message_from_string
 from datetime import datetime
 
 from pts.core.utils import extract_email_address_from_header
 from pts.core.utils import get_or_none
+from pts.core.utils import render_template_to_string
 from pts.core.utils import verp
 from pts.core.utils import get_decoded_message_payload
 
@@ -204,7 +204,7 @@ def handle_bounces(sent_to_address):
     if user.has_too_many_bounces():
         logger.info("{email} has too many bounces".format(email=user_email))
 
-        email_body = render_to_string(
+        email_body = render_template_to_string(
             'dispatch/unsubscribed-due-to-bounces-email.txt', {
                 'email': user_email,
                 'packages': user.package_set.all()

@@ -9,6 +9,9 @@
 # distributed except according to the terms contained in the LICENSE file.
 
 from __future__ import unicode_literals
+from django.conf import settings
+from django.template.loader import render_to_string
+from django.contrib.sites.models import Site
 
 
 def get_or_none(model, **kwargs):
@@ -62,3 +65,25 @@ def get_decoded_message_payload(message, default_charset='ascii'):
         decoded_payload = payload.decode('raw-unicode-escape')
 
     return decoded_payload
+
+
+def render_template_to_string(template_name, context=None):
+    """
+    A custom function to render a template to a string which injects extra
+    PTS-specific information to the context, such as the name of the derivative.
+
+    This function is necessary since Django's TEMPLATE_CONTEXT_PROCESSORS only
+    work when using a RequestContext, wheras this function can be called
+    independently from any HTTP request.
+    """
+    if context is None:
+        context = {}
+    extra_context = {
+        'PTS_DERIVATIVE_NAME': settings.PTS_DERIVATIVE_NAME,
+        'PTS_OWNER_EMAIL': settings.PTS_OWNER_EMAIL,
+        'PTS_CONTROL_EMAIL': settings.PTS_CONTROL_EMAIL,
+        'PTS_SITE_DOMAIN': Site.objects.get_current(),
+    }
+    context.update(extra_context)
+
+    return render_to_string(template_name, context)
