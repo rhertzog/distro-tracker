@@ -41,21 +41,20 @@ class UnsubscribeAllManagementCommand(TestCase):
         cmd.handle(*args, **kwargs)
         self.out = cmd.stdout.getvalue()
 
-    def assert_unsubscribed_user(self):
+    def assert_unsubscribed_user_response(self):
         for package in self.packages:
             self.assertIn(
                 'Unsubscribing {email} from {package}'.format(
                     email=self.user.email, package=package.name),
                 self.out)
-        self.assertEqual(self.user.subscription_set.count(), 0)
 
-    def assert_no_subscriptions(self):
+    def assert_no_subscriptions_response(self):
         self.assertIn(
             'Email {email} is not subscribed to any packages.'.format(
                 email=self.nosub_user),
             self.out)
 
-    def assert_user_doesnt_exist(self, user):
+    def assert_user_does_not_exist_response(self, user):
         self.assertIn(
             'Email {email} is not subscribed to any packages. '
             'Bad email?'.format(
@@ -69,7 +68,8 @@ class UnsubscribeAllManagementCommand(TestCase):
         """
         self.call_command(self.user.email)
 
-        self.assert_unsubscribed_user()
+        self.assert_unsubscribed_user_response()
+        self.assertEqual(self.user.subscription_set.count(), 0)
 
     def test_unsubscribe_doesnt_exist(self):
         """
@@ -78,7 +78,7 @@ class UnsubscribeAllManagementCommand(TestCase):
         """
         self.call_command('no-exist')
 
-        self.assert_user_doesnt_exist('no-exist')
+        self.assert_user_does_not_exist_response('no-exist')
 
     def test_unsubscribe_no_subscriptions(self):
         """
@@ -87,7 +87,7 @@ class UnsubscribeAllManagementCommand(TestCase):
         """
         self.call_command(self.nosub_user)
 
-        self.assert_no_subscriptions()
+        self.assert_no_subscriptions_response()
 
     def test_unsubscribe_multiple_user(self):
         """
@@ -97,9 +97,10 @@ class UnsubscribeAllManagementCommand(TestCase):
         args = ['no-exist', self.nosub_user.email, self.user.email]
         self.call_command(*args)
 
-        self.assert_unsubscribed_user()
-        self.assert_user_doesnt_exist('no-exist')
-        self.assert_no_subscriptions()
+        self.assert_unsubscribed_user_response()
+        self.assertEqual(self.user.subscription_set.count(), 0)
+        self.assert_user_does_not_exist_response('no-exist')
+        self.assert_no_subscriptions_response()
 
 
 class DumpSubscribersManagementCommandTest(TestCase):
@@ -124,10 +125,8 @@ class DumpSubscribersManagementCommandTest(TestCase):
                       self.out)
 
     def call_command(self, *args, **kwargs):
-        if 'inactive' not in kwargs:
-            kwargs['inactive'] = False
-        if 'json' not in kwargs:
-            kwargs['json'] = False
+        kwargs.setdefault('inactive', False)
+        kwargs.setdefault('json', False)
         cmd = DumpCommand()
         cmd.stdout = six.StringIO()
         cmd.handle(*args, **kwargs)
@@ -154,6 +153,27 @@ class DumpSubscribersManagementCommandTest(TestCase):
         for package in self.packages:
             self.assert_package_in_output(package)
         self.assert_user_list_in_output(self.users)
+
+    def test_dump_only_active(self):
+        """
+        Tests that only users with an active subscriptions are returned by
+        default.
+        """
+        # All users have an active subscription to the first package
+        for user in self.users:
+            Subscription.objects.create(email_user=user, package=self.packages[0])
+        # The first user has an active subscription to the second package
+        Subscription.objects.create(email_user=self.users[0],
+                                    package=self.packages[1])
+        # Whereas the second user has an inactive subscription.
+        Subscription.objects.create(email_user=self.users[1],
+                                    package=self.packages[1],
+                                    active=False)
+
+        self.call_command()
+
+        self.assert_user_list_in_output(self.users)
+        self.assert_user_list_in_output([self.users[0]])
 
     def test_dump_inactive(self):
         user = self.users[0]
@@ -204,8 +224,7 @@ class StatsCommandTest(TestCase):
                 Subscription.objects.create(email_user=user, package=package)
 
     def call_command(self, *args, **kwargs):
-        if 'json' not in kwargs:
-            kwargs['json'] = False
+        kwargs.setdefault('json', False)
         cmd = StatsCommand()
         cmd.stdout = six.StringIO()
         cmd.handle(*args, **kwargs)
