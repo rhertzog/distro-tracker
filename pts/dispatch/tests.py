@@ -64,6 +64,16 @@ class DispatchTestHelperMixin(object):
     def run_dispatch(self, sent_to_address=None):
         dispatch.process(self.message.as_string(), sent_to_address)
 
+    def subscribe_user_with_keyword(self, email, keyword):
+        """
+        Creates a user subscribed to the package with the given keyword.
+        """
+        subscription = Subscription.objects.create_for(
+            email=email,
+            package_name=self.package.name
+        )
+        subscription.keywords.add(Keyword.objects.get(name=keyword))
+
     def subscribe_user_to_package(self, user_email, package, active=True):
         """
         Helper method which subscribes the given user to the given package.
@@ -72,6 +82,14 @@ class DispatchTestHelperMixin(object):
             package_name=package,
             email=user_email,
             active=active)
+
+    def make_address_with_keyword(self, package, keyword):
+        """
+        Returns the address for the package which corresponds to the given
+        keyword.
+        """
+        return '{package}_{keyword}@{pts_fqdn}'.format(
+            package=package, keyword=keyword, pts_fqdn=PTS_FQDN)
 
     def assert_message_forwarded_to(self, email):
         """
@@ -95,6 +113,7 @@ class DispatchTestHelperMixin(object):
         for msg in mail.outbox:
             msg = msg.message()
             for header_name, header_value in headers:
+                self.assertIn(header_name, msg)
                 self.assertIn(
                     header_value, msg.get_all(header_name),
                     '{header_name}: {header_value} not found in {all}'.format(
@@ -186,9 +205,7 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
                 package=self.package_name,
                 pts_fqdn=PTS_FQDN)),
             ('X-PTS-Package', self.package_name),
-            ('X-Debian-Package', self.package_name),
             ('X-PTS-Keyword', 'default'),
-            ('X-Debian', 'PTS'),
             ('Precedence', 'list'),
             ('List-Unsubscribe',
                 '<mailto:{control_email}?body=unsubscribe%20{package}>'.format(
@@ -286,6 +303,27 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         self.subscribe_user_to_package('user@domain.com', self.package_name)
 
         self.run_dispatch()
+
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_dispatch_keyword_in_address(self):
+        """
+        Tests the dispatch functionality when the keyword of the message is
+        given in the address the message was sent to (srcpackage_keyword)
+        """
+        self.subscribe_user_with_keyword('user@domain.com', 'vcs')
+        address = self.make_address_with_keyword(self.package_name, 'vcs')
+
+        self.run_dispatch(address)
+
+        self.assert_message_forwarded_to('user@domain.com')
+        self.assert_header_equal('X-PTS-Keyword', 'vcs')
+
+    def test_unknown_keyword(self):
+        self.subscribe_user_to_package('user@domain.com', self.package_name)
+        address = self.make_address_with_keyword(self.package_name, 'unknown')
+
+        self.run_dispatch(address)
 
         self.assertEqual(len(mail.outbox), 0)
 
@@ -418,133 +456,6 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
 
         # Assert that the user's subscriptions have not been dropped.
         self.assertEqual(self.user.subscription_set.count(), subscription_count)
-
-
-class DispatchKeywordTest(TestCase, DispatchTestHelperMixin):
-    def setUp(self):
-        self.clear_message()
-        self.from_email = 'dummy-email@domain.com'
-        self.set_package_name('dummy-package')
-        self.add_header('From', 'Real Name <{from_email}>'.format(
-            from_email=self.from_email))
-        self.add_header('Subject', 'Some subject')
-        self.set_message_content('message content')
-
-        self.package = Package.objects.create(name=self.package_name)
-
-    def make_address_with_keyword(self, package, keyword):
-        """
-        Returns the address for the package which corresponds to the given
-        keyword.
-        """
-        return '{package}_{keyword}@{pts_fqdn}'.format(
-            package=package, keyword=keyword, pts_fqdn=PTS_FQDN)
-
-    def subscribe_user_with_keyword(self, email, keyword):
-        """
-        Creates a user subscribed to the package with the given keyword.
-        """
-        subscription = Subscription.objects.create_for(
-            email=email,
-            package_name=self.package.name
-        )
-        subscription.keywords.add(Keyword.objects.get(name=keyword))
-
-    def test_dispatch_keyword_in_address(self):
-        """
-        Tests the dispatch functionality when the keyword of the message is
-        given in the address the message was sent to (srcpackage_keyword)
-        """
-        self.subscribe_user_with_keyword('user@domain.com', 'vcs')
-        address = self.make_address_with_keyword(self.package_name, 'vcs')
-
-        self.run_dispatch(address)
-
-        self.assert_message_forwarded_to('user@domain.com')
-        self.assert_header_equal('X-PTS-Keyword', 'vcs')
-
-    def test_dispatch_bts_control(self):
-        """
-        Tests that the dispatch properly tags a message as bts-control
-        """
-        self.set_header('X-Debian-PR-Message', 'transcript of something')
-        self.set_header('X-Loop', 'owner@bugs.debian.org')
-        self.subscribe_user_with_keyword('user@domain.com', 'bts-control')
-
-        self.run_dispatch()
-
-        self.assert_message_forwarded_to('user@domain.com')
-        self.assert_header_equal('X-PTS-Keyword', 'bts-control')
-
-    def test_dispatch_bts(self):
-        """
-        Tests that the dispatch properly tags a message as bts
-        """
-        self.set_header('X-Debian-PR-Message', '1')
-        self.set_header('X-Loop', 'owner@bugs.debian.org')
-        self.subscribe_user_with_keyword('user@domain.com', 'bts')
-
-        self.run_dispatch()
-
-        self.assert_message_forwarded_to('user@domain.com')
-        self.assert_header_equal('X-PTS-Keyword', 'bts')
-
-    def test_dispatch_upload_source(self):
-        self.set_header('Subject', 'Accepted 0.1 in unstable')
-        self.set_header('X-DAK', 'DAK')
-        self.add_header('From', 'Real Name <{from_email}>'.format(
-            from_email=self.from_email))
-        self.set_message_content('Files\nchecksum lib.dsc\ncheck lib2.dsc')
-        self.subscribe_user_with_keyword('user@domain.com', 'upload-source')
-
-        self.run_dispatch()
-
-        self.assert_message_forwarded_to('user@domain.com')
-        self.assert_header_equal('X-PTS-Keyword', 'upload-source')
-
-    def test_dispatch_upload_binary(self):
-        self.set_header('Subject', 'Accepted 0.1 in unstable')
-        self.set_header('X-DAK', 'DAK')
-        self.add_header('From', 'Real Name <{from_email}>'.format(
-            from_email=self.from_email))
-        self.set_message_content('afgdfgdrterfg')
-        self.subscribe_user_with_keyword('user@domain.com', 'upload-binary')
-
-        self.run_dispatch()
-
-        self.assert_message_forwarded_to('user@domain.com')
-        self.assert_header_equal('X-PTS-Keyword', 'upload-binary')
-
-    def test_dispatch_katie_other(self):
-        self.set_header('Subject', 'Comments regarding some changes')
-        self.set_header('X-DAK', 'DAK')
-        self.add_header('From', 'Real Name <{from_email}>'.format(
-            from_email=self.from_email))
-        self.set_message_content('afgdfgdrterfg')
-        self.subscribe_user_with_keyword('user@domain.com', 'archive')
-
-        self.run_dispatch()
-
-        self.assert_message_forwarded_to('user@domain.com')
-        self.assert_header_equal('X-PTS-Keyword', 'archive')
-
-    def test_unknown_keyword(self):
-        self.subscribe_user_to_package('user@domain.com', self.package_name)
-        address = self.make_address_with_keyword(self.package_name, 'unknown')
-
-        self.run_dispatch(address)
-
-        self.assertEqual(len(mail.outbox), 0)
-
-    def test_default_not_trusted(self):
-        """
-        Tests that a non-trusted default message is dropped.
-        """
-        self.subscribe_user_to_package('user@domain.com', self.package_name)
-
-        self.run_dispatch()
-
-        self.assertEqual(len(mail.outbox), 0)
 
 
 from pts.dispatch.custom_email_message import CustomEmailMessage

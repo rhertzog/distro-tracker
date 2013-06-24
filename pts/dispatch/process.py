@@ -20,7 +20,6 @@ from pts.core.utils import extract_email_address_from_header
 from pts.core.utils import get_or_none
 from pts.core.utils import render_template_to_string
 from pts.core.utils import verp
-from pts.core.utils import get_decoded_message_payload
 
 from pts.dispatch.custom_email_message import CustomEmailMessage
 from pts.dispatch.models import EmailUserBounceStats
@@ -34,6 +33,31 @@ import re
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+class InvalidPluginException(Exception):
+    pass
+
+
+def get_callable(name):
+    """
+    Returns a callable object from the vendor-provided module based on the
+    string name given as the parameter.
+    If no callable object with the given name is found in the vendor module
+    an exception is raised.
+    """
+    import importlib
+    vendor_module = importlib.import_module(settings.PTS_VENDOR_RULES)
+
+    function = getattr(vendor_module, name, None)
+    if not function:
+        raise InvalidPluginException("{name} not found in {module}".format(
+            name=name, module=settings.PTS_VENDOR_RULES))
+    if not callable(function):
+        raise InvalidPluginException("{name} is not callable.".format(
+            name=name))
+
+    return function
 
 
 def process(message, sent_to_address=None):
@@ -74,53 +98,6 @@ def process(message, sent_to_address=None):
     send_to_subscribers(msg, package_name, keyword)
 
 
-def approved_default(msg):
-    if msg['X-Bugzilla-Product']:
-        return True
-    else:
-        return msg['X-PTS-Approved'] is not None
-
-
-def get_keyword(local_part, msg):
-    split = re.split(r'(\S+)_(\S+)', local_part)
-    if len(split) > 1:
-        # Keyword found in the address
-        return split[2]
-
-    re_accepted_installed = re.compile('^Accepted|INSTALLED|ACCEPTED')
-    re_comments_regarding = re.compile(r'^Comments regarding .*\.changes$')
-
-    body = get_message_body(msg)
-    xloop = msg.get_all('X-Loop', ())
-    subject = msg.get('Subject', '')
-    xdak = msg.get_all('X-DAK', '')
-    debian_pr_message = msg.get('X-Debian-PR-Message', '')
-
-    owner_match = 'owner@bugs.debian.org' in xloop
-
-    if owner_match and debian_pr_message.startswith('transcript'):
-        return 'bts-control'
-    elif owner_match and debian_pr_message:
-        return 'bts'
-    elif xdak and re_accepted_installed.match(subject):
-        if re.search(r'\.dsc\s*$', body, flags=re.MULTILINE):
-            return 'upload-source'
-        else:
-            return 'upload-binary'
-    elif xdak or re_comments_regarding.match(subject):
-        return 'archive'
-
-    return 'default'
-
-
-def get_message_body(msg):
-    """
-    Returns the message body, joining together all parts into one string.
-    """
-    return '\n'.join(get_decoded_message_payload(part)
-                     for part in msg.walk() if not part.is_multipart())
-
-
 def get_package_name(local_part):
     split = re.split(r'(\S+)_(\S+)', local_part)
     if len(split) > 1:
@@ -130,15 +107,41 @@ def get_package_name(local_part):
     return package_name
 
 
-def prepare_message(received_message, to_email, date):
-    bounce_address = 'bounces+{date}@{pts_fqdn}'.format(
-        date=date.strftime('%Y%m%d'),
-        pts_fqdn=PTS_FQDN)
-    message = CustomEmailMessage(
-        msg=received_message,
-        from_email=verp.encode(bounce_address, to_email),
-        to=[to_email])
-    return message
+def get_keyword(local_part, msg):
+    keyword = get_keyword_from_address(local_part)
+    if keyword:
+        return keyword
+
+    # Use a vendor-provided function to try and classify the message.
+    try:
+        keyword_classificator = get_callable('get_keyword')
+    except (ImportError, InvalidPluginException):
+        pass
+    else:
+        keyword = keyword_classificator(local_part, msg)
+        if keyword:
+            return keyword
+
+    # If we still do not have the keyword
+    return 'default'
+
+
+def get_keyword_from_address(local_part):
+    split = re.split(r'(\S+)_(\S+)', local_part)
+    if len(split) > 1:
+        # Keyword found in the address
+        return split[2]
+
+
+def approved_default(msg):
+    if 'X-PTS-Approved' in msg:
+        return True
+    try:
+        function = get_callable('approve_default_message')
+    except (ImportError, InvalidPluginException):
+        pass
+    else:
+        return function(msg)
 
 
 def add_new_headers(received_message, package_name, keyword):
@@ -148,14 +151,19 @@ def add_new_headers(received_message, package_name, keyword):
             pts_fqdn=PTS_FQDN)),
         ('X-PTS-Package', package_name),
         ('X-PTS-Keyword', keyword),
-        ('X-Debian-Package', package_name),
-        ('X-Debian', 'PTS'),
         ('Precedence', 'list'),
         ('List-Unsubscribe',
             '<mailto:{control_email}?body=unsubscribe%20{package}>'.format(
                 control_email=PTS_CONTROL_EMAIL,
                 package=package_name)),
     ]
+    try:
+        function = get_callable('add_new_headers')
+    except (ImportError, InvalidPluginException):
+        pass
+    else:
+        new_headers.extend(function(received_message, package_name, keyword))
+
     for header_name, header_value in new_headers:
         received_message[header_name] = header_value
 
@@ -177,6 +185,17 @@ def send_to_subscribers(received_message, package_name, keyword):
     for message in messages_to_send:
         EmailUserBounceStats.objects.add_sent_for_user(email=message.to[0],
                                                        date=date)
+
+
+def prepare_message(received_message, to_email, date):
+    bounce_address = 'bounces+{date}@{pts_fqdn}'.format(
+        date=date.strftime('%Y%m%d'),
+        pts_fqdn=PTS_FQDN)
+    message = CustomEmailMessage(
+        msg=received_message,
+        from_email=verp.encode(bounce_address, to_email),
+        to=[to_email])
+    return message
 
 
 def handle_bounces(sent_to_address):
