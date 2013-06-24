@@ -13,7 +13,6 @@ from __future__ import unicode_literals
 from pts.core.models import Package, EmailUser, Subscription, Keyword
 
 from pts.control.tests.common import EmailControlTest
-from operator import attrgetter
 
 
 class KeywordCommandHelperMixin(object):
@@ -149,7 +148,7 @@ class KeywordCommandSubscriptionSpecificTest(EmailControlTest,
         Tests the keyword command version which should add a keyword to the
         subscription.
         """
-        keywords = ['cvs', 'contact']
+        keywords = ['vcs', 'contact']
         self.add_keyword_command(self.package.name,
                                  '+',
                                  keywords,
@@ -181,7 +180,7 @@ class KeywordCommandSubscriptionSpecificTest(EmailControlTest,
         Tests the keyword command version which should set a new keyword list
         for a subscription.
         """
-        keywords = ['cvs', 'bts']
+        keywords = ['vcs', 'bts']
         self.add_keyword_command(self.package.name,
                                  '=',
                                  keywords,
@@ -198,14 +197,14 @@ class KeywordCommandSubscriptionSpecificTest(EmailControlTest,
         """
         Tests the keyword command when the email is not given.
         """
-        self.add_keyword_command(self.package.name, '+', ['cvs'])
+        self.add_keyword_command(self.package.name, '+', ['vcs'])
 
         self.control_process()
 
         self.assert_in_response(self.get_new_list_of_keywords_text(
             self.package.name, self.user.email))
-        self.assert_keywords_in_response(['cvs'])
-        self.assert_subscription_has_keywords(['cvs'])
+        self.assert_keywords_in_response(['vcs'])
+        self.assert_subscription_has_keywords(['vcs'])
 
     def test_keyword_doesnt_exist(self):
         """
@@ -227,20 +226,20 @@ class KeywordCommandSubscriptionSpecificTest(EmailControlTest,
         """
         self.subscription.active = False
         self.subscription.save()
-        self.add_keyword_command(self.package.name, '+', ['cvs'])
+        self.add_keyword_command(self.package.name, '+', ['vcs'])
 
         self.control_process()
 
         self.assert_in_response(self.get_new_list_of_keywords_text(
             self.package.name, self.user.email))
-        self.assert_keywords_in_response(['cvs'])
-        self.assert_subscription_has_keywords(['cvs'])
+        self.assert_keywords_in_response(['vcs'])
+        self.assert_subscription_has_keywords(['vcs'])
 
     def test_keyword_add_package_doesnt_exist(self):
         """
         Tests the keyword command when the given package does not exist.
         """
-        self.add_keyword_command('package-no-exist', '+', ['cvs'])
+        self.add_keyword_command('package-no-exist', '+', ['vcs'])
 
         self.control_process()
 
@@ -256,7 +255,7 @@ class KeywordCommandSubscriptionSpecificTest(EmailControlTest,
         other_user = EmailUser.objects.create(email='other-user@domain.com')
         self.add_keyword_command(self.package.name,
                                  '+',
-                                 ['cvs'],
+                                 ['vcs'],
                                  other_user.email)
 
         self.control_process()
@@ -274,7 +273,7 @@ class KeywordCommandSubscriptionSpecificTest(EmailControlTest,
         email = 'other-user@domain.com'
         self.add_keyword_command(self.package.name,
                                  '+',
-                                 ['cvs'],
+                                 ['vcs'],
                                  email)
 
         self.control_process()
@@ -288,7 +287,7 @@ class KeywordCommandSubscriptionSpecificTest(EmailControlTest,
         """
         Tests that tag works as an alias for keyword.
         """
-        keywords = ['cvs', 'contact']
+        keywords = ['vcs', 'contact']
         self.add_keyword_command(self.package.name,
                                  '+',
                                  keywords,
@@ -362,7 +361,7 @@ class KeywordCommandListSubscriptionSpecific(EmailControlTest,
         Tests the keyword command when the subscription has specific keywords
         associated with it.
         """
-        self.subscription.keywords.add(Keyword.objects.get(name='cvs'))
+        self.subscription.keywords.add(Keyword.objects.get(name='vcs'))
         self.add_keyword_command(self.package.name, self.user.email)
 
         self.control_process()

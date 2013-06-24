@@ -42,7 +42,7 @@
     {
         "fields": {
             "default": true,
-            "name": "katie-other"
+            "name": "archive"
         },
         "model": "core.keyword",
         "pk": 6
@@ -58,7 +58,7 @@
     {
         "fields": {
             "default": true,
-            "name": "buildd"
+            "name": "build"
         },
         "model": "core.keyword",
         "pk": 8
@@ -66,7 +66,7 @@
     {
         "fields": {
             "default": false,
-            "name": "cvs"
+            "name": "vcs"
         },
         "model": "core.keyword",
         "pk": 9
@@ -74,7 +74,7 @@
     {
         "fields": {
             "default": false,
-            "name": "ddtp"
+            "name": "translation"
         },
         "model": "core.keyword",
         "pk": 10

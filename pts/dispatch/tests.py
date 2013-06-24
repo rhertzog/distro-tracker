@@ -455,13 +455,13 @@ class DispatchKeywordTest(TestCase, DispatchTestHelperMixin):
         Tests the dispatch functionality when the keyword of the message is
         given in the address the message was sent to (srcpackage_keyword)
         """
-        self.subscribe_user_with_keyword('user@domain.com', 'cvs')
-        address = self.make_address_with_keyword(self.package_name, 'cvs')
+        self.subscribe_user_with_keyword('user@domain.com', 'vcs')
+        address = self.make_address_with_keyword(self.package_name, 'vcs')
 
         self.run_dispatch(address)
 
         self.assert_message_forwarded_to('user@domain.com')
-        self.assert_header_equal('X-PTS-Keyword', 'cvs')
+        self.assert_header_equal('X-PTS-Keyword', 'vcs')
 
     def test_dispatch_bts_control(self):
         """
@@ -521,12 +521,12 @@ class DispatchKeywordTest(TestCase, DispatchTestHelperMixin):
         self.add_header('From', 'Real Name <{from_email}>'.format(
             from_email=self.from_email))
         self.set_message_content('afgdfgdrterfg')
-        self.subscribe_user_with_keyword('user@domain.com', 'katie-other')
+        self.subscribe_user_with_keyword('user@domain.com', 'archive')
 
         self.run_dispatch()
 
         self.assert_message_forwarded_to('user@domain.com')
-        self.assert_header_equal('X-PTS-Keyword', 'katie-other')
+        self.assert_header_equal('X-PTS-Keyword', 'archive')
 
     def test_unknown_keyword(self):
         self.subscribe_user_to_package('user@domain.com', self.package_name)

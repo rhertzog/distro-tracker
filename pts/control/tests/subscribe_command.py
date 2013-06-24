@@ -96,7 +96,7 @@ class SubscribeToPackageTest(EmailControlTest):
         # Check that the confirmation mail contains the confirmation code
         match = self.regex_search_in_response(self.regexp)
         self.assertIsNotNone(match)
-        
+
         # Extract the code and send a confirmation mail
         self.reset_message()
         self.reset_outbox()

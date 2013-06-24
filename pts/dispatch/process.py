@@ -108,7 +108,7 @@ def get_keyword(local_part, msg):
         else:
             return 'upload-binary'
     elif xdak or re_comments_regarding.match(subject):
-        return 'katie-other'
+        return 'archive'
 
     return 'default'
 
