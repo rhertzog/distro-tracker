@@ -17,6 +17,7 @@ from __future__ import unicode_literals
 from django.test import TestCase
 from django.core import mail
 from django.utils import timezone
+from django.template.loader import render_to_string
 
 from email.message import Message
 from datetime import timedelta
@@ -328,10 +329,12 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         """
         Tests that a received bounce is recorded.
         """
+        # Make sure the user has no prior bounce stats
+        self.assertEqual(self.user.bouncestats_set.count(), 0)
+
         self.run_dispatch(self.create_bounce_address(self.user.email))
 
         bounce_stats = self.user.bouncestats_set.all()
-
         self.assertEqual(bounce_stats.count(), 1)
         self.assertEqual(bounce_stats[0].date, timezone.now().date())
         self.assertEqual(bounce_stats[0].mails_bounced, 1)
@@ -349,6 +352,12 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
             self.add_bounce(self.user, date - timedelta(days=days))
         # Set up a sent mail today.
         self.add_sent(self.user, date)
+        # Make sure there were at least some subscriptions
+        packages_subscribed_to = [
+            subscription.package.name
+            for subscription in self.user.subscription_set.all()
+        ]
+        self.assertTrue(len(packages_subscribed_to) > 0)
 
         # Receive a bounce message.
         self.run_dispatch(self.create_bounce_address(self.user.email))
@@ -358,6 +367,57 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         # A notification was sent to the user.
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn(self.user.email, mail.outbox[0].to)
+        # Check that the content of the email is correct.
+        self.assertEqual(mail.outbox[0].body, render_to_string(
+            'dispatch/unsubscribed-due-to-bounces-email.txt', {
+                'email': self.user.email,
+                'packages': packages_subscribed_to
+            }
+        ))
+
+    def test_bounce_under_limit(self):
+        """
+        Tests that the user's subscriptions are not dropped when there are
+        too many bounces for less days than tolerated.
+        """
+        # Set up some prior bounces - one each day.
+        date = timezone.now().date()
+        for days in range(1, settings.PTS_MAX_DAYS_TOLERATE_BOUNCE - 1):
+            self.add_sent(self.user, date - timedelta(days=days))
+            self.add_bounce(self.user, date - timedelta(days=days))
+        # Set up a sent mail today.
+        self.add_sent(self.user, date)
+        # Make sure there were at least some subscriptions
+        subscription_count = self.user.subscription_set.count()
+        self.assertTrue(subscription_count > 0)
+
+        # Receive a bounce message.
+        self.run_dispatch(self.create_bounce_address(self.user.email))
+
+        # Assert that the user's subscriptions have not been dropped.
+        self.assertEqual(self.user.subscription_set.count(), subscription_count)
+
+    def test_bounces_not_every_day(self):
+        """
+        Tests that the user's subscriptions are not dropped when there is a day
+        which had more sent messages.
+        """
+        date = timezone.now().date()
+        for days in range(1, settings.PTS_MAX_DAYS_TOLERATE_BOUNCE):
+            self.add_sent(self.user, date - timedelta(days=days))
+            if days % 2 == 0:
+                self.add_bounce(self.user, date - timedelta(days=days))
+        # Set up a sent mail today.
+        self.add_sent(self.user, date)
+        # Make sure there were at least some subscriptions
+        subscription_count = self.user.subscription_set.count()
+        self.assertTrue(subscription_count > 0)
+
+        # Receive a bounce message.
+        self.run_dispatch(self.create_bounce_address(self.user.email))
+
+        # Assert that the user's subscriptions have not been dropped.
+        self.assertEqual(self.user.subscription_set.count(), subscription_count)
 
 
 class DispatchKeywordTest(TestCase, DispatchTestHelperMixin):
