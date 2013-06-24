@@ -15,44 +15,40 @@ from django.conf import settings
 from pts.core.models import EmailUser
 
 
-class UserBounceInformationManager(models.Manager):
-    def get_bounce_info(self, email, date):
-        user = EmailUser.objects.get(email=email)
-        user_info, _ = self.get_or_create(email_user=user)
-        bounce_info, _ = user_info.bounceinformation_set.get_or_create(
-            date=date)
-        return bounce_info
+class EmailUserBounceStatsManager(models.Manager):
+    def get_bounce_stats(self, email, date):
+        user = self.get(email=email)
+        bounce_stats, created = user.bouncestats_set.get_or_create(date=date)
+        if created:
+            self.limit_bounce_information(email)
+        return bounce_stats
 
     def add_bounce_for_user(self, email, date):
-        bounce_info = self.get_bounce_info(email, date)
-        bounce_info.mails_bounced_number += 1
-        bounce_info.save()
-
-        self.limit_bounce_information(email)
+        bounce_stats = self.get_bounce_stats(email, date)
+        bounce_stats.mails_bounced += 1
+        bounce_stats.save()
 
     def add_sent_for_user(self, email, date):
-        bounce_info = self.get_bounce_info(email, date)
-        bounce_info.mails_sent_number += 1
-        bounce_info.save()
-
-        self.limit_bounce_information(email)
+        bounce_stats = self.get_bounce_stats(email, date)
+        bounce_stats.mails_sent += 1
+        bounce_stats.save()
 
     def limit_bounce_information(self, email):
         """
         Makes sure not to keep more records than the number of days set by
         ``PTS_MAX_DAYS_TOLERATE_BOUNCE``.
         """
-        user_info = self.get(email_user__email=email)
+        user = self.get(email=email)
         days = settings.PTS_MAX_DAYS_TOLERATE_BOUNCE
-        for info in user_info.bounceinformation_set.all()[days:]:
+        for info in user.bouncestats_set.all()[days:]:
             info.delete()
 
 
-@python_2_unicode_compatible
-class UserBounceInformation(models.Model):
-    email_user = models.OneToOneField(EmailUser)
+class EmailUserBounceStats(EmailUser):
+    class Meta:
+        proxy = True
 
-    objects = UserBounceInformationManager()
+    objects = EmailUserBounceStatsManager()
 
     def has_too_many_bounces(self):
         """
@@ -60,30 +56,30 @@ class UserBounceInformation(models.Model):
         """
         days = settings.PTS_MAX_DAYS_TOLERATE_BOUNCE
         count = 0
-        for info in self.bounceinformation_set.all()[:days]:
-            # If no mails were sent on a particular day...
-            if info.mails_sent_number:
-                if info.mails_bounced_number >= info.mails_sent_number:
+        for stats in self.bouncestats_set.all()[:days]:
+            # If no mails were sent on a particular day nothing could bounce
+            if stats.mails_sent:
+                if stats.mails_bounced >= stats.mails_sent:
                     count += 1
         return count == days
 
-    def __str__(self):
-        return "Information for {email}".format(email=self.email_user)
-
 
 @python_2_unicode_compatible
-class BounceInformation(models.Model):
-    user_information = models.ForeignKey(UserBounceInformation)
-    mails_sent_number = models.IntegerField(default=0)
-    mails_bounced_number = models.IntegerField(default=0)
+class BounceStats(models.Model):
+    email_user = models.ForeignKey(EmailUserBounceStats)
+    mails_sent = models.IntegerField(default=0)
+    mails_bounced = models.IntegerField(default=0)
     date = models.DateField()
 
     class Meta:
         ordering = ['-date']
+        unique_together = ('email_user', 'date')
 
     def __str__(self):
-        return '{email} on {date} {sent} {bounced}'.format(
-            email=self.user_information.email_user,
-            date=self.date,
-            sent=self.mails_sent_number,
-            bounced=self.mails_bounced_number)
+        return (
+            'Got {bounced} bounces out of {sent} mails to {email} on {date}'.format(
+                email=self.email_user,
+                date=self.date,
+                sent=self.mails_sent,
+                bounced=self.mails_bounced)
+        )

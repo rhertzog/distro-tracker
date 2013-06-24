@@ -23,7 +23,7 @@ from pts.core.utils import verp
 from pts.core.utils import get_decoded_message_payload
 
 from pts.dispatch.custom_email_message import CustomEmailMessage
-from pts.dispatch.models import UserBounceInformation
+from pts.dispatch.models import EmailUserBounceStats
 
 from pts.core.models import Package
 from django.conf import settings
@@ -175,8 +175,8 @@ def send_to_subscribers(received_message, package_name, keyword):
     connection.send_messages(messages_to_send)
 
     for message in messages_to_send:
-        UserBounceInformation.objects.add_sent_for_user(email=message.to[0],
-                                                        date=date)
+        EmailUserBounceStats.objects.add_sent_for_user(email=message.to[0],
+                                                       date=date)
 
 
 def handle_bounces(sent_to_address):
@@ -195,19 +195,19 @@ def handle_bounces(sent_to_address):
         # Invalid bounce address
         logger.error('Invalid bounce address ' + bounce_email)
         return
-    UserBounceInformation.objects.add_bounce_for_user(email=user_email,
-                                                      date=date)
+    EmailUserBounceStats.objects.add_bounce_for_user(email=user_email,
+                                                     date=date)
 
     logger.info('Logged bounce for {email} on {date}'.format(email=user_email,
                                                              date=date))
-    info = UserBounceInformation.objects.get(email_user__email=user_email)
-    if info.has_too_many_bounces():
+    user = EmailUserBounceStats.objects.get(email=user_email)
+    if user.has_too_many_bounces():
         logger.info("{email} has too many bounces".format(email=user_email))
 
         email_body = render_to_string(
             'dispatch/unsubscribed-due-to-bounces-email.txt', {
                 'email': user_email,
-                'packages': info.email_user.package_set.all()
+                'packages': user.package_set.all()
             })
         EmailMessage(
             subject='All your subscriptions from the PTS have been cancelled',
@@ -220,4 +220,4 @@ def handle_bounces(sent_to_address):
             },
         ).send()
 
-        info.email_user.unsubscribe_all()
+        user.unsubscribe_all()

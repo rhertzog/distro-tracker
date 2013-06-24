@@ -21,12 +21,12 @@ from django.utils import timezone
 from email.message import Message
 from datetime import timedelta
 
-from pts.core.models import Package, Subscription, Keyword, EmailUser
+from pts.core.models import Package, Subscription, Keyword
 from pts.core.utils import verp
 from pts.core.utils import get_decoded_message_payload
 from pts import dispatch
 
-from pts.dispatch.models import UserBounceInformation
+from pts.dispatch.models import EmailUserBounceStats
 
 
 from django.conf import settings
@@ -266,14 +266,14 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         information structure.
         """
         self.subscribe_user_to_package('user@domain.com', self.package_name)
-        user = EmailUser.objects.get(email='user@domain.com')
+        user = EmailUserBounceStats.objects.get(email='user@domain.com')
 
         self.run_dispatch()
 
-        bounce_info = user.userbounceinformation.bounceinformation_set.all()
-        self.assertEqual(bounce_info.count(), 1)
-        self.assertEqual(bounce_info[0].date, timezone.now().date())
-        self.assertEqual(bounce_info[0].mails_sent_number, 1)
+        bounce_stats = user.bouncestats_set.all()
+        self.assertEqual(bounce_stats.count(), 1)
+        self.assertEqual(bounce_stats[0].date, timezone.now().date())
+        self.assertEqual(bounce_stats[0].mails_sent, 1)
 
     def test_xloop_already_set(self):
         """
@@ -299,7 +299,7 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         self.message.add_header('Subject', 'bounce')
         Package.objects.create(name='dummy-package')
         self.subscribe_user_to_package('user@domain.com', 'dummy-package')
-        self.user = EmailUser.objects.get(email='user@domain.com')
+        self.user = EmailUserBounceStats.objects.get(email='user@domain.com')
 
     def create_bounce_address(self, to):
         """
@@ -314,15 +314,15 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         """
         Adds a sent mail record for the given user.
         """
-        UserBounceInformation.objects.add_sent_for_user(email=user.email,
-                                                        date=date)
+        EmailUserBounceStats.objects.add_sent_for_user(email=user.email,
+                                                       date=date)
 
     def add_bounce(self, user, date):
         """
         Adds a bounced mail record for the given user.
         """
-        UserBounceInformation.objects.add_bounce_for_user(email=user.email,
-                                                          date=date)
+        EmailUserBounceStats.objects.add_bounce_for_user(email=user.email,
+                                                         date=date)
 
     def test_bounce_recorded(self):
         """
@@ -330,12 +330,11 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         """
         self.run_dispatch(self.create_bounce_address(self.user.email))
 
-        user = self.user
-        bounce_info = user.userbounceinformation.bounceinformation_set.all()
+        bounce_stats = self.user.bouncestats_set.all()
 
-        self.assertEqual(bounce_info.count(), 1)
-        self.assertEqual(bounce_info[0].date, timezone.now().date())
-        self.assertEqual(bounce_info[0].mails_bounced_number, 1)
+        self.assertEqual(bounce_stats.count(), 1)
+        self.assertEqual(bounce_stats[0].date, timezone.now().date())
+        self.assertEqual(bounce_stats[0].mails_bounced, 1)
         self.assertEqual(self.user.subscription_set.count(), 1)
 
     def test_bounce_over_limit(self):
@@ -344,13 +343,12 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         bounces are received.
         """
         # Set up some prior bounces - one each day.
+        date = timezone.now().date()
         for days in range(1, settings.PTS_MAX_DAYS_TOLERATE_BOUNCE):
-            self.add_sent(
-                self.user, timezone.now().date() - timedelta(days=days))
-            self.add_bounce(
-                self.user, timezone.now().date() - timedelta(days=days))
+            self.add_sent(self.user, date - timedelta(days=days))
+            self.add_bounce(self.user, date - timedelta(days=days))
         # Set up a sent mail today.
-        self.add_sent(self.user, timezone.now().date())
+        self.add_sent(self.user, date)
 
         # Receive a bounce message.
         self.run_dispatch(self.create_bounce_address(self.user.email))
@@ -540,12 +538,12 @@ class CustomEmailMessageTest(TestCase):
         self.assertIn(attachment, mail.outbox[0].message().get_payload())
 
 
-class BounceInformationTests(TestCase):
+class BounceStatsTest(TestCase):
     """
     Tests for the ``pts.dispatch.models`` handling users' bounce information.
     """
     def setUp(self):
-        self.user = EmailUser.objects.create(email='user@domain.com')
+        self.user = EmailUserBounceStats.objects.create(email='user@domain.com')
         self.package = Package.objects.create(name='dummy-package')
 
     def test_add_sent_message(self):
@@ -553,28 +551,24 @@ class BounceInformationTests(TestCase):
         Tests that a new sent message record is correctly added.
         """
         date = timezone.now().date()
-        UserBounceInformation.objects.add_sent_for_user(
-            self.user.email, date)
+        EmailUserBounceStats.objects.add_sent_for_user(self.user.email, date)
 
-        user = self.user
-        bounce_info = user.userbounceinformation.bounceinformation_set.all()
-        self.assertEqual(bounce_info.count(), 1)
-        self.assertEqual(bounce_info[0].date, timezone.now().date())
-        self.assertEqual(bounce_info[0].mails_sent_number, 1)
+        bounce_stats = self.user.bouncestats_set.all()
+        self.assertEqual(bounce_stats.count(), 1)
+        self.assertEqual(bounce_stats[0].date, timezone.now().date())
+        self.assertEqual(bounce_stats[0].mails_sent, 1)
 
     def test_add_bounce_message(self):
         """
         Tests that a new bounced message record is correctly added.
         """
         date = timezone.now().date()
-        UserBounceInformation.objects.add_bounce_for_user(
-            self.user.email, date)
+        EmailUserBounceStats.objects.add_bounce_for_user(self.user.email, date)
 
-        user = self.user
-        bounce_info = user.userbounceinformation.bounceinformation_set.all()
-        self.assertEqual(bounce_info.count(), 1)
-        self.assertEqual(bounce_info[0].date, timezone.now().date())
-        self.assertEqual(bounce_info[0].mails_bounced_number, 1)
+        bounce_stats = self.user.bouncestats_set.all()
+        self.assertEqual(bounce_stats.count(), 1)
+        self.assertEqual(bounce_stats[0].date, timezone.now().date())
+        self.assertEqual(bounce_stats[0].mails_bounced, 1)
 
     def test_number_of_records_limited(self):
         """
@@ -582,21 +576,21 @@ class BounceInformationTests(TestCase):
         are kept.
         """
         days = settings.PTS_MAX_DAYS_TOLERATE_BOUNCE
+        current_date = timezone.now().date()
         dates = [
-            timezone.now().date() + timedelta(days=delta)
+            current_date + timedelta(days=delta)
             for delta in range(1, days + 5)
         ]
 
         for date in dates:
-            UserBounceInformation.objects.add_bounce_for_user(
+            EmailUserBounceStats.objects.add_bounce_for_user(
                 self.user.email, date)
 
-        user = self.user
-        bounce_info = user.userbounceinformation.bounceinformation_set.all()
+        bounce_stats = self.user.bouncestats_set.all()
         # Limited number
-        self.assertEqual(bounce_info.count(),
+        self.assertEqual(bounce_stats.count(),
                          settings.PTS_MAX_DAYS_TOLERATE_BOUNCE)
         # Only the most recent dates are kept.
-        bounce_info_dates = [info.date for info in bounce_info]
+        bounce_stats_dates = [info.date for info in bounce_stats]
         for date in dates[-days:]:
-            self.assertIn(date, bounce_info_dates)
+            self.assertIn(date, bounce_stats_dates)
