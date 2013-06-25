@@ -14,7 +14,7 @@ from django.core.mail import send_mail
 from django.utils import six
 
 from pts.control.models import CommandConfirmation
-from pts.core.utils import render_template_to_string
+from pts.core.utils import pts_render_to_string
 
 import re
 from django.conf import settings
@@ -167,7 +167,7 @@ class SendConfirmationCommandMixin(object):
         context.update({
             'command_confirmation': command_confirmation,
         })
-        message = render_template_to_string(template, context)
+        message = pts_render_to_string(template, context)
         subject = 'CONFIRM ' + command_confirmation.confirmation_key
 
         self._send_mail(

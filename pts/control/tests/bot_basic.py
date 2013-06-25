@@ -13,7 +13,7 @@
 from __future__ import unicode_literals
 from django.conf import settings
 
-from pts.core.utils import render_template_to_string
+from pts.core.utils import pts_render_to_string
 from pts.control.tests.common import EmailControlTest
 from pts.control.tests.common import PTS_CONTROL_EMAIL, PTS_OWNER_EMAIL
 
@@ -83,7 +83,7 @@ class ControlBotBasic(EmailControlTest):
         self.control_process()
 
         self.assert_response_sent()
-        self.assert_response_equal(render_template_to_string(
+        self.assert_response_equal(pts_render_to_string(
             'control/email-plaintext-warning.txt'))
 
     def test_multipart_with_plaintext(self):

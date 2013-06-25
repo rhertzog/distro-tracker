@@ -67,7 +67,7 @@ def get_decoded_message_payload(message, default_charset='ascii'):
     return decoded_payload
 
 
-def render_template_to_string(template_name, context=None):
+def pts_render_to_string(template_name, context=None):
     """
     A custom function to render a template to a string which injects extra
     PTS-specific information to the context, such as the name of the derivative.
