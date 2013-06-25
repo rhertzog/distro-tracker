@@ -1,6 +1,6 @@
+{% load pts_extras %}
 {{ PTS_DERIVATIVE_NAME }} Package Tracking System
-------------------------------
-
+{% with length=PTS_DERIVATIVE_NAME|length %}{% repeat length %}-{% endrepeat %}{% repeat 24 %}-{% endrepeat %}{% endwith %}
 The Package Tracking System (PTS) has the following commands:
 {% autoescape off %}{% for description in descriptions %}
 {{ description }}
