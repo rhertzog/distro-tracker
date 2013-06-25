@@ -102,14 +102,5 @@
         },
         "model": "core.keyword",
         "pk": 13
-    },
-
-    {
-        "fields": {
-            "domain": "pts.debian.net",
-            "name": "Debian Package Tracking System"
-        },
-        "model": "sites.site",
-        "pk": 1
     }
 ]
