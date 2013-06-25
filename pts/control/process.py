@@ -15,8 +15,7 @@ from email.iterators import typed_subpart_iterator
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 
-from pts.control.commands import CommandFactory
-from pts.control.commands import QuitCommand
+from pts.control.commands import CommandFactory, CommandProcessor
 from pts.core.utils import extract_email_address_from_header
 from pts.core.utils import get_decoded_message_payload
 
@@ -25,7 +24,6 @@ import re
 from django.conf import settings
 PTS_CONTACT_EMAIL = settings.PTS_CONTACT_EMAIL
 PTS_CONTROL_EMAIL = settings.PTS_CONTROL_EMAIL
-MAX_ALLOWED_ERRORS = settings.PTS_MAX_ALLOWED_ERRORS_CONTROL_COMMANDS
 
 
 def send_response(original_message, message_text, cc=None):
@@ -73,50 +71,17 @@ def process(message):
         return
 
     lines = extract_command_from_subject(msg) + text.splitlines()
-
     # Process the commands
-    out = []
-    errors = 0
-    processed = set()
-    cc = []
     factory = CommandFactory({
         'email': extract_email_address_from_header(msg['From']),
     })
-    # Each line is a separate command
-    for line in lines:
-        line = line.strip()
-        out.append('> ' + line)
-
-        if not line or line.startswith('#'):
-            continue
-        command = factory.get_command_function(line)
-
-        if not command:
-            errors += 1
-            if errors == MAX_ALLOWED_ERRORS:
-                out.append(
-                    '{MAX_ALLOWED_ERRORS} lines '
-                    'contain errors: stopping.'.format(
-                        MAX_ALLOWED_ERRORS=MAX_ALLOWED_ERRORS))
-                break
-        else:
-            if command.get_command_text() not in processed:
-                # Only process the command if it was not previously processed.
-                command_output = command()
-                if not command_output:
-                    command_output = ''
-                out.append(command_output)
-                # Send a CC of the response message to any email address that
-                # the command sent a mail to.
-                cc.extend(command.sent_mails)
-                processed.add(command.get_command_text())
-
-        if isinstance(command, QuitCommand):
-            break
+    processor = CommandProcessor(factory)
+    processor.process(lines)
 
     # Send a response only if there were some commands processed
-    if processed:
-        send_response(msg, '\n'.join(out), set(cc))
+    if processor.is_success():
+        send_response(
+            msg, processor.get_output(), set(processor.get_sent_mails()))
 
 
 def extract_command_from_subject(message):

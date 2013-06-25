@@ -23,6 +23,7 @@ from pts.control.commands.base import *
 from pts.control.commands.keywords import *
 from pts.control.commands.misc import *
 
+MAX_ALLOWED_ERRORS = settings.PTS_MAX_ALLOWED_ERRORS_CONTROL_COMMANDS
 
 class HelpCommand(Command):
     """
@@ -91,3 +92,70 @@ class CommandFactory(object):
                     if key in kwargs and not kwargs[key] and value
                 })
                 return cmd(**kwargs)
+
+
+class CommandProcessor(object):
+    def __init__(self, factory):
+        self.factory = factory
+
+        self.out = []
+        self.cc = []
+        self.errors = 0
+        self.processed = set()
+
+    def echo_command(self, line):
+        self.out.append('> ' + line)
+
+    def output(self, text):
+        self.out.append(text)
+
+    def run_command(self, command):
+        if command.get_command_text() not in self.processed:
+            # Only process the command if it was not previously processed.
+            command_output = command()
+            if not command_output:
+                command_output = ''
+            self.output(command_output)
+            # Send a CC of the response message to any email address that
+            # the command sent a mail to.
+            self.cc.extend(command.sent_mails)
+            self.processed.add(command.get_command_text())
+
+    def process(self, lines):
+        if self.errors == MAX_ALLOWED_ERRORS:
+            return
+
+        for line in lines:
+            line = line.strip()
+            self.echo_command(line)
+
+            if not line or line.startswith('#'):
+                continue
+            command = self.factory.get_command_function(line)
+
+            if not command:
+                self.errors += 1
+                if self.errors == MAX_ALLOWED_ERRORS:
+                    self.output(
+                        '{MAX_ALLOWED_ERRORS} lines '
+                        'contain errors: stopping.'.format(
+                            MAX_ALLOWED_ERRORS=MAX_ALLOWED_ERRORS))
+                    return
+            else:
+                self.run_command(command)
+
+            if isinstance(command, QuitCommand):
+                return
+
+    def is_success(self):
+        # Send a response only if there were some commands processed
+        if self.processed:
+            return True
+        else:
+            return False
+
+    def get_output(self):
+        return '\n'.join(self.out)
+
+    def get_sent_mails(self):
+        return self.cc
