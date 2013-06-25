@@ -1,7 +1,7 @@
 Hello,
 
 you asked to be unsubscribed from the "mailing list"[1] associated to
-the {{ PTS_DERIVATIVE_NAME }} source package called {{ package }}. To complete this process, you
+the {{ PTS_VENDOR_NAME }} source package called {{ package }}. To complete this process, you
 have to reply to this mail by including this command:
 CONFIRM {{ command_confirmation.confirmation_key }}
 
@@ -16,6 +16,6 @@ If you have any problem with this service, please contact
 Thanks,
 
 [1] This list receives all the bug reports (and the corresponding logs)
-    for the package "{{ package }}" that are sent to the {{ PTS_DERIVATIVE_NAME }}
+    for the package "{{ package }}" that are sent to the {{ PTS_VENDOR_NAME }}
     Bug Tracking System. 
     http://{{ PTS_SITE_DOMAIN }}{% url 'pts-package-page' package %}
