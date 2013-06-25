@@ -23,7 +23,7 @@ from pts.core.utils import get_decoded_message_payload
 import re
 
 from django.conf import settings
-PTS_OWNER_EMAIL = settings.PTS_OWNER_EMAIL
+PTS_CONTACT_EMAIL = settings.PTS_CONTACT_EMAIL
 PTS_CONTROL_EMAIL = settings.PTS_CONTROL_EMAIL
 MAX_ALLOWED_ERRORS = settings.PTS_MAX_ALLOWED_ERRORS_CONTROL_COMMANDS
 
@@ -36,7 +36,7 @@ def send_response(original_message, message_text, cc=None):
         subject='Re: ' + subject,
         to=[original_message['From']],
         cc=cc,
-        from_email=PTS_OWNER_EMAIL,
+        from_email=PTS_CONTACT_EMAIL,
         headers={
             'X-Loop': PTS_CONTROL_EMAIL,
             'References': ' '.join((original_message.get('References', ''),

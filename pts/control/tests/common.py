@@ -24,7 +24,7 @@ from pts.core.utils import extract_email_address_from_header
 from pts import control
 
 from django.conf import settings
-PTS_OWNER_EMAIL = settings.PTS_OWNER_EMAIL
+PTS_CONTACT_EMAIL = settings.PTS_CONTACT_EMAIL
 PTS_CONTROL_EMAIL = settings.PTS_CONTROL_EMAIL
 
 
@@ -150,7 +150,7 @@ class EmailControlTest(TestCase):
         # The last message sent should always be the response
         self.assert_header_equal('X-Loop', PTS_CONTROL_EMAIL)
         self.assert_header_equal('To', self.message['From'])
-        self.assert_header_equal('From', PTS_OWNER_EMAIL)
+        self.assert_header_equal('From', PTS_CONTACT_EMAIL)
         self.assert_header_equal('In-Reply-To', self.message['Message-ID'])
         self.assert_header_equal(
             'References',

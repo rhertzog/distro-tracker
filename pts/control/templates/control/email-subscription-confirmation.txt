@@ -11,7 +11,7 @@ If you don't understand why you got this mail, please ignore it,
 you won't be subscribed to anything unless you confirm it.
 
 If you have any problem with this service, please contact
-{{ PTS_OWNER_EMAIL }}.
+{{ PTS_CONTACT_EMAIL }}.
 
 Thanks,
 

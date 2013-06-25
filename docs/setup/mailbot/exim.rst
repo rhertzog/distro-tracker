@@ -15,7 +15,7 @@ choosing. You should modify the following values in
    This is the email address which is to be used for receiving control
    messages.
 
-* PTS_OWNER_EMAIL
+* PTS_CONTACT_EMAIL
 
    This is the email address from which the mailbot responds.
 
@@ -61,15 +61,15 @@ And the ``.forward`` file should be::
    
    | python path/to/manage.py control_process
 
-Mails received at ``PTS_OWNER_EMAIL`` should be saved or forwarded to the PTS
+Mails received at ``PTS_CONTACT_EMAIL`` should be saved or forwarded to the PTS
 administrators. This can be done by adding an additional alias to
-``/etc/aliases/``. For example, if ``PTS_OWNER_EMAIL`` is set to
+``/etc/aliases/``. For example, if ``PTS_CONTACT_EMAIL`` is set to
 ``owner@pts.debian.net``, the line in the aliases file would be::
    
    owner: some-admin-user
 
 All mail addresses at the ``PTS_FQDN`` domain (apart from ``PTS_CONTROL_EMAIL``
-and ``PTS_OWNER_EMAIL`` addresses if they are on that domain), are considered
+and ``PTS_CONTACT_EMAIL`` addresses if they are on that domain), are considered
 package names. As such, all of them should be piped to the ``dispatch``
 management command so that they can be processed by the PTS.
 
@@ -101,7 +101,7 @@ to first create a file with virtual aliases for the relevant email addresses.
 
 Assuming the following configuration::
 
-   PTS_OWNER_EMAIL = owner@pts.debian.net
+   PTS_CONTACT_EMAIL = owner@pts.debian.net
    PTS_CONTROL_EMAIL = control@pts.debian.net
    PTS_FQDN = pts.debian.net
 

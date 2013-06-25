@@ -232,10 +232,10 @@ def handle_bounces(sent_to_address):
             subject='All your subscriptions from the PTS have been cancelled',
             from_email=settings.PTS_BOUNCE_NO_REPLY_EMAIL,
             to=[user_email],
-            cc=[settings.PTS_OWNER_EMAIL],
+            cc=[settings.PTS_CONTACT_EMAIL],
             body=email_body,
             headers={
-                'From': settings.PTS_OWNER_EMAIL,
+                'From': settings.PTS_CONTACT_EMAIL,
             },
         ).send()
 

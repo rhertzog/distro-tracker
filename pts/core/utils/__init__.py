@@ -80,7 +80,7 @@ def pts_render_to_string(template_name, context=None):
         context = {}
     extra_context = {
         'PTS_VENDOR_NAME': settings.PTS_VENDOR_NAME,
-        'PTS_OWNER_EMAIL': settings.PTS_OWNER_EMAIL,
+        'PTS_CONTACT_EMAIL': settings.PTS_CONTACT_EMAIL,
         'PTS_CONTROL_EMAIL': settings.PTS_CONTROL_EMAIL,
         'PTS_SITE_DOMAIN': Site.objects.get_current(),
     }

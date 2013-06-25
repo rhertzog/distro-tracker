@@ -15,7 +15,7 @@ from django.conf import settings
 
 from pts.core.utils import pts_render_to_string
 from pts.control.tests.common import EmailControlTest
-from pts.control.tests.common import PTS_CONTROL_EMAIL, PTS_OWNER_EMAIL
+from pts.control.tests.common import PTS_CONTROL_EMAIL, PTS_CONTACT_EMAIL
 
 
 class ControlBotBasic(EmailControlTest):
@@ -37,7 +37,7 @@ class ControlBotBasic(EmailControlTest):
         self.assert_header_equal('Subject', 'Re: Commands')
         self.assert_header_equal('X-Loop', PTS_CONTROL_EMAIL)
         self.assert_header_equal('To', self.message['From'])
-        self.assert_header_equal('From', PTS_OWNER_EMAIL)
+        self.assert_header_equal('From', PTS_CONTACT_EMAIL)
         self.assert_header_equal('In-Reply-To', self.message['Message-ID'])
         self.assert_header_equal(
             'References',
