@@ -148,6 +148,8 @@ class ConfirmationTests(EmailControlTest):
                 self.user_subscribed(self.user_email_address, package.name))
         for command in commands:
             self.assert_command_echo_in_response(command)
+        # Key no longer usable
+        self.assertEqual(CommandConfirmation.objects.count(), 0)
 
     def test_multiple_commands_per_user(self):
         """
