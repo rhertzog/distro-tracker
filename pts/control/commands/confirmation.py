@@ -14,9 +14,6 @@ from pts.core.utils import get_or_none
 from pts.control.models import CommandConfirmation
 from pts.control.commands.base import Command
 
-from django.conf import settings
-PTS_FQDN = settings.PTS_FQDN
-
 
 def needs_confirmation(klass):
     """
