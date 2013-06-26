@@ -24,3 +24,4 @@ Thanks,
 
 --
 {{ PTS_VENDOR_NAME }} Package Tracking System
+http://{{ PTS_SITE_DOMAIN }}
