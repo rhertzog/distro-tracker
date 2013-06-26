@@ -12,14 +12,15 @@ from __future__ import unicode_literals
 
 from pts.core.utils import get_or_none
 from pts.core.models import Subscription, EmailUser, Package, BinaryPackage
-from pts.control.models import CommandConfirmation
-from pts.control.commands.base import Command, SendConfirmationCommandMixin
+from pts.control.commands.confirmation import needs_confirmation
+from pts.control.commands.base import Command
 
 from django.conf import settings
 PTS_FQDN = settings.PTS_FQDN
 
 
-class SubscribeCommand(Command, SendConfirmationCommandMixin):
+@needs_confirmation
+class SubscribeCommand(Command):
     META = {
         'description': """subscribe <srcpackage> [<email>]
   Subscribes <email> to all messages regarding <srcpackage>. If
@@ -43,13 +44,13 @@ class SubscribeCommand(Command, SendConfirmationCommandMixin):
     def get_command_text(self):
         return Command.get_command_text(self, self.package, self.user_email)
 
-    def handle(self):
+    def pre_confirm(self):
         if EmailUser.objects.is_user_subscribed_to(self.user_email,
                                                    self.package):
             self.warn('{email} is already subscribed to {package}'.format(
                 email=self.user_email,
                 package=self.package))
-            return
+            return False
 
         Subscription.objects.create_for(
             email=self.user_email,
@@ -70,17 +71,26 @@ class SubscribeCommand(Command, SendConfirmationCommandMixin):
                 self.warn(
                     '{package} is neither a source package '
                     'nor a binary package.'.format(package=self.package))
-                return
-
-        self.send_confirmation_mail(
-            user_email=self.user_email,
-            template='control/email-subscription-confirmation.txt',
-            context={'package': self.package})
+                return False
 
         self.reply('A confirmation mail has been sent to ' + self.user_email)
+        return True
+
+    def handle(self):
+        subscription = Subscription.objects.create_for(
+            package_name=self.package,
+            email=self.user_email,
+            active=True)
+        if subscription:
+            self.reply('{email} has been subscribed to {package}'.format(
+                email=self.user_email, package=self.package))
+        else:
+            self.error('Could not subscribe {email} to {package}'.format(
+                email=self.user_email, package=self.package))
 
 
-class UnsubscribeCommand(Command, SendConfirmationCommandMixin):
+@needs_confirmation
+class UnsubscribeCommand(Command):
     META = {
         'description': """unsubscribe <srcpackage> [<email>]
   Unsubscribes <email> from <srcpackage>. Like the subscribe command,
@@ -101,7 +111,7 @@ class UnsubscribeCommand(Command, SendConfirmationCommandMixin):
     def get_command_text(self):
         return Command.get_command_text(self, self.package, self.user_email)
 
-    def handle(self):
+    def pre_confirm(self):
         if not Package.objects.exists_with_name(self.package):
             if BinaryPackage.objects.exists_with_name(self.package):
                 binary_package = BinaryPackage.objects.get_by_name(self.package)
@@ -116,97 +126,29 @@ class UnsubscribeCommand(Command, SendConfirmationCommandMixin):
                 self.warn(
                     '{package} is neither a source package '
                     'nor a binary package.'.format(package=self.package))
-                return
+                return False
         if not EmailUser.objects.is_user_subscribed_to(self.user_email,
                                                        self.package):
             self.error(
                 "{email} is not subscribed, you can't unsubscribe.".format(
                     email=self.user_email)
             )
-            return
-
-        self.send_confirmation_mail(
-            user_email=self.user_email,
-            template='control/email-unsubscribe-confirmation.txt',
-            context={'package': self.package})
+            return False
 
         self.reply('A confirmation mail has been sent to ' + self.user_email)
-
-
-class ConfirmCommand(Command):
-    META = {
-        'description': """confirm <confirmation-key>
-  Confirm a previously requested action, such as subscribing or
-  unsubscribing from a package.""",
-        'name': 'confirm',
-        'position': 3,
-    }
-
-    REGEX_LIST = (
-        r'\s+(?P<confirmation_key>\S+)$',
-    )
-
-    def __init__(self, confirmation_key):
-        super(ConfirmCommand, self).__init__()
-        self.confirmation_key = confirmation_key
-
-    def get_command_text(self):
-        return Command.get_command_text(self, self.confirmation_key)
+        return True
 
     def handle(self):
-        command_confirmation = get_or_none(
-            CommandConfirmation,
-            confirmation_key=self.confirmation_key)
-        if not command_confirmation:
-            self.error('Confirmation failed')
-            return
-
-        args = command_confirmation.command.split()
-        command_confirmation.delete()
-        if args[0].lower() == 'subscribe':
-            return self._subscribe(package=args[1], user_email=args[2])
-        elif args[0].lower() == 'unsubscribe':
-            return self._unsubscribe(package=args[1], user_email=args[2])
-        elif args[0].lower() == 'unsubscribeall':
-            return self._unsubscribeall(user_email=args[1])
-
-    def _subscribe(self, package, user_email):
-        subscription = Subscription.objects.create_for(
-            package_name=package,
-            email=user_email,
-            active=True)
-        if subscription:
-            self.reply(user_email + ' has been subscribed to ' + package)
-        else:
-            self.error('Could not subscribe ' + user_email + ' to ' + package)
-
-    def _unsubscribe(self, package, user_email):
-        success = Subscription.objects.unsubscribe(package, user_email)
+        success = Subscription.objects.unsubscribe(self.package,
+                                                   self.user_email)
         if success:
             self.reply('{user} has been unsubscribed from {package}'.format(
-                user=user_email,
-                package=package))
+                user=self.user_email,
+                package=self.package))
         else:
             self.error('Could not unsubscribe {email} from {package}'.format(
-                email=user_email,
-                package=package))
-
-    def _unsubscribeall(self, user_email):
-        user = get_or_none(EmailUser, email=user_email)
-        if user is None:
-            return
-        packages = [
-            subscription.package.name
-            for subscription in user.subscription_set.all()
-        ]
-        user.unsubscribe_all()
-        self.reply('All your subscriptions have been terminated:')
-        self.list_reply(
-            '{email} has been unsubscribed from {package}@{fqdn}'.format(
-                email=user_email,
-                package=package,
-                fqdn=PTS_FQDN)
-            for package in sorted(packages))
+                email=self.user_email,
+                package=self.package))
 
 
 class WhichCommand(Command):
@@ -306,7 +248,8 @@ class QuitCommand(Command):
         self.reply('Stopping processing here.')
 
 
-class UnsubscribeallCommand(Command, SendConfirmationCommandMixin):
+@needs_confirmation
+class UnsubscribeallCommand(Command):
     META = {
         'description': '''unsubscribeall [<email>]
   Cancel all subscriptions of <email>. Like the subscribe command,
@@ -321,22 +264,36 @@ class UnsubscribeallCommand(Command, SendConfirmationCommandMixin):
 
     def __init__(self, email):
         super(UnsubscribeallCommand, self).__init__()
-        self.email = email
+        self.user_email = email
 
     def get_command_text(self):
-        return Command.get_command_text(self, self.email)
+        return Command.get_command_text(self, self.user_email)
 
-    def handle(self):
-        user = get_or_none(EmailUser, email=self.email)
+    def pre_confirm(self):
+        user = get_or_none(EmailUser, email=self.user_email)
         if not user or user.subscription_set.count() == 0:
             self.warn('User {email} is not subscribed to any packages'.format(
-                email=self.email))
-            return
-
-        self.send_confirmation_mail(
-            user_email=self.email,
-            template='control/email-unsubscribeall-confirmation.txt',
-            context={})
+                email=self.user_email))
+            return False
 
         self.reply('A confirmation mail has been sent to {email}'.format(
-            email=self.email))
+            email=self.user_email))
+        return True
+
+    def handle(self):
+        user = get_or_none(EmailUser, email=self.user_email)
+        if user is None:
+            return
+        packages = [
+            subscription.package.name
+            for subscription in user.subscription_set.all()
+        ]
+        user.unsubscribe_all()
+        self.reply('All your subscriptions have been terminated:')
+        self.list_reply(
+            '{email} has been unsubscribed from {package}@{fqdn}'.format(
+                email=self.user_email,
+                package=package,
+                fqdn=PTS_FQDN)
+            for package in sorted(packages))
+

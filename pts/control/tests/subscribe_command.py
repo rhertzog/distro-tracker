@@ -211,9 +211,9 @@ class SubscribeToPackageTest(EmailControlTest):
         Tests that an expired confirmation does not subscribe the user.
         """
         # Set up an expired CommandConfirmation object.
-        c = CommandConfirmation.objects.create_for_command(
-            'subscribe {package} {user}'.format(user=self.user_email_address,
-                                                package=self.package.name))
+        c = CommandConfirmation.objects.create_for_commands(
+            ['subscribe {package} {user}'.format(user=self.user_email_address,
+                                                 package=self.package.name)])
         delta = timedelta(days=settings.PTS_CONFIRMATION_EXPIRATION_DAYS + 1)
         c.date_created = c.date_created - delta
         c.save()

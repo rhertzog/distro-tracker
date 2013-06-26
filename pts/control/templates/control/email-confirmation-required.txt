@@ -1,0 +1,26 @@
+Hello,
+
+you tried performing some commands in the {{ PTS_VENDOR_NAME }} Package Tracking
+System which require confirmation. The commands are:
+
+{{ command_confirmation.commands }}
+{% if confirmation_messages %}{% for confirmation_message in confirmation_messages %}
+{{ confirmation_message }}
+{% endfor %}{% endif %}
+
+To complete this process, you have to reply to this mail by including this
+command:
+CONFIRM {{ command_confirmation.confirmation_key }}
+
+On any modern mailer, you just have to hit reply and send the mail.
+
+If you don't understand why you got this mail, please ignore it,
+you won't be unsubscribed unless you confirm it.
+
+If you have any problem with this service, please contact
+{{ PTS_CONTACT_EMAIL }}.
+
+Thanks,
+
+--
+{{ PTS_VENDOR_NAME }} Package Tracking System

@@ -22,8 +22,10 @@ from pts.core.utils import pts_render_to_string
 from pts.control.commands.base import *
 from pts.control.commands.keywords import *
 from pts.control.commands.misc import *
+from pts.control.commands.confirmation import *
 
 MAX_ALLOWED_ERRORS = settings.PTS_MAX_ALLOWED_ERRORS_CONTROL_COMMANDS
+
 
 class HelpCommand(Command):
     """
@@ -95,11 +97,12 @@ class CommandFactory(object):
 
 
 class CommandProcessor(object):
-    def __init__(self, factory):
+    def __init__(self, factory, confirmed=False):
         self.factory = factory
+        self.confirmed = confirmed
+        self.confirmation_set = None
 
         self.out = []
-        self.cc = []
         self.errors = 0
         self.processed = set()
 
@@ -112,13 +115,14 @@ class CommandProcessor(object):
     def run_command(self, command):
         if command.get_command_text() not in self.processed:
             # Only process the command if it was not previously processed.
+            if getattr(command, 'needs_confirmation', False):
+                command.is_confirmed = self.confirmed
+                command.confirmation_set = self.confirmation_set
+            # Now run the command
             command_output = command()
             if not command_output:
                 command_output = ''
             self.output(command_output)
-            # Send a CC of the response message to any email address that
-            # the command sent a mail to.
-            self.cc.extend(command.sent_mails)
             self.processed.add(command.get_command_text())
 
     def process(self, lines):
@@ -156,6 +160,3 @@ class CommandProcessor(object):
 
     def get_output(self):
         return '\n'.join(self.out)
-
-    def get_sent_mails(self):
-        return self.cc

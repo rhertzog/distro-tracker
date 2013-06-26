@@ -42,26 +42,27 @@ class CommandConfirmationManager(models.Manager):
         hash_input = (salt + command).encode('ascii')
         return hashlib.sha1(hash_input).hexdigest()
 
-    def create_for_command(self, command):
+    def create_for_commands(self, commands):
         """
-        Creates a CommandConfirmation object for the given command.
+        Creates a CommandConfirmation object for the given commands.
 
         If it is unable to generate a unique key, a
         ``CommandConfirmationException`` is raised.
         """
+        commands = '\n'.join(commands)
         MAX_TRIES = 10
         errors = 0
         while errors < MAX_TRIES:
-            confirmation_key = self.generate_key(command)
+            confirmation_key = self.generate_key(commands)
             try:
                 return self.create(
-                    command=command, confirmation_key=confirmation_key)
+                    commands=commands, confirmation_key=confirmation_key)
             except IntegrityError:
                 errors += 1
 
         raise CommandConfirmationException(
             'Unable to generate a confirmation key for {command}'.format(
-                command=command))
+                commands=commands))
 
     def clean_up_expired(self):
         """
@@ -78,14 +79,14 @@ class CommandConfirmationManager(models.Manager):
 
 @python_2_unicode_compatible
 class CommandConfirmation(models.Model):
-    command = models.CharField(max_length=120)
+    commands = models.TextField()
     confirmation_key = models.CharField(max_length=40, unique=True)
     date_created = models.DateTimeField(auto_now_add=True)
 
     objects = CommandConfirmationManager()
 
     def __str__(self):
-        return self.command
+        return self.commands
 
     def is_expired(self):
         delta = timezone.now() - self.date_created

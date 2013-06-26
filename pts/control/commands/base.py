@@ -140,38 +140,3 @@ class Command(six.with_metaclass(MetaCommand)):
         """
         for item in items:
             self.reply(bullet + ' ' + str(item))
-
-    @property
-    def sent_mails(self):
-        return self._sent_mails
-
-    def _send_mail(self, subject, message, recipient_list):
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=PTS_CONTROL_EMAIL,
-            recipient_list=recipient_list
-        )
-        self._sent_mails.extend(recipient_list)
-
-
-class SendConfirmationCommandMixin(object):
-    """
-    A mixin which allows ``Command`` subclasses which use it to send
-    confirmation emails
-    """
-    def send_confirmation_mail(self, user_email, template, context):
-        command_confirmation = CommandConfirmation.objects.create_for_command(
-            command=self.get_command_text()
-        )
-        context.update({
-            'command_confirmation': command_confirmation,
-        })
-        message = pts_render_to_string(template, context)
-        subject = 'CONFIRM ' + command_confirmation.confirmation_key
-
-        self._send_mail(
-            subject=subject,
-            message=message,
-            recipient_list=[user_email]
-        )

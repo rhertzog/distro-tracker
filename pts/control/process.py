@@ -12,10 +12,13 @@ from __future__ import unicode_literals
 from email import message_from_string
 from email.iterators import typed_subpart_iterator
 
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMessage, send_mail
 from django.template.loader import render_to_string
+from pts.core.utils import pts_render_to_string
 
-from pts.control.commands import CommandFactory, CommandProcessor
+from pts.control.commands import CommandFactory
+from pts.control.commands import CommandProcessor
+from pts.control.models import CommandConfirmation
 from pts.core.utils import extract_email_address_from_header
 from pts.core.utils import get_decoded_message_payload
 
@@ -52,6 +55,46 @@ def send_plain_text_warning(original_message):
     send_response(original_message, WARNING_MESSAGE)
 
 
+class ConfirmationSet(object):
+    def __init__(self):
+        self.commands = {}
+        self.confirmation_messages = {}
+
+    def add_command(self, email, command_text, confirmation_message):
+        self.commands.setdefault(email, [])
+        self.confirmation_messages.setdefault(email, [])
+
+        self.commands[email].append(command_text)
+        if confirmation_message:
+            self.confirmation_messages[email].append(confirmation_message)
+
+    def _ask_confirmation(self, email, commands, messages):
+        command_confirmation = CommandConfirmation.objects.create_for_commands(
+            commands=commands)
+        message = pts_render_to_string(
+            'control/email-confirmation-required.txt', {
+                'command_confirmation': command_confirmation,
+                'confirmation_messages': self.confirmation_messages[email],
+            }
+        )
+        subject = 'CONFIRM ' + command_confirmation.confirmation_key
+
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=PTS_CONTROL_EMAIL,
+            recipient_list=[email]
+        )
+
+    def ask_confirmation_all(self):
+        for email, commands in self.commands.items():
+            self._ask_confirmation(
+                email, commands, self.confirmation_messages[email])
+
+    def get_emails(self):
+        return self.commands.keys()
+
+
 def process(message):
     msg = message_from_string(message)
     if 'X-Loop' in msg and PTS_CONTROL_EMAIL in msg.get_all('X-Loop'):
@@ -75,13 +118,16 @@ def process(message):
     factory = CommandFactory({
         'email': extract_email_address_from_header(msg['From']),
     })
+    confirmation_set = ConfirmationSet()
     processor = CommandProcessor(factory)
+    processor.confirmation_set = confirmation_set
     processor.process(lines)
 
+    confirmation_set.ask_confirmation_all()
     # Send a response only if there were some commands processed
     if processor.is_success():
         send_response(
-            msg, processor.get_output(), set(processor.get_sent_mails()))
+            msg, processor.get_output(), set(confirmation_set.get_emails()))
 
 
 def extract_command_from_subject(message):
