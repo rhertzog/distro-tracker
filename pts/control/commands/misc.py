@@ -11,6 +11,7 @@
 from __future__ import unicode_literals
 
 from pts.core.utils import get_or_none
+from pts.core.utils import pts_render_to_string
 from pts.core.models import Subscription, EmailUser, Package, BinaryPackage
 from pts.control.commands.confirmation import needs_confirmation
 from pts.control.commands.base import Command
@@ -88,6 +89,13 @@ class SubscribeCommand(Command):
             self.error('Could not subscribe {email} to {package}'.format(
                 email=self.user_email, package=self.package))
 
+    def get_confirmation_message(self):
+        return pts_render_to_string(
+            'control/email-subscription-confirmation.txt', {
+                'package': self.package,
+            }
+        )
+
 
 @needs_confirmation
 class UnsubscribeCommand(Command):
@@ -149,6 +157,13 @@ class UnsubscribeCommand(Command):
             self.error('Could not unsubscribe {email} from {package}'.format(
                 email=self.user_email,
                 package=self.package))
+
+    def get_confirmation_message(self):
+        return pts_render_to_string(
+            'control/email-unsubscribe-confirmation.txt', {
+                'package': self.package,
+            }
+        )
 
 
 class WhichCommand(Command):
@@ -297,3 +312,7 @@ class UnsubscribeallCommand(Command):
                 fqdn=PTS_FQDN)
             for package in sorted(packages))
 
+    def get_confirmation_message(self):
+        return pts_render_to_string(
+            'control/email-unsubscribeall-confirmation.txt'
+        )

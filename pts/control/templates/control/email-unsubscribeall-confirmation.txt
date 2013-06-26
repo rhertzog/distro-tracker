@@ -1,18 +1,2 @@
-Hello,
-
-you asked to cancel all your subscriptions to the {{ PTS_VENDOR_NAME }} Package
-Tracking System[1]. To complete this process, you have to reply to this mail
-by including this command:
-CONFIRM {{ command_confirmation.confirmation_key }}
-
-On any modern mailer, you just have to hit reply and send the mail.
-
-If you don't understand why you got this mail, please ignore it,
-you won't be unsubscribed unless you confirm it.
-
-If you have any problem with this service, please contact
-{{ PTS_CONTACT_EMAIL }}.
-
-Thanks,
-
-[1] http://{{ PTS_SITE_DOMAIN }}
+You asked to cancel all your subscriptions to the {{ PTS_VENDOR_NAME }} Package
+Tracking System.

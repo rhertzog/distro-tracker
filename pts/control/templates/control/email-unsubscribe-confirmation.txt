@@ -1,21 +1,3 @@
-Hello,
-
-you asked to be unsubscribed from the "mailing list"[1] associated to
-the {{ PTS_VENDOR_NAME }} source package called {{ package }}. To complete this process, you
-have to reply to this mail by including this command:
-CONFIRM {{ command_confirmation.confirmation_key }}
-
-On any modern mailer, you just have to hit reply and send the mail.
-
-If you don't understand why you got this mail, please ignore it,
-you won't be unsubscribed unless you confirm it.
-
-If you have any problem with this service, please contact
-{{ PTS_CONTACT_EMAIL }}.
-
-Thanks,
-
-[1] This list receives all the bug reports (and the corresponding logs)
-    for the package "{{ package }}" that are sent to the {{ PTS_VENDOR_NAME }}
-    Bug Tracking System. 
-    http://{{ PTS_SITE_DOMAIN }}{% url 'pts-package-page' package %}
+You asked to be unsubscribed from the "mailing list" associated to
+the {{ PTS_VENDOR_NAME }} source package called {{ package }}.
+http://{{ PTS_SITE_DOMAIN }}{% url 'pts-package-page' package %}

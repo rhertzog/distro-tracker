@@ -82,13 +82,52 @@ class ConfirmationTests(EmailControlTest):
         # Check the commands associated with the confirmation object.
         c = CommandConfirmation.objects.all()[0]
         self.assertEqual('\n'.join(commands), c.commands)
-        self.assertEqual(mail.outbox[0].body, pts_render_to_string(
-            'control/email-confirmation-required.txt', {
-                'command_confirmation': c,
-            }
-        ))
+        self.assertIn(c.commands + '\n', mail.outbox[0].body)
         # Finally make sure the commands did not actually execute
         self.assertEqual(Subscription.objects.filter(active=True).count(), 0)
+
+    def test_subscribe_command_confirmation_message(self):
+        """
+        Tests that the custom confirmation messages for commands are correctly
+        included in the confirmation email.
+        """
+        Subscription.objects.create_for(
+            email=self.user_email_address,
+            package_name=self.packages[1].name)
+        commands = [
+            'unsubscribeall',
+            'unsubscribe ' + self.packages[1].name,
+            'subscribe ' + self.packages[0].name,
+        ]
+        self.set_input_lines(commands)
+
+        self.control_process()
+
+        expected_messages = [
+            pts_render_to_string(
+                'control/email-unsubscribeall-confirmation.txt'
+            ),
+            pts_render_to_string(
+                'control/email-unsubscribe-confirmation.txt', {
+                    'package': self.packages[1].name,
+                }
+            ),
+            pts_render_to_string(
+                'control/email-subscription-confirmation.txt', {
+                    'package': self.packages[0].name,
+                }
+            )
+        ]
+        c = CommandConfirmation.objects.all()[0]
+        self.assert_response_equal(
+            pts_render_to_string(
+                'control/email-confirmation-required.txt', {
+                    'command_confirmation': c,
+                    'confirmation_messages': expected_messages,
+                }
+            ),
+            response_number=0
+        )
 
     def test_multiple_commands_confirmed(self):
         """
