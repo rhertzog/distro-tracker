@@ -17,6 +17,9 @@ module of all subpackages.
 
 from __future__ import unicode_literals
 from django.test import TestCase
+from django.test.utils import override_settings
+
+from pts.dispatch.tests import DispatchBaseTest
 import sys
 import inspect
 import importlib
@@ -87,3 +90,12 @@ def suite():
                 suite.addTest(all_tests)
 
     return suite
+
+
+@override_settings(PTS_VENDOR_RULES=None)
+class DispatchBaseNoVendorModuleTest(DispatchBaseTest):
+    """
+    Tests that the base dispatch tests pass even when there is no vendor
+    specific module set.
+    """
+    pass

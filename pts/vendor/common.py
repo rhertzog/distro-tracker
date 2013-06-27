@@ -27,6 +27,10 @@ def get_callable(name):
     an exception is raised.
     """
     import importlib
+    if (not hasattr(settings, 'PTS_VENDOR_RULES') or
+            not settings.PTS_VENDOR_RULES):
+        raise InvalidPluginException("No vendor specific module set.")
+
     vendor_module = importlib.import_module(settings.PTS_VENDOR_RULES)
 
     function = getattr(vendor_module, name, None)
