@@ -17,7 +17,7 @@ from pts.control.commands.base import Command
 
 def needs_confirmation(klass):
     """
-    A class decorator to mark that a ``Command`` subclass requires confrimation
+    A class decorator to mark that a ``Command`` subclass requires confirmation
     before it is executed.
 
     Classes decorated by this decorator can provide two additional methods::
