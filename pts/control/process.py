@@ -65,8 +65,7 @@ class ConfirmationSet(object):
         self.confirmation_messages.setdefault(email, [])
 
         self.commands[email].append(command_text)
-        if confirmation_message:
-            self.confirmation_messages[email].append(confirmation_message)
+        self.confirmation_messages[email].append(confirmation_message)
 
     def _ask_confirmation(self, email, commands, messages):
         command_confirmation = CommandConfirmation.objects.create_for_commands(

@@ -1,2 +1,2 @@
-You asked to cancel all your subscriptions to the {{ PTS_VENDOR_NAME }} Package
-Tracking System.
+  You asked to cancel all your subscriptions to the {{ PTS_VENDOR_NAME }} Package
+  Tracking System.

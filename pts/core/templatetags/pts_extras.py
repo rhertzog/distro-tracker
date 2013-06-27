@@ -39,3 +39,8 @@ def repeat(parser, token):
     nodelist = parser.parse(('endrepeat',))
     parser.delete_first_token()
     return RepeatNode(nodelist, count)
+
+
+@register.filter(name='zip')
+def zip_iterables(first, second):
+    return zip(first, second)

@@ -1,4 +1,4 @@
-Hello,
+{% load pts_extras%}Hello,
 {% if command_confirmation.command_list|length == 1 %}
 an operation that you tried to execute on the {{ PTS_VENDOR_NAME }} Package
 Tracking System requires an e-mail confirmation. For reference, the
@@ -7,11 +7,11 @@ corresponding command was:
 some operations that you tried to execute on the {{ PTS_VENDOR_NAME }} Package
 Tracking System require an e-mail confirmation. For reference, the
 corresponding commands were:
-{% endif %}
-{{ command_confirmation.commands }}
-{% if confirmation_messages %}{% for confirmation_message in confirmation_messages %}
-{{ confirmation_message }}
-{% endfor %}{% endif %}
+{% endif %}{% for command, message in command_confirmation.command_list|zip:confirmation_messages %}
+{{ command }}
+{% if message %}
+{{ message }}
+{% endif %}{% endfor %}
 {% if command_confirmation.command_list|length == 1 %}
 To complete this process and actually execute the corresponding operation, you
 have to reply to this mail and include this command in your answer:

@@ -82,7 +82,8 @@ class ConfirmationTests(EmailControlTest):
         # Check the commands associated with the confirmation object.
         c = CommandConfirmation.objects.all()[0]
         self.assertEqual('\n'.join(commands), c.commands)
-        self.assertIn(c.commands + '\n', mail.outbox[0].body)
+        for command in commands:
+            self.assert_in_response(command)
         # Finally make sure the commands did not actually execute
         self.assertEqual(Subscription.objects.filter(active=True).count(), 0)
 
