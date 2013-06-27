@@ -34,7 +34,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from pts.vendor import get_callable, InvalidPluginException
+from pts import vendor
 
 
 def process(message, sent_to_address=None):
@@ -90,14 +90,9 @@ def get_keyword(local_part, msg):
         return keyword
 
     # Use a vendor-provided function to try and classify the message.
-    try:
-        keyword_classificator = get_callable('get_keyword')
-    except (ImportError, InvalidPluginException):
-        pass
-    else:
-        keyword = keyword_classificator(local_part, msg)
-        if keyword:
-            return keyword
+    keyword, _ = vendor.call('get_keyword', local_part, msg)
+    if keyword:
+        return keyword
 
     # If we still do not have the keyword
     return 'default'
@@ -113,12 +108,12 @@ def get_keyword_from_address(local_part):
 def approved_default(msg):
     if 'X-PTS-Approved' in msg:
         return True
-    try:
-        function = get_callable('approve_default_message')
-    except (ImportError, InvalidPluginException):
-        pass
+
+    approved, implemented = vendor.call('approve_default_message', msg)
+    if implemented:
+        return approved
     else:
-        return function(msg)
+        return False
 
 
 def add_new_headers(received_message, package_name, keyword):
@@ -134,12 +129,11 @@ def add_new_headers(received_message, package_name, keyword):
                 control_email=PTS_CONTROL_EMAIL,
                 package=package_name)),
     ]
-    try:
-        function = get_callable('add_new_headers')
-    except (ImportError, InvalidPluginException):
-        pass
-    else:
-        new_headers.extend(function(received_message, package_name, keyword))
+
+    extra_vendor_headers, implemented = vendor.call(
+        'add_new_headers', received_message, package_name, keyword)
+    if implemented:
+        new_headers.extend(extra_vendor_headers)
 
     for header_name, header_value in new_headers:
         received_message[header_name] = header_value
