@@ -131,6 +131,10 @@ class ViewDefaultKeywordsCommand(Command, KeywordCommandMixin):
         super(ViewDefaultKeywordsCommand, self).__init__()
         self.email = email
 
+    def get_command_text(self):
+        return super(ViewDefaultKeywordsCommand, self).get_command_text(
+            self.email)
+
     def handle(self):
         email_user, _ = EmailUser.objects.get_or_create(email=self.email)
         self.reply(
@@ -165,6 +169,11 @@ class ViewPackageKeywordsCommand(Command, KeywordCommandMixin):
         super(ViewPackageKeywordsCommand, self).__init__()
         self.package = package
         self.email = email
+
+    def get_command_text(self):
+        return super(ViewPackageKeywordsCommand, self).get_command_text(
+            self.package,
+            self.email)
 
     def handle(self):
         subscription = self.get_subscription(self.email, self.package)
@@ -204,6 +213,12 @@ class SetDefaultKeywordsCommand(Command, KeywordCommandMixin):
         self.email = email
         self.operation = operation
         self.keywords = keywords
+
+    def get_command_text(self):
+        return super(SetDefaultKeywordsCommand, self).get_command_text(
+            self.email,
+            self.operation,
+            self.keywords)
 
     def handle(self):
         keywords = re.split('[,\s]+', self.keywords)
@@ -247,6 +262,13 @@ class SetPackageKeywordsCommand(Command, KeywordCommandMixin):
         self.email = email
         self.operation = operation
         self.keywords = keywords
+
+    def get_command_text(self):
+        return super(SetPackageKeywordsCommand, self).get_command_text(
+            self.package,
+            self.email,
+            self.operation,
+            self.keywords)
 
     def handle(self):
         """

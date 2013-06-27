@@ -43,7 +43,8 @@ class SubscribeCommand(Command):
         self.user_email = email
 
     def get_command_text(self):
-        return Command.get_command_text(self, self.package, self.user_email)
+        return super(SubscribeCommand, self).get_command_text(
+            self.package, self.user_email)
 
     def pre_confirm(self):
         if EmailUser.objects.is_user_subscribed_to(self.user_email,
@@ -117,7 +118,8 @@ class UnsubscribeCommand(Command):
         self.user_email = email
 
     def get_command_text(self):
-        return Command.get_command_text(self, self.package, self.user_email)
+        return super(UnsubscribeCommand, self).get_command_text(
+            self.package, self.user_email)
 
     def pre_confirm(self):
         if not Package.objects.exists_with_name(self.package):
@@ -183,7 +185,7 @@ class WhichCommand(Command):
         self.user_email = email
 
     def get_command_text(self):
-        return Command.get_command_text(self, self.user_email)
+        return super(WhichCommand, self).get_command_text(self.user_email)
 
     def handle(self):
         user_subscriptions = Subscription.objects.get_for_email(
@@ -210,6 +212,9 @@ class WhoCommand(Command):
     def __init__(self, package):
         super(WhoCommand, self).__init__()
         self.package_name = package
+
+    def get_command_text(self):
+        return super(WhoCommand, self).get_command_text(self.package_name)
 
     def handle(self):
         package = get_or_none(Package, name=self.package_name)
@@ -282,7 +287,8 @@ class UnsubscribeallCommand(Command):
         self.user_email = email
 
     def get_command_text(self):
-        return Command.get_command_text(self, self.user_email)
+        return super(UnsubscribeallCommand, self).get_command_text(
+            self.user_email)
 
     def pre_confirm(self):
         user = get_or_none(EmailUser, email=self.user_email)
