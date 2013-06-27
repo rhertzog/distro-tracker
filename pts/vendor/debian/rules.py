@@ -17,7 +17,7 @@ def get_keyword(local_part, msg):
     re_accepted_installed = re.compile('^Accepted|INSTALLED|ACCEPTED')
     re_comments_regarding = re.compile(r'^Comments regarding .*\.changes$')
 
-    body = get_message_body(msg)
+    body = _get_message_body(msg)
     xloop = msg.get_all('X-Loop', ())
     subject = msg.get('Subject', '')
     xdak = msg.get_all('X-DAK', '')
@@ -50,7 +50,7 @@ def approve_default_message(msg):
     return 'X-Bugzilla-Product' in msg
 
 
-def get_message_body(msg):
+def _get_message_body(msg):
     """
     Returns the message body, joining together all parts into one string.
     """
