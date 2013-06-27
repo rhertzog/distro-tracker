@@ -16,11 +16,16 @@ from __future__ import unicode_literals
 from django.test import TestCase
 from django.test.utils import override_settings
 from django.core import mail
-from pts.dispatch.tests import DispatchTestHelperMixin
+from pts.dispatch.tests import DispatchTestHelperMixin, DispatchBaseTest
 from pts.core.models import Package
 
 
-__all__ = ('DispatchDebianSpecificTest',)
+__all__ = ('DispatchDebianSpecificTest', 'DispatchBaseDebianSettingsTest')
+
+
+@override_settings(PTS_VENDOR_RULES='pts.vendor.debian.rules')
+class DispatchBaseDebianSettingsTest(DispatchBaseTest):
+    pass
 
 
 @override_settings(PTS_VENDOR_RULES='pts.vendor.debian.rules')
