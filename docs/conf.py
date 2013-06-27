@@ -17,6 +17,7 @@ import sys, os
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('../'))
 
 # -- General configuration -----------------------------------------------------
 
@@ -248,5 +249,15 @@ texinfo_documents = [
 #texinfo_no_detailmenu = False
 
 
-# Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'http://docs.python.org/': None}
+# Add Django's docs to intersphinx
+intersphinx_mapping = {
+    'http://docs.python.org/': None,
+    'django': (
+        'http://docs.djangoproject.com/en/dev/',
+        'http://docs.djangoproject.com/en/dev/_objects/'
+    ),
+}
+from pts.project import settings
+from django.core.management import setup_environ
+
+setup_environ(settings)
