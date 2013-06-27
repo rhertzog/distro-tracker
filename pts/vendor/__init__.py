@@ -31,3 +31,5 @@ arguments with a predefined name. The supported callables are:
   Should return a Boolean indicating whether this message should still be
   forwarded to subscribers which are subscribed to the default keyword.
 """
+
+from pts.vendor.common import get_callable

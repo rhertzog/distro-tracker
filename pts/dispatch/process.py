@@ -34,30 +34,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
-class InvalidPluginException(Exception):
-    pass
-
-
-def get_callable(name):
-    """
-    Returns a callable object from the vendor-provided module based on the
-    string name given as the parameter.
-    If no callable object with the given name is found in the vendor module
-    an exception is raised.
-    """
-    import importlib
-    vendor_module = importlib.import_module(settings.PTS_VENDOR_RULES)
-
-    function = getattr(vendor_module, name, None)
-    if not function:
-        raise InvalidPluginException("{name} not found in {module}".format(
-            name=name, module=settings.PTS_VENDOR_RULES))
-    if not callable(function):
-        raise InvalidPluginException("{name} is not callable.".format(
-            name=name))
-
-    return function
+from pts.vendor import get_callable, InvalidPluginException
 
 
 def process(message, sent_to_address=None):
