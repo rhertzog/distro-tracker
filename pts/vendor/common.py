@@ -38,3 +38,24 @@ def get_callable(name):
             name=name))
 
     return function
+
+
+def call(name, *args, **kwargs):
+    """
+    Function which executes the vendor-specific function with the given name by
+    passing it the given arguments.
+
+    It returns a tuple ``(result, implemented)`` where the values represent:
+
+    - result -- the corresponding function's return value. If the function was
+      not found, ``None`` is given.
+    - implemented -- a Boolean indicating whether the package implements the
+      given function. This way clients can differentiate between functions with
+      no return value and non-implemented functions.
+    """
+    try:
+        func = get_callable(name)
+    except (ImportError, InvalidPluginException):
+        return None, False
+
+    return func(*args, **kwargs), True

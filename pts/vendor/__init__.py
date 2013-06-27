@@ -32,4 +32,4 @@ arguments with a predefined name. The supported callables are:
   forwarded to subscribers which are subscribed to the default keyword.
 """
 
-from pts.vendor.common import get_callable
+from pts.vendor.common import get_callable, call
