@@ -91,3 +91,7 @@ class CommandConfirmation(models.Model):
     def is_expired(self):
         delta = timezone.now() - self.date_created
         return delta.days >= PTS_CONFIRMATION_EXPIRATION_DAYS
+
+    @property
+    def command_list(self):
+        return self.commands.splitlines()
