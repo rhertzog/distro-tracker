@@ -138,7 +138,7 @@ INSTALLED_APPS = (
     'pts.core',
     'pts.control',
     'pts.dispatch',
-    'pts.debian',
+    'pts.vendor',
 )
 
 # A sample logging configuration. The only tangible logging

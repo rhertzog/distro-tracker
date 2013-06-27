@@ -20,7 +20,7 @@ from pts.dispatch.tests import DispatchTestHelperMixin
 from pts.core.models import Package
 
 
-@override_settings(PTS_VENDOR_RULES='pts.debian.rules')
+@override_settings(PTS_VENDOR_RULES='pts.vendor.debian.rules')
 class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
     """
     Tests Debian-specific keyword classification.
