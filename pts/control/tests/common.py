@@ -11,6 +11,7 @@
 from __future__ import unicode_literals
 from django.test import TestCase
 from django.core import mail
+from django.utils.encoding import force_bytes
 
 from email import encoders
 from email.message import Message
@@ -34,7 +35,7 @@ class EmailControlTest(TestCase):
         Helper method. Passes the constructed control message to the control
         processor.
         """
-        control.process(self.message.as_string())
+        control.process(force_bytes(self.message.as_string(), 'utf-8'))
 
     def setUp(self):
         self.reset_message()
