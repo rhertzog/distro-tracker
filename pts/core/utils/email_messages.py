@@ -29,15 +29,10 @@ def extract_email_address_from_header(header):
     return from_address
 
 
-def get_decoded_message_payload(message, default_charset='ascii'):
+def get_decoded_message_payload(message, default_charset='utf-8'):
     """
     Extracts the payload of the given ``email.message.Message`` and returns it
     decoded based on the Content-Transfer-Encoding and charset.
-
-    This function is necessary due to the fact that the get_payload method of
-    the ``Message`` object in Python3 encodes the payload of messages where
-    CTE is 8bit as ``raw-unicode-escape`` instead of using the charset given
-    in the message.
     """
     # If the message is multipart there is nothing to decode so None is
     # returned
@@ -48,13 +43,7 @@ def get_decoded_message_payload(message, default_charset='ascii'):
 
     # The charset defaults to ascii if none is given
     charset = message.get_content_charset(default_charset)
-    try:
-        # Try decoding the given bytes based on the charset of the message
-        decoded_payload = payload.decode(charset)
-    except UnicodeDecodeError:
-        decoded_payload = payload.decode('raw-unicode-escape')
-
-    return decoded_payload
+    return payload.decode(charset)
 
 
 class BytesEmailMessage(object):
