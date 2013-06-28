@@ -25,6 +25,10 @@ __all__ = ('DispatchDebianSpecificTest', 'DispatchBaseDebianSettingsTest')
 
 @override_settings(PTS_VENDOR_RULES='pts.vendor.debian.rules')
 class DispatchBaseDebianSettingsTest(DispatchBaseTest):
+    """
+    This test class makes sure that base tests which should pass no matter the
+    vendor work when PTS_VENDOR_RULES is set to use debian.
+    """
     pass
 
 
