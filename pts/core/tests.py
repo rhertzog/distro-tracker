@@ -438,10 +438,8 @@ Content-Transfer-Encoding: 8bit
         """
         from django.core.mail import get_connection
         backend = get_connection()
-        backend.open()
         # Replace the backend's SMTP connection with a mock.
         mock_connection = self.get_mock_connection()
-        backend.connection.quit()
         backend.connection = mock_connection
         # Send the message over the backend
         message = message_from_bytes(self.message_bytes)
