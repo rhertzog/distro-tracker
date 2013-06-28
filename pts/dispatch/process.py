@@ -10,10 +10,11 @@
 
 from __future__ import unicode_literals
 from django.core.mail import get_connection
+from django.utils import six
 from django.utils import timezone
 from django.core.mail import EmailMessage
 
-from email import message_from_string
+from pts.core.utils import message_from_bytes
 from datetime import datetime
 
 from pts.core.utils import extract_email_address_from_header
@@ -41,7 +42,8 @@ def process(message, sent_to_address=None):
     """
     Handles the dispatching of received messages.
     """
-    msg = message_from_string(message)
+    assert isinstance(message, six.binary_type), 'Message must be given as bytes'
+    msg = message_from_bytes(message)
 
     if sent_to_address is None:
         # No MTA was recognized, the last resort is to try and use the message

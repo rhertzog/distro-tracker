@@ -17,6 +17,7 @@ from __future__ import unicode_literals
 from django.test import TestCase
 from django.core import mail
 from django.utils import timezone
+from django.utils.encoding import force_bytes
 
 from email.message import Message
 from datetime import timedelta
@@ -62,7 +63,10 @@ class DispatchTestHelperMixin(object):
         self.add_header(header_name, header_value)
 
     def run_dispatch(self, sent_to_address=None):
-        dispatch.process(self.message.as_string(), sent_to_address)
+        dispatch.process(
+            force_bytes(self.message.as_string(), 'utf-8'),
+            sent_to_address
+        )
 
     def subscribe_user_with_keyword(self, email, keyword):
         """

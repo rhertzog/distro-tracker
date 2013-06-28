@@ -9,6 +9,7 @@
 # distributed except according to the terms contained in the LICENSE file.
 
 from django.core.management.base import BaseCommand
+from django.utils import six
 
 from pts import dispatch
 
@@ -30,6 +31,8 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         logger.info('Processing a received package message')
 
+        if six.PY3:
+            self.input_file = self.input_file.detach()
         input_data = self.input_file.read()
         sent_to = self._get_to_address()
 
