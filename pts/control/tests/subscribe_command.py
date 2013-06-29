@@ -78,6 +78,12 @@ class SubscribeToPackageTest(EmailControlTest):
         commands.append('subscribe ' + package + ' ' + email)
         self.set_input_lines(commands)
 
+    def get_not_source_nor_binary_warning(self, package_name):
+        return (
+            '{pkg} is neither a source package nor a binary package.'.format(
+                pkg=package_name)
+        )
+
     def test_subscribe_and_confirm_normal(self):
         """
         Tests that the user is subscribed to the pacakge after running
@@ -190,8 +196,7 @@ class SubscribeToPackageTest(EmailControlTest):
         self.control_process()
 
         self.assert_warning_in_response(
-            '{package} is neither a source package '
-            'nor a binary package.'.format(package=package_name))
+            self.get_not_source_nor_binary_warning(package_name))
         self.assert_warning_in_response(
             'Package {package} is not even a pseudo package'.format(
                 package=package_name))
@@ -214,8 +219,7 @@ class SubscribeToPackageTest(EmailControlTest):
         self.control_process()
 
         self.assert_warning_in_response(
-            '{package} is neither a source package '
-            'nor a binary package.'.format(package=package_name))
+            self.get_not_source_nor_binary_warning(package_name))
         self.assert_warning_in_response(
             'Package {package} is not even a pseudo package'.format(
                 package=package_name))
@@ -233,8 +237,7 @@ class SubscribeToPackageTest(EmailControlTest):
         self.control_process()
 
         self.assert_warning_in_response(
-            '{package} is neither a source package '
-            'nor a binary package.'.format(package=pseudo_package))
+            self.get_not_source_nor_binary_warning(pseudo_package))
         self.assert_warning_in_response(
             'Package {package} is a pseudo package'.format(
                 package=pseudo_package))
