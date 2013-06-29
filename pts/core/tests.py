@@ -19,10 +19,16 @@ from django.test.utils import override_settings
 from django.utils import six
 from pts.core.models import Subscription, EmailUser, Package, BinaryPackage
 from pts.core.models import Keyword
+from pts.core.models import PseudoPackage
 from pts.core.utils import verp
 from pts.core.utils import message_from_bytes
 from pts.dispatch.custom_email_message import CustomEmailMessage
 
+import sys
+if six.PY3:
+    from unittest.mock import create_autospec
+else:
+    from mock import create_autospec
 
 class SubscriptionManagerTest(TestCase):
     def setUp(self):
@@ -449,10 +455,6 @@ Content-Transfer-Encoding: 8bit
         """
         Helper method returning a mock SMTP connection object.
         """
-        if six.PY3:
-            from unittest.mock import create_autospec
-        else:
-            from mock import create_autospec
         import smtplib
         return create_autospec(smtplib.SMTP('localhost'), return_value={})
 
@@ -504,3 +506,97 @@ Content-Transfer-Encoding: 8bit
             'from@domain.com',
             ['to@domain.com'],
             message.as_string())
+
+
+@override_settings(PTS_VENDOR_RULES='pts.core.tests')
+class RetrievePseudoPackagesTest(TestCase):
+    """
+    Tests the get_pseudo_package_list data retrieval function.
+    """
+    def setUp(self):
+        # Since the tests module is used to provide the vendor rules,
+        # we dynamically add the needed function
+        self.packages = ['package1', 'package2']
+        self.mock_get_pseudo_package_list = create_autospec(
+            lambda: None, return_value=self.packages)
+        sys.modules[__name__].get_pseudo_package_list = (
+            self.mock_get_pseudo_package_list
+        )
+
+    def tearDown(self):
+        # The added function is removed after the tests
+        delattr(sys.modules[__name__], 'get_pseudo_package_list')
+
+    def get_pseudo_package_list(self):
+        """
+        Helper method runs the get_pseudo_package_list function.
+        """
+        # Update the return value
+        self.mock_get_pseudo_package_list.return_value = self.packages
+        from pts.core.retrieve_data import (
+            get_pseudo_package_list as get_pseudo_package_list_test
+        )
+        get_pseudo_package_list_test()
+
+    def populate_packages(self, packages):
+        """
+        Helper method adds the given packages to the database.
+        """
+        for package in packages:
+            PseudoPackage.objects.create(name=package)
+
+    def test_all_pseudo_packages_added(self):
+        """
+        Tests that all pseudo packages provided by the vendor are added to the
+        database.
+        """
+        self.get_pseudo_package_list()
+
+        self.assertSequenceEqual(
+            sorted(self.packages),
+            sorted([package.name for package in PseudoPackage.objects.all()])
+        )
+
+    def test_pseudo_package_exists(self):
+        """
+        Tests that when a pseudo package returned in the result already exists
+        it is not added again and processing does not fail.
+        """
+        self.populate_packages(self.packages)
+
+        self.get_pseudo_package_list()
+
+        self.assertSequenceEqual(
+            sorted(self.packages),
+            sorted([package.name for package in PseudoPackage.objects.all()])
+        )
+
+    def test_pseudo_package_update(self):
+        """
+        Tests that when the vendor provided package list is updated, the
+        get_pseudo_package_list function properly updates the database too.
+        """
+        self.populate_packages(self.packages)
+        self.packages.append('package3')
+
+        self.get_pseudo_package_list()
+
+        self.assertSequenceEqual(
+            sorted(self.packages),
+            sorted([package.name for package in PseudoPackage.objects.all()])
+        )
+
+    def test_pseudo_package_update_remove(self):
+        """
+        Tests that when the vendor provided package list is updated to remove a
+        package, the database is correctly updated.
+        """
+        self.populate_packages(self.packages)
+        self.packages = ['new-package']
+
+        self.get_pseudo_package_list()
+
+        self.assertSequenceEqual(
+            sorted(self.packages),
+            sorted([package.name for package in PseudoPackage.objects.all()])
+        )
