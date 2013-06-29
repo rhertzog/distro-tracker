@@ -311,6 +311,54 @@ class PackageManagerTest(TestCase):
     def test_package_exists_false(self):
         self.assertFalse(Package.objects.exists_with_name('unexisting'))
 
+    def test_source_package_create(self):
+        """
+        Tests that the sources manager creates source packages.
+        """
+        p = Package.source_packages.create(name='source-package')
+
+        self.assertEqual(p.package_type, Package.SOURCE_PACKAGE_TYPE)
+
+    def test_pseudo_package_create(self):
+        """
+        Tests that the pseudo packages manager creates pseudo pacakges.
+        """
+        p = Package.pseudo_packages.create(name='pseudo-package')
+
+        self.assertEqual(p.package_type, Package.PSEUDO_PACKAGE_TYPE)
+
+    def test_subscription_only_package_create(self):
+        """
+        Tests that the subscription only packages manager creates
+        subscription only packages.
+        """
+        p = Package.subscription_only_packages.create(name='package')
+
+        self.assertEqual(p.package_type, Package.SUBSCRIPTION_ONLY_PACKAGE_TYPE)
+
+    def test_manager_types_correct_objects(self):
+        """
+        Tests that the different manager types always return only their
+        associated package type.
+        """
+        # Make sure there are no packages in the beginning
+        Package.objects.all().delete()
+        self.assertEqual(Package.objects.count(), 0)
+
+        src_pkg = Package.source_packages.create(name='source-package')
+        pseudo_pkg = Package.pseudo_packages.create(name='pseudo-package')
+        sub_only_pkg = Package.subscription_only_packages.create(name='package')
+
+        # objects manager returns all packages
+        self.assertEqual(Package.objects.count(), 3)
+        # specific pacakge type managers:
+        self.assertEqual(Package.source_packages.count(), 1)
+        self.assertIn(src_pkg, Package.source_packages.all())
+        self.assertEqual(Package.pseudo_packages.count(), 1)
+        self.assertIn(pseudo_pkg, Package.pseudo_packages.all())
+        self.assertEqual(Package.subscription_only_packages.count(), 1)
+        self.assertIn(sub_only_pkg, Package.subscription_only_packages.all())
+
 
 class BinaryPackageManagerTest(TestCase):
     def setUp(self):

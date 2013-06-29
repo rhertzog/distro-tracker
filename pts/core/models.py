@@ -81,22 +81,75 @@ class PackageManager(models.Manager):
     """
     A custom Manager for the ``Package`` model.
     """
+    def __init__(self, package_type=None, *args, **kwargs):
+        super(PackageManager, self).__init__(*args, **kwargs)
+        self.type = package_type
+
+    def get_query_set(self):
+        qs = super(PackageManager, self).get_query_set()
+        if self.type is None:
+            return qs
+        return qs.filter(package_type=self.type)
+
     def exists_with_name(self, package_name):
         """
         Returns True if a package with the given name exists.
         """
         return self.filter(name=package_name).exists()
 
+    def create(self, *args, **kwargs):
+        if 'package_type' not in kwargs and self.type is not None:
+            kwargs['package_type'] = self.type
+
+        return super(PackageManager, self).create(*args, **kwargs)
+
+    def get_or_create(self, *args, **kwargs):
+        defaults = kwargs.get('defaults', {})
+        if self.type is not None:
+            defaults.update({'package_type': self.type})
+        kwargs['defaults'] = defaults
+        return super(PackageManager, self).get_or_create(*args, **kwargs)
+
+
+class BasePackage(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
 
 @python_2_unicode_compatible
-class Package(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+class Package(BasePackage):
+    SOURCE_PACKAGE_TYPE = 0
+    PSEUDO_PACKAGE_TYPE = 1
+    SUBSCRIPTION_ONLY_PACKAGE_TYPE = 2
+    TYPE_CHOICES = (
+        (SOURCE_PACKAGE_TYPE, 'Source package'),
+        (PSEUDO_PACKAGE_TYPE, 'Pseudo package'),
+        (SUBSCRIPTION_ONLY_PACKAGE_TYPE, 'Subscription-only package'),
+    )
+
     subscriptions = models.ManyToManyField(EmailUser, through='Subscription')
+    package_type = models.IntegerField(choices=TYPE_CHOICES, default=0)
 
     objects = PackageManager()
+    source_packages = PackageManager(SOURCE_PACKAGE_TYPE)
+    pseudo_packages = PackageManager(PSEUDO_PACKAGE_TYPE)
+    subscription_only_packages = PackageManager(SUBSCRIPTION_ONLY_PACKAGE_TYPE)
 
     def __str__(self):
         return self.name
+
+
+class PseudoPackage(Package):
+    class Meta:
+        proxy = True
+
+    objects = PackageManager(Package.PSEUDO_PACKAGE_TYPE)
+
+
+class SourcePackage(Package):
+    class Meta:
+        proxy = True
+
+    objects = PackageManager(Package.SOURCE_PACKAGE_TYPE)
 
 
 class SubscriptionManager(models.Manager):
@@ -236,8 +289,7 @@ class BinaryPackageManager(models.Manager):
 
 
 @python_2_unicode_compatible
-class BinaryPackage(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+class BinaryPackage(BasePackage):
     source_package = models.ForeignKey(Package)
 
     objects = BinaryPackageManager()
