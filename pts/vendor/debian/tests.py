@@ -15,9 +15,14 @@ Tests for Debian-specific modules/functionality of the PTS.
 from __future__ import unicode_literals
 from django.test import TestCase
 from django.test.utils import override_settings
+from django.utils import six
 from django.core import mail
 from pts.dispatch.tests import DispatchTestHelperMixin, DispatchBaseTest
 from pts.core.models import Package
+if six.PY3:
+    from unittest.mock import patch
+else:
+    from mock import patch
 
 
 __all__ = ('DispatchDebianSpecificTest', 'DispatchBaseDebianSettingsTest')
@@ -148,3 +153,31 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
         self.run_dispatch()
 
         self.assert_all_headers_found(expected_headers)
+
+
+class GetPseudoPackageListTest(TestCase):
+    @patch('pts.vendor.debian.rules.requests')
+    def test_debian_pseudo_packages(self, mock_requests):
+        """
+        Tests that Debian-specific function for retrieving allowed pseudo
+        packages uses the correct source and properly parses it.
+        """
+        from pts.vendor.debian.rules import get_pseudo_package_list
+        mock_response = mock_requests.models.Response()
+        mock_response.status_code = 200
+        mock_response.text = (
+            'package1      text here\n'
+            'package2\t\t text'
+        )
+        mock_requests.get.return_value = mock_response
+
+        packages = get_pseudo_package_list()
+
+        # Correct URL used?
+        mock_requests.get.assert_called_with(
+            'http://bugs.debian.org/pseudo-packages.maintainers')
+        # Correct packages extracted?
+        self.assertSequenceEqual(
+            ['package1', 'package2'],
+            packages
+        )

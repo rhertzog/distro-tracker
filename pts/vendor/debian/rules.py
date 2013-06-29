@@ -10,6 +10,7 @@
 
 from __future__ import unicode_literals
 import re
+import requests
 from pts.core.utils import get_decoded_message_payload
 
 
@@ -56,3 +57,18 @@ def _get_message_body(msg):
     """
     return '\n'.join(get_decoded_message_payload(part)
                      for part in msg.walk() if not part.is_multipart())
+
+
+def get_pseudo_package_list():
+    PSEUDO_PACKAGE_LIST_URL = (
+        'http://bugs.debian.org/pseudo-packages.maintainers'
+    )
+    response = requests.get(PSEUDO_PACKAGE_LIST_URL)
+
+    if response.status_code == 200:
+        return [
+            line.split(None, 1)[0]
+            for line in response.text.splitlines()
+        ]
+    else:
+        return []
