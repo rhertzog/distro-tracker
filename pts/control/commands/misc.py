@@ -13,6 +13,7 @@ from __future__ import unicode_literals
 from pts.core.utils import get_or_none
 from pts.core.utils import pts_render_to_string
 from pts.core.models import Subscription, EmailUser, Package, BinaryPackage
+from pts.core.models import SourcePackage, PseudoPackage
 from pts.control.commands.confirmation import needs_confirmation
 from pts.control.commands.base import Command
 
@@ -54,12 +55,7 @@ class SubscribeCommand(Command):
                 package=self.package))
             return False
 
-        Subscription.objects.create_for(
-            email=self.user_email,
-            package_name=self.package,
-            active=False)
-
-        if not Package.objects.exists_with_name(self.package):
+        if not SourcePackage.objects.exists_with_name(self.package):
             if BinaryPackage.objects.exists_with_name(self.package):
                 binary_package = BinaryPackage.objects.get_by_name(self.package)
                 self.warn('{package} is not a source package.'.format(
@@ -73,7 +69,17 @@ class SubscribeCommand(Command):
                 self.warn(
                     '{package} is neither a source package '
                     'nor a binary package.'.format(package=self.package))
-                return False
+                if PseudoPackage.objects.exists_with_name(self.package):
+                    self.warn('Package {package} is a pseudo package.'.format(
+                        package=self.package))
+                else:
+                    self.warn('Package {package} is not even a pseudo '
+                              'package.'.format(package=self.package))
+
+        Subscription.objects.create_for(
+            email=self.user_email,
+            package_name=self.package,
+            active=False)
 
         self.reply('A confirmation mail has been sent to ' + self.user_email)
         return True

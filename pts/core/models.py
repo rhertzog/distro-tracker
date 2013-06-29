@@ -156,7 +156,10 @@ class SubscriptionManager(models.Manager):
     def create_for(self, package_name, email, active=True):
         package = get_or_none(Package, name=package_name)
         if not package:
-            return None
+            # If the package did not previously exist, create a
+            # "subscriptions-only" package.
+            package = Package.subscription_only_packages.create(
+                name=package_name)
         email_user, created = EmailUser.objects.get_or_create(
             email=email)
 

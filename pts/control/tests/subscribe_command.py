@@ -14,6 +14,7 @@ from django.conf import settings
 from datetime import timedelta
 
 from pts.core.utils import extract_email_address_from_header
+from pts.core.utils import get_or_none
 from pts.core.models import Package, BinaryPackage, EmailUser, Subscription
 import re
 
@@ -178,19 +179,44 @@ class SubscribeToPackageTest(EmailControlTest):
                 binary=binary_package))
         self.assert_confirmation_sent_to(self.user_email_address)
 
-    def test_subscribe_unexisting_source_or_binary_package(self):
+    def test_subscribe_unexisting_package(self):
         """
-        Tests the subscribe command when the given package is neither an
-        existing source nor an existing binary package.
+        Tests the subscribe command when the given package is not an existing
+        source, binary or pseudo package.
         """
-        binary_package = 'binary-package'
-        self.add_subscribe_command(binary_package)
+        package_name = 'random-package-name'
+        self.add_subscribe_command(package_name)
 
         self.control_process()
 
         self.assert_warning_in_response(
             '{package} is neither a source package '
-            'nor a binary package.'.format(package=binary_package))
+            'nor a binary package.'.format(package=package_name))
+        self.assert_warning_in_response(
+            'Package {package} is not even a pseudo package'.format(
+                package=package_name))
+        self.assert_confirmation_sent_to(self.user_email_address)
+        # A new package was created.
+        self.assertIsNotNone(get_or_none(Package, name=package_name))
+
+    def test_subscribe_pseudo_package(self):
+        """
+        Tests the subscribe command when the given package is an existing
+        pseudo-package.
+        """
+        pseudo_package = 'pseudo-package'
+        Package.pseudo_packages.create(name=pseudo_package)
+        self.add_subscribe_command(pseudo_package)
+
+        self.control_process()
+
+        self.assert_warning_in_response(
+            '{package} is neither a source package '
+            'nor a binary package.'.format(package=pseudo_package))
+        self.assert_warning_in_response(
+            'Package {package} is a pseudo package'.format(
+                package=pseudo_package))
+        self.assert_confirmation_sent_to(self.user_email_address)
 
     def test_subscribe_execute_once(self):
         """
