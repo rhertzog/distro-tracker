@@ -600,3 +600,23 @@ class RetrievePseudoPackagesTest(TestCase):
             sorted(self.packages),
             sorted([package.name for package in PseudoPackage.objects.all()])
         )
+
+    def test_management_command_called(self):
+        """
+        Tests that the management command for updating pseudo packages calls
+        the correct function.
+        """
+        from pts.core.management.commands.pts_update_pseudo_packages import (
+            Command as UpdatePseudoPackagesCommand
+        )
+
+        command = UpdatePseudoPackagesCommand()
+        # Redirect the output to a string not to pollute the test output
+        command.stdout = six.StringIO()
+        command.handle()
+
+        self.mock_get_pseudo_package_list.assert_called_with()
+        self.assertSequenceEqual(
+            sorted(self.packages),
+            sorted([package.name for package in PseudoPackage.objects.all()])
+        )
