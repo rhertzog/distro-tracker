@@ -8,6 +8,17 @@
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
 
+from django.shortcuts import render, redirect
+from django.http import Http404
+from pts.core.models import get_web_package
+
 
 def package_page(request, package_name):
-    pass
+    package = get_web_package(package_name)
+    if not package:
+        raise Http404
+    if package.get_absolute_url() != request.path:
+        return redirect(package)
+    return render(request, 'core/package.html', {
+        'package': package
+    })

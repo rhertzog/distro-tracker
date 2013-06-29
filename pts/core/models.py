@@ -162,6 +162,26 @@ class SourcePackage(Package):
             'package_name': self.name
         })
 
+def get_web_package(package_name):
+    """
+    Utility function returning either a PseudoPackage or a SourcePackage based
+    on the given package_name.
+
+    If neither of them are found, it tries to find a BinaryPackage with the
+    given name and returns the corresponding SourcePackage if found.
+
+    If that is not possible, ``None`` is returned.
+    """
+    if SourcePackage.objects.exists_with_name(package_name):
+        return SourcePackage.objects.get(name=package_name)
+    elif PseudoPackage.objects.exists_with_name(package_name):
+        return PseudoPackage.objects.get(name=package_name)
+    elif BinaryPackage.objects.exists_with_name(package_name):
+        binary_package = BinaryPackage.objects.get(name=package_name)
+        return binary_package.source_package
+
+    return None
+
 class SubscriptionManager(models.Manager):
     def create_for(self, package_name, email, active=True):
         package = get_or_none(Package, name=package_name)

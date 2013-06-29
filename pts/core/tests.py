@@ -622,3 +622,75 @@ class RetrievePseudoPackagesTest(TestCase):
             sorted(self.packages),
             sorted([package.name for package in PseudoPackage.objects.all()])
         )
+
+
+from django.core.urlresolvers import reverse
+from pts.core.models import SourcePackage
+
+
+class PackageViewTest(TestCase):
+    """
+    Tests for the package view.
+    """
+    def setUp(self):
+        self.package = SourcePackage.objects.create(name='dummy-package')
+        self.binary_package = BinaryPackage.objects.create(
+            name='binary-package', source_package=self.package)
+        self.pseudo_package = PseudoPackage.objects.create(name='pseudo-pkg')
+
+    def get_package_url(self, package_name):
+        """
+        Helper method which returns the URL for the package with the given name
+        """
+        return reverse('pts-package-page', kwargs={
+            'package_name': package_name
+        })
+
+    def test_source_package_page(self):
+        """
+        Tests that when visiting the package page for an existing package, a
+        response based on the correct template is returned.
+        """
+        url = self.get_package_url(self.package.name)
+        response = self.client.get(url)
+
+        self.assertTemplateUsed(response, 'core/package.html')
+
+    def test_binary_package_redirects_to_source(self):
+        """
+        Tests that when visited a binary package URL, the user is redirected
+        to the corresponding source package page.
+        """
+        url = self.get_package_url(self.binary_package.name)
+        response = self.client.get(url)
+
+        self.assertRedirects(response, self.get_package_url(self.package.name))
+
+    def test_pseudo_package_page(self):
+        """
+        Tests that when visiting a page for a pseudo package the correct
+        template is used.
+        """
+        url = self.get_package_url(self.pseudo_package.name)
+        response = self.client.get(url)
+
+        self.assertTemplateUsed(response, 'core/package.html')
+
+    def test_non_existent_package(self):
+        """
+        Tests that a 404 is returned when the given package does not exist.
+        """
+        url = self.get_package_url('no-exist')
+        self.assertEqual(self.client.get(url).status_code, 404)
+
+    def test_subscriptions_only_package(self):
+        """
+        Tests that a 404 is returned when the given package is a "subscriptions
+        only" package.
+        """
+        package_name = 'sub-only-pkg'
+        # Make sure the package actually exists.
+        Package.subscription_only_packages.create(name=package_name)
+
+        url = self.get_package_url(package_name)
+        self.assertEqual(self.client.get(url).status_code, 404)

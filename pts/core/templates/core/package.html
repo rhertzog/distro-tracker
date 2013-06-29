@@ -1,0 +1,19 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ block.super }} - {{ package }}{% endblock %}
+
+{% block content %}
+        <h1>{{ package }}</h1>
+        <form id="package-search-form">
+            <input type="text" name="package_name">
+        </form>
+{% endblock %}
+
+{% block footer %}
+            <div id="footer-title">Package Tracking System</div>
+            <div id="footer-copyright">
+                <a href="http://deb.li/ptsauthors">Copyright</a> 2013 The Debian Package Tracking System Developers</div>
+            <div id="footer-repository">
+                <a href="http://anonscm.debian.org/gitweb/?p=qa/pts.git">Git Repository</a>
+            </div>
+{% endblock %}
