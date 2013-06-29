@@ -199,6 +199,28 @@ class SubscribeToPackageTest(EmailControlTest):
         # A new package was created.
         self.assertIsNotNone(get_or_none(Package, name=package_name))
 
+    def test_subscribe_subscription_only_package(self):
+        """
+        Tests that when subscribing to a subscription-only package the correct
+        warning is displayed even when it already contains subscriptions.
+        """
+        package_name = 'random-package-name'
+        Subscription.objects.create_for(
+            email='user@domain.com', package_name=package_name)
+        # Make sure the package actually exists before running the test
+        self.assertIsNotNone(get_or_none(Package, name=package_name))
+        self.add_subscribe_command(package_name)
+
+        self.control_process()
+
+        self.assert_warning_in_response(
+            '{package} is neither a source package '
+            'nor a binary package.'.format(package=package_name))
+        self.assert_warning_in_response(
+            'Package {package} is not even a pseudo package'.format(
+                package=package_name))
+        self.assert_confirmation_sent_to(self.user_email_address)
+
     def test_subscribe_pseudo_package(self):
         """
         Tests the subscribe command when the given package is an existing
