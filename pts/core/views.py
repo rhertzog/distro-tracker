@@ -22,3 +22,7 @@ def package_page(request, package_name):
     return render(request, 'core/package.html', {
         'package': package
     })
+
+
+def legacy_package_url_redirect(request, package_hash, package_name):
+    return redirect('pts-package-page', package_name=package_name, permanent=True)

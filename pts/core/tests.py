@@ -694,3 +694,28 @@ class PackageViewTest(TestCase):
 
         url = self.get_package_url(package_name)
         self.assertEqual(self.client.get(url).status_code, 404)
+
+    def test_legacy_url_redirects(self):
+        """
+        Tests that the old PTS style package URLs are correctly redirected.
+        """
+        url_template = '/{hash}/{package}.html'
+
+        # Redirects for packages that do not start with "lib"
+        url = url_template.format(hash=self.package.name[0],
+                                  package=self.package.name)
+        response = self.client.get(url)
+        self.assertRedirects(response, self.get_package_url(self.package.name),
+                             status_code=301)
+
+        # No redirect when the hash does not match the package
+        url = url_template.format(hash='q', package=self.package.name)
+        self.assertEqual(self.client.get(url).status_code, 404)
+
+        # Redirect when the package name starts with "lib"
+        lib_package = 'libpackage'
+        SourcePackage.objects.create(name=lib_package)
+        url = url_template.format(hash='libp', package=lib_package)
+        self.assertRedirects(self.client.get(url),
+                             self.get_package_url(lib_package),
+                             status_code=301)

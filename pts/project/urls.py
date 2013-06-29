@@ -16,6 +16,9 @@ from django.conf.urls import patterns, include, url
 # admin.autodiscover()
 
 urlpatterns = patterns('',
+    url(r'^(?P<package_hash>(lib)?.)/(?P<package_name>(\1).+)\.html$',
+        'pts.core.views.legacy_package_url_redirect'),
+
     url(r'^(?P<package_name>.+)$', 'pts.core.views.package_page',
         name='pts-package-page'),
 
