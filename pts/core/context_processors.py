@@ -15,7 +15,7 @@ from django.contrib.sites.models import Site
 
 PTS_EXTRAS = {
     'PTS_VENDOR_NAME': settings.PTS_VENDOR_NAME,
-    'PTS_VENDOR_HOMEPAGE_URL': getattr(settings, 'PTS_VENDOR_HOMEPAGE_URL', ''),
+    'PTS_VENDOR_URL': getattr(settings, 'PTS_VENDOR_URL', ''),
     'PTS_CONTACT_EMAIL': settings.PTS_CONTACT_EMAIL,
     'PTS_CONTROL_EMAIL': settings.PTS_CONTROL_EMAIL,
     'PTS_SITE_DOMAIN': Site.objects.get_current(),
