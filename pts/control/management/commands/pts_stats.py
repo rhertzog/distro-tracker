@@ -16,7 +16,7 @@ from optparse import make_option
 
 import json
 
-from pts.core.models import Package, Subscription, EmailUser
+from pts.core.models import SourcePackage, Subscription, EmailUser
 
 
 class Command(BaseCommand):
@@ -43,7 +43,8 @@ class Command(BaseCommand):
         from collections import OrderedDict
         # Necessary to keep ordering because of the legacy output format.
         stats = OrderedDict((
-            ('package_number', Package.objects.count()),
+            ('package_number',
+             SourcePackage.objects.all_with_subscribers().count()),
             ('subscription_number', Subscription.objects.count()),
             ('date', timezone.now().strftime('%Y-%m-%d')),
             ('unique_emails_number', EmailUser.objects.count()),

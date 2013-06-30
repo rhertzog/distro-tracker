@@ -111,6 +111,14 @@ class PackageManager(models.Manager):
         kwargs['defaults'] = defaults
         return super(PackageManager, self).get_or_create(*args, **kwargs)
 
+    def all_with_subscribers(self):
+        """
+        An additional method which filters the packages and returns a QuerySet
+        containing only those which have at least one subscriber.
+        """
+        qs = self.annotate(subscriber_count=models.Count('subscriptions'))
+        return qs.filter(subscriber_count__gt=0)
+
 
 class BasePackage(models.Model):
     name = models.CharField(max_length=100, unique=True)

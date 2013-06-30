@@ -16,7 +16,9 @@ from pts.control.management.commands.pts_dump_subscribers import (
     Command as DumpCommand)
 from pts.control.management.commands.pts_stats import Command as StatsCommand
 
+
 from pts.core.models import Package, EmailUser, Subscription
+from pts.core.models import SourcePackage, PseudoPackage
 
 from django.utils import six
 from django.utils import timezone
@@ -213,14 +215,16 @@ class StatsCommandTest(TestCase):
     def setUp(self):
         self.package_count = 5
         for i in range(self.package_count):
-            Package.objects.create(name='package' + str(i))
+            SourcePackage.objects.create(name='package' + str(i))
+        # Add some pseudo packages in the mix
+        PseudoPackage.objects.create(name='pseudo')
         self.user_count = 2
         for i in range(self.user_count):
             EmailUser.objects.create(email='email' + str(i) + '@domain.com')
-        # Subscribe all users to all packages
+        # Subscribe all users to all source packages
         self.subscription_count = self.package_count * self.user_count
         for user in EmailUser.objects.all():
-            for package in Package.objects.all():
+            for package in SourcePackage.objects.all():
                 Subscription.objects.create(email_user=user, package=package)
 
     def call_command(self, *args, **kwargs):

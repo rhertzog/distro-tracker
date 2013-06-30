@@ -367,6 +367,56 @@ class PackageManagerTest(TestCase):
         self.assertEqual(Package.subscription_only_packages.count(), 1)
         self.assertIn(sub_only_pkg, Package.subscription_only_packages.all())
 
+    def test_all_with_subscriptions(self):
+        """
+        Tests the manager method which should return a QuerySet with all
+        packages that have at least one subscriber.
+        """
+        pseudo_package = PseudoPackage.objects.create(name='pseudo-package')
+        sub_only_pkg = Package.subscription_only_packages.create(
+            name='sub-only-pkg')
+        Package.subscription_only_packages.create(name='sub-only-pkg-1')
+
+        # When there are no subscriptions, it shouldn't return any results
+        self.assertEqual(Package.objects.all_with_subscribers().count(), 0)
+        self.assertEqual(
+            Package.pseudo_packages.all_with_subscribers().count(),
+            0)
+        self.assertEqual(
+            Package.source_packages.all_with_subscribers().count(),
+            0)
+        self.assertEqual(
+            Package.subscription_only_packages.all_with_subscribers().count(),
+            0)
+
+        # When subscriptions are added, only the packages with subscriptions
+        # are returned
+        Subscription.objects.create_for(package_name=self.package.name,
+                                        email='user@domain.com')
+        Subscription.objects.create_for(package_name=sub_only_pkg.name,
+                                        email='other-user@domain.com')
+        Subscription.objects.create_for(package_name=pseudo_package.name,
+                                        email='some-user@domain.com')
+
+        self.assertEqual(Package.objects.all_with_subscribers().count(), 3)
+        all_with_subscribers = [
+            pkg.name
+            for pkg in Package.objects.all_with_subscribers()
+        ]
+        self.assertIn(self.package.name, all_with_subscribers)
+        self.assertIn(pseudo_package.name, all_with_subscribers)
+        self.assertIn(sub_only_pkg.name, all_with_subscribers)
+        # Specific managers...
+        self.assertEqual(
+            Package.pseudo_packages.all_with_subscribers().count(),
+            1)
+        self.assertEqual(
+            Package.source_packages.all_with_subscribers().count(),
+            1)
+        self.assertEqual(
+            Package.subscription_only_packages.all_with_subscribers().count(),
+            1)
+
 
 class BinaryPackageManagerTest(TestCase):
     def setUp(self):
