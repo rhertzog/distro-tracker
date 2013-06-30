@@ -772,3 +772,13 @@ class PackageSearchViewTest(TestCase):
         self.assertTemplateUsed('core/package_search.html')
         self.assertIn('package_name', response.context)
         self.assertEqual(response.context['package_name'], 'no-exist')
+
+
+class IndexViewTest(TestCase):
+    def test_index(self):
+        """
+        Tests that the correct template is rendered when the index page is
+        accessed.
+        """
+        response = self.client.get('/')
+        self.assertTemplateUsed(response, 'core/index.html')

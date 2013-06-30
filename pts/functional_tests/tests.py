@@ -56,6 +56,8 @@ class PackagePageTest(LiveServerTestCase):
         """
         search_form = self.browser.find_element_by_id('package-search-form')
         text_box = search_form.find_element_by_name('package_name')
+        # Make sure any old text is removed.
+        text_box.clear()
         text_box.send_keys(text)
         text_box.send_keys(Keys.ENTER)
 
@@ -116,5 +118,33 @@ class PackagePageTest(LiveServerTestCase):
 
         # However, when the user tries a package name which does not exist,
         # he expects to see a page informing him of this
+        self.send_text_to_package_search_form('no-exist')
+        self.assert_in_page_body('Package no-exist does not exist')
+
+    def test_access_package_page_from_index(self):
+        """
+        Tests that the user can access a package page starting from the index
+        and using the provided form.
+        """
+        # The user opens the start page of the PTS
+        self.browser.get(self.get_absolute_url('/'))
+
+        # He sees it is the index page of the PTS
+        self.assertIn('Package Tracking System', self.browser.title)
+
+        # There is a form which he can use for access to pacakges.
+        self.assert_element_with_id_in_page('package-search-form')
+
+        # He types in a name of a known source package...
+        self.send_text_to_package_search_form(self.package.name)
+        # ...and expects to see the package page open.
+        self.assertEqual(
+            self.browser.current_url,
+            self.get_absolute_url(self.package.get_absolute_url()))
+
+        # The user goes back to the index...
+        self.browser.back()
+        # ...and tries using the form to access a package page, but the package
+        # does not exist.
         self.send_text_to_package_search_form('no-exist')
         self.assert_in_page_body('Package no-exist does not exist')

@@ -10,6 +10,7 @@
 
 from __future__ import unicode_literals
 from django.conf.urls import patterns, include, url
+from django.views.generic import TemplateView
 from pts.core.views import PackageSearchView
 
 # Uncomment the next two lines to enable the admin:
@@ -25,6 +26,9 @@ urlpatterns = patterns('',
 
     url(r'^(?P<package_name>.+)$', 'pts.core.views.package_page',
         name='pts-package-page'),
+
+    url(r'^$', TemplateView.as_view(template_name='core/index.html'),
+        name='pts-index'),
 
     # Uncomment the admin/doc line below to enable admin documentation:
     # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),

@@ -1,0 +1,6 @@
+{% extends 'core/base.html' %}
+{% block content %}
+        <form id="package-search-form" action="{% url 'pts-package-search' %}" method="GET">
+            <input type="text" name="package_name">
+        </form>
+{% endblock %}
