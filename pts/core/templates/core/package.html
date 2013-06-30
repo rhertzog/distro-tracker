@@ -4,7 +4,7 @@
 
 {% block content %}
         <h1>{{ package }}</h1>
-        <form id="package-search-form">
+        <form id="package-search-form" action="{% url 'pts-package-search' %}" method="GET">
             <input type="text" name="package_name">
         </form>
 {% endblock %}

@@ -10,6 +10,7 @@
 
 from django.shortcuts import render, redirect
 from django.http import Http404
+from django.views.generic import View
 from pts.core.models import get_web_package
 
 
@@ -26,3 +27,18 @@ def package_page(request, package_name):
 
 def legacy_package_url_redirect(request, package_hash, package_name):
     return redirect('pts-package-page', package_name=package_name, permanent=True)
+
+
+class PackageSearchView(View):
+    def get(self, request):
+        if 'package_name' not in self.request.GET:
+            raise Http404
+        package_name = self.request.GET.get('package_name')
+
+        package = get_web_package(package_name)
+        if package is not None:
+            return redirect(package)
+        else:
+            return render(request, 'core/package_search.html', {
+                'package_name': package_name
+            })

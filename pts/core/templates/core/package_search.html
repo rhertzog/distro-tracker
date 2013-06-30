@@ -1,0 +1,10 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ block.super }} - Search{% endblock %}
+
+{% block content %}
+        Package {{ package_name }} does not exist.
+        <form id="package-search-form" action="{% url 'pts-package-search' %}" method="GET">
+            <input type="text" name="package_name">
+        </form>
+{% endblock %}

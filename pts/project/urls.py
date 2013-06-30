@@ -10,6 +10,7 @@
 
 from __future__ import unicode_literals
 from django.conf.urls import patterns, include, url
+from pts.core.views import PackageSearchView
 
 # Uncomment the next two lines to enable the admin:
 # from django.contrib import admin
@@ -18,6 +19,9 @@ from django.conf.urls import patterns, include, url
 urlpatterns = patterns('',
     url(r'^(?P<package_hash>(lib)?.)/(?P<package_name>(\1).+)\.html$',
         'pts.core.views.legacy_package_url_redirect'),
+
+    url(r'^search$', PackageSearchView.as_view(),
+        name='pts-package-search'),
 
     url(r'^(?P<package_name>.+)$', 'pts.core.views.package_page',
         name='pts-package-page'),

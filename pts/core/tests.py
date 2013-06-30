@@ -625,7 +625,6 @@ class RetrievePseudoPackagesTest(TestCase):
 
 
 from django.core.urlresolvers import reverse
-from pts.core.models import SourcePackage
 
 
 class PackageViewTest(TestCase):
@@ -719,3 +718,57 @@ class PackageViewTest(TestCase):
         self.assertRedirects(self.client.get(url),
                              self.get_package_url(lib_package),
                              status_code=301)
+
+
+class PackageSearchViewTest(TestCase):
+    def setUp(self):
+        self.pseudo_package = PseudoPackage.objects.create(name='pseudo-package')
+        self.source_package = SourcePackage.objects.create(name='dummy-package')
+        self.binary_package = BinaryPackage.objects.create(
+            name='binary-package',
+            source_package=self.source_package)
+
+    def test_package_search_source_package(self):
+        """
+        Tests the package search when the given package is an existing source
+        package.
+        """
+        response = self.client.get(reverse('pts-package-search'), {
+            'package_name': self.source_package.name
+        })
+
+        self.assertRedirects(response, self.source_package.get_absolute_url())
+
+    def test_package_search_pseudo_package(self):
+        """
+        Tests the package search when the given package is an existing pseudo
+        package.
+        """
+        response = self.client.get(reverse('pts-package-search'), {
+            'package_name': self.pseudo_package.name
+        })
+
+        self.assertRedirects(response, self.pseudo_package.get_absolute_url())
+
+    def test_package_search_binary_package(self):
+        """
+        Tests the package search when the given package is an existing binary
+        package.
+        """
+        response = self.client.get(reverse('pts-package-search'), {
+            'package_name': self.binary_package.name
+        })
+
+        self.assertRedirects(response, self.source_package.get_absolute_url())
+
+    def test_package_does_not_exist(self):
+        """
+        Tests the package search when the given package does not exist.
+        """
+        response = self.client.get(reverse('pts-package-search'), {
+            'package_name': 'no-exist'
+        })
+
+        self.assertTemplateUsed('core/package_search.html')
+        self.assertIn('package_name', response.context)
+        self.assertEqual(response.context['package_name'], 'no-exist')
