@@ -563,7 +563,7 @@ Content-Transfer-Encoding: 8bit
 @override_settings(PTS_VENDOR_RULES='pts.core.tests')
 class RetrievePseudoPackagesTest(TestCase):
     """
-    Tests the get_pseudo_package_list data retrieval function.
+    Tests the update_pseudo_package_list data retrieval function.
     """
     def setUp(self):
         # Since the tests module is used to provide the vendor rules,
@@ -579,16 +579,14 @@ class RetrievePseudoPackagesTest(TestCase):
         # The added function is removed after the tests
         delattr(sys.modules[__name__], 'get_pseudo_package_list')
 
-    def get_pseudo_package_list(self):
+    def update_pseudo_package_list(self):
         """
         Helper method runs the get_pseudo_package_list function.
         """
         # Update the return value
         self.mock_get_pseudo_package_list.return_value = self.packages
-        from pts.core.retrieve_data import (
-            get_pseudo_package_list as get_pseudo_package_list_test
-        )
-        get_pseudo_package_list_test()
+        from pts.core.retrieve_data import update_pseudo_package_list
+        update_pseudo_package_list()
 
     def populate_packages(self, packages):
         """
@@ -602,7 +600,7 @@ class RetrievePseudoPackagesTest(TestCase):
         Tests that all pseudo packages provided by the vendor are added to the
         database.
         """
-        self.get_pseudo_package_list()
+        self.update_pseudo_package_list()
 
         self.assertSequenceEqual(
             sorted(self.packages),
@@ -616,7 +614,7 @@ class RetrievePseudoPackagesTest(TestCase):
         """
         self.populate_packages(self.packages)
 
-        self.get_pseudo_package_list()
+        self.update_pseudo_package_list()
 
         self.assertSequenceEqual(
             sorted(self.packages),
@@ -626,12 +624,12 @@ class RetrievePseudoPackagesTest(TestCase):
     def test_pseudo_package_update(self):
         """
         Tests that when the vendor provided package list is updated, the
-        get_pseudo_package_list function properly updates the database too.
+        database is correctly updated too.
         """
         self.populate_packages(self.packages)
         self.packages.append('package3')
 
-        self.get_pseudo_package_list()
+        self.update_pseudo_package_list()
 
         self.assertSequenceEqual(
             sorted(self.packages),
@@ -646,7 +644,7 @@ class RetrievePseudoPackagesTest(TestCase):
         self.populate_packages(self.packages)
         self.packages = ['new-package']
 
-        self.get_pseudo_package_list()
+        self.update_pseudo_package_list()
 
         self.assertSequenceEqual(
             sorted(self.packages),

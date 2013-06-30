@@ -11,7 +11,7 @@
 from __future__ import unicode_literals
 from django.core.management.base import BaseCommand
 from pts.core.models import PseudoPackage
-from pts.core.retrieve_data import get_pseudo_package_list
+from pts.core.retrieve_data import update_pseudo_package_list
 
 
 class Command(BaseCommand):
@@ -23,7 +23,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         self.stdout.write('Retrieving new list of pseudo-packages...')
-        get_pseudo_package_list()
+        update_pseudo_package_list()
 
         self.stdout.write("The updated list of pseudo-packages is:")
         for package in PseudoPackage.objects.all():

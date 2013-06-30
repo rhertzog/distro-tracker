@@ -13,7 +13,7 @@ from pts import vendor
 from pts.core.models import PseudoPackage
 
 
-def get_pseudo_package_list():
+def update_pseudo_package_list():
     pseudo_packages, implemented = vendor.call('get_pseudo_package_list')
 
     if not implemented:

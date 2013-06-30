@@ -8,6 +8,7 @@
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
 
+from __future__ import unicode_literals
 from django.shortcuts import render, redirect
 from django.http import Http404
 from django.views.generic import View
