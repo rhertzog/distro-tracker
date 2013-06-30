@@ -18,6 +18,7 @@ from django.test import TestCase, SimpleTestCase
 from django.test.utils import override_settings
 from django.utils import six
 from pts.core.models import Subscription, EmailUser, Package, BinaryPackage
+from pts.core.models import SourcePackage
 from pts.core.models import Keyword
 from pts.core.models import PseudoPackage
 from pts.core.utils import verp
@@ -29,6 +30,7 @@ if six.PY3:
     from unittest.mock import create_autospec
 else:
     from mock import create_autospec
+
 
 class SubscriptionManagerTest(TestCase):
     def setUp(self):
@@ -368,7 +370,7 @@ class PackageManagerTest(TestCase):
 
 class BinaryPackageManagerTest(TestCase):
     def setUp(self):
-        self.package = Package.objects.create(name='dummy-package')
+        self.package = SourcePackage.objects.create(name='dummy-package')
         self.binary_package = BinaryPackage.objects.create(
             name='binary-package',
             source_package=self.package)

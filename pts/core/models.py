@@ -293,7 +293,7 @@ class BinaryPackageManager(models.Manager):
 
 @python_2_unicode_compatible
 class BinaryPackage(BasePackage):
-    source_package = models.ForeignKey(Package)
+    source_package = models.ForeignKey(SourcePackage)
 
     objects = BinaryPackageManager()
 

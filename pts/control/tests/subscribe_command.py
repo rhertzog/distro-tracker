@@ -16,6 +16,7 @@ from datetime import timedelta
 from pts.core.utils import extract_email_address_from_header
 from pts.core.utils import get_or_none
 from pts.core.models import Package, BinaryPackage, EmailUser, Subscription
+from pts.core.models import SourcePackage
 import re
 
 from pts.control.tests.common import EmailControlTest
@@ -63,9 +64,10 @@ class SubscribeToPackageTest(EmailControlTest):
         Helper method which creates a binary package for the given source
         package.
         """
+        src_pkg = SourcePackage.objects.get(name=source_package.name)
         BinaryPackage.objects.create(
             name=binary_package,
-            source_package=source_package)
+            source_package=src_pkg)
 
     def add_subscribe_command(self, package, email=None):
         """
