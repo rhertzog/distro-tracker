@@ -11,6 +11,7 @@
 from __future__ import unicode_literals
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
+from django.core.urlresolvers import reverse
 from pts.core.utils import get_or_none
 
 
@@ -144,6 +145,11 @@ class PseudoPackage(Package):
 
     objects = PackageManager(Package.PSEUDO_PACKAGE_TYPE)
 
+    def get_absolute_url(self):
+        return reverse('pts-package-page', kwargs={
+            'package_name': self.name
+        })
+
 
 class SourcePackage(Package):
     class Meta:
@@ -151,6 +157,10 @@ class SourcePackage(Package):
 
     objects = PackageManager(Package.SOURCE_PACKAGE_TYPE)
 
+    def get_absolute_url(self):
+        return reverse('pts-package-page', kwargs={
+            'package_name': self.name
+        })
 
 class SubscriptionManager(models.Manager):
     def create_for(self, package_name, email, active=True):
@@ -299,3 +309,7 @@ class BinaryPackage(BasePackage):
 
     def __str__(self):
         return self.name
+
+    def get_absolute_url(self):
+        # Take the URL of its source package
+        return self.source_package.get_absolute_url()
