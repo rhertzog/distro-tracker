@@ -642,14 +642,67 @@ class RetrievePseudoPackagesTest(TestCase):
         package, the database is correctly updated.
         """
         self.populate_packages(self.packages)
+        old_packages = self.packages
         self.packages = ['new-package']
 
         self.update_pseudo_package_list()
 
+        # The list of pseudo packages is updated to contain only the new
+        # package
         self.assertSequenceEqual(
             sorted(self.packages),
             sorted([package.name for package in PseudoPackage.objects.all()])
         )
+        # Old pseudo packages are now demoted to subscription-only packages
+        self.assertSequenceEqual(
+            sorted(old_packages),
+            sorted([
+                pkg.name
+                for pkg in Package.subscription_only_packages.all()
+            ])
+        )
+
+    def test_subscriptions_remain_after_update(self):
+        """
+        Tests that any user subscriptions to pseudo packages are retained after
+        the update operation is ran.
+        """
+        self.populate_packages(self.packages)
+        user_email = 'user@domain.com'
+        Subscription.objects.create_for(package_name=self.packages[0],
+                                        email=user_email)
+        Subscription.objects.create_for(package_name=self.packages[1],
+                                        email=user_email)
+        # After the update, the first package is no longer to be considered a
+        # pseudo package.
+        removed_package = self.packages.pop(0)
+
+        self.update_pseudo_package_list()
+
+        user = EmailUser.objects.get(email=user_email)
+        # Still subscribed to the demoted package
+        self.assertTrue(user.is_subscribed_to(removed_package))
+        # Still subscribed to the pseudo package
+        self.assertTrue(user.is_subscribed_to(self.packages[0]))
+
+    def test_all_pseudo_packages_demoted(self):
+        """
+        Tests that when the vendor-provided function returns an empty list, all
+        pseudo packages are correctly demoted down to subscription-only
+        packages.
+        """
+        self.populate_packages(self.packages)
+        old_packages = self.packages
+        self.packages = []
+        # Sanity check: there were no subscription-only packages originaly
+        self.assertEqual(Package.subscription_only_packages.count(),
+                         0)
+
+        self.update_pseudo_package_list()
+
+        self.assertEqual(PseudoPackage.objects.count(), 0)
+        self.assertEqual(Package.subscription_only_packages.count(),
+                         len(old_packages))
 
     def test_management_command_called(self):
         """

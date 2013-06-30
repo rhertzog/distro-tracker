@@ -10,7 +10,7 @@
 
 from __future__ import unicode_literals
 from pts import vendor
-from pts.core.models import PseudoPackage
+from pts.core.models import PseudoPackage, Package
 
 
 def update_pseudo_package_list():
@@ -19,8 +19,19 @@ def update_pseudo_package_list():
     if not implemented:
         return
 
-    # Drop the old pseudo package information since it could contain pseudo
-    # packages which are no longer valid
-    PseudoPackage.objects.all().delete()
+    # Faster lookups than if this were a list
+    pseudo_packages = set(pseudo_packages)
+    for existing_package in PseudoPackage.objects.all():
+        if existing_package.name not in pseudo_packages:
+            # Existing packages which are no longer considered pseudo packages are
+            # demoted to a subscription-only package.
+            existing_package.package_type = Package.SUBSCRIPTION_ONLY_PACKAGE_TYPE
+            existing_package.save()
+        else:
+            # If an existing package remained a pseudo package there will be no
+            # action required so it is removed from the set.
+            pseudo_packages.remove(existing_package.name)
+
+    # The left over packages in the set are the ones that do not exist.
     for package_name in pseudo_packages:
         PseudoPackage.objects.create(name=package_name)
