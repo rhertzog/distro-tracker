@@ -1,0 +1,19 @@
+@charset "utf-8";
+
+#header-pts {
+    width: 100%;
+    border-radius: 30px;
+    -moz-border-radius: 30px;
+    -webkit-border-radius: 30px;
+    border: 1px solid #D70751;
+    background: #D70751;
+    color: yellow;
+}
+
+#package-page-header {
+    border-bottom-color: #D70751;
+}
+
+.separator {
+    background: #D70751;
+}

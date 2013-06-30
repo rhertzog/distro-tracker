@@ -1,12 +1,49 @@
+{% load staticfiles %}
 <!DOCTYPE html>
 <html>
     <head>
         <meta charset="utf-8">
         <title>{% block title %}{{ PTS_VENDOR_NAME }} Package Tracking System{% endblock %}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet" media="screen">
+        <link href="{% static 'css/style.css' %}" rel="stylesheet" media="screen">
+        {% block extra-css %}{% endblock %}
     </head>
     <body>
-        {% block content %}
+        {% block page-header %}
+        <header class="page-header">
+            <div class="container">
+                {% block page-header-content %}
+                <div class="row text-center">{% include 'core/logo.html' %}</div>
+                <div class="row text-center"><div id="header-pts"><h4>{{ PTS_VENDOR_NAME }} Package Tracking System</h4></div></div>
+                {% endblock %}
+            </div>
+        </header>
         {% endblock %}
-        <div id="footer">{% block footer %}{% endblock %}</div>
+
+        <div class="container">
+            {% block content %}
+            {% endblock %}
+        </div>
+
+        <hr>
+        <footer id="footer" class="footer">
+            <div class="container">
+                <div class="text-center">
+                    {% block footer %}
+                    <div id="footer-title">{% if PTS_VENDOR_HOMEPAGE_URL %}<a href="{{ PTS_VENDOR_HOMEPAGE_URL }}">{{ PTS_VENDOR_NAME }}</a>{% else %}{{ PTS_VENDOR_NAME }}{% endif %} Package Tracking System</div>
+                    <div id="footer-copyright">
+                        <a href="http://deb.li/ptsauthors">Copyright</a> 2013 The Debian Package Tracking System Developers</div>
+                    <div id="footer-repository">
+                        <a href="http://anonscm.debian.org/gitweb/?p=qa/pts.git">Git Repository</a>
+                    </div>
+                    {% endblock %}
+                </div>
+            </div>
+        </footer>
+
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+        <script src="{% static 'js/bootstrap.min.js' %}"></script>
+        {% block extra-js %}{% endblock %}
     </body>
 </html>
