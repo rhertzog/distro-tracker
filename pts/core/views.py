@@ -11,8 +11,12 @@
 from __future__ import unicode_literals
 from django.shortcuts import render, redirect
 from django.http import Http404
+from django.utils.decorators import method_decorator
 from django.views.generic import View
+from django.views.decorators.cache import cache_control
 from pts.core.models import get_web_package
+from pts.core.utils import render_to_json_response
+from pts.core.models import SourcePackage, Package, PseudoPackage
 
 
 def package_page(request, package_name):
@@ -43,3 +47,29 @@ class PackageSearchView(View):
             return render(request, 'core/package_search.html', {
                 'package_name': package_name
             })
+
+
+class PackageAutocompleteView(View):
+    @method_decorator(cache_control(must_revalidate=True, max_age=3600))
+    def get(self, request):
+        if 'q' not in request.GET:
+            raise Http404
+        query_string = request.GET['q']
+        package_type = request.GET.get('package_type', None)
+        MANAGERS = {
+            'pseudo': PseudoPackage.objects,
+            'source': SourcePackage.objects,
+        }
+        # When no package type is given include both pseudo and source packages
+        filtered = MANAGERS.get(
+            package_type,
+            Package.objects.exclude(
+                package_type=Package.SUBSCRIPTION_ONLY_PACKAGE_TYPE)
+        )
+        filtered = filtered.filter(name__istartswith=query_string)
+        # Extract only the name of the package.
+        filtered = filtered.values('name')
+        # Limit the number of packages returned from the autocomplete
+        AUTOCOMPLETE_ITEMS_LIMIT = 10
+        filtered = filtered[:AUTOCOMPLETE_ITEMS_LIMIT]
+        return render_to_json_response([package['name'] for package in filtered])

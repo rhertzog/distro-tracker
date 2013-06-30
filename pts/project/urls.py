@@ -11,7 +11,7 @@
 from __future__ import unicode_literals
 from django.conf.urls import patterns, include, url
 from django.views.generic import TemplateView
-from pts.core.views import PackageSearchView
+from pts.core.views import PackageSearchView, PackageAutocompleteView
 
 # Uncomment the next two lines to enable the admin:
 # from django.contrib import admin
@@ -23,6 +23,9 @@ urlpatterns = patterns('',
 
     url(r'^search$', PackageSearchView.as_view(),
         name='pts-package-search'),
+
+    url(r'^api/package/search/autocomplete$', PackageAutocompleteView.as_view(),
+        name='pts-api-package-autocomplete'),
 
     url(r'^(?P<package_name>.+)$', 'pts.core.views.package_page',
         name='pts-package-page'),

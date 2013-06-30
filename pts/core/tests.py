@@ -24,6 +24,7 @@ from pts.core.models import PseudoPackage
 from pts.core.utils import verp
 from pts.core.utils import message_from_bytes
 from pts.dispatch.custom_email_message import CustomEmailMessage
+import json
 
 import sys
 if six.PY3:
@@ -900,3 +901,89 @@ class IndexViewTest(TestCase):
         """
         response = self.client.get('/')
         self.assertTemplateUsed(response, 'core/index.html')
+
+
+class PackageAutocompleteViewTest(TestCase):
+    def setUp(self):
+        SourcePackage.objects.create(name='dummy-package')
+        SourcePackage.objects.create(name='d-package')
+        SourcePackage.objects.create(name='package')
+        PseudoPackage.objects.create(name='pseudo-package')
+        PseudoPackage.objects.create(name='zzz')
+        Package.subscription_only_packages.create(name='ppp')
+
+    def test_source_package_autocomplete(self):
+        """
+        Tests the autocomplete functionality when the client asks for source
+        packages.
+        """
+        response = self.client.get(reverse('pts-api-package-autocomplete'), {
+            'package_type': 'source',
+            'q': 'd',
+        })
+
+        response = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(len(response), 2)
+        self.assertIn('dummy-package', response)
+        self.assertIn('d-package', response)
+
+        # No packages given when there are no matching source packages
+        response = self.client.get(reverse('pts-api-package-autocomplete'), {
+            'package_type': 'source',
+            'q': 'z',
+        })
+        response = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(len(response), 0)
+
+    def test_pseudo_package_autocomplete(self):
+        """
+        Tests the autocomplete functionality when the client asks for pseudo
+        packages.
+        """
+        response = self.client.get(reverse('pts-api-package-autocomplete'), {
+            'package_type': 'pseudo',
+            'q': 'p',
+        })
+
+        response = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(len(response), 1)
+        self.assertIn('pseudo-package', response)
+
+        # No packages given when there are no matching pseudo packages
+        response = self.client.get(reverse('pts-api-package-autocomplete'), {
+            'package_type': 'source',
+            'q': '-',
+        })
+        response = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(len(response), 0)
+
+    def test_all_packages_autocomplete(self):
+        """
+        Tests the autocomplete functionality when the client does not specify
+        the type of package.
+        """
+        response = self.client.get(reverse('pts-api-package-autocomplete'), {
+            'q': 'p',
+        })
+
+        response = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(len(response), 2)
+        self.assertIn('package', response)
+        self.assertIn('pseudo-package', response)
+
+        # No packages given when there are no matching packages
+        response = self.client.get(reverse('pts-api-package-autocomplete'), {
+            'q': '-',
+        })
+        response = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(len(response), 0)
+
+    def test_no_query_given(self):
+        """
+        Tests the autocomplete when there is no query parameter given.
+        """
+        response = self.client.get(reverse('pts-api-package-autocomplete'), {
+            'package_type': 'source',
+        })
+
+        self.assertEqual(response.status_code, 404)

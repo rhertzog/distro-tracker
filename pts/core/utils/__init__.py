@@ -10,6 +10,8 @@
 
 from __future__ import unicode_literals
 from django.template.loader import render_to_string
+from django.http import HttpResponse
+import json
 
 from .email_messages import extract_email_address_from_header
 from .email_messages import get_decoded_message_payload
@@ -43,3 +45,10 @@ def pts_render_to_string(template_name, context=None):
     context.update(extra_context)
 
     return render_to_string(template_name, context)
+
+
+def render_to_json_response(response):
+    return HttpResponse(
+        json.dumps(response),
+        content_type='application/json'
+    )
