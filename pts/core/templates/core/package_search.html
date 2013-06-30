@@ -4,7 +4,5 @@
 
 {% block content %}
         Package {{ package_name }} does not exist.
-        <form id="package-search-form" action="{% url 'pts-package-search' %}" method="GET">
-            <input type="text" name="package_name">
-        </form>
+        {% include 'core/package-search-form.html' %}
 {% endblock %}

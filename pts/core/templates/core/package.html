@@ -4,9 +4,7 @@
 
 {% block content %}
         <h1>{{ package }}</h1>
-        <form id="package-search-form" action="{% url 'pts-package-search' %}" method="GET">
-            <input type="text" name="package_name">
-        </form>
+        {% include 'core/package-search-form.html' %}
 {% endblock %}
 
 {% block footer %}
