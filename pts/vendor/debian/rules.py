@@ -12,6 +12,7 @@ from __future__ import unicode_literals
 import re
 import requests
 from pts.core.utils import get_decoded_message_payload
+from pts.vendor.common import PluginProcessingError
 
 
 def get_keyword(local_part, msg):
@@ -65,10 +66,9 @@ def get_pseudo_package_list():
     )
     response = requests.get(PSEUDO_PACKAGE_LIST_URL)
 
-    if response.status_code == 200:
-        return [
-            line.split(None, 1)[0]
-            for line in response.text.splitlines()
-        ]
-    else:
-        return []
+    if response.status_code != 200:
+        raise PluginProcessingError()
+    return [
+        line.split(None, 1)[0]
+        for line in response.text.splitlines()
+    ]

@@ -662,6 +662,23 @@ class RetrievePseudoPackagesTest(TestCase):
             ])
         )
 
+    def test_no_changes_when_resource_unavailable(self):
+        """
+        Tests that no updates are made when the vendor-provided message does
+        not provide a new list of pseudo packages due to an error in accessing
+        the necessary resource.
+        """
+        self.populate_packages(self.packages)
+        # Set up an exception in the vendor-provided function
+        from pts.vendor.common import PluginProcessingError
+        self.mock_get_pseudo_package_list.side_effect = PluginProcessingError()
+        self.update_pseudo_package_list()
+
+        self.assertSequenceEqual(
+            sorted(self.packages),
+            sorted([package.name for package in PseudoPackage.objects.all()])
+        )
+
     def test_subscriptions_remain_after_update(self):
         """
         Tests that any user subscriptions to pseudo packages are retained after

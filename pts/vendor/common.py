@@ -19,6 +19,10 @@ class InvalidPluginException(Exception):
     pass
 
 
+class PluginProcessingError(Exception):
+    pass
+
+
 def get_callable(name):
     """
     Returns a callable object from the vendor-provided module based on the

@@ -14,7 +14,11 @@ from pts.core.models import PseudoPackage, Package
 
 
 def update_pseudo_package_list():
-    pseudo_packages, implemented = vendor.call('get_pseudo_package_list')
+    try:
+        pseudo_packages, implemented = vendor.call('get_pseudo_package_list')
+    except:
+        # Error accessing pseudo package resource: do not update the list
+        return
 
     if not implemented:
         return
