@@ -13,6 +13,7 @@ Functional tests for the Package Tracking System.
 """
 from __future__ import unicode_literals
 from django.test import LiveServerTestCase
+from django.test.utils import override_settings
 from django.core.urlresolvers import reverse
 from pts.core.models import SourcePackage, BinaryPackage
 
@@ -148,3 +149,50 @@ class PackagePageTest(LiveServerTestCase):
         # does not exist.
         self.send_text_to_package_search_form('no-exist')
         self.assert_in_page_body('Package no-exist does not exist')
+
+    @override_settings(PTS_PACKAGE_PAGE_PANELS={
+        'left': ('pts.functional_tests.tests.TestPanel',)
+    })
+    def test_include_panel_left(self):
+        """
+        Tests whether a package page includes a panel in the left side column.
+        """
+        self.browser.get(
+            self.get_absolute_url(self.get_package_url(self.package.name)))
+
+        self.assert_element_with_id_in_page('pts-package-left')
+        column = self.browser.find_element_by_id('pts-package-left')
+        self.assertIn("Hello, world", column.text)
+
+    @override_settings(PTS_PACKAGE_PAGE_PANELS={
+        'center': ('pts.functional_tests.tests.TestPanel',)
+    })
+    def test_include_panel_center(self):
+        """
+        Tests whether a package page includes a panel in the center column.
+        """
+        self.browser.get(
+            self.get_absolute_url(self.get_package_url(self.package.name)))
+
+        self.assert_element_with_id_in_page('pts-package-center')
+        column = self.browser.find_element_by_id('pts-package-center')
+        self.assertIn("Hello, world", column.text)
+
+    @override_settings(PTS_PACKAGE_PAGE_PANELS={
+        'right': ('pts.functional_tests.tests.TestPanel',)
+    })
+    def test_include_panel_right(self):
+        """
+        Tests whether a package page includes a panel in the right side column.
+        """
+        self.browser.get(
+            self.get_absolute_url(self.get_package_url(self.package.name)))
+
+        self.assert_element_with_id_in_page('pts-package-right')
+        column = self.browser.find_element_by_id('pts-package-right')
+        self.assertIn("Hello, world", column.text)
+
+
+from pts.core.panels import BasePanel
+class TestPanel(BasePanel):
+    html_output = "Hello, world"

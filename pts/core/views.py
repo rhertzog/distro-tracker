@@ -17,6 +17,7 @@ from django.views.decorators.cache import cache_control
 from pts.core.models import get_web_package
 from pts.core.utils import render_to_json_response
 from pts.core.models import SourcePackage, Package, PseudoPackage
+from pts.core.panels import get_panels_for_package
 
 
 def package_page(request, package_name):
@@ -25,8 +26,10 @@ def package_page(request, package_name):
         raise Http404
     if package.get_absolute_url() != request.path:
         return redirect(package)
+
     return render(request, 'core/package.html', {
-        'package': package
+        'package': package,
+        'panels': get_panels_for_package(package),
     })
 
 
