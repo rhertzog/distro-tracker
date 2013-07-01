@@ -22,9 +22,13 @@ class Command(BaseCommand):
     help = "Update the available pseudo packages"
 
     def handle(self, *args, **kwargs):
-        self.stdout.write('Retrieving new list of pseudo-packages...')
+        verbose = int(kwargs['verbosity']) > 1
+        if verbose:
+            self.stdout.write('Retrieving new list of pseudo-packages...')
+
         update_pseudo_package_list()
 
-        self.stdout.write("The updated list of pseudo-packages is:")
-        for package in PseudoPackage.objects.all():
-            self.stdout.write('- ' + str(package))
+        if verbose:
+            self.stdout.write("The updated list of pseudo-packages is:")
+            for package in PseudoPackage.objects.all():
+                self.stdout.write('- ' + str(package))

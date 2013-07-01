@@ -28,9 +28,9 @@ import json
 
 import sys
 if six.PY3:
-    from unittest.mock import create_autospec
+    from unittest.mock import create_autospec, patch
 else:
-    from mock import create_autospec
+    from mock import create_autospec, patch
 
 
 class SubscriptionManagerTest(TestCase):
@@ -722,25 +722,16 @@ class RetrievePseudoPackagesTest(TestCase):
         self.assertEqual(Package.subscription_only_packages.count(),
                          len(old_packages))
 
-    def test_management_command_called(self):
+    @patch('pts.core.retrieve_data.update_pseudo_package_list')
+    def test_management_command_called(self, mock_update_pseudo_package_list):
         """
         Tests that the management command for updating pseudo packages calls
         the correct function.
         """
-        from pts.core.management.commands.pts_update_pseudo_packages import (
-            Command as UpdatePseudoPackagesCommand
-        )
+        from django.core.management import call_command
+        call_command('pts_update_pseudo_packages')
 
-        command = UpdatePseudoPackagesCommand()
-        # Redirect the output to a string not to pollute the test output
-        command.stdout = six.StringIO()
-        command.handle()
-
-        self.mock_get_pseudo_package_list.assert_called_with()
-        self.assertSequenceEqual(
-            sorted(self.packages),
-            sorted([package.name for package in PseudoPackage.objects.all()])
-        )
+        mock_update_pseudo_package_list.assert_called_with()
 
 
 from django.core.urlresolvers import reverse
