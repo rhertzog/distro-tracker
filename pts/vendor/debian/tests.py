@@ -15,14 +15,10 @@ Tests for Debian-specific modules/functionality of the PTS.
 from __future__ import unicode_literals
 from django.test import TestCase
 from django.test.utils import override_settings
-from django.utils import six
 from django.core import mail
 from pts.dispatch.tests import DispatchTestHelperMixin, DispatchBaseTest
 from pts.core.models import Package
-if six.PY3:
-    from unittest.mock import patch
-else:
-    from mock import patch
+from django.utils.six.moves import mock
 
 
 __all__ = ('DispatchDebianSpecificTest', 'DispatchBaseDebianSettingsTest')
@@ -156,7 +152,7 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
 
 
 class GetPseudoPackageListTest(TestCase):
-    @patch('pts.vendor.debian.rules.requests')
+    @mock.patch('pts.vendor.debian.rules.requests')
     def test_debian_pseudo_packages(self, mock_requests):
         """
         Tests that Debian-specific function for retrieving allowed pseudo

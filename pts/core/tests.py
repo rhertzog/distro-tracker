@@ -27,10 +27,7 @@ from pts.dispatch.custom_email_message import CustomEmailMessage
 import json
 
 import sys
-if six.PY3:
-    from unittest.mock import create_autospec, patch
-else:
-    from mock import create_autospec, patch
+from django.utils.six.moves import mock
 
 
 class SubscriptionManagerTest(TestCase):
@@ -509,7 +506,7 @@ Content-Transfer-Encoding: 8bit
         Helper method returning a mock SMTP connection object.
         """
         import smtplib
-        return create_autospec(smtplib.SMTP('localhost'), return_value={})
+        return mock.create_autospec(smtplib.SMTP('localhost'), return_value={})
 
     def test_as_string_returns_bytes(self):
         """
@@ -570,7 +567,7 @@ class RetrievePseudoPackagesTest(TestCase):
         # Since the tests module is used to provide the vendor rules,
         # we dynamically add the needed function
         self.packages = ['package1', 'package2']
-        self.mock_get_pseudo_package_list = create_autospec(
+        self.mock_get_pseudo_package_list = mock.create_autospec(
             lambda: None, return_value=self.packages)
         sys.modules[__name__].get_pseudo_package_list = (
             self.mock_get_pseudo_package_list
@@ -722,7 +719,7 @@ class RetrievePseudoPackagesTest(TestCase):
         self.assertEqual(Package.subscription_only_packages.count(),
                          len(old_packages))
 
-    @patch('pts.core.retrieve_data.update_pseudo_package_list')
+    @mock.patch('pts.core.retrieve_data.update_pseudo_package_list')
     def test_management_command_called(self, mock_update_pseudo_package_list):
         """
         Tests that the management command for updating pseudo packages calls

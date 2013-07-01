@@ -10,6 +10,10 @@
 
 # Django settings for pts project.
 from __future__ import unicode_literals
+from django.utils import six
+
+
+six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
