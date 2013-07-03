@@ -11,6 +11,13 @@
 from __future__ import unicode_literals
 from pts import vendor
 from pts.core.models import PseudoPackage, Package
+from debian import deb822
+import requests
+from pts.core.models import Repository
+
+
+class InvalidRepositoryException(Exception):
+    pass
 
 
 def update_pseudo_package_list():
@@ -39,3 +46,56 @@ def update_pseudo_package_list():
     # The left over packages in the set are the ones that do not exist.
     for package_name in pseudo_packages:
         PseudoPackage.objects.create(name=package_name)
+
+
+def retrieve_repository_info(sources_list_entry):
+    """
+    A function which accesses a Release file for the given repository and
+    returns a dict representing the parsed information.
+    """
+    entry_split = sources_list_entry.split(None, 3)
+    if len(entry_split) < 3:
+        raise InvalidRepositoryException("Invalid sources.list entry")
+
+    repository_type, url, distribution = entry_split[:3]
+
+    # Access the Release file
+    try:
+        response = requests.get(Repository.release_file_url(url, distribution))
+    except:
+        raise InvalidRepositoryException(
+            "Could not connect to {url}".format(url=url))
+    if response.status_code != 200:
+        raise InvalidRepositoryException(
+            "No Release file found at the URL: {url}".format(url=url))
+
+    # Parse the retrieved information
+    release = deb822.Release(response.text)
+    if not release:
+        raise InvalidRepositoryException(
+            "No data could be extracted from the Release file at {url}".format(
+                url=url))
+    # Make sure all necessary keys were found in the file
+    REQUIRED_KEYS = (
+        'architectures',
+        'suite',
+        'components',
+        'codename',
+    )
+    for key in REQUIRED_KEYS:
+        if key not in release:
+            raise InvalidRepositoryException(
+                "Property {key} not found in the Release file at {url}".format(
+                    key=key,
+                    url=url))
+    # Finally build the return dictionary with the information about the
+    # repository.
+    return {
+        'uri': url,
+        'architectures': release['architectures'].split(),
+        'suite': release['suite'],
+        'binary': repository_type == 'deb',
+        'source': repository_type == 'deb-src',
+        'components': release['components'].split(),
+        'codename': release['codename'],
+    }

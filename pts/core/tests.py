@@ -24,6 +24,7 @@ from pts.core.models import PseudoPackage
 from pts.core.utils import verp
 from pts.core.utils import message_from_bytes
 from pts.dispatch.custom_email_message import CustomEmailMessage
+from pts.core.retrieve_data import retrieve_repository_info
 import json
 
 import sys
@@ -975,3 +976,62 @@ class PackageAutocompleteViewTest(TestCase):
         })
 
         self.assertEqual(response.status_code, 404)
+
+
+class RepositoryTests(TestCase):
+    @mock.patch('pts.core.retrieve_data.requests')
+    def test_retrieve_repository_info_correct(self, mock_requests):
+        """
+        Tests that the function returns correct data when it is all found in
+        the Release file.
+        """
+        mock_requests.get.return_value = mock_requests.models.Response()
+        mock_requests.get.return_value.status_code = 200
+        architectures = (
+            'amd64 armel armhf i386 ia64 kfreebsd-amd64 '
+            'kfreebsd-i386 mips mipsel powerpc s390 s390x sparc'.split()
+        )
+        components = ['main', 'contrib', 'non-free']
+        mock_requests.get.return_value.text = (
+            'Suite: stable\n'
+            'Codename: wheezy\n'
+            'Architectures: ' + ' '.join(architectures) + '\n'
+            'Components: ' + ' '.join(components) + '\n'
+            'Version: 7.1\n'
+            'Description: Debian 7.1 Released 15 June 2013\n'
+        )
+
+        repository_info = retrieve_repository_info(
+            'deb http://repository.com/ stable')
+
+        expected_info = {
+            'uri': 'http://repository.com/',
+            'architectures': architectures,
+            'components': components,
+            'binary': True,
+            'source': False,
+            'codename': 'wheezy',
+            'suite': 'stable',
+        }
+
+        self.assertDictEqual(expected_info, repository_info)
+
+    @mock.patch('pts.core.retrieve_data.requests')
+    def test_retrieve_repository_info_missing(self, mock_requests):
+        """
+        Tests that the function raises an exception when some keys are missing
+        from the Release file.
+        """
+        mock_requests.get.return_value = mock_requests.models.Response()
+        mock_requests.get.return_value.status_code = 200
+        mock_requests.get.return_value.text = (
+            'Suite: stable\n'
+            'Codename: wheezy\n'
+            'Architectures: amd64\n'
+            'Version: 7.1\n'
+            'Description: Debian 7.1 Released 15 June 2013\n'
+        )
+
+        from pts.core.retrieve_data import InvalidRepositoryException
+        with self.assertRaises(InvalidRepositoryException):
+            retrieve_repository_info('deb http://repository.com/ stable')

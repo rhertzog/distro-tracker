@@ -341,3 +341,59 @@ class BinaryPackage(BasePackage):
     def get_absolute_url(self):
         # Take the URL of its source package
         return self.source_package.get_absolute_url()
+
+
+from jsonfield import JSONField
+from django.core.exceptions import ValidationError
+
+
+@python_2_unicode_compatible
+class Repository(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    shorthand = models.CharField(max_length=10, unique=True)
+
+    uri = models.URLField(max_length=200, verbose_name='URI')
+    public_uri = models.URLField(
+        max_length=200,
+        blank=True,
+        verbose_name='public URI'
+    )
+    suite = models.CharField(max_length=50)
+    codename = models.CharField(max_length=50)
+    components = JSONField()
+    architectures = JSONField()
+    default = models.BooleanField(default=False)
+
+    optional = models.BooleanField(default=True)
+    binary = models.BooleanField(default=True)
+    source = models.BooleanField(default=True)
+
+    position = models.IntegerField(default=lambda: Repository.objects.count())
+
+    class Meta:
+        verbose_name_plural = "repositories"
+        ordering = (
+            'position',
+        )
+
+    def __str__(self):
+        return ' '.join((
+            self.uri,
+            self.codename,
+            ' '.join(self.components)
+        ))
+
+    @classmethod
+    def release_file_url(cls, base_url, distribution):
+        base_url = base_url.rstrip('/')
+        return base_url + '/dists/{distribution}/Release'.format(
+            distribution=distribution)
+
+    def clean(self):
+        super(Repository, self).clean()
+        if self.default:
+            # If this instance is not trying to set default to True, it is safe
+            qs = Repository.objects.filter(default=True).exclude(pk=self.pk)
+            if qs.exists():
+                raise ValidationError(
+                    "Only one repository can be set as the default")
