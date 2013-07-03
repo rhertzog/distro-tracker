@@ -11,12 +11,15 @@
 # Django settings for pts project.
 from __future__ import unicode_literals
 from django.utils import six
+import os
 
 
 six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
+
+BASE_PATH = os.path.dirname(__file__)
 
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
@@ -126,6 +129,7 @@ TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
+    BASE_PATH + '/templates/',
 )
 TEMPLATE_CONTEXT_PROCESSORS = (
     'django.contrib.auth.context_processors.auth',
