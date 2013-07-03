@@ -20,6 +20,7 @@ from pts.core.models import SourcePackage, BinaryPackage
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
+from django.utils.six.moves import mock
 
 
 class PackagePageTest(LiveServerTestCase):
@@ -196,3 +197,172 @@ class PackagePageTest(LiveServerTestCase):
 from pts.core.panels import BasePanel
 class TestPanel(BasePanel):
     html_output = "Hello, world"
+
+
+class SeleniumTestCase(LiveServerTestCase):
+    """
+    A class which includes some common functionality for all tests which use
+    Selenium.
+    """
+    def setUp(self):
+        self.browser = webdriver.Firefox()
+        self.browser.implicitly_wait(3)
+
+    def tearDown(self):
+        self.browser.close()
+
+    def get_page(self, relative):
+        """
+        Helper method which points the browser to the absolute URL based on the
+        given relative URL and the server's live_server_url.
+        """
+        self.browser.get(self.absolute_url(relative))
+
+    def absolute_url(self, relative):
+        """
+        Helper method which builds an absolute URL where the live_server_url is
+        the root.
+        """
+        return self.live_server_url + relative
+
+    def input_to_element(self, id, text):
+        """
+        Helper method which sends the text to the element with the given ID.
+        """
+        element = self.browser.find_element_by_id(id)
+        element.send_keys(text)
+
+    def click_link(self, link_text):
+        """
+        Helper method which clicks on the link with the given text.
+        """
+        element = self.browser.find_element_by_link_text(link_text)
+        element.click()
+
+    def send_enter(self, id):
+        """
+        Helper method which sends the enter key to the element with the given
+        ID.
+        """
+        element = self.browser.find_element_by_id(id)
+        element.send_keys(Keys.ENTER)
+
+    def assert_in_page_body(self, text):
+        body = self.browser.find_element_by_tag_name('body')
+        self.assertIn(text, body.text)
+
+    def set_mock_http_response(self, mock_requests, text, status_code=200):
+        mock_response = mock_requests.models.Response()
+        mock_response.status_code = status_code
+        mock_response.text = text
+        mock_requests.get.return_value = mock_response
+
+
+from django.contrib.auth.models import User
+
+
+class RepositoryAdminTest(SeleniumTestCase):
+    def setUp(self):
+        super(RepositoryAdminTest, self).setUp()
+        # Create a superuser which will be used for the tests
+        User.objects.create_superuser(
+            username='admin',
+            password='admin',
+            email='admin@localhost'
+        )
+
+    def login_to_admin(self, username='admin', password='admin'):
+        """
+        Helper method which logs the user with the given credentials to the
+        admin console.
+        """
+        self.get_page('/admin/')
+        self.input_to_element('id_username', username)
+        self.input_to_element('id_password', password)
+        self.send_enter('id_password')
+
+    @mock.patch('pts.core.retrieve_data.requests')
+    def test_repository_add(self, mock_requests):
+        """
+        Tests that an admin user is able to add a new repository.
+        """
+        # The user first logs in to the admin panel.
+        self.login_to_admin()
+
+        # He expects to be able to successfully access it with his credentials.
+        self.assertIn('Site administration', self.browser.title)
+
+        # He now wants to go to the repositories management page.
+        # The necessary link can be found in the page.
+        try:
+            self.browser.find_element_by_link_text("Repositories")
+        except NoSuchElementException:
+            self.fail("Link for repositories management not found in the admin")
+
+        # Clicking on it opens a new page to manage repositories.
+        self.click_link("Repositories")
+        self.assertIn(
+            'Repositories',
+            self.browser.find_element_by_class_name('breadcrumbs').text
+        )
+
+        # He now wants to create a new repository...
+        self.click_link("Add repository")
+        self.assert_in_page_body("Add repository")
+        try:
+            save_button = self.browser.find_element_by_css_selector(
+                'input.default')
+        except NoSuchElementException:
+            self.fail("Could not find the save button")
+
+        # The user tries clicking the save button immediately
+        save_button.click()
+        # But this causes an error since there are some required fields...
+        self.assert_in_page_body('Please correct the errors below')
+
+        # He enters a name and shorthand for the repository
+        self.input_to_element('id_name', 'stable')
+        self.input_to_element('id_shorthand', 'stable')
+        # He wants to create the repository by using a sources.list entry
+        self.input_to_element(
+            'id_sources_list_entry',
+            'deb http://ftp.ba.debian.org/debian stable'
+        )
+        ## Make sure that no actual HTTP requests are sent out
+        self.set_mock_http_response(mock_requests,
+            'Suite: stable\n'
+            'Codename: wheezy\n'
+            'Architectures: amd64 armel armhf i386 ia64 kfreebsd-amd64'
+            ' kfreebsd-i386 mips mipsel powerpc s390 s390x sparc\n'
+            'Components: main contrib non-free\n'
+            'Version: 7.1\n'
+            'Description: Debian 7.1 Released 15 June 2013\n'
+        )
+        # The user decides to save by hitting the enter key
+        self.send_enter('id_sources_list_entry')
+        # The user sees a message telling him the repository has been added.
+        self.assert_in_page_body("added successfully")
+        # He also sees the information of the newly added repository
+        self.assert_in_page_body('Codename')
+        self.assert_in_page_body('wheezy')
+        self.assert_in_page_body('Components')
+        self.assert_in_page_body('main contrib non-free')
+
+        # The user now wants to add another repository
+        self.click_link("Add repository")
+        # This time, he wants to enter all the necessary data manually.
+        self.input_to_element('id_name', 'testing')
+        self.input_to_element('id_shorthand', 'testing')
+        self.input_to_element('id_uri', 'http://ftp.ba.debian.org/debian')
+        self.input_to_element('id_suite', 'testing')
+        self.input_to_element('id_codename', 'jessie')
+        self.input_to_element('id_components', '["main", "non-free"]')
+        self.input_to_element('id_architectures', '["amd64"]')
+        # Finally the user clicks the save button
+        self.browser.find_element_by_css_selector('input.default').click()
+
+        # He sees that the new repository has also been created.
+        self.assert_in_page_body("added successfully")
+        # He also sees the information of the newly added repository
+        self.assert_in_page_body('jessie')
+        self.assert_in_page_body('main non-free')

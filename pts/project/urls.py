@@ -14,8 +14,8 @@ from django.views.generic import TemplateView
 from pts.core.views import PackageSearchView, PackageAutocompleteView
 
 # Uncomment the next two lines to enable the admin:
-# from django.contrib import admin
-# admin.autodiscover()
+from django.contrib import admin
+admin.autodiscover()
 
 urlpatterns = patterns('',
     url(r'^(?P<package_hash>(lib)?.)/(?P<package_name>(\1).+)\.html$',
@@ -27,6 +27,8 @@ urlpatterns = patterns('',
     url(r'^api/package/search/autocomplete$', PackageAutocompleteView.as_view(),
         name='pts-api-package-autocomplete'),
 
+    url(r'^admin/', include(admin.site.urls)),
+
     url(r'^(?P<package_name>.+)$', 'pts.core.views.package_page',
         name='pts-package-page'),
 
@@ -37,5 +39,4 @@ urlpatterns = patterns('',
     # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
 
     # Uncomment the next line to enable the admin:
-    # url(r'^admin/', include(admin.site.urls)),
 )

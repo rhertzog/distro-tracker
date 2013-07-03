@@ -979,6 +979,26 @@ class PackageAutocompleteViewTest(TestCase):
 
 
 class RepositoryTests(TestCase):
+    @mock.patch('pts.core.admin.requests')
+    def test_sources_list_entry_validation(self, mock_requests):
+        from pts.core.admin import validate_sources_list_entry
+        from django.core.exceptions import ValidationError
+        # Not enough parts in the entry is an exception
+        with self.assertRaises(ValidationError):
+            validate_sources_list_entry('texthere')
+        # Enough parts, but it does not start with deb|deb-src
+        with self.assertRaises(ValidationError):
+            validate_sources_list_entry('part1 part2 part3 part4')
+        # Starts with deb, but no URL given.
+        with self.assertRaises(ValidationError):
+            validate_sources_list_entry('deb thisisnotaurl part3 part4')
+        ## Make sure requests returns 404
+        mock_requests.get.return_value = mock_requests.models.Response()
+        mock_requests.get.return_value.status_code = 404
+        # There is no Release file at the given URL
+        with self.assertRaises(ValidationError):
+            validate_sources_list_entry('deb http://does-not-matter.com/ part3 part4')
+
     @mock.patch('pts.core.retrieve_data.requests')
     def test_retrieve_repository_info_correct(self, mock_requests):
         """
