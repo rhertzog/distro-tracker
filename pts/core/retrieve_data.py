@@ -14,6 +14,8 @@ from pts.core.models import PseudoPackage, Package
 from debian import deb822
 import requests
 from pts.core.models import Repository
+from django.utils.six import reraise
+import sys
 
 
 class InvalidRepositoryException(Exception):
@@ -62,12 +64,21 @@ def retrieve_repository_info(sources_list_entry):
     # Access the Release file
     try:
         response = requests.get(Repository.release_file_url(url, distribution))
-    except:
-        raise InvalidRepositoryException(
-            "Could not connect to {url}".format(url=url))
+    except requests.exceptions.RequestException as original:
+        reraise(
+            InvalidRepositoryException,
+            InvalidRepositoryException(
+                "Could not connect to {url}\n{original}".format(
+                    url=url,
+                    original=original)
+            ),
+            sys.exc_info()[2]
+        )
     if response.status_code != 200:
         raise InvalidRepositoryException(
-            "No Release file found at the URL: {url}".format(url=url))
+            "No Release file found at the URL: {url}\n"
+            "Response status code {status_code}".format(
+                url=url, status_code=response.status_code))
 
     # Parse the retrieved information
     release = deb822.Release(response.text)

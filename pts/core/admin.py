@@ -14,6 +14,8 @@ from django import forms
 from .models import Repository
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
+from pts.core.retrieve_data import retrieve_repository_info
+from pts.core.retrieve_data import InvalidRepositoryException
 import requests
 
 
@@ -44,11 +46,28 @@ def validate_sources_list_entry(value):
         url = url.rstrip('/')
     try:
         response = requests.head(Repository.release_file_url(url, name))
+    except requests.exceptions.Timeout as e:
+        raise ValidationError(
+            "Invalid repository: Could not connect to {url}."
+            " Request timed out.".format(url=url))
+    except requests.exceptions.ConnectionError as e:
+        raise ValidationError(
+            "Invalid repository: Could not connect to {url} due to a network"
+            " problem. The URL may not exist or is refusing to receive"
+            " connections.".format(url=url))
+    except requests.exceptions.HTTPError as e:
+        raise ValidationError(
+            "Invalid repository:"
+            " Received an invalid HTTP response from {url}.".format(url=url))
     except:
         raise ValidationError(
             "Invalid repository: Could not connect to {url}".format(url=url))
+
     if response.status_code != 200:
-        raise ValidationError("Invalid repository: No Release file found")
+        raise ValidationError(
+            "Invalid repository: No Release file found. "
+            "received a {status_code} HTTP response code.".format(
+                status_code=response.status_code))
 
 
 class RepositoryAdminForm(forms.ModelForm):
@@ -103,11 +122,10 @@ class RepositoryAdminForm(forms.ModelForm):
         else:
             # If it was given, need to make sure now that the Relase file
             # contains usable data.
-            from pts.core.retrieve_data import retrieve_repository_info
             try:
                 repository_info = retrieve_repository_info(
                     self.cleaned_data['sources_list_entry'])
-            except:
+            except InvalidRepositoryException as e:
                 raise ValidationError("The Release file was invalid.")
             # Use the data to construct a Repository object.
             self.cleaned_data.update(repository_info)
