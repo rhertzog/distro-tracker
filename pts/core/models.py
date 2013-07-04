@@ -359,7 +359,7 @@ class Repository(models.Model):
         verbose_name='public URI'
     )
     suite = models.CharField(max_length=50)
-    codename = models.CharField(max_length=50)
+    codename = models.CharField(max_length=50, blank=True)
     components = JSONField()
     architectures = JSONField()
     default = models.BooleanField(default=False)

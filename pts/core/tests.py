@@ -979,6 +979,16 @@ class PackageAutocompleteViewTest(TestCase):
 
 
 class RepositoryTests(TestCase):
+    def set_mock_response(self, mock_requests, text="", status_code=200):
+        """
+        Helper method which sets a mock response to the given mock_requests
+        module.
+        """
+        mock_response = mock_requests.models.Response()
+        mock_response.status_code = status_code
+        mock_response.text = text
+        mock_requests.get.return_value = mock_response
+
     @mock.patch('pts.core.admin.requests')
     def test_sources_list_entry_validation(self, mock_requests):
         from pts.core.admin import validate_sources_list_entry
@@ -993,8 +1003,7 @@ class RepositoryTests(TestCase):
         with self.assertRaises(ValidationError):
             validate_sources_list_entry('deb thisisnotaurl part3 part4')
         ## Make sure requests returns 404
-        mock_requests.get.return_value = mock_requests.models.Response()
-        mock_requests.get.return_value.status_code = 404
+        self.set_mock_response(mock_requests, status_code=404)
         # There is no Release file at the given URL
         with self.assertRaises(ValidationError):
             validate_sources_list_entry('deb http://does-not-matter.com/ part3 part4')
@@ -1005,14 +1014,12 @@ class RepositoryTests(TestCase):
         Tests that the function returns correct data when it is all found in
         the Release file.
         """
-        mock_requests.get.return_value = mock_requests.models.Response()
-        mock_requests.get.return_value.status_code = 200
         architectures = (
             'amd64 armel armhf i386 ia64 kfreebsd-amd64 '
             'kfreebsd-i386 mips mipsel powerpc s390 s390x sparc'.split()
         )
         components = ['main', 'contrib', 'non-free']
-        mock_requests.get.return_value.text = (
+        mock_response_text = (
             'Suite: stable\n'
             'Codename: wheezy\n'
             'Architectures: ' + ' '.join(architectures) + '\n'
@@ -1020,6 +1027,7 @@ class RepositoryTests(TestCase):
             'Version: 7.1\n'
             'Description: Debian 7.1 Released 15 June 2013\n'
         )
+        self.set_mock_response(mock_requests, mock_response_text)
 
         repository_info = retrieve_repository_info(
             'deb http://repository.com/ stable')
@@ -1037,21 +1045,41 @@ class RepositoryTests(TestCase):
         self.assertDictEqual(expected_info, repository_info)
 
     @mock.patch('pts.core.retrieve_data.requests')
-    def test_retrieve_repository_info_missing(self, mock_requests):
+    def test_retrieve_repository_info_missing_required(self, mock_requests):
         """
-        Tests that the function raises an exception when some keys are missing
-        from the Release file.
+        Tests that the function raises an exception when some required keys are
+        missing from the Release file.
         """
-        mock_requests.get.return_value = mock_requests.models.Response()
-        mock_requests.get.return_value.status_code = 200
-        mock_requests.get.return_value.text = (
+        mock_response_text = (
             'Suite: stable\n'
             'Codename: wheezy\n'
             'Architectures: amd64\n'
             'Version: 7.1\n'
             'Description: Debian 7.1 Released 15 June 2013\n'
         )
+        self.set_mock_response(mock_requests, mock_response_text)
 
         from pts.core.retrieve_data import InvalidRepositoryException
         with self.assertRaises(InvalidRepositoryException):
             retrieve_repository_info('deb http://repository.com/ stable')
+
+    @mock.patch('pts.core.retrieve_data.requests')
+    def test_retrieve_repository_info_missing_non_required(self, mock_requests):
+        """
+        Tests the function when some non-required keys are missing from the
+        Release file.
+        """
+        mock_response_text = (
+            'Architectures: amd64\n'
+            'components: main'
+            'Version: 7.1\n'
+            'Description: Debian 7.1 Released 15 June 2013\n'
+        )
+        self.set_mock_response(mock_requests, mock_response_text)
+
+        repository_info = retrieve_repository_info(
+            'deb http://repository.com/ stable')
+        # It uses the suite name from the sources.list
+        self.assertEqual(repository_info['suite'], 'stable')
+        # Codename is not found
+        self.assertIsNone(repository_info['codename'])

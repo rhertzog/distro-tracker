@@ -75,13 +75,16 @@ def retrieve_repository_info(sources_list_entry):
         raise InvalidRepositoryException(
             "No data could be extracted from the Release file at {url}".format(
                 url=url))
-    # Make sure all necessary keys were found in the file
     REQUIRED_KEYS = (
         'architectures',
-        'suite',
         'components',
-        'codename',
     )
+    # A mapping of optional keys to their default values, if any
+    OPTIONAL_KEYS = {
+        'suite': distribution,
+        'codename': None,
+    }
+    # Make sure all necessary keys were found in the file
     for key in REQUIRED_KEYS:
         if key not in release:
             raise InvalidRepositoryException(
@@ -90,12 +93,15 @@ def retrieve_repository_info(sources_list_entry):
                     url=url))
     # Finally build the return dictionary with the information about the
     # repository.
-    return {
+    repository_information = {
         'uri': url,
         'architectures': release['architectures'].split(),
-        'suite': release['suite'],
+        'components': release['components'].split(),
         'binary': repository_type == 'deb',
         'source': repository_type == 'deb-src',
-        'components': release['components'].split(),
-        'codename': release['codename'],
     }
+    # Add in optional info
+    for key, default in OPTIONAL_KEYS.items():
+        repository_information[key] = release.get(key, default)
+
+    return repository_information
