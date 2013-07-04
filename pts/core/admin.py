@@ -118,10 +118,7 @@ class RepositoryAdminForm(forms.ModelForm):
 class RepositroyAdmin(admin.ModelAdmin):
     class Media:
         js = (
-            # Include only small subset of a jQuery-ui which allows
-            # drag-and-drop reordering (~200kB is saved by using the custom
-            # version instead of loading the whole library from Google CDN,
-            # like jQuery itself)
+            'js/jquery-2.0.3.min.js',
             'js/jquery-ui.min.js',
             'js/admin-list-reorder.js',
         )
