@@ -9,12 +9,11 @@
 # distributed except according to the terms contained in the LICENSE file.
 
 from __future__ import unicode_literals
-from django.core.exceptions import ImproperlyConfigured
-from django.utils.functional import memoize
-from django.conf import settings
+from django.utils import six
+from pts.core.utils.plugins import PluginRegistry
 
 
-class BasePanel(object):
+class BasePanel(six.with_metaclass(PluginRegistry)):
     """
     A base class representing panels which are displayed on a package page.
 
@@ -22,6 +21,14 @@ class BasePanel(object):
     and include the path to the new class in the project settings in order to
     have it displayed on the page.
     """
+    #: A list of available positions
+    # NOTE: This is a good candidate for Python3.4's Enum.
+    POSITIONS = (
+        'left',
+        'center',
+        'right',
+    )
+
     def __init__(self, package):
         self.package = package
 
@@ -34,6 +41,14 @@ class BasePanel(object):
         in this dictionary.
         """
         return {}
+
+    @property
+    def position(self):
+        """
+        The property should be one of the available POSITIONS signalling where
+        the panel should be positioned in the page.
+        """
+        return 'center'
 
     @property
     def title(self):
@@ -60,43 +75,20 @@ class BasePanel(object):
         return None
 
 
-def get_panel_by_name(panel_path):
-    import importlib
-    if '.' not in panel_path:
-        raise ImproperlyConfigured(panel_path + ' is not a valid path to a class')
-    module_name, panel_class_name = panel_path.rsplit('.', 1)
-
-    try:
-        module = importlib.import_module(module_name)
-    except ImportError:
-        raise ImproperlyConfigured('Given module ' + panel_path + ' not found.')
-
-    panel_class = getattr(module, panel_class_name, None)
-    if panel_class is None:
-        raise ImproperlyConfigured(
-            panel_path + ' class not found in the given module.')
-
-    if not issubclass(panel_class, BasePanel):
-        raise ImproperlyConfigured(panel_path + ' is not derived from BasePanel')
-
-    return panel_class
-get_panel_by_name = memoize(get_panel_by_name, {}, 1)
-
-
 def get_panels_for_package(package):
     """
-    Returns a dict containing an instance of each panel for a package.
+    A convenience method which accesses the BasePanel's list of children and
+    instantiates them for the given package.
 
-    The keys of the dict are the panel positions and the values are lists of
-    panel instances which are to go in the given position.
+    Returns a dict mapping the page position to a list of Panels which should
+    be rendered in that position.
     """
-    registered_panels = settings.PTS_PACKAGE_PAGE_PANELS
-    panels = {
-        position: [
-            get_panel_by_name(panel_name)(package)
-            for panel_name in panel_list
-        ]
-        for position, panel_list in registered_panels.items()
-    }
+    from collections import defaultdict
 
-    return panels
+    panels = defaultdict(lambda: [])
+    for panel_class in BasePanel.plugins:
+        if panel_class is not BasePanel:
+            panel = panel_class(package)
+            panels[panel.position].append(panel)
+
+    return dict(panels)

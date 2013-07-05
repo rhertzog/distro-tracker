@@ -29,12 +29,3 @@ PTS_CONTACT_EMAIL = 'owner@' + PTS_FQDN
 PTS_BOUNCE_NO_REPLY_EMAIL = 'bounces-likely-spam@' + PTS_FQDN
 
 PTS_VENDOR_RULES = 'pts.vendor.debian.rules'
-
-PTS_PACKAGE_PAGE_PANELS = {
-    'left': (
-    ),
-    'center': (
-    ),
-    'right': (
-    )
-}
