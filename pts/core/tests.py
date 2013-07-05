@@ -1083,3 +1083,258 @@ class RepositoryTests(TestCase):
         self.assertEqual(repository_info['suite'], 'stable')
         # Codename is not found
         self.assertIsNone(repository_info['codename'])
+
+
+from pts.core.utils.datastructures import DAG, InvalidDAGException
+class DAGTests(SimpleTestCase):
+    """
+    Tests for the `DAG` class.
+    """
+    def test_add_nodes(self):
+        """
+        Tests adding nodes to a DAG.
+        """
+        g = DAG()
+
+        # A single node
+        g.add_node(1)
+        self.assertEqual(len(g.all_nodes), 1)
+        self.assertEqual(g.all_nodes[0], 1)
+        # Another one
+        g.add_node(2)
+        self.assertEqual(len(g.all_nodes), 2)
+        self.assertIn(2, g.all_nodes)
+        # When adding a same node again, nothing changes.
+        g.add_node(1)
+        self.assertEqual(len(g.all_nodes), 2)
+
+    def test_add_edge(self):
+        """
+        Tests adding edges to a DAG.
+        """
+        g = DAG()
+        g.add_node(1)
+        g.add_node(2)
+
+        g.add_edge(1, 2)
+        self.assertEqual(len(g.dependent_nodes(1)), 1)
+        self.assertIn(2, g.dependent_nodes(1))
+        # In-degrees updated
+        self.assertEqual(g.in_degree[g.nodes_map[1].id], 0)
+        self.assertEqual(g.in_degree[g.nodes_map[2].id], 1)
+
+        g.add_node(3)
+        g.add_edge(1, 3)
+        self.assertEqual(len(g.dependent_nodes(1)), 2)
+        self.assertIn(3, g.dependent_nodes(1))
+        # In-degrees updated
+        self.assertEqual(g.in_degree[g.nodes_map[1].id], 0)
+        self.assertEqual(g.in_degree[g.nodes_map[3].id], 1)
+
+        g.add_edge(2, 3)
+        self.assertEqual(len(g.dependent_nodes(2)), 1)
+        self.assertIn(3, g.dependent_nodes(2))
+        # In-degrees updated
+        self.assertEqual(g.in_degree[g.nodes_map[3].id], 2)
+
+        # Add a same edge again - nothing changed?
+        g.add_edge(1, 3)
+        self.assertEqual(len(g.dependent_nodes(1)), 2)
+
+        # Add an edge resulting in a cycle
+        with self.assertRaises(InvalidDAGException):
+            g.add_edge(3, 1)
+
+    def test_remove_node(self):
+        """
+        Tests removing a node from the graph.
+        """
+        g = DAG()
+        g.add_node(1)
+        g.add_node(2)
+        g.add_node(3)
+        g.add_edge(1, 2)
+        g.add_edge(1, 3)
+        g.add_edge(2, 3)
+
+        g.remove_node(3)
+        self.assertNotIn(3, g.all_nodes)
+        self.assertEqual(len(g.dependent_nodes(1)), 1)
+        self.assertIn(2, g.dependent_nodes(1))
+        self.assertEqual(len(g.dependent_nodes(2)), 0)
+
+        g.remove_node(1)
+        self.assertEqual(g.in_degree[g.nodes_map[2].id], 0)
+
+    def test_find_no_dependency_node(self):
+        """
+        Tests that the DAG correctly returns nodes with no dependencies.
+        """
+        g = DAG()
+        g.add_node(1)
+        g.add_node(2)
+        g.add_node(3)
+        g.add_edge(1, 2)
+        g.add_edge(2, 3)
+        self.assertEqual(g._get_node_with_no_dependencies().original, 1)
+
+        g = DAG()
+        g.add_node(1)
+        g.add_node(2)
+        g.add_node(3)
+        g.add_edge(3, 2)
+        g.add_edge(2, 1)
+        self.assertEqual(g._get_node_with_no_dependencies().original, 3)
+
+        g = DAG()
+        g.add_node(1)
+        self.assertEqual(g._get_node_with_no_dependencies().original, 1)
+
+    def test_topsort_simple(self):
+        """
+        Tests the topological sort of the DAG class.
+        """
+        g = DAG()
+        g.add_node(1)
+        g.add_node(2)
+        g.add_node(3)
+        g.add_edge(1, 2)
+        g.add_edge(2, 3)
+
+        topsort = list(g.topsort_nodes())
+
+        self.assertSequenceEqual([1, 2, 3], topsort)
+
+    def test_topsort_no_dependencies(self):
+        """
+        Tests the toplogical sort of the DAG class when the given DAG has no
+        dependencies between the nodes.
+        """
+        g = DAG()
+        g.add_node(1)
+        g.add_node(2)
+        g.add_node(3)
+
+        topsort = list(g.topsort_nodes())
+
+        nodes = [1, 2, 3]
+        # The order in this case cannot be mandated, only that all the nodes
+        # are in the output
+        for node in nodes:
+            self.assertIn(node, topsort)
+
+    def test_topsort_complex(self):
+        """
+        Tests the toplogical sort when a more complex graph is given.
+        """
+        g = DAG()
+        nodes = list(range(13))
+        for node in nodes:
+            g.add_node(node)
+        edges = (
+            (0, 1),
+            (0, 2),
+            (0, 3),
+            (0, 5),
+            (0, 6),
+            (2, 3),
+            (3, 4),
+            (3, 5),
+            (4, 9),
+            (6, 4),
+            (6, 9),
+            (7, 6),
+            (8, 7),
+            (9, 10),
+            (9, 11),
+            (9, 12),
+            (11, 12),
+        )
+        for edge in edges:
+            g.add_edge(*edge)
+
+        topsort = list(g.topsort_nodes())
+        # Make sure all nodes are found in the toplogical sort
+        for node in nodes:
+            self.assertIn(node, topsort)
+        # Make sure that all dependent nodes are found after the nodes they
+        # depend on.
+        # Invariant: for each edge (n1, n2) position(n2) in the topological
+        # sort must be strictly greater than the position(n1).
+        for node1, node2 in edges:
+            self.assertTrue(topsort.index(node2) > topsort.index(node1))
+
+    def test_topsort_string_nodes(self):
+        """
+        Tests the toplogical sort when strings are used for node objects.
+        """
+        g = DAG()
+        nodes = ['shirt', 'pants', 'tie', 'belt', 'shoes', 'socks', 'pants']
+        for node in nodes:
+            g.add_node(node)
+        edges = (
+            ('shirt', 'tie'),
+            ('shirt', 'belt'),
+            ('belt', 'tie'),
+            ('pants', 'tie'),
+            ('pants', 'belt'),
+            ('pants', 'shoes'),
+            ('pants', 'shirt'),
+            ('socks', 'shoes'),
+            ('socks', 'pants'),
+        )
+        for edge in edges:
+            g.add_edge(*edge)
+
+        topsort = list(g.topsort_nodes())
+        for node in nodes:
+            self.assertIn(node, topsort)
+        for node1, node2 in edges:
+            self.assertTrue(topsort.index(node2) > topsort.index(node1))
+
+    def test_nodes_reachable_from(self):
+        """
+        Tests finding all nodes reachable from a single node.
+        """
+        # Simple situation first.
+        g = DAG()
+        g.add_node(1)
+        g.add_node(2)
+        g.add_node(3)
+        g.add_edge(1, 2)
+        g.add_edge(2, 3)
+
+        self.assertEqual(len(g.nodes_reachable_from(1)), 2)
+        self.assertIn(2, g.nodes_reachable_from(1))
+        self.assertIn(3, g.nodes_reachable_from(1))
+        self.assertEqual(len(g.nodes_reachable_from(2)), 1)
+        self.assertIn(3, g.nodes_reachable_from(1))
+
+        # No nodes reachable from the given node
+        g = DAG()
+        g.add_node(1)
+        g.add_node(2)
+        g.add_node(3)
+        g.add_edge(2, 3)
+
+        self.assertEqual(len(g.nodes_reachable_from(1)), 0)
+
+        # More complex graph
+        g = DAG()
+
+        g.add_node(1)
+        g.add_node(2)
+        g.add_node(3)
+        g.add_node(4)
+        g.add_node(5)
+        g.add_edge(1, 3)
+        g.add_edge(2, 4)
+        g.add_edge(2, 5)
+        g.add_edge(4, 5)
+        g.add_edge(5, 3)
+
+        self.assertEqual(len(g.nodes_reachable_from(2)), 3)
+        for node in range(3, 6):
+            self.assertIn(node, g.nodes_reachable_from(2))
+        self.assertEqual(len(g.nodes_reachable_from(1)), 1)
+        self.assertIn(3, g.nodes_reachable_from(1))
