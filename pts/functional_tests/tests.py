@@ -348,7 +348,9 @@ class RepositoryAdminTest(SeleniumTestCase):
         self.input_to_element('id_suite', 'testing')
         self.input_to_element('id_codename', 'jessie')
         self.input_to_element('id_components', 'main non-free')
-        self.input_to_element('id_architectures', '["amd64"]')
+        architecture_option = self.browser.find_element_by_css_selector(
+            '.field-architectures select option[value="1"]')
+        architecture_option.click()
         # Finally the user clicks the save button
         self.browser.find_element_by_css_selector('input.default').click()
 

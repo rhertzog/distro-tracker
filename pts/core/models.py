@@ -349,6 +349,14 @@ from django.core.exceptions import ValidationError
 
 
 @python_2_unicode_compatible
+class Architecture(models.Model):
+    name = models.CharField(max_length=30, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
+@python_2_unicode_compatible
 class Repository(models.Model):
     name = models.CharField(max_length=50, unique=True)
     shorthand = models.CharField(max_length=10, unique=True)
@@ -362,7 +370,7 @@ class Repository(models.Model):
     suite = models.CharField(max_length=50)
     codename = models.CharField(max_length=50, blank=True)
     components = SpaceDelimitedTextField()
-    architectures = JSONField()
+    architectures = models.ManyToManyField(Architecture, blank=True)
     default = models.BooleanField(default=False)
 
     optional = models.BooleanField(default=True)

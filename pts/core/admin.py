@@ -14,6 +14,7 @@ from django import forms
 from .models import Repository
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
+from pts.core.models import Architecture
 from pts.core.retrieve_data import retrieve_repository_info
 from pts.core.retrieve_data import InvalidRepositoryException
 import requests
@@ -129,6 +130,12 @@ class RepositoryAdminForm(forms.ModelForm):
                 raise ValidationError("The Release file was invalid.")
             # Use the data to construct a Repository object.
             self.cleaned_data.update(repository_info)
+            # Architectures have to be matched with their primary keys
+            self.cleaned_data['architectures'] = [
+                Architecture.objects.get(name=architecture_name).pk
+                for architecture_name in self.cleaned_data['architectures']
+                if Architecture.objects.filter(name=architecture_name).exists()
+            ]
 
         return self.cleaned_data
 
@@ -198,7 +205,7 @@ class RepositroyAdmin(admin.ModelAdmin):
         Helper method for displaying Repository objects.
         Turns the architectures list into a display-friendly string.
         """
-        return ' '.join(obj.architectures)
+        return ' '.join(map(str, obj.architectures.all()))
     architectures_string.short_description = 'architectures'
 
 
