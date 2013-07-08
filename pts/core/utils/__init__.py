@@ -11,6 +11,7 @@
 from __future__ import unicode_literals
 from django.template.loader import render_to_string
 from django.http import HttpResponse
+from django.db import models
 import json
 
 from .email_messages import extract_email_address_from_header
@@ -52,3 +53,65 @@ def render_to_json_response(response):
         json.dumps(response),
         content_type='application/json'
     )
+
+
+class PrettyPrintList(object):
+    def __init__(self, l=None, delimiter=' '):
+        if l is None:
+            self._list = []
+        else:
+            self._list = l
+        self.delimiter = delimiter
+
+    def __getattr__(self, name, *args, **kwargs):
+        return getattr(self._list, name)
+
+    def __len__(self):
+        return len(self._list)
+
+    def __getitem__(self, pos):
+        return self._list[pos]
+
+    def __iter__(self):
+        return self._list.__iter__()
+
+    def __str__(self):
+        return self.delimiter.join(map(str, self._list))
+
+    def __repr__(self):
+        return str(self)
+
+    def __eq__(self, other):
+        if isinstance(other, PrettyPrintList):
+            return self._list == other._list
+        return self._list == other
+
+
+class SpaceDelimitedTextField(models.TextField):
+    __metaclass__ = models.SubfieldBase
+
+    description = "Stores a space delimited list of strings"
+
+    def to_python(self, value):
+        if value is None:
+            return None
+
+        if isinstance(value, PrettyPrintList):
+            return value
+        elif isinstance(value, list):
+            return PrettyPrintList(value)
+
+        return PrettyPrintList(value.split())
+
+    def get_prep_value(self, value, **kwargs):
+        if value is None:
+            return
+        # Any iterable value can be converted into this type of field.
+        return ' '.join(map(str, value))
+
+    def get_db_prep_value(self, value, **kwargs):
+        return self.get_prep_value(value)
+
+    def value_to_string(self, obj):
+        value = self._get_val_from_obj(obj)
+        return self.get_prep_value(value)

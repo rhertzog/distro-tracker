@@ -1600,3 +1600,89 @@ class JobTests(SimpleTestCase):
 
         self.assert_task_dependency_preserved(T1, [T7, T5])
         self.assert_task_dependency_preserved(T5, [T8])
+
+
+from pts.core.utils import PrettyPrintList
+class PrettyPrintListTest(SimpleTestCase):
+    """
+    Tests for the PrettyPrintList class.
+    """
+    def test_string_output(self):
+        """
+        Tests the output of a PrettyPrintList.
+        """
+        l = PrettyPrintList(['a', 'b', 'abe', 'q'])
+        self.assertEqual(str(l), 'a b abe q')
+
+        l = PrettyPrintList()
+        self.assertEqual(str(l), '')
+
+        l = PrettyPrintList([0, 'a', 1])
+        self.assertEqual(str(l), '0 a 1')
+
+    def test_list_methods_accessible(self):
+        """
+        Tests that list methods are accessible to the PrettyPrintList object.
+        """
+        l = PrettyPrintList()
+        l.append('a')
+        self.assertEqual(str(l), 'a')
+
+        l.extend(['q', 'w'])
+        self.assertEqual(str(l), 'a q w')
+
+        l.pop()
+        self.assertEqual(str(l), 'a q')
+
+        # len works?
+        self.assertEqual(len(l), 2)
+        # Iterable?
+        self.assertSequenceEqual(l, ['a', 'q'])
+        # Indexable?
+        self.assertEqual(l[0], 'a')
+        # Comparable?
+        l2 = PrettyPrintList(['a', 'q'])
+        self.assertTrue(l == l2)
+        l3 = PrettyPrintList()
+        self.assertFalse(l == l3)
+        # Comparable to plain lists?
+        self.assertTrue(l == ['a', 'q'])
+        self.assertFalse(l == ['a'])
+
+
+from pts.core.utils import SpaceDelimitedTextField
+class SpaceDelimitedTextFieldTest(SimpleTestCase):
+    """
+    Tests the SpaceDelimitedTextField class.
+    """
+    def setUp(self):
+        self.field = SpaceDelimitedTextField()
+
+    def test_list_to_field(self):
+        self.assertEqual(
+            self.field.get_db_prep_value(PrettyPrintList(['a', 'b', 3])),
+            'a b 3'
+        )
+
+        self.assertEqual(
+            self.field.get_db_prep_value(PrettyPrintList()),
+            ''
+        )
+
+    def test_field_to_list(self):
+        self.assertEqual(
+            self.field.to_python('a b 3'),
+            PrettyPrintList(['a', 'b', '3'])
+        )
+
+        self.assertEqual(
+            self.field.to_python(''),
+            PrettyPrintList()
+        )
+
+    def test_sane_inverse(self):
+        l = PrettyPrintList(['a', 'b', 'c'])
+        self.assertEqual(
+            self.field.to_python(self.field.get_db_prep_value(l)),
+            l
+        )
