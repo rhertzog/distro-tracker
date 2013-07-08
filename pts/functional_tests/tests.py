@@ -347,7 +347,7 @@ class RepositoryAdminTest(SeleniumTestCase):
         self.input_to_element('id_uri', 'http://ftp.ba.debian.org/debian')
         self.input_to_element('id_suite', 'testing')
         self.input_to_element('id_codename', 'jessie')
-        self.input_to_element('id_components', '["main", "non-free"]')
+        self.input_to_element('id_components', 'main non-free')
         self.input_to_element('id_architectures', '["amd64"]')
         # Finally the user clicks the save button
         self.browser.find_element_by_css_selector('input.default').click()

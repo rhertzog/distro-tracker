@@ -13,6 +13,7 @@ from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 from django.core.urlresolvers import reverse
 from pts.core.utils import get_or_none
+from pts.core.utils import SpaceDelimitedTextField
 
 
 @python_2_unicode_compatible
@@ -360,7 +361,7 @@ class Repository(models.Model):
     )
     suite = models.CharField(max_length=50)
     codename = models.CharField(max_length=50, blank=True)
-    components = JSONField()
+    components = SpaceDelimitedTextField()
     architectures = JSONField()
     default = models.BooleanField(default=False)
 
