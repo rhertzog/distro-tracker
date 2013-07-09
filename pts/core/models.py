@@ -176,6 +176,28 @@ class SourcePackage(Package):
             'package_name': self.name
         })
 
+    @property
+    def main_entry(self):
+        """
+        Returns the `SourceRepositoryEntry` of the given package which belongs
+        to either the default repository. If the package is not found in the
+        default repository, the entry from the repository with the highest
+        version of the package is returned.
+        """
+        default_repository = Repository.objects.get_default()
+        if default_repository.exists():
+            default_repository = default_repository[0]
+            qs = SourceRepositoryEntry.objects.filter(
+                source_package=self, repository=default_repository)
+        else:
+            qs = SourceRepositoryEntry.objects.filter(source_package=self)
+
+        if qs.exists():
+            return max(qs, key=lambda x: AptPkgVersion(x.version))
+        else:
+            return None
+
+
 def get_web_package(package_name):
     """
     Utility function returning either a PseudoPackage or a SourcePackage based

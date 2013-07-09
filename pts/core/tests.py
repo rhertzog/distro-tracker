@@ -1877,3 +1877,96 @@ class SourceRepositoryEntryTests(TestCase):
         # New binary package created.
         self.assertEqual(BinaryPackage.objects.count(), 1)
         self.assertEqual('bin-pkg', BinaryPackage.objects.all()[0].name)
+
+    def test_get_main_source_package_entry_default_repo(self):
+        """
+        Tests retrieving the main source package entry.
+
+        The main entry is either the one from a default repository or
+        the one which has the highest version number if the package can
+        not be found in the default repository.
+        """
+        self.repository.default = True
+        self.repository.save()
+        src_pkg = SourcePackage.objects.create(name='dummy-package')
+        architectures = ['amd64', 'all']
+        self.repository.add_source_package(src_pkg, **{
+            'version': '0.1',
+            'maintainer': {
+                'name': 'Maintainer',
+                'email': 'maintainer@domain.com'
+            },
+            'architectures': architectures,
+        })
+        # Create a second repository.
+        repo2 = Repository.objects.create(name='repo', shorthand='repo')
+        # Add the package to it too.
+        repo2.add_source_package(src_pkg, **{
+            'version': '0.1',
+            'maintainer': {
+                'name': 'Maintainer',
+                'email': 'maintainer@domain.com'
+            },
+            'architectures': architectures,
+        })
+
+        # The main entry is the one from the default repository.
+        self.assertEqual(src_pkg.main_entry.repository, self.repository)
+        self.assertEqual(src_pkg.main_entry.source_package, src_pkg)
+
+    def test_get_main_source_package_entry_only_repo(self):
+        """
+        Tests retrieving the main source package entry.
+        """
+        # Make sure it is not default
+        self.repository.default = False
+        self.repository.save()
+
+        src_pkg = SourcePackage.objects.create(name='dummy-package')
+        architectures = ['amd64', 'all']
+        self.repository.add_source_package(src_pkg, **{
+            'version': '0.1',
+            'maintainer': {
+                'name': 'Maintainer',
+                'email': 'maintainer@domain.com'
+            },
+            'architectures': architectures,
+        })
+
+        self.assertEqual(src_pkg.main_entry.repository, self.repository)
+        self.assertEqual(src_pkg.main_entry.source_package, src_pkg)
+
+    def test_get_main_source_package_entry_no_default(self):
+        """
+        Tests retrieving a main entry when there is no default repository.
+        """
+        # Make sure it is not default
+        self.repository.default = False
+        self.repository.save()
+
+        src_pkg = SourcePackage.objects.create(name='dummy-package')
+        architectures = ['amd64', 'all']
+        self.repository.add_source_package(src_pkg, **{
+            'version': '0.1',
+            'maintainer': {
+                'name': 'Maintainer',
+                'email': 'maintainer@domain.com'
+            },
+            'architectures': architectures,
+        })
+        # Create a second repository.
+        repo2 = Repository.objects.create(name='repo', shorthand='repo')
+        # Add the package to it too.
+        repo2.add_source_package(src_pkg, **{
+            'version': '1.1',
+            'maintainer': {
+                'name': 'Maintainer',
+                'email': 'maintainer@domain.com'
+            },
+            'architectures': architectures,
+        })
+
+        # The main entry is the one from the second repository since it has
+        # a higher version.
+        self.assertEqual(src_pkg.main_entry.repository, repo2)
+        self.assertEqual(src_pkg.main_entry.source_package, src_pkg)
