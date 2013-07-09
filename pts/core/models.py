@@ -462,6 +462,32 @@ class Repository(models.Model):
             ' '.join(self.components)
         ))
 
+    @property
+    def sources_list_entry(self):
+        entry_common = (
+            '{uri} {suite} {components}'.format(
+                uri=self.uri,
+                suite=self.suite,
+                components=' '.join(self.components)
+            )
+        )
+        src_entry = 'deb-src ' + entry_common
+        if not self.binary:
+            return src_entry
+        else:
+            bin_entry = 'deb [arch={archs}] ' + entry_common
+            archs = ','.join(map(str, self.architectures.all()))
+            bin_entry = bin_entry.format(archs=archs)
+            return '\n'.join((src_entry, bin_entry))
+
+    @property
+    def component_urls(self):
+        base_url = self.uri.rstrip('/')
+        return [
+            base_url + '/' + self.suite + '/' + component
+            for component in self.components
+        ]
+
     def has_source_package(self, package):
         """
         The method returns whether the repository contains the given source
