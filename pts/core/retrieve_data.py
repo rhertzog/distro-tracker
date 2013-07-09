@@ -400,3 +400,42 @@ class UpdateVersionInformation(BaseTask):
                     package=package)
                 versions.value = self._extract_versions_for_package(package)
                 versions.save()
+
+
+class UpdateSourceToBinariesInformation(BaseTask):
+    DEPENDS_ON_EVENTS = (
+        'source-package-updated',
+        'source-package-created',
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(UpdateSourceToBinariesInformation, self).__init__(*args, **kwargs)
+        self.packages = set()
+
+    def process_event(self, event):
+        self.packages.add(event.arguments['name'])
+
+    def _get_all_binaries(self, package):
+        """
+        Returns a list representing binary packages linked to the given
+        source package.
+        """
+        return [
+            {
+                'repository_name': (
+                    pkg.source_package.main_entry.repository.name),
+                'name': pkg.name,
+            }
+            for pkg in package.binarypackage_set.all()
+        ]
+
+    def execute(self):
+        with transaction.commit_on_success():
+            for package_name in self.packages:
+                package = SourcePackage.objects.get(name=package_name)
+
+                binaries, _ = PackageExtractedInfo.objects.get_or_create(
+                    key='binaries',
+                    package=package)
+                binaries.value = self._get_all_binaries(package)
+                binaries.save()
