@@ -78,7 +78,7 @@ class RepositoryAdminForm(forms.ModelForm):
                   "Release file of the repository.",
         max_length=200,
         widget=forms.TextInput(attrs={
-            'size': 200,
+            'size': 100,
         }),
         validators=[
             validate_sources_list_entry,
