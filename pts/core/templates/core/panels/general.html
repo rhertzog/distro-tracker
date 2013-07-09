@@ -1,0 +1,15 @@
+<h4 class="text-center">{{ panel.title }}</h4>
+<ul>
+<li>source: {{ panel.context.name }} ({{ panel.context.priority }}, {{ panel.context.section }})</li>
+<li>version: {{ panel.context.version }}</li>
+<li>maintainer: <a href="mailto:{{ panel.context.maintainer.email }}">{{ panel.context.maintainer.name }}</a></li>
+<li>uploaders:
+    <ul>
+        {% for uploader in panel.context.uploaders %}
+        <li><a href="mailto:{{ uploader.email }}">{{ uploader.name }}</a></li>
+        {% endfor %}
+    </ul>
+<li>arch: {% for arch in panel.context.architectures %}{{ arch }} {% endfor %}</li>
+<li>std-ver: {{ panel.context.standards_version }}</li>
+<li>VCS: <a href="{{ panel.context.vcs.url }}">{{ panel.context.vcs.type }}</a> (<a href="{{ panel.context.vcs.browser }}">Browse</a>)</li>
+</ul>

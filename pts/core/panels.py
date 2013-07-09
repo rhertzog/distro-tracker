@@ -11,6 +11,7 @@
 from __future__ import unicode_literals
 from django.utils import six
 from pts.core.utils.plugins import PluginRegistry
+from pts.core.models import PackageExtractedInfo
 
 
 class BasePanel(six.with_metaclass(PluginRegistry)):
@@ -92,3 +93,15 @@ def get_panels_for_package(package):
             panels[panel.position].append(panel)
 
     return dict(panels)
+
+
+class GeneralInformationPanel(BasePanel):
+    position = 'left'
+    title = 'general'
+    template_name = 'core/panels/general.html'
+
+    @property
+    def context(self):
+        info = PackageExtractedInfo.objects.get(
+            package=self.package, key='general')
+        return info.value
