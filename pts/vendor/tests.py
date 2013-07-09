@@ -16,7 +16,7 @@ module of all subpackages.
 """
 
 from __future__ import unicode_literals
-from django.test import TestCase
+from django.test import SimpleTestCase
 from django.test.utils import override_settings
 
 from pts.dispatch.tests import DispatchBaseTest
@@ -43,13 +43,13 @@ def get_subpackages():
 
 def get_test_cases(tests_module):
     """
-    Returns a list of all TestCase subclasses from the given module.
+    Returns a list of all SimpleTestCase subclasses from the given module.
     """
     module_name = tests_module.__name__
     return [
         klass
         for _, klass in inspect.getmembers(tests_module, inspect.isclass)
-        if issubclass(klass, TestCase) and klass.__module__ == module_name
+        if issubclass(klass, SimpleTestCase) and klass.__module__ == module_name
     ]
 
 
@@ -70,7 +70,7 @@ def suite():
     # Add this tests module to the list too
     tests_modules.append('..tests')
 
-    # Try importing the tests from all TestCase classes defined in the
+    # Try importing the tests from all SimpleTestCase classes defined in the
     # found tests modules.
     for tests_module_name in tests_modules:
         try:
@@ -84,7 +84,7 @@ def suite():
         if hasattr(tests_module, 'suite') and tests_module.__name__ != __name__:
             suite.addTest(getattr(tests_module, 'suite')())
         else:
-            # Just add all TestCase subclasses.
+            # Just add all SimpleTestCase subclasses.
             for test_case in get_test_cases(tests_module):
                 all_tests = unittest.TestLoader().loadTestsFromTestCase(test_case)
                 suite.addTest(all_tests)
