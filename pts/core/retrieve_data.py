@@ -359,3 +359,44 @@ class UpdatePackageGeneralInformation(BaseTask):
                 )
                 general.value = self._get_info_from_entry(entry)
                 general.save()
+
+
+class UpdateVersionInformation(BaseTask):
+    DEPENDS_ON_EVENTS = (
+        'source-package-updated',
+        'source-package-created',
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(UpdateVersionInformation, self).__init__(*args, **kwargs)
+        self.packages = set()
+
+    def process_event(self, event):
+        self.packages.add(event.arguments['name'])
+
+    def _extract_versions_for_package(self, package):
+        """
+        Returns a list where each element is a dictionary with the following
+        keys: repository_name, repository_shorthand, package_version.
+        """
+        versions = [
+            {
+                'repository_name': entry.repository.name,
+                'repository_shorthand': entry.repository.shorthand,
+                'version': entry.version,
+            }
+            for entry in package.repository_entries.all()
+        ]
+
+        return versions
+
+    def execute(self):
+        with transaction.commit_on_success():
+            for package_name in self.packages:
+                package = SourcePackage.objects.get(name=package_name)
+
+                versions, _ = PackageExtractedInfo.objects.get_or_create(
+                    key='versions',
+                    package=package)
+                versions.value = self._extract_versions_for_package(package)
+                versions.save()
