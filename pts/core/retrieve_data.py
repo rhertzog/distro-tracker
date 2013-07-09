@@ -11,11 +11,18 @@
 from __future__ import unicode_literals
 from pts import vendor
 from pts.core.models import PseudoPackage, Package
-from debian import deb822
-import requests
 from pts.core.models import Repository
+from pts.core.models import BinaryPackage
+from pts.core.models import SourcePackage, Architecture
 from django.utils.six import reraise
+from django.conf import settings
+
+from debian import deb822
+import os
+import apt
 import sys
+import apt_pkg
+import requests
 
 
 class InvalidRepositoryException(Exception):
@@ -116,3 +123,95 @@ def retrieve_repository_info(sources_list_entry):
         repository_information[key] = release.get(key, default)
 
     return repository_information
+
+
+class AptCache(object):
+
+    class AcquireProgress(apt.progress.base.AcquireProgress):
+        def __init__(self, *args, **kwargs):
+            super(AptCache.AcquireProgress, self).__init__(*args, **kwargs)
+            self.fetched = []
+            self.hit = []
+
+        def done(self, item):
+            self.fetched.append(os.path.split(item.owner.destfile)[1])
+
+        def ims_hit(self, item):
+            self.hit.append(os.path.split(item.owner.destfile)[1])
+
+        def pulse(self, owner):
+            return True
+
+    def __init__(self):
+        self.cache_root_dir = settings.PTS_APT_CACHE_DIRECTORY
+        self.sources_list_path = os.path.join(
+            self.cache_root_dir,
+            'sources.list')
+        self.conf_file_path = os.path.join(self.cache_root_dir, 'apt.conf')
+
+        self.sources = []
+        self.packages = []
+
+    def update_sources_list(self):
+        with open(self.sources_list_path, 'w') as sources_list:
+            for repository in Repository.objects.all():
+                sources_list.write(repository.sources_list_entry + '\n')
+
+    def update_apt_conf(self):
+        with open(self.conf_file_path, 'w') as conf_file:
+            conf_file.write('APT::Architectures { ')
+            for architecture in Architecture.objects.all():
+                conf_file.write('"{arch}"; '.format(arch=architecture))
+            conf_file.write('};\n')
+
+    def _configure_apt(self):
+        apt_pkg.init_config()
+        apt_pkg.init_system()
+        apt_pkg.read_config_file(apt_pkg.config, self.conf_file_path)
+        apt_pkg.config.set('Dir::Etc', self.cache_root_dir)
+
+    def _index_file_full_path(self, file_name):
+        return os.path.join(
+            self.cache_root_dir,
+            'var/lib/apt/lists',
+            file_name
+        )
+
+    def _match_index_file_to_repository(self, sources_file):
+        sources_list = apt_pkg.SourceList()
+        sources_list.read_main_list()
+        component_url = None
+        for entry in sources_list.list:
+            for index_file in entry.index_files:
+                if sources_file in index_file.describe:
+                    split_description = index_file.describe.split()
+                    component_url = split_description[0] + split_description[1]
+                    break
+        for repository in Repository.objects.all():
+            if component_url in repository.component_urls:
+                return repository
+
+    def update_repositories(self):
+        self.update_sources_list()
+        self.update_apt_conf()
+
+        self._configure_apt()
+        cache = apt.cache.Cache(rootdir=self.cache_root_dir)
+        progress = AptCache.AcquireProgress()
+        cache.update(progress)
+
+        updated_sources = []
+        updated_packages = []
+        for fetched_file in progress.fetched:
+            if fetched_file.endswith('Sources'):
+                dest = updated_sources
+            elif fetched_file.endswith('Packages'):
+                dest = updated_packages
+            else:
+                continue
+            repository = self._match_index_file_to_repository(fetched_file)
+            dest.append((
+                repository, self._index_file_full_path(fetched_file)
+            ))
+
+        return updated_sources, updated_packages
