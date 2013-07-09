@@ -627,3 +627,17 @@ class SourceRepositoryEntry(models.Model):
         for key, value in kwargs.items():
             if hasattr(self, key):
                 setattr(self, key, value)
+
+
+@python_2_unicode_compatible
+class PackageExtractedInfo(models.Model):
+    package = models.ForeignKey(Package)
+    key = models.CharField(max_length='50')
+    value = JSONField()
+
+    def __str__(self):
+        return '{key}: {value} for package {package}'.format(
+            key=self.key, value=self.value, package=self.package)
+
+    class Meta:
+        unique_together = ('key', 'package')
