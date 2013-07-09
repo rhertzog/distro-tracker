@@ -72,3 +72,37 @@ def get_pseudo_package_list():
         line.split(None, 1)[0]
         for line in response.text.splitlines()
     ]
+
+
+def get_package_information_site_url(package_name,
+                                     source_package=False,
+                                     repository_name=None):
+    """
+    Should return a URL to a package information Web page for the given package
+    and repository. The repository parameter is optional.
+
+    If no URL exists, returns None
+    """
+    BASE_URL = 'http://packages.debian.org/'
+    SOURCE_PACKAGE_URL_TEMPLATES = {
+        'repository': BASE_URL + 'source/{repo}/{package}',
+        'no-repository': BASE_URL + 'src:{package}',
+    }
+    BINARY_PACKAGE_URL_TEMPLATES = {
+        'repository': BASE_URL + '{repo}/{package}',
+        'no-repository': BASE_URL + '{package}',
+    }
+
+    params = {'package': package_name}
+    if repository_name:
+        url_type = 'repository'
+        params['repo'] = repository_name
+    else:
+        url_type = 'no-repository'
+
+    if source_package:
+        template = SOURCE_PACKAGE_URL_TEMPLATES[url_type]
+    else:
+        template = BINARY_PACKAGE_URL_TEMPLATES[url_type]
+
+    return template.format(**params)

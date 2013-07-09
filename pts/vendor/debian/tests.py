@@ -13,12 +13,13 @@ Tests for Debian-specific modules/functionality of the PTS.
 """
 
 from __future__ import unicode_literals
-from django.test import TestCase
+from django.test import TestCase, SimpleTestCase
 from django.test.utils import override_settings
 from django.core import mail
 from pts.dispatch.tests import DispatchTestHelperMixin, DispatchBaseTest
 from pts.core.models import Package
 from django.utils.six.moves import mock
+from pts.vendor.debian.rules import get_package_information_site_url
 
 
 __all__ = ('DispatchDebianSpecificTest', 'DispatchBaseDebianSettingsTest')
@@ -176,4 +177,38 @@ class GetPseudoPackageListTest(TestCase):
         self.assertSequenceEqual(
             ['package1', 'package2'],
             packages
+        )
+
+
+class GetPackageInformationSiteUrlTest(SimpleTestCase):
+    def test_get_source_package_url(self):
+        """
+        Tests retrieving a URL to the package information site for a source
+        package.
+        """
+        # Source package with no repository given
+        self.assertEqual(
+            'http://packages.debian.org/src:dpkg',
+            get_package_information_site_url('dpkg', source_package=True)
+        )
+        # Source package in a repository
+        self.assertEqual(
+            'http://packages.debian.org/source/stable/dpkg',
+            get_package_information_site_url('dpkg', True, 'stable')
+        )
+
+    def test_get_binary_package_url(self):
+        """
+        Tests retrieving a URL to the package information site for a binary
+        package.
+        """
+        # Binary package with no repository given
+        self.assertEqual(
+            'http://packages.debian.org/dpkg',
+            get_package_information_site_url('dpkg')
+        )
+        # Binary package in a repository
+        self.assertEqual(
+            'http://packages.debian.org/unstable/dpkg',
+            get_package_information_site_url('dpkg', repository_name='unstable')
         )
