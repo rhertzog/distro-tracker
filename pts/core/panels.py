@@ -11,6 +11,7 @@
 from __future__ import unicode_literals
 from django.utils import six
 from pts.core.utils.plugins import PluginRegistry
+from pts import vendor
 from pts.core.models import PackageExtractedInfo
 
 
@@ -118,6 +119,7 @@ class VersionsInformationPanel(BasePanel):
             package=self.package, key='versions')
         return info.value
 
+
 class BinariesInformationPanel(BasePanel):
     position = 'right'
     title = 'binaries'
@@ -127,4 +129,14 @@ class BinariesInformationPanel(BasePanel):
     def context(self):
         info = PackageExtractedInfo.objects.get(
             package=self.package, key='binaries')
-        return info.value
+        binaries = info.value
+        for binary in binaries:
+            url, implemented = vendor.call('get_package_information_site_url', **{
+                'package_name': binary['name'],
+                'repository_name': binary['repository_name'],
+                'source_package': False,
+            })
+            if implemented and url:
+                binary['url'] = url
+
+        return binaries
