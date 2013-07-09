@@ -105,3 +105,15 @@ class GeneralInformationPanel(BasePanel):
         info = PackageExtractedInfo.objects.get(
             package=self.package, key='general')
         return info.value
+
+
+class VersionsInformationPanel(BasePanel):
+    position = 'left'
+    title = 'versions'
+    template_name = 'core/panels/versions.html'
+
+    @property
+    def context(self):
+        info = PackageExtractedInfo.objects.get(
+            package=self.package, key='versions')
+        return info.value

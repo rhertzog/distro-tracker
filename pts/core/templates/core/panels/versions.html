@@ -1,0 +1,6 @@
+<h4 class="text-center">{{ panel.title }}</h4>
+<ul>
+    {% for item in panel.context %}
+    <li>{{ item.repository_shorthand }}: {{ item.version }}</li>
+    {% endfor %}
+</ul>
