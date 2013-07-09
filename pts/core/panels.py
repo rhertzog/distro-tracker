@@ -117,3 +117,14 @@ class VersionsInformationPanel(BasePanel):
         info = PackageExtractedInfo.objects.get(
             package=self.package, key='versions')
         return info.value
+
+class BinariesInformationPanel(BasePanel):
+    position = 'left'
+    title = 'binaries'
+    template_name = 'core/panels/binaries.html'
+
+    @property
+    def context(self):
+        info = PackageExtractedInfo.objects.get(
+            package=self.package, key='binaries')
+        return info.value
