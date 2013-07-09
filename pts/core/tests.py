@@ -1434,6 +1434,12 @@ class JobTests(SimpleTestCase):
     def setUp(self):
         #: Tasks which execute add themselves to this list.
         self.execution_list = []
+        self.original_plugins = [
+            plugin
+            for plugin in BaseTask.plugins
+        ]
+        # Now ignore all original plugins.
+        BaseTask.plugins = []
 
     def assert_executed_tasks_equal(self, expected_tasks):
         """
@@ -1454,7 +1460,7 @@ class JobTests(SimpleTestCase):
 
     def tearDown(self):
         # Remove any extra plugins which may have been created during a test run
-        BaseTask.plugins = BaseTask.plugins[:1]
+        BaseTask.plugins = self.original_plugins
 
     def test_simple_dependency(self):
         """
