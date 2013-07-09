@@ -96,7 +96,7 @@ def get_panels_for_package(package):
 
 
 class GeneralInformationPanel(BasePanel):
-    position = 'left'
+    position = 'center'
     title = 'general'
     template_name = 'core/panels/general.html'
 
@@ -119,7 +119,7 @@ class VersionsInformationPanel(BasePanel):
         return info.value
 
 class BinariesInformationPanel(BasePanel):
-    position = 'left'
+    position = 'right'
     title = 'binaries'
     template_name = 'core/panels/binaries.html'
 

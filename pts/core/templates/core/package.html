@@ -5,8 +5,8 @@
 
 {% block page-header %}
     <header class="page-header" id="package-page-header">
-        <div class="container">
-            <div class="row">
+        <div class="container-fluid">
+            <div class="row-fluid">
                 <div class="span3 col col-lg-3 text-center">
                     {% include 'core/logo.html' %}
                 </div>
@@ -20,7 +20,7 @@
 {% endblock %}
 
 {% block content %}
-    <div class="row">
+    <div class="row-fluid">
         <div class="span3 col col-lg-3" id="pts-package-left">
             {% for panel in panels.left %}
             {% if panel.template_name %}

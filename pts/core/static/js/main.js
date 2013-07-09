@@ -15,4 +15,6 @@ $(function() {
             rateLimitWait: 500
         }
     ]);
+
+    $('.has-tooltip').tooltip();
 });

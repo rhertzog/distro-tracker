@@ -1,15 +1,56 @@
-<h4 class="text-center">{{ panel.title }}</h4>
-<ul>
-<li>source: {{ panel.context.name }} ({{ panel.context.priority }}, {{ panel.context.section }})</li>
-<li>version: {{ panel.context.version }}</li>
-<li>maintainer: <a href="mailto:{{ panel.context.maintainer.email }}">{{ panel.context.maintainer.name }}</a></li>
-<li>uploaders:
-    <ul>
-        {% for uploader in panel.context.uploaders %}
-        <li><a href="mailto:{{ uploader.email }}">{{ uploader.name }}</a></li>
-        {% endfor %}
-    </ul>
-<li>arch: {% for arch in panel.context.architectures %}{{ arch }} {% endfor %}</li>
-<li>std-ver: {{ panel.context.standards_version }}</li>
-<li>VCS: <a href="{{ panel.context.vcs.url }}">{{ panel.context.vcs.type }}</a> (<a href="{{ panel.context.vcs.browser }}">Browse</a>)</li>
+{% extends 'core/panels/panel.html' %}
+{% block panel-header %}
+{{ panel.title }}
+{% endblock %}
+
+{% block panel-body %}
+{% with context=panel.context %}
+<ul class="list-group list-group-flush">
+    <li class="list-group-item">
+        <div class="list-item-key"><b>source:</b></div>
+        <div class="list-item-value">{{ context.name }} (<a href="#" data-toggle="tooltip" title="priority" class="has-tooltip">{{ context.priority }}</a>, <a href="#" data-toggle="tooltip" title="section" class="has-tooltip">{{ context.section }}</a>)</div>
+        <div class="clear"></div>
+    </li>
+    <li class="list-group-item">
+        <div class="list-item-key"><b>version:</b></div>
+        <div class="list-item-value">{{ context.version }}</div>
+        <div class="clear"></div>
+    </li>
+    <li class="list-group-item">
+        <div class="list-item-key"><b>maintainer:</b></div>
+        <div class="list-item-value">
+            <a href="mailto:{{ context.maintainer.email }}">{{ context.maintainer.name }}</a>
+        </div>
+        <div class="clear"></div>
+    </li>
+    <li class="list-group-item">
+        <div class="list-item-key"><b>uploaders:</b></div>
+        <div class="list-item-value">
+        <ul>
+            {% for uploader in context.uploaders %}
+            <li><a href="mailto:{{ uploader.email }}">{{ uploader.name }}</a></li>
+            {% endfor %}
+        </ul>
+        </div>
+        <div class="clear"></div>
+    </li>
+    <li class="list-group-item">
+        <div class="list-item-key"><b>arch:</b></div>
+        <div class="list-item-value">{% for arch in context.architectures %}{{ arch }} {% endfor %}</div>
+        <div class="clear"></div>
+    </li>
+    <li class="list-group-item">
+        <div class="list-item-key"><b>std-ver:</b></div>
+        <div class="list-item-value">{{ context.standards_version }}</div>
+        <div class="clear"></div>
+    </li>
+    <li class="list-group-item">
+        <div class="list-item-key"><b>VCS:</b></div>
+        <div class="list-item-value">
+            <a href="{{ context.vcs.url }}">{{ context.vcs.type }}</a> (<a href="{{ context.vcs.browser }}">Browse</a>)
+        </div>
+        <div class="clear"></div>
+    </li>
 </ul>
+{% endwith %}
+{% endblock %}

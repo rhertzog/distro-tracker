@@ -1,6 +1,18 @@
-<h4 class="text-center">{{ panel.title }}</h4>
-<ul>
+{% extends 'core/panels/panel.html' %}
+
+{% block panel-header %}
+{{ panel.title }}
+{% endblock %}
+
+{% block panel-body %}
+<ul class="list-group list-group-flush">
     {% for item in panel.context %}
-    <li>{{ item.repository_shorthand }}: {{ item.version }}</li>
+    <div class="row-fluid">
+    <li class="list-group-item">
+        <div class="span3"><b>{{ item.repository_shorthand }}:</b></div>
+        <div class="span9">{{ item.version }}</div>
+    </li>
+    </div>
     {% endfor %}
 </ul>
+{% endblock %}
