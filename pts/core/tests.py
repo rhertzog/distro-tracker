@@ -559,6 +559,62 @@ Content-Transfer-Encoding: 8bit
             message.as_string())
 
 
+from pts.core.utils.email_messages import (
+    name_and_address_from_string,
+    names_and_addresses_from_string)
+
+class EmailUtilsTest(SimpleTestCase):
+    def test_name_and_address_from_string(self):
+        """
+        Tests retrieving a name and address from a string which contains
+        unquoted commas.
+        """
+        self.assertDictEqual(
+            name_and_address_from_string(
+                'John H. Robinson, IV <jaqque@debian.org>'),
+            {'name': 'John H. Robinson, IV', 'email': 'jaqque@debian.org'}
+        )
+
+        self.assertDictEqual(
+            name_and_address_from_string('email@domain.com'),
+            {'name': '', 'email': 'email@domain.com'}
+        )
+
+        self.assertDictEqual(
+            name_and_address_from_string('Name <email@domain.com>'),
+            {'name': 'Name', 'email': 'email@domain.com'}
+        )
+
+        self.assertIsNone(name_and_address_from_string(''))
+
+    def test_names_and_addresses_from_string(self):
+        """
+        Tests extracting names and emails from a string containing a list of
+        them.
+        """
+        self.assertSequenceEqual(
+            names_and_addresses_from_string(
+                'John H. Robinson, IV <jaqque@debian.org>, '
+                'Name <email@domain.com>'
+            ), [
+                {'name': 'John H. Robinson, IV', 'email': 'jaqque@debian.org'},
+                {'name': 'Name', 'email': 'email@domain.com'}
+            ]
+        )
+
+        self.assertSequenceEqual(
+            names_and_addresses_from_string(
+                'John H. Robinson, IV <jaqque@debian.org>, '
+                'email@domain.com'
+            ), [
+                {'name': 'John H. Robinson, IV', 'email': 'jaqque@debian.org'},
+                {'name': '', 'email': 'email@domain.com'}
+            ]
+        )
+
+        self.assertSequenceEqual(names_and_addresses_from_string(''), [])
+
+
 @override_settings(PTS_VENDOR_RULES='pts.core.tests')
 class RetrievePseudoPackagesTest(TestCase):
     """
@@ -1686,3 +1742,58 @@ class SpaceDelimitedTextFieldTest(SimpleTestCase):
             self.field.to_python(self.field.get_db_prep_value(l)),
             l
         )
+
+
+from pts.core.utils.packages import extract_vcs_information
+class PackageUtilsTests(SimpleTestCase):
+    """
+    Tests the pts.core.utils.packages utlity functions.
+    """
+    def test_get_vcs(self):
+        browser_url = 'http://other-url.com'
+        vcs_url = 'git://url.com'
+        d = {
+            'Vcs-Git': vcs_url,
+            'Vcs-Browser': browser_url,
+        }
+        self.assertDictEqual(
+            {
+                'type': 'git',
+                'browser': browser_url,
+                'url': vcs_url,
+            },
+            extract_vcs_information(d)
+        )
+
+        # Browser not found
+        d = {
+            'Vcs-Git': vcs_url,
+        }
+        self.assertDictEqual(
+            {
+                'type': 'git',
+                'url': vcs_url,
+            },
+            extract_vcs_information(d)
+        )
+
+        # A VCS type longer than three letters
+        d = {
+            'Vcs-Darcs': vcs_url,
+        }
+        self.assertDictEqual(
+            {
+                'type': 'darcs',
+                'url': vcs_url,
+            },
+            extract_vcs_information(d)
+        )
+
+        # Empty dict
+        self.assertDictEqual({}, extract_vcs_information({}))
+        # No vcs information in the dict
+        self.assertDictEqual({}, extract_vcs_information({
+            'stuff': 'that does not',
+            'have': 'anything to do',
+            'with': 'vcs'
+        }))

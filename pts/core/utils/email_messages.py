@@ -13,6 +13,7 @@ Module including some utility functions and classes for manipulating email.
 """
 from __future__ import unicode_literals
 from django.utils import six
+import re
 
 
 def extract_email_address_from_header(header):
@@ -27,6 +28,44 @@ def extract_email_address_from_header(header):
     from email.utils import parseaddr
     real_name, from_address = parseaddr(header)
     return from_address
+
+
+def name_and_address_from_string(content):
+    """
+    Takes an address in almost-RFC822 format and turns it into a dict
+    {'name': real_name, 'email': email_address}
+
+    The difference with email.utils.parseaddr and rfc822.parseaddr
+    is that this routine allows unquoted commas to appear in the real name
+    (in violation of RFC822).
+    """
+    from email.utils import parseaddr
+    hacked_content = content.replace(",", "WEWANTNOCOMMAS")
+    name, mail = parseaddr(hacked_content)
+    if mail:
+        return {
+            'name': name.replace("WEWANTNOCOMMAS", ","),
+            'email': mail.replace("WEWANTNOCOMMAS", ",")
+        }
+    else:
+        return None
+
+
+def names_and_addresses_from_string(content):
+    """
+    Takes a string with addresses in RFC822 format and returns a list of dicts
+    {'name': real_name, 'email': email_address}
+    It tries to be forgiving about unquoted commas in addresses.
+    """
+    all_parts = [
+        name_and_address_from_string(part)
+        for part in re.split('(?<=>)\s*,\s*', content)
+    ]
+    return [
+        part
+        for part in all_parts
+        if part is not None
+    ]
 
 
 def get_decoded_message_payload(message, default_charset='utf-8'):
