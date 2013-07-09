@@ -1970,3 +1970,43 @@ class SourceRepositoryEntryTests(TestCase):
         # a higher version.
         self.assertEqual(src_pkg.main_entry.repository, repo2)
         self.assertEqual(src_pkg.main_entry.source_package, src_pkg)
+
+    def test_update_binary_source_mapping(self):
+        """
+        Tests updating the main binary-source mapping.
+        This mapping determines to which source package users are redirected
+        when they attempt to access this binary package.
+        """
+        src_pkg = SourcePackage.objects.create(name='dummy-package')
+        architectures = ['amd64', 'all']
+        self.repository.add_source_package(src_pkg, **{
+            'binary_packages': ['binary-package'],
+            'version': '0.1',
+            'maintainer': {
+                'name': 'Maintainer',
+                'email': 'maintainer@domain.com'
+            },
+            'architectures': architectures,
+        })
+        src_pkg2 = SourcePackage.objects.create(name='src-pkg')
+        self.repository.add_source_package(src_pkg2, **{
+            'binary_packages': ['binary-package'],
+            'version': '0.2',
+            'maintainer': {
+                'name': 'Maintainer',
+                'email': 'maintainer@domain.com'
+            },
+            'architectures': architectures,
+        })
+
+        # Sanity check - linked to the original source package
+        bin_pkg = BinaryPackage.objects.get(name='binary-package')
+        self.assertEqual(bin_pkg.source_package, src_pkg)
+
+        # Remove the original source package
+        src_pkg.delete()
+        bin_pkg.update_source_mapping()
+
+        # The package is now mapped to the other source package.
+        bin_pkg = BinaryPackage.objects.get(name='binary-package')
+        self.assertEqual(bin_pkg.source_package, src_pkg2)

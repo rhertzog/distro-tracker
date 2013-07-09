@@ -388,6 +388,19 @@ class BinaryPackage(BasePackage):
         # Take the URL of its source package
         return self.source_package.get_absolute_url()
 
+    def update_source_mapping(self):
+        entries = SourceRepositoryEntry.objects.filter(binary_packages=self)
+        default_repository_entries = entries.filter(repository__default=True)
+        if default_repository_entries.exists():
+            entries = default_repository_entries
+        highest_version_entry = max(entries, key=lambda x: AptPkgVersion(x.version))
+
+        if self.source_package != highest_version_entry.source_package:
+            self.source_package = highest_version_entry.source_package
+            self.save()
+            return True
+        else:
+            return False
 
 from jsonfield import JSONField
 from django.core.exceptions import ValidationError
