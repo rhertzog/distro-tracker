@@ -1,0 +1,604 @@
+# -*- coding: utf-8 -*-
+
+# Copyright 2013 The Debian Package Tracking System Developers
+# See the COPYRIGHT file at the top-level directory of this distribution and
+# at http://deb.li/ptsauthors
+#
+# This file is part of the Package Tracking System. It is subject to the
+# license terms in the LICENSE file found in the top-level directory of
+# this distribution and at http://deb.li/ptslicense. No part of the Package
+# Tracking System, including this file, may be copied, modified, propagated, or
+# distributed except according to the terms contained in the LICENSE file.
+
+"""
+Tests for the PTS core utils.
+"""
+from __future__ import unicode_literals
+from django.test import TestCase, SimpleTestCase
+from django.test.utils import override_settings
+from django.utils import six
+from django.utils.six.moves import mock
+
+from pts.core.utils import verp
+from pts.core.utils import message_from_bytes
+from pts.core.utils import SpaceDelimitedTextField
+from pts.core.utils import PrettyPrintList
+from pts.core.utils.packages import extract_vcs_information
+from pts.core.utils.datastructures import DAG, InvalidDAGException
+from pts.dispatch.custom_email_message import CustomEmailMessage
+
+
+class VerpModuleTest(SimpleTestCase):
+    """
+    Tests for the ``pts.core.utils.verp`` module.
+    """
+    def test_encode(self):
+        """
+        Tests for the encode method.
+        """
+        self.assertEqual(
+            verp.encode('itny-out@domain.com', 'node42!ann@old.example.com'),
+            'itny-out-node42+21ann=old.example.com@domain.com')
+
+        self.assertEqual(
+            verp.encode('itny-out@domain.com', 'tom@old.example.com'),
+            'itny-out-tom=old.example.com@domain.com')
+
+        self.assertEqual(
+            verp.encode('itny-out@domain.com', 'dave+priority@new.example.com'),
+            'itny-out-dave+2Bpriority=new.example.com@domain.com')
+
+        self.assertEqual(
+            verp.encode('bounce@dom.com', 'user+!%-:@[]+@other.com'),
+            'bounce-user+2B+21+25+2D+3A+40+5B+5D+2B=other.com@dom.com')
+
+    def test_decode(self):
+        """
+        Tests the decode method.
+        """
+        self.assertEqual(
+            verp.decode('itny-out-dave+2Bpriority=new.example.com@domain.com'),
+            ('itny-out@domain.com', 'dave+priority@new.example.com'))
+
+        self.assertEqual(
+            verp.decode('itny-out-node42+21ann=old.example.com@domain.com'),
+            ('itny-out@domain.com', 'node42!ann@old.example.com'))
+
+        self.assertEqual(
+            verp.decode('bounce-addr+2B40=dom.com@asdf.com'),
+            ('bounce@asdf.com', 'addr+40@dom.com'))
+
+        self.assertEqual(
+            verp.decode('bounce-user+2B+21+25+2D+3A+40+5B+5D+2B=other.com@dom.com'),
+            ('bounce@dom.com', 'user+!%-:@[]+@other.com'))
+
+    def test_invariant_encode_decode(self):
+        """
+        Tests that decoding an encoded address returns the original pair.
+        """
+        from_email, to_email = 'bounce@domain.com', 'user@other.com'
+        self.assertEqual(
+            verp.decode(verp.encode(from_email, to_email)),
+            (from_email, to_email))
+
+
+@override_settings(EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend')
+class CustomMessageFromBytesTest(TestCase):
+    """
+    Tests the ``pts.core.utils.message_from_bytes`` function.
+    """
+    def setUp(self):
+        self.message_bytes = b"""MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+
+"""
+        self.body = "üßščć한글ᥡ╥ສए"
+        self.message_bytes = self.message_bytes + self.body.encode('utf-8')
+
+    def get_mock_connection(self):
+        """
+        Helper method returning a mock SMTP connection object.
+        """
+        import smtplib
+        return mock.create_autospec(smtplib.SMTP('localhost'), return_value={})
+
+    def test_as_string_returns_bytes(self):
+        """
+        Tests that the as_string message returns bytes.
+        """
+        message = message_from_bytes(self.message_bytes)
+
+        self.assertEqual(self.message_bytes, message.as_string())
+        self.assertTrue(isinstance(message.as_string(), six.binary_type))
+
+    def test_get_payload_decode_idempotent(self):
+        """
+        Tests that the get_payload method returns bytes which can be decoded
+        using the message's encoding and that they are identical to the
+        ones given to the function in the first place.
+        """
+        message = message_from_bytes(self.message_bytes)
+
+        self.assertEqual(self.body,
+                         message.get_payload(decode=True).decode('utf-8'))
+
+    def test_integrate_with_django(self):
+        """
+        Tests that the message obtained by the message_from_bytes function can
+        be sent out using the Django email API.
+
+        In the same time, this test makes sure that Django keeps using
+        the as_string method as expected.
+        """
+        from django.core.mail import get_connection
+        backend = get_connection()
+        # Replace the backend's SMTP connection with a mock.
+        mock_connection = self.get_mock_connection()
+        backend.connection = mock_connection
+        # Send the message over the backend
+        message = message_from_bytes(self.message_bytes)
+        custom_message = CustomEmailMessage(
+            msg=message,
+            from_email='from@domain.com',
+            to=['to@domain.com'])
+
+        backend.send_messages([custom_message])
+        backend.close()
+
+        # The backend sent the mail over SMTP & it is not corrupted
+        mock_connection.sendmail.assert_called_with(
+            'from@domain.com',
+            ['to@domain.com'],
+            message.as_string())
+
+
+from pts.core.utils.email_messages import (
+    name_and_address_from_string,
+    names_and_addresses_from_string)
+
+class EmailUtilsTest(SimpleTestCase):
+    def test_name_and_address_from_string(self):
+        """
+        Tests retrieving a name and address from a string which contains
+        unquoted commas.
+        """
+        self.assertDictEqual(
+            name_and_address_from_string(
+                'John H. Robinson, IV <jaqque@debian.org>'),
+            {'name': 'John H. Robinson, IV', 'email': 'jaqque@debian.org'}
+        )
+
+        self.assertDictEqual(
+            name_and_address_from_string('email@domain.com'),
+            {'name': '', 'email': 'email@domain.com'}
+        )
+
+        self.assertDictEqual(
+            name_and_address_from_string('Name <email@domain.com>'),
+            {'name': 'Name', 'email': 'email@domain.com'}
+        )
+
+        self.assertIsNone(name_and_address_from_string(''))
+
+    def test_names_and_addresses_from_string(self):
+        """
+        Tests extracting names and emails from a string containing a list of
+        them.
+        """
+        self.assertSequenceEqual(
+            names_and_addresses_from_string(
+                'John H. Robinson, IV <jaqque@debian.org>, '
+                'Name <email@domain.com>'
+            ), [
+                {'name': 'John H. Robinson, IV', 'email': 'jaqque@debian.org'},
+                {'name': 'Name', 'email': 'email@domain.com'}
+            ]
+        )
+
+        self.assertSequenceEqual(
+            names_and_addresses_from_string(
+                'John H. Robinson, IV <jaqque@debian.org>, '
+                'email@domain.com'
+            ), [
+                {'name': 'John H. Robinson, IV', 'email': 'jaqque@debian.org'},
+                {'name': '', 'email': 'email@domain.com'}
+            ]
+        )
+
+        self.assertSequenceEqual(names_and_addresses_from_string(''), [])
+
+
+class DAGTests(SimpleTestCase):
+    """
+    Tests for the `DAG` class.
+    """
+    def test_add_nodes(self):
+        """
+        Tests adding nodes to a DAG.
+        """
+        g = DAG()
+
+        # A single node
+        g.add_node(1)
+        self.assertEqual(len(g.all_nodes), 1)
+        self.assertEqual(g.all_nodes[0], 1)
+        # Another one
+        g.add_node(2)
+        self.assertEqual(len(g.all_nodes), 2)
+        self.assertIn(2, g.all_nodes)
+        # When adding a same node again, nothing changes.
+        g.add_node(1)
+        self.assertEqual(len(g.all_nodes), 2)
+
+    def test_add_edge(self):
+        """
+        Tests adding edges to a DAG.
+        """
+        g = DAG()
+        g.add_node(1)
+        g.add_node(2)
+
+        g.add_edge(1, 2)
+        self.assertEqual(len(g.dependent_nodes(1)), 1)
+        self.assertIn(2, g.dependent_nodes(1))
+        # In-degrees updated
+        self.assertEqual(g.in_degree[g.nodes_map[1].id], 0)
+        self.assertEqual(g.in_degree[g.nodes_map[2].id], 1)
+
+        g.add_node(3)
+        g.add_edge(1, 3)
+        self.assertEqual(len(g.dependent_nodes(1)), 2)
+        self.assertIn(3, g.dependent_nodes(1))
+        # In-degrees updated
+        self.assertEqual(g.in_degree[g.nodes_map[1].id], 0)
+        self.assertEqual(g.in_degree[g.nodes_map[3].id], 1)
+
+        g.add_edge(2, 3)
+        self.assertEqual(len(g.dependent_nodes(2)), 1)
+        self.assertIn(3, g.dependent_nodes(2))
+        # In-degrees updated
+        self.assertEqual(g.in_degree[g.nodes_map[3].id], 2)
+
+        # Add a same edge again - nothing changed?
+        g.add_edge(1, 3)
+        self.assertEqual(len(g.dependent_nodes(1)), 2)
+
+        # Add an edge resulting in a cycle
+        with self.assertRaises(InvalidDAGException):
+            g.add_edge(3, 1)
+
+    def test_remove_node(self):
+        """
+        Tests removing a node from the graph.
+        """
+        g = DAG()
+        g.add_node(1)
+        g.add_node(2)
+        g.add_node(3)
+        g.add_edge(1, 2)
+        g.add_edge(1, 3)
+        g.add_edge(2, 3)
+
+        g.remove_node(3)
+        self.assertNotIn(3, g.all_nodes)
+        self.assertEqual(len(g.dependent_nodes(1)), 1)
+        self.assertIn(2, g.dependent_nodes(1))
+        self.assertEqual(len(g.dependent_nodes(2)), 0)
+
+        g.remove_node(1)
+        self.assertEqual(g.in_degree[g.nodes_map[2].id], 0)
+
+    def test_find_no_dependency_node(self):
+        """
+        Tests that the DAG correctly returns nodes with no dependencies.
+        """
+        g = DAG()
+        g.add_node(1)
+        g.add_node(2)
+        g.add_node(3)
+        g.add_edge(1, 2)
+        g.add_edge(2, 3)
+        self.assertEqual(g._get_node_with_no_dependencies().original, 1)
+
+        g = DAG()
+        g.add_node(1)
+        g.add_node(2)
+        g.add_node(3)
+        g.add_edge(3, 2)
+        g.add_edge(2, 1)
+        self.assertEqual(g._get_node_with_no_dependencies().original, 3)
+
+        g = DAG()
+        g.add_node(1)
+        self.assertEqual(g._get_node_with_no_dependencies().original, 1)
+
+    def test_topsort_simple(self):
+        """
+        Tests the topological sort of the DAG class.
+        """
+        g = DAG()
+        g.add_node(1)
+        g.add_node(2)
+        g.add_node(3)
+        g.add_edge(1, 2)
+        g.add_edge(2, 3)
+
+        topsort = list(g.topsort_nodes())
+
+        self.assertSequenceEqual([1, 2, 3], topsort)
+
+    def test_topsort_no_dependencies(self):
+        """
+        Tests the toplogical sort of the DAG class when the given DAG has no
+        dependencies between the nodes.
+        """
+        g = DAG()
+        g.add_node(1)
+        g.add_node(2)
+        g.add_node(3)
+
+        topsort = list(g.topsort_nodes())
+
+        nodes = [1, 2, 3]
+        # The order in this case cannot be mandated, only that all the nodes
+        # are in the output
+        for node in nodes:
+            self.assertIn(node, topsort)
+
+    def test_topsort_complex(self):
+        """
+        Tests the toplogical sort when a more complex graph is given.
+        """
+        g = DAG()
+        nodes = list(range(13))
+        for node in nodes:
+            g.add_node(node)
+        edges = (
+            (0, 1),
+            (0, 2),
+            (0, 3),
+            (0, 5),
+            (0, 6),
+            (2, 3),
+            (3, 4),
+            (3, 5),
+            (4, 9),
+            (6, 4),
+            (6, 9),
+            (7, 6),
+            (8, 7),
+            (9, 10),
+            (9, 11),
+            (9, 12),
+            (11, 12),
+        )
+        for edge in edges:
+            g.add_edge(*edge)
+
+        topsort = list(g.topsort_nodes())
+        # Make sure all nodes are found in the toplogical sort
+        for node in nodes:
+            self.assertIn(node, topsort)
+        # Make sure that all dependent nodes are found after the nodes they
+        # depend on.
+        # Invariant: for each edge (n1, n2) position(n2) in the topological
+        # sort must be strictly greater than the position(n1).
+        for node1, node2 in edges:
+            self.assertTrue(topsort.index(node2) > topsort.index(node1))
+
+    def test_topsort_string_nodes(self):
+        """
+        Tests the toplogical sort when strings are used for node objects.
+        """
+        g = DAG()
+        nodes = ['shirt', 'pants', 'tie', 'belt', 'shoes', 'socks', 'pants']
+        for node in nodes:
+            g.add_node(node)
+        edges = (
+            ('shirt', 'tie'),
+            ('shirt', 'belt'),
+            ('belt', 'tie'),
+            ('pants', 'tie'),
+            ('pants', 'belt'),
+            ('pants', 'shoes'),
+            ('pants', 'shirt'),
+            ('socks', 'shoes'),
+            ('socks', 'pants'),
+        )
+        for edge in edges:
+            g.add_edge(*edge)
+
+        topsort = list(g.topsort_nodes())
+        for node in nodes:
+            self.assertIn(node, topsort)
+        for node1, node2 in edges:
+            self.assertTrue(topsort.index(node2) > topsort.index(node1))
+
+    def test_nodes_reachable_from(self):
+        """
+        Tests finding all nodes reachable from a single node.
+        """
+        # Simple situation first.
+        g = DAG()
+        g.add_node(1)
+        g.add_node(2)
+        g.add_node(3)
+        g.add_edge(1, 2)
+        g.add_edge(2, 3)
+
+        self.assertEqual(len(g.nodes_reachable_from(1)), 2)
+        self.assertIn(2, g.nodes_reachable_from(1))
+        self.assertIn(3, g.nodes_reachable_from(1))
+        self.assertEqual(len(g.nodes_reachable_from(2)), 1)
+        self.assertIn(3, g.nodes_reachable_from(1))
+
+        # No nodes reachable from the given node
+        g = DAG()
+        g.add_node(1)
+        g.add_node(2)
+        g.add_node(3)
+        g.add_edge(2, 3)
+
+        self.assertEqual(len(g.nodes_reachable_from(1)), 0)
+
+        # More complex graph
+        g = DAG()
+
+        g.add_node(1)
+        g.add_node(2)
+        g.add_node(3)
+        g.add_node(4)
+        g.add_node(5)
+        g.add_edge(1, 3)
+        g.add_edge(2, 4)
+        g.add_edge(2, 5)
+        g.add_edge(4, 5)
+        g.add_edge(5, 3)
+
+        self.assertEqual(len(g.nodes_reachable_from(2)), 3)
+        for node in range(3, 6):
+            self.assertIn(node, g.nodes_reachable_from(2))
+        self.assertEqual(len(g.nodes_reachable_from(1)), 1)
+        self.assertIn(3, g.nodes_reachable_from(1))
+
+
+class PrettyPrintListTest(SimpleTestCase):
+    """
+    Tests for the PrettyPrintList class.
+    """
+    def test_string_output(self):
+        """
+        Tests the output of a PrettyPrintList.
+        """
+        l = PrettyPrintList(['a', 'b', 'abe', 'q'])
+        self.assertEqual(str(l), 'a b abe q')
+
+        l = PrettyPrintList()
+        self.assertEqual(str(l), '')
+
+        l = PrettyPrintList([0, 'a', 1])
+        self.assertEqual(str(l), '0 a 1')
+
+    def test_list_methods_accessible(self):
+        """
+        Tests that list methods are accessible to the PrettyPrintList object.
+        """
+        l = PrettyPrintList()
+        l.append('a')
+        self.assertEqual(str(l), 'a')
+
+        l.extend(['q', 'w'])
+        self.assertEqual(str(l), 'a q w')
+
+        l.pop()
+        self.assertEqual(str(l), 'a q')
+
+        # len works?
+        self.assertEqual(len(l), 2)
+        # Iterable?
+        self.assertSequenceEqual(l, ['a', 'q'])
+        # Indexable?
+        self.assertEqual(l[0], 'a')
+        # Comparable?
+        l2 = PrettyPrintList(['a', 'q'])
+        self.assertTrue(l == l2)
+        l3 = PrettyPrintList()
+        self.assertFalse(l == l3)
+        # Comparable to plain lists?
+        self.assertTrue(l == ['a', 'q'])
+        self.assertFalse(l == ['a'])
+
+
+class SpaceDelimitedTextFieldTest(SimpleTestCase):
+    """
+    Tests the SpaceDelimitedTextField class.
+    """
+    def setUp(self):
+        self.field = SpaceDelimitedTextField()
+
+    def test_list_to_field(self):
+        self.assertEqual(
+            self.field.get_db_prep_value(PrettyPrintList(['a', 'b', 3])),
+            'a b 3'
+        )
+
+        self.assertEqual(
+            self.field.get_db_prep_value(PrettyPrintList()),
+            ''
+        )
+
+    def test_field_to_list(self):
+        self.assertEqual(
+            self.field.to_python('a b 3'),
+            PrettyPrintList(['a', 'b', '3'])
+        )
+
+        self.assertEqual(
+            self.field.to_python(''),
+            PrettyPrintList()
+        )
+
+    def test_sane_inverse(self):
+        l = PrettyPrintList(['a', 'b', 'c'])
+        self.assertEqual(
+            self.field.to_python(self.field.get_db_prep_value(l)),
+            l
+        )
+
+
+class PackageUtilsTests(SimpleTestCase):
+    """
+    Tests the pts.core.utils.packages utlity functions.
+    """
+    def test_get_vcs(self):
+        browser_url = 'http://other-url.com'
+        vcs_url = 'git://url.com'
+        d = {
+            'Vcs-Git': vcs_url,
+            'Vcs-Browser': browser_url,
+        }
+        self.assertDictEqual(
+            {
+                'type': 'git',
+                'browser': browser_url,
+                'url': vcs_url,
+            },
+            extract_vcs_information(d)
+        )
+
+        # Browser not found
+        d = {
+            'Vcs-Git': vcs_url,
+        }
+        self.assertDictEqual(
+            {
+                'type': 'git',
+                'url': vcs_url,
+            },
+            extract_vcs_information(d)
+        )
+
+        # A VCS type longer than three letters
+        d = {
+            'Vcs-Darcs': vcs_url,
+        }
+        self.assertDictEqual(
+            {
+                'type': 'darcs',
+                'url': vcs_url,
+            },
+            extract_vcs_information(d)
+        )
+
+        # Empty dict
+        self.assertDictEqual({}, extract_vcs_information({}))
+        # No vcs information in the dict
+        self.assertDictEqual({}, extract_vcs_information({
+            'stuff': 'that does not',
+            'have': 'anything to do',
+            'with': 'vcs'
+        }))
+
+

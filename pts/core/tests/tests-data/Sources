@@ -1,0 +1,37 @@
+Package: chromium-browser
+Binary: chromium-browser, chromium-browser-dbg, chromium-browser-l10n, chromium-browser-inspector, chromium, chromium-dbg, chromium-l10n, chromium-inspector
+Version: 27.0.1453.110-1~deb7u1
+Maintainer: Debian Chromium Maintainers <pkg-chromium-maint@lists.alioth.debian.org>
+Uploaders: Giuseppe Iuculano <iuculano@debian.org>, Michael Gilbert <michael.s.gilbert@gmail.com>
+Build-Depends: cdbs, debhelper (>= 7), g++-4.6, pkg-config, lsb-release, gyp (>= 0.1~svn1119), patchutils (>= 0.2.25), python, bison, flex, gperf, gdb, wdiff, coreutils (>= 7.5) | timeout, xvfb, x11-apps, xfonts-base, ttf-kochi-gothic, ttf-kochi-mincho, libjpeg-dev, libpng-dev, libbz2-dev, zlib1g-dev, libxml2-dev, libxslt1-dev, lzma-dev, libhunspell-dev, libsqlite3-dev, libasound2-dev, libnss3-dev (>= 3.12.3), libnspr4-dev (>= 2:4.9-2~), libgl1-mesa-dri, mesa-common-dev, libgl1-mesa-dev, libglu1-mesa-dev, libxss-dev, libpango1.0-dev, libglib2.0-dev, libgtk2.0-dev, libdbus-glib-1-dev, libgconf2-dev, libicu-dev (>= 4.2.1), libevent-dev (>= 1.4.13), yasm, libprotobuf-dev, protobuf-compiler, libglewmx-dev, libvpx-dev, libcups2-dev (>= 1.5.0), libgnome-keyring-dev, libspeex-dev, libspeechd-dev, hardening-wrapper, libxt-dev, libxtst-dev, libpam0g-dev, binutils-gold, libflac-dev, libwebp-dev, autotools-dev, libv8-dev (>= 3.8), libpulse-dev, libavcodec-dev (>= 4:0.7.1), libavformat-dev (>= 4:0.7.1), libavutil-dev (>= 4:0.7.1), scons, libelf-dev, python-simplejson, libegl1-mesa-dev, libgles2-mesa-dev, subversion, libudev-dev, libssl-dev, libpci-dev
+Architecture: all i386 amd64
+Standards-Version: 3.9.2
+Format: 3.0 (quilt)
+Files:
+ 22700cab41effa76f45968aeee39cdb1 3041 chromium-browser_27.0.1453.110-1~deb7u1.dsc
+ c124fa0dda6d1f5e4cef63a41ba25805 684195904 chromium-browser_27.0.1453.110.orig.tar.xz
+ 5e32b44fd1c34df5afe38e8b6195b2ad 257046 chromium-browser_27.0.1453.110-1~deb7u1.debian.tar.gz
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-chromium/pkg-chromium.git
+Vcs-Git: git://git.debian.org/git/pkg-chromium/pkg-chromium.git
+Checksums-Sha1:
+ 92f1b271c2eb4c99997be3011454d77f24a78655 3041 chromium-browser_27.0.1453.110-1~deb7u1.dsc
+ 5b4bad375a667413da64b6c55a1a359bc99597b6 684195904 chromium-browser_27.0.1453.110.orig.tar.xz
+ 104be239efd18153b5115d0e2c1a7866e508d1a1 257046 chromium-browser_27.0.1453.110-1~deb7u1.debian.tar.gz
+Checksums-Sha256:
+ 992e0acd619310e829985e60f7ea0b688709e5b9e18b7beaade18a144fd87342 3041 chromium-browser_27.0.1453.110-1~deb7u1.dsc
+ 08e45e687f37453c996c71d3440853149dac7dd68c5a2732d435280436ddbb81 684195904 chromium-browser_27.0.1453.110.orig.tar.xz
+ b0c9a062c06ad80371efd67984ef41bcc55c67add00ab5cd43a0fa56c61dfb59 257046 chromium-browser_27.0.1453.110-1~deb7u1.debian.tar.gz
+Homepage: http://www.chromium.org/Home
+Package-List: 
+ chromium deb web optional
+ chromium-browser deb oldlibs optional
+ chromium-browser-dbg deb oldlibs extra
+ chromium-browser-inspector deb oldlibs optional
+ chromium-browser-l10n deb oldlibs optional
+ chromium-dbg deb debug extra
+ chromium-inspector deb web optional
+ chromium-l10n deb web optional
+Directory: pool/updates/main/c/chromium-browser
+Priority: source
+Section: web
+
