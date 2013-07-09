@@ -105,7 +105,15 @@ class GeneralInformationPanel(BasePanel):
     def context(self):
         info = PackageExtractedInfo.objects.get(
             package=self.package, key='general')
-        return info.value
+        general = info.value
+        url, implemented = vendor.call('get_package_information_site_url', **{
+            'package_name': general['name'],
+            'source_package': True,
+        })
+        if implemented and url:
+            general['url'] = url
+
+        return general
 
 
 class VersionsInformationPanel(BasePanel):

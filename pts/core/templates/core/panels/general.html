@@ -8,7 +8,11 @@
 <ul class="list-group list-group-flush">
     <li class="list-group-item">
         <div class="list-item-key"><b>source:</b></div>
-        <div class="list-item-value">{{ context.name }} (<a href="#" data-toggle="tooltip" title="priority" class="has-tooltip">{{ context.priority }}</a>, <a href="#" data-toggle="tooltip" title="section" class="has-tooltip">{{ context.section }}</a>)</div>
+        <div class="list-item-value">
+            {% with url=context.url|default:"#" %}
+            <a href="{{ url }}">{{ context.name }}</a> (<a href="#" data-toggle="tooltip" title="priority" class="has-tooltip">{{ context.priority }}</a>, <a href="#" data-toggle="tooltip" title="section" class="has-tooltip">{{ context.section }}</a>)
+            {% endwith %}
+        </div>
         <div class="clear"></div>
     </li>
     <li class="list-group-item">
