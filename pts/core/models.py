@@ -356,6 +356,21 @@ class BinaryPackageManager(models.Manager):
         """
         return self.get(name=package_name)
 
+    def filter_by_source(self, source_package):
+        """
+        Returns the set of all binary packages which are linked to the given
+        source package in at least one repository.
+        """
+        return self.filter(
+            sourcerepositoryentry__source_package=source_package)
+
+    def filter_no_source(self):
+        """
+        Returns all binary packages which are not linked to any source package.
+        """
+        qs = self.annotate(entry_count=models.Count('sourcerepositoryentry'))
+        return qs.filter(entry_count=0)
+
 
 @python_2_unicode_compatible
 class BinaryPackage(BasePackage):
@@ -433,6 +448,18 @@ class Repository(models.Model):
             self.codename,
             ' '.join(self.components)
         ))
+
+    def has_source_package(self, package):
+        """
+        The method returns whether the repository contains the given source
+        package.
+        The source package is an instance of the `SourcePackage` model.
+        """
+        qs = SourceRepositoryEntry.objects.filter(
+            repository=self,
+            source_package=package
+        )
+        return qs.exists()
 
     def _adapt_arguments(self, arguments, src_pkg):
         arguments['architectures'] = [
