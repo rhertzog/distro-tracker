@@ -15,6 +15,8 @@ from django.core.urlresolvers import reverse
 from pts.core.utils import get_or_none
 from pts.core.utils import SpaceDelimitedTextField
 
+from debian.debian_support import AptPkgVersion
+
 
 @python_2_unicode_compatible
 class Keyword(models.Model):
@@ -362,6 +364,16 @@ class Architecture(models.Model):
         return self.name
 
 
+class RepositoryManager(models.Manager):
+    def get_default(self):
+        """
+        Returns the default Repository.
+
+        If there is no default repository, returns an empty QuerySet.
+        """
+        return self.filter(default=True)
+
+
 @python_2_unicode_compatible
 class Repository(models.Model):
     name = models.CharField(max_length=50, unique=True)
@@ -385,6 +397,8 @@ class Repository(models.Model):
 
     position = models.IntegerField(default=lambda: Repository.objects.count())
 
+    objects = RepositoryManager()
+
     class Meta:
         verbose_name_plural = "repositories"
         ordering = (
@@ -397,6 +411,62 @@ class Repository(models.Model):
             self.codename,
             ' '.join(self.components)
         ))
+
+    def _adapt_arguments(self, arguments, src_pkg):
+        arguments['architectures'] = [
+            Architecture.objects.get(name=arch)
+            for arch in arguments.get('architectures', [])
+            if Architecture.objects.filter(name=arch).exists()
+        ]
+        arguments['binary_packages'] = [
+            BinaryPackage.objects.get_or_create(name=pkg, defaults={
+                'source_package': src_pkg
+            })[0]
+            for pkg in arguments.get('binary_packages', [])
+        ]
+        if 'maintainer' in arguments:
+            arguments['maintainer'] = Developer.objects.get_or_create(
+                **arguments['maintainer'])[0]
+
+        arguments['uploaders'] = [
+            Developer.objects.get_or_create(**uploader)[0]
+            for uploader in arguments.get('uploaders', [])
+        ]
+
+        return arguments
+
+    def add_source_package(self, package, **kwargs):
+        """
+        The method adds a new source package to the repository.
+
+        The source package is given by the package parameter.
+        The rest of the keyword arguments describe the SourceRepositoryEntry
+        object which will be created for this source package, repository pair.
+        """
+        entry = SourceRepositoryEntry.objects.create(
+            repository=self,
+            source_package=package
+        )
+        kwargs = self._adapt_arguments(kwargs, package)
+        entry.update(**kwargs)
+        entry.save()
+        return entry
+
+    def update_source_package(self, package, **kwargs):
+        """
+        The method updates the data linked to a source package which is a part
+        of the repository.
+        """
+        entry = SourceRepositoryEntry.objects.get(
+            repository=self,
+            source_package=package)
+        if entry.version != kwargs['version']:
+            kwargs = self._adapt_arguments(kwargs, package)
+            entry.update(**kwargs)
+            entry.save()
+            return True
+        else:
+            return False
 
     @classmethod
     def release_file_url(cls, base_url, distribution):
@@ -412,3 +482,60 @@ class Repository(models.Model):
             if qs.exists():
                 raise ValidationError(
                     "Only one repository can be set as the default")
+
+
+@python_2_unicode_compatible
+class Developer(models.Model):
+    name = models.CharField(max_length=60, blank=True)
+    email = models.EmailField(max_length=244)
+
+    def __str__(self):
+        return "{name} <{email}>".format(name=self.name, email=self.email)
+
+    def to_dict(self):
+        """
+        Returns a dictionary representing a Developer instance.
+        """
+        from django.forms.models import model_to_dict
+        return model_to_dict(self, fields=['name', 'email'])
+
+
+@python_2_unicode_compatible
+class SourceRepositoryEntry(models.Model):
+    source_package = models.ForeignKey(
+        SourcePackage,
+        related_name='repository_entries')
+    repository = models.ForeignKey(Repository)
+    version = models.CharField(max_length=50)
+
+    standards_version = models.CharField(max_length=550, blank=True)
+    architectures = models.ManyToManyField(Architecture, blank=True)
+    binary_packages = models.ManyToManyField(BinaryPackage, blank=True)
+
+    maintainer = models.ForeignKey(
+        Developer,
+        related_name='package_maintains_set',
+        null=True)
+    uploaders = models.ManyToManyField(
+        Developer,
+        related_name='package_uploads_set')
+
+    priority = models.CharField(max_length=50, blank=True)
+    section = models.CharField(max_length=50, blank=True)
+
+    homepage = models.URLField(max_length=255, blank=True)
+    vcs = JSONField()
+
+    class Meta:
+        # A source package can be found only once in a single repository.
+        unique_together = ('source_package', 'repository')
+
+    def __str__(self):
+        return "Source package {pkg} in the repository {repo}".format(
+            pkg=self.source_package,
+            repo=self.repository)
+
+    def update(self, **kwargs):
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)

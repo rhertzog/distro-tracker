@@ -1,0 +1,1 @@
+[{"pk": 1, "model": "core.repository", "fields": {"binary": false, "shorthand": "secu", "name": "secu", "default": true, "uri": "http://security.debian.org/", "public_uri": "", "source": true, "architectures": [1, 2], "components": "updates/main", "position": 0, "suite": "stable", "codename": "wheezy", "optional": true}}]

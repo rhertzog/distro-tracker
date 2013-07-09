@@ -21,6 +21,7 @@ from pts.core.models import Subscription, EmailUser, Package, BinaryPackage
 from pts.core.models import SourcePackage
 from pts.core.models import Keyword
 from pts.core.models import PseudoPackage
+from pts.core.models import Repository
 from pts.core.utils import verp
 from pts.core.utils import message_from_bytes
 from pts.dispatch.custom_email_message import CustomEmailMessage
@@ -1813,3 +1814,66 @@ class PackageUtilsTests(SimpleTestCase):
             'have': 'anything to do',
             'with': 'vcs'
         }))
+
+
+from pts.core.models import Developer, SourceRepositoryEntry
+
+class SourceRepositoryEntryTests(TestCase):
+    fixtures = ['repository-test-fixture.json']
+
+    def setUp(self):
+        self.repository = Repository.objects.all()[0]
+
+    def test_add_source_entry_to_repository(self):
+        """
+        Tests adding a source entry to a repository instance.
+        """
+        src_pkg = SourcePackage.objects.create(name='dummy-package')
+        architectures = ['amd64', 'all']
+        self.repository.add_source_package(src_pkg, **{
+            'version': '0.1',
+            'maintainer': {
+                'name': 'Maintainer',
+                'email': 'maintainer@domain.com'
+            },
+            'architectures': architectures,
+        })
+
+        # An entry is created.
+        self.assertEqual(SourceRepositoryEntry.objects.count(), 1)
+        e = SourceRepositoryEntry.objects.all()[0]
+        self.assertEqual(e.source_package, src_pkg)
+        # A developer instance is created on the fly
+        self.assertEqual(Developer.objects.count(), 1)
+        # Architectures are all found
+        self.assertEqual(e.architectures.count(), len(architectures))
+
+    def test_update_source_entry(self):
+        """
+        Tests updating a source entry.
+        """
+        src_pkg = SourcePackage.objects.create(name='dummy-package')
+        architectures = ['amd64', 'all']
+        self.repository.add_source_package(src_pkg, **{
+            'version': '0.1',
+            'maintainer': {
+                'name': 'Maintainer',
+                'email': 'maintainer@domain.com'
+            },
+            'architectures': architectures,
+        })
+
+        self.repository.update_source_package(src_pkg, **{
+            'version': '0.2',
+            'binary_packages': ['bin-pkg']
+        })
+
+        self.assertEqual(SourceRepositoryEntry.objects.count(), 1)
+        e = SourceRepositoryEntry.objects.all()[0]
+        # Stil linked to the same source package.
+        self.assertEqual(e.source_package, src_pkg)
+        # The version number is bumped up
+        e.version = '0.2'
+        # New binary package created.
+        self.assertEqual(BinaryPackage.objects.count(), 1)
+        self.assertEqual('bin-pkg', BinaryPackage.objects.all()[0].name)
