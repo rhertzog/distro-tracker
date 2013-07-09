@@ -432,6 +432,16 @@ class BinaryPackageManagerTest(TestCase):
         self.assertFalse(
             BinaryPackage.objects.exists_with_name('unexisting'))
 
+    def test_binary_and_source_same_name(self):
+        """
+        Tests that it is possible to create a binary and source package with
+        the same name.
+        """
+        bin_pkg = BinaryPackage.objects.create(name='package')
+        src_pkg = SourcePackage.objects.create(name='package')
+        self.assertIn(bin_pkg, BinaryPackage.objects.all())
+        self.assertIn(src_pkg, SourcePackage.objects.all())
+
 
 class VerpModuleTest(SimpleTestCase):
     """

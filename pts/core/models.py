@@ -124,6 +124,9 @@ class PackageManager(models.Manager):
 class BasePackage(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
+    class Meta:
+        abstract = True
+
 
 @python_2_unicode_compatible
 class Package(BasePackage):
@@ -332,7 +335,10 @@ class BinaryPackageManager(models.Manager):
 
 @python_2_unicode_compatible
 class BinaryPackage(BasePackage):
-    source_package = models.ForeignKey(SourcePackage)
+    source_package = models.ForeignKey(
+        SourcePackage,
+        on_delete=models.SET_NULL,
+        null=True)
 
     objects = BinaryPackageManager()
 
