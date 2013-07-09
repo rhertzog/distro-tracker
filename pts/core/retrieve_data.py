@@ -12,6 +12,7 @@ from __future__ import unicode_literals
 from pts import vendor
 from pts.core.models import PseudoPackage, Package
 from pts.core.models import Repository
+from pts.core.models import PackageExtractedInfo
 from pts.core.models import BinaryPackage
 from pts.core.tasks import BaseTask
 from pts.core.models import SourcePackage, Architecture
@@ -311,3 +312,50 @@ class UpdateRepositoriesTask(BaseTask):
                 self._update_sources_file(repository, sources_file)
             self._remove_obsolete_source_packages()
             self._update_binary_mapping()
+
+
+class UpdatePackageGeneralInformation(BaseTask):
+    DEPENDS_ON_EVENTS = (
+        'source-package-updated',
+        'source-package-created',
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(UpdatePackageGeneralInformation, self).__init__(*args, **kwargs)
+        self.packages = set()
+
+    def process_event(self, event):
+        self.packages.add(event.arguments['name'])
+
+    def _get_info_from_entry(self, entry):
+        general_information = {
+            'name': entry.source_package.name,
+            'priority': entry.priority,
+            'section': entry.section,
+            'version': entry.version,
+            'maintainer': entry.maintainer.to_dict(),
+            'uploaders': [
+                uploader.to_dict()
+                for uploader in entry.uploaders.all()
+            ],
+            'architectures': map(str, entry.architectures.all()),
+            'standards_version': entry.standards_version,
+            'vcs': entry.vcs,
+        }
+
+        return general_information
+
+    def execute(self):
+        with transaction.commit_on_success():
+            for package_name in self.packages:
+                package = SourcePackage.objects.get(name=package_name)
+                entry = package.main_entry
+                if entry is None:
+                    continue
+
+                general, _ = PackageExtractedInfo.objects.get_or_create(
+                    key='general',
+                    package=package
+                )
+                general.value = self._get_info_from_entry(entry)
+                general.save()
