@@ -13,8 +13,11 @@ from pts import vendor
 from pts.core.models import PseudoPackage, Package
 from pts.core.models import Repository
 from pts.core.models import BinaryPackage
+from pts.core.tasks import BaseTask
 from pts.core.models import SourcePackage, Architecture
 from django.utils.six import reraise
+from django import db
+from django.db import transaction
 from django.conf import settings
 
 from debian import deb822
@@ -215,3 +218,96 @@ class AptCache(object):
             ))
 
         return updated_sources, updated_packages
+
+
+from pts.core.utils.packages import extract_information_from_sources_entry
+class UpdateRepositoriesTask(BaseTask):
+
+    PRODUCES_EVENTS = (
+        'source-package-created',
+        'source-package-updated',
+        'source-package-removed',
+        'binary-source-mapping-changed',
+        'binary-package-removed',
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(UpdateRepositoriesTask, self).__init__(*args, **kwargs)
+        self._all_packages = set()
+        self._updated_packages = set()
+
+    def _add_processed_package(self, package_name, updated):
+        if updated:
+            self._updated_packages.add(package_name)
+        self._all_packages.add(package_name)
+
+    def _update_sources_file(self, repository, sources_file):
+        for stanza in deb822.Sources.iter_paragraphs(file(sources_file)):
+            db.reset_queries()
+            src_pkg, created = SourcePackage.objects.get_or_create(
+                name=stanza['package']
+            )
+            entry = extract_information_from_sources_entry(stanza)
+
+            # First check whether this package is already in the repository
+            updated = False
+            if not repository.has_source_package(src_pkg):
+                updated = repository.add_source_package(src_pkg, **entry)
+            else:
+                updated = repository.update_source_package(src_pkg, **entry)
+            # Decide which event needs to be emitted.
+            event = None
+            if created:
+                event = 'source-package-created'
+            elif updated:
+                event = 'source-package-updated'
+            if event:
+                self.raise_event(event, {
+                    'name': src_pkg.name,
+                    'repository': repository.name,
+                })
+            self._add_processed_package(src_pkg.name, created or updated)
+
+    def _update_binary_mapping(self):
+        processed = set()
+        for package in self._updated_packages:
+            package = SourcePackage.objects.get(name=package)
+            for bin_pkg in BinaryPackage.objects.filter_by_source(package):
+                if bin_pkg in processed:
+                    # No need to update a binary package more than once.
+                    continue
+                updated = bin_pkg.update_source_mapping()
+                if updated:
+                    self.raise_event(
+                        'binary-source-mapping-changed', {
+                            'name': package.name,
+                        }
+                    )
+                    processed.add(bin_pkg)
+        # Remove binary packages which no longer have a matching source package
+        qs = BinaryPackage.objects.filter_no_source()
+        for bin_pkg in qs:
+            self.raise_event('binary-package-removed', {
+                'name': bin_pkg.name
+            })
+        qs.delete()
+
+    def _remove_obsolete_source_packages(self):
+        qs = SourcePackage.objects.exclude(name__in=self._all_packages)
+        for package in qs:
+            self.raise_event('source-package-removed', {
+                'name': package.name,
+            })
+        qs.delete()
+
+    def execute(self):
+        apt_cache = AptCache()
+        updated_sources, updated_packages = (
+            apt_cache.update_repositories()
+        )
+
+        with transaction.commit_on_success():
+            for repository, sources_file in updated_sources:
+                self._update_sources_file(repository, sources_file)
+            self._remove_obsolete_source_packages()
+            self._update_binary_mapping()

@@ -17,6 +17,7 @@ from __future__ import unicode_literals
 from django.test import TestCase, SimpleTestCase
 from django.test.utils import override_settings
 from django.utils import six
+from django.conf import settings
 from pts.core.models import Subscription, EmailUser, Package, BinaryPackage
 from pts.core.models import SourcePackage
 from pts.core.models import Keyword
@@ -28,6 +29,7 @@ from pts.dispatch.custom_email_message import CustomEmailMessage
 from pts.core.retrieve_data import retrieve_repository_info
 import json
 
+import os
 import sys
 from django.utils.six.moves import mock
 
@@ -1759,6 +1761,295 @@ class SpaceDelimitedTextFieldTest(SimpleTestCase):
             self.field.to_python(self.field.get_db_prep_value(l)),
             l
         )
+
+
+from pts.core.retrieve_data import UpdateRepositoriesTask
+from pts.core.tasks import run_task
+class RetrieveSourcesInformationTest(TestCase):
+    fixtures = ['repository-test-fixture.json']
+
+    def setUp(self):
+        self.repository = Repository.objects.all()[0]
+        self.caught_events = []
+
+        # A dummy task which simply receives all events that the update task
+        # emits.
+        self.intercept_events_task = self.create_task_class(
+            (),
+            UpdateRepositoriesTask.PRODUCES_EVENTS,
+            ()
+        )
+
+    def get_path_to(self, file_name):
+        return os.path.join(os.path.dirname(__file__), 'tests-data', file_name)
+        self.intercept_events_task.unregister_plugin()
+
+    def run_update(self):
+        run_task(UpdateRepositoriesTask)
+
+    def create_task_class(self, produces, depends_on, raises):
+        """
+        Helper method creates and returns a new BaseTask subclass.
+        """
+        caught_events = self.caught_events
+        class TestTask(BaseTask):
+            PRODUCES_EVENTS = produces
+            DEPENDS_ON_EVENTS = depends_on
+
+            def __init__(self, *args, **kwargs):
+                super(TestTask, self).__init__(*args, **kwargs)
+                self.caught_events = []
+
+            def process_event(self, event):
+                caught_events.append(event)
+
+            def execute(self):
+                for event in raises:
+                    self.raise_event(event)
+        return TestTask
+
+    def set_mock_sources(self, mock_update, file_name):
+        mock_update.return_value = (
+            [(self.repository, self.get_path_to(file_name))],
+            []
+        )
+
+    def clear_events(self):
+        self.caught_events = []
+
+    def assert_events_raised(self, events):
+        """
+        Asserts that the update task emited all the given events.
+        """
+        raised_event_names = [
+            event.name
+            for event in self.caught_events
+        ]
+        self.assertEqual(len(events), len(raised_event_names))
+
+        for event_name in events:
+            self.assertIn(event_name, raised_event_names)
+
+    def assert_package_by_name_in(self, pkg_name, qs):
+        self.assertIn(pkg_name, [pkg.name for pkg in qs])
+
+    @mock.patch('pts.core.retrieve_data.AptCache.update_repositories')
+    def test_update_repositories_creates_source(self, mock_update_repositories):
+        """
+        Tests that a new source package is created when a sources file is
+        updated.
+        """
+        self.set_mock_sources(mock_update_repositories, 'Sources')
+
+        self.run_update()
+
+        self.assertEqual(SourcePackage.objects.count(), 1)
+        self.assertIn(
+            'chromium-browser',
+            [pkg.name for pkg in SourcePackage.objects.all()]
+        )
+        self.assertEqual(BinaryPackage.objects.count(), 8)
+        self.assert_events_raised(['source-package-created'])
+
+    @mock.patch('pts.core.retrieve_data.AptCache.update_repositories')
+    def test_update_repositories_existing(self, mock_update_repositories):
+        """
+        Tests that when an existing source repository is changed in the newly
+        retrieved data, it is updated in the database.
+        """
+        SourcePackage.objects.create(name='chromium-browser')
+        # Sanity check - there were no binary packages
+        self.assertEqual(BinaryPackage.objects.count(), 0)
+
+        self.set_mock_sources(mock_update_repositories, 'Sources')
+
+        self.run_update()
+
+        # Still one source package.
+        self.assertEqual(SourcePackage.objects.count(), 1)
+        self.assert_package_by_name_in(
+            'chromium-browser',
+            SourcePackage.objects.all()
+        )
+        self.assertEqual(BinaryPackage.objects.count(), 8)
+        self.assert_events_raised(['source-package-updated'])
+
+    @mock.patch('pts.core.retrieve_data.AptCache.update_repositories')
+    def test_update_repositories_no_changes(self, mock_update_repositories):
+        """
+        Tests that when an update is ran multiple times with no changes to the
+        data, nothing changes in the database either.
+        """
+        self.set_mock_sources(mock_update_repositories, 'Sources')
+        self.run_update()
+
+        # Run it again.
+        self.clear_events()
+        self.run_update()
+
+        self.assertEqual(SourcePackage.objects.count(), 1)
+        # No events emitted since nothing was done.
+        self.assertEqual(len(self.caught_events), 0)
+
+    @mock.patch('pts.core.retrieve_data.AptCache.update_repositories')
+    def test_update_changed_binary_mapping_1(self, mock_update):
+        """
+        Tests the scenario when new data changes the source package to which
+        a particular binary package belongs.
+        """
+        self.set_mock_sources(mock_update, 'Sources-minimal-1')
+
+        src_pkg = SourcePackage.objects.create(name='dummy-package')
+        self.repository.add_source_package(src_pkg, **{
+            'version': '0.1',
+            'maintainer': {
+                'name': 'Maintainer',
+                'email': 'maintainer@domain.com'
+            },
+            'architectures': ['amd64', 'all'],
+        })
+        src_pkg2 = SourcePackage.objects.create(name='src_pkg')
+        self.repository.add_source_package(src_pkg2, **{
+            'binary_packages': ['dummy-package-binary', 'other-package'],
+            'version': '2.1',
+            'maintainer': {
+                'name': 'Maintainer',
+                'email': 'maintainer@domain.com'
+            },
+            'architectures': ['amd64', 'all'],
+        })
+        # Sanity check: the binary package now exists
+        self.assertEqual(BinaryPackage.objects.count(), 2)
+        self.assert_package_by_name_in(
+            'dummy-package-binary',
+            BinaryPackage.objects.all()
+        )
+
+        self.run_update()
+
+        # Both source packages are still here
+        self.assertEqual(SourcePackage.objects.count(), 2)
+        self.assert_package_by_name_in(
+            'dummy-package',
+            SourcePackage.objects.all()
+        )
+        self.assert_package_by_name_in(
+            'src_pkg',
+            SourcePackage.objects.all()
+        )
+        src_pkg = SourcePackage.objects.get(name='dummy-package')
+        # The binary package still exists
+        self.assert_package_by_name_in(
+            'dummy-package-binary',
+            BinaryPackage.objects.all()
+        )
+        # The binary package is now linked with a different source package
+        bin_pkg = BinaryPackage.objects.get(name='dummy-package-binary')
+        self.assertEqual(bin_pkg.source_package, src_pkg)
+
+        self.assert_events_raised([
+            'source-package-updated',
+            'source-package-updated',
+            'binary-source-mapping-changed',
+        ])
+
+    @mock.patch('pts.core.retrieve_data.AptCache.update_repositories')
+    def test_update_changed_binary_mapping_2(self, mock_update):
+        """
+        Tests the scenario when new data changes the source package to which
+        a particular binary package belongs and the old source package is
+        removed from the repository.
+        """
+        self.set_mock_sources(mock_update, 'Sources-minimal')
+
+        src_pkg = SourcePackage.objects.create(name='dummy-package')
+        self.repository.add_source_package(src_pkg, **{
+            'version': '0.1',
+            'maintainer': {
+                'name': 'Maintainer',
+                'email': 'maintainer@domain.com'
+            },
+            'architectures': ['amd64', 'all'],
+        })
+        src_pkg2 = SourcePackage.objects.create(name='src_pkg')
+        self.repository.add_source_package(src_pkg2, **{
+            'binary_packages': ['dummy-package-binary'],
+            'version': '2.1',
+            'maintainer': {
+                'name': 'Maintainer',
+                'email': 'maintainer@domain.com'
+            },
+            'architectures': ['amd64', 'all'],
+        })
+        # Sanity check: the binary package now exists
+        self.assertEqual(BinaryPackage.objects.count(), 1)
+        self.assert_package_by_name_in(
+            'dummy-package-binary',
+            BinaryPackage.objects.all()
+        )
+
+        self.run_update()
+
+        # There is only one source package left
+        self.assertEqual(SourcePackage.objects.count(), 1)
+        self.assert_package_by_name_in(
+            'dummy-package',
+            SourcePackage.objects.all()
+        )
+        src_pkg = SourcePackage.objects.get(name='dummy-package')
+        # The binary package still exists
+        self.assert_package_by_name_in(
+            'dummy-package-binary',
+            BinaryPackage.objects.all()
+        )
+        # The binary package is now linked with a different source package
+        bin_pkg = BinaryPackage.objects.get(name='dummy-package-binary')
+        self.assertEqual(bin_pkg.source_package, src_pkg)
+
+        self.assert_events_raised([
+            'source-package-updated',
+            'source-package-removed',
+            'binary-source-mapping-changed',
+        ])
+
+    @mock.patch('pts.core.retrieve_data.AptCache.update_repositories')
+    def test_update_removed_binary_package(self, mock_update):
+        """
+        Test the scenario when new data removes an existing binary package.
+        """
+        self.set_mock_sources(mock_update, 'Sources-minimal')
+        src_pkg = SourcePackage.objects.create(name='dummy-package')
+        self.repository.add_source_package(src_pkg, **{
+            'binary_packages': ['some-package'],
+            'version': '0.1',
+            'maintainer': {
+                'name': 'Maintainer',
+                'email': 'maintainer@domain.com'
+            },
+            'architectures': ['amd64', 'all'],
+        })
+        # Sanity check -- the binary package exists.
+        self.assert_package_by_name_in(
+            'some-package',
+            BinaryPackage.objects.all()
+        )
+
+        self.run_update()
+
+        # The package should no longer exist.
+        self.assertEqual(BinaryPackage.objects.count(), 1)
+        self.assert_package_by_name_in(
+            'dummy-package-binary',
+            BinaryPackage.objects.all()
+        )
+        # The new binary package is now mapped to the existing source package
+        bin_pkg = BinaryPackage.objects.get(name='dummy-package-binary')
+        self.assertEqual(bin_pkg.source_package, src_pkg)
+        # All events?
+        self.assert_events_raised([
+            'source-package-updated',
+            'binary-package-removed',
+        ])
 
 
 from pts.core.utils.packages import extract_vcs_information
