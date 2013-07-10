@@ -22,6 +22,8 @@ from pts.core.models import Package
 from pts.core.models import Developer
 from pts.core.tasks import run_task
 from pts.vendor.debian.rules import get_package_information_site_url
+from pts.vendor.debian.rules import get_maintainer_extra
+from pts.vendor.debian.rules import get_uploader_extra
 from pts.vendor.debian.rules import get_developer_information_url
 from pts.vendor.debian.tasks import RetrieveDebianMaintainersTask
 from pts.vendor.debian.tasks import RetrieveLowThresholdNmuTask
@@ -417,7 +419,7 @@ class RetrieveDebianMaintainersTest(TestCase):
         Tests updating the DM list when one of the developers has changes in
         the allowed packages list.
         """
-        # Set up a Debian developer that is already in the NMU list.
+        # Set up a Debian developer that is already in the DM list.
         d = Developer.objects.create(email='dummy@debian.org', name='Name')
         DebianDeveloper.objects.create(developer=d,
                                        debian_maintainer=True,
@@ -435,3 +437,66 @@ class RetrieveDebianMaintainersTest(TestCase):
         d = DebianDeveloper.objects.get(developer__email='dummy@debian.org')
         # The developer is no longer a debian maintainer
         self.assertFalse(d.debian_maintainer)
+
+
+class DebianDeveloperExtraTest(TestCase):
+    def test_maintainer_extra(self):
+        d = Developer.objects.create(email='dummy@debian.org', name='Name')
+        d = DebianDeveloper.objects.create(developer=d,
+                                           agree_with_low_threshold_nmu=True)
+
+        # Only in NMU list
+        self.assertSequenceEqual(
+            [{
+                'display': 'LowNMU',
+                'description': 'maintainer agrees with Low Threshold NMU',
+                'link': 'http://wiki.debian.org/LowThresholdNmu',
+            }],
+            get_maintainer_extra('dummy@debian.org')
+        )
+        # The developer is now in the DM list
+        d.debian_maintainer = True
+        d.allowed_packages = ['package-name']
+        d.save()
+        # When not providing a package name, the response is the same
+        self.assertSequenceEqual(
+            [{
+                'display': 'LowNMU',
+                'description': 'maintainer agrees with Low Threshold NMU',
+                'link': 'http://wiki.debian.org/LowThresholdNmu',
+            }],
+            get_maintainer_extra('dummy@debian.org')
+        )
+        # With a package name an extra item is in the response.
+        self.assertSequenceEqual([
+            {
+                'display': 'LowNMU',
+                'description': 'maintainer agrees with Low Threshold NMU',
+                'link': 'http://wiki.debian.org/LowThresholdNmu',
+            },
+            {'display': 'dm'}
+        ],
+            get_maintainer_extra('dummy@debian.org', 'package-name')
+        )
+
+    def test_uploader_extra(self):
+        d = Developer.objects.create(email='dummy@debian.org', name='Name')
+        d = DebianDeveloper.objects.create(developer=d,
+                                           agree_with_low_threshold_nmu=True)
+
+        # Only in NMU list - no extra data when the developer in displayed as
+        # an uploader.
+        self.assertIsNone(get_uploader_extra('dummy@debian.org'))
+        # The developer is now in the DM list
+        d.debian_maintainer = True
+        d.allowed_packages = ['package-name']
+        d.save()
+        # When not providing a package name, the response is the same
+        self.assertIsNone(get_uploader_extra('dummy@debian.org'))
+        # With a package name an extra item is in the response.
+        self.assertSequenceEqual([
+            {'display': 'dm'}
+        ],
+            get_uploader_extra('dummy@debian.org', 'package-name')
+        )
+

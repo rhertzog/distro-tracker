@@ -12,6 +12,8 @@ from __future__ import unicode_literals
 import re
 import requests
 from pts.core.utils import get_decoded_message_payload
+from pts.core.utils import get_or_none
+from .models import DebianDeveloper
 from pts.vendor.common import PluginProcessingError
 
 
@@ -144,3 +146,59 @@ def get_external_version_information_urls(package_name):
             'description': 'old versions available from snapshot.debian.org',
         }
     ]
+
+
+def get_maintainer_extra(developer_email, package_name=None):
+    """
+    Should return a list of additional items that are to be included in
+    the general panel next to the maintainer.
+
+    Each item needs to be a dictionary itself, containing at least the display
+    key.
+    Additionally, it can contain keys: description and url.
+
+    It should return None if the vendor does not wish to include any extra
+    items.
+    """
+    developer = get_or_none(DebianDeveloper, developer__email=developer_email)
+    if not developer:
+        # Debian does not have any extra information to include in this case.
+        return None
+    extra = []
+    if developer.agree_with_low_threshold_nmu:
+        extra.append({
+            'display': 'LowNMU',
+            'description': 'maintainer agrees with Low Threshold NMU',
+            'link': 'http://wiki.debian.org/LowThresholdNmu',
+        })
+    if package_name and developer.debian_maintainer:
+        if package_name in developer.allowed_packages:
+            extra.append({
+                'display': 'dm',
+            })
+    return extra
+
+def get_uploader_extra(developer_email, package_name=None):
+    """
+    Should return a dictionary of additional items that are to be included in
+    the general panel next to the uploaders.
+
+    Each item needs to be a dictionary itself, containing at least the display
+    key.
+    Additionally, it can contain keys: description and url.
+
+    It should return None if the vendor does not wish to include any extra
+    items.
+    """
+    if package_name is None:
+        return
+
+    developer = get_or_none(DebianDeveloper, developer__email=developer_email)
+    if not developer:
+        return
+
+    if developer.debian_maintainer:
+        if package_name in developer.allowed_packages:
+            return [{
+                'display': 'dm',
+            }]
