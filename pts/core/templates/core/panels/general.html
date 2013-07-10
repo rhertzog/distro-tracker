@@ -6,20 +6,30 @@
 {% block panel-body %}
 {% with context=panel.context %}
 <ul class="list-group list-group-flush">
+    {% if context.name %}
     <li class="list-group-item">
         <div class="list-item-key"><b>source:</b></div>
         <div class="list-item-value">
             {% with url=context.url|default:"#" %}
-            <a href="{{ url }}">{{ context.name }}</a> (<a href="#" data-toggle="tooltip" title="priority" class="has-tooltip">{{ context.priority }}</a>, <a href="#" data-toggle="tooltip" title="section" class="has-tooltip">{{ context.section }}</a>)
+            <a href="{{ url }}">{{ context.name }}</a>
             {% endwith %}
+            {% if context.priority %}
+            <span>(<a href="#" data-toggle="tooltip" title="priority" class="has-tooltip">{{ context.priority }}</a>, <a href="#" data-toggle="tooltip" title="section" class="has-tooltip">{{ context.section }}</a>)</span>
+            {% endif %}
         </div>
         <div class="clear"></div>
     </li>
+    {% endif %}
+
+    {% if context.version %}
     <li class="list-group-item">
         <div class="list-item-key"><b>version:</b></div>
         <div class="list-item-value">{{ context.version }}</div>
         <div class="clear"></div>
     </li>
+    {% endif %}
+
+    {% if context.maintainer %}
     <li class="list-group-item">
         <div class="list-item-key"><b>maintainer:</b></div>
         <div class="list-item-value">
@@ -35,6 +45,9 @@
         </div>
         <div class="clear"></div>
     </li>
+    {% endif %}
+
+    {% if context.uploaders %}
     <li class="list-group-item">
         <div class="list-item-key"><b>uploaders:</b></div>
         <div class="list-item-value">
@@ -56,16 +69,25 @@
         </div>
         <div class="clear"></div>
     </li>
+    {% endif %}
+
+    {% if context.architectures %}
     <li class="list-group-item">
         <div class="list-item-key"><b>arch:</b></div>
         <div class="list-item-value">{% for arch in context.architectures %}{{ arch }} {% endfor %}</div>
         <div class="clear"></div>
     </li>
+    {% endif %}
+
+    {% if context.standards_version %}
     <li class="list-group-item">
         <div class="list-item-key"><b>std-ver:</b></div>
         <div class="list-item-value">{{ context.standards_version }}</div>
         <div class="clear"></div>
     </li>
+    {% endif %}
+
+    {% if context.vcs %}
     <li class="list-group-item">
         <div class="list-item-key"><b>VCS:</b></div>
         <div class="list-item-value">
@@ -75,6 +97,7 @@
         </div>
         <div class="clear"></div>
     </li>
+    {% endif %}
 </ul>
 {% endwith %}
 {% endblock %}
