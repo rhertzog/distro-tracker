@@ -656,3 +656,80 @@ class VersionControlSystem(models.Model):
         return "{name} ({shorthand})".format(
             name=self.name, shorthand=self.shorthand
         )
+
+
+class MailingListManager(models.Manager):
+    """
+    A custom manager for the MailingList class.
+    """
+    def get_by_email(self, email):
+        """
+        Returns a MailingList instance which matches the given email.
+        This means that the email's domain matches exactly the MailingList's
+        domain field.
+        """
+        if '@' not in email:
+            return None
+        domain = email.rsplit('@', 1)[1]
+
+        qs = self.filter(domain=domain)
+        if qs.exists():
+            return qs[0]
+        else:
+            return None
+
+
+def validate_archive_url_template(value):
+    """
+    Custom validator for MailingList's archive_url_template field.
+    """
+    if '{user}' not in value:
+        raise ValidationError(
+            "The archive URL template must have a {user} parameter")
+
+
+@python_2_unicode_compatible
+class MailingList(models.Model):
+    """
+    Describes a known mailing list.
+
+    This provides PTS users to define the known mailing lists through the admin
+    panel in order to support displaying their archives in the package pages
+    without modifying any code.
+
+    Instances should have the archive_url_template field set to the template
+    which archive URLs should follow where a mandatory parameter is {user}.
+    """
+
+    name = models.CharField(max_length=100)
+    domain = models.CharField(max_length=255, unique=True)
+    archive_url_template = models.CharField(max_length=255, validators=[
+        validate_archive_url_template,
+    ])
+
+    objects = MailingListManager()
+
+    def __str__(self):
+        return self.name
+
+    def archive_url(self, user):
+        """
+        Returns the archive URL for the given user.
+        """
+        return self.archive_url_template.format(user=user)
+
+    def archive_url_for_email(self, email):
+        """
+        Returns the archive URL for the given email.
+
+        Similar to archive_url, but extracts the user name from the email
+        first.
+        """
+        if '@' not in email:
+            return None
+        user, domain = email.rsplit('@', 1)
+
+        if domain != self.domain:
+            return None
+
+        return self.archive_url(user)

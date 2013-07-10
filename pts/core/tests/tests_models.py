@@ -15,12 +15,14 @@ Tests for the PTS core module's models.
 """
 from __future__ import unicode_literals
 from django.test import TestCase
+from django.core.exceptions import ValidationError
 from pts.core.models import Subscription, EmailUser, Package, BinaryPackage
 from pts.core.models import SourcePackage
 from pts.core.models import Keyword
 from pts.core.models import PseudoPackage
 from pts.core.models import Repository
 from pts.core.models import Developer, SourceRepositoryEntry
+from pts.core.models import MailingList
 
 
 class SubscriptionManagerTest(TestCase):
@@ -627,3 +629,74 @@ class SourceRepositoryEntryTests(TestCase):
         # The package is now mapped to the other source package.
         bin_pkg = BinaryPackage.objects.get(name='binary-package')
         self.assertEqual(bin_pkg.source_package, src_pkg2)
+
+
+class MailingListTest(TestCase):
+    def test_validate_url_template(self):
+        """
+        Tests validation of the URL template field.
+        """
+        mailing_list = MailingList(name='list', domain='some.domain.com')
+        mailing_list.archive_url_template = (
+            'http://this.does/not/have/user/parameter')
+
+        with self.assertRaises(ValidationError):
+            mailing_list.full_clean()
+
+        mailing_list.archive_url_template = (
+            'http://this.does/have/{user}')
+        mailing_list.full_clean()
+
+    def test_get_archive_url(self):
+        """
+        Tests retrieving the archive URL from a MailingList instance.
+        """
+        mailing_list = MailingList(name='list', domain='some.domain.com')
+        mailing_list.archive_url_template = (
+            'http://some.domain.com/archive/{user}/')
+
+        self.assertEqual(
+            mailing_list.archive_url('this-is-a-user'),
+            'http://some.domain.com/archive/this-is-a-user/'
+        )
+
+    def test_get_archive_url_for_email(self):
+        """
+        Test retrieving the archive URL from a MailingList instance when an
+        email is given, instead of a user.
+        """
+        mailing_list = MailingList(name='list', domain='some.domain.com')
+        mailing_list.archive_url_template = (
+            'http://some.domain.com/archive/{user}/')
+
+        self.assertEqual(
+            mailing_list.archive_url_for_email(
+                'this-is-a-user@some.domain.com'),
+            'http://some.domain.com/archive/this-is-a-user/'
+        )
+
+        # Not given a valid email
+        self.assertIsNone(
+            mailing_list.archive_url_for_email('this-is-not-an-email'))
+
+        # Not given an email in the correct domain
+        self.assertIsNone(
+            mailing_list.archive_url_for_email('email@other.domain.com'))
+
+    def test_find_matching_mailing_list(self):
+        """
+        Tests finding a matching mailing list object when given an email.
+        """
+        expect = MailingList.objects.create(
+            name='list', domain='some.domain.com')
+        MailingList.objects.create(name='other', domain='other.com')
+        MailingList.objects.create(name='domain', domain='domain.com')
+
+        email = 'username@some.domain.com'
+        self.assertEqual(MailingList.objects.get_by_email(email), expect)
+
+        email = 'not-an-email'
+        self.assertIsNone(MailingList.objects.get_by_email(email))
+
+        email = 'user@no.registered.domain'
+        self.assertIsNone(MailingList.objects.get_by_email(email))
