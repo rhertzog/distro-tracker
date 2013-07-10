@@ -611,6 +611,8 @@ class SourceRepositoryEntry(models.Model):
     priority = models.CharField(max_length=50, blank=True)
     section = models.CharField(max_length=50, blank=True)
 
+    dsc_file_name = models.CharField(max_length=255, blank=True)
+    directory = models.CharField(max_length=255, blank=True)
     homepage = models.URLField(max_length=255, blank=True)
     vcs = JSONField()
 

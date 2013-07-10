@@ -30,6 +30,17 @@ def extract_vcs_information(stanza):
     return vcs
 
 
+def extract_dsc_file_name(stanza):
+    """
+    Extracts the name of the .dsc file from a package's Sources entry.
+    """
+    for file in stanza.get('files', []):
+        if file.get('name', '').endswith('.dsc'):
+            return file['name']
+
+    return None
+
+
 def extract_information_from_sources_entry(stanza):
     """
     Extracts information from a Sources file entry and returns it in the form
@@ -52,6 +63,8 @@ def extract_information_from_sources_entry(stanza):
         'uploaders': parse_addresses(stanza.get('uploaders', '')),
         'standards_version': stanza.get('standards-version', ''),
         'vcs': extract_vcs_information(stanza),
+        'dsc_file_name': extract_dsc_file_name(stanza),
+        'directory': stanza.get('directory', ''),
     }
 
     return entry
