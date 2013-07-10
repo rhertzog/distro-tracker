@@ -625,6 +625,28 @@ class SourceRepositoryEntry(models.Model):
             pkg=self.source_package,
             repo=self.repository)
 
+    @property
+    def dsc_file_url(self):
+        """
+        Returns the URL where the .dsc file of this entry can be found.
+        """
+        if self.directory and self.dsc_file_name:
+            base_url = self.repository.uri.rstrip('/')
+            return base_url + '/' + self.directory + '/' + self.dsc_file_name
+        else:
+            return None
+
+    @property
+    def directory_url(self):
+        """
+        Returns the URL of the package's directory.
+        """
+        if self.directory:
+            base_url = self.repository.uri.rstrip('/')
+            return base_url + '/' + self.directory
+        else:
+            return None
+
     def update(self, **kwargs):
         for key, value in kwargs.items():
             if hasattr(self, key):

@@ -630,6 +630,53 @@ class SourceRepositoryEntryTests(TestCase):
         bin_pkg = BinaryPackage.objects.get(name='binary-package')
         self.assertEqual(bin_pkg.source_package, src_pkg2)
 
+    def test_get_directory_url(self):
+        """
+        Tests retrieving the URL of the package's directory from the entry.
+        """
+        src_pkg = SourcePackage.objects.create(name='dummy-package')
+        architectures = ['amd64', 'all']
+        self.repository.add_source_package(src_pkg, **{
+            'binary_packages': ['binary-package'],
+            'version': '0.1',
+            'maintainer': {
+                'name': 'Maintainer',
+                'email': 'maintainer@domain.com'
+            },
+            'architectures': architectures,
+            'directory': 'pool/path/to/dir',
+        })
+
+        e = SourceRepositoryEntry.objects.all()[0]
+        self.assertEqual(
+            self.repository.uri + 'pool/path/to/dir',
+            e.directory_url
+        )
+
+    def test_get_dsc_file_url(self):
+        """
+        Tests retrieving the URL of the package's .dsc file given in the entry.
+        """
+        src_pkg = SourcePackage.objects.create(name='dummy-package')
+        architectures = ['amd64', 'all']
+        self.repository.add_source_package(src_pkg, **{
+            'binary_packages': ['binary-package'],
+            'version': '0.1',
+            'maintainer': {
+                'name': 'Maintainer',
+                'email': 'maintainer@domain.com'
+            },
+            'architectures': architectures,
+            'directory': 'pool/path/to/dir',
+            'dsc_file_name': 'file.dsc',
+        })
+
+        e = SourceRepositoryEntry.objects.all()[0]
+        self.assertEqual(
+            self.repository.uri + 'pool/path/to/dir/file.dsc',
+            e.dsc_file_url
+        )
+
 
 class MailingListTest(TestCase):
     def test_validate_url_template(self):
