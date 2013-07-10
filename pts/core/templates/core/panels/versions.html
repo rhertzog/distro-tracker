@@ -1,12 +1,19 @@
 {% extends 'core/panels/panel.html' %}
 
 {% block panel-header %}
-{{ panel.title }}
+<span>{{ panel.title }}</span>
+{% if panel.context.external_resources %}
+{% for external in panel.context.external_resources %}
+<a href="{{ external.url }}" class="has-tooltip" data-toggle="tooltip" title="{{ external.description }}">
+    <i class="icon-share"></i>
+</a>
+{% endfor %}
+{% endif %}
 {% endblock %}
 
 {% block panel-body %}
 <ul class="list-group list-group-flush">
-    {% for item in panel.context %}
+    {% for item in panel.context.version_list %}
     <div class="row-fluid">
     <li class="list-group-item">
         <div class="span3"><b>{{ item.repository_shorthand }}:</b></div>

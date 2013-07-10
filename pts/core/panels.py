@@ -181,9 +181,11 @@ class VersionsInformationPanel(BasePanel):
     def context(self):
         info = PackageExtractedInfo.objects.get(
             package=self.package, key='versions')
-        version_info = info.value
+        version_info = {
+            'version_list': info.value,
+        }
         package_name = info.package.name
-        for item in version_info:
+        for item in version_info['version_list']:
             url, implemented = vendor.call('get_package_information_site_url', **{
                 'package_name': package_name,
                 'repository_name': item['repository_name'],
@@ -191,6 +193,12 @@ class VersionsInformationPanel(BasePanel):
             })
             if implemented and url:
                 item['url'] = url
+        external_resources, implemented = (
+            vendor.call('get_external_version_information_urls',
+                        self.package.name)
+        )
+        if implemented and external_resources:
+            version_info['external_resources'] = external_resources
 
         return version_info
 
