@@ -14,6 +14,9 @@ from pts.core.utils.datastructures import DAG
 from django.utils import six
 
 from collections import defaultdict
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class BaseTask(six.with_metaclass(PluginRegistry)):
@@ -164,9 +167,16 @@ class Job(object):
             #  topological sort order.)
             if task.event_received:
                 # Run task
-                task.execute()
-                # Update dependent tasks based on events raised
-                self._update_task_events(task)
+                try:
+                    task.execute()
+                except Exception as e:
+                    logger.error(
+                        "Problem processing a task. "
+                        "Exception: {e}".format(e=e))
+                else:
+                    # Update dependent tasks based on events raised, but only
+                    # if the task finished successfully.
+                    self._update_task_events(task)
 
 
 def build_task_event_dependency_graph():

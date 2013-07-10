@@ -209,7 +209,12 @@ LOGGING = {
             'handlers': ['console'],
             'level': DEBUG,
             'propagate': True,
-        }
+        },
+        'pts.core.tasks': {
+            'handlers': ['console'],
+            'level': DEBUG,
+            'propagate': True,
+        },
     }
 }
 

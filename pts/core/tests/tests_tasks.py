@@ -15,11 +15,13 @@ Tests for the PTS core's tasks framework.
 """
 from __future__ import unicode_literals
 from django.test import SimpleTestCase
+from django.utils.six.moves import mock
 from pts.core.tasks import BaseTask
-
 from pts.core.tasks import run_task
 from pts.core.tasks import build_task_event_dependency_graph
 from pts.core.tasks import build_full_task_dag
+import logging
+logging.disable(logging.CRITICAL)
 
 
 class JobTests(SimpleTestCase):
@@ -288,4 +290,36 @@ class JobTests(SimpleTestCase):
         self.assert_task_dependency_preserved(T1, [T7, T5])
         self.assert_task_dependency_preserved(T5, [T8])
 
+    def test_run_job_with_fail_task(self):
+        """
+        Tests that running a job where one task fails works as expected.
+        """
+        fail_task = self.create_task_class(('fail',), (), ('fail'))
+        # Make sure this task will definitely fail
+        fail_task.execute = mock.MagicMock(
+            name='execute', side_effect=Exception('Fail!'))
+        # This task will not run
+        self.create_task_class((), ('fail',), ())
 
+        run_task(fail_task)
+
+        self.assert_executed_tasks_equal([])
+
+    def test_run_job_with_fail_task_branch(self):
+        """
+        Tests that running a job where one task fails executes other tasks
+        which are not directly dependent on the failed task.
+        """
+        root_task = self.create_task_class(('A',), (), ('A',))
+        fail_task = self.create_task_class(('fail',), ('A',), ('fail',))
+        # Make sure this task will definitely fail
+        fail_task.execute = mock.MagicMock(
+            name='execute', side_effect=Exception('Fail!'))
+        # This task will not run
+        self.create_task_class((), ('fail',), ())
+        # This one will
+        do_run = self.create_task_class((), ('A',), ())
+
+        run_task(root_task)
+
+        self.assert_executed_tasks_equal([root_task, do_run])
