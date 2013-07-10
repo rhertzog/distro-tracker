@@ -1,27 +1,36 @@
 {% extends 'core/panels/panel.html' %}
 
 {% block panel-header %}
-<span>{{ panel.title }}</span>
-{% if panel.context.external_resources %}
-{% for external in panel.context.external_resources %}
-<a href="{{ external.url }}" class="has-tooltip" data-toggle="tooltip" title="{{ external.description }}">
-    <i class="icon-share"></i>
-</a>
-{% endfor %}
-{% endif %}
+<div class="row-fluid">
+<div class="span11">
+    <span>{{ panel.title }}</span>
+    {% if panel.context.external_resources %}
+    {% for external in panel.context.external_resources %}
+    <a href="{{ external.url }}" class="has-tooltip" data-toggle="tooltip" title="{{ external.description }}">
+        <i class="icon-share"></i>
+    </a>
+    {% endfor %}
+    {% endif %}
+</div>
+<div class="span1">
+    {% if panel.context.default_pool_url %}
+    <a href="{{ panel.context.default_pool_url }}" class="has-tooltip" data-toggle="tooltip" title="pool directory"><i class="icon-folder-open"></i></a>
+    {% endif %}
+</div>
+</div>
 {% endblock %}
-
 {% block panel-body %}
 <ul class="list-group list-group-flush">
     {% for item in panel.context.version_list %}
     <div class="row-fluid">
     <li class="list-group-item">
         <div class="span3"><b>{{ item.repository_shorthand }}:</b></div>
-        <div class="span9">
+        <div class="span8">
             {% with url=item.url|default:"#" %}
             <a href="{{ url }}">{{ item.version }}</a>
             {% endwith %}
         </div>
+        <div class="span1"><a href="{{ item.dsc_file_url }}" class="has-tooltip" data-toggle="tooltip" title=".dsc, use dget on this link to retrieve source package"><i class="icon-download-alt"></i></a></div>
     </li>
     </div>
     {% endfor %}

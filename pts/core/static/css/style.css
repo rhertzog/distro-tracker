@@ -116,7 +116,7 @@
 .list-group-item {
   position: relative;
   display: block;
-  padding: 10px 30px 10px 15px;
+  padding: 10px 15px 10px 15px;
   margin-bottom: -1px;
   border: 1px solid #dddddd;
 }

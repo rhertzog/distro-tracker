@@ -379,14 +379,18 @@ class UpdateVersionInformation(BaseTask):
         Returns a list where each element is a dictionary with the following
         keys: repository_name, repository_shorthand, package_version.
         """
-        versions = [
-            {
-                'repository_name': entry.repository.name,
-                'repository_shorthand': entry.repository.shorthand,
-                'version': entry.version,
-            }
-            for entry in package.repository_entries.all()
-        ]
+        versions = {
+            'version_list': [
+                {
+                    'repository_name': entry.repository.name,
+                    'repository_shorthand': entry.repository.shorthand,
+                    'version': entry.version,
+                    'dsc_file_url': entry.dsc_file_url,
+                }
+                for entry in package.repository_entries.all()
+            ],
+            'default_pool_url': entry.directory_url,
+        }
 
         return versions
 
