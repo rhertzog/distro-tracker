@@ -23,7 +23,10 @@
     <li class="list-group-item">
         <div class="list-item-key"><b>maintainer:</b></div>
         <div class="list-item-value">
-            <a href="mailto:{{ context.maintainer.email }}">{{ context.maintainer.name }}</a>
+            {% with mailto="mailto:"|add:context.maintainer.email %}
+            {% with url=context.maintainer.developer_info_url|default:mailto %}
+            <a href="{{ url }}">{{ context.maintainer.name }}</a>
+            {% endwith %}{% endwith %}
             {% if context.maintainer.archive_url %}
                 <small>
                     (<a href="{{ context.maintainer.archive_url }}" class="has-tooltip" data-toggle="tooltip" title="Archives for the {{ context.maintainer.name }} list">archive</a>)
@@ -38,7 +41,10 @@
         <ul>
             {% for uploader in context.uploaders %}
             <li>
-                <a href="mailto:{{ uploader.email }}">{{ uploader.name }}</a>
+                {% with mailto="mailto:"|add:uploader.email %}
+                {% with url=uploader.developer_info_url|default:mailto %}
+                <a href="{{ url }}">{{ uploader.name }}</a>
+                {% endwith %}{% endwith %}
                 {% if uploader.archive_url %}
                 <small>
                 (<a href="{{ uploader.archive_url }}" class="has-tooltip" data-toggle="tooltip" title="Archives for the {{ uploader.name }} list">archive</a>)
