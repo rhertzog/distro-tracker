@@ -286,7 +286,7 @@ class RetrieveLowThresholdNmuTest(TestCase):
 
         run_task(RetrieveLowThresholdNmuTask)
 
-        # A Debian developer created
+        # Still only one debian developer instance
         self.assertEqual(DebianDeveloper.objects.count(), 1)
         d = DebianDeveloper.objects.all()[0]
         self.assertTrue(d.agree_with_low_threshold_nmu)
@@ -315,3 +315,123 @@ class RetrieveLowThresholdNmuTest(TestCase):
         d = DebianDeveloper.objects.get(developer__email='dummy@debian.org')
         # The Debian developer is no longer in the list of low threshold nmu
         self.assertFalse(d.agree_with_low_threshold_nmu)
+
+
+class RetrieveDebianMaintainersTest(TestCase):
+    def set_mock_response(self, mock_requests, text="", status_code=200):
+        """
+        Helper method which sets a mock response to the given mock_requests
+        module.
+        """
+        mock_response = mock_requests.models.Response()
+        mock_response.status_code = status_code
+        mock_response.text = text
+        mock_response.iter_lines.return_value = text.splitlines()
+        mock_requests.get.return_value = mock_response
+
+    @mock.patch('pts.vendor.debian.tasks.requests')
+    def test_developer_did_not_exist(self, mock_requests):
+        """
+        Tests updating the DM list when a new developer is to be added.
+        """
+        """
+        Tests updating the list of developers that allow the low threshold
+        NMU when the developer did not previously exist in the database.
+        """
+        self.set_mock_response(mock_requests,
+            "Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
+            "Uid: Dummy Developer <dummy@debian.org>\n"
+            "Allow: dummy-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E),\n"
+            " second-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E)\n"
+        )
+
+        run_task(RetrieveDebianMaintainersTask)
+
+        # A Debian developer created
+        self.assertEqual(DebianDeveloper.objects.count(), 1)
+        d = DebianDeveloper.objects.all()[0]
+        self.assertTrue(d.debian_maintainer)
+        self.assertSequenceEqual(
+            ['dummy-package', 'second-package'],
+            d.allowed_packages
+        )
+
+    @mock.patch('pts.vendor.debian.tasks.requests')
+    def test_developer_existed(self, mock_requests):
+        """
+        Tests updating the DM list when the developer was previously registered
+        in the database.
+        """
+        d = Developer.objects.create(email='dummy@debian.org', name='Name')
+        self.set_mock_response(mock_requests,
+            "Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
+            "Uid: Dummy Developer <dummy@debian.org>\n"
+            "Allow: dummy-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E),\n"
+            " second-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E)\n"
+        )
+
+        run_task(RetrieveDebianMaintainersTask)
+
+        # A Debian developer created
+        self.assertEqual(DebianDeveloper.objects.count(), 1)
+        d = DebianDeveloper.objects.all()[0]
+        self.assertTrue(d.debian_maintainer)
+        self.assertSequenceEqual(
+            ['dummy-package', 'second-package'],
+            d.allowed_packages
+        )
+        # The name of the original developer model has not changed.
+        self.assertEqual('Name', d.developer.name)
+
+    @mock.patch('pts.vendor.debian.tasks.requests')
+    def test_developer_update_dm_list(self, mock_requests):
+        """
+        Tests updating the DM list when one of the developers has changes in
+        the allowed packages list.
+        """
+        # Set up a Debian developer that is already in the NMU list.
+        d = Developer.objects.create(email='dummy@debian.org', name='Name')
+        DebianDeveloper.objects.create(developer=d,
+                                       debian_maintainer=True,
+                                       allowed_packages=['one'])
+
+        self.set_mock_response(mock_requests,
+            "Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
+            "Uid: Dummy Developer <dummy@debian.org>\n"
+            "Allow: dummy-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E),\n"
+            " second-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E)\n"
+        )
+
+        run_task(RetrieveDebianMaintainersTask)
+
+        d = DebianDeveloper.objects.get(developer__email='dummy@debian.org')
+        # The old package is no longer in its list of allowed packages.
+        self.assertSequenceEqual(
+            ['dummy-package', 'second-package'],
+            d.allowed_packages
+        )
+
+    @mock.patch('pts.vendor.debian.tasks.requests')
+    def test_developer_delete_from_dm_list(self, mock_requests):
+        """
+        Tests updating the DM list when one of the developers has changes in
+        the allowed packages list.
+        """
+        # Set up a Debian developer that is already in the NMU list.
+        d = Developer.objects.create(email='dummy@debian.org', name='Name')
+        DebianDeveloper.objects.create(developer=d,
+                                       debian_maintainer=True,
+                                       allowed_packages=['one'])
+
+        self.set_mock_response(mock_requests,
+            "Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
+            "Uid: Dummy Developer <different-developer@debian.org>\n"
+            "Allow: dummy-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E),\n"
+            " second-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E)\n"
+        )
+
+        run_task(RetrieveDebianMaintainersTask)
+
+        d = DebianDeveloper.objects.get(developer__email='dummy@debian.org')
+        # The developer is no longer a debian maintainer
+        self.assertFalse(d.debian_maintainer)

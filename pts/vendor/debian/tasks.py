@@ -19,6 +19,43 @@ from pts.core.models import Developer
 from .models import DebianDeveloper
 import requests
 import re
+from debian import deb822
+
+
+class RetrieveDebianMaintainersTask(BaseTask):
+    def execute(self):
+        response = requests.get("http://ftp-master.debian.org/dm.txt")
+        response.raise_for_status()
+
+        maintainers = {}
+        for stanza in deb822.Deb822.iter_paragraphs(response.iter_lines()):
+            if 'Uid' in stanza and 'Allow' in stanza:
+                # Allow is a comma-separated string of 'package (DD fpr)' items,
+                # where DD fpr is the fingerprint of the DD that granted the
+                # permission
+                name, email = stanza['Uid'].rsplit(' ', 1)
+                email = email.strip('<>')
+                for pair in stanza['Allow'].split(','):
+                    pair = pair.strip()
+                    pkg, dd_fpr = pair.split()
+                    pkg = pkg.encode('utf-8')
+                    maintainers.setdefault(email, [])
+                    maintainers[email].append(pkg)
+
+        # Now update the developer information
+        with transaction.commit_on_success():
+            # Reset all old maintainers first.
+            qs = DebianDeveloper.objects.filter(debian_maintainer=True)
+            qs.update(debian_maintainer=False)
+
+            for email, packages in maintainers.items():
+                developer, _ = Developer.objects.get_or_create(email=email)
+                developer, _ = DebianDeveloper.objects.get_or_create(
+                    developer=developer)
+
+                developer.debian_maintainer = True
+                developer.allowed_packages = packages
+                developer.save()
 
 
 class RetrieveLowThresholdNmuTask(BaseTask):
