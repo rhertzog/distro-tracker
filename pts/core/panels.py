@@ -131,17 +131,25 @@ class GeneralInformationPanel(BasePanel):
                 self._get_archive_url_info(uploader['email'])
             )
 
-    def _add_developer_info_url(self, general):
+    def _add_developer_extras(self, general):
         maintainer_email = general['maintainer']['email']
         url = self._get_developer_information_url(maintainer_email)
         if url:
             general['maintainer']['developer_info_url'] = url
+            extra, implemented = vendor.call(
+                'get_maintainer_extra', maintainer_email, general['name'])
+            general['maintainer']['extra'] = extra
 
         uploaders = general.get('uploaders', None)
         if not uploaders:
             return
 
         for uploader in uploaders:
+            # Vendor specific extras.
+            extra, implemented = vendor.call(
+                'get_uploader_extra', uploader['email'], general['name'])
+            if implemented and extra:
+                uploader['extra'] = extra
             url = self._get_developer_information_url(uploader['email'])
             if url:
                 uploader['developer_info_url'] = url
@@ -166,8 +174,8 @@ class GeneralInformationPanel(BasePanel):
                 general['vcs']['full_name'] = vcs.name
         # Add mailing list archive URLs
         self._add_archive_urls(general)
-        # Add developer information links
-        self._add_developer_info_url(general)
+        # Add developer information links and any other vendor-specific extras
+        self._add_developer_extras(general)
 
         return general
 

@@ -37,11 +37,18 @@
             {% with url=context.maintainer.developer_info_url|default:mailto %}
             <a href="{{ url }}">{{ context.maintainer.name }}</a>
             {% endwith %}{% endwith %}
-            {% if context.maintainer.archive_url %}
-                <small>
-                    (<a href="{{ context.maintainer.archive_url }}" class="has-tooltip" data-toggle="tooltip" title="Archives for the {{ context.maintainer.name }} list">archive</a>)
-                </small>
-            {% endif %}
+            {% with developer=context.maintainer %}
+                {% if developer.archive_url %}
+                    <small>
+                        (<a href="{{ developer.archive_url }}" class="has-tooltip" data-toggle="tooltip" title="Archives for the {{ developer.name }} list">archive</a>)
+                    </small>
+                {% endif %}
+                {% for extra in developer.extra %}
+                    <small>
+                    [<a href="{{ extra.link }}" class="has-tooltip" data-toggle="tooltip" title="{{ extra.description }}">{{ extra.display }}</a>]
+                    </small>
+                {% endfor %}
+            {% endwith %}
         </div>
         <div class="clear"></div>
     </li>
@@ -58,11 +65,18 @@
                 {% with url=uploader.developer_info_url|default:mailto %}
                 <a href="{{ url }}">{{ uploader.name }}</a>
                 {% endwith %}{% endwith %}
-                {% if uploader.archive_url %}
-                <small>
-                (<a href="{{ uploader.archive_url }}" class="has-tooltip" data-toggle="tooltip" title="Archives for the {{ uploader.name }} list">archive</a>)
-                </small>
+                {% with developer=uploader %}
+                {% if developer.archive_url %}
+                    <small>
+                        (<a href="{{ developer.archive_url }}" class="has-tooltip" data-toggle="tooltip" title="Archives for the {{ developer.name }} list">archive</a>)
+                    </small>
                 {% endif %}
+                {% for extra in developer.extra %}
+                    <small>
+                    [<a href="{{ extra.link }}" class="has-tooltip" data-toggle="tooltip" title="{{ extra.description }}">{{ extra.display }}</a>]
+                    </small>
+                {% endfor %}
+                {% endwith %}
             </li>
             {% endfor %}
         </ul>
