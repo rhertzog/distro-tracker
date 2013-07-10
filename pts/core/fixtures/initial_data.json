@@ -270,5 +270,59 @@
         },
         "model": "core.versioncontrolsystem",
         "pk": 7
+    },
+    {
+        "fields": {
+            "archive_url_template": "http://lists.debian.org/{user}/",
+            "domain": "lists.debian.org",
+            "name": "debian"
+        },
+        "model": "core.mailinglist",
+        "pk": 1
+    },
+    {
+        "fields": {
+            "archive_url_template": "http://lists.alioth.debian.org/pipermail/{user}/",
+            "domain": "lists.alioth.debian.org",
+            "name": "alioth-debian"
+        },
+        "model": "core.mailinglist",
+        "pk": 2
+    },
+    {
+        "fields": {
+            "archive_url_template": "https://lists.ubuntu.com/archives/{user}/",
+            "domain": "lists.ubuntu.com",
+            "name": "ubuntu"
+        },
+        "model": "core.mailinglist",
+        "pk": 3
+    },
+    {
+        "fields": {
+            "archive_url_template": "https://lists.riseup.net/www/arc/{user}",
+            "domain": "lists.riseup.net",
+            "name": "riseup"
+        },
+        "model": "core.mailinglist",
+        "pk": 4
+    },
+    {
+        "fields": {
+            "archive_url_template": "https://lists.launchpad.net/{user}/",
+            "domain": "lists.launchpad.net",
+            "name": "launchpad"
+        },
+        "model": "core.mailinglist",
+        "pk": 5
+    },
+    {
+        "fields": {
+            "archive_url_template": "https://lists.freedesktop.org/archives/{user}/",
+            "domain": "lists.freedesktop.org",
+            "name": "freedesktop"
+        },
+        "model": "core.mailinglist",
+        "pk": 6
     }
 ]
