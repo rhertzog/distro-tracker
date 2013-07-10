@@ -20,6 +20,7 @@ from pts.dispatch.tests import DispatchTestHelperMixin, DispatchBaseTest
 from pts.core.models import Package
 from django.utils.six.moves import mock
 from pts.vendor.debian.rules import get_package_information_site_url
+from pts.vendor.debian.rules import get_developer_information_url
 
 
 __all__ = ('DispatchDebianSpecificTest', 'DispatchBaseDebianSettingsTest')
@@ -211,4 +212,22 @@ class GetPackageInformationSiteUrlTest(SimpleTestCase):
         self.assertEqual(
             'http://packages.debian.org/unstable/dpkg',
             get_package_information_site_url('dpkg', repository_name='unstable')
+        )
+
+
+class GetDeveloperInformationSiteUrlTest(SimpleTestCase):
+    def test_get_developer_site_info_url(self):
+        """
+        Test retrieving a URL to a developer information Web site.
+        """
+        developer_email = 'debian-dpkg@lists.debian.org'
+        self.assertEqual(
+            'http://qa.debian.org/developer.php?login=debian-dpkg@lists.debian.org',
+            get_developer_information_url(developer_email)
+        )
+
+        developer_email = 'email@domain.com'
+        self.assertEqual(
+            'http://qa.debian.org/developer.php?login=email@domain.com',
+            get_developer_information_url(developer_email)
         )

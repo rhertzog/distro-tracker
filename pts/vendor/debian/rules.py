@@ -106,3 +106,17 @@ def get_package_information_site_url(package_name,
         template = BINARY_PACKAGE_URL_TEMPLATES[url_type]
 
     return template.format(**params)
+
+
+def get_developer_information_url(developer_email):
+    """
+    Should return a URL which displays extra information about a developer,
+    given its email.
+
+    The function should return None if the vendor does not provide additional
+    developer information or if it does not have the information for the
+    particular developer email. In this case, on the package page, a <mailto>
+    link will be provided.
+    """
+    URL_TEMPLATE = 'http://qa.debian.org/developer.php?login={email}'
+    return URL_TEMPLATE.format(email=developer_email)
