@@ -513,13 +513,20 @@ class Repository(models.Model):
             for pkg in arguments.get('binary_packages', [])
         ]
         if 'maintainer' in arguments:
-            arguments['maintainer'] = Developer.objects.get_or_create(
-                **arguments['maintainer'])[0]
+            maintainer, _ = Developer.objects.get_or_create(
+                email=arguments['maintainer']['email'])
+            maintainer.update(**arguments['maintainer'])
+            maintainer.save()
+            arguments['maintainer'] = maintainer
 
-        arguments['uploaders'] = [
-            Developer.objects.get_or_create(**uploader)[0]
-            for uploader in arguments.get('uploaders', [])
-        ]
+        uploaders = []
+        for uploader in arguments.get('uploaders', []):
+            developer, _ = Developer.objects.get_or_create(
+                email=uploader['email'])
+            developer.update(**uploader)
+            developer.save()
+            uploaders.append(developer)
+        arguments['uploaders'] = uploaders
 
         return arguments
 
@@ -575,7 +582,7 @@ class Repository(models.Model):
 @python_2_unicode_compatible
 class Developer(models.Model):
     name = models.CharField(max_length=60, blank=True)
-    email = models.EmailField(max_length=244)
+    email = models.EmailField(max_length=244, unique=True)
 
     def __str__(self):
         return "{name} <{email}>".format(name=self.name, email=self.email)
@@ -586,6 +593,11 @@ class Developer(models.Model):
         """
         from django.forms.models import model_to_dict
         return model_to_dict(self, fields=['name', 'email'])
+
+    def update(self, **kwargs):
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
 
 
 @python_2_unicode_compatible
