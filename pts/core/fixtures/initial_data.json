@@ -214,5 +214,61 @@
         },
         "model": "core.architecture",
         "pk": 16
+    },
+    {
+        "fields": {
+            "name": "Subversion",
+            "shorthand": "svn"
+        },
+        "model": "core.versioncontrolsystem",
+        "pk": 1
+    },
+    {
+        "fields": {
+            "name": "Git",
+            "shorthand": "git"
+        },
+        "model": "core.versioncontrolsystem",
+        "pk": 2
+    },
+    {
+        "fields": {
+            "name": "Bazaar",
+            "shorthand": "bzr"
+        },
+        "model": "core.versioncontrolsystem",
+        "pk": 3
+    },
+    {
+        "fields": {
+            "name": "CVS",
+            "shorthand": "cvs"
+        },
+        "model": "core.versioncontrolsystem",
+        "pk": 4
+    },
+    {
+        "fields": {
+            "name": "Darcs",
+            "shorthand": "darcs"
+        },
+        "model": "core.versioncontrolsystem",
+        "pk": 5
+    },
+    {
+        "fields": {
+            "name": "Mercurial",
+            "shorthand": "hg"
+        },
+        "model": "core.versioncontrolsystem",
+        "pk": 6
+    },
+    {
+        "fields": {
+            "name": "Monotone",
+            "shorthand": "mtn"
+        },
+        "model": "core.versioncontrolsystem",
+        "pk": 7
     }
 ]
