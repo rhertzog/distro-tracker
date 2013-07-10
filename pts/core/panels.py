@@ -15,6 +15,7 @@ from pts.core.utils import get_or_none
 from pts import vendor
 from pts.core.models import PackageExtractedInfo
 from pts.core.models import VersionControlSystem
+from pts.core.models import MailingList
 
 
 class BasePanel(six.with_metaclass(PluginRegistry)):
@@ -103,6 +104,26 @@ class GeneralInformationPanel(BasePanel):
     title = 'general'
     template_name = 'core/panels/general.html'
 
+    def _get_archive_url_info(self, email):
+        ml = MailingList.objects.get_by_email(email)
+        if ml:
+            return ml.archive_url_for_email(email)
+
+    def _add_archive_urls(self, general):
+        maintainer_email = general['maintainer']['email']
+        general['maintainer']['archive_url'] = (
+            self._get_archive_url_info(maintainer_email)
+        )
+
+        uploaders = general.get('uploaders', None)
+        if not uploaders:
+            return
+
+        for uploader in uploaders:
+            uploader['archive_url'] = (
+                self._get_archive_url_info(uploader['email'])
+            )
+
     @property
     def context(self):
         info = PackageExtractedInfo.objects.get(
@@ -121,6 +142,8 @@ class GeneralInformationPanel(BasePanel):
             vcs = get_or_none(VersionControlSystem, shorthand=shorthand)
             if vcs:
                 general['vcs']['full_name'] = vcs.name
+        # Add mailing list archive URLs
+        self._add_archive_urls(general)
 
         return general
 

@@ -24,6 +24,11 @@
         <div class="list-item-key"><b>maintainer:</b></div>
         <div class="list-item-value">
             <a href="mailto:{{ context.maintainer.email }}">{{ context.maintainer.name }}</a>
+            {% if context.maintainer.archive_url %}
+                <small>
+                    (<a href="{{ context.maintainer.archive_url }}" class="has-tooltip" data-toggle="tooltip" title="Archives for the {{ context.maintainer.name }} list">archive</a>)
+                </small>
+            {% endif %}
         </div>
         <div class="clear"></div>
     </li>
@@ -32,7 +37,14 @@
         <div class="list-item-value">
         <ul>
             {% for uploader in context.uploaders %}
-            <li><a href="mailto:{{ uploader.email }}">{{ uploader.name }}</a></li>
+            <li>
+                <a href="mailto:{{ uploader.email }}">{{ uploader.name }}</a>
+                {% if uploader.archive_url %}
+                <small>
+                (<a href="{{ uploader.archive_url }}" class="has-tooltip" data-toggle="tooltip" title="Archives for the {{ uploader.name }} list">archive</a>)
+                </small>
+                {% endif %}
+            </li>
             {% endfor %}
         </ul>
         </div>
