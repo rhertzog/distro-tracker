@@ -11,8 +11,10 @@
 from __future__ import unicode_literals
 from django.utils import six
 from pts.core.utils.plugins import PluginRegistry
+from pts.core.utils import get_or_none
 from pts import vendor
 from pts.core.models import PackageExtractedInfo
+from pts.core.models import VersionControlSystem
 
 
 class BasePanel(six.with_metaclass(PluginRegistry)):
@@ -106,12 +108,19 @@ class GeneralInformationPanel(BasePanel):
         info = PackageExtractedInfo.objects.get(
             package=self.package, key='general')
         general = info.value
+        # Add source package URL
         url, implemented = vendor.call('get_package_information_site_url', **{
             'package_name': general['name'],
             'source_package': True,
         })
         if implemented and url:
             general['url'] = url
+        # Map the VCS type to its name.
+        if 'vcs' in general and 'type' in general['vcs']:
+            shorthand = general['vcs']['type']
+            vcs = get_or_none(VersionControlSystem, shorthand=shorthand)
+            if vcs:
+                general['vcs']['full_name'] = vcs.name
 
         return general
 

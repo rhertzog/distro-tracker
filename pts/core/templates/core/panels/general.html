@@ -51,7 +51,9 @@
     <li class="list-group-item">
         <div class="list-item-key"><b>VCS:</b></div>
         <div class="list-item-value">
-            <a href="{{ context.vcs.url }}">{{ context.vcs.type }}</a> (<a href="{{ context.vcs.browser }}">Browse</a>)
+            {% with vcs=context.vcs.full_name|default:context.vcs.type %}
+            <a href="{{ context.vcs.url }}">{{ vcs }}</a> (<a href="{{ context.vcs.browser }}">Browse</a>)
+            {% endwith %}
         </div>
         <div class="clear"></div>
     </li>
