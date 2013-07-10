@@ -125,7 +125,18 @@ class VersionsInformationPanel(BasePanel):
     def context(self):
         info = PackageExtractedInfo.objects.get(
             package=self.package, key='versions')
-        return info.value
+        version_info = info.value
+        package_name = info.package.name
+        for item in version_info:
+            url, implemented = vendor.call('get_package_information_site_url', **{
+                'package_name': package_name,
+                'repository_name': item['repository_name'],
+                'source_package': True,
+            })
+            if implemented and url:
+                item['url'] = url
+
+        return version_info
 
 
 class BinariesInformationPanel(BasePanel):

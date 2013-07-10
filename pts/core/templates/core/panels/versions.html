@@ -10,7 +10,11 @@
     <div class="row-fluid">
     <li class="list-group-item">
         <div class="span3"><b>{{ item.repository_shorthand }}:</b></div>
-        <div class="span9">{{ item.version }}</div>
+        <div class="span9">
+            {% with url=item.url|default:"#" %}
+            <a href="{{ url }}">{{ item.version }}</a>
+            {% endwith %}
+        </div>
     </li>
     </div>
     {% endfor %}
