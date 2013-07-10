@@ -16,11 +16,16 @@ from __future__ import unicode_literals
 from django.test import TestCase, SimpleTestCase
 from django.test.utils import override_settings
 from django.core import mail
+from django.utils.six.moves import mock
 from pts.dispatch.tests import DispatchTestHelperMixin, DispatchBaseTest
 from pts.core.models import Package
-from django.utils.six.moves import mock
+from pts.core.models import Developer
+from pts.core.tasks import run_task
 from pts.vendor.debian.rules import get_package_information_site_url
 from pts.vendor.debian.rules import get_developer_information_url
+from pts.vendor.debian.tasks import RetrieveDebianMaintainersTask
+from pts.vendor.debian.tasks import RetrieveLowThresholdNmuTask
+from pts.vendor.debian.models import DebianDeveloper
 
 
 __all__ = ('DispatchDebianSpecificTest', 'DispatchBaseDebianSettingsTest')
@@ -231,3 +236,82 @@ class GetDeveloperInformationSiteUrlTest(SimpleTestCase):
             'http://qa.debian.org/developer.php?login=email@domain.com',
             get_developer_information_url(developer_email)
         )
+
+
+class RetrieveLowThresholdNmuTest(TestCase):
+    def set_mock_response(self, mock_requests, text="", status_code=200):
+        """
+        Helper method which sets a mock response to the given mock_requests
+        module.
+        """
+        mock_response = mock_requests.models.Response()
+        mock_response.status_code = status_code
+        mock_response.text = text
+        mock_response.iter_lines.return_value = text.splitlines()
+        mock_requests.get.return_value = mock_response
+
+    @mock.patch('pts.vendor.debian.tasks.requests')
+    def test_developer_did_not_exist(self, mock_requests):
+        """
+        Tests updating the list of developers that allow the low threshold
+        NMU when the developer did not previously exist in the database.
+        """
+        self.set_mock_response(mock_requests,
+            "Text text text\n"
+            "text more text...\n"
+            " 1. [[DeveloperName|Name]] - "
+            "([[http://qa.debian.org/developer.php?"
+            "login=dummy|all packages]])\n")
+
+        run_task(RetrieveLowThresholdNmuTask)
+
+        # A Debian developer created
+        self.assertEqual(DebianDeveloper.objects.count(), 1)
+        d = DebianDeveloper.objects.all()[0]
+        self.assertTrue(d.agree_with_low_threshold_nmu)
+
+    @mock.patch('pts.vendor.debian.tasks.requests')
+    def test_developer_existed(self, mock_requests):
+        """
+        Tests updating the list of developers that allow the low threshold
+        NMU when the developer was previously registered in the database.
+        """
+        d = Developer.objects.create(email='dummy@debian.org', name='Name')
+        self.set_mock_response(mock_requests,
+            "Text text text\n"
+            "text more text...\n"
+            " 1. [[DeveloperName|Name]] - "
+            "([[http://qa.debian.org/developer.php?"
+            "login=dummy|all packages]])\n")
+
+        run_task(RetrieveLowThresholdNmuTask)
+
+        # A Debian developer created
+        self.assertEqual(DebianDeveloper.objects.count(), 1)
+        d = DebianDeveloper.objects.all()[0]
+        self.assertTrue(d.agree_with_low_threshold_nmu)
+        # The name of the original developer model has not changed.
+        self.assertEqual('Name', d.developer.name)
+
+    @mock.patch('pts.vendor.debian.tasks.requests')
+    def test_developer_remove_nmu(self, mock_requests):
+        """
+        Tests updating the list of NMU developers when one of them needs to be
+        removed from the list.
+        """
+        # Set up a Debian developer that is already in the NMU list.
+        d = Developer.objects.create(email='dummy@debian.org', name='Name')
+        DebianDeveloper.objects.create(developer=d,
+                                       agree_with_low_threshold_nmu=True)
+        self.set_mock_response(mock_requests,
+            "Text text text\n"
+            "text more text...\n"
+            " 1. [[DeveloperName|Name]] - "
+            "([[http://qa.debian.org/developer.php?"
+            "login=other|all packages]])\n")
+
+        run_task(RetrieveLowThresholdNmuTask)
+
+        d = DebianDeveloper.objects.get(developer__email='dummy@debian.org')
+        # The Debian developer is no longer in the list of low threshold nmu
+        self.assertFalse(d.agree_with_low_threshold_nmu)
