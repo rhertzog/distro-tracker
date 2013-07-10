@@ -120,3 +120,27 @@ def get_developer_information_url(developer_email):
     """
     URL_TEMPLATE = 'http://qa.debian.org/developer.php?login={email}'
     return URL_TEMPLATE.format(email=developer_email)
+
+
+def get_external_version_information_urls(package_name):
+    """
+    Should return a list of external Web resources which provide additional
+    information about a package's versions.
+    Each element of the list should be a dictionary with the keys url and
+    description.
+
+    The function should return None if the vendor does not want to provide
+    extra version information URLs.
+    """
+    return [
+        {
+            'url': 'http://qa.debian.org/madison.php?package={package}'.format(
+                package=package_name),
+            'description': 'more versions can be listed by madison',
+        },
+        {
+            'url': 'http://snapshot.debian.org/package/{package}/'.format(
+                package=package_name),
+            'description': 'old versions available from snapshot.debian.org',
+        }
+    ]
