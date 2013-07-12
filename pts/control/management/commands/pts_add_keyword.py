@@ -36,14 +36,23 @@ class Command(BaseCommand):
         if self.verbose > 1:
             self.stdout.write("Warning: {text}".format(text=text))
 
+    def add_keyword_to_user_defaults(self, keyword, user_set):
+        """
+        Adds the given keyword to the default_keywords list of each user found
+        in the given QuerySet user_set.
+        """
+        for user in user_set:
+            user.default_keywords.add(keyword)
+
     def add_keyword_to_subscriptions(self, new_keyword, existing_keyword):
         existing_keyword = get_or_none(Keyword, name=existing_keyword)
         if not existing_keyword:
             raise CommandError("Given keyword does not exist. No actions taken.")
 
-        for user in EmailUser.objects.all():
-            if existing_keyword in user.default_keywords.all():
-                user.default_keywords.add(new_keyword)
+        self.add_keyword_to_user_defaults(
+            new_keyword,
+            EmailUser.objects.filter(default_keywords=existing_keyword)
+        )
         for subscription in Subscription.objects.all():
             if existing_keyword in subscription.keywords.all():
                 if subscription._use_user_default_keywords:
