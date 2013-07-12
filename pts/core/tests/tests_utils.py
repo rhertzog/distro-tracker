@@ -615,24 +615,24 @@ Architecture: any
 Standards-Version: 3.9.3
 Format: 3.0 (quilt)
 Files:
- 602b2a11624744e2e92353f5e76ad7e6 2531 dummy_package_7.26.0.dsc
- 3fa4d5236f2a36ca5c3af6715e837691 3073624 dummy_package_7.26.0.orig.tar.gz
- 2972826d5b1ebadace83f236e946b33f 33360 dummy_package_7.26.0-1+wheezy3.debian.tar.gz
+ 602b2a11624744e2e92353f5e76ad7e6 2531 dummy-package_7.26.0.dsc
+ 3fa4d5236f2a36ca5c3af6715e837691 3073624 dummy-package_7.26.0.orig.tar.gz
+ 2972826d5b1ebadace83f236e946b33f 33360 dummy-package_7.26.0-1+wheezy3.debian.tar.gz
 Checksums-Sha1:
- 50fd8c0de138e80903443927365565151291338c 2531 dummy_package_7.26.0.dsc
- 66e1fd0312f62374b96fe02e644f66202fd6324b 3073624 dummy_package_7.26.0.orig.tar.gz
- a0f16b381d3ac3e02de307dced481eaf01b3ead1 33360 dummy_package_7.26.0-1+wheezy3.debian.tar.gz
+ 50fd8c0de138e80903443927365565151291338c 2531 dummy-package_7.26.0.dsc
+ 66e1fd0312f62374b96fe02e644f66202fd6324b 3073624 dummy-package_7.26.0.orig.tar.gz
+ a0f16b381d3ac3e02de307dced481eaf01b3ead1 33360 dummy-package_7.26.0-1+wheezy3.debian.tar.gz
 Checksums-Sha256:
- daf4c6c8ad485f98cc6ad684b5de30d7d07e45e521a1a6caf148406f7c9993cd 2531 dummy_package_7.26.0.dsc
- 79ccce9edb8aee17d20ad4d75e1f83a789f8c2e71e68f468e1bf8abf8933193f 3073624 dummy_package_7.26.0.orig.tar.gz
- 335bf9f847e68df71dc0b9bd14863c6a8951198af3ac19fc67b8817835fd0e17 33360 dummy_package_7.26.0-1+wheezy3.debian.tar.gz
+ daf4c6c8ad485f98cc6ad684b5de30d7d07e45e521a1a6caf148406f7c9993cd 2531 dummy-package_7.26.0.dsc
+ 79ccce9edb8aee17d20ad4d75e1f83a789f8c2e71e68f468e1bf8abf8933193f 3073624 dummy-package_7.26.0.orig.tar.gz
+ 335bf9f847e68df71dc0b9bd14863c6a8951198af3ac19fc67b8817835fd0e17 33360 dummy-package_7.26.0-1+wheezy3.debian.tar.gz
 Directory: pool/updates/main/c/curl
 Priority: source
 Section: libs
 """)
 
         self.assertEqual(
-            'dummy_package_7.26.0.dsc',
+            'dummy-package_7.26.0.dsc',
             extract_dsc_file_name(stanza)
         )
 
