@@ -272,7 +272,23 @@ class AddKeywordManagementCommandTest(TransactionTestCase):
 
         call_command('pts_add_keyword', 'new-keyword')
 
-        self.assertEqual(Keyword.objects.filter(name='new-keyword').count(), 1)
+        qs = Keyword.objects.filter(name='new-keyword', default=False)
+        self.assertEqual(qs.count(), 1)
+
+    def test_simple_add_default(self):
+        """
+        Tests the management command when it is only supposed to create a new
+        default keyword.
+        """
+        # Sanity check - the keyword we are about to add does not already exist
+        self.assertEqual(Keyword.objects.filter(name='new-keyword').count(), 0)
+
+        call_command('pts_add_keyword', 'new-keyword', **{
+            'is_default_keyword': True
+        })
+
+        qs = Keyword.objects.filter(name='new-keyword', default=True)
+        self.assertEqual(qs.count(), 1)
 
     def test_create_and_add_to_subscribers(self):
         """
@@ -348,3 +364,72 @@ class AddKeywordManagementCommandTest(TransactionTestCase):
 
         # ...and nothing changed.
         self.assertEqual(Keyword.objects.count(), old_count)
+
+    def test_create_default_keyword_to_all_users(self):
+        """
+        Tests adding a default keyword adds it to all users' default keywords
+        list.
+        """
+        existing_keyword = Keyword.objects.create(name='existing-keyword')
+        # A user who added an existing keyword to its default keywords
+        u = EmailUser.objects.create(email='defaultuser@domain.com')
+        u.default_keywords.add(existing_keyword)
+        u.save()
+        # A user who does not have any keywords apart from the defaults
+        u = EmailUser.objects.create(email='no-keyword@domain.com')
+        ## Make sure that it is so!
+        self.assertNotIn(existing_keyword, u.default_keywords.all())
+        # Sanity check - the keyword we want to add does not already exist
+        self.assertEqual(Keyword.objects.filter(name='new-keyword').count(), 0)
+
+        call_command('pts_add_keyword', 'new-keyword', **{
+            'is_default_keyword': True
+        })
+
+        keyword = Keyword.objects.get(name='new-keyword')
+        # This keyword is given to all users
+        self.assertEqual(
+            EmailUser.objects.filter(default_keywords=keyword).count(),
+            EmailUser.objects.count()
+        )
+
+    def test_create_default_keyword_existing_keyword(self):
+        """
+        Tests adding a default keyword which should be added to all
+        subscriptions that have a different existing keyword.
+        """
+        existing_keyword = Keyword.objects.create(name='existing-keyword')
+        # A user who added the existing keyword to its subscription keywords
+        user1 = EmailUser.objects.create(email='subscription-user@domain.com')
+        p = Package.objects.create(name='dummy-package')
+        sub = Subscription.objects.create(email_user=user1, package=p)
+        sub.keywords.add(existing_keyword)
+        sub.save()
+        # A user who added the existing keyword to its default keywords
+        u = EmailUser.objects.create(email='defaultuser@domain.com')
+        u.default_keywords.add(existing_keyword)
+        u.save()
+        # A user who does not have the existing keyword.
+        user2 = EmailUser.objects.create(email='no-keyword@domain.com')
+        # And is subscribed to a package without having the keyword
+        sub = Subscription.objects.create(email_user=user2, package=p)
+        sub.keywords.add(Keyword.objects.create(name='some-other-keyword'))
+        # Sanity check - the keyword we want to add does not already exist
+        self.assertEqual(Keyword.objects.filter(name='new-keyword').count(), 0)
+
+        call_command('pts_add_keyword', 'new-keyword', 'existing-keyword', **{
+            'is_default_keyword': True,
+        })
+
+        new_keyword = Keyword.objects.get(name='new-keyword')
+        # Every user has the keyword
+        self.assertEqual(
+            EmailUser.objects.filter(default_keywords=new_keyword).count(),
+            EmailUser.objects.count()
+        )
+        # Subscription with the existing keyword has the new keyword
+        sub = Subscription.objects.get(email_user=user1, package=p)
+        self.assertIn(new_keyword, sub.keywords.all())
+        # Subscription without the existing keyword not modified
+        sub = Subscription.objects.get(email_user=user2, package=p)
+        self.assertNotIn(new_keyword, sub.keywords.all())

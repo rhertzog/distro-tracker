@@ -14,6 +14,7 @@ from django.db import transaction
 
 from pts.core.models import Keyword, EmailUser, Subscription
 from pts.core.utils import get_or_none
+from optparse import make_option
 
 
 class Command(BaseCommand):
@@ -25,6 +26,14 @@ class Command(BaseCommand):
     already contain a different keyword (given as a parameter to the command).
     """
     args = 'keyword [existing-keyword]'
+
+    option_list = BaseCommand.option_list + (
+        make_option('--set-default',
+                    action='store_true',
+                    dest='is_default_keyword',
+                    default=False,
+                    help='Make the new keyword a default one'),
+    )
 
     help = ("Add a new keyword.\n."
             "The command supports simply adding a new keyword and allowing"
@@ -69,11 +78,20 @@ class Command(BaseCommand):
             raise CommandError("The name of the new keyword must be given")
         keyword = args[0]
 
-        keyword, created = Keyword.objects.get_or_create(name=keyword)
+        default = kwargs['is_default_keyword']
+        keyword, created = Keyword.objects.get_or_create(
+            name=keyword,
+            defaults={
+                'default': default,
+            }
+        )
 
         if not created:
             self.warn("The given keyword already exists")
             return
+
+        if default:
+            self.add_keyword_to_user_defaults(keyword, EmailUser.objects.all())
 
         if len(args) > 1:
             # Add the new keyword to all subscribers and subscriptions which
