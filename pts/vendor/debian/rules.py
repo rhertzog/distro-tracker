@@ -120,7 +120,7 @@ def get_developer_information_url(developer_email):
     particular developer email. In this case, on the package page, a <mailto>
     link will be provided.
     """
-    URL_TEMPLATE = 'http://qa.debian.org/developer.php?login={email}'
+    URL_TEMPLATE = 'http://qa.debian.org/developer.php?email={email}'
     return URL_TEMPLATE.format(email=developer_email)
 
 

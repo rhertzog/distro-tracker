@@ -229,13 +229,13 @@ class GetDeveloperInformationSiteUrlTest(SimpleTestCase):
         """
         developer_email = 'debian-dpkg@lists.debian.org'
         self.assertEqual(
-            'http://qa.debian.org/developer.php?login=debian-dpkg@lists.debian.org',
+            'http://qa.debian.org/developer.php?email=debian-dpkg@lists.debian.org',
             get_developer_information_url(developer_email)
         )
 
         developer_email = 'email@domain.com'
         self.assertEqual(
-            'http://qa.debian.org/developer.php?login=email@domain.com',
+            'http://qa.debian.org/developer.php?email=email@domain.com',
             get_developer_information_url(developer_email)
         )
 
