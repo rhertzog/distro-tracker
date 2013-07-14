@@ -45,26 +45,31 @@ $(document).ready(function() {
         items: 'tr',
         cursor: 'move',
         update: function(event, ui) {
-            item = ui.item
-            items = $(this).find('tr').get()
+            item = ui.item;
+            items = $(this).find('tr').get();
             if (sort_order == 'desc') {
                 // Reverse order
-                items.reverse()
+                items.reverse();
             }
 
             $(items).each(function(index) {
                 pos_td = $(this).children()[pos_col];
                 input = $(pos_td).children('input').first();
                 label = $(pos_td).children('strong').first();
-                
+
                 input.attr('value', index);
                 label.text(index);
             });
 
             // Update row classes
-            $(this).find('tr').removeClass('row1').removeClass('row2')
-            $(this).find('tr:even').addClass('row1')
-            $(this).find('tr:odd').addClass('row2')
+            $(this).find('tr').removeClass('row1').removeClass('row2');
+            $(this).find('tr:even').addClass('row1');
+            $(this).find('tr:odd').addClass('row2');
         }
     });
+
+    $('#content h1').after(
+        "<div>You can drag and drop repositories in the list bellow to modify their order.</div>" +
+        "<div>Don't forget to click save when you're done.</div>"
+    );
 });
