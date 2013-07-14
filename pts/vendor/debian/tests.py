@@ -27,7 +27,7 @@ from pts.vendor.debian.rules import get_uploader_extra
 from pts.vendor.debian.rules import get_developer_information_url
 from pts.vendor.debian.tasks import RetrieveDebianMaintainersTask
 from pts.vendor.debian.tasks import RetrieveLowThresholdNmuTask
-from pts.vendor.debian.models import DebianDeveloper
+from pts.vendor.debian.models import DebianContributor
 
 
 __all__ = ('DispatchDebianSpecificTest', 'DispatchBaseDebianSettingsTest')
@@ -268,8 +268,8 @@ class RetrieveLowThresholdNmuTest(TestCase):
         run_task(RetrieveLowThresholdNmuTask)
 
         # A Debian developer created
-        self.assertEqual(DebianDeveloper.objects.count(), 1)
-        d = DebianDeveloper.objects.all()[0]
+        self.assertEqual(DebianContributor.objects.count(), 1)
+        d = DebianContributor.objects.all()[0]
         self.assertTrue(d.agree_with_low_threshold_nmu)
 
     @mock.patch('pts.vendor.debian.tasks.requests')
@@ -289,8 +289,8 @@ class RetrieveLowThresholdNmuTest(TestCase):
         run_task(RetrieveLowThresholdNmuTask)
 
         # Still only one debian developer instance
-        self.assertEqual(DebianDeveloper.objects.count(), 1)
-        d = DebianDeveloper.objects.all()[0]
+        self.assertEqual(DebianContributor.objects.count(), 1)
+        d = DebianContributor.objects.all()[0]
         self.assertTrue(d.agree_with_low_threshold_nmu)
         # The name of the original developer model has not changed.
         self.assertEqual('Name', d.developer.name)
@@ -303,7 +303,7 @@ class RetrieveLowThresholdNmuTest(TestCase):
         """
         # Set up a Debian developer that is already in the NMU list.
         d = Developer.objects.create(email='dummy@debian.org', name='Name')
-        DebianDeveloper.objects.create(developer=d,
+        DebianContributor.objects.create(developer=d,
                                        agree_with_low_threshold_nmu=True)
         self.set_mock_response(mock_requests,
             "Text text text\n"
@@ -314,7 +314,7 @@ class RetrieveLowThresholdNmuTest(TestCase):
 
         run_task(RetrieveLowThresholdNmuTask)
 
-        d = DebianDeveloper.objects.get(developer__email='dummy@debian.org')
+        d = DebianContributor.objects.get(developer__email='dummy@debian.org')
         # The Debian developer is no longer in the list of low threshold nmu
         self.assertFalse(d.agree_with_low_threshold_nmu)
 
@@ -350,8 +350,8 @@ class RetrieveDebianMaintainersTest(TestCase):
         run_task(RetrieveDebianMaintainersTask)
 
         # A Debian developer created
-        self.assertEqual(DebianDeveloper.objects.count(), 1)
-        d = DebianDeveloper.objects.all()[0]
+        self.assertEqual(DebianContributor.objects.count(), 1)
+        d = DebianContributor.objects.all()[0]
         self.assertTrue(d.debian_maintainer)
         self.assertSequenceEqual(
             ['dummy-package', 'second-package'],
@@ -375,8 +375,8 @@ class RetrieveDebianMaintainersTest(TestCase):
         run_task(RetrieveDebianMaintainersTask)
 
         # A Debian developer created
-        self.assertEqual(DebianDeveloper.objects.count(), 1)
-        d = DebianDeveloper.objects.all()[0]
+        self.assertEqual(DebianContributor.objects.count(), 1)
+        d = DebianContributor.objects.all()[0]
         self.assertTrue(d.debian_maintainer)
         self.assertSequenceEqual(
             ['dummy-package', 'second-package'],
@@ -393,7 +393,7 @@ class RetrieveDebianMaintainersTest(TestCase):
         """
         # Set up a Debian developer that is already in the NMU list.
         d = Developer.objects.create(email='dummy@debian.org', name='Name')
-        DebianDeveloper.objects.create(developer=d,
+        DebianContributor.objects.create(developer=d,
                                        debian_maintainer=True,
                                        allowed_packages=['one'])
 
@@ -406,7 +406,7 @@ class RetrieveDebianMaintainersTest(TestCase):
 
         run_task(RetrieveDebianMaintainersTask)
 
-        d = DebianDeveloper.objects.get(developer__email='dummy@debian.org')
+        d = DebianContributor.objects.get(developer__email='dummy@debian.org')
         # The old package is no longer in its list of allowed packages.
         self.assertSequenceEqual(
             ['dummy-package', 'second-package'],
@@ -421,7 +421,7 @@ class RetrieveDebianMaintainersTest(TestCase):
         """
         # Set up a Debian developer that is already in the DM list.
         d = Developer.objects.create(email='dummy@debian.org', name='Name')
-        DebianDeveloper.objects.create(developer=d,
+        DebianContributor.objects.create(developer=d,
                                        debian_maintainer=True,
                                        allowed_packages=['one'])
 
@@ -434,7 +434,7 @@ class RetrieveDebianMaintainersTest(TestCase):
 
         run_task(RetrieveDebianMaintainersTask)
 
-        d = DebianDeveloper.objects.get(developer__email='dummy@debian.org')
+        d = DebianContributor.objects.get(developer__email='dummy@debian.org')
         # The developer is no longer a debian maintainer
         self.assertFalse(d.debian_maintainer)
 
@@ -442,7 +442,7 @@ class RetrieveDebianMaintainersTest(TestCase):
 class DebianDeveloperExtraTest(TestCase):
     def test_maintainer_extra(self):
         d = Developer.objects.create(email='dummy@debian.org', name='Name')
-        d = DebianDeveloper.objects.create(developer=d,
+        d = DebianContributor.objects.create(developer=d,
                                            agree_with_low_threshold_nmu=True)
 
         # Only in NMU list
@@ -481,7 +481,7 @@ class DebianDeveloperExtraTest(TestCase):
 
     def test_uploader_extra(self):
         d = Developer.objects.create(email='dummy@debian.org', name='Name')
-        d = DebianDeveloper.objects.create(developer=d,
+        d = DebianContributor.objects.create(developer=d,
                                            agree_with_low_threshold_nmu=True)
 
         # Only in NMU list - no extra data when the developer in displayed as

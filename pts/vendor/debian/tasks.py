@@ -16,7 +16,7 @@ from __future__ import unicode_literals
 from django.db import transaction
 from pts.core.tasks import BaseTask
 from pts.core.models import Developer
-from .models import DebianDeveloper
+from .models import DebianContributor
 import requests
 import re
 from debian import deb822
@@ -45,12 +45,12 @@ class RetrieveDebianMaintainersTask(BaseTask):
         # Now update the developer information
         with transaction.commit_on_success():
             # Reset all old maintainers first.
-            qs = DebianDeveloper.objects.filter(debian_maintainer=True)
+            qs = DebianContributor.objects.filter(debian_maintainer=True)
             qs.update(debian_maintainer=False)
 
             for email, packages in maintainers.items():
                 developer, _ = Developer.objects.get_or_create(email=email)
-                developer, _ = DebianDeveloper.objects.get_or_create(
+                developer, _ = DebianContributor.objects.get_or_create(
                     developer=developer)
 
                 developer.debian_maintainer = True
@@ -86,11 +86,11 @@ class RetrieveLowThresholdNmuTask(BaseTask):
         emails = self._retrieve_emails()
         with transaction.commit_on_success():
             # Reset all threshold flags first.
-            qs = DebianDeveloper.objects.filter(agree_with_low_threshold_nmu=True)
+            qs = DebianContributor.objects.filter(agree_with_low_threshold_nmu=True)
             qs.update(agree_with_low_threshold_nmu=False)
             for email in emails:
                 developer, _ = Developer.objects.get_or_create(email=email)
-                developer, _ = DebianDeveloper.objects.get_or_create(developer=developer)
+                developer, _ = DebianContributor.objects.get_or_create(developer=developer)
 
                 developer.agree_with_low_threshold_nmu = True
                 developer.save()

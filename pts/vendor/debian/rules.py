@@ -13,7 +13,7 @@ import re
 import requests
 from pts.core.utils import get_decoded_message_payload
 from pts.core.utils import get_or_none
-from .models import DebianDeveloper
+from .models import DebianContributor
 from pts.vendor.common import PluginProcessingError
 
 
@@ -160,7 +160,7 @@ def get_maintainer_extra(developer_email, package_name=None):
     It should return None if the vendor does not wish to include any extra
     items.
     """
-    developer = get_or_none(DebianDeveloper, developer__email=developer_email)
+    developer = get_or_none(DebianContributor, developer__email=developer_email)
     if not developer:
         # Debian does not have any extra information to include in this case.
         return None
@@ -193,7 +193,7 @@ def get_uploader_extra(developer_email, package_name=None):
     if package_name is None:
         return
 
-    developer = get_or_none(DebianDeveloper, developer__email=developer_email)
+    developer = get_or_none(DebianContributor, developer__email=developer_email)
     if not developer:
         return
 
