@@ -242,8 +242,22 @@ class AptCache(object):
         return updated_sources, updated_packages
 
 
+class PackageUpdateTask(BaseTask):
+    """
+    A subclass of the BaseTask providing some methods specific to tasks dealing
+    with package updates.
+    """
+    def __init__(self, force_update=False):
+        super(PackageUpdateTask, self).__init__()
+        self.force_update = force_update
+
+    def set_parameters(self, parameters):
+        if 'force_update' in parameters:
+            self.force_update = parameters['force_update']
+
+
 from pts.core.utils.packages import extract_information_from_sources_entry
-class UpdateRepositoriesTask(BaseTask):
+class UpdateRepositoriesTask(PackageUpdateTask):
 
     PRODUCES_EVENTS = (
         'source-package-created',
@@ -326,7 +340,7 @@ class UpdateRepositoriesTask(BaseTask):
     def execute(self):
         apt_cache = AptCache()
         updated_sources, updated_packages = (
-            apt_cache.update_repositories()
+            apt_cache.update_repositories(self.force_update)
         )
 
         with transaction.commit_on_success():
@@ -336,7 +350,7 @@ class UpdateRepositoriesTask(BaseTask):
             self._update_binary_mapping()
 
 
-class UpdatePackageGeneralInformation(BaseTask):
+class UpdatePackageGeneralInformation(PackageUpdateTask):
     DEPENDS_ON_EVENTS = (
         'source-package-updated',
         'source-package-created',
@@ -384,7 +398,7 @@ class UpdatePackageGeneralInformation(BaseTask):
                 general.save()
 
 
-class UpdateVersionInformation(BaseTask):
+class UpdateVersionInformation(PackageUpdateTask):
     DEPENDS_ON_EVENTS = (
         'source-package-updated',
         'source-package-created',
@@ -430,7 +444,7 @@ class UpdateVersionInformation(BaseTask):
                 versions.save()
 
 
-class UpdateSourceToBinariesInformation(BaseTask):
+class UpdateSourceToBinariesInformation(PackageUpdateTask):
     DEPENDS_ON_EVENTS = (
         'source-package-updated',
         'source-package-created',
