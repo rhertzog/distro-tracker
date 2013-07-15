@@ -169,8 +169,8 @@ class Job(object):
         # The full DAG contains dependencies between Task classes, but the job
         # needs to have Task instances, so it instantiates the Tasks dependent
         # on the initial task.
-        reachable_tasks = self.job_dag.nodes_reachable_from(initial_task)
-        for task_class in self.job_dag.all_nodes:
+        reachable_tasks = self.job_dag.all_dependent_tasks(initial_task)
+        for task_class in self.job_dag.all_tasks:
             if task_class is initial_task or task_class in reachable_tasks:
                 task = task_class()
                 if task_class is initial_task:
@@ -182,14 +182,14 @@ class Job(object):
                 # Remove tasks which are not reachable from the initial task
                 # from the job Tasks DAG, since those are in no way dependent
                 # on it and will not need to run.
-                self.job_dag.remove_node(task_class)
+                self.job_dag.remove_task(task_class)
 
     def _update_task_events(self, processed_task):
         """
         Updates the received events of all tasks which depend on events the
         processed_task has raised.
         """
-        for dependent_task in self.job_dag.dependent_nodes(processed_task):
+        for dependent_task in self.job_dag.directly_dependent_tasks(processed_task):
             # Update this task's raised events.
             for event in processed_task.raised_events:
                 dependent_task.receive_event(event)
@@ -245,22 +245,22 @@ def build_task_event_dependency_graph():
 
 def build_full_task_dag():
     """
-    Returns a DAG instance representing the dependencies between Task classes
-    based on the events they produce and depend on.
+    Returns a TaskDAG instance representing the dependencies between Task
+    classes based on the events they produce and depend on.
     """
-    dag = DAG()
+    dag = TaskDAG()
     # Add all existing tasks to the dag.
     for task in BaseTask.plugins:
         if task is not BaseTask:
-            dag.add_node(task)
+            dag.add_task(task)
 
     # Create the edges of the graph by creating an edge between each pair of
     # tasks T1, T2 where T1 produces an event E and T2 depends on the event E.
     from itertools import product as cross_product
     events = build_task_event_dependency_graph()
     for event_producers, event_consumers in events.values():
-        for node1, node2 in cross_product(event_producers, event_consumers):
-            dag.add_edge(node1, node2)
+        for task1, task2 in cross_product(event_producers, event_consumers):
+            dag.add_dependency(task1, task2)
 
     return dag
 
