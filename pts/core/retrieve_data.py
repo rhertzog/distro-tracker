@@ -26,6 +26,7 @@ from debian import deb822
 import os
 import apt
 import sys
+import shutil
 import apt_pkg
 import requests
 
@@ -168,6 +169,10 @@ class AptCache(object):
         if not os.path.exists(self.cache_root_dir):
             os.makedirs(self.cache_root_dir)
 
+    def clear_cache(self):
+        shutil.rmtree(self.cache_root_dir)
+        self._create_cache_directory()
+
     def update_sources_list(self):
         with open(self.sources_list_path, 'w') as sources_list:
             for repository in Repository.objects.all():
@@ -207,11 +212,15 @@ class AptCache(object):
             if component_url in repository.component_urls:
                 return repository
 
-    def update_repositories(self):
+    def update_repositories(self, force_download=False):
+        if force_download:
+            self.clear_cache()
+
         self.update_sources_list()
         self.update_apt_conf()
 
         self._configure_apt()
+
         cache = apt.cache.Cache(rootdir=self.cache_root_dir)
         progress = AptCache.AcquireProgress()
         cache.update(progress)
