@@ -679,21 +679,6 @@ class PackageExtractedInfo(models.Model):
         unique_together = ('key', 'package')
 
 
-@python_2_unicode_compatible
-class VersionControlSystem(models.Model):
-    """
-    Describes a particular version control system type which packages can
-    set in their source information.
-    """
-    name = models.CharField(max_length=50, blank=True)
-    shorthand = models.CharField(max_length=20, unique=True)
-
-    def __str__(self):
-        return "{name} ({shorthand})".format(
-            name=self.name, shorthand=self.shorthand
-        )
-
-
 class MailingListManager(models.Manager):
     """
     A custom manager for the MailingList class.
