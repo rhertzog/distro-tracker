@@ -179,7 +179,7 @@ class SourcePackageName(PackageName):
     @property
     def main_entry(self):
         """
-        Returns the `SourceRepositoryEntry` of the given package which belongs
+        Returns the `SourcePackage` of the given package which belongs
         to either the default repository. If the package is not found in the
         default repository, the entry from the repository with the highest
         version of the package is returned.
@@ -187,10 +187,10 @@ class SourcePackageName(PackageName):
         default_repository = Repository.objects.get_default()
         if default_repository.exists():
             default_repository = default_repository[0]
-            qs = SourceRepositoryEntry.objects.filter(
+            qs = SourcePackage.objects.filter(
                 source_package=self, repository=default_repository)
         else:
-            qs = SourceRepositoryEntry.objects.filter(source_package=self)
+            qs = SourcePackage.objects.filter(source_package=self)
 
         if qs.exists():
             return max(qs, key=lambda x: AptPkgVersion(x.version))
@@ -362,13 +362,13 @@ class BinaryPackageManager(models.Manager):
         source package in at least one repository.
         """
         return self.filter(
-            sourcerepositoryentry__source_package=source_package)
+            sourcepackage__source_package=source_package)
 
     def filter_no_source(self):
         """
         Returns all binary packages which are not linked to any source package.
         """
-        qs = self.annotate(entry_count=models.Count('sourcerepositoryentry'))
+        qs = self.annotate(entry_count=models.Count('sourcepackage'))
         return qs.filter(entry_count=0)
 
 
@@ -389,7 +389,7 @@ class BinaryPackageName(BasePackageName):
         return self.source_package.get_absolute_url()
 
     def update_source_mapping(self):
-        entries = SourceRepositoryEntry.objects.filter(binary_packages=self)
+        entries = SourcePackage.objects.filter(binary_packages=self)
         default_repository_entries = entries.filter(repository__default=True)
         if default_repository_entries.exists():
             entries = default_repository_entries
@@ -494,7 +494,7 @@ class Repository(models.Model):
         package.
         The source package is an instance of the `SourcePackage` model.
         """
-        qs = SourceRepositoryEntry.objects.filter(
+        qs = SourcePackage.objects.filter(
             repository=self,
             source_package=package
         )
@@ -534,11 +534,9 @@ class Repository(models.Model):
         """
         The method adds a new source package to the repository.
 
-        The source package is given by the package parameter.
-        The rest of the keyword arguments describe the SourceRepositoryEntry
-        object which will be created for this source package, repository pair.
+        The source package name is given by the package parameter.
         """
-        entry = SourceRepositoryEntry.objects.create(
+        entry = SourcePackage.objects.create(
             repository=self,
             source_package=package
         )
@@ -552,7 +550,7 @@ class Repository(models.Model):
         The method updates the data linked to a source package which is a part
         of the repository.
         """
-        entry = SourceRepositoryEntry.objects.get(
+        entry = SourcePackage.objects.get(
             repository=self,
             source_package=package)
         if entry.version != kwargs['version']:
@@ -601,7 +599,7 @@ class Developer(models.Model):
 
 
 @python_2_unicode_compatible
-class SourceRepositoryEntry(models.Model):
+class SourcePackage(models.Model):
     source_package = models.ForeignKey(
         SourcePackageName,
         related_name='repository_entries')

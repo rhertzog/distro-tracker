@@ -21,7 +21,7 @@ from pts.core.models import SourcePackageName
 from pts.core.models import Keyword
 from pts.core.models import PseudoPackageName
 from pts.core.models import Repository
-from pts.core.models import Developer, SourceRepositoryEntry
+from pts.core.models import Developer, SourcePackage
 from pts.core.models import MailingList
 
 
@@ -437,7 +437,7 @@ class BinaryPackageManagerTest(TestCase):
         self.assertIn(src_pkg, SourcePackageName.objects.all())
 
 
-class SourceRepositoryEntryTests(TestCase):
+class sourcepackageTests(TestCase):
     fixtures = ['repository-test-fixture.json']
 
     def setUp(self):
@@ -459,8 +459,8 @@ class SourceRepositoryEntryTests(TestCase):
         })
 
         # An entry is created.
-        self.assertEqual(SourceRepositoryEntry.objects.count(), 1)
-        e = SourceRepositoryEntry.objects.all()[0]
+        self.assertEqual(SourcePackage.objects.count(), 1)
+        e = SourcePackage.objects.all()[0]
         self.assertEqual(e.source_package, src_pkg)
         # A developer instance is created on the fly
         self.assertEqual(Developer.objects.count(), 1)
@@ -487,8 +487,8 @@ class SourceRepositoryEntryTests(TestCase):
             'binary_packages': ['bin-pkg']
         })
 
-        self.assertEqual(SourceRepositoryEntry.objects.count(), 1)
-        e = SourceRepositoryEntry.objects.all()[0]
+        self.assertEqual(SourcePackage.objects.count(), 1)
+        e = SourcePackage.objects.all()[0]
         # Stil linked to the same source package.
         self.assertEqual(e.source_package, src_pkg)
         # The version number is bumped up
@@ -647,7 +647,7 @@ class SourceRepositoryEntryTests(TestCase):
             'directory': 'pool/path/to/dir',
         })
 
-        e = SourceRepositoryEntry.objects.all()[0]
+        e = SourcePackage.objects.all()[0]
         self.assertEqual(
             self.repository.uri + 'pool/path/to/dir',
             e.directory_url
@@ -671,7 +671,7 @@ class SourceRepositoryEntryTests(TestCase):
             'dsc_file_name': 'file.dsc',
         })
 
-        e = SourceRepositoryEntry.objects.all()[0]
+        e = SourcePackage.objects.all()[0]
         self.assertEqual(
             self.repository.uri + 'pool/path/to/dir/file.dsc',
             e.dsc_file_url
