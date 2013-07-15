@@ -100,6 +100,52 @@ class Event(object):
         self.arguments = arguments
 
 
+class TaskDAG(DAG):
+    """
+    A DAG subclass which exposes some methods specific for DAGs of dependent
+    tasks.
+    """
+    @property
+    def all_tasks(self):
+        return self.all_nodes
+
+    def all_dependent_tasks(self, task):
+        """
+        Returns all tasks that are dependent on this task.
+
+        Effectively, this means all tasks reachable from this one in the DAG of
+        tasks.
+        """
+        return self.nodes_reachable_from(task)
+
+    def directly_dependent_tasks(self, task):
+        """
+        Returns only tasks which are directly dependent on this task.
+
+        This means all tasks to which this task has a direct edge
+        (neighbour nodes).
+        """
+        return self.dependent_nodes(task)
+
+    def remove_task(self, task):
+        """
+        Removes the given task from the DAG.
+        """
+        return self.remove_node(task)
+
+    def add_task(self, task):
+        """
+        Adds the given task to the DAG.
+        """
+        return self.add_node(task)
+
+    def add_dependency(self, task1, task2):
+        """
+        Registers the dependency between these two tasks.
+        """
+        return self.add_edge(task1, task2)
+
+
 class Job(object):
     """
     A class used to initialize and run a set of interdependent tasks.
