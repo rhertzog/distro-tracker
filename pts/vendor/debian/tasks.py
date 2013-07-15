@@ -14,8 +14,11 @@ Debian-specific tasks.
 
 from __future__ import unicode_literals
 from django.db import transaction
+from django.conf import settings
+
 from pts.core.tasks import BaseTask
 from pts.core.models import Developer
+from pts.core.utils.http import HttpCache
 from .models import DebianContributor
 import requests
 import re
@@ -24,8 +27,16 @@ from debian import deb822
 
 class RetrieveDebianMaintainersTask(BaseTask):
     def execute(self):
-        response = requests.get("http://ftp-master.debian.org/dm.txt")
+        cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
+        url = "http://ftp-master.debian.org/dm.txt"
+        if not cache.is_expired(url):
+            # No need to do anything when the previously cached value is fresh
+            return
+        response, updated = cache.update(url)
         response.raise_for_status()
+        if not updated:
+            # No need to do anything if the cached item was still not updated
+            return
 
         maintainers = {}
         for stanza in deb822.Deb822.iter_paragraphs(response.iter_lines()):

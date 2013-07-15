@@ -327,11 +327,13 @@ class RetrieveDebianMaintainersTest(TestCase):
         """
         mock_response = mock_requests.models.Response()
         mock_response.status_code = status_code
+        mock_response.ok = status_code < 400
+        mock_response.content = text.encode('utf-8')
         mock_response.text = text
         mock_response.iter_lines.return_value = text.splitlines()
         mock_requests.get.return_value = mock_response
 
-    @mock.patch('pts.vendor.debian.tasks.requests')
+    @mock.patch('pts.core.utils.http.requests')
     def test_developer_did_not_exist(self, mock_requests):
         """
         Tests updating the DM list when a new developer is to be added.
@@ -358,7 +360,7 @@ class RetrieveDebianMaintainersTest(TestCase):
             d.allowed_packages
         )
 
-    @mock.patch('pts.vendor.debian.tasks.requests')
+    @mock.patch('pts.core.utils.http.requests')
     def test_developer_existed(self, mock_requests):
         """
         Tests updating the DM list when the developer was previously registered
@@ -385,7 +387,7 @@ class RetrieveDebianMaintainersTest(TestCase):
         # The name of the original developer model has not changed.
         self.assertEqual('Name', d.developer.name)
 
-    @mock.patch('pts.vendor.debian.tasks.requests')
+    @mock.patch('pts.core.utils.http.requests')
     def test_developer_update_dm_list(self, mock_requests):
         """
         Tests updating the DM list when one of the developers has changes in
@@ -413,7 +415,7 @@ class RetrieveDebianMaintainersTest(TestCase):
             d.allowed_packages
         )
 
-    @mock.patch('pts.vendor.debian.tasks.requests')
+    @mock.patch('pts.core.utils.http.requests')
     def test_developer_delete_from_dm_list(self, mock_requests):
         """
         Tests updating the DM list when one of the developers has changes in
