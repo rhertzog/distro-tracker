@@ -68,6 +68,12 @@ class BaseTask(six.with_metaclass(PluginRegistry)):
         """
         self._raised_events.append(Event(event_name, arguments))
 
+    def clear_events(self):
+        """
+        Clears all events the task raised.
+        """
+        self._raised_events = []
+
     def receive_event(self, event):
         """
         This method is used by clients to notify the task that a specific event
@@ -223,6 +229,23 @@ class Job(object):
                 # The update is performed regardless of a possible failure in
                 # order not to miss some events.
                 self._update_task_events(task)
+
+
+def clear_all_events_on_exception(func):
+    """
+    Decorator which makes sure that all events a task wanted to raise are
+    cleared in case an exception is raised during its execution.
+
+    This may not be what all tasks want so it is provided as a convenience
+    decorator for those that do.
+    """
+    def wrapper(self):
+        try:
+            func(self)
+        except Exception as e:
+            self.clear_events()
+            raise e
+    return wrapper
 
 
 def build_task_event_dependency_graph():
