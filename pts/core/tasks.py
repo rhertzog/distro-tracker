@@ -96,6 +96,13 @@ class BaseTask(six.with_metaclass(PluginRegistry)):
         """
         pass
 
+    def set_parameters(self, parameters):
+        """
+        Allows clients to set additional task-specific parameters once a task
+        is already created.
+        """
+        pass
+
 
 class Event(object):
     """
@@ -200,7 +207,7 @@ class Job(object):
             for event in processed_task.raised_events:
                 dependent_task.receive_event(event)
 
-    def run(self):
+    def run(self, parameters=None):
         """
         Starts the Job processing.
 
@@ -220,6 +227,9 @@ class Job(object):
             if task.event_received:
                 # Run task
                 try:
+                    # Inject additional parameters, if any
+                    if parameters:
+                        task.set_parameters(parameters)
                     task.execute()
                 except Exception as e:
                     logger.error(
@@ -288,7 +298,7 @@ def build_full_task_dag():
     return dag
 
 
-def run_task(initial_task):
+def run_task(initial_task, parameters=None):
     """
     Receives a class of the task which should be executed and makes sure that
     all the tasks which have data dependencies on this task are ran after it.
@@ -296,4 +306,4 @@ def run_task(initial_task):
     This is a convenience function which delegates this to a Job class instance
     """
     job = Job(initial_task)
-    return job.run()
+    return job.run(parameters)
