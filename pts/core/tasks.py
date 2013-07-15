@@ -103,6 +103,51 @@ class BaseTask(six.with_metaclass(PluginRegistry)):
         """
         pass
 
+    @classmethod
+    def build_full_task_dag(cls):
+        """
+        A class method which builds a full TaskDAG where only subclasses of
+        `cls` are included in the DAG. If `cls` is `BaseTask` then the DAG
+        contains all tasks.
+
+        The TaskDAG instance represents the dependencies between Task classes
+        based on the events they produce and depend on.
+        """
+        dag = TaskDAG()
+        # Add all existing tasks to the dag.
+        for task in BaseTask.plugins:
+            if task is not cls and issubclass(task, cls):
+                dag.add_task(task)
+
+        # Create the edges of the graph by creating an edge between each pair of
+        # tasks T1, T2 where T1 produces an event E and T2 depends on the event E.
+        from itertools import product as cross_product
+        events = cls.build_task_event_dependency_graph()
+        for event_producers, event_consumers in events.values():
+            for task1, task2 in cross_product(event_producers, event_consumers):
+                dag.add_dependency(task1, task2)
+
+        return dag
+
+    @classmethod
+    def build_task_event_dependency_graph(cls):
+        """
+        Returns a dict mapping event names to a two-tuple of a list of task classes
+        which produce the event and a list of task classes which depend on the
+        event, respectively.
+        Only tasks which are subclassed from `cls` are included.
+        """
+        events = defaultdict(lambda: ([], []))
+        for task in BaseTask.plugins:
+            if task is cls or not issubclass(task, cls):
+                continue
+            for event in task.PRODUCES_EVENTS:
+                events[event][0].append(task)
+            for event in task.DEPENDS_ON_EVENTS:
+                events[event][1].append(task)
+
+        return events
+
 
 class Event(object):
     """
@@ -163,7 +208,7 @@ class Job(object):
     """
     A class used to initialize and run a set of interdependent tasks.
     """
-    def __init__(self, initial_task):
+    def __init__(self, initial_task, base_task_class=BaseTask):
         """
         Instantiates a new Job instance based on the given initial_task.
 
@@ -178,7 +223,7 @@ class Job(object):
         which that task depends on.
         """
         # Build this job's DAG based on the full DAG of all tasks.
-        self.job_dag = build_full_task_dag()
+        self.job_dag = base_task_class.build_full_task_dag()
         # The full DAG contains dependencies between Task classes, but the job
         # needs to have Task instances, so it instantiates the Tasks dependent
         # on the initial task.

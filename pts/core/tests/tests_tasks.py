@@ -15,11 +15,8 @@ Tests for the PTS core's tasks framework.
 """
 from __future__ import unicode_literals
 from django.test import SimpleTestCase
-from django.utils.six.moves import mock
 from pts.core.tasks import BaseTask
 from pts.core.tasks import run_task
-from pts.core.tasks import build_task_event_dependency_graph
-from pts.core.tasks import build_full_task_dag
 import logging
 logging.disable(logging.CRITICAL)
 
@@ -89,7 +86,7 @@ class JobTests(SimpleTestCase):
         B = self.create_task_class((), ('a',), ())
 
         # Is the event dependency built correctly
-        events = build_task_event_dependency_graph()
+        events = BaseTask.build_task_event_dependency_graph()
         self.assertEqual(len(events), 1)
         self.assertEqual(len(events['a'][0]), 1)
         self.assertIn(A, events['a'][0])
@@ -97,7 +94,7 @@ class JobTests(SimpleTestCase):
         self.assertIn(B, events['a'][1])
 
         # Is the DAG built correctly
-        g = build_full_task_dag()
+        g = BaseTask.build_full_task_dag()
         self.assertEqual(len(g.all_nodes), 2)
         self.assertIn(A, g.all_nodes)
         self.assertIn(B, g.all_nodes)
@@ -119,7 +116,7 @@ class JobTests(SimpleTestCase):
         T7 = self.create_task_class((), ('D1', 'A'), ())
         T8 = self.create_task_class((), ('evt-5', 'evt-6', 'E'), ())
 
-        g = build_full_task_dag()
+        g = BaseTask.build_full_task_dag()
         self.assertEqual(len(g.dependent_nodes(T0)), 5)
         self.assert_contains_all([T1, T2, T3, T4, T7], g.dependent_nodes(T0))
 
