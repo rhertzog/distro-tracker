@@ -219,10 +219,10 @@ class Job(object):
                     logger.error(
                         "Problem processing a task. "
                         "Exception: {e}".format(e=e))
-                else:
-                    # Update dependent tasks based on events raised, but only
-                    # if the task finished successfully.
-                    self._update_task_events(task)
+                # Update dependent tasks based on events raised.
+                # The update is performed regardless of a possible failure in
+                # order not to miss some events.
+                self._update_task_events(task)
 
 
 def build_task_event_dependency_graph():

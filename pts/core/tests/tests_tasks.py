@@ -25,7 +25,7 @@ logging.disable(logging.CRITICAL)
 
 
 class JobTests(SimpleTestCase):
-    def create_task_class(self, produces, depends_on, raises):
+    def create_task_class(self, produces, depends_on, raises, fail=False):
         """
         Helper method creates and returns a new BaseTask subclass.
         """
@@ -39,6 +39,8 @@ class JobTests(SimpleTestCase):
                 for event in raises:
                     self.raise_event(event)
                 exec_list.append(self.__class__)
+                if fail:
+                    raise Exception("This task fails")
         return TestTask
 
     def assert_contains_all(self, items, container):
@@ -294,32 +296,25 @@ class JobTests(SimpleTestCase):
         """
         Tests that running a job where one task fails works as expected.
         """
-        fail_task = self.create_task_class(('fail',), (), ('fail'))
-        # Make sure this task will definitely fail
-        fail_task.execute = mock.MagicMock(
-            name='execute', side_effect=Exception('Fail!'))
-        # This task will not run
-        self.create_task_class((), ('fail',), ())
+        fail_task = self.create_task_class(('fail',), (), ('fail'), fail=True)
 
         run_task(fail_task)
 
-        self.assert_executed_tasks_equal([])
+        # The job has gracefully exited without raising an exception.
+        self.assert_executed_tasks_equal([fail_task])
 
-    def test_run_job_with_fail_task_branch(self):
+    def test_run_job_with_fail_task_dependency(self):
         """
-        Tests that running a job where one task fails executes other tasks
-        which are not directly dependent on the failed task.
+        Tests that even though a task has failed, any events it raised while
+        running affect the rest of the tasks.
         """
         root_task = self.create_task_class(('A',), (), ('A',))
-        fail_task = self.create_task_class(('fail',), ('A',), ('fail',))
-        # Make sure this task will definitely fail
-        fail_task.execute = mock.MagicMock(
-            name='execute', side_effect=Exception('Fail!'))
-        # This task will not run
-        self.create_task_class((), ('fail',), ())
-        # This one will
+        fail_task = self.create_task_class(('fail',), ('A',), ('fail',), True)
+        depends_on_fail = self.create_task_class((), ('fail',), ())
         do_run = self.create_task_class((), ('A',), ())
 
         run_task(root_task)
 
-        self.assert_executed_tasks_equal([root_task, do_run])
+        self.assert_executed_tasks_equal(
+            [root_task, fail_task, depends_on_fail, do_run]
+        )
