@@ -11,10 +11,9 @@
 from __future__ import unicode_literals
 from django.utils import six
 from pts.core.utils.plugins import PluginRegistry
-from pts.core.utils import get_or_none
+from pts.core.utils import get_vcs_name
 from pts import vendor
 from pts.core.models import PackageExtractedInfo
-from pts.core.models import VersionControlSystem
 from pts.core.models import MailingList
 
 
@@ -169,9 +168,7 @@ class GeneralInformationPanel(BasePanel):
         # Map the VCS type to its name.
         if 'vcs' in general and 'type' in general['vcs']:
             shorthand = general['vcs']['type']
-            vcs = get_or_none(VersionControlSystem, shorthand=shorthand)
-            if vcs:
-                general['vcs']['full_name'] = vcs.name
+            general['vcs']['full_name'] = get_vcs_name(shorthand)
         # Add mailing list archive URLs
         self._add_archive_urls(general)
         # Add developer information links and any other vendor-specific extras
