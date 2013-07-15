@@ -22,7 +22,7 @@ from django.utils.encoding import force_bytes
 from email.message import Message
 from datetime import timedelta
 
-from pts.core.models import Package, Subscription, Keyword
+from pts.core.models import PackageName, Subscription, Keyword
 from pts.core.utils import verp
 from pts.core.utils import get_decoded_message_payload
 from pts.core.utils import pts_render_to_string
@@ -146,7 +146,7 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         self.add_header('X-PTS-Approved', '1')
         self.set_message_content('message content')
 
-        self.package = Package.objects.create(name=self.package_name)
+        self.package = PackageName.objects.create(name=self.package_name)
 
     def test_dispatch_to_subscribers(self):
         """
@@ -340,7 +340,7 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         super(BounceMessagesTest, self).setUp()
         self.message = Message()
         self.message.add_header('Subject', 'bounce')
-        Package.objects.create(name='dummy-package')
+        PackageName.objects.create(name='dummy-package')
         self.subscribe_user_to_package('user@domain.com', 'dummy-package')
         self.user = EmailUserBounceStats.objects.get(email='user@domain.com')
 
@@ -519,7 +519,7 @@ class BounceStatsTest(TestCase):
     """
     def setUp(self):
         self.user = EmailUserBounceStats.objects.create(email='user@domain.com')
-        self.package = Package.objects.create(name='dummy-package')
+        self.package = PackageName.objects.create(name='dummy-package')
 
     def test_add_sent_message(self):
         """

@@ -15,9 +15,9 @@ Tests for the PTS core views.
 """
 from __future__ import unicode_literals
 from django.test import TestCase
-from pts.core.models import Package, BinaryPackage
-from pts.core.models import SourcePackage
-from pts.core.models import PseudoPackage
+from pts.core.models import PackageName, BinaryPackageName
+from pts.core.models import SourcePackageName
+from pts.core.models import PseudoPackageName
 import json
 
 from django.core.urlresolvers import reverse
@@ -28,10 +28,10 @@ class PackageViewTest(TestCase):
     Tests for the package view.
     """
     def setUp(self):
-        self.package = SourcePackage.objects.create(name='dummy-package')
-        self.binary_package = BinaryPackage.objects.create(
+        self.package = SourcePackageName.objects.create(name='dummy-package')
+        self.binary_package = BinaryPackageName.objects.create(
             name='binary-package', source_package=self.package)
-        self.pseudo_package = PseudoPackage.objects.create(name='pseudo-pkg')
+        self.pseudo_package = PseudoPackageName.objects.create(name='pseudo-pkg')
 
     def get_package_url(self, package_name):
         """
@@ -85,7 +85,7 @@ class PackageViewTest(TestCase):
         """
         package_name = 'sub-only-pkg'
         # Make sure the package actually exists.
-        Package.subscription_only_packages.create(name=package_name)
+        PackageName.subscription_only_packages.create(name=package_name)
 
         url = self.get_package_url(package_name)
         self.assertEqual(self.client.get(url).status_code, 404)
@@ -109,7 +109,7 @@ class PackageViewTest(TestCase):
 
         # Redirect when the package name starts with "lib"
         lib_package = 'libpackage'
-        SourcePackage.objects.create(name=lib_package)
+        SourcePackageName.objects.create(name=lib_package)
         url = url_template.format(hash='libp', package=lib_package)
         self.assertRedirects(self.client.get(url),
                              self.get_package_url(lib_package),
@@ -118,9 +118,9 @@ class PackageViewTest(TestCase):
 
 class PackageSearchViewTest(TestCase):
     def setUp(self):
-        self.pseudo_package = PseudoPackage.objects.create(name='pseudo-package')
-        self.source_package = SourcePackage.objects.create(name='dummy-package')
-        self.binary_package = BinaryPackage.objects.create(
+        self.pseudo_package = PseudoPackageName.objects.create(name='pseudo-package')
+        self.source_package = SourcePackageName.objects.create(name='dummy-package')
+        self.binary_package = BinaryPackageName.objects.create(
             name='binary-package',
             source_package=self.source_package)
 
@@ -182,12 +182,12 @@ class IndexViewTest(TestCase):
 
 class PackageAutocompleteViewTest(TestCase):
     def setUp(self):
-        SourcePackage.objects.create(name='dummy-package')
-        SourcePackage.objects.create(name='d-package')
-        SourcePackage.objects.create(name='package')
-        PseudoPackage.objects.create(name='pseudo-package')
-        PseudoPackage.objects.create(name='zzz')
-        Package.subscription_only_packages.create(name='ppp')
+        SourcePackageName.objects.create(name='dummy-package')
+        SourcePackageName.objects.create(name='d-package')
+        SourcePackageName.objects.create(name='package')
+        PseudoPackageName.objects.create(name='pseudo-package')
+        PseudoPackageName.objects.create(name='zzz')
+        PackageName.subscription_only_packages.create(name='ppp')
 
     def test_source_package_autocomplete(self):
         """

@@ -13,7 +13,7 @@ from django.core import mail
 
 from pts.core.utils import extract_email_address_from_header
 from pts.core.utils import pts_render_to_string
-from pts.core.models import Package, EmailUser, Subscription
+from pts.core.models import PackageName, EmailUser, Subscription
 import re
 
 from pts.control.tests.common import EmailControlTest
@@ -34,8 +34,8 @@ class ConfirmationTests(EmailControlTest):
         # the response mail
         self.regexp = re.compile(r'^CONFIRM (.*)$', re.MULTILINE)
         self.packages = [
-            Package.objects.create(name='dummy-package'),
-            Package.objects.create(name='other-package'),
+            PackageName.objects.create(name='dummy-package'),
+            PackageName.objects.create(name='other-package'),
         ]
 
     def user_subscribed(self, email_address, package_name):

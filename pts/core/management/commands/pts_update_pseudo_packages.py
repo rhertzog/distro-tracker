@@ -10,7 +10,7 @@
 
 from __future__ import unicode_literals
 from django.core.management.base import BaseCommand
-from pts.core.models import PseudoPackage
+from pts.core.models import PseudoPackageName
 from pts.core.retrieve_data import update_pseudo_package_list
 
 
@@ -30,5 +30,5 @@ class Command(BaseCommand):
 
         if verbose:
             self.stdout.write("The updated list of pseudo-packages is:")
-            for package in PseudoPackage.objects.all():
+            for package in PseudoPackageName.objects.all():
                 self.stdout.write('- ' + str(package))

@@ -10,7 +10,7 @@
 
 from __future__ import unicode_literals
 
-from pts.core.models import Package, EmailUser, Subscription
+from pts.core.models import PackageName, EmailUser, Subscription
 from pts.core.utils import extract_email_address_from_header
 from django.core import mail
 
@@ -31,8 +31,8 @@ class UnsubscribeallCommandTest(EmailControlTest):
         self.set_header('From',
                         'Dummy User <{user_email}>'.format(
                             user_email=self.user_email_address))
-        self.package = Package.objects.create(name='dummy-package')
-        self.other_package = Package.objects.create(name='other-package')
+        self.package = PackageName.objects.create(name='dummy-package')
+        self.other_package = PackageName.objects.create(name='other-package')
         # The user is initially subscribed to the package
         Subscription.objects.create_for(
             package_name=self.package.name,
@@ -63,7 +63,7 @@ class UnsubscribeallCommandTest(EmailControlTest):
         """
         Tests the unsubscribeall command with the confirmation.
         """
-        old_subscriptions = [pkg.name for pkg in self.user.package_set.all()]
+        old_subscriptions = [pkg.name for pkg in self.user.packagename_set.all()]
         self.set_input_lines(['unsubscribeall ' + self.user.email])
 
         self.control_process()

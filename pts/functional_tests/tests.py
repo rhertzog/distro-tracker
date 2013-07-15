@@ -14,7 +14,7 @@ Functional tests for the Package Tracking System.
 from __future__ import unicode_literals
 from django.test import LiveServerTestCase
 from django.core.urlresolvers import reverse
-from pts.core.models import SourcePackage, BinaryPackage
+from pts.core.models import SourcePackageName, BinaryPackageName
 from pts.core.panels import BasePanel
 
 from selenium import webdriver
@@ -119,9 +119,9 @@ def create_test_panel(panel_position):
 class PackagePageTest(SeleniumTestCase):
     def setUp(self):
         super(PackagePageTest, self).setUp()
-        self.package = SourcePackage.objects.create(name='dummy-package')
-        SourcePackage.objects.create(name='second-package')
-        self.binary_package = BinaryPackage.objects.create(
+        self.package = SourcePackageName.objects.create(name='dummy-package')
+        SourcePackageName.objects.create(name='second-package')
+        self.binary_package = BinaryPackageName.objects.create(
             name='binary-package',
             source_package=self.package)
 

@@ -25,7 +25,7 @@ from pts.core.utils import verp
 from pts.dispatch.custom_email_message import CustomEmailMessage
 from pts.dispatch.models import EmailUserBounceStats
 
-from pts.core.models import Package
+from pts.core.models import PackageName
 from django.conf import settings
 PTS_CONTROL_EMAIL = settings.PTS_CONTROL_EMAIL
 PTS_FQDN = settings.PTS_FQDN
@@ -142,7 +142,7 @@ def add_new_headers(received_message, package_name, keyword):
 
 
 def send_to_subscribers(received_message, package_name, keyword):
-    package = get_or_none(Package, name=package_name)
+    package = get_or_none(PackageName, name=package_name)
     if not package:
         return
     # Build a list of all messages to be sent
@@ -199,7 +199,7 @@ def handle_bounces(sent_to_address):
         email_body = pts_render_to_string(
             'dispatch/unsubscribed-due-to-bounces-email.txt', {
                 'email': user_email,
-                'packages': user.package_set.all()
+                'packages': user.packagename_set.all()
             })
         EmailMessage(
             subject='All your subscriptions from the PTS have been cancelled',

@@ -10,7 +10,7 @@
 
 from __future__ import unicode_literals
 
-from pts.core.models import Package, EmailUser
+from pts.core.models import PackageName, EmailUser
 from pts.core.models import Subscription
 
 from pts.control.tests.common import EmailControlTest
@@ -23,7 +23,7 @@ class WhichCommandTest(EmailControlTest):
     def setUp(self):
         super(WhichCommandTest, self).setUp()
         self.packages = [
-            Package.objects.create(name='package' + str(i))
+            PackageName.objects.create(name='package' + str(i))
             for i in range(10)
         ]
         self.user = EmailUser.objects.create(email='user@domain.com')

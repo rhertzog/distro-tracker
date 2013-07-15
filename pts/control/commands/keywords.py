@@ -12,7 +12,7 @@ from __future__ import unicode_literals
 
 from pts.control.commands.base import Command
 from pts.core.models import (
-    Subscription, EmailUser, Package, Keyword)
+    Subscription, EmailUser, PackageName, Keyword)
 
 from pts.core.utils import get_or_none
 
@@ -46,7 +46,7 @@ class KeywordCommandMixin(object):
             self.error_not_subscribed(email, package_name)
             return
 
-        package = get_or_none(Package, name=package_name)
+        package = get_or_none(PackageName, name=package_name)
         if not package:
             self.error('Package {package} does not exist'.format(
                 package=package_name))

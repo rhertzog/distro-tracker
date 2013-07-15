@@ -15,7 +15,7 @@ from optparse import make_option
 
 import json
 
-from pts.core.models import Package
+from pts.core.models import PackageName
 from pts.core.utils import get_or_none
 
 
@@ -47,11 +47,11 @@ class Command(BaseCommand):
         inactive = kwargs['inactive']
         self.out_packages = {}
         if len(args) == 0:
-            for package in Package.objects.all():
+            for package in PackageName.objects.all():
                 self.output_package(package, inactive)
         else:
             for package_name in args:
-                package = get_or_none(Package, name=package_name)
+                package = get_or_none(PackageName, name=package_name)
                 if package:
                     self.output_package(package, inactive)
                 else:

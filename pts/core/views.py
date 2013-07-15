@@ -16,7 +16,7 @@ from django.views.generic import View
 from django.views.decorators.cache import cache_control
 from pts.core.models import get_web_package
 from pts.core.utils import render_to_json_response
-from pts.core.models import SourcePackage, Package, PseudoPackage
+from pts.core.models import SourcePackageName, PackageName, PseudoPackageName
 from pts.core.panels import get_panels_for_package
 
 
@@ -60,14 +60,14 @@ class PackageAutocompleteView(View):
         query_string = request.GET['q']
         package_type = request.GET.get('package_type', None)
         MANAGERS = {
-            'pseudo': PseudoPackage.objects,
-            'source': SourcePackage.objects,
+            'pseudo': PseudoPackageName.objects,
+            'source': SourcePackageName.objects,
         }
         # When no package type is given include both pseudo and source packages
         filtered = MANAGERS.get(
             package_type,
-            Package.objects.exclude(
-                package_type=Package.SUBSCRIPTION_ONLY_PACKAGE_TYPE)
+            PackageName.objects.exclude(
+                package_type=PackageName.SUBSCRIPTION_ONLY_PACKAGE_TYPE)
         )
         filtered = filtered.filter(name__istartswith=query_string)
         # Extract only the name of the package.

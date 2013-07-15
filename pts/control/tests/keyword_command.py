@@ -10,7 +10,7 @@
 
 from __future__ import unicode_literals
 
-from pts.core.models import Package, EmailUser, Subscription, Keyword
+from pts.core.models import PackageName, EmailUser, Subscription, Keyword
 
 from pts.control.tests.common import EmailControlTest
 
@@ -45,7 +45,7 @@ class KeywordCommandSubscriptionSpecificTest(EmailControlTest,
         super(KeywordCommandSubscriptionSpecificTest, self).setUp()
 
         # Setup a subscription
-        self.package = Package.objects.create(name='dummy-package')
+        self.package = PackageName.objects.create(name='dummy-package')
         self.user = EmailUser.objects.create(email='user@domain.com')
         self.subscription = Subscription.objects.create(
             package=self.package,
@@ -310,7 +310,7 @@ class KeywordCommandListSubscriptionSpecific(EmailControlTest,
         super(KeywordCommandListSubscriptionSpecific, self).setUp()
 
         # Setup a subscription
-        self.package = Package.objects.create(name='dummy-package')
+        self.package = PackageName.objects.create(name='dummy-package')
         self.user = EmailUser.objects.create(email='user@domain.com')
         self.subscription = Subscription.objects.create(
             package=self.package,

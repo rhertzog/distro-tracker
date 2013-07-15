@@ -12,7 +12,7 @@ from __future__ import unicode_literals
 from django.core import mail
 
 from pts.core.utils import extract_email_address_from_header
-from pts.core.models import Package, BinaryPackage, SourcePackage
+from pts.core.models import PackageName, BinaryPackageName, SourcePackageName
 from pts.core.models import Subscription
 import re
 
@@ -29,8 +29,8 @@ class UnsubscribeFromPackageTest(EmailControlTest):
         self.set_header('From',
                         'Dummy User <{user_email}>'.format(
                             user_email=self.user_email_address))
-        self.package = Package.objects.create(name='dummy-package')
-        self.other_package = Package.objects.create(name='other-package')
+        self.package = PackageName.objects.create(name='dummy-package')
+        self.other_package = PackageName.objects.create(name='other-package')
         # The user is initially subscribed to the package
         Subscription.objects.create_for(
             package_name=self.package.name,
@@ -76,8 +76,8 @@ class UnsubscribeFromPackageTest(EmailControlTest):
         Helper method which creates a binary package for the given source
         package.
         """
-        src_pkg = SourcePackage.objects.get(name=source_package.name)
-        BinaryPackage.objects.create(
+        src_pkg = SourcePackageName.objects.get(name=source_package.name)
+        BinaryPackageName.objects.create(
             name=binary_package,
             source_package=src_pkg)
 

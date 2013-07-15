@@ -15,8 +15,8 @@ from datetime import timedelta
 
 from pts.core.utils import extract_email_address_from_header
 from pts.core.utils import get_or_none
-from pts.core.models import Package, BinaryPackage, EmailUser, Subscription
-from pts.core.models import SourcePackage
+from pts.core.models import PackageName, BinaryPackageName, EmailUser, Subscription
+from pts.core.models import SourcePackageName
 import re
 
 from pts.control.tests.common import EmailControlTest
@@ -36,7 +36,7 @@ class SubscribeToPackageTest(EmailControlTest):
         # Regular expression to extract the confirmation code from the body of
         # the response mail
         self.regexp = re.compile(r'^CONFIRM (.*)$', re.MULTILINE)
-        self.package = Package.objects.create(name='dummy-package')
+        self.package = PackageName.objects.create(name='dummy-package')
 
     def user_subscribed(self, email_address):
         """
@@ -64,8 +64,8 @@ class SubscribeToPackageTest(EmailControlTest):
         Helper method which creates a binary package for the given source
         package.
         """
-        src_pkg = SourcePackage.objects.get(name=source_package.name)
-        BinaryPackage.objects.create(
+        src_pkg = SourcePackageName.objects.get(name=source_package.name)
+        BinaryPackageName.objects.create(
             name=binary_package,
             source_package=src_pkg)
 
@@ -204,7 +204,7 @@ class SubscribeToPackageTest(EmailControlTest):
                 package=package_name))
         self.assert_confirmation_sent_to(self.user_email_address)
         # A new package was created.
-        self.assertIsNotNone(get_or_none(Package, name=package_name))
+        self.assertIsNotNone(get_or_none(PackageName, name=package_name))
 
     def test_subscribe_subscription_only_package(self):
         """
@@ -215,7 +215,7 @@ class SubscribeToPackageTest(EmailControlTest):
         Subscription.objects.create_for(
             email='user@domain.com', package_name=package_name)
         # Make sure the package actually exists before running the test
-        self.assertIsNotNone(get_or_none(Package, name=package_name))
+        self.assertIsNotNone(get_or_none(PackageName, name=package_name))
         self.add_subscribe_command(package_name)
 
         self.control_process()
@@ -233,7 +233,7 @@ class SubscribeToPackageTest(EmailControlTest):
         pseudo-package.
         """
         pseudo_package = 'pseudo-package'
-        Package.pseudo_packages.create(name=pseudo_package)
+        PackageName.pseudo_packages.create(name=pseudo_package)
         self.add_subscribe_command(pseudo_package)
 
         self.control_process()

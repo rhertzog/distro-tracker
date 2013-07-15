@@ -38,13 +38,13 @@ class Command(BaseCommand):
         if not user:
             return ('Email {email} is not subscribed to any packages. '
                     'Bad email?'.format(email=email))
-        if user.package_set.count() == 0:
+        if user.packagename_set.count() == 0:
             return 'Email {email} is not subscribed to any packages.'.format(
                 email=email)
         out = [
             'Unsubscribing {email} from {package}'.format(
                 email=email, package=package)
-            for package in user.package_set.all()
+            for package in user.packagename_set.all()
         ]
         user.unsubscribe_all()
         return '\n'.join(out)

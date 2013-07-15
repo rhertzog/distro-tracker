@@ -18,7 +18,7 @@ from django.test.utils import override_settings
 from django.core import mail
 from django.utils.six.moves import mock
 from pts.dispatch.tests import DispatchTestHelperMixin, DispatchBaseTest
-from pts.core.models import Package
+from pts.core.models import PackageName
 from pts.core.models import Developer
 from pts.core.tasks import run_task
 from pts.vendor.debian.rules import get_package_information_site_url
@@ -56,7 +56,7 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
         self.add_header('Subject', 'Some subject')
         self.set_message_content('message content')
 
-        self.package = Package.objects.create(name=self.package_name)
+        self.package = PackageName.objects.create(name=self.package_name)
 
     def test_dispatch_bts_control(self):
         """

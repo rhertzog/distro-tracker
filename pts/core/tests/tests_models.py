@@ -16,10 +16,10 @@ Tests for the PTS core module's models.
 from __future__ import unicode_literals
 from django.test import TestCase
 from django.core.exceptions import ValidationError
-from pts.core.models import Subscription, EmailUser, Package, BinaryPackage
-from pts.core.models import SourcePackage
+from pts.core.models import Subscription, EmailUser, PackageName, BinaryPackageName
+from pts.core.models import SourcePackageName
 from pts.core.models import Keyword
-from pts.core.models import PseudoPackage
+from pts.core.models import PseudoPackageName
 from pts.core.models import Repository
 from pts.core.models import Developer, SourceRepositoryEntry
 from pts.core.models import MailingList
@@ -27,7 +27,7 @@ from pts.core.models import MailingList
 
 class SubscriptionManagerTest(TestCase):
     def setUp(self):
-        self.package = Package.objects.create(name='dummy-package')
+        self.package = PackageName.objects.create(name='dummy-package')
         self.email_user = EmailUser.objects.create(email='email@domain.com')
 
     def create_subscription(self, package, email, active=True):
@@ -88,9 +88,9 @@ class SubscriptionManagerTest(TestCase):
         packages.
         """
         self.create_subscription(self.package.name, self.email_user.email)
-        p = Package.objects.create(name='temp')
+        p = PackageName.objects.create(name='temp')
         self.create_subscription(p.name, self.email_user.email)
-        package_not_subscribed_to = Package.objects.create(name='qwer')
+        package_not_subscribed_to = PackageName.objects.create(name='qwer')
         self.create_subscription(package_not_subscribed_to.name,
                                  self.email_user.email,
                                  active=False)
@@ -152,7 +152,7 @@ class SubscriptionManagerTest(TestCase):
 
 class KeywordsTest(TestCase):
     def setUp(self):
-        self.package = Package.objects.create(name='dummy-package')
+        self.package = PackageName.objects.create(name='dummy-package')
         self.email_user = EmailUser.objects.create(email='email@domain.com')
         Keyword.objects.all().delete()
         self.email_user.default_keywords.add(
@@ -202,7 +202,7 @@ class KeywordsTest(TestCase):
 
 class EmailUserTest(TestCase):
     def setUp(self):
-        self.package = Package.objects.create(name='dummy-package')
+        self.package = PackageName.objects.create(name='dummy-package')
         self.email_user = EmailUser.objects.create(email='email@domain.com')
 
     def test_is_subscribed_to(self):
@@ -259,7 +259,7 @@ class EmailUserTest(TestCase):
 
 class EmailUserManagerTest(TestCase):
     def setUp(self):
-        self.package = Package.objects.create(name='dummy-package')
+        self.package = PackageName.objects.create(name='dummy-package')
         self.email_user = EmailUser.objects.create(email='email@domain.com')
 
     def test_is_subscribed_to(self):
@@ -304,38 +304,38 @@ class EmailUserManagerTest(TestCase):
 
 class PackageManagerTest(TestCase):
     def setUp(self):
-        self.package = Package.objects.create(name='dummy-package')
+        self.package = PackageName.objects.create(name='dummy-package')
 
     def test_package_exists(self):
-        self.assertTrue(Package.objects.exists_with_name(self.package.name))
+        self.assertTrue(PackageName.objects.exists_with_name(self.package.name))
 
     def test_package_exists_false(self):
-        self.assertFalse(Package.objects.exists_with_name('unexisting'))
+        self.assertFalse(PackageName.objects.exists_with_name('unexisting'))
 
     def test_source_package_create(self):
         """
         Tests that the sources manager creates source packages.
         """
-        p = Package.source_packages.create(name='source-package')
+        p = PackageName.source_packages.create(name='source-package')
 
-        self.assertEqual(p.package_type, Package.SOURCE_PACKAGE_TYPE)
+        self.assertEqual(p.package_type, PackageName.SOURCE_PACKAGE_TYPE)
 
     def test_pseudo_package_create(self):
         """
         Tests that the pseudo packages manager creates pseudo pacakges.
         """
-        p = Package.pseudo_packages.create(name='pseudo-package')
+        p = PackageName.pseudo_packages.create(name='pseudo-package')
 
-        self.assertEqual(p.package_type, Package.PSEUDO_PACKAGE_TYPE)
+        self.assertEqual(p.package_type, PackageName.PSEUDO_PACKAGE_TYPE)
 
     def test_subscription_only_package_create(self):
         """
         Tests that the subscription only packages manager creates
         subscription only packages.
         """
-        p = Package.subscription_only_packages.create(name='package')
+        p = PackageName.subscription_only_packages.create(name='package')
 
-        self.assertEqual(p.package_type, Package.SUBSCRIPTION_ONLY_PACKAGE_TYPE)
+        self.assertEqual(p.package_type, PackageName.SUBSCRIPTION_ONLY_PACKAGE_TYPE)
 
     def test_manager_types_correct_objects(self):
         """
@@ -343,43 +343,43 @@ class PackageManagerTest(TestCase):
         associated package type.
         """
         # Make sure there are no packages in the beginning
-        Package.objects.all().delete()
-        self.assertEqual(Package.objects.count(), 0)
+        PackageName.objects.all().delete()
+        self.assertEqual(PackageName.objects.count(), 0)
 
-        src_pkg = Package.source_packages.create(name='source-package')
-        pseudo_pkg = Package.pseudo_packages.create(name='pseudo-package')
-        sub_only_pkg = Package.subscription_only_packages.create(name='package')
+        src_pkg = PackageName.source_packages.create(name='source-package')
+        pseudo_pkg = PackageName.pseudo_packages.create(name='pseudo-package')
+        sub_only_pkg = PackageName.subscription_only_packages.create(name='package')
 
         # objects manager returns all packages
-        self.assertEqual(Package.objects.count(), 3)
+        self.assertEqual(PackageName.objects.count(), 3)
         # specific pacakge type managers:
-        self.assertEqual(Package.source_packages.count(), 1)
-        self.assertIn(src_pkg, Package.source_packages.all())
-        self.assertEqual(Package.pseudo_packages.count(), 1)
-        self.assertIn(pseudo_pkg, Package.pseudo_packages.all())
-        self.assertEqual(Package.subscription_only_packages.count(), 1)
-        self.assertIn(sub_only_pkg, Package.subscription_only_packages.all())
+        self.assertEqual(PackageName.source_packages.count(), 1)
+        self.assertIn(src_pkg, PackageName.source_packages.all())
+        self.assertEqual(PackageName.pseudo_packages.count(), 1)
+        self.assertIn(pseudo_pkg, PackageName.pseudo_packages.all())
+        self.assertEqual(PackageName.subscription_only_packages.count(), 1)
+        self.assertIn(sub_only_pkg, PackageName.subscription_only_packages.all())
 
     def test_all_with_subscriptions(self):
         """
         Tests the manager method which should return a QuerySet with all
         packages that have at least one subscriber.
         """
-        pseudo_package = PseudoPackage.objects.create(name='pseudo-package')
-        sub_only_pkg = Package.subscription_only_packages.create(
+        pseudo_package = PseudoPackageName.objects.create(name='pseudo-package')
+        sub_only_pkg = PackageName.subscription_only_packages.create(
             name='sub-only-pkg')
-        Package.subscription_only_packages.create(name='sub-only-pkg-1')
+        PackageName.subscription_only_packages.create(name='sub-only-pkg-1')
 
         # When there are no subscriptions, it shouldn't return any results
-        self.assertEqual(Package.objects.all_with_subscribers().count(), 0)
+        self.assertEqual(PackageName.objects.all_with_subscribers().count(), 0)
         self.assertEqual(
-            Package.pseudo_packages.all_with_subscribers().count(),
+            PackageName.pseudo_packages.all_with_subscribers().count(),
             0)
         self.assertEqual(
-            Package.source_packages.all_with_subscribers().count(),
+            PackageName.source_packages.all_with_subscribers().count(),
             0)
         self.assertEqual(
-            Package.subscription_only_packages.all_with_subscribers().count(),
+            PackageName.subscription_only_packages.all_with_subscribers().count(),
             0)
 
         # When subscriptions are added, only the packages with subscriptions
@@ -391,50 +391,50 @@ class PackageManagerTest(TestCase):
         Subscription.objects.create_for(package_name=pseudo_package.name,
                                         email='some-user@domain.com')
 
-        self.assertEqual(Package.objects.all_with_subscribers().count(), 3)
+        self.assertEqual(PackageName.objects.all_with_subscribers().count(), 3)
         all_with_subscribers = [
             pkg.name
-            for pkg in Package.objects.all_with_subscribers()
+            for pkg in PackageName.objects.all_with_subscribers()
         ]
         self.assertIn(self.package.name, all_with_subscribers)
         self.assertIn(pseudo_package.name, all_with_subscribers)
         self.assertIn(sub_only_pkg.name, all_with_subscribers)
         # Specific managers...
         self.assertEqual(
-            Package.pseudo_packages.all_with_subscribers().count(),
+            PackageName.pseudo_packages.all_with_subscribers().count(),
             1)
         self.assertEqual(
-            Package.source_packages.all_with_subscribers().count(),
+            PackageName.source_packages.all_with_subscribers().count(),
             1)
         self.assertEqual(
-            Package.subscription_only_packages.all_with_subscribers().count(),
+            PackageName.subscription_only_packages.all_with_subscribers().count(),
             1)
 
 
 class BinaryPackageManagerTest(TestCase):
     def setUp(self):
-        self.package = SourcePackage.objects.create(name='dummy-package')
-        self.binary_package = BinaryPackage.objects.create(
+        self.package = SourcePackageName.objects.create(name='dummy-package')
+        self.binary_package = BinaryPackageName.objects.create(
             name='binary-package',
             source_package=self.package)
 
     def test_package_exists(self):
         self.assertTrue(
-            BinaryPackage.objects.exists_with_name(self.binary_package.name))
+            BinaryPackageName.objects.exists_with_name(self.binary_package.name))
 
     def test_package_exists_false(self):
         self.assertFalse(
-            BinaryPackage.objects.exists_with_name('unexisting'))
+            BinaryPackageName.objects.exists_with_name('unexisting'))
 
     def test_binary_and_source_same_name(self):
         """
         Tests that it is possible to create a binary and source package with
         the same name.
         """
-        bin_pkg = BinaryPackage.objects.create(name='package')
-        src_pkg = SourcePackage.objects.create(name='package')
-        self.assertIn(bin_pkg, BinaryPackage.objects.all())
-        self.assertIn(src_pkg, SourcePackage.objects.all())
+        bin_pkg = BinaryPackageName.objects.create(name='package')
+        src_pkg = SourcePackageName.objects.create(name='package')
+        self.assertIn(bin_pkg, BinaryPackageName.objects.all())
+        self.assertIn(src_pkg, SourcePackageName.objects.all())
 
 
 class SourceRepositoryEntryTests(TestCase):
@@ -447,7 +447,7 @@ class SourceRepositoryEntryTests(TestCase):
         """
         Tests adding a source entry to a repository instance.
         """
-        src_pkg = SourcePackage.objects.create(name='dummy-package')
+        src_pkg = SourcePackageName.objects.create(name='dummy-package')
         architectures = ['amd64', 'all']
         self.repository.add_source_package(src_pkg, **{
             'version': '0.1',
@@ -471,7 +471,7 @@ class SourceRepositoryEntryTests(TestCase):
         """
         Tests updating a source entry.
         """
-        src_pkg = SourcePackage.objects.create(name='dummy-package')
+        src_pkg = SourcePackageName.objects.create(name='dummy-package')
         architectures = ['amd64', 'all']
         self.repository.add_source_package(src_pkg, **{
             'version': '0.1',
@@ -494,8 +494,8 @@ class SourceRepositoryEntryTests(TestCase):
         # The version number is bumped up
         e.version = '0.2'
         # New binary package created.
-        self.assertEqual(BinaryPackage.objects.count(), 1)
-        self.assertEqual('bin-pkg', BinaryPackage.objects.all()[0].name)
+        self.assertEqual(BinaryPackageName.objects.count(), 1)
+        self.assertEqual('bin-pkg', BinaryPackageName.objects.all()[0].name)
 
     def test_get_main_source_package_entry_default_repo(self):
         """
@@ -507,7 +507,7 @@ class SourceRepositoryEntryTests(TestCase):
         """
         self.repository.default = True
         self.repository.save()
-        src_pkg = SourcePackage.objects.create(name='dummy-package')
+        src_pkg = SourcePackageName.objects.create(name='dummy-package')
         architectures = ['amd64', 'all']
         self.repository.add_source_package(src_pkg, **{
             'version': '0.1',
@@ -541,7 +541,7 @@ class SourceRepositoryEntryTests(TestCase):
         self.repository.default = False
         self.repository.save()
 
-        src_pkg = SourcePackage.objects.create(name='dummy-package')
+        src_pkg = SourcePackageName.objects.create(name='dummy-package')
         architectures = ['amd64', 'all']
         self.repository.add_source_package(src_pkg, **{
             'version': '0.1',
@@ -563,7 +563,7 @@ class SourceRepositoryEntryTests(TestCase):
         self.repository.default = False
         self.repository.save()
 
-        src_pkg = SourcePackage.objects.create(name='dummy-package')
+        src_pkg = SourcePackageName.objects.create(name='dummy-package')
         architectures = ['amd64', 'all']
         self.repository.add_source_package(src_pkg, **{
             'version': '0.1',
@@ -596,7 +596,7 @@ class SourceRepositoryEntryTests(TestCase):
         This mapping determines to which source package users are redirected
         when they attempt to access this binary package.
         """
-        src_pkg = SourcePackage.objects.create(name='dummy-package')
+        src_pkg = SourcePackageName.objects.create(name='dummy-package')
         architectures = ['amd64', 'all']
         self.repository.add_source_package(src_pkg, **{
             'binary_packages': ['binary-package'],
@@ -607,7 +607,7 @@ class SourceRepositoryEntryTests(TestCase):
             },
             'architectures': architectures,
         })
-        src_pkg2 = SourcePackage.objects.create(name='src-pkg')
+        src_pkg2 = SourcePackageName.objects.create(name='src-pkg')
         self.repository.add_source_package(src_pkg2, **{
             'binary_packages': ['binary-package'],
             'version': '0.2',
@@ -619,7 +619,7 @@ class SourceRepositoryEntryTests(TestCase):
         })
 
         # Sanity check - linked to the original source package
-        bin_pkg = BinaryPackage.objects.get(name='binary-package')
+        bin_pkg = BinaryPackageName.objects.get(name='binary-package')
         self.assertEqual(bin_pkg.source_package, src_pkg)
 
         # Remove the original source package
@@ -627,14 +627,14 @@ class SourceRepositoryEntryTests(TestCase):
         bin_pkg.update_source_mapping()
 
         # The package is now mapped to the other source package.
-        bin_pkg = BinaryPackage.objects.get(name='binary-package')
+        bin_pkg = BinaryPackageName.objects.get(name='binary-package')
         self.assertEqual(bin_pkg.source_package, src_pkg2)
 
     def test_get_directory_url(self):
         """
         Tests retrieving the URL of the package's directory from the entry.
         """
-        src_pkg = SourcePackage.objects.create(name='dummy-package')
+        src_pkg = SourcePackageName.objects.create(name='dummy-package')
         architectures = ['amd64', 'all']
         self.repository.add_source_package(src_pkg, **{
             'binary_packages': ['binary-package'],
@@ -657,7 +657,7 @@ class SourceRepositoryEntryTests(TestCase):
         """
         Tests retrieving the URL of the package's .dsc file given in the entry.
         """
-        src_pkg = SourcePackage.objects.create(name='dummy-package')
+        src_pkg = SourcePackageName.objects.create(name='dummy-package')
         architectures = ['amd64', 'all']
         self.repository.add_source_package(src_pkg, **{
             'binary_packages': ['binary-package'],

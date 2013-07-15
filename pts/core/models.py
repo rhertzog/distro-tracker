@@ -58,8 +58,8 @@ class EmailUser(models.Model):
         ``package`` can be either a str representing the name of the package
         or a ``Package`` instance.
         """
-        if not isinstance(package, Package):
-            package = get_or_none(Package, name=package)
+        if not isinstance(package, PackageName):
+            package = get_or_none(PackageName, name=package)
             if not package:
                 return False
 
@@ -83,7 +83,7 @@ class EmailUser(models.Model):
 
 class PackageManager(models.Manager):
     """
-    A custom Manager for the ``Package`` model.
+    A custom Manager for the ``PackageName`` model.
     """
     def __init__(self, package_type=None, *args, **kwargs):
         super(PackageManager, self).__init__(*args, **kwargs)
@@ -123,7 +123,7 @@ class PackageManager(models.Manager):
         return qs.filter(subscriber_count__gt=0)
 
 
-class BasePackage(models.Model):
+class BasePackageName(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
     class Meta:
@@ -131,7 +131,7 @@ class BasePackage(models.Model):
 
 
 @python_2_unicode_compatible
-class Package(BasePackage):
+class PackageName(BasePackageName):
     SOURCE_PACKAGE_TYPE = 0
     PSEUDO_PACKAGE_TYPE = 1
     SUBSCRIPTION_ONLY_PACKAGE_TYPE = 2
@@ -153,11 +153,11 @@ class Package(BasePackage):
         return self.name
 
 
-class PseudoPackage(Package):
+class PseudoPackageName(PackageName):
     class Meta:
         proxy = True
 
-    objects = PackageManager(Package.PSEUDO_PACKAGE_TYPE)
+    objects = PackageManager(PackageName.PSEUDO_PACKAGE_TYPE)
 
     def get_absolute_url(self):
         return reverse('pts-package-page', kwargs={
@@ -165,11 +165,11 @@ class PseudoPackage(Package):
         })
 
 
-class SourcePackage(Package):
+class SourcePackageName(PackageName):
     class Meta:
         proxy = True
 
-    objects = PackageManager(Package.SOURCE_PACKAGE_TYPE)
+    objects = PackageManager(PackageName.SOURCE_PACKAGE_TYPE)
 
     def get_absolute_url(self):
         return reverse('pts-package-page', kwargs={
@@ -208,23 +208,23 @@ def get_web_package(package_name):
 
     If that is not possible, ``None`` is returned.
     """
-    if SourcePackage.objects.exists_with_name(package_name):
-        return SourcePackage.objects.get(name=package_name)
-    elif PseudoPackage.objects.exists_with_name(package_name):
-        return PseudoPackage.objects.get(name=package_name)
-    elif BinaryPackage.objects.exists_with_name(package_name):
-        binary_package = BinaryPackage.objects.get(name=package_name)
+    if SourcePackageName.objects.exists_with_name(package_name):
+        return SourcePackageName.objects.get(name=package_name)
+    elif PseudoPackageName.objects.exists_with_name(package_name):
+        return PseudoPackageName.objects.get(name=package_name)
+    elif BinaryPackageName.objects.exists_with_name(package_name):
+        binary_package = BinaryPackageName.objects.get(name=package_name)
         return binary_package.source_package
 
     return None
 
 class SubscriptionManager(models.Manager):
     def create_for(self, package_name, email, active=True):
-        package = get_or_none(Package, name=package_name)
+        package = get_or_none(PackageName, name=package_name)
         if not package:
             # If the package did not previously exist, create a
             # "subscriptions-only" package.
-            package = Package.subscription_only_packages.create(
+            package = PackageName.subscription_only_packages.create(
                 name=package_name)
         email_user, created = EmailUser.objects.get_or_create(
             email=email)
@@ -237,7 +237,7 @@ class SubscriptionManager(models.Manager):
         return subscription
 
     def unsubscribe(self, package_name, email):
-        package = get_or_none(Package, name=package_name)
+        package = get_or_none(PackageName, name=package_name)
         email_user = get_or_none(EmailUser, email=email)
         if not package or not email_user:
             return False
@@ -276,7 +276,7 @@ class SubscriptionManager(models.Manager):
 @python_2_unicode_compatible
 class Subscription(models.Model):
     email_user = models.ForeignKey(EmailUser)
-    package = models.ForeignKey(Package)
+    package = models.ForeignKey(PackageName)
     active = models.BooleanField(default=True)
     _keywords = models.ManyToManyField(Keyword)
     _use_user_default_keywords = models.BooleanField(default=True)
@@ -373,9 +373,9 @@ class BinaryPackageManager(models.Manager):
 
 
 @python_2_unicode_compatible
-class BinaryPackage(BasePackage):
+class BinaryPackageName(BasePackageName):
     source_package = models.ForeignKey(
-        SourcePackage,
+        SourcePackageName,
         on_delete=models.SET_NULL,
         null=True)
 
@@ -507,7 +507,7 @@ class Repository(models.Model):
             if Architecture.objects.filter(name=arch).exists()
         ]
         arguments['binary_packages'] = [
-            BinaryPackage.objects.get_or_create(name=pkg, defaults={
+            BinaryPackageName.objects.get_or_create(name=pkg, defaults={
                 'source_package': src_pkg
             })[0]
             for pkg in arguments.get('binary_packages', [])
@@ -603,14 +603,14 @@ class Developer(models.Model):
 @python_2_unicode_compatible
 class SourceRepositoryEntry(models.Model):
     source_package = models.ForeignKey(
-        SourcePackage,
+        SourcePackageName,
         related_name='repository_entries')
     repository = models.ForeignKey(Repository)
     version = models.CharField(max_length=50)
 
     standards_version = models.CharField(max_length=550, blank=True)
     architectures = models.ManyToManyField(Architecture, blank=True)
-    binary_packages = models.ManyToManyField(BinaryPackage, blank=True)
+    binary_packages = models.ManyToManyField(BinaryPackageName, blank=True)
 
     maintainer = models.ForeignKey(
         Developer,
@@ -667,7 +667,7 @@ class SourceRepositoryEntry(models.Model):
 
 @python_2_unicode_compatible
 class PackageExtractedInfo(models.Model):
-    package = models.ForeignKey(Package)
+    package = models.ForeignKey(PackageName)
     key = models.CharField(max_length='50')
     value = JSONField()
 

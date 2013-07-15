@@ -18,9 +18,9 @@ from pts.control.management.commands.pts_stats import Command as StatsCommand
 from django.core.management import call_command
 from django.core.management.base import CommandError
 
-from pts.core.models import Package, EmailUser, Subscription
+from pts.core.models import PackageName, EmailUser, Subscription
 from pts.core.models import Keyword
-from pts.core.models import SourcePackage, PseudoPackage
+from pts.core.models import SourcePackageName, PseudoPackageName
 
 from django.utils import six
 from django.utils import timezone
@@ -30,8 +30,8 @@ import json
 class UnsubscribeAllManagementCommand(TestCase):
     def setUp(self):
         self.packages = [
-            Package.objects.create(name='dummy-package'),
-            Package.objects.create(name='second-package'),
+            PackageName.objects.create(name='dummy-package'),
+            PackageName.objects.create(name='second-package'),
         ]
         self.user = EmailUser.objects.create(email='email-user@domain.com')
         for package in self.packages:
@@ -110,7 +110,7 @@ class UnsubscribeAllManagementCommand(TestCase):
 class DumpSubscribersManagementCommandTest(TestCase):
     def setUp(self):
         self.packages = [
-            Package.objects.create(name='package' + str(i))
+            PackageName.objects.create(name='package' + str(i))
             for i in range(5)
         ]
         self.users = [
@@ -217,16 +217,16 @@ class StatsCommandTest(TestCase):
     def setUp(self):
         self.package_count = 5
         for i in range(self.package_count):
-            SourcePackage.objects.create(name='package' + str(i))
+            SourcePackageName.objects.create(name='package' + str(i))
         # Add some pseudo packages in the mix
-        PseudoPackage.objects.create(name='pseudo')
+        PseudoPackageName.objects.create(name='pseudo')
         self.user_count = 2
         for i in range(self.user_count):
             EmailUser.objects.create(email='email' + str(i) + '@domain.com')
         # Subscribe all users to all source packages
         self.subscription_count = self.package_count * self.user_count
         for user in EmailUser.objects.all():
-            for package in SourcePackage.objects.all():
+            for package in SourcePackageName.objects.all():
                 Subscription.objects.create(email_user=user, package=package)
 
     def call_command(self, *args, **kwargs):
@@ -298,7 +298,7 @@ class AddKeywordManagementCommandTest(TransactionTestCase):
         existing_keyword = Keyword.objects.create(name='existing-keyword')
         # A user who added the existing keyword to its subscription keywords
         u = EmailUser.objects.create(email='subscription-user@domain.com')
-        p = Package.objects.create(name='dummy-package')
+        p = PackageName.objects.create(name='dummy-package')
         sub = Subscription.objects.create(email_user=u, package=p)
         sub.keywords.add(existing_keyword)
         sub.save()
@@ -343,7 +343,7 @@ class AddKeywordManagementCommandTest(TransactionTestCase):
         """
         Keyword.objects.create(name='existing-keyword')
         u = EmailUser.objects.create(email='subscription-user@domain.com')
-        p = Package.objects.create(name='dummy-package')
+        p = PackageName.objects.create(name='dummy-package')
         sub = Subscription.objects.create(email_user=u, package=p)
 
         call_command('pts_add_keyword', 'new-keyword', 'existing-keyword')
@@ -401,7 +401,7 @@ class AddKeywordManagementCommandTest(TransactionTestCase):
         existing_keyword = Keyword.objects.create(name='existing-keyword')
         # A user who added the existing keyword to its subscription keywords
         user1 = EmailUser.objects.create(email='subscription-user@domain.com')
-        p = Package.objects.create(name='dummy-package')
+        p = PackageName.objects.create(name='dummy-package')
         sub = Subscription.objects.create(email_user=user1, package=p)
         sub.keywords.add(existing_keyword)
         sub.save()

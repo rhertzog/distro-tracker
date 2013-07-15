@@ -10,13 +10,13 @@
 
 from __future__ import unicode_literals
 from pts import vendor
-from pts.core.models import PseudoPackage, Package
+from pts.core.models import PseudoPackageName, PackageName
 from pts.core.models import Repository
 from pts.core.models import PackageExtractedInfo
-from pts.core.models import BinaryPackage
+from pts.core.models import BinaryPackageName
 from pts.core.tasks import BaseTask
 from pts.core.tasks import clear_all_events_on_exception
-from pts.core.models import SourcePackage, Architecture
+from pts.core.models import SourcePackageName, Architecture
 from django.utils.six import reraise
 from django import db
 from django.db import transaction
@@ -47,11 +47,11 @@ def update_pseudo_package_list():
 
     # Faster lookups than if this were a list
     pseudo_packages = set(pseudo_packages)
-    for existing_package in PseudoPackage.objects.all():
+    for existing_package in PseudoPackageName.objects.all():
         if existing_package.name not in pseudo_packages:
             # Existing packages which are no longer considered pseudo packages are
             # demoted to a subscription-only package.
-            existing_package.package_type = Package.SUBSCRIPTION_ONLY_PACKAGE_TYPE
+            existing_package.package_type = PackageName.SUBSCRIPTION_ONLY_PACKAGE_TYPE
             existing_package.save()
         else:
             # If an existing package remained a pseudo package there will be no
@@ -60,7 +60,7 @@ def update_pseudo_package_list():
 
     # The left over packages in the set are the ones that do not exist.
     for package_name in pseudo_packages:
-        PseudoPackage.objects.create(name=package_name)
+        PseudoPackageName.objects.create(name=package_name)
 
 
 def retrieve_repository_info(sources_list_entry):
@@ -280,7 +280,7 @@ class UpdateRepositoriesTask(PackageUpdateTask):
     def _update_sources_file(self, repository, sources_file):
         for stanza in deb822.Sources.iter_paragraphs(file(sources_file)):
             db.reset_queries()
-            src_pkg, created = SourcePackage.objects.get_or_create(
+            src_pkg, created = SourcePackageName.objects.get_or_create(
                 name=stanza['package']
             )
             entry = extract_information_from_sources_entry(stanza)
@@ -307,8 +307,8 @@ class UpdateRepositoriesTask(PackageUpdateTask):
     def _update_binary_mapping(self):
         processed = set()
         for package in self._updated_packages:
-            package = SourcePackage.objects.get(name=package)
-            for bin_pkg in BinaryPackage.objects.filter_by_source(package):
+            package = SourcePackageName.objects.get(name=package)
+            for bin_pkg in BinaryPackageName.objects.filter_by_source(package):
                 if bin_pkg in processed:
                     # No need to update a binary package more than once.
                     continue
@@ -321,7 +321,7 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                     )
                     processed.add(bin_pkg)
         # Remove binary packages which no longer have a matching source package
-        qs = BinaryPackage.objects.filter_no_source()
+        qs = BinaryPackageName.objects.filter_no_source()
         for bin_pkg in qs:
             self.raise_event('binary-package-removed', {
                 'name': bin_pkg.name
@@ -329,7 +329,7 @@ class UpdateRepositoriesTask(PackageUpdateTask):
         qs.delete()
 
     def _remove_obsolete_source_packages(self):
-        qs = SourcePackage.objects.exclude(name__in=self._all_packages)
+        qs = SourcePackageName.objects.exclude(name__in=self._all_packages)
         for package in qs:
             self.raise_event('source-package-removed', {
                 'name': package.name,
@@ -385,7 +385,7 @@ class UpdatePackageGeneralInformation(PackageUpdateTask):
     def execute(self):
         with transaction.commit_on_success():
             for package_name in self.packages:
-                package = SourcePackage.objects.get(name=package_name)
+                package = SourcePackageName.objects.get(name=package_name)
                 entry = package.main_entry
                 if entry is None:
                     continue
@@ -435,7 +435,7 @@ class UpdateVersionInformation(PackageUpdateTask):
     def execute(self):
         with transaction.commit_on_success():
             for package_name in self.packages:
-                package = SourcePackage.objects.get(name=package_name)
+                package = SourcePackageName.objects.get(name=package_name)
 
                 versions, _ = PackageExtractedInfo.objects.get_or_create(
                     key='versions',
@@ -468,14 +468,14 @@ class UpdateSourceToBinariesInformation(PackageUpdateTask):
                     pkg.source_package.main_entry.repository.name),
                 'name': pkg.name,
             }
-            for pkg in package.binarypackage_set.all()
+            for pkg in package.binarypackagename_set.all()
         ]
 
     @clear_all_events_on_exception
     def execute(self):
         with transaction.commit_on_success():
             for package_name in self.packages:
-                package = SourcePackage.objects.get(name=package_name)
+                package = SourcePackageName.objects.get(name=package_name)
 
                 binaries, _ = PackageExtractedInfo.objects.get_or_create(
                     key='binaries',

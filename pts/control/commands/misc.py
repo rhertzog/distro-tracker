@@ -12,8 +12,8 @@ from __future__ import unicode_literals
 
 from pts.core.utils import get_or_none
 from pts.core.utils import pts_render_to_string
-from pts.core.models import Subscription, EmailUser, Package, BinaryPackage
-from pts.core.models import SourcePackage, PseudoPackage
+from pts.core.models import Subscription, EmailUser, PackageName, BinaryPackageName
+from pts.core.models import SourcePackageName, PseudoPackageName
 from pts.control.commands.confirmation import needs_confirmation
 from pts.control.commands.base import Command
 
@@ -55,9 +55,9 @@ class SubscribeCommand(Command):
                 package=self.package))
             return False
 
-        if not SourcePackage.objects.exists_with_name(self.package):
-            if BinaryPackage.objects.exists_with_name(self.package):
-                binary_package = BinaryPackage.objects.get_by_name(self.package)
+        if not SourcePackageName.objects.exists_with_name(self.package):
+            if BinaryPackageName.objects.exists_with_name(self.package):
+                binary_package = BinaryPackageName.objects.get_by_name(self.package)
                 self.warn('{package} is not a source package.'.format(
                     package=self.package))
                 self.reply('{package} is the source package '
@@ -69,7 +69,7 @@ class SubscribeCommand(Command):
                 self.warn(
                     '{package} is neither a source package '
                     'nor a binary package.'.format(package=self.package))
-                if PseudoPackage.objects.exists_with_name(self.package):
+                if PseudoPackageName.objects.exists_with_name(self.package):
                     self.warn('Package {package} is a pseudo package.'.format(
                         package=self.package))
                 else:
@@ -128,9 +128,9 @@ class UnsubscribeCommand(Command):
             self.package, self.user_email)
 
     def pre_confirm(self):
-        if not Package.objects.exists_with_name(self.package):
-            if BinaryPackage.objects.exists_with_name(self.package):
-                binary_package = BinaryPackage.objects.get_by_name(self.package)
+        if not PackageName.objects.exists_with_name(self.package):
+            if BinaryPackageName.objects.exists_with_name(self.package):
+                binary_package = BinaryPackageName.objects.get_by_name(self.package)
                 self.warn('{package} is not a source package.'.format(
                     package=self.package))
                 self.reply('{package} is the source package '
@@ -223,7 +223,7 @@ class WhoCommand(Command):
         return super(WhoCommand, self).get_command_text(self.package_name)
 
     def handle(self):
-        package = get_or_none(Package, name=self.package_name)
+        package = get_or_none(PackageName, name=self.package_name)
         if not package:
             self.error('Package {package} does not exist'.format(
                 package=self.package_name))

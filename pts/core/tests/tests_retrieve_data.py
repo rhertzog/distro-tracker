@@ -18,9 +18,9 @@ from django.test import TestCase, TransactionTestCase
 from django.test.utils import override_settings
 from django.utils.six.moves import mock
 from pts.core.tasks import run_task
-from pts.core.models import Subscription, EmailUser, Package, BinaryPackage
-from pts.core.models import SourcePackage
-from pts.core.models import PseudoPackage
+from pts.core.models import Subscription, EmailUser, PackageName, BinaryPackageName
+from pts.core.models import SourcePackageName
+from pts.core.models import PseudoPackageName
 from pts.core.models import Repository
 from pts.core.retrieve_data import UpdateRepositoriesTask
 from pts.core.retrieve_data import retrieve_repository_info
@@ -64,7 +64,7 @@ class RetrievePseudoPackagesTest(TestCase):
         Helper method adds the given packages to the database.
         """
         for package in packages:
-            PseudoPackage.objects.create(name=package)
+            PseudoPackageName.objects.create(name=package)
 
     def test_all_pseudo_packages_added(self):
         """
@@ -75,7 +75,7 @@ class RetrievePseudoPackagesTest(TestCase):
 
         self.assertSequenceEqual(
             sorted(self.packages),
-            sorted([package.name for package in PseudoPackage.objects.all()])
+            sorted([package.name for package in PseudoPackageName.objects.all()])
         )
 
     def test_pseudo_package_exists(self):
@@ -89,7 +89,7 @@ class RetrievePseudoPackagesTest(TestCase):
 
         self.assertSequenceEqual(
             sorted(self.packages),
-            sorted([package.name for package in PseudoPackage.objects.all()])
+            sorted([package.name for package in PseudoPackageName.objects.all()])
         )
 
     def test_pseudo_package_update(self):
@@ -104,7 +104,7 @@ class RetrievePseudoPackagesTest(TestCase):
 
         self.assertSequenceEqual(
             sorted(self.packages),
-            sorted([package.name for package in PseudoPackage.objects.all()])
+            sorted([package.name for package in PseudoPackageName.objects.all()])
         )
 
     def test_pseudo_package_update_remove(self):
@@ -122,14 +122,14 @@ class RetrievePseudoPackagesTest(TestCase):
         # package
         self.assertSequenceEqual(
             sorted(self.packages),
-            sorted([package.name for package in PseudoPackage.objects.all()])
+            sorted([package.name for package in PseudoPackageName.objects.all()])
         )
         # Old pseudo packages are now demoted to subscription-only packages
         self.assertSequenceEqual(
             sorted(old_packages),
             sorted([
                 pkg.name
-                for pkg in Package.subscription_only_packages.all()
+                for pkg in PackageName.subscription_only_packages.all()
             ])
         )
 
@@ -147,7 +147,7 @@ class RetrievePseudoPackagesTest(TestCase):
 
         self.assertSequenceEqual(
             sorted(self.packages),
-            sorted([package.name for package in PseudoPackage.objects.all()])
+            sorted([package.name for package in PseudoPackageName.objects.all()])
         )
 
     def test_subscriptions_remain_after_update(self):
@@ -183,13 +183,13 @@ class RetrievePseudoPackagesTest(TestCase):
         old_packages = self.packages
         self.packages = []
         # Sanity check: there were no subscription-only packages originaly
-        self.assertEqual(Package.subscription_only_packages.count(),
+        self.assertEqual(PackageName.subscription_only_packages.count(),
                          0)
 
         self.update_pseudo_package_list()
 
-        self.assertEqual(PseudoPackage.objects.count(), 0)
-        self.assertEqual(Package.subscription_only_packages.count(),
+        self.assertEqual(PseudoPackageName.objects.count(), 0)
+        self.assertEqual(PackageName.subscription_only_packages.count(),
                          len(old_packages))
 
     @mock.patch('pts.core.retrieve_data.update_pseudo_package_list')
@@ -389,12 +389,12 @@ class RetrieveSourcesInformationTest(TestCase):
 
         self.run_update()
 
-        self.assertEqual(SourcePackage.objects.count(), 1)
+        self.assertEqual(SourcePackageName.objects.count(), 1)
         self.assertIn(
             'chromium-browser',
-            [pkg.name for pkg in SourcePackage.objects.all()]
+            [pkg.name for pkg in SourcePackageName.objects.all()]
         )
-        self.assertEqual(BinaryPackage.objects.count(), 8)
+        self.assertEqual(BinaryPackageName.objects.count(), 8)
         self.assert_events_raised(['source-package-created'])
 
     @mock.patch('pts.core.retrieve_data.AptCache.update_repositories')
@@ -403,21 +403,21 @@ class RetrieveSourcesInformationTest(TestCase):
         Tests that when an existing source repository is changed in the newly
         retrieved data, it is updated in the database.
         """
-        SourcePackage.objects.create(name='chromium-browser')
+        SourcePackageName.objects.create(name='chromium-browser')
         # Sanity check - there were no binary packages
-        self.assertEqual(BinaryPackage.objects.count(), 0)
+        self.assertEqual(BinaryPackageName.objects.count(), 0)
 
         self.set_mock_sources(mock_update_repositories, 'Sources')
 
         self.run_update()
 
         # Still one source package.
-        self.assertEqual(SourcePackage.objects.count(), 1)
+        self.assertEqual(SourcePackageName.objects.count(), 1)
         self.assert_package_by_name_in(
             'chromium-browser',
-            SourcePackage.objects.all()
+            SourcePackageName.objects.all()
         )
-        self.assertEqual(BinaryPackage.objects.count(), 8)
+        self.assertEqual(BinaryPackageName.objects.count(), 8)
         self.assert_events_raised(['source-package-updated'])
 
     @mock.patch('pts.core.retrieve_data.AptCache.update_repositories')
@@ -433,7 +433,7 @@ class RetrieveSourcesInformationTest(TestCase):
         self.clear_events()
         self.run_update()
 
-        self.assertEqual(SourcePackage.objects.count(), 1)
+        self.assertEqual(SourcePackageName.objects.count(), 1)
         # No events emitted since nothing was done.
         self.assertEqual(len(self.caught_events), 0)
 
@@ -445,7 +445,7 @@ class RetrieveSourcesInformationTest(TestCase):
         """
         self.set_mock_sources(mock_update, 'Sources-minimal-1')
 
-        src_pkg = SourcePackage.objects.create(name='dummy-package')
+        src_pkg = SourcePackageName.objects.create(name='dummy-package')
         self.repository.add_source_package(src_pkg, **{
             'version': '0.1',
             'maintainer': {
@@ -454,7 +454,7 @@ class RetrieveSourcesInformationTest(TestCase):
             },
             'architectures': ['amd64', 'all'],
         })
-        src_pkg2 = SourcePackage.objects.create(name='src_pkg')
+        src_pkg2 = SourcePackageName.objects.create(name='src_pkg')
         self.repository.add_source_package(src_pkg2, **{
             'binary_packages': ['dummy-package-binary', 'other-package'],
             'version': '2.1',
@@ -465,32 +465,32 @@ class RetrieveSourcesInformationTest(TestCase):
             'architectures': ['amd64', 'all'],
         })
         # Sanity check: the binary package now exists
-        self.assertEqual(BinaryPackage.objects.count(), 2)
+        self.assertEqual(BinaryPackageName.objects.count(), 2)
         self.assert_package_by_name_in(
             'dummy-package-binary',
-            BinaryPackage.objects.all()
+            BinaryPackageName.objects.all()
         )
 
         self.run_update()
 
         # Both source packages are still here
-        self.assertEqual(SourcePackage.objects.count(), 2)
+        self.assertEqual(SourcePackageName.objects.count(), 2)
         self.assert_package_by_name_in(
             'dummy-package',
-            SourcePackage.objects.all()
+            SourcePackageName.objects.all()
         )
         self.assert_package_by_name_in(
             'src_pkg',
-            SourcePackage.objects.all()
+            SourcePackageName.objects.all()
         )
-        src_pkg = SourcePackage.objects.get(name='dummy-package')
+        src_pkg = SourcePackageName.objects.get(name='dummy-package')
         # The binary package still exists
         self.assert_package_by_name_in(
             'dummy-package-binary',
-            BinaryPackage.objects.all()
+            BinaryPackageName.objects.all()
         )
         # The binary package is now linked with a different source package
-        bin_pkg = BinaryPackage.objects.get(name='dummy-package-binary')
+        bin_pkg = BinaryPackageName.objects.get(name='dummy-package-binary')
         self.assertEqual(bin_pkg.source_package, src_pkg)
 
         self.assert_events_raised([
@@ -508,7 +508,7 @@ class RetrieveSourcesInformationTest(TestCase):
         """
         self.set_mock_sources(mock_update, 'Sources-minimal')
 
-        src_pkg = SourcePackage.objects.create(name='dummy-package')
+        src_pkg = SourcePackageName.objects.create(name='dummy-package')
         self.repository.add_source_package(src_pkg, **{
             'version': '0.1',
             'maintainer': {
@@ -517,7 +517,7 @@ class RetrieveSourcesInformationTest(TestCase):
             },
             'architectures': ['amd64', 'all'],
         })
-        src_pkg2 = SourcePackage.objects.create(name='src_pkg')
+        src_pkg2 = SourcePackageName.objects.create(name='src_pkg')
         self.repository.add_source_package(src_pkg2, **{
             'binary_packages': ['dummy-package-binary'],
             'version': '2.1',
@@ -528,28 +528,28 @@ class RetrieveSourcesInformationTest(TestCase):
             'architectures': ['amd64', 'all'],
         })
         # Sanity check: the binary package now exists
-        self.assertEqual(BinaryPackage.objects.count(), 1)
+        self.assertEqual(BinaryPackageName.objects.count(), 1)
         self.assert_package_by_name_in(
             'dummy-package-binary',
-            BinaryPackage.objects.all()
+            BinaryPackageName.objects.all()
         )
 
         self.run_update()
 
         # There is only one source package left
-        self.assertEqual(SourcePackage.objects.count(), 1)
+        self.assertEqual(SourcePackageName.objects.count(), 1)
         self.assert_package_by_name_in(
             'dummy-package',
-            SourcePackage.objects.all()
+            SourcePackageName.objects.all()
         )
-        src_pkg = SourcePackage.objects.get(name='dummy-package')
+        src_pkg = SourcePackageName.objects.get(name='dummy-package')
         # The binary package still exists
         self.assert_package_by_name_in(
             'dummy-package-binary',
-            BinaryPackage.objects.all()
+            BinaryPackageName.objects.all()
         )
         # The binary package is now linked with a different source package
-        bin_pkg = BinaryPackage.objects.get(name='dummy-package-binary')
+        bin_pkg = BinaryPackageName.objects.get(name='dummy-package-binary')
         self.assertEqual(bin_pkg.source_package, src_pkg)
 
         self.assert_events_raised([
@@ -564,7 +564,7 @@ class RetrieveSourcesInformationTest(TestCase):
         Test the scenario when new data removes an existing binary package.
         """
         self.set_mock_sources(mock_update, 'Sources-minimal')
-        src_pkg = SourcePackage.objects.create(name='dummy-package')
+        src_pkg = SourcePackageName.objects.create(name='dummy-package')
         self.repository.add_source_package(src_pkg, **{
             'binary_packages': ['some-package'],
             'version': '0.1',
@@ -577,19 +577,19 @@ class RetrieveSourcesInformationTest(TestCase):
         # Sanity check -- the binary package exists.
         self.assert_package_by_name_in(
             'some-package',
-            BinaryPackage.objects.all()
+            BinaryPackageName.objects.all()
         )
 
         self.run_update()
 
         # The package should no longer exist.
-        self.assertEqual(BinaryPackage.objects.count(), 1)
+        self.assertEqual(BinaryPackageName.objects.count(), 1)
         self.assert_package_by_name_in(
             'dummy-package-binary',
-            BinaryPackage.objects.all()
+            BinaryPackageName.objects.all()
         )
         # The new binary package is now mapped to the existing source package
-        bin_pkg = BinaryPackage.objects.get(name='dummy-package-binary')
+        bin_pkg = BinaryPackageName.objects.get(name='dummy-package-binary')
         self.assertEqual(bin_pkg.source_package, src_pkg)
         # All events?
         self.assert_events_raised([
@@ -678,7 +678,7 @@ class RetrieveSourcesFailureTest(TransactionTestCase):
         self.run_update()
 
         # Nothing was created
-        self.assertEqual(SourcePackage.objects.count(), 0)
-        self.assertEqual(BinaryPackage.objects.count(), 0)
+        self.assertEqual(SourcePackageName.objects.count(), 0)
+        self.assertEqual(BinaryPackageName.objects.count(), 0)
         # No events raised
         self.assert_events_raised([])
