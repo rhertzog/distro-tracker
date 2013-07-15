@@ -148,7 +148,14 @@ class AptCache(object):
             return True
 
     def __init__(self):
-        self.cache_root_dir = settings.PTS_CACHE_DIRECTORY
+        # The root cache directory is a subdirectory in the PTS_CACHE_DIRECTORY
+        self.cache_root_dir = os.path.join(
+            settings.PTS_CACHE_DIRECTORY,
+            'apt-cache'
+        )
+        # Create the cache directory if it didn't already exist
+        self._create_cache_directory()
+
         self.sources_list_path = os.path.join(
             self.cache_root_dir,
             'sources.list')
@@ -156,6 +163,10 @@ class AptCache(object):
 
         self.sources = []
         self.packages = []
+
+    def _create_cache_directory(self):
+        if not os.path.exists(self.cache_root_dir):
+            os.makedirs(self.cache_root_dir)
 
     def update_sources_list(self):
         with open(self.sources_list_path, 'w') as sources_list:
