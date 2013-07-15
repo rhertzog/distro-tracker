@@ -71,8 +71,14 @@ class RetrieveDebianMaintainersTask(BaseTask):
 
 class RetrieveLowThresholdNmuTask(BaseTask):
     def _retrieve_emails(self):
-        response = requests.get('http://wiki.debian.org/LowThresholdNmu?action=raw')
+        url = 'http://wiki.debian.org/LowThresholdNmu?action=raw'
+        cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
+        if not cache.is_expired(url):
+            return
+        response, updated = cache.update(url)
         response.raise_for_status()
+        if not updated:
+            return
 
         emails = []
         devel_php_RE = re.compile(

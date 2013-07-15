@@ -248,11 +248,13 @@ class RetrieveLowThresholdNmuTest(TestCase):
         """
         mock_response = mock_requests.models.Response()
         mock_response.status_code = status_code
+        mock_response.ok = status_code < 400
         mock_response.text = text
+        mock_response.content = text.encode('utf-8')
         mock_response.iter_lines.return_value = text.splitlines()
         mock_requests.get.return_value = mock_response
 
-    @mock.patch('pts.vendor.debian.tasks.requests')
+    @mock.patch('pts.core.utils.http.requests')
     def test_developer_did_not_exist(self, mock_requests):
         """
         Tests updating the list of developers that allow the low threshold
@@ -272,7 +274,7 @@ class RetrieveLowThresholdNmuTest(TestCase):
         d = DebianContributor.objects.all()[0]
         self.assertTrue(d.agree_with_low_threshold_nmu)
 
-    @mock.patch('pts.vendor.debian.tasks.requests')
+    @mock.patch('pts.core.utils.http.requests')
     def test_developer_existed(self, mock_requests):
         """
         Tests updating the list of developers that allow the low threshold
@@ -295,7 +297,7 @@ class RetrieveLowThresholdNmuTest(TestCase):
         # The name of the original developer model has not changed.
         self.assertEqual('Name', d.developer.name)
 
-    @mock.patch('pts.vendor.debian.tasks.requests')
+    @mock.patch('pts.core.utils.http.requests')
     def test_developer_remove_nmu(self, mock_requests):
         """
         Tests updating the list of NMU developers when one of them needs to be
