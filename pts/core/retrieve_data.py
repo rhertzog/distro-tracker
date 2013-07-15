@@ -40,7 +40,7 @@ def update_pseudo_package_list():
         # Error accessing pseudo package resource: do not update the list
         return
 
-    if not implemented:
+    if not implemented or pseudo_packages is None:
         return
 
     # Faster lookups than if this were a list

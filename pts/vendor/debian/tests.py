@@ -161,7 +161,7 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
 
 
 class GetPseudoPackageListTest(TestCase):
-    @mock.patch('pts.vendor.debian.rules.requests')
+    @mock.patch('pts.core.utils.http.requests')
     def test_debian_pseudo_packages(self, mock_requests):
         """
         Tests that Debian-specific function for retrieving allowed pseudo
@@ -174,13 +174,15 @@ class GetPseudoPackageListTest(TestCase):
             'package1      text here\n'
             'package2\t\t text'
         )
+        mock_response.content = mock_response.text.encode('utf-8')
+        mock_response.ok = True
         mock_requests.get.return_value = mock_response
 
         packages = get_pseudo_package_list()
 
         # Correct URL used?
         mock_requests.get.assert_called_with(
-            'http://bugs.debian.org/pseudo-packages.maintainers')
+            'http://bugs.debian.org/pseudo-packages.maintainers', headers={})
         # Correct packages extracted?
         self.assertSequenceEqual(
             ['package1', 'package2'],

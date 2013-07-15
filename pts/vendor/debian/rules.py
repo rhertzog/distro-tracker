@@ -11,8 +11,10 @@
 from __future__ import unicode_literals
 import re
 import requests
+from django.conf import settings
 from pts.core.utils import get_decoded_message_payload
 from pts.core.utils import get_or_none
+from pts.core.utils.http import HttpCache
 from .models import DebianContributor
 from pts.vendor.common import PluginProcessingError
 
@@ -66,10 +68,19 @@ def get_pseudo_package_list():
     PSEUDO_PACKAGE_LIST_URL = (
         'http://bugs.debian.org/pseudo-packages.maintainers'
     )
-    response = requests.get(PSEUDO_PACKAGE_LIST_URL)
+    cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
+    if not cache.is_expired(PSEUDO_PACKAGE_LIST_URL):
+        return
+    response, updated = cache.update(PSEUDO_PACKAGE_LIST_URL)
 
-    if response.status_code != 200:
+    try:
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
         raise PluginProcessingError()
+
+    if not updated:
+        return
+
     return [
         line.split(None, 1)[0]
         for line in response.text.splitlines()
