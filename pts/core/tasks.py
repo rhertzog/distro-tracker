@@ -303,46 +303,6 @@ def clear_all_events_on_exception(func):
     return wrapper
 
 
-def build_task_event_dependency_graph():
-    """
-    Returns a dict mapping event names to a two-tuple of a list of task classes
-    which produce the event and a list of task classes which depend on the
-    event, respectively.
-    """
-    events = defaultdict(lambda: ([], []))
-    for task in BaseTask.plugins:
-        if task is BaseTask:
-            continue
-        for event in task.PRODUCES_EVENTS:
-            events[event][0].append(task)
-        for event in task.DEPENDS_ON_EVENTS:
-            events[event][1].append(task)
-
-    return events
-
-
-def build_full_task_dag():
-    """
-    Returns a TaskDAG instance representing the dependencies between Task
-    classes based on the events they produce and depend on.
-    """
-    dag = TaskDAG()
-    # Add all existing tasks to the dag.
-    for task in BaseTask.plugins:
-        if task is not BaseTask:
-            dag.add_task(task)
-
-    # Create the edges of the graph by creating an edge between each pair of
-    # tasks T1, T2 where T1 produces an event E and T2 depends on the event E.
-    from itertools import product as cross_product
-    events = build_task_event_dependency_graph()
-    for event_producers, event_consumers in events.values():
-        for task1, task2 in cross_product(event_producers, event_consumers):
-            dag.add_dependency(task1, task2)
-
-    return dag
-
-
 def run_task(initial_task, parameters=None):
     """
     Receives a class of the task which should be executed and makes sure that
