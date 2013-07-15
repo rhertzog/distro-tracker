@@ -115,3 +115,21 @@ class SpaceDelimitedTextField(models.TextField):
     def value_to_string(self, obj):
         value = self._get_val_from_obj(obj)
         return self.get_prep_value(value)
+
+
+VCS_SHORTHAND_TO_NAME = {
+    'svn': 'Subversion',
+    'git': 'Git',
+    'bzr': 'Bazaar',
+    'cvs': 'CVS',
+    'darcs': 'Darcs',
+    'hg': 'Mercurial',
+    'mtn': 'Monotone',
+}
+
+
+def get_vcs_name(shorthand):
+    """
+    Returns a full name for the VCS given its shorthand.
+    """
+    return VCS_SHORTHAND_TO_NAME.get(shorthand, '')
