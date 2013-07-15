@@ -147,7 +147,7 @@ class AptCache(object):
             return True
 
     def __init__(self):
-        self.cache_root_dir = settings.PTS_APT_CACHE_DIRECTORY
+        self.cache_root_dir = settings.PTS_CACHE_DIRECTORY
         self.sources_list_path = os.path.join(
             self.cache_root_dir,
             'sources.list')
