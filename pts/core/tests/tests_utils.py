@@ -17,6 +17,7 @@ from __future__ import unicode_literals
 from django.test import TestCase, SimpleTestCase
 from django.test.utils import override_settings
 from django.utils import six
+from django.utils.http import http_date
 from django.utils.six.moves import mock
 
 from pts.core.utils import verp
@@ -26,9 +27,11 @@ from pts.core.utils import PrettyPrintList
 from pts.core.utils.packages import extract_vcs_information
 from pts.core.utils.packages import extract_dsc_file_name
 from pts.core.utils.datastructures import DAG, InvalidDAGException
+from pts.core.utils.http import HttpCache
 from pts.dispatch.custom_email_message import CustomEmailMessage
 
 from debian import deb822
+import time
 
 
 class VerpModuleTest(SimpleTestCase):
@@ -643,3 +646,314 @@ Section: libs
             'package': 'name',
             'version': 'version'
         }))
+
+
+class HttpCacheTest(SimpleTestCase):
+    def set_mock_response(self, mock_requests, headers=None, status_code=200):
+        """
+        Helper method which sets a mock response to the given mock_requests
+        module.
+        """
+        if headers is None:
+            headers = {}
+        mock_response = mock_requests.models.Response()
+        mock_response.status_code = status_code
+        mock_response.ok = status_code < 400
+        mock_response.content = self.response_content
+        mock_response.headers = headers
+
+        mock_requests.get.return_value = mock_response
+
+    def setUp(self):
+        # Set up a cache directory to use in the tests
+        import os
+        self.cache_directory = os.path.join(
+            os.path.dirname(__file__),
+            'test-cache'
+        )
+        if not os.path.exists(self.cache_directory):
+            os.makedirs(self.cache_directory)
+        # Set up a simple response content
+        self.response_content = 'Simple response'
+        self.response_content = self.response_content.encode('utf-8')
+
+    def tearDown(self):
+        # Remove the test directory
+        import shutil
+        shutil.rmtree(self.cache_directory)
+
+    def test_parse_cache_control_header(self):
+        """
+        Tests the utility function for parsing a Cache-Control header into a
+        dict.
+        """
+        from pts.core.utils.http import parse_cache_control_header
+        header = 'must-revalidate, max-age=3600'
+        d = parse_cache_control_header(header)
+        self.assertIn('must-revalidate', d)
+        self.assertIn('max-age', d)
+        self.assertEqual(d['max-age'], '3600')
+
+        header = 'max-age=0, private'
+        d = parse_cache_control_header(header)
+        self.assertIn('private', d)
+        self.assertIn('max-age', d)
+        self.assertEqual(d['max-age'], '0')
+
+    @mock.patch('pts.core.utils.http.requests')
+    def test_update_cache_new_item(self, mock_requests):
+        """
+        Tests the simple case of updating the cache with a new URL's response.
+        """
+        headers = {
+            'Connection': 'Keep-Alive',
+            'Content-Type': 'text/plain',
+        }
+        self.set_mock_response(mock_requests, headers=headers)
+        cache = HttpCache(self.cache_directory)
+        url = 'http://example.com'
+        # The URL cannot be found in the cache at this point
+        self.assertFalse(url in cache)
+
+        response, updated = cache.update(url)
+
+        # The returned response is correct
+        self.assertEqual(self.response_content, response.content)
+        self.assertEqual(200, response.status_code)
+        # The return value indicates the cache has been updated
+        self.assertTrue(updated)
+        # The URL is now found in the cache
+        self.assertTrue(url in cache)
+        # The content is accessible through the cache
+        self.assertEqual(self.response_content, cache.get_content(url))
+        # The returned headers are accessible through the cache
+        cached_headers = cache.get_headers(url)
+        for key, value in headers.items():
+            self.assertIn(key, cached_headers)
+            self.assertEqual(value, cached_headers[key])
+
+    @mock.patch('pts.core.utils.http.requests')
+    def test_cache_not_expired(self, mock_requests):
+        """
+        Tests that the cache knows a response is not expired based on its
+        Cache-Control header.
+        """
+        self.set_mock_response(mock_requests, headers={
+            'Cache-Control': 'must-revalidate, max-age=3600',
+        })
+        cache = HttpCache(self.cache_directory)
+        url = 'http://example.com'
+
+        cache.update(url)
+
+        self.assertTrue(url in cache)
+        self.assertFalse(cache.is_expired(url))
+
+    @mock.patch('pts.core.utils.http.requests')
+    def test_cache_expired(self, mock_requests):
+        """
+        Tests that the cache knows when an entry with a stale Cache-Control
+        header is expired.
+        """
+        self.set_mock_response(mock_requests, headers={
+            'Cache-Control': 'must-revalidate, max-age=0',
+        })
+        cache = HttpCache(self.cache_directory)
+        url = 'http://example.com'
+
+        cache.update(url)
+
+        self.assertTrue(url in cache)
+        self.assertTrue(cache.is_expired(url))
+
+    @mock.patch('pts.core.utils.http.requests')
+    def test_cache_conditional_get_last_modified(self, mock_requests):
+        """
+        Tests that the cache performs a conditional GET request when asked to
+        update the response for a URL with a Last-Modified header.
+        """
+        last_modified = http_date(time.time())
+        self.set_mock_response(mock_requests, headers={
+            'Last-Modified': last_modified
+        })
+        cache = HttpCache(self.cache_directory)
+        url = 'http://example.com'
+        cache.update(url)
+
+        self.response_content = b''
+        self.set_mock_response(mock_requests, status_code=304)
+        # Run the update again
+        response, updated = cache.update(url)
+
+        self.assertFalse(updated)
+        mock_requests.get.assert_called_with(url, headers={
+            'If-Modified-Since': last_modified,
+        })
+        # The actual server's response is returned
+        self.assertEqual(response.status_code, 304)
+
+    @mock.patch('pts.core.utils.http.requests')
+    def test_cache_conditional_get_last_modified_expired(self, mock_requests):
+        """
+        Tests that the cache performs a conditional GET request when asked to
+        update the response for a URL with a Last-Modified header, which has
+        since expired.
+        """
+        last_modified = http_date(time.time() - 3600)
+        self.set_mock_response(mock_requests, headers={
+            'Last-Modified': last_modified
+        })
+        cache = HttpCache(self.cache_directory)
+        url = 'http://example.com'
+        cache.update(url)
+        # Set a new Last-Modified and content value
+        new_last_modified = http_date(time.time())
+        self.response_content = b'Response'
+        self.set_mock_response(mock_requests, headers={
+            'Last-Modified': new_last_modified
+        })
+
+        # Run the update again
+        response, updated = cache.update(url)
+
+        self.assertTrue(updated)
+        self.assertEqual(200, response.status_code)
+        # The new content is found in the cache
+        self.assertEqual(self.response_content, cache.get_content(url))
+        # The new Last-Modified is found in the headers cache
+        self.assertEqual(
+            new_last_modified,
+            cache.get_headers(url)['Last-Modified']
+        )
+
+    @mock.patch('pts.core.utils.http.requests')
+    def test_cache_expires_header(self, mock_requests):
+        """
+        Tests that the cache knows that a cached response is not expired based
+        on its Expires header.
+        """
+        expires = http_date(time.time() + 3600)
+        self.set_mock_response(mock_requests, headers={
+            'Expires': expires
+        })
+        cache = HttpCache(self.cache_directory)
+        url = 'http://example.com'
+
+        cache.update(url)
+
+        self.assertFalse(cache.is_expired(url))
+
+    @mock.patch('pts.core.utils.http.requests')
+    def test_cache_expires_header_expired(self, mock_requests):
+        """
+        Tests that the cache knows that a cached response is expired based
+        on its Expires header.
+        """
+        expires = http_date(time.time() - 3600)
+        self.set_mock_response(mock_requests, headers={
+            'Expires': expires
+        })
+        cache = HttpCache(self.cache_directory)
+        url = 'http://example.com'
+        cache.update(url)
+
+        self.assertTrue(cache.is_expired(url))
+
+    @mock.patch('pts.core.utils.http.requests')
+    def test_cache_remove_url(self, mock_requests):
+        """
+        Tests removing a cached response.
+        """
+        self.set_mock_response(mock_requests)
+        cache = HttpCache(self.cache_directory)
+        url = 'http://example.com'
+        cache.update(url)
+        # Sanity check - the url is cached
+        self.assertTrue(url in cache)
+
+        cache.remove(url)
+
+        self.assertFalse(url in cache)
+
+    @mock.patch('pts.core.utils.http.requests')
+    def test_conditional_get_etag(self, mock_requests):
+        """
+        Tests that the cache performs a conditional GET request when asked to
+        update the response for a URL with an ETag header
+        """
+        etag = '"466010a-11bf9-4e17efa8afb81"'
+        self.set_mock_response(mock_requests, headers={
+            'ETag': etag,
+        })
+        cache = HttpCache(self.cache_directory)
+        url = 'http://example.com'
+        cache.update(url)
+
+        self.response_content = b''
+        self.set_mock_response(mock_requests, status_code=304)
+        # Run the update again
+        response, updated = cache.update(url)
+
+        self.assertFalse(updated)
+        mock_requests.get.assert_called_with(url, headers={
+            'If-None-Match': etag,
+        })
+        # The actual server's response is returned
+        self.assertEqual(response.status_code, 304)
+
+    @mock.patch('pts.core.utils.http.requests')
+    def test_conditional_get_etag_expired(self, mock_requests):
+        """
+        Tests that the cache performs a conditional GET request when asked to
+        update the response for a URL with an ETag header, which has since
+        expired.
+        """
+        etag = '"466010a-11bf9-4e17efa8afb81"'
+        self.set_mock_response(mock_requests, headers={
+            'ETag': etag,
+        })
+        cache = HttpCache(self.cache_directory)
+        url = 'http://example.com'
+        cache.update(url)
+        # Set a new ETag and content value
+        new_etag = '"57ngfhty11bf9-9t831116kn1qw1'
+        self.response_content = b'Response'
+        self.set_mock_response(mock_requests, headers={
+            'ETag': new_etag
+        })
+
+        # Run the update again
+        response, updated = cache.update(url)
+
+        self.assertTrue(updated)
+        self.assertEqual(200, response.status_code)
+        # The new content is found in the cache
+        self.assertEqual(self.response_content, cache.get_content(url))
+        # The new Last-Modified is found in the headers cache
+        self.assertEqual(
+            new_etag,
+            cache.get_headers(url)['ETag']
+        )
+
+    @mock.patch('pts.core.utils.http.requests')
+    def test_conditional_force_unconditional_get(self, mock_requests):
+        """
+        Tests that the users can force the cache to perform an unconditional
+        GET when updating a cached resource.
+        """
+        last_modified = http_date(time.time())
+        self.set_mock_response(mock_requests, headers={
+            'Last-Modified': last_modified
+        })
+        cache = HttpCache(self.cache_directory)
+        url = 'http://example.com'
+        cache.update(url)
+
+        # Run the update again
+        response, updated = cache.update(url, conditional=False)
+
+        # Make sure that we ask for a non-cached version
+        mock_requests.get.assert_called_with(url, headers={
+            'Cache-Control': 'no-cache'
+        })
+        self.assertTrue(updated)
