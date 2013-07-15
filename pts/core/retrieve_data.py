@@ -15,6 +15,7 @@ from pts.core.models import Repository
 from pts.core.models import PackageExtractedInfo
 from pts.core.models import BinaryPackage
 from pts.core.tasks import BaseTask
+from pts.core.tasks import clear_all_events_on_exception
 from pts.core.models import SourcePackage, Architecture
 from django.utils.six import reraise
 from django import db
@@ -301,6 +302,7 @@ class UpdateRepositoriesTask(BaseTask):
             })
         qs.delete()
 
+    @clear_all_events_on_exception
     def execute(self):
         apt_cache = AptCache()
         updated_sources, updated_packages = (
@@ -345,6 +347,7 @@ class UpdatePackageGeneralInformation(BaseTask):
 
         return general_information
 
+    @clear_all_events_on_exception
     def execute(self):
         with transaction.commit_on_success():
             for package_name in self.packages:
@@ -394,6 +397,7 @@ class UpdateVersionInformation(BaseTask):
 
         return versions
 
+    @clear_all_events_on_exception
     def execute(self):
         with transaction.commit_on_success():
             for package_name in self.packages:
@@ -433,6 +437,7 @@ class UpdateSourceToBinariesInformation(BaseTask):
             for pkg in package.binarypackage_set.all()
         ]
 
+    @clear_all_events_on_exception
     def execute(self):
         with transaction.commit_on_success():
             for package_name in self.packages:

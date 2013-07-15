@@ -14,7 +14,7 @@
 Tests for the PTS core data retrieval.
 """
 from __future__ import unicode_literals
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase
 from django.test.utils import override_settings
 from django.utils.six.moves import mock
 from pts.core.tasks import run_task
@@ -597,4 +597,88 @@ class RetrieveSourcesInformationTest(TestCase):
             'binary-package-removed',
         ])
 
+class RetrieveSourcesFailureTest(TransactionTestCase):
+    """
+    Tests retrieving source package information from a repository when there is
+    a failure in the process.
 
+    A separate class is made since TransactionTestCase brings a significant
+    overhead and there is no need for all tests to incur it.
+    """
+    fixtures = ['repository-test-fixture.json']
+
+    def setUp(self):
+        self.repository = Repository.objects.all()[0]
+        self.caught_events = []
+
+        # A dummy task which simply receives all events that the update task
+        # emits.
+        self.intercept_events_task = self.create_task_class(
+            (),
+            UpdateRepositoriesTask.PRODUCES_EVENTS,
+            ()
+        )
+
+    def get_path_to(self, file_name):
+        return os.path.join(os.path.dirname(__file__), 'tests-data', file_name)
+        self.intercept_events_task.unregister_plugin()
+
+    def run_update(self):
+        run_task(UpdateRepositoriesTask)
+
+    def create_task_class(self, produces, depends_on, raises):
+        """
+        Helper method creates and returns a new BaseTask subclass.
+        """
+        caught_events = self.caught_events
+        class TestTask(BaseTask):
+            PRODUCES_EVENTS = produces
+            DEPENDS_ON_EVENTS = depends_on
+
+            def __init__(self, *args, **kwargs):
+                super(TestTask, self).__init__(*args, **kwargs)
+                self.caught_events = []
+
+            def process_event(self, event):
+                caught_events.append(event)
+
+            def execute(self):
+                for event in raises:
+                    self.raise_event(event)
+        return TestTask
+
+    def assert_events_raised(self, events):
+        """
+        Asserts that the update task emited all the given events.
+        """
+        raised_event_names = [
+            event.name
+            for event in self.caught_events
+        ]
+        self.assertEqual(len(events), len(raised_event_names))
+
+        for event_name in events:
+            self.assertIn(event_name, raised_event_names)
+
+    def set_mock_sources(self, mock_update, file_name):
+        mock_update.return_value = (
+            [(self.repository, self.get_path_to(file_name))],
+            []
+        )
+
+    @mock.patch('pts.core.retrieve_data.AptCache.update_repositories')
+    def test_update_repositories_invalid(self, mock_update_repositories):
+        """
+        Tests updating the repositories when the repository's Sources file is
+        invalid.
+        """
+        self.set_mock_sources(mock_update_repositories, 'Sources-invalid')
+
+        # No exceptions propagated
+        self.run_update()
+
+        # Nothing was created
+        self.assertEqual(SourcePackage.objects.count(), 0)
+        self.assertEqual(BinaryPackage.objects.count(), 0)
+        # No events raised
+        self.assert_events_raised([])
