@@ -509,7 +509,6 @@ class UpdateVersionInformation(PackageUpdateTask):
     DEPENDS_ON_EVENTS = (
         'new-source-package-version-in-repository',
         'lost-version-of-source-package',
-        'lost-binary-package',
         'updated-source-package-in-repository',
     )
 
