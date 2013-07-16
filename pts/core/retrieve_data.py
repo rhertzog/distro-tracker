@@ -558,7 +558,6 @@ class UpdateSourceToBinariesInformation(PackageUpdateTask):
     DEPENDS_ON_EVENTS = (
         'new-source-package-version-in-repository',
         'updated-source-package-in-repository',
-        'new-binary-package',
     )
 
     def __init__(self, *args, **kwargs):
@@ -575,8 +574,6 @@ class UpdateSourceToBinariesInformation(PackageUpdateTask):
         """
         return [
             {
-                'repository_name': (
-                    pkg.main_source_package_name.main_entry.repository.name),
                 'name': pkg.name,
             }
             for pkg in package.main_version.binary_packages.all()

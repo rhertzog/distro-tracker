@@ -218,6 +218,8 @@ class BinariesInformationPanel(BasePanel):
             package=self.package, key='binaries')
         binaries = info.value
         for binary in binaries:
+            if 'repository_name' not in binary:
+                continue
             url, implemented = vendor.call('get_package_information_site_url', **{
                 'package_name': binary['name'],
                 'repository_name': binary['repository_name'],
