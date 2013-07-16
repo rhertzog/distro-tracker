@@ -691,6 +691,49 @@ class SourcePackage(models.Model):
 
 
 @python_2_unicode_compatible
+class BinaryPackage(models.Model):
+    binary_package_name = models.ForeignKey(
+        BinaryPackageName,
+        related_name='binary_package_versions'
+    )
+    version = models.CharField(max_length=50, null=True)
+    source_package = models.ForeignKey(SourcePackage)
+
+    short_description = models.CharField(max_length=300, blank=True)
+    long_description = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = ('binary_package_name', 'version')
+
+    def __str__(self):
+        return 'Binary package {pkg}, version {ver}'.format(
+            pkg=self.binary_package_name, ver=self.version)
+
+
+@python_2_unicode_compatible
+class BinaryPackageRepositoryEntry(models.Model):
+    binary_package = models.ForeignKey(
+        BinaryPackage,
+        related_name='repository_entries'
+    )
+    repository = models.ForeignKey(
+        Repository,
+        related_name='binary_package_entries'
+    )
+    architecture = models.ForeignKey(Architecture)
+
+    priority = models.CharField(max_length=50, blank=True)
+    section = models.CharField(max_length=50, blank=True)
+
+    class Meta:
+        unique_together = ('binary_package', 'repository', 'architecture')
+
+    def __str__(self):
+        return '{pkg} ({arch}) in the repository {repo}'.format(
+            pkg=self.binary_package, arch=self.architecture, repo=self.repository)
+
+
+@python_2_unicode_compatible
 class SourcePackageRepositoryEntry(models.Model):
     """
     A model for source package data that is repository specific.
