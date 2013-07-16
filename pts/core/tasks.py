@@ -281,6 +281,8 @@ class Job(object):
                     # Inject additional parameters, if any
                     if parameters:
                         task.set_parameters(parameters)
+                    logger.info("Starting task {task}".format(
+                        task=task.task_name()))
                     task.execute()
                 except Exception as e:
                     logger.error(
@@ -290,6 +292,7 @@ class Job(object):
                 # The update is performed regardless of a possible failure in
                 # order not to miss some events.
                 self._update_task_events(task)
+        logger.info("Finished all tasks")
 
 
 def clear_all_events_on_exception(func):
