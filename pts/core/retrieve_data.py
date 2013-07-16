@@ -525,10 +525,6 @@ class UpdateVersionInformation(PackageUpdateTask):
         Returns a list where each element is a dictionary with the following
         keys: repository_name, repository_shorthand, package_version.
         """
-        source_packages = [
-            repository.get_source_package(package_name)
-            for repository in package_name.repositories
-        ]
         version_list = []
         for repository in package_name.repositories:
             entry = repository.get_source_package_entry(package_name)
