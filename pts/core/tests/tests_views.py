@@ -16,7 +16,7 @@ Tests for the PTS core views.
 from __future__ import unicode_literals
 from django.test import TestCase
 from pts.core.models import PackageName, BinaryPackageName
-from pts.core.models import SourcePackageName
+from pts.core.models import SourcePackageName, SourcePackage
 from pts.core.models import PseudoPackageName
 import json
 
@@ -32,6 +32,10 @@ class PackageViewTest(TestCase):
         self.binary_package = BinaryPackageName.objects.create(
             name='binary-package', source_package=self.package)
         self.pseudo_package = PseudoPackageName.objects.create(name='pseudo-pkg')
+        src_pkg = SourcePackage.objects.create(
+            source_package_name=self.package, version='1.0.0')
+        src_pkg.binary_packages = [self.binary_package]
+        src_pkg.save()
 
     def get_package_url(self, package_name):
         """
@@ -123,6 +127,10 @@ class PackageSearchViewTest(TestCase):
         self.binary_package = BinaryPackageName.objects.create(
             name='binary-package',
             source_package=self.source_package)
+        src_pkg = SourcePackage.objects.create(
+            source_package_name=self.source_package, version='1.0.0')
+        src_pkg.binary_packages = [self.binary_package]
+        src_pkg.save()
 
     def test_package_search_source_package(self):
         """

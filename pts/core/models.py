@@ -177,25 +177,63 @@ class SourcePackageName(PackageName):
         })
 
     @property
-    def main_entry(self):
+    def main_version(self):
         """
-        Returns the `SourcePackage` of the given package which belongs
-        to either the default repository. If the package is not found in the
-        default repository, the entry from the repository with the highest
-        version of the package is returned.
+        Returns the main version of this SourcePackageName.
+
+        It is defined as either the highest version found in the default
+        repository, or if the package is not found in the default repository at
+        all, the highest available version.
         """
-        default_repository = Repository.objects.get_default()
-        if default_repository.exists():
-            default_repository = default_repository[0]
-            qs = SourcePackage.objects.filter(
-                source_package=self, repository=default_repository)
+        default_repository_qs = self.source_package_versions.filter(
+            repository_entries__repository__default=True)
+        if default_repository_qs.exists():
+            qs = default_repository_qs
         else:
-            qs = SourcePackage.objects.filter(source_package=self)
+            qs = self.source_package_versions.all()
 
         if qs.exists():
             return max(qs, key=lambda x: AptPkgVersion(x.version))
         else:
             return None
+
+    @property
+    def main_entry(self):
+        """
+        Returns the `SourcePackageRepositoryEntry` which represents the
+        package's entry in either the default repository (if the package is
+        found there) or in the first repository (as defined by the repository
+        order) which has the highest available package version.
+        """
+        default_repository_qs = SourcePackageRepositoryEntry.objects.filter(
+            repository__default=True,
+            source_package__source_package_name=self
+        )
+        if default_repository_qs.exists():
+            qs = default_repository_qs
+        else:
+            qs = SourcePackageRepositoryEntry.objects.filter(
+                source_package__source_package_name=self)
+
+        if qs.exists():
+            return max(
+                qs,
+                key=lambda x: AptPkgVersion(x.source_package.version)
+            )
+        else:
+            return None
+
+    @property
+    def repositories(self):
+        """
+        Returns all repositories which contain a source package with this name.
+        """
+        kwargs = {
+            'sourcepackagerepositoryentry'
+            '__source_package'
+            '__source_package_name': self
+        }
+        return Repository.objects.filter(**kwargs)
 
 
 def get_web_package(package_name):
@@ -214,7 +252,7 @@ def get_web_package(package_name):
         return PseudoPackageName.objects.get(name=package_name)
     elif BinaryPackageName.objects.exists_with_name(package_name):
         binary_package = BinaryPackageName.objects.get(name=package_name)
-        return binary_package.source_package
+        return binary_package.main_source_package_name
 
     return None
 
@@ -386,21 +424,34 @@ class BinaryPackageName(BasePackageName):
 
     def get_absolute_url(self):
         # Take the URL of its source package
-        return self.source_package.get_absolute_url()
-
-    def update_source_mapping(self):
-        entries = SourcePackage.objects.filter(binary_packages=self)
-        default_repository_entries = entries.filter(repository__default=True)
-        if default_repository_entries.exists():
-            entries = default_repository_entries
-        highest_version_entry = max(entries, key=lambda x: AptPkgVersion(x.version))
-
-        if self.source_package != highest_version_entry.source_package:
-            self.source_package = highest_version_entry.source_package
-            self.save()
-            return True
+        main_source_package = self.main_source_package_name
+        if main_source_package:
+            return main_source_package.get_absolute_url()
         else:
-            return False
+            return None
+
+    @property
+    def main_source_package_name(self):
+        """
+        Returns the main source package name to which this binary package name
+        is mapped.
+
+        This is used for redirecting users who try to access a Web page for
+        by giving this binary's name.
+        """
+        default_repo_sources_qs = self.sourcepackage_set.filter(
+            repository_entries__repository__default=True)
+        if default_repo_sources_qs.exists():
+            qs = default_repo_sources_qs
+        else:
+            qs = self.sourcepackage_set.all()
+
+        if qs.exists():
+            source_package = max(qs, key=lambda x: AptPkgVersion(x.version))
+            return source_package.source_package_name
+        else:
+            return None
+
 
 from jsonfield import JSONField
 from django.core.exceptions import ValidationError
@@ -445,6 +496,11 @@ class Repository(models.Model):
     binary = models.BooleanField(default=True)
     source = models.BooleanField(default=True)
 
+    source_packages = models.ManyToManyField(
+        'SourcePackage',
+        through='SourcePackageRepositoryEntry'
+    )
+
     position = models.IntegerField(default=lambda: Repository.objects.count())
 
     objects = RepositoryManager()
@@ -488,78 +544,73 @@ class Repository(models.Model):
             for component in self.components
         ]
 
-    def has_source_package(self, package):
+    def get_source_package(self, package_name):
         """
-        The method returns whether the repository contains the given source
-        package.
-        The source package is an instance of the `SourcePackage` model.
+        Returns the canonical `SourcePackage` with the given name, if found in
+        the repository. This means the `SourcePackage` instance with the
+        highest version is returned.
         """
-        qs = SourcePackage.objects.filter(
-            repository=self,
-            source_package=package
-        )
-        return qs.exists()
+        qs = self.source_packages.all()
+        if qs.count() == 0:
+            return None
+        return max(qs, key=lambda x: AptPkgVersion(x.version))
 
-    def _adapt_arguments(self, arguments, src_pkg):
-        arguments['architectures'] = [
-            Architecture.objects.get(name=arch)
-            for arch in arguments.get('architectures', [])
-            if Architecture.objects.filter(name=arch).exists()
-        ]
-        arguments['binary_packages'] = [
-            BinaryPackageName.objects.get_or_create(name=pkg, defaults={
-                'source_package': src_pkg
-            })[0]
-            for pkg in arguments.get('binary_packages', [])
-        ]
-        if 'maintainer' in arguments:
-            maintainer, _ = Developer.objects.get_or_create(
-                email=arguments['maintainer']['email'])
-            maintainer.update(**arguments['maintainer'])
-            maintainer.save()
-            arguments['maintainer'] = maintainer
-
-        uploaders = []
-        for uploader in arguments.get('uploaders', []):
-            developer, _ = Developer.objects.get_or_create(
-                email=uploader['email'])
-            developer.update(**uploader)
-            developer.save()
-            uploaders.append(developer)
-        arguments['uploaders'] = uploaders
-
-        return arguments
+    def get_source_package_entry(self, package_name):
+        """
+        Returns the canonical `SourcePackageRepositoryEntry` with the given name, if found in
+        the repository.
+        """
+        qs = self.sourcepackagerepositoryentry_set.filter(
+            source_package__source_package_name=package_name)
+        if qs.count() == 0:
+            return None
+        return max(qs, key=lambda x: AptPkgVersion(x.source_package.version))
 
     def add_source_package(self, package, **kwargs):
         """
-        The method adds a new source package to the repository.
+        The method adds a new `SourcePackage` to the repository.
 
-        The source package name is given by the package parameter.
+        The parameters needed for the corresponding
+        `SourcePackageRepositoryEntry` should be in the keyword arguments.
         """
-        entry = SourcePackage.objects.create(
+        entry = SourcePackageRepositoryEntry.objects.create(
             repository=self,
-            source_package=package
+            source_package=package,
+            **kwargs
         )
-        kwargs = self._adapt_arguments(kwargs, package)
-        entry.update(**kwargs)
-        entry.save()
         return entry
 
     def update_source_package(self, package, **kwargs):
         """
-        The method updates the data linked to a source package which is a part
-        of the repository.
+        The method updates a `SourcePackage` which is already found in the
+        repository.
+
+        The parameters needed for the corresponding
+        `SourcePackageRepositoryEntry` should be in the keyword arguments.
         """
-        entry = SourcePackage.objects.get(
+        entry = SourcePackageRepositoryEntry.objects.get(
             repository=self,
-            source_package=package)
-        if entry.version != kwargs['version']:
-            kwargs = self._adapt_arguments(kwargs, package)
-            entry.update(**kwargs)
-            entry.save()
-            return True
-        else:
-            return False
+            source_package=package
+        )
+        entry.update(**kwargs)
+        entry.save()
+        return entry
+
+    def has_source_package_name(self, source_package_name):
+        """
+        Returns True if the Repository instance contains at least one version
+        of the source package with the given name.
+        """
+        qs = self.source_packages.filter(
+            source_package_name__name=source_package_name)
+        return qs.exists()
+
+    def has_source_package(self, source_package):
+        """
+        Returns True if the Repository instance contains the given
+        SourcePackage.
+        """
+        return self.source_packages.filter(id=source_package.id).exists()
 
     @classmethod
     def release_file_url(cls, base_url, distribution):
@@ -600,10 +651,9 @@ class Developer(models.Model):
 
 @python_2_unicode_compatible
 class SourcePackage(models.Model):
-    source_package = models.ForeignKey(
+    source_package_name = models.ForeignKey(
         SourcePackageName,
-        related_name='repository_entries')
-    repository = models.ForeignKey(Repository)
+        related_name='source_package_versions')
     version = models.CharField(max_length=50)
 
     standards_version = models.CharField(max_length=550, blank=True)
@@ -618,16 +668,43 @@ class SourcePackage(models.Model):
         Developer,
         related_name='package_uploads_set')
 
-    priority = models.CharField(max_length=50, blank=True)
-    section = models.CharField(max_length=50, blank=True)
-
     dsc_file_name = models.CharField(max_length=255, blank=True)
     directory = models.CharField(max_length=255, blank=True)
     homepage = models.URLField(max_length=255, blank=True)
     vcs = JSONField()
 
     class Meta:
-        # A source package can be found only once in a single repository.
+        unique_together = ('source_package_name', 'version')
+
+    def __str__(self):
+        return '{pkg}, version {ver}'.format(
+            pkg=self.source_package_name, ver=self.version)
+
+    @property
+    def name(self):
+        return self.source_package_name.name
+
+    def update(self, **kwargs):
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+
+
+@python_2_unicode_compatible
+class SourcePackageRepositoryEntry(models.Model):
+    """
+    A model for source package data that is repository specific.
+    """
+    source_package = models.ForeignKey(
+        SourcePackage,
+        related_name='repository_entries'
+    )
+    repository = models.ForeignKey(Repository)
+
+    priority = models.CharField(max_length=50, blank=True)
+    section = models.CharField(max_length=50, blank=True)
+
+    class Meta:
         unique_together = ('source_package', 'repository')
 
     def __str__(self):
@@ -640,9 +717,13 @@ class SourcePackage(models.Model):
         """
         Returns the URL where the .dsc file of this entry can be found.
         """
-        if self.directory and self.dsc_file_name:
+        if self.source_package.directory and self.source_package.dsc_file_name:
             base_url = self.repository.uri.rstrip('/')
-            return base_url + '/' + self.directory + '/' + self.dsc_file_name
+            return '/'.join((
+                base_url,
+                self.source_package.directory,
+                self.source_package.dsc_file_name,
+            ))
         else:
             return None
 
@@ -651,9 +732,9 @@ class SourcePackage(models.Model):
         """
         Returns the URL of the package's directory.
         """
-        if self.directory:
+        if self.source_package.directory:
             base_url = self.repository.uri.rstrip('/')
-            return base_url + '/' + self.directory
+            return base_url + '/' + self.source_package.directory
         else:
             return None
 

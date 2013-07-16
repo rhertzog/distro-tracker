@@ -90,6 +90,7 @@ class RepositoryAdminForm(forms.ModelForm):
         model = Repository
         exclude = (
             'position',
+            'source_packages',
         )
 
     def __init__(self, *args, **kwargs):

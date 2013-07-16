@@ -17,8 +17,9 @@ from __future__ import unicode_literals
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 from pts.core.models import Subscription, EmailUser, PackageName, BinaryPackageName
-from pts.core.models import SourcePackageName
+from pts.core.models import SourcePackageName, SourcePackageRepositoryEntry
 from pts.core.models import Keyword
+from pts.core.models import Architecture
 from pts.core.models import PseudoPackageName
 from pts.core.models import Repository
 from pts.core.models import Developer, SourcePackage
@@ -437,206 +438,309 @@ class BinaryPackageManagerTest(TestCase):
         self.assertIn(src_pkg, SourcePackageName.objects.all())
 
 
-class sourcepackageTests(TestCase):
+class RepositoryTests(TestCase):
     fixtures = ['repository-test-fixture.json']
 
     def setUp(self):
         self.repository = Repository.objects.all()[0]
+        self.src_pkg_name = SourcePackageName.objects.create(name='dummy-package')
+        self.source_package = SourcePackage.objects.create(
+            source_package_name=self.src_pkg_name, version='1.0.0')
 
     def test_add_source_entry_to_repository(self):
         """
-        Tests adding a source entry to a repository instance.
+        Tests adding a source package entry (name, version) to a repository
+        instance.
         """
-        src_pkg = SourcePackageName.objects.create(name='dummy-package')
-        architectures = ['amd64', 'all']
-        self.repository.add_source_package(src_pkg, **{
-            'version': '0.1',
-            'maintainer': {
-                'name': 'Maintainer',
-                'email': 'maintainer@domain.com'
-            },
-            'architectures': architectures,
+        self.repository.add_source_package(self.source_package)
+
+        # An entry is created.
+        self.assertEqual(SourcePackageRepositoryEntry.objects.count(), 1)
+        e = SourcePackageRepositoryEntry.objects.all()[0]
+        # Correct source package
+        self.assertEqual(e.source_package, self.source_package)
+        # Correct repository
+        self.assertEqual(e.repository, self.repository)
+
+    def test_add_source_entry_to_repository_extra_info(self):
+        """
+        Tests adding a source package entry (name, version + repository
+        specific information) to a repository instance.
+        """
+        self.repository.add_source_package(self.source_package, **{
+            'priority': 'source',
+            'section': 'admin',
         })
 
         # An entry is created.
-        self.assertEqual(SourcePackage.objects.count(), 1)
-        e = SourcePackage.objects.all()[0]
-        self.assertEqual(e.source_package, src_pkg)
-        # A developer instance is created on the fly
-        self.assertEqual(Developer.objects.count(), 1)
-        # Architectures are all found
-        self.assertEqual(e.architectures.count(), len(architectures))
+        self.assertEqual(SourcePackageRepositoryEntry.objects.count(), 1)
+        e = SourcePackageRepositoryEntry.objects.all()[0]
+        # Correct source package
+        self.assertEqual(e.source_package, self.source_package)
+        # Correct repository
+        self.assertEqual(e.repository, self.repository)
+        # Extra (repository-specific data is saved)
+        self.assertEqual(e.priority, 'source')
+        self.assertEqual(e.section, 'admin')
 
     def test_update_source_entry(self):
         """
         Tests updating a source entry.
         """
-        src_pkg = SourcePackageName.objects.create(name='dummy-package')
-        architectures = ['amd64', 'all']
-        self.repository.add_source_package(src_pkg, **{
-            'version': '0.1',
-            'maintainer': {
-                'name': 'Maintainer',
-                'email': 'maintainer@domain.com'
-            },
-            'architectures': architectures,
+        SourcePackageRepositoryEntry.objects.create(
+            source_package=self.source_package,
+            repository=self.repository
+        )
+
+        self.repository.update_source_package(self.source_package, **{
+            'priority': 'source',
         })
 
-        self.repository.update_source_package(src_pkg, **{
-            'version': '0.2',
-            'binary_packages': ['bin-pkg']
-        })
-
-        self.assertEqual(SourcePackage.objects.count(), 1)
-        e = SourcePackage.objects.all()[0]
+        # Still only one repository entry.
+        self.assertEqual(SourcePackageRepositoryEntry.objects.count(), 1)
+        e = SourcePackageRepositoryEntry.objects.all()[0]
         # Stil linked to the same source package.
-        self.assertEqual(e.source_package, src_pkg)
-        # The version number is bumped up
-        e.version = '0.2'
-        # New binary package created.
-        self.assertEqual(BinaryPackageName.objects.count(), 1)
-        self.assertEqual('bin-pkg', BinaryPackageName.objects.all()[0].name)
+        self.assertEqual(e.source_package, self.source_package)
+        # Still linked to the same repository
+        self.assertEqual(e.repository, self.repository)
+        # Updated field
+        self.assertEqual(e.priority, 'source')
+        # The other is not changed
+        self.assertEqual(e.section, '')
 
-    def test_get_main_source_package_entry_default_repo(self):
+    def test_has_source_package_name_1(self):
         """
-        Tests retrieving the main source package entry.
-
-        The main entry is either the one from a default repository or
-        the one which has the highest version number if the package can
-        not be found in the default repository.
+        Tests the has_source_package_name when the given source package is
+        found in the repository.
         """
-        self.repository.default = True
-        self.repository.save()
-        src_pkg = SourcePackageName.objects.create(name='dummy-package')
-        architectures = ['amd64', 'all']
-        self.repository.add_source_package(src_pkg, **{
-            'version': '0.1',
-            'maintainer': {
-                'name': 'Maintainer',
-                'email': 'maintainer@domain.com'
-            },
-            'architectures': architectures,
-        })
-        # Create a second repository.
-        repo2 = Repository.objects.create(name='repo', shorthand='repo')
-        # Add the package to it too.
-        repo2.add_source_package(src_pkg, **{
-            'version': '0.1',
-            'maintainer': {
-                'name': 'Maintainer',
-                'email': 'maintainer@domain.com'
-            },
-            'architectures': architectures,
-        })
+        self.repository.add_source_package(self.source_package)
 
-        # The main entry is the one from the default repository.
-        self.assertEqual(src_pkg.main_entry.repository, self.repository)
-        self.assertEqual(src_pkg.main_entry.source_package, src_pkg)
+        self.assertTrue(
+            self.repository.has_source_package_name(self.source_package.name))
 
-    def test_get_main_source_package_entry_only_repo(self):
+    def test_has_source_package_name_2(self):
         """
-        Tests retrieving the main source package entry.
+        Tests the has_source_package_name when the given source package is
+        found in the repository.
         """
-        # Make sure it is not default
-        self.repository.default = False
-        self.repository.save()
+        self.repository.add_source_package(self.source_package)
+        source_package = SourcePackage.objects.create(
+            source_package_name=self.src_pkg_name, version='1.2.0')
+        # Add another version of the same package
+        self.repository.add_source_package(source_package)
 
-        src_pkg = SourcePackageName.objects.create(name='dummy-package')
-        architectures = ['amd64', 'all']
-        self.repository.add_source_package(src_pkg, **{
-            'version': '0.1',
-            'maintainer': {
-                'name': 'Maintainer',
-                'email': 'maintainer@domain.com'
-            },
-            'architectures': architectures,
-        })
+        self.assertTrue(
+            self.repository.has_source_package_name(self.source_package.name))
 
-        self.assertEqual(src_pkg.main_entry.repository, self.repository)
-        self.assertEqual(src_pkg.main_entry.source_package, src_pkg)
-
-    def test_get_main_source_package_entry_no_default(self):
+    def test_has_source_package_name_3(self):
         """
-        Tests retrieving a main entry when there is no default repository.
+        Tests the has_source_package_name when the given source package is not
+        found in the repository.
         """
-        # Make sure it is not default
-        self.repository.default = False
-        self.repository.save()
+        self.assertFalse(
+            self.repository.has_source_package_name(self.source_package.name))
 
-        src_pkg = SourcePackageName.objects.create(name='dummy-package')
-        architectures = ['amd64', 'all']
-        self.repository.add_source_package(src_pkg, **{
-            'version': '0.1',
-            'maintainer': {
-                'name': 'Maintainer',
-                'email': 'maintainer@domain.com'
-            },
-            'architectures': architectures,
-        })
-        # Create a second repository.
-        repo2 = Repository.objects.create(name='repo', shorthand='repo')
-        # Add the package to it too.
-        repo2.add_source_package(src_pkg, **{
-            'version': '1.1',
-            'maintainer': {
-                'name': 'Maintainer',
-                'email': 'maintainer@domain.com'
-            },
-            'architectures': architectures,
-        })
-
-        # The main entry is the one from the second repository since it has
-        # a higher version.
-        self.assertEqual(src_pkg.main_entry.repository, repo2)
-        self.assertEqual(src_pkg.main_entry.source_package, src_pkg)
-
-    def test_update_binary_source_mapping(self):
+    def test_has_source_package_name_does_not_exist(self):
         """
-        Tests updating the main binary-source mapping.
-        This mapping determines to which source package users are redirected
-        when they attempt to access this binary package.
+        Tests the has_source_package_name when the given source package name
+        does not exist.
         """
-        src_pkg = SourcePackageName.objects.create(name='dummy-package')
-        architectures = ['amd64', 'all']
-        self.repository.add_source_package(src_pkg, **{
-            'binary_packages': ['binary-package'],
-            'version': '0.1',
-            'maintainer': {
-                'name': 'Maintainer',
-                'email': 'maintainer@domain.com'
-            },
-            'architectures': architectures,
-        })
-        src_pkg2 = SourcePackageName.objects.create(name='src-pkg')
-        self.repository.add_source_package(src_pkg2, **{
-            'binary_packages': ['binary-package'],
-            'version': '0.2',
-            'maintainer': {
-                'name': 'Maintainer',
-                'email': 'maintainer@domain.com'
-            },
-            'architectures': architectures,
-        })
+        # Sanity check - the package really does not exist
+        self.assertFalse(
+            SourcePackageName.objects.filter(name='no-exist').exists())
 
-        # Sanity check - linked to the original source package
-        bin_pkg = BinaryPackageName.objects.get(name='binary-package')
-        self.assertEqual(bin_pkg.source_package, src_pkg)
+        self.assertFalse(
+            self.repository.has_source_package_name('no-exist'))
 
-        # Remove the original source package
-        src_pkg.delete()
-        bin_pkg.update_source_mapping()
+    def test_has_source_package_1(self):
+        """
+        Tests the has_source_package when the given source package is found in
+        the repository.
+        """
+        self.repository.add_source_package(self.source_package)
 
-        # The package is now mapped to the other source package.
-        bin_pkg = BinaryPackageName.objects.get(name='binary-package')
-        self.assertEqual(bin_pkg.source_package, src_pkg2)
+        self.assertTrue(
+            self.repository.has_source_package(self.source_package))
+
+    def test_has_source_package_2(self):
+        """
+        Tests the has_source_package when the given source package is not found
+        in the repository.
+        """
+        self.assertFalse(
+            self.repository.has_source_package(self.source_package))
+
+    def test_get_source_package_1(self):
+        """
+        Tests retrieving a source package from a repository when there is only
+        one version of the package found in the repository.
+        """
+        self.repository.add_source_package(self.source_package)
+
+        src_pkg = self.repository.get_source_package(self.source_package.name)
+
+        self.assertEqual(src_pkg, self.source_package)
+
+    def test_get_source_package_2(self):
+        """
+        Tests retrieving a source package from a repository when there are
+        multiple versions of the package found in the repository.
+        """
+        self.repository.add_source_package(self.source_package)
+        higher_version_pkg = SourcePackage.objects.create(
+            source_package_name=self.src_pkg_name, version='10.0.0')
+        self.repository.add_source_package(higher_version_pkg)
+
+        src_pkg = self.repository.get_source_package(self.source_package.name)
+
+        # The highest version is chosen.
+        self.assertEqual(src_pkg, higher_version_pkg)
+
+    def test_get_source_package_3(self):
+        """
+        Tests retrieving a source package from a repository when the given
+        source package is not found in the repository.
+        """
+        self.assertIsNone(
+            self.repository.get_source_package(self.source_package.name)
+        )
+
+
+class SourcePackageTests(TestCase):
+    fixtures = ['repository-test-fixture.json']
+
+    def setUp(self):
+        self.repository = Repository.objects.all()[0]
+        self.src_pkg_name = SourcePackageName.objects.create(name='dummy-package')
+        self.source_package = SourcePackage.objects.create(
+            source_package_name=self.src_pkg_name, version='1.0.0')
+
+    def create_source_package(self, arguments):
+        """
+        Creates and returns a new SourcePackage instance based on the
+        parameters given in the arguments.
+
+        It takes care to automatically create any missing maintainers, package
+        names, etc.
+        """
+        kwargs = {}
+        if 'maintainer' in arguments:
+            maintainer = arguments['maintainer']['email']
+            kwargs['maintainer'] = Developer.objects.get_or_create(
+                email=maintainer)[0]
+        if 'name' in arguments:
+            name = arguments['name']
+            kwargs['source_package_name'] = (
+                SourcePackageName.objects.get_or_create(name=name)[0])
+        if 'version' in arguments:
+            kwargs['version'] = arguments['version']
+        if 'directory' in arguments:
+            kwargs['directory'] = arguments['directory']
+        if 'dsc_file_name' in arguments:
+            kwargs['dsc_file_name'] = arguments['dsc_file_name']
+
+        src_pkg = SourcePackage.objects.create(**kwargs)
+
+        # Now add m2m fields
+        if 'architectures' in arguments:
+            architectures = arguments['architectures']
+            src_pkg.architectures = Architecture.objects.filter(
+                name__in=architectures)
+        if 'binary_packages' in arguments:
+            binaries = []
+            for binary in arguments['binary_packages']:
+                binaries.append(
+                    BinaryPackageName.objects.get_or_create(name=binary)[0])
+            src_pkg.binary_packages = binaries
+
+        src_pkg.save()
+        return src_pkg
+
+    def test_main_version_1(self):
+        """
+        Tests that the main version is correctly returned when the package is
+        found in only one repository.
+        """
+        self.repository.add_source_package(self.source_package)
+
+        self.assertEqual(self.source_package, self.src_pkg_name.main_version)
+
+    def test_main_version_2(self):
+        """
+        Tests that the main version is correctly returned when the package is
+        found multiple times (with different versions) in the default
+        repository.
+        """
+        self.repository.add_source_package(self.source_package)
+        higher_version_pkg = SourcePackage.objects.create(
+            source_package_name=self.src_pkg_name, version='10.0.0')
+        self.repository.add_source_package(higher_version_pkg)
+
+        self.assertEqual(higher_version_pkg, self.src_pkg_name.main_version)
+
+    def test_main_version_3(self):
+        """
+        Test that the main version is correctly returned when the package is
+        found in multiple repositories.
+        """
+        self.repository.add_source_package(self.source_package)
+        higher_version_pkg = SourcePackage.objects.create(
+            source_package_name=self.src_pkg_name, version='10.0.0')
+        non_default_repository = Repository.objects.create(name='repo')
+        non_default_repository.add_source_package(higher_version_pkg)
+
+        # The main version is the one from the default repository, regardless
+        # of the fact that it has a lower version number.
+        self.assertEqual(self.source_package, self.src_pkg_name.main_version)
+
+    def test_main_entry_1(self):
+        """
+        Tests that the main entry is correctly returned when the package is
+        found in only one repository.
+        """
+        self.repository.add_source_package(self.source_package)
+
+        expected = SourcePackageRepositoryEntry.objects.get(
+            source_package=self.source_package, repository=self.repository)
+        self.assertEqual(expected, self.src_pkg_name.main_entry)
+
+    def test_main_entry_2(self):
+        """
+        Tests that the main entry is correctly returned when the package is
+        found multiple times (with different versions) in the default
+        repository.
+        """
+        self.repository.add_source_package(self.source_package)
+        higher_version_pkg = SourcePackage.objects.create(
+            source_package_name=self.src_pkg_name, version='10.0.0')
+        self.repository.add_source_package(higher_version_pkg)
+
+        expected = SourcePackageRepositoryEntry.objects.get(
+            source_package=higher_version_pkg, repository=self.repository)
+        self.assertEqual(expected, self.src_pkg_name.main_entry)
+
+    def test_main_entry_3(self):
+        """
+        Tests that the main entry is correctly returned when the package is
+        found in multiple repositories.
+        """
+        self.repository.add_source_package(self.source_package)
+        higher_version_pkg = SourcePackage.objects.create(
+            source_package_name=self.src_pkg_name, version='10.0.0')
+        non_default_repository = Repository.objects.create(name='repo')
+        non_default_repository.add_source_package(higher_version_pkg)
+
+        expected = SourcePackageRepositoryEntry.objects.get(
+            source_package=self.source_package, repository=self.repository)
+        self.assertEqual(expected, self.src_pkg_name.main_entry)
 
     def test_get_directory_url(self):
         """
         Tests retrieving the URL of the package's directory from the entry.
         """
-        src_pkg = SourcePackageName.objects.create(name='dummy-package')
         architectures = ['amd64', 'all']
-        self.repository.add_source_package(src_pkg, **{
+        src_pkg = self.create_source_package({
+            'name': 'package-with-directory',
             'binary_packages': ['binary-package'],
             'version': '0.1',
             'maintainer': {
@@ -646,20 +750,29 @@ class sourcepackageTests(TestCase):
             'architectures': architectures,
             'directory': 'pool/path/to/dir',
         })
+        entry = self.repository.add_source_package(src_pkg)
 
-        e = SourcePackage.objects.all()[0]
         self.assertEqual(
             self.repository.uri + 'pool/path/to/dir',
-            e.directory_url
+            entry.directory_url
         )
+
+    def test_get_directory_url_no_directory_set(self):
+        """
+        Tests retrieving the URL of the package's directory from the repository
+        entry when no directory is set for the source package.
+        """
+        entry = self.repository.add_source_package(self.source_package)
+
+        self.assertIsNone(entry.directory_url)
 
     def test_get_dsc_file_url(self):
         """
         Tests retrieving the URL of the package's .dsc file given in the entry.
         """
-        src_pkg = SourcePackageName.objects.create(name='dummy-package')
         architectures = ['amd64', 'all']
-        self.repository.add_source_package(src_pkg, **{
+        src_pkg = self.create_source_package({
+            'name': 'package-with-dsc-file',
             'binary_packages': ['binary-package'],
             'version': '0.1',
             'maintainer': {
@@ -670,11 +783,85 @@ class sourcepackageTests(TestCase):
             'directory': 'pool/path/to/dir',
             'dsc_file_name': 'file.dsc',
         })
+        entry = self.repository.add_source_package(src_pkg)
 
-        e = SourcePackage.objects.all()[0]
         self.assertEqual(
             self.repository.uri + 'pool/path/to/dir/file.dsc',
-            e.dsc_file_url
+            entry.dsc_file_url
+        )
+
+    def test_get_dsc_file_url_no_file_set(self):
+        """
+        Tests retrieving the URL of the package's .dsc file given when there is
+        no dsc file found in the source package information.
+        """
+        entry = self.repository.add_source_package(self.source_package)
+
+        self.assertIsNone(entry.dsc_file_url)
+
+
+class BinaryPackageTests(TestCase):
+    fixtures = ['repository-test-fixture.json']
+
+    def setUp(self):
+        self.repository = Repository.objects.all()[0]
+        self.src_pkg_name = SourcePackageName.objects.create(name='dummy-package')
+        self.source_package = SourcePackage.objects.create(
+            source_package_name=self.src_pkg_name, version='1.0.0')
+        self.binary_package = BinaryPackageName.objects.create(
+            name='binary-package')
+
+    def test_binary_package_name_to_source_name_1(self):
+        """
+        Tests retrieving a source package name from a binary package name when
+        the binary package name is registered for only one source package.
+        """
+        self.source_package.binary_packages.add(self.binary_package)
+
+        self.assertEqual(
+            self.src_pkg_name,
+            self.binary_package.main_source_package_name
+        )
+
+    def test_binary_package_name_to_source_name_2(self):
+        """
+        Tests retrieving a source package name from a binary package name when
+        the binary package is registered for two different source packages
+        """
+        self.source_package.binary_packages.add(self.binary_package)
+        higher_version_name = SourcePackageName.objects.create(
+            name='higher-version-name')
+        higher_version_pkg = SourcePackage.objects.create(
+            source_package_name=higher_version_name, version='10.0.0')
+        higher_version_pkg.binary_packages.add(self.binary_package)
+
+        self.assertEqual(
+            higher_version_name,
+            self.binary_package.main_source_package_name
+        )
+
+    def test_binary_package_name_to_source_name_default_repository(self):
+        """
+        Tests retrieving a source package name from a bianry package name when
+        the resulting source package name should be the one from the default
+        repository.
+        """
+        self.repository.add_source_package(self.source_package)
+        self.source_package.binary_packages.add(self.binary_package)
+        higher_version_name = SourcePackageName.objects.create(
+            name='higher-version-name')
+        higher_version_pkg = SourcePackage.objects.create(
+            source_package_name=higher_version_name, version='10.0.0')
+        # Add the higher version package to a non-default repository
+        non_default_repository = Repository.objects.create(name='repo')
+        non_default_repository.add_source_package(higher_version_pkg)
+        higher_version_pkg.binary_packages.add(self.binary_package)
+
+        # The resulting name is the name of the source package found in the
+        # default repository.
+        self.assertEqual(
+            self.src_pkg_name,
+            self.binary_package.main_source_package_name
         )
 
 

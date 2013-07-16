@@ -12,6 +12,9 @@ from __future__ import unicode_literals
 from pts import vendor
 from pts.core.models import PseudoPackageName, PackageName
 from pts.core.models import Repository
+from pts.core.models import SourcePackageRepositoryEntry
+from pts.core.models import Developer
+from pts.core.models import SourcePackage
 from pts.core.models import PackageExtractedInfo
 from pts.core.models import BinaryPackageName
 from pts.core.tasks import BaseTask
@@ -20,6 +23,7 @@ from pts.core.models import SourcePackageName, Architecture
 from django.utils.six import reraise
 from django import db
 from django.db import transaction
+from django.db import models
 from django.conf import settings
 
 from debian import deb822
@@ -260,81 +264,185 @@ from pts.core.utils.packages import extract_information_from_sources_entry
 class UpdateRepositoriesTask(PackageUpdateTask):
 
     PRODUCES_EVENTS = (
-        'source-package-created',
-        'source-package-updated',
-        'source-package-removed',
-        'binary-source-mapping-changed',
-        'binary-package-removed',
+        'new-source-package',
+        'new-source-package-version',
+        'new-source-package-in-repository',
+        'new-source-package-version-in-repository',
+
+        'new-binary-package',
+
+        # The source package does not have a new version, but something has
+        # changed.
+        'updated-source-package-in-repository',
+
+        # Source package no longer found in any repository
+        'lost-source-package',
+        # A particular version of a source package no longer found in any repo
+        'lost-version-of-source-package',
+        # Binary package name no longer used by any source package
+        'lost-binary-package',
     )
 
     def __init__(self, *args, **kwargs):
         super(UpdateRepositoriesTask, self).__init__(*args, **kwargs)
-        self._all_packages = set()
-        self._updated_packages = set()
+        self._all_packages = []
+        self._all_repository_entries = []
 
-    def _add_processed_package(self, package_name, updated):
-        if updated:
-            self._updated_packages.add(package_name)
-        self._all_packages.add(package_name)
+    def _add_processed_repository_entry(self, repository_entry):
+        self._all_repository_entries.append(repository_entry.id)
+
+    def _add_processed_package(self, source_package_name):
+        self._all_packages.append(source_package_name.id)
 
     def _update_sources_file(self, repository, sources_file):
         for stanza in deb822.Sources.iter_paragraphs(file(sources_file)):
             db.reset_queries()
-            src_pkg, created = SourcePackageName.objects.get_or_create(
+            src_pkg_name, created = SourcePackageName.objects.get_or_create(
                 name=stanza['package']
             )
+            if created:
+                self.raise_event('new-source-package', {
+                    'name': src_pkg_name.name
+                })
+
+            src_pkg, created_new_version = SourcePackage.objects.get_or_create(
+                source_package_name=src_pkg_name,
+                version=stanza['version']
+            )
+            if created_new_version:
+                self.raise_event('new-source-package-version', {
+                    'name': src_pkg.name,
+                    'version': src_pkg.version,
+                })
+
             entry = extract_information_from_sources_entry(stanza)
 
-            # First check whether this package is already in the repository
-            updated = False
-            if not repository.has_source_package(src_pkg):
-                updated = repository.add_source_package(src_pkg, **entry)
-            else:
-                updated = repository.update_source_package(src_pkg, **entry)
-            # Decide which event needs to be emitted.
-            event = None
-            if created:
-                event = 'source-package-created'
-            elif updated:
-                event = 'source-package-updated'
-            if event:
-                self.raise_event(event, {
-                    'name': src_pkg.name,
-                    'repository': repository.name,
-                })
-            self._add_processed_package(src_pkg.name, created or updated)
+            # Convert the parsed data into corresponding model instances
+            if 'architectures' in entry:
+                # Map the list of architecture names to their objects
+                # Discards any unknown architectures.
+                entry['architectures'] = Architecture.objects.filter(
+                    name__in=entry['architectures'])
 
-    def _update_binary_mapping(self):
-        processed = set()
-        for package in self._updated_packages:
-            package = SourcePackageName.objects.get(name=package)
-            for bin_pkg in BinaryPackageName.objects.filter_by_source(package):
-                if bin_pkg in processed:
-                    # No need to update a binary package more than once.
-                    continue
-                updated = bin_pkg.update_source_mapping()
-                if updated:
-                    self.raise_event(
-                        'binary-source-mapping-changed', {
-                            'name': package.name,
-                        }
-                    )
-                    processed.add(bin_pkg)
-        # Remove binary packages which no longer have a matching source package
-        qs = BinaryPackageName.objects.filter_no_source()
-        for bin_pkg in qs:
-            self.raise_event('binary-package-removed', {
-                'name': bin_pkg.name
+            if 'binary_packages' in entry:
+                # Map the list of binary package names to list of existing
+                # binary package names.
+                binary_package_names = entry['binary_packages']
+                existing_binaries_qs = BinaryPackageName.objects.filter(
+                    name__in=binary_package_names)
+                existing_binaries_names = []
+                binaries = []
+                for binary in existing_binaries_qs:
+                    binaries.append(binary)
+                    existing_binaries_names.append(binary.name)
+                for binary_name in binary_package_names:
+                    if binary_name not in existing_binaries_names:
+                        binaries.append(BinaryPackageName.objects.create(
+                            name=binary_name))
+                        self.raise_event('new-binary-package', {
+                            'name': binary_name,
+                        })
+                entry['binary_packages'] = binaries
+
+            if 'maintainer' in entry:
+                maintainer, _ = Developer.objects.get_or_create(
+                    email=entry['maintainer']['email'], defaults={
+                        'name': entry['maintainer']['name'],
+                    })
+                # TODO: Handle maintainer names
+                entry['maintainer'] = maintainer
+
+            if 'uploaders' in entry:
+                uploader_emails = [
+                    uploader['email']
+                    for uploader in entry['uploaders']
+                ]
+                uploader_names = [
+                    uploader['name']
+                    for uploader in entry['uploaders']
+                ]
+                existing_uploaders_qs = Developer.objects.filter(
+                    email__in=uploader_emails)
+                existing_uploaders_emails = []
+                uploaders = []
+                for uploader in existing_uploaders_qs:
+                    uploaders.append(uploader)
+                    existing_uploaders_emails.append(uploader.email)
+                for email, name in zip(uploader_emails, uploader_names):
+                    if email not in existing_uploaders_emails:
+                        uploaders.append(
+                            Developer.objects.create(email=email, name=name))
+
+                entry['uploaders'] = uploaders
+
+            # Update the source package information based on the newly
+            # extracted data.
+            src_pkg.update(**entry)
+            src_pkg.save()
+            # Add it to the repository
+            kwargs = {
+                key: value
+                for key, value in entry.items()
+                if key in ('priority', 'section')
+            }
+            if not repository.has_source_package(src_pkg):
+                # Does it have any version of the package?
+                if not repository.has_source_package_name(src_pkg.name):
+                    self.raise_event('new-source-package-in-repository', {
+                        'name': src_pkg.name,
+                        'repository': repository.name,
+                    })
+
+                event = 'new-source-package-version-in-repository'
+                entry = repository.add_source_package(src_pkg, **kwargs)
+            else:
+                event = 'updated-source-package-in-repository'
+                entry = repository.update_source_package(src_pkg, **kwargs)
+            self.raise_event(event, {
+                'name': src_pkg.name,
+                'version': src_pkg.version,
+                'repository': repository.name,
             })
-        qs.delete()
+
+            self._add_processed_package(src_pkg.source_package_name)
+            self._add_processed_repository_entry(entry)
 
     def _remove_obsolete_source_packages(self):
-        qs = SourcePackageName.objects.exclude(name__in=self._all_packages)
-        for package in qs:
-            self.raise_event('source-package-removed', {
+        # Clean up names which no longer exist.
+        source_package_name_qs = SourcePackageName.objects.exclude(
+            id__in=self._all_packages)
+        for package in source_package_name_qs:
+            self.raise_event('lost-source-package', {
                 'name': package.name,
             })
-        qs.delete()
+        source_package_name_qs.delete()
+
+        # Clean up repository versions which no longer exist.
+        repository_entries_qs = SourcePackageRepositoryEntry.objects.exclude(
+            id__in=self._all_repository_entries)
+        repository_entries_qs.delete()
+
+        # Clean up package versions which no longer exist in any repository.
+        source_package_qs = SourcePackage.objects.annotate(
+            repository_count=models.Count('repository'))
+        source_package_qs = source_package_qs.filter(repository_count=0)
+        for source_package in source_package_qs:
+            self.raise_event('lost-version-of-source-package', {
+                'name': source_package.name,
+                'version': source_package.version,
+            })
+        source_package_qs.delete()
+
+        # Clean up binary package names which are no longer used by any source
+        # package.
+        binary_package_qs = BinaryPackageName.objects.annotate(
+            source_package_count=models.Count('sourcepackage'))
+        binary_package_qs = binary_package_qs.filter(source_package_count=0)
+        for binary_package_name in binary_package_qs:
+            self.raise_event('lost-binary-package', {
+                'name': binary_package_name,
+            })
+        binary_package_qs.delete()
 
     @clear_all_events_on_exception
     def execute(self):
@@ -347,13 +455,12 @@ class UpdateRepositoriesTask(PackageUpdateTask):
             for repository, sources_file in updated_sources:
                 self._update_sources_file(repository, sources_file)
             self._remove_obsolete_source_packages()
-            self._update_binary_mapping()
 
 
 class UpdatePackageGeneralInformation(PackageUpdateTask):
     DEPENDS_ON_EVENTS = (
-        'source-package-updated',
-        'source-package-created',
+        'updated-source-package-in-repository',
+        'new-source-package-version-in-repository',
     )
 
     def __init__(self, *args, **kwargs):
@@ -368,15 +475,15 @@ class UpdatePackageGeneralInformation(PackageUpdateTask):
             'name': entry.source_package.name,
             'priority': entry.priority,
             'section': entry.section,
-            'version': entry.version,
-            'maintainer': entry.maintainer.to_dict(),
+            'version': entry.source_package.version,
+            'maintainer': entry.source_package.maintainer.to_dict(),
             'uploaders': [
                 uploader.to_dict()
-                for uploader in entry.uploaders.all()
+                for uploader in entry.source_package.uploaders.all()
             ],
-            'architectures': map(str, entry.architectures.all()),
-            'standards_version': entry.standards_version,
-            'vcs': entry.vcs,
+            'architectures': map(str, entry.source_package.architectures.all()),
+            'standards_version': entry.source_package.standards_version,
+            'vcs': entry.source_package.vcs,
         }
 
         return general_information
@@ -400,8 +507,10 @@ class UpdatePackageGeneralInformation(PackageUpdateTask):
 
 class UpdateVersionInformation(PackageUpdateTask):
     DEPENDS_ON_EVENTS = (
-        'source-package-updated',
-        'source-package-created',
+        'new-source-package-version-in-repository',
+        'lost-version-of-source-package',
+        'lost-binary-package',
+        'updated-source-package-in-repository',
     )
 
     def __init__(self, *args, **kwargs):
@@ -411,22 +520,27 @@ class UpdateVersionInformation(PackageUpdateTask):
     def process_event(self, event):
         self.packages.add(event.arguments['name'])
 
-    def _extract_versions_for_package(self, package):
+    def _extract_versions_for_package(self, package_name):
         """
         Returns a list where each element is a dictionary with the following
         keys: repository_name, repository_shorthand, package_version.
         """
+        source_packages = [
+            repository.get_source_package(package_name)
+            for repository in package_name.repositories
+        ]
+        version_list = []
+        for repository in package_name.repositories:
+            entry = repository.get_source_package_entry(package_name)
+            version_list.append({
+                'repository_name': entry.repository.name,
+                'repository_shorthand': entry.repository.shorthand,
+                'version': entry.source_package.version,
+                'dsc_file_url': entry.dsc_file_url,
+            })
         versions = {
-            'version_list': [
-                {
-                    'repository_name': entry.repository.name,
-                    'repository_shorthand': entry.repository.shorthand,
-                    'version': entry.version,
-                    'dsc_file_url': entry.dsc_file_url,
-                }
-                for entry in package.repository_entries.all()
-            ],
-            'default_pool_url': entry.directory_url,
+            'version_list': version_list,
+            'default_pool_url': package_name.main_entry.directory_url,
         }
 
         return versions
@@ -446,8 +560,9 @@ class UpdateVersionInformation(PackageUpdateTask):
 
 class UpdateSourceToBinariesInformation(PackageUpdateTask):
     DEPENDS_ON_EVENTS = (
-        'source-package-updated',
-        'source-package-created',
+        'new-source-package-version-in-repository',
+        'updated-source-package-in-repository',
+        'new-binary-package',
     )
 
     def __init__(self, *args, **kwargs):
@@ -465,10 +580,10 @@ class UpdateSourceToBinariesInformation(PackageUpdateTask):
         return [
             {
                 'repository_name': (
-                    pkg.source_package.main_entry.repository.name),
+                    pkg.main_source_package_name.main_entry.repository.name),
                 'name': pkg.name,
             }
-            for pkg in package.binarypackagename_set.all()
+            for pkg in package.main_version.binary_packages.all()
         ]
 
     @clear_all_events_on_exception

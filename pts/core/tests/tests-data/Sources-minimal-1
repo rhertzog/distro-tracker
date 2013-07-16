@@ -6,7 +6,7 @@ Architecture: all amd64
 Files:
  22700cab41effa76f45968aeee39cdb1 3041 file.dsc
 
-Package: src_pkg
+Package: src-pkg
 Binary: other-package
 Version: 2.2
 Maintainer: Maintainer <maintainer@domain.com>

@@ -19,9 +19,12 @@ from django.test.utils import override_settings
 from django.utils.six.moves import mock
 from pts.core.tasks import run_task
 from pts.core.models import Subscription, EmailUser, PackageName, BinaryPackageName
-from pts.core.models import SourcePackageName
+from pts.core.models import Developer
+from pts.core.models import SourcePackageName, SourcePackage
+from pts.core.models import SourcePackageRepositoryEntry
 from pts.core.models import PseudoPackageName
 from pts.core.models import Repository
+from pts.core.models import Architecture
 from pts.core.retrieve_data import UpdateRepositoriesTask
 from pts.core.retrieve_data import retrieve_repository_info
 
@@ -204,7 +207,7 @@ class RetrievePseudoPackagesTest(TestCase):
         mock_update_pseudo_package_list.assert_called_with()
 
 
-class RepositoryTests(TestCase):
+class RetrieveRepositoryInfoTests(TestCase):
     def set_mock_response(self, mock_requests, text="", status_code=200):
         """
         Helper method which sets a mock response to the given mock_requests
@@ -326,6 +329,49 @@ class RetrieveSourcesInformationTest(TestCase):
             ()
         )
 
+    def get_architectures_for_names(self, architectures):
+        """
+        Helper method which maps the given list of architecture names to their
+        Architecture model instances.
+        """
+        return Architecture.objects.filter(name__in=architectures)
+
+    def create_source_package(self, arguments):
+        """
+        Creates and returns a new SourcePackage instance based on the
+        parameters given in the arguments.
+
+        It takes care to automatically create any missing maintainers, package
+        names, etc.
+        """
+        kwargs = {}
+        if 'maintainer' in arguments:
+            maintainer = arguments['maintainer']['email']
+            kwargs['maintainer'] = Developer.objects.get_or_create(
+                email=maintainer)[0]
+        if 'name' in arguments:
+            name = arguments['name']
+            kwargs['source_package_name'] = (
+                SourcePackageName.objects.get_or_create(name=name)[0])
+        if 'version' in arguments:
+            kwargs['version'] = arguments['version']
+
+        src_pkg = SourcePackage.objects.create(**kwargs)
+
+        # Now add m2m fields
+        if 'architectures' in arguments:
+            src_pkg.architectures = self.get_architectures_for_names(
+                arguments['architectures'])
+        if 'binary_packages' in arguments:
+            binaries = []
+            for binary in arguments['binary_packages']:
+                binaries.append(
+                    BinaryPackageName.objects.get_or_create(name=binary)[0])
+            src_pkg.binary_packages = binaries
+
+        src_pkg.save()
+        return src_pkg
+
     def get_path_to(self, file_name):
         return os.path.join(os.path.dirname(__file__), 'tests-data', file_name)
         self.intercept_events_task.unregister_plugin()
@@ -395,7 +441,12 @@ class RetrieveSourcesInformationTest(TestCase):
             [pkg.name for pkg in SourcePackageName.objects.all()]
         )
         self.assertEqual(BinaryPackageName.objects.count(), 8)
-        self.assert_events_raised(['source-package-created'])
+        self.assert_events_raised([
+            'new-source-package',
+            'new-source-package-in-repository',
+            'new-source-package-version',
+            'new-source-package-version-in-repository',
+        ] + ['new-binary-package'] * 8)
 
     @mock.patch('pts.core.retrieve_data.AptCache.update_repositories')
     def test_update_repositories_existing(self, mock_update_repositories):
@@ -418,7 +469,11 @@ class RetrieveSourcesInformationTest(TestCase):
             SourcePackageName.objects.all()
         )
         self.assertEqual(BinaryPackageName.objects.count(), 8)
-        self.assert_events_raised(['source-package-updated'])
+        self.assert_events_raised([
+            'new-source-package-in-repository',
+            'new-source-package-version',
+            'new-source-package-version-in-repository',
+        ] + ['new-binary-package'] * 8)
 
     @mock.patch('pts.core.retrieve_data.AptCache.update_repositories')
     def test_update_repositories_no_changes(self, mock_update_repositories):
@@ -445,8 +500,8 @@ class RetrieveSourcesInformationTest(TestCase):
         """
         self.set_mock_sources(mock_update, 'Sources-minimal-1')
 
-        src_pkg = SourcePackageName.objects.create(name='dummy-package')
-        self.repository.add_source_package(src_pkg, **{
+        src_pkg = self.create_source_package({
+            'name': 'dummy-package',
             'version': '0.1',
             'maintainer': {
                 'name': 'Maintainer',
@@ -454,8 +509,10 @@ class RetrieveSourcesInformationTest(TestCase):
             },
             'architectures': ['amd64', 'all'],
         })
-        src_pkg2 = SourcePackageName.objects.create(name='src_pkg')
-        self.repository.add_source_package(src_pkg2, **{
+        self.repository.add_source_package(src_pkg)
+
+        src_pkg2 = self.create_source_package({
+            'name': 'src-pkg',
             'binary_packages': ['dummy-package-binary', 'other-package'],
             'version': '2.1',
             'maintainer': {
@@ -464,6 +521,7 @@ class RetrieveSourcesInformationTest(TestCase):
             },
             'architectures': ['amd64', 'all'],
         })
+        self.repository.add_source_package(src_pkg2)
         # Sanity check: the binary package now exists
         self.assertEqual(BinaryPackageName.objects.count(), 2)
         self.assert_package_by_name_in(
@@ -473,31 +531,40 @@ class RetrieveSourcesInformationTest(TestCase):
 
         self.run_update()
 
-        # Both source packages are still here
+        # Both source package names are still here
         self.assertEqual(SourcePackageName.objects.count(), 2)
+        # Still only two source packages since the original ones were merely
+        # updated.
+        self.assertEqual(SourcePackage.objects.count(), 2)
+        self.assertEqual(SourcePackageRepositoryEntry.objects.count(), 2)
+        # The package names are unchanged
         self.assert_package_by_name_in(
             'dummy-package',
             SourcePackageName.objects.all()
         )
         self.assert_package_by_name_in(
-            'src_pkg',
+            'src-pkg',
             SourcePackageName.objects.all()
         )
         src_pkg = SourcePackageName.objects.get(name='dummy-package')
-        # The binary package still exists
+        # Both binary packages are still here
+        self.assertEqual(BinaryPackageName.objects.count(), 2)
         self.assert_package_by_name_in(
             'dummy-package-binary',
             BinaryPackageName.objects.all()
         )
-        # The binary package is now linked with a different source package
+        # This binary package is now linked with a different source package
         bin_pkg = BinaryPackageName.objects.get(name='dummy-package-binary')
-        self.assertEqual(bin_pkg.source_package, src_pkg)
+        self.assertEqual(
+            bin_pkg.main_source_package_name,
+            src_pkg
+        )
 
-        self.assert_events_raised([
-            'source-package-updated',
-            'source-package-updated',
-            'binary-source-mapping-changed',
-        ])
+        self.assert_events_raised(
+            ['new-source-package-version'] * 2 +
+            ['new-source-package-version-in-repository'] * 2 +
+            ['lost-version-of-source-package'] * 2
+        )
 
     @mock.patch('pts.core.retrieve_data.AptCache.update_repositories')
     def test_update_changed_binary_mapping_2(self, mock_update):
@@ -508,8 +575,8 @@ class RetrieveSourcesInformationTest(TestCase):
         """
         self.set_mock_sources(mock_update, 'Sources-minimal')
 
-        src_pkg = SourcePackageName.objects.create(name='dummy-package')
-        self.repository.add_source_package(src_pkg, **{
+        src_pkg = self.create_source_package({
+            'name': 'dummy-package',
             'version': '0.1',
             'maintainer': {
                 'name': 'Maintainer',
@@ -517,8 +584,10 @@ class RetrieveSourcesInformationTest(TestCase):
             },
             'architectures': ['amd64', 'all'],
         })
-        src_pkg2 = SourcePackageName.objects.create(name='src_pkg')
-        self.repository.add_source_package(src_pkg2, **{
+        self.repository.add_source_package(src_pkg)
+
+        src_pkg2 = self.create_source_package({
+            'name': 'src-pkg',
             'binary_packages': ['dummy-package-binary'],
             'version': '2.1',
             'maintainer': {
@@ -527,6 +596,7 @@ class RetrieveSourcesInformationTest(TestCase):
             },
             'architectures': ['amd64', 'all'],
         })
+        self.repository.add_source_package(src_pkg2)
         # Sanity check: the binary package now exists
         self.assertEqual(BinaryPackageName.objects.count(), 1)
         self.assert_package_by_name_in(
@@ -538,25 +608,29 @@ class RetrieveSourcesInformationTest(TestCase):
 
         # There is only one source package left
         self.assertEqual(SourcePackageName.objects.count(), 1)
+        # And only one repository entry
+        self.assertEqual(SourcePackageRepositoryEntry.objects.count(), 1)
         self.assert_package_by_name_in(
             'dummy-package',
             SourcePackageName.objects.all()
         )
         src_pkg = SourcePackageName.objects.get(name='dummy-package')
         # The binary package still exists
+        self.assertEqual(BinaryPackageName.objects.count(), 1)
         self.assert_package_by_name_in(
             'dummy-package-binary',
             BinaryPackageName.objects.all()
         )
         # The binary package is now linked with a different source package
         bin_pkg = BinaryPackageName.objects.get(name='dummy-package-binary')
-        self.assertEqual(bin_pkg.source_package, src_pkg)
+        self.assertEqual(bin_pkg.main_source_package_name, src_pkg)
 
-        self.assert_events_raised([
-            'source-package-updated',
-            'source-package-removed',
-            'binary-source-mapping-changed',
-        ])
+        self.assert_events_raised(
+            ['new-source-package-version'] +
+            ['new-source-package-version-in-repository'] +
+            ['lost-version-of-source-package'] +
+            ['lost-source-package']
+        )
 
     @mock.patch('pts.core.retrieve_data.AptCache.update_repositories')
     def test_update_removed_binary_package(self, mock_update):
@@ -564,8 +638,8 @@ class RetrieveSourcesInformationTest(TestCase):
         Test the scenario when new data removes an existing binary package.
         """
         self.set_mock_sources(mock_update, 'Sources-minimal')
-        src_pkg = SourcePackageName.objects.create(name='dummy-package')
-        self.repository.add_source_package(src_pkg, **{
+        src_pkg = self.create_source_package({
+            'name': 'dummy-package',
             'binary_packages': ['some-package'],
             'version': '0.1',
             'maintainer': {
@@ -574,6 +648,7 @@ class RetrieveSourcesInformationTest(TestCase):
             },
             'architectures': ['amd64', 'all'],
         })
+        self.repository.add_source_package(src_pkg)
         # Sanity check -- the binary package exists.
         self.assert_package_by_name_in(
             'some-package',
@@ -582,7 +657,7 @@ class RetrieveSourcesInformationTest(TestCase):
 
         self.run_update()
 
-        # The package should no longer exist.
+        # The binary package should no longer exist, replaced by a different one
         self.assertEqual(BinaryPackageName.objects.count(), 1)
         self.assert_package_by_name_in(
             'dummy-package-binary',
@@ -590,12 +665,17 @@ class RetrieveSourcesInformationTest(TestCase):
         )
         # The new binary package is now mapped to the existing source package
         bin_pkg = BinaryPackageName.objects.get(name='dummy-package-binary')
-        self.assertEqual(bin_pkg.source_package, src_pkg)
+        self.assertEqual(
+            bin_pkg.main_source_package_name,
+            src_pkg.source_package_name)
         # All events?
-        self.assert_events_raised([
-            'source-package-updated',
-            'binary-package-removed',
-        ])
+        self.assert_events_raised(
+            ['new-source-package-version',
+             'new-source-package-version-in-repository'] +
+            ['new-binary-package'] +
+            ['lost-version-of-source-package'] +
+            ['lost-binary-package']
+        )
 
 class RetrieveSourcesFailureTest(TransactionTestCase):
     """
