@@ -37,11 +37,13 @@ class BaseTask(six.with_metaclass(PluginRegistry)):
         else:
             return cls.__name__
 
-    def __init__(self):
+    def __init__(self, job=None):
         #: A flag signalling whether the task has received any events.
         #: A task with no received events does not need to run.
         self.event_received = False
         self._raised_events = []
+        #: A reference to the job to which this task belongs, if any
+        self.job = job
 
     def execute(self):
         """
@@ -75,27 +77,15 @@ class BaseTask(six.with_metaclass(PluginRegistry)):
         """
         self._raised_events = []
 
-    def receive_event(self, event):
+    def get_all_events(self):
         """
-        This method is used by clients to notify the task that a specific event
-        has been triggered while processing another task.
-
-        If the task depends on this event, the `event_received` flag is set and
-        additional, subclass specific, processing is initiated (by calling the
-        `process_event` method).
+        Returns all events raised during the processing of a job which are
+        relevant for this task.
         """
-        if event.name in self.DEPENDS_ON_EVENTS:
-            # In the general case, an event can come with some arguments, but
-            # BaseTask subclasses need to implement this specifically.
-            self.process_event(event)
-            self.event_received = True
-
-    def process_event(self, event):
-        """
-        Helper method which should be implemented by subclasses which require
-        specific processing of received events.
-        """
-        pass
+        if self.job:
+            return self.job.job_state.events_for_task(self)
+        else:
+            return []
 
     def set_parameters(self, parameters):
         """
@@ -246,14 +236,10 @@ class Job(object):
         Instantiates a new Job instance based on the given initial_task.
 
         The task contains a DAG instance which is constructed by using all
-        possible dependencies between tasks. While running the tasks, the
-        job keeps track of emitted events and makes sure that a task with
-        no received events is not run, even though we used those dependencies
-        when constructing the DAG.
+        possible dependencies between tasks.
 
-        This way, we are guaranteed that tasks execute in the correct order and
-        at most once -- after all the tasks which could possibly raise an event
-        which that task depends on.
+        Tasks are run in toplogical sort order and it is left up to them to
+        inspect the raised events and decide how to process them.
         """
         # Build this job's DAG based on the full DAG of all tasks.
         self.job_dag = base_task_class.build_full_task_dag()
@@ -263,7 +249,7 @@ class Job(object):
         reachable_tasks = self.job_dag.all_dependent_tasks(initial_task)
         for task_class in self.job_dag.all_tasks:
             if task_class is initial_task or task_class in reachable_tasks:
-                task = task_class()
+                task = task_class(job=self)
                 if task_class is initial_task:
                     # The initial task gets flagged with an event so that we
                     # make sure that it is not skipped.
@@ -275,23 +261,33 @@ class Job(object):
                 # on it and will not need to run.
                 self.job_dag.remove_task(task_class)
 
+        self.job_state = JobState(initial_task)
+
     def _update_task_events(self, processed_task):
         """
-        Updates the received events of all tasks which depend on events the
-        processed_task has raised.
+        Updates the tasks based on whether they would process one of the raised
+        events.
         """
+        event_names_raised = set(
+            event.name
+            for event in processed_task.raised_events
+        )
         for dependent_task in self.job_dag.directly_dependent_tasks(processed_task):
+            if dependent_task.event_received:
+                continue
             # Update this task's raised events.
-            for event in processed_task.raised_events:
-                dependent_task.receive_event(event)
+            for event_name in event_names_raised:
+                if event_name in dependent_task.DEPENDS_ON_EVENTS:
+                    dependent_task.event_received = True
+                    break
 
     def run(self, parameters=None):
         """
         Starts the Job processing.
 
-        It runs all tasks which depend on the given initial task, but only if
-        the required events are emitted and received.
+        It runs all tasks which depend on the given initial task.
         """
+        self.job_state.additional_parameters = parameters
         for task in self.job_dag.topsort_nodes():
             # A task does not need to run if none of the events it depends on
             # have been raised by this point.
@@ -319,6 +315,8 @@ class Job(object):
                 # The update is performed regardless of a possible failure in
                 # order not to miss some events.
                 self._update_task_events(task)
+
+            self.job_state.add_processed_task(task)
         logger.info("Finished all tasks")
 
 

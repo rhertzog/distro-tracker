@@ -501,7 +501,8 @@ class UpdatePackageGeneralInformation(PackageUpdateTask):
     @clear_all_events_on_exception
     def execute(self):
         with transaction.commit_on_success():
-            for package_name in self.packages:
+            for event in self.get_all_events():
+                package_name = event.arguments['name']
                 package = SourcePackageName.objects.get(name=package_name)
                 entry = package.main_entry
                 if entry is None:
@@ -553,7 +554,8 @@ class UpdateVersionInformation(PackageUpdateTask):
     @clear_all_events_on_exception
     def execute(self):
         with transaction.commit_on_success():
-            for package_name in self.packages:
+            for event in self.get_all_events():
+                package_name = event.arguments['name']
                 package = SourcePackageName.objects.get(name=package_name)
 
                 versions, _ = PackageExtractedInfo.objects.get_or_create(
@@ -591,7 +593,8 @@ class UpdateSourceToBinariesInformation(PackageUpdateTask):
     @clear_all_events_on_exception
     def execute(self):
         with transaction.commit_on_success():
-            for package_name in self.packages:
+            for event in self.get_all_events():
+                package_name = event.arguments['name']
                 package = SourcePackageName.objects.get(name=package_name)
 
                 binaries, _ = PackageExtractedInfo.objects.get_or_create(

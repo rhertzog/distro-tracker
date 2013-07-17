@@ -327,6 +327,12 @@ class RetrieveSourcesInformationTest(TestCase):
             UpdateRepositoriesTask.PRODUCES_EVENTS,
             ()
         )
+        self._old_plugins = BaseTask.plugins
+        BaseTask.plugins = [UpdateRepositoriesTask, self.intercept_events_task]
+
+    def tearDown(self):
+        # Return them as we found them.
+        BaseTask.plugins = self._old_plugins
 
     def get_path_to(self, file_name):
         return os.path.join(os.path.dirname(__file__), 'tests-data', file_name)
@@ -346,14 +352,11 @@ class RetrieveSourcesInformationTest(TestCase):
 
             def __init__(self, *args, **kwargs):
                 super(TestTask, self).__init__(*args, **kwargs)
-                self.caught_events = []
-
-            def process_event(self, event):
-                caught_events.append(event)
 
             def execute(self):
                 for event in raises:
                     self.raise_event(event)
+                caught_events.extend(list(self.get_all_events()))
         return TestTask
 
     def set_mock_sources(self, mock_update, file_name):
