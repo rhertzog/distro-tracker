@@ -446,3 +446,47 @@ class JobPersistenceTests(TestCase):
         # Both tasks processed
         self.assertSequenceEqual(job.state['processed_tasks'], task_names)
         self.assertFalse(job.is_complete)
+
+    def test_deserialize(self):
+        """
+        Tests deserializing a RunningJob instance to a JobState.
+        """
+        initial_task_name = 'initial-task'
+        additional_parameters = {
+            'param1': 1
+        }
+        job = RunningJob.objects.create(
+            initial_task_name=initial_task_name,
+            additional_parameters=additional_parameters)
+        processed_tasks = ['initial-task', 'task-1']
+        job.state = {
+            'events': [
+                {
+                    'name': 'event-1',
+                },
+                {
+                    'name': 'event-2',
+                    'arguments': {
+                        'a': 1,
+                        'b': '2'
+                    }
+                }
+            ],
+            'processed_tasks': processed_tasks
+        }
+        job.save()
+
+        state = JobState.deserialize_running_job_state(job)
+
+        self.assertEqual(state.initial_task_name, 'initial-task')
+        self.assertEqual(state.additional_parameters, additional_parameters)
+        self.assertEqual(state.processed_tasks, processed_tasks)
+
+        self.assertEqual(len(state.events), 2)
+        self.assertEqual(state.events[0].name, 'event-1')
+        self.assertIsNone(state.events[0].arguments)
+        self.assertEqual(state.events[1].arguments, {
+            'a': 1,
+            'b': '2'
+        })
+        self.assertEqual(state._running_job, job)

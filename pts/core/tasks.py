@@ -214,6 +214,22 @@ class JobState(object):
 
         self._running_job = None
 
+    @classmethod
+    def deserialize_running_job_state(cls, running_job):
+        """
+        Deserializes a RunningJob instance and returns a matching JobState.
+        """
+        instance = cls(running_job.initial_task_name)
+        instance.additional_parameters = running_job.additional_parameters
+        instance.events = [
+            Event(name=event['name'], arguments=event.get('arguments', None))
+            for event in running_job.state['events']
+        ]
+        instance.processed_tasks = running_job.state['processed_tasks']
+        instance._running_job = running_job
+
+        return instance
+
     def add_processed_task(self, task):
         self.events.extend(task.raised_events)
         self.processed_tasks.append(task.task_name())
