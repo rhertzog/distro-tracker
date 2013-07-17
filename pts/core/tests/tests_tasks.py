@@ -14,8 +14,12 @@
 Tests for the PTS core's tasks framework.
 """
 from __future__ import unicode_literals
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, TestCase
+from django.utils.six.moves import mock
+from pts.core.models import RunningJob
 from pts.core.tasks import BaseTask
+from pts.core.tasks import Event
+from pts.core.tasks import JobState
 from pts.core.tasks import run_task
 import logging
 logging.disable(logging.CRITICAL)
@@ -315,3 +319,130 @@ class JobTests(SimpleTestCase):
         self.assert_executed_tasks_equal(
             [root_task, fail_task, depends_on_fail, do_run]
         )
+
+
+class JobPersistenceTests(TestCase):
+    def create_mock_event(self, event_name, event_arguments=None):
+        mock_event = mock.create_autospec(Event)
+        mock_event.name = event_name
+        mock_event.arguments = event_arguments
+        return mock_event
+
+    def create_mock_task(self, task_name, events=()):
+        mock_task = mock.create_autospec(BaseTask)
+        mock_task.task_name.return_value = task_name
+        mock_task.raised_events = [
+            self.create_mock_event(event['name'], event.get('arguments', None))
+            for event in events
+        ]
+        return mock_task
+
+    def test_serialize_start(self):
+        """
+        Tests serializing a job's state to a RunningJob instance.
+        """
+        state = JobState('initial-task-name')
+        state.start()
+
+        # A running job was created.
+        self.assertEqual(RunningJob.objects.count(), 1)
+        job = RunningJob.objects.all()[0]
+        self.assertEqual(job.initial_task_name, 'initial-task-name')
+        self.assertIsNone(job.additional_parameters)
+        self.assertFalse(job.is_complete)
+
+    def test_serialize_after_processed_task(self):
+        """
+        Tests serializing a job's state to a RunningJob instance.
+        """
+        task_name = 'task-1'
+        state = JobState(task_name)
+        state.start()
+        expected_events = [
+            {
+                'name': 'event-1',
+                'arguments': ['a', 'b'],
+            },
+            {
+                'name': 'event-2',
+                'arguments': None,
+            }
+        ]
+        mock_task = self.create_mock_task(task_name, expected_events)
+
+        state.add_processed_task(mock_task)
+        state.save_state()
+
+        # Stil only one running job instance
+        self.assertEqual(RunningJob.objects.count(), 1)
+        job = RunningJob.objects.all()[0]
+        self.assertSequenceEqual(job.state['events'], expected_events)
+        self.assertSequenceEqual(job.state['processed_tasks'], [task_name])
+        self.assertFalse(job.is_complete)
+
+    def test_serialize_after_finish(self):
+        """
+        Tests serializing a job's state to a RunningJob instance.
+        """
+        task_name = 'task-1'
+        state = JobState(task_name)
+        state.start()
+        expected_events = [
+            {
+                'name': 'event-1',
+                'arguments': ['a', 'b'],
+            },
+            {
+                'name': 'event-2',
+                'arguments': None,
+            }
+        ]
+        mock_task = self.create_mock_task(task_name, expected_events)
+
+        state.add_processed_task(mock_task)
+        state.save_state()
+        state.finish()
+
+        # Stil only one running job instance
+        self.assertEqual(RunningJob.objects.count(), 1)
+        job = RunningJob.objects.all()[0]
+        self.assertSequenceEqual(job.state['events'], expected_events)
+        self.assertSequenceEqual(job.state['processed_tasks'], [task_name])
+        self.assertTrue(job.is_complete)
+
+    def test_serialize_after_update(self):
+        """
+        Tests serializing a job's state after multiple tasks have finished.
+        """
+        task_names = ['task-1', 'task-2']
+        state = JobState(task_names[0])
+        state.start()
+        expected_events = [
+            {
+                'name': 'event-1',
+                'arguments': {
+                    'a': 1,
+                    'b': '2'
+                },
+            },
+            {
+                'name': 'event-2',
+                'arguments': None,
+            }
+        ]
+        mock_task_1 = self.create_mock_task(task_names[0], [expected_events[0]])
+        state.add_processed_task(mock_task_1)
+        state.save_state()
+
+        mock_task_2 = self.create_mock_task(task_names[1], [expected_events[1]])
+        state.add_processed_task(mock_task_2)
+        state.save_state()
+
+        # Stil only one running job instance
+        self.assertEqual(RunningJob.objects.count(), 1)
+        job = RunningJob.objects.all()[0]
+        # All events found now
+        self.assertSequenceEqual(job.state['events'], expected_events)
+        # Both tasks processed
+        self.assertSequenceEqual(job.state['processed_tasks'], task_names)
+        self.assertFalse(job.is_complete)

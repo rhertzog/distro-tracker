@@ -11,6 +11,7 @@
 from __future__ import unicode_literals
 from pts.core.utils.plugins import PluginRegistry
 from pts.core.utils.datastructures import DAG
+from pts.core.models import RunningJob
 from django.utils import six
 
 from collections import defaultdict
@@ -205,15 +206,44 @@ class JobState(object):
     """
     Represents the current state of a running job.
     """
-    def __init__(self, initial_task, additional_parameters=None):
-        self.initial_task = initial_task
+    def __init__(self, initial_task_name, additional_parameters=None):
+        self.initial_task_name = initial_task_name
         self.additional_parameters = additional_parameters
         self.events = []
         self.processed_tasks = []
 
+        self._running_job = None
+
     def add_processed_task(self, task):
         self.events.extend(task.raised_events)
         self.processed_tasks.append(task.task_name())
+
+    def save_state(self):
+        """
+        Saves the state to persistent storage.
+        """
+        state = {
+            'events': [
+                {
+                    'name': event.name,
+                    'arguments': event.arguments,
+                }
+                for event in self.events
+            ],
+            'processed_tasks': self.processed_tasks,
+        }
+        self._running_job.state = state
+        self._running_job.save()
+
+    def start(self):
+        self._running_job = RunningJob.objects.create(
+            initial_task_name=self.initial_task_name,
+            additional_parameters=self.additional_parameters)
+        self.save_state()
+
+    def finish(self):
+        self._running_job.is_complete = True
+        self.save_state()
 
     def events_for_task(self, task):
         """
@@ -261,7 +291,7 @@ class Job(object):
                 # on it and will not need to run.
                 self.job_dag.remove_task(task_class)
 
-        self.job_state = JobState(initial_task)
+        self.job_state = JobState(initial_task.task_name())
 
     def _update_task_events(self, processed_task):
         """
@@ -288,6 +318,7 @@ class Job(object):
         It runs all tasks which depend on the given initial task.
         """
         self.job_state.additional_parameters = parameters
+        self.job_state.start()
         for task in self.job_dag.topsort_nodes():
             # A task does not need to run if none of the events it depends on
             # have been raised by this point.
@@ -319,6 +350,9 @@ class Job(object):
                 self._update_task_events(task)
 
             self.job_state.add_processed_task(task)
+            self.job_state.save_state()
+
+        self.job_state.finish()
         logger.info("Finished all tasks")
 
 

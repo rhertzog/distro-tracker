@@ -920,3 +920,24 @@ class MailingList(models.Model):
             return None
 
         return self.archive_url(user)
+
+
+@python_2_unicode_compatible
+class RunningJob(models.Model):
+    """
+    A model used to serialize a running job state.
+    """
+    datetime_created = models.DateTimeField(auto_now_add=True)
+    initial_task_name = models.CharField(max_length=50)
+    additional_parameters = JSONField(null=True)
+    state = JSONField(null=True)
+
+    is_complete = models.BooleanField(default=False)
+
+    def __str__(self):
+        if self.is_complete:
+            return "Completed Job (started {date})".format(
+                date=self.datetime_created)
+        else:
+            return "Running Job (started {date})".format(
+                date=self.datetime_created)
