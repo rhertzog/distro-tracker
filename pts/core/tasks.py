@@ -307,6 +307,8 @@ class Job(object):
                     logger.info("Starting task {task}".format(
                         task=task.task_name()))
                     task.execute()
+                    logger.info("Successfully executed task {task}".format(
+                        task=task.task_name()))
                 except Exception as e:
                     logger.error(
                         "Problem processing a task. "
