@@ -450,7 +450,7 @@ class UpdateRepositoriesTask(PackageUpdateTask):
         binary_package_qs = binary_package_qs.filter(source_package_count=0)
         for binary_package_name in binary_package_qs:
             self.raise_event('lost-binary-package', {
-                'name': binary_package_name,
+                'name': binary_package_name.name,
             })
         binary_package_qs.delete()
 
