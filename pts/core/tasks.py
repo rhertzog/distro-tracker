@@ -259,6 +259,8 @@ class JobState(object):
         self._running_job.save()
 
     def start(self):
+        if self._running_job:
+            return
         self._running_job = RunningJob.objects.create(
             initial_task_name=self.initial_task_name,
             additional_parameters=self.additional_parameters)
@@ -316,6 +318,33 @@ class Job(object):
 
         self.job_state = JobState(initial_task.task_name())
 
+    @classmethod
+    def reconstruct_job_from_state(cls, job_state):
+        """
+        The method takes a job state and reconstructs a job if possible.
+        Returns the reconstructed Job instance.
+        Calling the run method of this instance will continue execution of the
+        job at the task following the last executed task in the job state.
+        """
+        job = cls(BaseTask.get_task_class_by_name(job_state.initial_task_name))
+        job.job_state = job_state
+
+        # Update the task instances event_received for all events which are
+        # found in the job's state.
+        raised_events_names = set(
+            event.name
+            for event in job_state.events
+        )
+        for task in job.job_dag.all_tasks:
+            if task.event_received:
+                continue
+            for task_depends_event_name in task.DEPENDS_ON_EVENTS:
+                if task_depends_event_name in raised_events_names:
+                    task.event_received = True
+                    break
+
+        return job
+
     def _update_task_events(self, processed_task):
         """
         Updates the tasks based on whether they would process one of the raised
@@ -343,6 +372,11 @@ class Job(object):
         self.job_state.additional_parameters = parameters
         self.job_state.start()
         for task in self.job_dag.topsort_nodes():
+            # This happens if the job was restarted. Skip such tasks since they
+            # considered finish by this job. All its events will be propagated
+            # to the following tasks correctly.
+            if task.task_name() in self.job_state.processed_tasks:
+                continue
             # A task does not need to run if none of the events it depends on
             # have been raised by this point.
             # If it's that task's turn in topological sort order when all
@@ -405,3 +439,12 @@ def run_task(initial_task, parameters=None):
     """
     job = Job(initial_task)
     return job.run(parameters)
+
+
+def continue_task_from_state(job_state):
+    """
+    Receives a JobState instance and continues the job's execution from the
+    last point in the JobState instance.
+    """
+    job = Job.reconstruct_job_from_state(job_state)
+    return job.run(job_state.additional_parameters)

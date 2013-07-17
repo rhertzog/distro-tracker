@@ -20,7 +20,7 @@ from pts.core.models import RunningJob
 from pts.core.tasks import BaseTask
 from pts.core.tasks import Event
 from pts.core.tasks import JobState
-from pts.core.tasks import run_task
+from pts.core.tasks import run_task, continue_task_from_state
 import logging
 logging.disable(logging.CRITICAL)
 
@@ -30,11 +30,13 @@ class JobTests(SimpleTestCase):
         """
         Helper method creates and returns a new BaseTask subclass.
         """
+        self._created_task_count += 1
         exec_list = self.execution_list
 
         class TestTask(BaseTask):
             PRODUCES_EVENTS = produces
             DEPENDS_ON_EVENTS = depends_on
+            NAME = 'a' * self._created_task_count
 
             def execute(self):
                 for event in raises:
@@ -53,6 +55,7 @@ class JobTests(SimpleTestCase):
 
     def setUp(self):
         #: Tasks which execute add themselves to this list.
+        self._created_task_count = 0
         self.execution_list = []
         self.original_plugins = [
             plugin
@@ -490,3 +493,109 @@ class JobPersistenceTests(TestCase):
             'b': '2'
         })
         self.assertEqual(state._running_job, job)
+
+
+class ContinuePersistedJobsTest(TestCase):
+    def setUp(self):
+        #: Tasks which execute add themselves to this list.
+        self._created_task_count = 0
+        self.execution_list = []
+        self.original_plugins = [
+            plugin
+            for plugin in BaseTask.plugins
+        ]
+        # Now ignore all original plugins.
+        BaseTask.plugins = []
+
+    def tearDown(self):
+        # Remove any extra plugins which may have been created during a test run
+        BaseTask.plugins = self.original_plugins
+
+    def clear_executed_tasks_list(self):
+        self.execution_list[:] = []
+
+    def assert_task_ran(self, task):
+        self.assertIn(task, self.execution_list)
+
+    def create_task_class(self, produces, depends_on, raises, fail=False):
+        """
+        Helper method creates and returns a new BaseTask subclass.
+        """
+        self._created_task_count += 1
+        exec_list = self.execution_list
+
+        class TestTask(BaseTask):
+            PRODUCES_EVENTS = produces
+            DEPENDS_ON_EVENTS = depends_on
+            NAME = 'a' * self._created_task_count
+
+            def execute(self):
+                for event in raises:
+                    self.raise_event(event)
+                exec_list.append(self.__class__)
+                if fail:
+                    raise Exception("This task fails")
+        return TestTask
+
+    def test_continue_job_no_start(self):
+        """
+        Tests continuing a job from a job state which is only at the beginning.
+        """
+        task1 = self.create_task_class(('a',), (), ('a',))
+        job_state = JobState(task1.task_name())
+
+        continue_task_from_state(job_state)
+
+        self.assert_task_ran(task1)
+
+    def test_continue_job_started(self):
+        """
+        Tests continuing a job from a job state which has only just started
+        (no tasks complete yet).
+        """
+        task1 = self.create_task_class(('a',), (), ('a',))
+        job_state = JobState(task1.task_name())
+        job_state.start()
+
+        continue_task_from_state(job_state)
+
+        self.assert_task_ran(task1)
+
+    def test_continue_job_some_finished(self):
+        """
+        Tests continuing a job from a job state where a task has finished.
+        """
+        task1 = self.create_task_class(('a',), (), ('a',))
+        task2 = self.create_task_class((), ('a',), ())
+        job_state = JobState(task1.task_name())
+        job_state.start()
+        task1_instance = task1()
+        task1_instance.execute()
+        job_state.add_processed_task(task1_instance)
+        job_state.save_state()
+
+        self.clear_executed_tasks_list()
+        continue_task_from_state(job_state)
+
+        # Only one task ran
+        self.assertEqual(len(self.execution_list), 1)
+        # It was the one that was not completed before the continue
+        self.assert_task_ran(task2)
+
+    def test_continue_job_finished(self):
+        """
+        Tests continuing a job from a job state where the job was finished.
+        """
+        task1 = self.create_task_class(('a',), (), ('a',))
+        job_state = JobState(task1.task_name())
+        job_state.start()
+        task1_instance = task1()
+        task1_instance.execute()
+        job_state.add_processed_task(task1_instance)
+        job_state.save_state()
+
+        self.clear_executed_tasks_list()
+        continue_task_from_state(job_state)
+
+        # No tasks were ran from the continue
+        self.assertEqual(len(self.execution_list), 0)
