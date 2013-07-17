@@ -637,6 +637,30 @@ class ContributorEmail(models.Model):
 
 
 @python_2_unicode_compatible
+class SourcePackageMaintainer(models.Model):
+    """
+    Represents the maintainer of a single SourcePackage.
+    """
+    contributor_email = models.ForeignKey(ContributorEmail)
+    name = models.CharField(max_length=60, blank=True)
+
+    def __str__(self):
+        return "{name} <{email}>, maintainer of source package {pkg}".format(
+            name=self.name,
+            email=self.contributor_email,
+            pkg=self.source_package)
+
+    def to_dict(self):
+        """
+        Returns a dictionary representing a SourcePackageMaintainer instance.
+        """
+        return {
+            'name': self.name,
+            'email': self.contributor_email.email,
+        }
+
+
+@python_2_unicode_compatible
 class Developer(models.Model):
     name = models.CharField(max_length=60, blank=True)
     email = models.EmailField(max_length=244, unique=True)
@@ -668,9 +692,9 @@ class SourcePackage(models.Model):
     architectures = models.ManyToManyField(Architecture, blank=True)
     binary_packages = models.ManyToManyField(BinaryPackageName, blank=True)
 
-    maintainer = models.ForeignKey(
-        Developer,
-        related_name='package_maintains_set',
+    maintainer = models.OneToOneField(
+        SourcePackageMaintainer,
+        related_name='source_package',
         null=True)
     uploaders = models.ManyToManyField(
         Developer,

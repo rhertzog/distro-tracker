@@ -13,6 +13,8 @@ from pts import vendor
 from pts.core.models import PseudoPackageName, PackageName
 from pts.core.models import Repository
 from pts.core.models import SourcePackageRepositoryEntry
+from pts.core.models import ContributorEmail
+from pts.core.models import SourcePackageMaintainer
 from pts.core.models import Developer
 from pts.core.models import SourcePackage
 from pts.core.models import PackageExtractedInfo
@@ -345,11 +347,11 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                 entry['binary_packages'] = binaries
 
             if 'maintainer' in entry:
-                maintainer, _ = Developer.objects.get_or_create(
-                    email=entry['maintainer']['email'], defaults={
-                        'name': entry['maintainer']['name'],
-                    })
-                # TODO: Handle maintainer names
+                maintainer_email, _ = ContributorEmail.objects.get_or_create(
+                    email=entry['maintainer']['email'])
+                maintainer = SourcePackageMaintainer.objects.create(
+                    contributor_email=maintainer_email,
+                    name=entry['maintainer'].get('name', ''))
                 entry['maintainer'] = maintainer
 
             if 'uploaders' in entry:
