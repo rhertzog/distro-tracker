@@ -15,6 +15,7 @@ from pts.core.models import Repository
 from pts.core.models import SourcePackageRepositoryEntry
 from pts.core.models import ContributorEmail
 from pts.core.models import SourcePackageMaintainer
+from pts.core.models import SourcePackageUploader
 from pts.core.models import Developer
 from pts.core.models import SourcePackage
 from pts.core.models import PackageExtractedInfo
@@ -360,20 +361,28 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                     for uploader in entry['uploaders']
                 ]
                 uploader_names = [
-                    uploader['name']
+                    uploader.get('name', '')
                     for uploader in entry['uploaders']
                 ]
-                existing_uploaders_qs = Developer.objects.filter(
+                existing_contributor_emails_qs = ContributorEmail.objects.filter(
                     email__in=uploader_emails)
-                existing_uploaders_emails = []
+                existing_contributor_emails = {
+                    contributor.email: contributor
+                    for contributor in existing_contributor_emails_qs
+                }
                 uploaders = []
-                for uploader in existing_uploaders_qs:
-                    uploaders.append(uploader)
-                    existing_uploaders_emails.append(uploader.email)
                 for email, name in zip(uploader_emails, uploader_names):
-                    if email not in existing_uploaders_emails:
-                        uploaders.append(
-                            Developer.objects.create(email=email, name=name))
+                    if email not in existing_contributor_emails:
+                        contributor_email = ContributorEmail.objects.create(
+                            email=email)
+                    else:
+                        contributor_email = existing_contributor_emails[email]
+                    uploaders.append(SourcePackageUploader.objects.get_or_create(
+                        contributor_email=contributor_email,
+                        source_package=src_pkg,
+                        defaults={
+                            'name': name,
+                        })[0])
 
                 entry['uploaders'] = uploaders
 
