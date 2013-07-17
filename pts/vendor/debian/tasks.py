@@ -25,8 +25,8 @@ from debian import deb822
 
 
 class RetrieveDebianMaintainersTask(BaseTask):
-    def __init__(self, force_update=False):
-        super(RetrieveDebianMaintainersTask, self).__init__()
+    def __init__(self, force_update=False, *args, **kwargs):
+        super(RetrieveDebianMaintainersTask, self).__init__(*args, **kwargs)
         self.force_update = force_update
 
     def set_parameters(self, parameters):
@@ -77,8 +77,8 @@ class RetrieveDebianMaintainersTask(BaseTask):
 
 
 class RetrieveLowThresholdNmuTask(BaseTask):
-    def __init__(self, force_update=False):
-        super(RetrieveLowThresholdNmuTask, self).__init__()
+    def __init__(self, force_update=False, *args, **kwargs):
+        super(RetrieveLowThresholdNmuTask, self).__init__(*args, **kwargs)
         self.force_update = force_update
 
     def set_parameters(self, parameters):

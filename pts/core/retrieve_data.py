@@ -253,8 +253,8 @@ class PackageUpdateTask(BaseTask):
     A subclass of the BaseTask providing some methods specific to tasks dealing
     with package updates.
     """
-    def __init__(self, force_update=False):
-        super(PackageUpdateTask, self).__init__()
+    def __init__(self, force_update=False, *args, **kwargs):
+        super(PackageUpdateTask, self).__init__(*args, **kwargs)
         self.force_update = force_update
 
     def set_parameters(self, parameters):
