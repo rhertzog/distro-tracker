@@ -14,6 +14,7 @@ from optparse import make_option
 from pts.core.retrieve_data import UpdateRepositoriesTask
 from pts.core.tasks import run_task
 
+
 class Command(BaseCommand):
     """
     A Django management command which performs the update of available pseudo

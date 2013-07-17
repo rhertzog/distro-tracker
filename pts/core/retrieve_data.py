@@ -416,39 +416,53 @@ class UpdateRepositoriesTask(PackageUpdateTask):
 
             self._add_processed_repository_entry(entry)
 
+    def _remove_query_set_if_count_zero(self, qs, count_field, event_generator=None):
+        """
+        Removes elements from the given query set if their count of the given
+        count_field is 0.
+        If provided, uses the event_generator callback to generate an event
+        for each of the removed instances.
+        """
+        qs = qs.annotate(count=models.Count(count_field))
+        qs = qs.filter(count=0)
+        if event_generator:
+            for item in qs:
+                self.raise_event(*event_generator(item))
+        qs.delete()
+
     def _remove_obsolete_packages(self):
         # Clean up package versions which no longer exist in any repository.
-        source_package_qs = SourcePackage.objects.annotate(
-            repository_count=models.Count('repository'))
-        source_package_qs = source_package_qs.filter(repository_count=0)
-        for source_package in source_package_qs:
-            self.raise_event('lost-version-of-source-package', {
-                'name': source_package.name,
-                'version': source_package.version,
-            })
-        source_package_qs.delete()
-
+        self._remove_query_set_if_count_zero(
+            SourcePackage.objects.all(),
+            'repository',
+            lambda source_package: (
+                'lost-version-of-source-package', {
+                    'name': source_package.name,
+                    'version': source_package.version,
+                }
+            )
+        )
         # Clean up names which no longer exist.
-        source_package_name_qs = SourcePackageName.objects.annotate(
-            version_count=models.Count('source_package_versions'))
-        source_package_name_qs = source_package_name_qs.filter(
-            version_count=0)
-        for package in source_package_name_qs:
-            self.raise_event('lost-source-package', {
-                'name': package.name,
-            })
-        source_package_name_qs.delete()
-
+        self._remove_query_set_if_count_zero(
+            SourcePackageName.objects.all(),
+            'source_package_versions',
+            lambda package: (
+                'lost-source-package', {
+                    'name': package.name,
+                }
+            )
+        )
         # Clean up binary package names which are no longer used by any source
         # package.
-        binary_package_qs = BinaryPackageName.objects.annotate(
-            source_package_count=models.Count('sourcepackage'))
-        binary_package_qs = binary_package_qs.filter(source_package_count=0)
-        for binary_package_name in binary_package_qs:
-            self.raise_event('lost-binary-package', {
-                'name': binary_package_name.name,
-            })
-        binary_package_qs.delete()
+        self._remove_query_set_if_count_zero(
+            BinaryPackageName.objects.all(),
+            'sourcepackage',
+            lambda binary_package_name: (
+                'lost-binary-package', {
+                    'name': binary_package_name.name,
+                }
+            )
+        )
 
     def _update_repository_entries(self, repository):
         """
