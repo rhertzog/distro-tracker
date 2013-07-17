@@ -15,6 +15,7 @@ from django.utils import six
 
 from collections import defaultdict
 import logging
+import sys
 
 logger = logging.getLogger(__name__)
 
@@ -308,7 +309,7 @@ def clear_all_events_on_exception(func):
             func(self)
         except Exception as e:
             self.clear_events()
-            raise e
+            six.reraise(*sys.exc_info())
     return wrapper
 
 
