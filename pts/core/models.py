@@ -692,27 +692,6 @@ class SourcePackageUploader(models.Model):
 
 
 @python_2_unicode_compatible
-class Developer(models.Model):
-    name = models.CharField(max_length=60, blank=True)
-    email = models.EmailField(max_length=244, unique=True)
-
-    def __str__(self):
-        return "{name} <{email}>".format(name=self.name, email=self.email)
-
-    def to_dict(self):
-        """
-        Returns a dictionary representing a Developer instance.
-        """
-        from django.forms.models import model_to_dict
-        return model_to_dict(self, fields=['name', 'email'])
-
-    def update(self, **kwargs):
-        for key, value in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
-
-
-@python_2_unicode_compatible
 class SourcePackage(models.Model):
     source_package_name = models.ForeignKey(
         SourcePackageName,

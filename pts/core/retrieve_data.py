@@ -16,7 +16,6 @@ from pts.core.models import SourcePackageRepositoryEntry
 from pts.core.models import ContributorEmail
 from pts.core.models import SourcePackageMaintainer
 from pts.core.models import SourcePackageUploader
-from pts.core.models import Developer
 from pts.core.models import SourcePackage
 from pts.core.models import PackageExtractedInfo
 from pts.core.models import BinaryPackageName
