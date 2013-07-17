@@ -26,6 +26,48 @@ from pts.core.models import Developer, SourcePackage
 from pts.core.models import MailingList
 
 
+def create_source_package(arguments):
+    """
+    Creates and returns a new SourcePackage instance based on the
+    parameters given in the arguments.
+
+    It takes care to automatically create any missing maintainers, package
+    names, etc.
+    """
+    kwargs = {}
+    if 'maintainer' in arguments:
+        maintainer = arguments['maintainer']['email']
+        kwargs['maintainer'] = Developer.objects.get_or_create(
+            email=maintainer)[0]
+    if 'name' in arguments:
+        name = arguments['name']
+        kwargs['source_package_name'] = (
+            SourcePackageName.objects.get_or_create(name=name)[0])
+    if 'version' in arguments:
+        kwargs['version'] = arguments['version']
+    if 'directory' in arguments:
+        kwargs['directory'] = arguments['directory']
+    if 'dsc_file_name' in arguments:
+        kwargs['dsc_file_name'] = arguments['dsc_file_name']
+
+    src_pkg = SourcePackage.objects.create(**kwargs)
+
+    # Now add m2m fields
+    if 'architectures' in arguments:
+        architectures = arguments['architectures']
+        src_pkg.architectures = Architecture.objects.filter(
+            name__in=architectures)
+    if 'binary_packages' in arguments:
+        binaries = []
+        for binary in arguments['binary_packages']:
+            binaries.append(
+                BinaryPackageName.objects.get_or_create(name=binary)[0])
+        src_pkg.binary_packages = binaries
+
+    src_pkg.save()
+    return src_pkg
+
+
 class SubscriptionManagerTest(TestCase):
     def setUp(self):
         self.package = PackageName.objects.create(name='dummy-package')
@@ -615,47 +657,6 @@ class SourcePackageTests(TestCase):
         self.source_package = SourcePackage.objects.create(
             source_package_name=self.src_pkg_name, version='1.0.0')
 
-    def create_source_package(self, arguments):
-        """
-        Creates and returns a new SourcePackage instance based on the
-        parameters given in the arguments.
-
-        It takes care to automatically create any missing maintainers, package
-        names, etc.
-        """
-        kwargs = {}
-        if 'maintainer' in arguments:
-            maintainer = arguments['maintainer']['email']
-            kwargs['maintainer'] = Developer.objects.get_or_create(
-                email=maintainer)[0]
-        if 'name' in arguments:
-            name = arguments['name']
-            kwargs['source_package_name'] = (
-                SourcePackageName.objects.get_or_create(name=name)[0])
-        if 'version' in arguments:
-            kwargs['version'] = arguments['version']
-        if 'directory' in arguments:
-            kwargs['directory'] = arguments['directory']
-        if 'dsc_file_name' in arguments:
-            kwargs['dsc_file_name'] = arguments['dsc_file_name']
-
-        src_pkg = SourcePackage.objects.create(**kwargs)
-
-        # Now add m2m fields
-        if 'architectures' in arguments:
-            architectures = arguments['architectures']
-            src_pkg.architectures = Architecture.objects.filter(
-                name__in=architectures)
-        if 'binary_packages' in arguments:
-            binaries = []
-            for binary in arguments['binary_packages']:
-                binaries.append(
-                    BinaryPackageName.objects.get_or_create(name=binary)[0])
-            src_pkg.binary_packages = binaries
-
-        src_pkg.save()
-        return src_pkg
-
     def test_main_version_1(self):
         """
         Tests that the main version is correctly returned when the package is
@@ -739,7 +740,7 @@ class SourcePackageTests(TestCase):
         Tests retrieving the URL of the package's directory from the entry.
         """
         architectures = ['amd64', 'all']
-        src_pkg = self.create_source_package({
+        src_pkg = create_source_package({
             'name': 'package-with-directory',
             'binary_packages': ['binary-package'],
             'version': '0.1',
@@ -771,7 +772,7 @@ class SourcePackageTests(TestCase):
         Tests retrieving the URL of the package's .dsc file given in the entry.
         """
         architectures = ['amd64', 'all']
-        src_pkg = self.create_source_package({
+        src_pkg = create_source_package({
             'name': 'package-with-dsc-file',
             'binary_packages': ['binary-package'],
             'version': '0.1',
