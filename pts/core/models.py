@@ -629,6 +629,14 @@ class Repository(models.Model):
 
 
 @python_2_unicode_compatible
+class ContributorEmail(models.Model):
+    email = models.EmailField(max_length=244, unique=True)
+
+    def __str__(self):
+        return self.email
+
+
+@python_2_unicode_compatible
 class Developer(models.Model):
     name = models.CharField(max_length=60, blank=True)
     email = models.EmailField(max_length=244, unique=True)
