@@ -182,7 +182,7 @@ def get_maintainer_extra(developer_email, package_name=None):
             'description': 'maintainer agrees with Low Threshold NMU',
             'link': 'http://wiki.debian.org/LowThresholdNmu',
         })
-    if package_name and developer.debian_maintainer:
+    if package_name and developer.is_debian_maintainer:
         if package_name in developer.allowed_packages:
             extra.append({
                 'display': 'dm',
@@ -209,7 +209,7 @@ def get_uploader_extra(developer_email, package_name=None):
     if not developer:
         return
 
-    if developer.debian_maintainer:
+    if developer.is_debian_maintainer:
         if package_name in developer.allowed_packages:
             return [{
                 'display': 'dm',

@@ -356,7 +356,7 @@ class RetrieveDebianMaintainersTest(TestCase):
         # A Debian developer created
         self.assertEqual(DebianContributor.objects.count(), 1)
         d = DebianContributor.objects.all()[0]
-        self.assertTrue(d.debian_maintainer)
+        self.assertTrue(d.is_debian_maintainer)
         self.assertSequenceEqual(
             ['dummy-package', 'second-package'],
             d.allowed_packages
@@ -381,7 +381,7 @@ class RetrieveDebianMaintainersTest(TestCase):
         # A Debian developer created
         self.assertEqual(DebianContributor.objects.count(), 1)
         d = DebianContributor.objects.all()[0]
-        self.assertTrue(d.debian_maintainer)
+        self.assertTrue(d.is_debian_maintainer)
         self.assertSequenceEqual(
             ['dummy-package', 'second-package'],
             d.allowed_packages
@@ -396,7 +396,7 @@ class RetrieveDebianMaintainersTest(TestCase):
         # Set up a Debian developer that is already in the NMU list.
         email = ContributorEmail.objects.create(email='dummy@debian.org')
         DebianContributor.objects.create(email=email,
-                                         debian_maintainer=True,
+                                         is_debian_maintainer=True,
                                          allowed_packages=['one'])
 
         self.set_mock_response(mock_requests,
@@ -424,7 +424,7 @@ class RetrieveDebianMaintainersTest(TestCase):
         # Set up a Debian developer that is already in the DM list.
         email = ContributorEmail.objects.create(email='dummy@debian.org')
         DebianContributor.objects.create(email=email,
-                                         debian_maintainer=True,
+                                         is_debian_maintainer=True,
                                          allowed_packages=['one'])
 
         self.set_mock_response(mock_requests,
@@ -438,7 +438,7 @@ class RetrieveDebianMaintainersTest(TestCase):
 
         d = DebianContributor.objects.get(email__email='dummy@debian.org')
         # The developer is no longer a debian maintainer
-        self.assertFalse(d.debian_maintainer)
+        self.assertFalse(d.is_debian_maintainer)
 
 
 class DebianContributorExtraTest(TestCase):
@@ -457,7 +457,7 @@ class DebianContributorExtraTest(TestCase):
             get_maintainer_extra('dummy@debian.org')
         )
         # The developer is now in the DM list
-        d.debian_maintainer = True
+        d.is_debian_maintainer = True
         d.allowed_packages = ['package-name']
         d.save()
         # When not providing a package name, the response is the same
@@ -490,7 +490,7 @@ class DebianContributorExtraTest(TestCase):
         # an uploader.
         self.assertIsNone(get_uploader_extra('dummy@debian.org'))
         # The developer is now in the DM list
-        d.debian_maintainer = True
+        d.is_debian_maintainer = True
         d.allowed_packages = ['package-name']
         d.save()
         # When not providing a package name, the response is the same

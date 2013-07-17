@@ -63,15 +63,15 @@ class RetrieveDebianMaintainersTask(BaseTask):
         # Now update the developer information
         with transaction.commit_on_success():
             # Reset all old maintainers first.
-            qs = DebianContributor.objects.filter(debian_maintainer=True)
-            qs.update(debian_maintainer=False)
+            qs = DebianContributor.objects.filter(is_debian_maintainer=True)
+            qs.update(is_debian_maintainer=False)
 
             for email, packages in maintainers.items():
                 email, _ = ContributorEmail.objects.get_or_create(email=email)
                 contributor, _ = DebianContributor.objects.get_or_create(
                     email=email)
 
-                contributor.debian_maintainer = True
+                contributor.is_debian_maintainer = True
                 contributor.allowed_packages = packages
                 contributor.save()
 
