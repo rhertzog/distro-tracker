@@ -96,6 +96,13 @@ class BaseTask(six.with_metaclass(PluginRegistry)):
         pass
 
     @classmethod
+    def get_task_class_by_name(cls, task_name):
+        for task_class in cls.plugins:
+            if task_class.task_name() == task_name:
+                return task_class
+        return None
+
+    @classmethod
     def build_full_task_dag(cls):
         """
         A class method which builds a full TaskDAG where only subclasses of
