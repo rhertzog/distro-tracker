@@ -211,6 +211,32 @@ class TaskDAG(DAG):
         return self.add_edge(task1, task2)
 
 
+class JobState(object):
+    """
+    Represents the current state of a running job.
+    """
+    def __init__(self, initial_task, additional_parameters=None):
+        self.initial_task = initial_task
+        self.additional_parameters = additional_parameters
+        self.events = []
+        self.processed_tasks = []
+
+    def add_processed_task(self, task):
+        self.events.extend(task.raised_events)
+        self.processed_tasks.append(task.task_name())
+
+    def events_for_task(self, task):
+        """
+        Returns a generator of raised events which are relevant for the given
+        task.
+        """
+        return (
+            event
+            for event in self.events
+            if event.name in task.DEPENDS_ON_EVENTS
+        )
+
+
 class Job(object):
     """
     A class used to initialize and run a set of interdependent tasks.
