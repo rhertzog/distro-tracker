@@ -290,11 +290,11 @@ class UpdateRepositoriesTask(PackageUpdateTask):
         self._all_packages = []
         self._all_repository_entries = []
 
+    def _clear_processed_repository_entries(self):
+        self._all_repository_entries = []
+
     def _add_processed_repository_entry(self, repository_entry):
         self._all_repository_entries.append(repository_entry.id)
-
-    def _add_processed_package(self, source_package_name):
-        self._all_packages.append(source_package_name.id)
 
     def _update_sources_file(self, repository, sources_file):
         for stanza in deb822.Sources.iter_paragraphs(file(sources_file)):
@@ -414,24 +414,9 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                 'repository': repository.name,
             })
 
-            self._add_processed_package(src_pkg.source_package_name)
             self._add_processed_repository_entry(entry)
 
-    def _remove_obsolete_source_packages(self):
-        # Clean up names which no longer exist.
-        source_package_name_qs = SourcePackageName.objects.exclude(
-            id__in=self._all_packages)
-        for package in source_package_name_qs:
-            self.raise_event('lost-source-package', {
-                'name': package.name,
-            })
-        source_package_name_qs.delete()
-
-        # Clean up repository versions which no longer exist.
-        repository_entries_qs = SourcePackageRepositoryEntry.objects.exclude(
-            id__in=self._all_repository_entries)
-        repository_entries_qs.delete()
-
+    def _remove_obsolete_packages(self):
         # Clean up package versions which no longer exist in any repository.
         source_package_qs = SourcePackage.objects.annotate(
             repository_count=models.Count('repository'))
@@ -442,6 +427,17 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                 'version': source_package.version,
             })
         source_package_qs.delete()
+
+        # Clean up names which no longer exist.
+        source_package_name_qs = SourcePackageName.objects.annotate(
+            version_count=models.Count('source_package_versions'))
+        source_package_name_qs = source_package_name_qs.filter(
+            version_count=0)
+        for package in source_package_name_qs:
+            self.raise_event('lost-source-package', {
+                'name': package.name,
+            })
+        source_package_name_qs.delete()
 
         # Clean up binary package names which are no longer used by any source
         # package.
@@ -454,6 +450,23 @@ class UpdateRepositoriesTask(PackageUpdateTask):
             })
         binary_package_qs.delete()
 
+    def _update_repository_entries(self, repository):
+        """
+        Removes all repository entries which are no longer found in the given
+        repository after the last update.
+        """
+        # Clean up repository versions which no longer exist.
+        repository_entries_qs = (
+            SourcePackageRepositoryEntry.objects.filter(
+                repository=repository))
+        # Out of all entries in this repository, only those found in
+        # the last update need to stay, so exclude them from the delete
+        repository_entries_qs = repository_entries_qs.exclude(
+            id__in=self._all_repository_entries)
+        repository_entries_qs.delete()
+
+        self._clear_processed_repository_entries()
+
     @clear_all_events_on_exception
     def execute(self):
         apt_cache = AptCache()
@@ -461,10 +474,22 @@ class UpdateRepositoriesTask(PackageUpdateTask):
             apt_cache.update_repositories(self.force_update)
         )
 
+        # Group all files by repository to which they belong
+        repository_files = {}
+        for repository, sources_file in updated_sources:
+            repository_files.setdefault(repository, [])
+            repository_files[repository].append(sources_file)
+
         with transaction.commit_on_success():
-            for repository, sources_file in updated_sources:
-                self._update_sources_file(repository, sources_file)
-            self._remove_obsolete_source_packages()
+            for repository, sources_files in repository_files.items():
+                for sources_file in sources_files:
+                    self._update_sources_file(repository, sources_file)
+                # When all the files for the repository are handled, update
+                # which packages are still found in it.
+                self._update_repository_entries(repository)
+            # When all repositories are handled, update which packages are
+            # still found in at least one repository.
+            self._remove_obsolete_packages()
 
 
 class UpdatePackageGeneralInformation(PackageUpdateTask):

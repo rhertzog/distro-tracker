@@ -587,7 +587,7 @@ class RetrieveSourcesInformationTest(TestCase):
         self.assert_events_raised(
             ['new-source-package-version'] +
             ['new-source-package-version-in-repository'] +
-            ['lost-version-of-source-package'] +
+            ['lost-version-of-source-package'] * 2 +
             ['lost-source-package']
         )
 
