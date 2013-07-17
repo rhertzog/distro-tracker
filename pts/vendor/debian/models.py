@@ -21,10 +21,10 @@ from pts.core.utils import SpaceDelimitedTextField
 
 @python_2_unicode_compatible
 class DebianContributor(models.Model):
-    developer = models.OneToOneField('core.Developer')
+    email = models.OneToOneField('core.ContributorEmail')
     agree_with_low_threshold_nmu = models.BooleanField(default=False)
     debian_maintainer = models.BooleanField(default=False)
     allowed_packages = SpaceDelimitedTextField(blank=True)
 
     def __str__(self):
-        return 'Debian contributor <{email}>'.format(email=self.developer.email)
+        return 'Debian contributor <{email}>'.format(email=self.email)

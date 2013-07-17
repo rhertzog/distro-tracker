@@ -17,7 +17,7 @@ from django.db import transaction
 from django.conf import settings
 
 from pts.core.tasks import BaseTask
-from pts.core.models import Developer
+from pts.core.models import ContributorEmail
 from pts.core.utils.http import HttpCache
 from .models import DebianContributor
 import re
@@ -67,13 +67,13 @@ class RetrieveDebianMaintainersTask(BaseTask):
             qs.update(debian_maintainer=False)
 
             for email, packages in maintainers.items():
-                developer, _ = Developer.objects.get_or_create(email=email)
-                developer, _ = DebianContributor.objects.get_or_create(
-                    developer=developer)
+                email, _ = ContributorEmail.objects.get_or_create(email=email)
+                contributor, _ = DebianContributor.objects.get_or_create(
+                    email=email)
 
-                developer.debian_maintainer = True
-                developer.allowed_packages = packages
-                developer.save()
+                contributor.debian_maintainer = True
+                contributor.allowed_packages = packages
+                contributor.save()
 
 
 class RetrieveLowThresholdNmuTask(BaseTask):
@@ -121,8 +121,9 @@ class RetrieveLowThresholdNmuTask(BaseTask):
             qs = DebianContributor.objects.filter(agree_with_low_threshold_nmu=True)
             qs.update(agree_with_low_threshold_nmu=False)
             for email in emails:
-                developer, _ = Developer.objects.get_or_create(email=email)
-                developer, _ = DebianContributor.objects.get_or_create(developer=developer)
+                email, _ = ContributorEmail.objects.get_or_create(email=email)
+                contributor, _ = DebianContributor.objects.get_or_create(
+                    email=email)
 
-                developer.agree_with_low_threshold_nmu = True
-                developer.save()
+                contributor.agree_with_low_threshold_nmu = True
+                contributor.save()

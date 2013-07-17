@@ -19,7 +19,7 @@ from django.core import mail
 from django.utils.six.moves import mock
 from pts.dispatch.tests import DispatchTestHelperMixin, DispatchBaseTest
 from pts.core.models import PackageName
-from pts.core.models import Developer
+from pts.core.models import ContributorEmail
 from pts.core.tasks import run_task
 from pts.vendor.debian.rules import get_package_information_site_url
 from pts.vendor.debian.rules import get_maintainer_extra
@@ -282,7 +282,7 @@ class RetrieveLowThresholdNmuTest(TestCase):
         Tests updating the list of developers that allow the low threshold
         NMU when the developer was previously registered in the database.
         """
-        d = Developer.objects.create(email='dummy@debian.org', name='Name')
+        email = ContributorEmail.objects.create(email='dummy@debian.org')
         self.set_mock_response(mock_requests,
             "Text text text\n"
             "text more text...\n"
@@ -296,8 +296,6 @@ class RetrieveLowThresholdNmuTest(TestCase):
         self.assertEqual(DebianContributor.objects.count(), 1)
         d = DebianContributor.objects.all()[0]
         self.assertTrue(d.agree_with_low_threshold_nmu)
-        # The name of the original developer model has not changed.
-        self.assertEqual('Name', d.developer.name)
 
     @mock.patch('pts.core.utils.http.requests')
     def test_developer_remove_nmu(self, mock_requests):
@@ -306,9 +304,9 @@ class RetrieveLowThresholdNmuTest(TestCase):
         removed from the list.
         """
         # Set up a Debian developer that is already in the NMU list.
-        d = Developer.objects.create(email='dummy@debian.org', name='Name')
-        DebianContributor.objects.create(developer=d,
-                                       agree_with_low_threshold_nmu=True)
+        email = ContributorEmail.objects.create(email='dummy@debian.org')
+        DebianContributor.objects.create(email=email,
+                                         agree_with_low_threshold_nmu=True)
         self.set_mock_response(mock_requests,
             "Text text text\n"
             "text more text...\n"
@@ -318,7 +316,7 @@ class RetrieveLowThresholdNmuTest(TestCase):
 
         run_task(RetrieveLowThresholdNmuTask)
 
-        d = DebianContributor.objects.get(developer__email='dummy@debian.org')
+        d = DebianContributor.objects.get(email__email='dummy@debian.org')
         # The Debian developer is no longer in the list of low threshold nmu
         self.assertFalse(d.agree_with_low_threshold_nmu)
 
@@ -370,7 +368,7 @@ class RetrieveDebianMaintainersTest(TestCase):
         Tests updating the DM list when the developer was previously registered
         in the database.
         """
-        d = Developer.objects.create(email='dummy@debian.org', name='Name')
+        ContributorEmail.objects.create(email='dummy@debian.org')
         self.set_mock_response(mock_requests,
             "Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
             "Uid: Dummy Developer <dummy@debian.org>\n"
@@ -388,8 +386,6 @@ class RetrieveDebianMaintainersTest(TestCase):
             ['dummy-package', 'second-package'],
             d.allowed_packages
         )
-        # The name of the original developer model has not changed.
-        self.assertEqual('Name', d.developer.name)
 
     @mock.patch('pts.core.utils.http.requests')
     def test_developer_update_dm_list(self, mock_requests):
@@ -398,10 +394,10 @@ class RetrieveDebianMaintainersTest(TestCase):
         the allowed packages list.
         """
         # Set up a Debian developer that is already in the NMU list.
-        d = Developer.objects.create(email='dummy@debian.org', name='Name')
-        DebianContributor.objects.create(developer=d,
-                                       debian_maintainer=True,
-                                       allowed_packages=['one'])
+        email = ContributorEmail.objects.create(email='dummy@debian.org')
+        DebianContributor.objects.create(email=email,
+                                         debian_maintainer=True,
+                                         allowed_packages=['one'])
 
         self.set_mock_response(mock_requests,
             "Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
@@ -412,7 +408,7 @@ class RetrieveDebianMaintainersTest(TestCase):
 
         run_task(RetrieveDebianMaintainersTask)
 
-        d = DebianContributor.objects.get(developer__email='dummy@debian.org')
+        d = DebianContributor.objects.get(email__email='dummy@debian.org')
         # The old package is no longer in its list of allowed packages.
         self.assertSequenceEqual(
             ['dummy-package', 'second-package'],
@@ -426,10 +422,10 @@ class RetrieveDebianMaintainersTest(TestCase):
         the allowed packages list.
         """
         # Set up a Debian developer that is already in the DM list.
-        d = Developer.objects.create(email='dummy@debian.org', name='Name')
-        DebianContributor.objects.create(developer=d,
-                                       debian_maintainer=True,
-                                       allowed_packages=['one'])
+        email = ContributorEmail.objects.create(email='dummy@debian.org')
+        DebianContributor.objects.create(email=email,
+                                         debian_maintainer=True,
+                                         allowed_packages=['one'])
 
         self.set_mock_response(mock_requests,
             "Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
@@ -440,16 +436,16 @@ class RetrieveDebianMaintainersTest(TestCase):
 
         run_task(RetrieveDebianMaintainersTask)
 
-        d = DebianContributor.objects.get(developer__email='dummy@debian.org')
+        d = DebianContributor.objects.get(email__email='dummy@debian.org')
         # The developer is no longer a debian maintainer
         self.assertFalse(d.debian_maintainer)
 
 
-class DebianDeveloperExtraTest(TestCase):
+class DebianContributorExtraTest(TestCase):
     def test_maintainer_extra(self):
-        d = Developer.objects.create(email='dummy@debian.org', name='Name')
-        d = DebianContributor.objects.create(developer=d,
-                                           agree_with_low_threshold_nmu=True)
+        email = ContributorEmail.objects.create(email='dummy@debian.org')
+        d = DebianContributor.objects.create(email=email,
+                                             agree_with_low_threshold_nmu=True)
 
         # Only in NMU list
         self.assertSequenceEqual(
@@ -486,9 +482,9 @@ class DebianDeveloperExtraTest(TestCase):
         )
 
     def test_uploader_extra(self):
-        d = Developer.objects.create(email='dummy@debian.org', name='Name')
-        d = DebianContributor.objects.create(developer=d,
-                                           agree_with_low_threshold_nmu=True)
+        email = ContributorEmail.objects.create(email='dummy@debian.org')
+        d = DebianContributor.objects.create(email=email,
+                                             agree_with_low_threshold_nmu=True)
 
         # Only in NMU list - no extra data when the developer in displayed as
         # an uploader.
@@ -505,4 +501,3 @@ class DebianDeveloperExtraTest(TestCase):
         ],
             get_uploader_extra('dummy@debian.org', 'package-name')
         )
-
