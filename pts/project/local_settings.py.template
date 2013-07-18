@@ -32,3 +32,16 @@ PTS_VENDOR_RULES = 'pts.vendor.debian.rules'
 
 PTS_CACHE_DIRECTORY = '/path/to/a/directory'
 """This directory is used to store the local cache of repository information"""
+
+# Absolute path to the directory static files should be collected to.
+# Don't put anything in this directory yourself; store your static files
+# in apps' "static/" subdirectories and in STATICFILES_DIRS.
+STATIC_ROOT = '/path/to/static/root/directory'
+
+# Make this unique, and don't share it with anybody.
+# DO NOT USE THE EXAMPLE KEY GIVEN BELOW
+SECRET_KEY = 'etu2#5lv=!0(g9l31mw=cpwhioy!egg60lb5o3_67d83#(wu-u'
+
+# Hosts/domain names that are valid for this site; required if DEBUG is False
+# See https://docs.djangoproject.com/en/1.5/ref/settings/#allowed-hosts
+ALLOWED_HOSTS = []
