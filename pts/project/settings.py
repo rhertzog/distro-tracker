@@ -197,17 +197,17 @@ LOGGING = {
         },
         'pts.control': {
             'handlers': ['console'],
-            'level': DEBUG,
+            'level': 'DEBUG',
             'propagate': True,
         },
         'pts.dispatch': {
             'handlers': ['console'],
-            'level': DEBUG,
+            'level': 'DEBUG',
             'propagate': True,
         },
         'pts.core.tasks': {
             'handlers': ['console-timestamp'],
-            'level': DEBUG,
+            'level': 'DEBUG',
             'propagate': True,
         },
     }
