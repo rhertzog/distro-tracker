@@ -17,8 +17,8 @@ from pts.core.tasks import run_task
 
 class Command(BaseCommand):
     """
-    A Django management command which performs the update of available pseudo
-    pacakges.
+    A management command which updates package information found in all
+    registered repositories.
     """
     help = "Update the package information found in registered repositories"
     option_list = BaseCommand.option_list + (
