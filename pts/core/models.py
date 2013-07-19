@@ -661,37 +661,6 @@ class SourcePackageMaintainer(models.Model):
 
 
 @python_2_unicode_compatible
-class SourcePackageUploader(models.Model):
-    """
-    Represents an uploader of a single SourcePackage.
-    """
-    contributor_email = models.ForeignKey(ContributorEmail)
-    source_package = models.ForeignKey(
-        'SourcePackage',
-        related_name='uploaders'
-    )
-    name = models.CharField(max_length=60, blank=True)
-
-    class Meta:
-        unique_together = ('contributor_email', 'source_package')
-
-    def __str__(self):
-        return "{name} <{email}>, uploader of source package {pkg}".format(
-            name=self.name,
-            email=self.contributor_email,
-            pkg=self.source_package)
-
-    def to_dict(self):
-        """
-        Returns a dictionary representing a SourcePackageMaintainer instance.
-        """
-        return {
-            'name': self.name,
-            'email': self.contributor_email.email,
-        }
-
-
-@python_2_unicode_compatible
 class SourcePackage(models.Model):
     source_package_name = models.ForeignKey(
         SourcePackageName,
@@ -706,10 +675,9 @@ class SourcePackage(models.Model):
         SourcePackageMaintainer,
         related_name='source_package',
         null=True)
-    uploader_emails = models.ManyToManyField(
-        ContributorEmail,
-        related_name='source_packages_uploads_set',
-        through='SourcePackageUploader'
+    uploaders = models.ManyToManyField(
+        SourcePackageMaintainer,
+        related_name='source_packages_uploads_set'
     )
 
     dsc_file_name = models.CharField(max_length=255, blank=True)

@@ -15,7 +15,6 @@ from pts.core.models import Repository
 from pts.core.models import SourcePackageRepositoryEntry
 from pts.core.models import ContributorEmail
 from pts.core.models import SourcePackageMaintainer
-from pts.core.models import SourcePackageUploader
 from pts.core.models import SourcePackage
 from pts.core.models import PackageExtractedInfo
 from pts.core.models import BinaryPackageName
@@ -354,12 +353,10 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                         email=email)
                 else:
                     contributor_email = existing_contributor_emails[email]
-                uploaders.append(SourcePackageUploader.objects.get_or_create(
+                uploaders.append(SourcePackageMaintainer.objects.get_or_create(
                     contributor_email=contributor_email,
-                    source_package=src_pkg,
-                    defaults={
-                        'name': name,
-                    })[0])
+                    name=name)[0]
+                )
 
             entry['uploaders'] = uploaders
 
