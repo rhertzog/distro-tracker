@@ -18,6 +18,7 @@ from pts.core.models import SourcePackageMaintainer
 from pts.core.models import SourcePackage
 from pts.core.models import PackageExtractedInfo
 from pts.core.models import BinaryPackageName
+from pts.core.utils import get_or_none
 from pts.core.tasks import BaseTask
 from pts.core.tasks import clear_all_events_on_exception
 from pts.core.models import SourcePackageName, Architecture
@@ -553,7 +554,9 @@ class UpdatePackageGeneralInformation(PackageUpdateTask):
         with transaction.commit_on_success():
             for event in self.get_all_events():
                 package_name = event.arguments['name']
-                package = SourcePackageName.objects.get(name=package_name)
+                package = get_or_none(SourcePackageName, name=package_name)
+                if not package:
+                    continue
                 entry = package.main_entry
                 if entry is None:
                     continue
@@ -605,7 +608,9 @@ class UpdateVersionInformation(PackageUpdateTask):
         with transaction.commit_on_success():
             for event in self.get_all_events():
                 package_name = event.arguments['name']
-                package = SourcePackageName.objects.get(name=package_name)
+                package = get_or_none(SourcePackageName, name=package_name)
+                if not package:
+                    continue
 
                 versions, _ = PackageExtractedInfo.objects.get_or_create(
                     key='versions',
@@ -644,7 +649,9 @@ class UpdateSourceToBinariesInformation(PackageUpdateTask):
         with transaction.commit_on_success():
             for event in self.get_all_events():
                 package_name = event.arguments['name']
-                package = SourcePackageName.objects.get(name=package_name)
+                package = get_or_none(SourcePackageName, name=package_name)
+                if not package:
+                    continue
 
                 binaries, _ = PackageExtractedInfo.objects.get_or_create(
                     key='binaries',
