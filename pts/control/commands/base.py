@@ -7,7 +7,10 @@
 # this distribution and at http://deb.li/ptslicense. No part of the Package
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
-
+"""
+The module defining common functionality and base classes for all email control
+commands.
+"""
 from __future__ import unicode_literals
 
 from django.utils import six
@@ -21,10 +24,10 @@ class MetaCommand(type):
     """
     Meta class for PTS Commands.
 
-    Transforms the ``REGEX_LIST`` given in the Command to include all aliases
-    of the command so when implementing a Command subclass, it is not necessary
-    to include a separate regex for each command or a long one listing every
-    option.
+    Transforms the :py:attr:`Command.REGEX_LIST` given in a Command sublclass
+    to include all aliases of the command. When implementing a
+    :py:class:`Command` subclass, it is not necessary to include a separate
+    regex for each command alias or a long one listing every option.
     """
     def __init__(cls, name, bases, dct):
         if not getattr(cls, 'META', None):
@@ -41,11 +44,12 @@ class MetaCommand(type):
 
 class Command(six.with_metaclass(MetaCommand)):
     """
-    Base class for commands. Instances of this class can be used for NOP
+    Base class for commands. Instances of this class can be used for no-op
     commands.
     """
     __metaclass__ = MetaCommand
 
+    META = {}
     """
     Meta information about the command, such as:
      - Description
@@ -53,7 +57,7 @@ class Command(six.with_metaclass(MetaCommand)):
      - List of aliases
      - Preferred position in the help output
     """
-    META = {}
+    REGEX_LIST = ()
     """
     A list of regular expressions which, when matched to a string, identify
     a command. Additionally, any named group in the regular expression should
@@ -66,7 +70,6 @@ class Command(six.with_metaclass(MetaCommand)):
     capture the parameters, while the name and all aliases given in the META
     dict are automatically assumed when matching a string to the command.
     """
-    REGEX_LIST = ()
 
     def __init__(self, *args):
         self._sent_mails = []
@@ -74,8 +77,8 @@ class Command(six.with_metaclass(MetaCommand)):
 
     def __call__(self):
         """
-        The base class delegates execution to the appropriate handle method
-        and handles the reply.
+        The base class delegates execution to the appropriate :py:meth:`handle`
+        method and handles the reply.
         """
         self.handle()
         return self.render_reply()
@@ -99,6 +102,8 @@ class Command(six.with_metaclass(MetaCommand)):
     def match_line(cls, line):
         """
         Class method to check whether the given line matches the command.
+
+        :param line: The line to check whether it matches the command.
         """
         for pattern in cls.REGEX_LIST:
             match = re.match(pattern, line, re.IGNORECASE)
@@ -114,18 +119,27 @@ class Command(six.with_metaclass(MetaCommand)):
     def reply(self, message):
         """
         Adds a message to the command's reply.
+
+        :param message: Message to include in the reply
+        :type message: string
         """
         self.out.append(message)
 
     def warn(self, message):
         """
         Adds a warning to the command's reply.
+
+        :param message: Message to include in the reply
+        :type message: string
         """
         self.out.append('Warning: ' + message)
 
     def error(self, message):
         """
         Adds an error message to the command's reply.
+
+        :param message: Message to include in the reply
+        :type message: string
         """
         self.out.append("Error: " + message)
 
@@ -133,6 +147,10 @@ class Command(six.with_metaclass(MetaCommand)):
         """
         Includes a list of items in the reply. Each item is converted to a
         string before being output.
+
+        :param items: An iterable of items to be included in the form of a list
+            in the reply.
+        :param bullet: The character to be used as the "bullet" of the list.
         """
         for item in items:
             self.reply(bullet + ' ' + str(item))

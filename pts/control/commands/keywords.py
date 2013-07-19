@@ -7,7 +7,9 @@
 # this distribution and at http://deb.li/ptslicense. No part of the Package
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
-
+"""
+Implements all commands which deal with message keywords.
+"""
 from __future__ import unicode_literals
 
 from pts.control.commands.base import Command
@@ -23,6 +25,7 @@ __all__ = (
     'ViewPackageKeywordsCommand',
     'SetDefaultKeywordsCommand',
     'SetPackageKeywordsCommand',
+    'KeywordCommandMixin',
 )
 
 
@@ -34,6 +37,11 @@ class KeywordCommandMixin(object):
         """
         Helper returns an error saying the user is not subscribed to the
         package.
+
+        :param email: The email of the user which is not subscribed to the
+            package.
+        :param package_name: The name of the package the user is not subscribed
+            to.
         """
         self.error('{email} is not subscribed to the package {package}'.format(
             email=email,
@@ -41,6 +49,16 @@ class KeywordCommandMixin(object):
         )
 
     def get_subscription(self, email, package_name):
+        """
+        Helper method returning a
+        :py:class:`Subscription <pts.core.models.Subscription>` instance for
+        the given package and user.
+        It logs any errors found while retrieving this instance, such as the
+        user not being subscribed to the given package.
+
+        :param email: The email of the user.
+        :param package_name: The name of the package.
+        """
         email_user = get_or_none(EmailUser, email=email)
         if not email_user:
             self.error_not_subscribed(email, package_name)
@@ -62,8 +80,12 @@ class KeywordCommandMixin(object):
 
     def keyword_name_to_object(self, keyword_name):
         """
-        Takes a keyword name and returns a Keyword object with the given name
-        if it exists.
+        Takes a keyword name and returns a
+        :py:class:`Keyword <pts.core.models.Keyword>` object with the given name
+        if it exists. If not, a warning is added to the commands' output.
+
+        :param keyword_name: The name of the keyword to be retrieved.
+        :rtype: :py:class:`Keyword <pts.core.models.Keyword>` or ``None``
         """
         keyword = get_or_none(Keyword, name=keyword_name)
         if not keyword:
@@ -74,6 +96,13 @@ class KeywordCommandMixin(object):
     def add_keywords(self, keywords, manager):
         """
         Adds the keywords given in the iterable ``keywords`` to the ``manager``
+
+        :param keywords: The keywords to be added to the ``manager``
+        :type keywords: any iterable containing
+            :py:class:`Keyword <pts.core.models.Keyword>` instances
+
+        :param manager: The manager to which the keywords should be added.
+        :type manager: :py:class:`Manager <django.db.models.Manager>`
         """
         for keyword_name in keywords:
             keyword = self.keyword_name_to_object(keyword_name)
@@ -84,6 +113,13 @@ class KeywordCommandMixin(object):
         """
         Removes the keywords given in the iterable ``keywords`` from the
         ``manager``.
+
+        :param keywords: The keywords to be removed from the ``manager``
+        :type keywords: any iterable containing
+            :py:class:`Keyword <pts.core.models.Keyword>` instances
+
+        :param manager: The manager from which the keywords should be removed.
+        :type manager: :py:class:`Manager <django.db.models.Manager>`
         """
         for keyword_name in keywords:
             keyword = self.keyword_name_to_object(keyword_name)
@@ -94,6 +130,13 @@ class KeywordCommandMixin(object):
         """
         Sets the keywords given in the iterable ``keywords`` to the ``manager``
         so that they are the only keywords it contains.
+
+        :param keywords: The keywords to be set to the ``manager``
+        :type keywords: any iterable containing
+            :py:class:`Keyword <pts.core.models.Keyword>` instances
+
+        :param manager: The manager to which the keywords should be added.
+        :type manager: :py:class:`Manager <django.db.models.Manager>`
         """
         manager.clear()
         self.add_keywords(keywords, manager)
@@ -103,6 +146,14 @@ class KeywordCommandMixin(object):
         '-': remove_keywords,
         '=': set_keywords,
     }
+    """
+    Maps symbols to operations. When the symbol is found in a keyword command
+    the given operation is called.
+
+    - '+': :py:meth:`add_keywords`
+    - '-': :py:meth:`remove_keywords`
+    - '=': :py:meth:`set_keywords`
+    """
 
 
 class ViewDefaultKeywordsCommand(Command, KeywordCommandMixin):

@@ -7,7 +7,10 @@
 # this distribution and at http://deb.li/ptslicense. No part of the Package
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
-
+"""
+Implements a management command used to invoke the processing of control
+messages.
+"""
 from django.core.management.base import BaseCommand
 from django.utils import six
 

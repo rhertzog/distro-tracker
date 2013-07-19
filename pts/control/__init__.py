@@ -7,5 +7,8 @@
 # this distribution and at http://deb.li/ptslicense. No part of the Package
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
-
+"""
+This app implements all PTS functionality regarding the email interface control
+messages.
+"""
 from pts.control.process import process

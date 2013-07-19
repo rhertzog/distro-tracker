@@ -7,7 +7,9 @@
 # this distribution and at http://deb.li/ptslicense. No part of the Package
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
-
+"""
+Implementation of miscellaneous commands.
+"""
 from __future__ import unicode_literals
 
 from pts.core.utils import get_or_none
@@ -23,6 +25,13 @@ PTS_FQDN = settings.PTS_FQDN
 
 @needs_confirmation
 class SubscribeCommand(Command):
+    """
+    A command which subscribes a user to a package so that he receives that
+    package's email messages.
+
+    .. note::
+      This command requires confirmation.
+    """
     META = {
         'description': """subscribe <srcpackage> [<email>]
   Subscribes <email> to all messages regarding <srcpackage>. If
@@ -48,6 +57,10 @@ class SubscribeCommand(Command):
             self.package, self.user_email)
 
     def pre_confirm(self):
+        """
+        Implementation of a hook method which is executed instead of
+        :py:meth:`handle` when the command is not confirmed.
+        """
         if EmailUser.objects.is_user_subscribed_to(self.user_email,
                                                    self.package):
             self.warn('{email} is already subscribed to {package}'.format(
@@ -97,6 +110,11 @@ class SubscribeCommand(Command):
                 email=self.user_email, package=self.package))
 
     def get_confirmation_message(self):
+        """
+        :returns: A message giving additional information about subscribing to
+            a package.
+        :rtype: string
+        """
         return pts_render_to_string(
             'control/email-subscription-confirmation.txt', {
                 'package': self.package,
@@ -106,6 +124,13 @@ class SubscribeCommand(Command):
 
 @needs_confirmation
 class UnsubscribeCommand(Command):
+    """
+    Command which unsubscribes the user from a package so that he no longer
+    receives any email messages regarding this package.
+
+    .. note::
+       This command requires confirmation.
+    """
     META = {
         'description': """unsubscribe <srcpackage> [<email>]
   Unsubscribes <email> from <srcpackage>. Like the subscribe command,
@@ -128,6 +153,10 @@ class UnsubscribeCommand(Command):
             self.package, self.user_email)
 
     def pre_confirm(self):
+        """
+        Implementation of a hook method which is executed instead of
+        :py:meth:`handle` when the command is not confirmed.
+        """
         if not PackageName.objects.exists_with_name(self.package):
             if BinaryPackageName.objects.exists_with_name(self.package):
                 binary_package = BinaryPackageName.objects.get_by_name(self.package)
@@ -167,6 +196,11 @@ class UnsubscribeCommand(Command):
                 package=self.package))
 
     def get_confirmation_message(self):
+        """
+        :returns: A message giving additional information about unsubscribing
+            from a package.
+        :rtype: string
+        """
         return pts_render_to_string(
             'control/email-unsubscribe-confirmation.txt', {
                 'package': self.package,
@@ -175,6 +209,10 @@ class UnsubscribeCommand(Command):
 
 
 class WhichCommand(Command):
+    """
+    A command which returns a list of packages to which the given user is
+    subscribed to.
+    """
     META = {
         'description': """which [<email>]
   Tells you which packages <email> is subscribed to.""",
@@ -203,6 +241,10 @@ class WhichCommand(Command):
 
 
 class WhoCommand(Command):
+    """
+    A command which returns a list of users which are subscribed to the given
+    package.
+    """
     META = {
         'description': """who <package>
   Outputs all the subscriber emails for the given package in
@@ -246,6 +288,12 @@ class WhoCommand(Command):
     def obfuscate(self, email_user):
         """
         Helper method which obfuscates the given email.
+
+        :param email_user: The user whose email should be obfuscated.
+        :type email_user: :py:class:`EmailUser <pts.core.models.EmailUser>`
+
+        :returns: An obfuscated email address of the given user.
+        :rtype: string
         """
         email = email_user.email
         local_part, domain = email.rsplit('@', 1)
@@ -258,6 +306,10 @@ class WhoCommand(Command):
 
 
 class QuitCommand(Command):
+    """
+    When this command is executed, the processing of further commands should
+    stop.
+    """
     META = {
         'description': '''quit
   Stops processing commands''',
@@ -276,6 +328,13 @@ class QuitCommand(Command):
 
 @needs_confirmation
 class UnsubscribeallCommand(Command):
+    """
+    Command which unsubscribes the user from all packages so that he no longer
+    receives any email messages regarding any packages.
+
+    .. note::
+       This command requires confirmation.
+    """
     META = {
         'description': '''unsubscribeall [<email>]
   Cancel all subscriptions of <email>. Like the subscribe command,
@@ -297,6 +356,10 @@ class UnsubscribeallCommand(Command):
             self.user_email)
 
     def pre_confirm(self):
+        """
+        Implementation of a hook method which is executed instead of
+        :py:meth:`handle` when the command is not confirmed.
+        """
         user = get_or_none(EmailUser, email=self.user_email)
         if not user or user.subscription_set.count() == 0:
             self.warn('User {email} is not subscribed to any packages'.format(
@@ -325,6 +388,11 @@ class UnsubscribeallCommand(Command):
             for package in sorted(packages))
 
     def get_confirmation_message(self):
+        """
+        :returns: A message giving additional information about unsubscribing
+            from all packages.
+        :rtype: string
+        """
         return pts_render_to_string(
             'control/email-unsubscribeall-confirmation.txt'
         )

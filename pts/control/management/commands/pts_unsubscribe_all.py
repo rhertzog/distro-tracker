@@ -7,7 +7,9 @@
 # this distribution and at http://deb.li/ptslicense. No part of the Package
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
-
+"""
+Implements the command which removes all subscriptions for a given email.
+"""
 from __future__ import unicode_literals
 from django.core.management.base import BaseCommand, CommandError
 
@@ -34,6 +36,15 @@ class Command(BaseCommand):
                 self.stdout.write(out)
 
     def _remove_subscriptions(self, email):
+        """
+        Removes subscriptions for the given email.
+
+        :param email: Email for which to remove all subscriptions.
+        :type email: string
+
+        :returns: A message explaining the result of the operation.
+        :rtype: string
+        """
         user = get_or_none(EmailUser, email=email)
         if not user:
             return ('Email {email} is not subscribed to any packages. '

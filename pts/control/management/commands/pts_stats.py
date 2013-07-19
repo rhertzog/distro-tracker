@@ -7,7 +7,9 @@
 # this distribution and at http://deb.li/ptslicense. No part of the Package
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
-
+"""
+Implements the command which outputs statistics on the PTS.
+"""
 from __future__ import unicode_literals
 from __future__ import print_function
 from django.core.management.base import BaseCommand

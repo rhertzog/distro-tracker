@@ -57,22 +57,36 @@ UNIQUE_COMMANDS = sorted(
      if klass != Command and issubclass(klass, Command)),
     key=lambda cmd: cmd.META.get('position', float('inf'))
 )
+"""
+A list of all :py:class:`Command` that are defined.
+"""
 
 
 class CommandFactory(object):
     """
-    Creates instances of Command classes based on the given context.
+    Creates instances of :py:class:`Command <pts.control.commands.base.Command>`
+    classes based on the given context.
 
     Context is used to fill in parameters when the command has not found
     it in the given command line.
     """
     def __init__(self, context):
+        #: A dict which is used to fill in parameters' values when they are not
+        #: found in the command line.
         self.context = context
 
     def get_command_function(self, line):
         """
         Returns a function which executes the functionality of the command
         which corresponds to the given arguments.
+
+        :param line: The line for which a command function should be returned.
+        :type line: string
+
+        :returns: A callable which when called executes the functionality of a
+            command matching the given line.
+        :rtype: :py:class:`Command <pts.control.commands.base.Command>`
+            subclass
         """
         for cmd in UNIQUE_COMMANDS:
             # Command exists
@@ -97,7 +111,20 @@ class CommandFactory(object):
 
 
 class CommandProcessor(object):
+    """
+    A class which performs command processing.
+    """
     def __init__(self, factory, confirmed=False):
+        """
+        :param factory: Used to obtain
+            :py:class:`Command <pts.control.commands.base.Command>` instances
+            from command text which is processed.
+        :type factory: :py:class`CommandFactory` instance
+        :param confirmed: Indicates whether the commands being executed have
+            already been confirmed or if those which require confirmation will
+            be added to the set of commands requiring confirmation.
+        :type confirmed: Boolean
+        """
         self.factory = factory
         self.confirmed = confirmed
         self.confirmation_set = None
@@ -107,12 +134,29 @@ class CommandProcessor(object):
         self.processed = set()
 
     def echo_command(self, line):
+        """
+        Echoes the line to the command processing output. The line is quoted in
+        the output.
+
+        :param line: The line to be echoed back to the output.
+        """
         self.out.append('> ' + line)
 
     def output(self, text):
+        """
+        Include the given line in the command processing output.
+
+        :param line: The line of text to be included in the output.
+        """
         self.out.append(text)
 
     def run_command(self, command):
+        """
+        Runs the given command.
+
+        :param command: The command to be ran.
+        :type command: :py:class:`Command <pts.control.commands.base.Command>`
+        """
         if command.get_command_text() not in self.processed:
             # Only process the command if it was not previously processed.
             if getattr(command, 'needs_confirmation', False):
@@ -126,6 +170,13 @@ class CommandProcessor(object):
             self.processed.add(command.get_command_text())
 
     def process(self, lines):
+        """
+        Processes all the given lines of text which are interpreted as
+        commands.
+
+        :param lines: A list of strings each representing a single line which
+            is to be regarded as a command.
+        """
         if self.errors == MAX_ALLOWED_ERRORS:
             return
 
@@ -152,6 +203,13 @@ class CommandProcessor(object):
                 return
 
     def is_success(self):
+        """
+        Checks whether any command was successfully processed.
+
+        :returns True: when at least one command is successfully executed
+        :returns False: when no commands were successfully executed
+        :rtype: Boolean
+        """
         # Send a response only if there were some commands processed
         if self.processed:
             return True
@@ -159,4 +217,9 @@ class CommandProcessor(object):
             return False
 
     def get_output(self):
+        """
+        Returns the resulting output of processing all given commands.
+
+        :rtype: string
+        """
         return '\n'.join(self.out)

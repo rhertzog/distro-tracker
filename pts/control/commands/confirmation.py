@@ -7,7 +7,10 @@
 # this distribution and at http://deb.li/ptslicense. No part of the Package
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
-
+"""
+Implements classes and functions related to commands which require confirmation
+and confirming such commands.
+"""
 from __future__ import unicode_literals
 
 from pts.core.utils import get_or_none
@@ -17,12 +20,13 @@ from pts.control.commands.base import Command
 
 def needs_confirmation(klass):
     """
-    A class decorator to mark that a ``Command`` subclass requires confirmation
-    before it is executed.
+    A class decorator to mark that a
+    :py:class:`Command <pts.control.commands.base.Command>` subclass requires
+    confirmation before it is executed.
 
-    Classes decorated by this decorator can provide two additional methods::
+    Classes decorated by this decorator can provide two additional methods:
 
-     - ``pre_confirm`` - for actions which should come before asking for
+    - ``pre_confirm`` - for actions which should come before asking for
        confirmation for the command. If this method does not return an
        object which evalutes as a True Boolean, no confirmation is sent.
        It should also make sure to add appropriate status messages to the
@@ -30,7 +34,7 @@ def needs_confirmation(klass):
        If the method is not provided, then a default response indicating that
        a confirmation is required is output.
 
-     - ``get_confirmation_message`` - Method which should return a string
+    - ``get_confirmation_message`` - Method which should return a string
        containing an additional message to be included in the confirmation
        email.
     """
@@ -85,6 +89,9 @@ def needs_confirmation(klass):
 
 
 class ConfirmCommand(Command):
+    """
+    The command used to confirm other commands which require confirmation.
+    """
     META = {
         'description': """confirm <confirmation-key>
   Confirm a previously requested action, such as subscribing or

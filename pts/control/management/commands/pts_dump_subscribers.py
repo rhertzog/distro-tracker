@@ -7,6 +7,9 @@
 # this distribution and at http://deb.li/ptslicense. No part of the Package
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
+"""
+Implements the command which outputs all subscribers for given packages.
+"""
 from __future__ import unicode_literals
 from django.core.management.base import BaseCommand
 from optparse import make_option
@@ -62,6 +65,12 @@ class Command(BaseCommand):
     def output_package(self, package, inactive=False):
         """
         Includes the subscribers of the given package in the output.
+
+        :param package: Package whose subscribers should be output
+        :type package: :py:class:`Package <pts.core.models.Package>`
+
+        :param inactive: Signals whether inactive or active subscriptions
+            should be output.
         """
         subscriptions = package.subscription_set.filter(active=not inactive)
         self.out_packages[package.name] = [
@@ -72,6 +81,10 @@ class Command(BaseCommand):
     def render_packages(self, use_json=False):
         """
         Prints the packages and their subscribers to the output stream.
+
+        :param use_json: If ``True`` the output is rendered as JSON.
+            Otherwise, a legacy format is used.
+        :type use_json: Boolean
         """
         if use_json:
             self.stdout.write(json.dumps(self.out_packages))
