@@ -41,9 +41,9 @@ def create_source_package(arguments):
         maintainer = arguments['maintainer']
         maintainer_email = ContributorEmail.objects.get_or_create(
             email=maintainer['email'])[0]
-        kwargs['maintainer'] = SourcePackageMaintainer.objects.create(
+        kwargs['maintainer'] = SourcePackageMaintainer.objects.get_or_create(
             contributor_email=maintainer_email,
-            name=maintainer.get('name', ''))
+            name=maintainer.get('name', ''))[0]
     if 'name' in arguments:
         name = arguments['name']
         kwargs['source_package_name'] = (

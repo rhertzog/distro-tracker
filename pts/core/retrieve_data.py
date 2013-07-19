@@ -326,9 +326,9 @@ class UpdateRepositoriesTask(PackageUpdateTask):
         if 'maintainer' in entry:
             maintainer_email, _ = ContributorEmail.objects.get_or_create(
                 email=entry['maintainer']['email'])
-            maintainer = SourcePackageMaintainer.objects.create(
+            maintainer = SourcePackageMaintainer.objects.get_or_create(
                 contributor_email=maintainer_email,
-                name=entry['maintainer'].get('name', ''))
+                name=entry['maintainer'].get('name', ''))[0]
             entry['maintainer'] = maintainer
 
         if 'uploaders' in entry:

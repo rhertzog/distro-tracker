@@ -644,6 +644,9 @@ class SourcePackageMaintainer(models.Model):
     contributor_email = models.ForeignKey(ContributorEmail)
     name = models.CharField(max_length=60, blank=True)
 
+    class Meta:
+        unique_together = ('contributor_email', 'name')
+
     def __str__(self):
         return "{name} <{email}>, maintainer of source package {pkg}".format(
             name=self.name,
@@ -671,7 +674,7 @@ class SourcePackage(models.Model):
     architectures = models.ManyToManyField(Architecture, blank=True)
     binary_packages = models.ManyToManyField(BinaryPackageName, blank=True)
 
-    maintainer = models.OneToOneField(
+    maintainer = models.ForeignKey(
         SourcePackageMaintainer,
         related_name='source_package',
         null=True)
