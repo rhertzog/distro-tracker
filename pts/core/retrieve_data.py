@@ -387,20 +387,14 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                     'name': src_pkg.name,
                     'version': src_pkg.version,
                 })
+                # Since it's a new version, extract package data from Sources
+                entry = self._extract_information_from_sources_entry(
+                    src_pkg, stanza)
+                # Update the source package information based on the newly
+                # extracted data.
+                src_pkg.update(**entry)
+                src_pkg.save()
 
-            entry = self._extract_information_from_sources_entry(
-                src_pkg, stanza)
-
-            # Update the source package information based on the newly
-            # extracted data.
-            src_pkg.update(**entry)
-            src_pkg.save()
-            # Add it to the repository
-            kwargs = {
-                key: value
-                for key, value in entry.items()
-                if key in ('priority', 'section')
-            }
             if not repository.has_source_package(src_pkg):
                 # Does it have any version of the package?
                 if not repository.has_source_package_name(src_pkg.name):
@@ -409,16 +403,25 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                         'repository': repository.name,
                     })
 
-                event = 'new-source-package-version-in-repository'
+                # Add it to the repository
+                kwargs = {
+                    key: value
+                    for key, value in entry.items()
+                    if key in ('priority', 'section')
+                }
                 entry = repository.add_source_package(src_pkg, **kwargs)
+                self.raise_event('new-source-package-version-in-repository', {
+                    'name': src_pkg.name,
+                    'version': src_pkg.version,
+                    'repository': repository.name,
+                })
             else:
-                event = 'updated-source-package-in-repository'
-                entry = repository.update_source_package(src_pkg, **kwargs)
-            self.raise_event(event, {
-                'name': src_pkg.name,
-                'version': src_pkg.version,
-                'repository': repository.name,
-            })
+                # We get the entry to mark that the package version is still in
+                # the repository.
+                entry = SourcePackageRepositoryEntry.objects.get(
+                    repository=repository,
+                    source_package=src_pkg
+                )
 
             self._add_processed_repository_entry(entry)
 
