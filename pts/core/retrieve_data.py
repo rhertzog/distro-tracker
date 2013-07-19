@@ -273,12 +273,10 @@ class UpdateRepositoriesTask(PackageUpdateTask):
 
         'new-binary-package',
 
-        # The source package does not have a new version, but something has
-        # changed.
-        'updated-source-package-in-repository',
-
         # Source package no longer found in any repository
         'lost-source-package',
+        # Source package version no longer found in the given repository
+        'lost-source-package-version-in-repository',
         # A particular version of a source package no longer found in any repo
         'lost-version-of-source-package',
         # Binary package name no longer used by any source package
@@ -486,6 +484,14 @@ class UpdateRepositoriesTask(PackageUpdateTask):
         # the last update need to stay, so exclude them from the delete
         repository_entries_qs = repository_entries_qs.exclude(
             id__in=self._all_repository_entries)
+        # Emit events for all packages that were removed from the repository
+        for entry in repository_entries_qs:
+            source_package = entry.source_package
+            self.raise_event('lost-source-package-version-in-repository', {
+                'name': source_package.name,
+                'version': source_package.version,
+                'repository': entry.repository.name,
+            })
         repository_entries_qs.delete()
 
         self._clear_processed_repository_entries()
@@ -517,8 +523,8 @@ class UpdateRepositoriesTask(PackageUpdateTask):
 
 class UpdatePackageGeneralInformation(PackageUpdateTask):
     DEPENDS_ON_EVENTS = (
-        'updated-source-package-in-repository',
         'new-source-package-version-in-repository',
+        'lost-source-package-version-in-repository',
     )
 
     def __init__(self, *args, **kwargs):
@@ -567,8 +573,7 @@ class UpdatePackageGeneralInformation(PackageUpdateTask):
 class UpdateVersionInformation(PackageUpdateTask):
     DEPENDS_ON_EVENTS = (
         'new-source-package-version-in-repository',
-        'lost-version-of-source-package',
-        'updated-source-package-in-repository',
+        'lost-source-package-version-in-repository',
     )
 
     def __init__(self, *args, **kwargs):
@@ -616,7 +621,7 @@ class UpdateVersionInformation(PackageUpdateTask):
 class UpdateSourceToBinariesInformation(PackageUpdateTask):
     DEPENDS_ON_EVENTS = (
         'new-source-package-version-in-repository',
-        'updated-source-package-in-repository',
+        'lost-source-package-version-in-repository',
     )
 
     def __init__(self, *args, **kwargs):

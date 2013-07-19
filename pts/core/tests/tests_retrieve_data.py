@@ -413,10 +413,10 @@ class RetrieveSourcesInformationTest(TestCase):
         Tests that when an existing source repository is changed in the newly
         retrieved data, it is updated in the database.
         """
+        # The source package name exists, but is in no repository (no versions)
         SourcePackageName.objects.create(name='chromium-browser')
         # Sanity check - there were no binary packages
         self.assertEqual(BinaryPackageName.objects.count(), 0)
-
         self.set_mock_sources(mock_update_repositories, 'Sources')
 
         self.run_update()
@@ -522,6 +522,7 @@ class RetrieveSourcesInformationTest(TestCase):
         self.assert_events_raised(
             ['new-source-package-version'] * 2 +
             ['new-source-package-version-in-repository'] * 2 +
+            ['lost-source-package-version-in-repository'] * 2 +
             ['lost-version-of-source-package'] * 2
         )
 
@@ -588,6 +589,7 @@ class RetrieveSourcesInformationTest(TestCase):
             ['new-source-package-version'] +
             ['new-source-package-version-in-repository'] +
             ['lost-version-of-source-package'] * 2 +
+            ['lost-source-package-version-in-repository'] * 2 +
             ['lost-source-package']
         )
 
@@ -632,7 +634,8 @@ class RetrieveSourcesInformationTest(TestCase):
             ['new-source-package-version',
              'new-source-package-version-in-repository'] +
             ['new-binary-package'] +
-            ['lost-version-of-source-package'] +
+            ['lost-version-of-source-package',
+             'lost-source-package-version-in-repository'] +
             ['lost-binary-package']
         )
 
