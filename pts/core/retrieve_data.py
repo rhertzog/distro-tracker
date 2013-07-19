@@ -403,9 +403,8 @@ class UpdateRepositoriesTask(PackageUpdateTask):
 
                 # Add it to the repository
                 kwargs = {
-                    key: value
-                    for key, value in entry.items()
-                    if key in ('priority', 'section')
+                    'priority': stanza.get('priority', ''),
+                    'section': stanza.get('section', ''),
                 }
                 entry = repository.add_source_package(src_pkg, **kwargs)
                 self.raise_event('new-source-package-version-in-repository', {
