@@ -296,6 +296,77 @@ class UpdateRepositoriesTask(PackageUpdateTask):
     def _add_processed_repository_entry(self, repository_entry):
         self._all_repository_entries.append(repository_entry.id)
 
+    def _extract_information_from_sources_entry(self, src_pkg, stanza):
+        entry = extract_information_from_sources_entry(stanza)
+
+        # Convert the parsed data into corresponding model instances
+        if 'architectures' in entry:
+            # Map the list of architecture names to their objects
+            # Discards any unknown architectures.
+            entry['architectures'] = Architecture.objects.filter(
+                name__in=entry['architectures'])
+
+        if 'binary_packages' in entry:
+            # Map the list of binary package names to list of existing
+            # binary package names.
+            binary_package_names = entry['binary_packages']
+            existing_binaries_qs = BinaryPackageName.objects.filter(
+                name__in=binary_package_names)
+            existing_binaries_names = []
+            binaries = []
+            for binary in existing_binaries_qs:
+                binaries.append(binary)
+                existing_binaries_names.append(binary.name)
+            for binary_name in binary_package_names:
+                if binary_name not in existing_binaries_names:
+                    binaries.append(BinaryPackageName.objects.create(
+                        name=binary_name))
+                    self.raise_event('new-binary-package', {
+                        'name': binary_name,
+                    })
+            entry['binary_packages'] = binaries
+
+        if 'maintainer' in entry:
+            maintainer_email, _ = ContributorEmail.objects.get_or_create(
+                email=entry['maintainer']['email'])
+            maintainer = SourcePackageMaintainer.objects.create(
+                contributor_email=maintainer_email,
+                name=entry['maintainer'].get('name', ''))
+            entry['maintainer'] = maintainer
+
+        if 'uploaders' in entry:
+            uploader_emails = [
+                uploader['email']
+                for uploader in entry['uploaders']
+            ]
+            uploader_names = [
+                uploader.get('name', '')
+                for uploader in entry['uploaders']
+            ]
+            existing_contributor_emails_qs = ContributorEmail.objects.filter(
+                email__in=uploader_emails)
+            existing_contributor_emails = {
+                contributor.email: contributor
+                for contributor in existing_contributor_emails_qs
+            }
+            uploaders = []
+            for email, name in zip(uploader_emails, uploader_names):
+                if email not in existing_contributor_emails:
+                    contributor_email = ContributorEmail.objects.create(
+                        email=email)
+                else:
+                    contributor_email = existing_contributor_emails[email]
+                uploaders.append(SourcePackageUploader.objects.get_or_create(
+                    contributor_email=contributor_email,
+                    source_package=src_pkg,
+                    defaults={
+                        'name': name,
+                    })[0])
+
+            entry['uploaders'] = uploaders
+
+        return entry
+
     def _update_sources_file(self, repository, sources_file):
         for stanza in deb822.Sources.iter_paragraphs(file(sources_file)):
             db.reset_queries()
@@ -317,73 +388,8 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                     'version': src_pkg.version,
                 })
 
-            entry = extract_information_from_sources_entry(stanza)
-
-            # Convert the parsed data into corresponding model instances
-            if 'architectures' in entry:
-                # Map the list of architecture names to their objects
-                # Discards any unknown architectures.
-                entry['architectures'] = Architecture.objects.filter(
-                    name__in=entry['architectures'])
-
-            if 'binary_packages' in entry:
-                # Map the list of binary package names to list of existing
-                # binary package names.
-                binary_package_names = entry['binary_packages']
-                existing_binaries_qs = BinaryPackageName.objects.filter(
-                    name__in=binary_package_names)
-                existing_binaries_names = []
-                binaries = []
-                for binary in existing_binaries_qs:
-                    binaries.append(binary)
-                    existing_binaries_names.append(binary.name)
-                for binary_name in binary_package_names:
-                    if binary_name not in existing_binaries_names:
-                        binaries.append(BinaryPackageName.objects.create(
-                            name=binary_name))
-                        self.raise_event('new-binary-package', {
-                            'name': binary_name,
-                        })
-                entry['binary_packages'] = binaries
-
-            if 'maintainer' in entry:
-                maintainer_email, _ = ContributorEmail.objects.get_or_create(
-                    email=entry['maintainer']['email'])
-                maintainer = SourcePackageMaintainer.objects.create(
-                    contributor_email=maintainer_email,
-                    name=entry['maintainer'].get('name', ''))
-                entry['maintainer'] = maintainer
-
-            if 'uploaders' in entry:
-                uploader_emails = [
-                    uploader['email']
-                    for uploader in entry['uploaders']
-                ]
-                uploader_names = [
-                    uploader.get('name', '')
-                    for uploader in entry['uploaders']
-                ]
-                existing_contributor_emails_qs = ContributorEmail.objects.filter(
-                    email__in=uploader_emails)
-                existing_contributor_emails = {
-                    contributor.email: contributor
-                    for contributor in existing_contributor_emails_qs
-                }
-                uploaders = []
-                for email, name in zip(uploader_emails, uploader_names):
-                    if email not in existing_contributor_emails:
-                        contributor_email = ContributorEmail.objects.create(
-                            email=email)
-                    else:
-                        contributor_email = existing_contributor_emails[email]
-                    uploaders.append(SourcePackageUploader.objects.get_or_create(
-                        contributor_email=contributor_email,
-                        source_package=src_pkg,
-                        defaults={
-                            'name': name,
-                        })[0])
-
-                entry['uploaders'] = uploaders
+            entry = self._extract_information_from_sources_entry(
+                src_pkg, stanza)
 
             # Update the source package information based on the newly
             # extracted data.
