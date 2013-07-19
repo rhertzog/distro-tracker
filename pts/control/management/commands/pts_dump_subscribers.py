@@ -7,9 +7,7 @@
 # this distribution and at http://deb.li/ptslicense. No part of the Package
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
-
 from __future__ import unicode_literals
-from __future__ import print_function
 from django.core.management.base import BaseCommand
 from optparse import make_option
 
@@ -81,24 +79,3 @@ class Command(BaseCommand):
             for package, subscribers in self.out_packages.items():
                 subscriber_out = ' '.join(str(email) for email in subscribers)
                 self.stdout.write(package + ' => [ ' + subscriber_out + ' ]')
-
-    def _output(self, packages, inactive=False):
-        """
-        Outputs the subscribers for the packages found in the iterable
-        ``packages``. Members of the iterable should be tuples where the first
-        member is the package name and the second is the ``Package`` object.
-        """
-        for package_name, package in packages:
-            if not package:
-                self.stdout.write("Warning: {package} does not exist.".format(
-                    package=str(package_name)))
-            else:
-                subscriptions = package.subscription_set.filter(
-                    active=not inactive)
-                out = [
-                    '{package} '.format(package=package_name),
-                    ' => [ ',
-                    ' '.join(str(sub.email_user) for sub in subscriptions),
-                    ' ]'
-                ]
-                self.stdout.write(''.join(out))
