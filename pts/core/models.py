@@ -233,7 +233,7 @@ class SourcePackageName(PackageName):
             '__source_package'
             '__source_package_name': self
         }
-        return Repository.objects.filter(**kwargs)
+        return Repository.objects.filter(**kwargs).distinct()
 
 
 def get_web_package(package_name):
