@@ -262,7 +262,7 @@ class JobState(object):
         self._running_job.state = state
         self._running_job.save()
 
-    def finish(self):
+    def mark_as_complete(self):
         self._running_job.is_complete = True
         self.save_state()
 
@@ -404,7 +404,7 @@ class Job(object):
             self.job_state.add_processed_task(task)
             self.job_state.save_state()
 
-        self.job_state.finish()
+        self.job_state.mark_as_complete()
         logger.info("Finished all tasks")
 
 

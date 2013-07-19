@@ -404,7 +404,7 @@ class JobPersistenceTests(TestCase):
 
         state.add_processed_task(mock_task)
         state.save_state()
-        state.finish()
+        state.mark_as_complete()
 
         # Stil only one running job instance
         self.assertEqual(RunningJob.objects.count(), 1)
