@@ -345,7 +345,7 @@ class JobPersistenceTests(TestCase):
         Tests serializing a job's state to a RunningJob instance.
         """
         state = JobState('initial-task-name')
-        state.start()
+        state.save_state()
 
         # A running job was created.
         self.assertEqual(RunningJob.objects.count(), 1)
@@ -360,7 +360,7 @@ class JobPersistenceTests(TestCase):
         """
         task_name = 'task-1'
         state = JobState(task_name)
-        state.start()
+        state.save_state()
         expected_events = [
             {
                 'name': 'event-1',
@@ -389,7 +389,7 @@ class JobPersistenceTests(TestCase):
         """
         task_name = 'task-1'
         state = JobState(task_name)
-        state.start()
+        state.save_state()
         expected_events = [
             {
                 'name': 'event-1',
@@ -419,7 +419,7 @@ class JobPersistenceTests(TestCase):
         """
         task_names = ['task-1', 'task-2']
         state = JobState(task_names[0])
-        state.start()
+        state.save_state()
         expected_events = [
             {
                 'name': 'event-1',
@@ -555,7 +555,6 @@ class ContinuePersistedJobsTest(TestCase):
         """
         task1 = self.create_task_class(('a',), (), ('a',))
         job_state = JobState(task1.task_name())
-        job_state.start()
 
         continue_task_from_state(job_state)
 
@@ -568,7 +567,6 @@ class ContinuePersistedJobsTest(TestCase):
         task1 = self.create_task_class(('a',), (), ('a',))
         task2 = self.create_task_class((), ('a',), ())
         job_state = JobState(task1.task_name())
-        job_state.start()
         task1_instance = task1()
         task1_instance.execute()
         job_state.add_processed_task(task1_instance)
@@ -588,7 +586,6 @@ class ContinuePersistedJobsTest(TestCase):
         """
         task1 = self.create_task_class(('a',), (), ('a',))
         job_state = JobState(task1.task_name())
-        job_state.start()
         task1_instance = task1()
         task1_instance.execute()
         job_state.add_processed_task(task1_instance)

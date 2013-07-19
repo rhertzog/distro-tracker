@@ -255,16 +255,12 @@ class JobState(object):
             ],
             'processed_tasks': self.processed_tasks,
         }
+        if not self._running_job:
+            self._running_job = RunningJob(
+                initial_task_name=self.initial_task_name,
+                additional_parameters=self.additional_parameters)
         self._running_job.state = state
         self._running_job.save()
-
-    def start(self):
-        if self._running_job:
-            return
-        self._running_job = RunningJob.objects.create(
-            initial_task_name=self.initial_task_name,
-            additional_parameters=self.additional_parameters)
-        self.save_state()
 
     def finish(self):
         self._running_job.is_complete = True
@@ -370,7 +366,6 @@ class Job(object):
         It runs all tasks which depend on the given initial task.
         """
         self.job_state.additional_parameters = parameters
-        self.job_state.start()
         for task in self.job_dag.topsort_nodes():
             # This happens if the job was restarted. Skip such tasks since they
             # considered finish by this job. All its events will be propagated
