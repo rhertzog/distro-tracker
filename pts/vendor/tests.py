@@ -9,7 +9,7 @@
 # distributed except according to the terms contained in the LICENSE file.
 
 """
-Tests for the ``vendor`` app.
+Tests for the :py:mod:`pts.vendor` app.
 
 The test suite automatically includes any tests available in a ``tests``
 module of all subpackages.
@@ -27,7 +27,7 @@ import importlib
 
 def get_subpackages():
     """
-    Helper function returns all subpackages of the ``vendor`` package.
+    Helper function returns all subpackages of the :py:mod:`pts.vendor` package.
     """
     import pkgutil
 
@@ -43,7 +43,11 @@ def get_subpackages():
 
 def get_test_cases(tests_module):
     """
-    Returns a list of all SimpleTestCase subclasses from the given module.
+    Returns a list of all
+    :py:class:`django.test.SimpleTestCase` subclasses from the given module.
+
+    :param tests_module: The module from which
+        :py:class:`django.test.SimpleTestCase` should be extracted.
     """
     module_name = tests_module.__name__
     return [
@@ -55,7 +59,7 @@ def get_test_cases(tests_module):
 
 def suite():
     """
-    Loads tests found in all subpackages of the ``pts.vendor`` package.
+    Loads tests found in all subpackages of the :py:mod:`pts.vendor` package.
     """
     import unittest
     suite = unittest.TestSuite()

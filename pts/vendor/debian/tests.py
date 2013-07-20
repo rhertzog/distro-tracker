@@ -36,8 +36,9 @@ __all__ = ('DispatchDebianSpecificTest', 'DispatchBaseDebianSettingsTest')
 @override_settings(PTS_VENDOR_RULES='pts.vendor.debian.rules')
 class DispatchBaseDebianSettingsTest(DispatchBaseTest):
     """
-    This test class makes sure that base tests which should pass no matter the
-    vendor work when PTS_VENDOR_RULES is set to use debian.
+    This test class makes sure that base tests pass when
+    :py:data:`PTS_VENDOR_RULES <pts.project.settings.PTS_VENDOR_RULES>` is set
+    to use debian.
     """
     pass
 
@@ -133,7 +134,7 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
 
         self.assertEqual(len(mail.outbox), 0)
 
-    def test_debian_trusts_mozilla(self):
+    def test_debian_trusts_bugzilla(self):
         """
         Tests that messages tagged with the default keyword are forwarded when
         they originated from Bugzilla.

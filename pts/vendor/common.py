@@ -29,6 +29,9 @@ def get_callable(name):
     string name given as the parameter.
     If no callable object with the given name is found in the vendor module
     an exception is raised.
+
+    :param name: The name of the callable which should be returned
+    :type name: string
     """
     import importlib
     if (not hasattr(settings, 'PTS_VENDOR_RULES') or
@@ -60,6 +63,9 @@ def call(name, *args, **kwargs):
     - implemented -- a Boolean indicating whether the package implements the
       given function. This way clients can differentiate between functions with
       no return value and non-implemented functions.
+
+    :param name: The name of the vendor-specific function that should be
+        called.
     """
     try:
         func = get_callable(name)

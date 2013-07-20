@@ -25,6 +25,9 @@ from debian import deb822
 
 
 class RetrieveDebianMaintainersTask(BaseTask):
+    """
+    Retrieves (and updates if necessary) a list of Debian Maintainers.
+    """
     def __init__(self, force_update=False, *args, **kwargs):
         super(RetrieveDebianMaintainersTask, self).__init__(*args, **kwargs)
         self.force_update = force_update
@@ -77,6 +80,10 @@ class RetrieveDebianMaintainersTask(BaseTask):
 
 
 class RetrieveLowThresholdNmuTask(BaseTask):
+    """
+    Updates the list of Debian Maintainers which agree with the lowthreshold
+    NMU.
+    """
     def __init__(self, force_update=False, *args, **kwargs):
         super(RetrieveLowThresholdNmuTask, self).__init__(*args, **kwargs)
         self.force_update = force_update
@@ -86,6 +93,10 @@ class RetrieveLowThresholdNmuTask(BaseTask):
             self.force_update = parameters['force_update']
 
     def _retrieve_emails(self):
+        """
+        Helper function which obtains the list of emails of maintainers that
+        agree with the lowthreshold NMU.
+        """
         url = 'http://wiki.debian.org/LowThresholdNmu?action=raw'
         cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
         if not self.force_update and not cache.is_expired(url):
