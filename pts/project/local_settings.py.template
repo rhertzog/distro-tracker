@@ -1,47 +1,76 @@
-# A template for the local_settings.py file.
+"""
+This is a template for the :py:mod:`pts.project.local_settings` module.
 
-# After modifying the needed parameters, rename the file to local_settings.py
+It lists all configuration parameters that need to be set by each deployment
+of the PTS, along with some defaults or examples for those values.
+
+After modifying the needed parameters, rename the file to local_settings.py
+"""
 from __future__ import unicode_literals
 
+#: The Django DATABASES setting
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'pts.db',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'pts',
         # The following settings are not used with sqlite3:
-        'USER': '',
+        'USER': 'pts',
         'PASSWORD': '',
         'HOST': '',
         'PORT': '',
     }
 }
 
+#: The name of the vendor. Equivalent to the Vendor field of an
+#: /etc/dpkg/origins file.
 PTS_VENDOR_NAME = "Debian"
+#: The URL of the vendor. Equivalent to the Vendor-URL field of an
+#: /etc/dpkg/origins file."""
 PTS_VENDOR_URL = "http://www.debian.org"
-"""The number of days to tolerate bounced messages for subscribers."""
+#: The number of days to tolerate bounced messages for subscribers.
 PTS_MAX_DAYS_TOLERATE_BOUNCE = 4
+#: The number of errors after which the processing of a command email stops.
 PTS_MAX_ALLOWED_ERRORS_CONTROL_COMMANDS = 5
+#: The number of days a command confirmation key should be valid.
 PTS_CONFIRMATION_EXPIRATION_DAYS = 3
 
 import socket
+#: The fully qualified domain name for the PTS deployment 
 PTS_FQDN = socket.getfqdn()
+#: The email address which is to receive control emails.
+#: It does not necessarily have to be in the same domain as specified in
+#: :py:data:`pts.project.settings.PTS_FQDN`.
 PTS_CONTROL_EMAIL = 'control@' + PTS_FQDN
+#: The email address which is to receive contact emails.
+#: It does not necessarily have to be in the same domain as specified in
+#: :py:data:`pts.project.settings.PTS_FQDN`.
 PTS_CONTACT_EMAIL = 'owner@' + PTS_FQDN
+#: The email address which is to be used as the sender address when no bounce
+#: processing should happen.
+#: It does not necessarily have to be in the same domain as specified in
+#: :py:data:`pts.project.settings.PTS_FQDN`.
 PTS_BOUNCE_NO_REPLY_EMAIL = 'bounces-likely-spam@' + PTS_FQDN
 
+#: A module implementing vendor-specific functionality which the PTS can hook
+#: into.
+#: For more information see :py:mod:`pts.vendor`.
 PTS_VENDOR_RULES = 'pts.vendor.debian.rules'
 
+#: This directory is used to store the locally cached resources.
+#: Any PTS app should be able to use this directory to store its caches.
+#: For example, it is used to store the APT cache of repository information and
+#: the cache of retrieved Web resources.
 PTS_CACHE_DIRECTORY = '/path/to/a/directory'
-"""This directory is used to store the local cache of repository information"""
 
-# Absolute path to the directory static files should be collected to.
-# Don't put anything in this directory yourself; store your static files
-# in apps' "static/" subdirectories and in STATICFILES_DIRS.
+#: Absolute path to the directory static files should be collected to.
+#: Don't put anything in this directory yourself; store your static files
+#: in apps' "static/" subdirectories and in STATICFILES_DIRS.
 STATIC_ROOT = '/path/to/static/root/directory'
 
-# Make this unique, and don't share it with anybody.
-# DO NOT USE THE EXAMPLE KEY GIVEN BELOW
+#: Make this unique, and don't share it with anybody.
+#: DO NOT USE THE EXAMPLE KEY GIVEN BELOW
 SECRET_KEY = 'etu2#5lv=!0(g9l31mw=cpwhioy!egg60lb5o3_67d83#(wu-u'
 
-# Hosts/domain names that are valid for this site; required if DEBUG is False
-# See https://docs.djangoproject.com/en/1.5/ref/settings/#allowed-hosts
+#: Hosts/domain names that are valid for this site; required if DEBUG is False
+#: See https://docs.djangoproject.com/en/1.5/ref/settings/#allowed-hosts
 ALLOWED_HOSTS = []
