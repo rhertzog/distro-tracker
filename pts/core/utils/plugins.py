@@ -16,11 +16,11 @@ class PluginRegistry(type):
     A metaclass which any class that wants to behave as a registry can use.
 
     When classes derived from classes which use this metaclass are
-    instantiated, they are added to the list `plugins`.
+    instantiated, they are added to the list :attr:`plugins`.
     The concrete classes using this metaclass are free to decide how to use
     this list.
 
-    This metaclass also adds an `unregister_plugin` classmethod to all concrete
+    This metaclass also adds an :meth:`unregister_plugin` classmethod to all concrete
     classes which removes the class from the list of plugins.
     """
     def __init__(cls, name, bases, attrs):

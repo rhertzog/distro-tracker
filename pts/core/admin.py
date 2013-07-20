@@ -7,7 +7,10 @@
 # this distribution and at http://deb.li/ptslicense. No part of the Package
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
-
+"""
+Settings for the admin panel for the models defined in the :mod:`pts.core`
+app.
+"""
 from __future__ import unicode_literals
 from django.contrib import admin
 from django import forms
@@ -26,6 +29,11 @@ def validate_sources_list_entry(value):
 
     Makes sure that it follows the correct syntax and that the specified Web
     resource is available.
+
+    :param value: The value of the sources.list entry which needs to be
+        validated
+
+    :raises ValidationError: Giving the validation failure message.
     """
     split = value.split(None, 3)
     if len(split) < 3:
@@ -72,6 +80,15 @@ def validate_sources_list_entry(value):
 
 
 class RepositoryAdminForm(forms.ModelForm):
+    """
+    A custom :class:`ModelForm <django.forms.ModelForm>` used for creating and
+    modifying :class:`Repository <pts.core.models.Repository>` model instances.
+
+    The class adds the ability to enter only a sources.list entry describing
+    the repository and other properties of the repository are automatically
+    filled in by using the ``Release`` file of the repository.
+    """
+    #: The additional form field which allows entring the sources.list entry
     sources_list_entry = forms.CharField(
         required=False,
         help_text="You can enter a sources.list formatted entry and have the"
@@ -109,6 +126,11 @@ class RepositoryAdminForm(forms.ModelForm):
         self.fields['shorthand'].required = True
 
     def clean(self, *args, **kwargs):
+        """
+        Overrides the :meth:`clean <django.forms.ModelForm.clean>` method of the
+        parent class to allow validating the form based on the sources.list
+        entry, not only the model fields.
+        """
         self.cleaned_data = super(RepositoryAdminForm, self).clean(*args, **kwargs)
         if 'sources_list_entry' not in self.cleaned_data:
             # Sources list entry was given to the form but it failed
@@ -142,7 +164,15 @@ class RepositoryAdminForm(forms.ModelForm):
 
 
 class RepositroyAdmin(admin.ModelAdmin):
+    """
+    Actual configuration for the :class:`Repository <pts.core.models.Repository>`
+    admin panel.
+    """
     class Media:
+        """
+        Add extra Javascript resources to the page in order to support
+        drag-and-drop repository position modification.
+        """
         js = (
             'js/jquery-2.0.3.min.js',
             'js/jquery-ui.min.js',
@@ -151,6 +181,7 @@ class RepositroyAdmin(admin.ModelAdmin):
 
     form = RepositoryAdminForm
 
+    #: Sections the form in three main parts
     fieldsets = [
         (None, {
             'fields': [
@@ -172,9 +203,13 @@ class RepositroyAdmin(admin.ModelAdmin):
         })
     ]
 
+    #: Gives a list of fields which should be displayed as columns in the
+    #: list of existing :class:`Repository <pts.core.models.Repository>`
+    #: instances.
     list_display = (
-        'codename',
+        'name',
         'shorthand',
+        'codename',
         'uri',
         'components_string',
         'architectures_string',
@@ -197,6 +232,9 @@ class RepositroyAdmin(admin.ModelAdmin):
         """
         Helper method for displaying Repository objects.
         Turns the components list into a display-friendly string.
+
+        :param obj: The repository whose components are to be formatted
+        :type obj: :class:`Repository <pts.core.models.Repository>`
         """
         return ' '.join(obj.components)
     components_string.short_description = 'components'
@@ -205,6 +243,9 @@ class RepositroyAdmin(admin.ModelAdmin):
         """
         Helper method for displaying Repository objects.
         Turns the architectures list into a display-friendly string.
+
+        :param obj: The repository whose architectures are to be formatted
+        :type obj: :class:`Repository <pts.core.models.Repository>`
         """
         return ' '.join(map(str, obj.architectures.all()))
     architectures_string.short_description = 'architectures'

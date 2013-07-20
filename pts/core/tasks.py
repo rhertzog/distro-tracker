@@ -7,7 +7,12 @@
 # this distribution and at http://deb.li/ptslicense. No part of the Package
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
+"""
+Implements a framework for implementing interdependent tasks.
 
+It provides a way to run all tasks dependent on the original task
+automatically.
+"""
 from __future__ import unicode_literals
 from pts.core.utils.plugins import PluginRegistry
 from pts.core.utils.datastructures import DAG
@@ -26,13 +31,37 @@ class BaseTask(six.with_metaclass(PluginRegistry)):
     A class representing the base class for all data processing tasks of the
     PTS.
 
-    The subclasses of this class are automatically registered when created.
+    Each task can produce or depend on certain events.
+
+    The list :attr:`DEPENDS_ON_EVENTS` gives a list of events that, if raised
+    during the processing of another task, cause this task to run as well.
+
+    Events defined in the :attr:`PRODUCES_EVENTS` list are the ones this task
+    is allowed to produce. Other tasks which depend on those events can then
+    be registered.
+    It is possible that the task does not produce all events given in this list
+    in which case only tasks depending on the events which *were* raised are
+    initiated afterwards.
+
+    ..note::
+      Subclasses of this class are automatically registered when created which
+      allows the :class:`BaseTask` to have the full picture of all tasks and
+      their mutual dependencies.
     """
     DEPENDS_ON_EVENTS = ()
     PRODUCES_EVENTS = ()
 
     @classmethod
     def task_name(cls):
+        """
+        The classmethod should return the name of the task.
+
+        It can be given as a ``NAME`` class-level attribute or by overriding
+        this classmethod.
+
+        If none of those is done, the default value is the name of the class,
+        i.e. the ``__name__`` atribute of the class.
+        """
         if hasattr(cls, 'NAME'):
             return cls.NAME
         else:
@@ -50,7 +79,7 @@ class BaseTask(six.with_metaclass(PluginRegistry)):
         """
         Performs the actual processing of the task.
 
-        This method must raise appropriate events by using the `raise_event`
+        This method must raise appropriate events by using the :meth:`raise_event`
         method during the processing so that tasks which are dependent on those
         events can be notified.
         """
@@ -59,16 +88,23 @@ class BaseTask(six.with_metaclass(PluginRegistry)):
     @property
     def raised_events(self):
         """
-        Return an iterable of Events which the task raised during its execution
+        :returns: Events which the task raised during its execution
+        :rtype: ``iterable`` of :class:`Event`
         """
         return self._raised_events
 
     def raise_event(self, event_name, arguments=None):
         """
         Helper method which should be used by subclasses to signal that an
-        event has been triggered. The object given in the arguments parameter
-        will be passed on to to the `Event` instance's arguments and become
-        available to any tasks which receive this event.
+        event has been triggered.
+
+        :param event_name: The name of the event to be raised.
+        :type event_name: string
+
+        :param arguments: Passed on to to the :class:`Event` instance's
+            :attr:`arguments <Event.arguments>`. It becomes available to any
+            tasks which receive the raised event.
+        :type arguments: dict
         """
         self._raised_events.append(Event(event_name, arguments))
 
@@ -82,6 +118,9 @@ class BaseTask(six.with_metaclass(PluginRegistry)):
         """
         Returns all events raised during the processing of a job which are
         relevant for this task.
+
+        If the task is running independently of a job, an empty list is
+        returned.
         """
         if self.job:
             return self.job.job_state.events_for_task(self)
@@ -92,11 +131,21 @@ class BaseTask(six.with_metaclass(PluginRegistry)):
         """
         Allows clients to set additional task-specific parameters once a task
         is already created.
+
+        :param parameters: The extra parameters.
+        :type parameters: dict
         """
         pass
 
     @classmethod
     def get_task_class_by_name(cls, task_name):
+        """
+        Returns a :class:`BaseTask` subclass which has the given name, i.e. its
+        :meth:`task_name` method returns the ``task_name`` given in the
+        parameters.
+
+        :param task_name: The name of the task which should be returned.
+        """
         for task_class in cls.plugins:
             if task_class.task_name() == task_name:
                 return task_class
@@ -105,12 +154,15 @@ class BaseTask(six.with_metaclass(PluginRegistry)):
     @classmethod
     def build_full_task_dag(cls):
         """
-        A class method which builds a full TaskDAG where only subclasses of
-        `cls` are included in the DAG. If `cls` is `BaseTask` then the DAG
-        contains all tasks.
+        A class method which builds a full :class:`TaskDAG` where only
+        subclasses of ``cls`` are included in the DAG.
+        If `cls` is :class:`BaseTask` then the DAG contains all tasks.
 
-        The TaskDAG instance represents the dependencies between Task classes
-        based on the events they produce and depend on.
+        The :class:`TaskDAG` instance represents the dependencies between
+        :class:`BaseTask` subclasses based on the events they produce and
+        depend on.
+
+        :rtype: :class:`TaskDAG`
         """
         dag = TaskDAG()
         # Add all existing tasks to the dag.
@@ -135,6 +187,9 @@ class BaseTask(six.with_metaclass(PluginRegistry)):
         which produce the event and a list of task classes which depend on the
         event, respectively.
         Only tasks which are subclassed from `cls` are included.
+
+        .. note::
+           "Task classes" are all subclasses of :class:`BaseTask`
         """
         events = defaultdict(lambda: ([], []))
         for task in BaseTask.plugins:
@@ -165,8 +220,8 @@ class Event(object):
 
 class TaskDAG(DAG):
     """
-    A DAG subclass which exposes some methods specific for DAGs of dependent
-    tasks.
+    A :class:`DAG <pts.core.utils.datastructures.DAG>` subclass which exposes
+    some methods specific for DAGs of dependent tasks.
     """
     @property
     def all_tasks(self):
@@ -174,31 +229,41 @@ class TaskDAG(DAG):
 
     def all_dependent_tasks(self, task):
         """
-        Returns all tasks that are dependent on this task.
+        Returns all tasks that are dependent on the given ``task``.
 
         Effectively, this means all tasks reachable from this one in the DAG of
         tasks.
+
+        :type task: :class:`BaseTask` subclass
+        :rtype: ``list`` of :class:`BaseTask` subclasses
         """
         return self.nodes_reachable_from(task)
 
     def directly_dependent_tasks(self, task):
         """
-        Returns only tasks which are directly dependent on this task.
+        Returns only tasks which are directly dependent on the given ``task``
 
         This means all tasks to which this task has a direct edge
         (neighbour nodes).
+
+        :type task: :class:`BaseTask` subclass
+        :rtype: ``list`` of :class:`BaseTask` subclasses
         """
         return self.dependent_nodes(task)
 
     def remove_task(self, task):
         """
-        Removes the given task from the DAG.
+        Removes the given ``task`` from the DAG.
+
+        :type task: :class:`BaseTask` subclass
         """
         return self.remove_node(task)
 
     def add_task(self, task):
         """
-        Adds the given task to the DAG.
+        Adds the given ``task`` to the DAG.
+
+        :type task: :class:`BaseTask` subclass
         """
         return self.add_node(task)
 
@@ -212,6 +277,9 @@ class TaskDAG(DAG):
 class JobState(object):
     """
     Represents the current state of a running job.
+
+    Provides a way to persist the state and reconstruct it in order to re-run
+    failed tasks in a job.
     """
     def __init__(self, initial_task_name, additional_parameters=None):
         self.initial_task_name = initial_task_name
@@ -224,7 +292,8 @@ class JobState(object):
     @classmethod
     def deserialize_running_job_state(cls, running_job):
         """
-        Deserializes a RunningJob instance and returns a matching JobState.
+        Deserializes a :class:`RunningJob <pts.core.models.RunningJob>` instance
+        and returns a matching :class:`JobState`.
         """
         instance = cls(running_job.initial_task_name)
         instance.additional_parameters = running_job.additional_parameters
@@ -238,6 +307,12 @@ class JobState(object):
         return instance
 
     def add_processed_task(self, task):
+        """
+        Marks a task as processed.
+
+        :param task: The task which should be marked as processed
+        :type task: :class:`BaseTask` subclass instance
+        """
         self.events.extend(task.raised_events)
         self.processed_tasks.append(task.task_name())
 
@@ -263,13 +338,18 @@ class JobState(object):
         self._running_job.save()
 
     def mark_as_complete(self):
+        """
+        Signals that the job is finished.
+        """
         self._running_job.is_complete = True
         self.save_state()
 
     def events_for_task(self, task):
         """
-        Returns a generator of raised events which are relevant for the given
-        task.
+        :param task: The task for which relevant :class:`Event` instances
+            should be returned.
+        :returns: Raised events which are relevant for the given ``task``
+        :rtype: ``generator``
         """
         return (
             event
@@ -284,13 +364,17 @@ class Job(object):
     """
     def __init__(self, initial_task, base_task_class=BaseTask):
         """
-        Instantiates a new Job instance based on the given initial_task.
+        Instantiates a new :class:`Job` instance based on the given
+        ``initial_task``.
 
-        The task contains a DAG instance which is constructed by using all
+        The job constructs a :class:`TaskDAG` instance by using all
         possible dependencies between tasks.
 
         Tasks are run in toplogical sort order and it is left up to them to
         inspect the raised events and decide how to process them.
+
+        .. note::
+           "Task classes" are all subclasses of :class:`BaseTask`
         """
         # Build this job's DAG based on the full DAG of all tasks.
         self.job_dag = base_task_class.build_full_task_dag()
@@ -317,10 +401,16 @@ class Job(object):
     @classmethod
     def reconstruct_job_from_state(cls, job_state):
         """
-        The method takes a job state and reconstructs a job if possible.
-        Returns the reconstructed Job instance.
-        Calling the run method of this instance will continue execution of the
-        job at the task following the last executed task in the job state.
+        The method takes a :class:`JobState` and reconstructs a job if possible.
+
+        :param job_state: The job state based on which the job should be
+            reconstructed
+        :type job_state: :class:`JobState`
+
+        :returns: the reconstructed :class:`Job` instance.
+            Calling the run method of this instance will continue execution of the
+            job at the task following the last executed task in the job state.
+        :rtype: :class:`Job`
         """
         job = cls(BaseTask.get_task_class_by_name(job_state.initial_task_name))
         job.job_state = job_state
@@ -343,8 +433,16 @@ class Job(object):
 
     def _update_task_events(self, processed_task):
         """
-        Updates the tasks based on whether they would process one of the raised
-        events.
+        Performs an update of tasks in the job based on the events raised by
+        ``processed_task``.
+
+        Flags all tasks which are registered to depend on one of the raised
+        events so that they are guaranteed to run.
+        Tasks which are never flagged are skipped; there is no need to run them
+        since no event they depend on was raised during the job's processing.
+
+        :param processed_task: A finished task
+        :type processed_task: :class:`BaseTask` subclass
         """
         event_names_raised = set(
             event.name
@@ -364,6 +462,9 @@ class Job(object):
         Starts the Job processing.
 
         It runs all tasks which depend on the given initial task.
+
+        :param parameters: Additional parameters which are given to each task
+            before it is executed.
         """
         self.job_state.additional_parameters = parameters
         for task in self.job_dag.topsort_nodes():
@@ -428,7 +529,14 @@ def run_task(initial_task, parameters=None):
     Receives a class of the task which should be executed and makes sure that
     all the tasks which have data dependencies on this task are ran after it.
 
-    This is a convenience function which delegates this to a Job class instance
+    This is a convenience function which delegates this to a :class:`Job` class
+    instance.
+
+    :param initial_task: The task which should be run.
+    :type initial_task: :class:`BaseTask` subclass
+
+    :param parameters: Additional parameters which are given to each task
+    before it is executed.
     """
     job = Job(initial_task)
     return job.run(parameters)
@@ -436,8 +544,10 @@ def run_task(initial_task, parameters=None):
 
 def continue_task_from_state(job_state):
     """
-    Receives a JobState instance and continues the job's execution from the
-    last point in the JobState instance.
+    Continues execution of a job from the last point in the given ``job_state``
+
+    :param job_state: The state of the job from which it should be continued
+    :type job_state: :class:`JobState`
     """
     job = Job.reconstruct_job_from_state(job_state)
     return job.run(job_state.additional_parameters)

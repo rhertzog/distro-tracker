@@ -7,7 +7,7 @@
 # this distribution and at http://deb.li/ptslicense. No part of the Package
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
-
+"""Implemets a command to update available pseudo packages."""
 from __future__ import unicode_literals
 from django.core.management.base import BaseCommand
 from pts.core.models import PseudoPackageName

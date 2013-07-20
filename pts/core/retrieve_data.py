@@ -7,7 +7,7 @@
 # this distribution and at http://deb.li/ptslicense. No part of the Package
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
-
+"""Implements core data retrieval from various external resources."""
 from __future__ import unicode_literals
 from pts import vendor
 from pts.core.models import PseudoPackageName, PackageName
@@ -42,6 +42,14 @@ class InvalidRepositoryException(Exception):
 
 
 def update_pseudo_package_list():
+    """
+    Retrieves the list of all allowed pseudo packages and updates the stored
+    list if necessary.
+
+    Uses a vendor-provided function
+    :func:`get_pseudo_package_list <pts.vendor.skeleton.rules.get_pseudo_package_list>`
+    to get the list of currently available pseudo packages.
+    """
     try:
         pseudo_packages, implemented = vendor.call('get_pseudo_package_list')
     except:
@@ -71,8 +79,10 @@ def update_pseudo_package_list():
 
 def retrieve_repository_info(sources_list_entry):
     """
-    A function which accesses a Release file for the given repository and
+    A function which accesses a ``Release`` file for the given repository and
     returns a dict representing the parsed information.
+
+    :rtype: dict
     """
     entry_split = sources_list_entry.split(None, 3)
     if len(entry_split) < 3:
@@ -138,8 +148,16 @@ def retrieve_repository_info(sources_list_entry):
 
 
 class AptCache(object):
-
+    """
+    A class for handling cached package information.
+    """
     class AcquireProgress(apt.progress.base.AcquireProgress):
+        """
+        Instances of this class can be passed to :meth:`apt.cache.Cache.update`
+        calls.
+        It provides a way to track which files were changed and which were not
+        by an update operation.
+        """
         def __init__(self, *args, **kwargs):
             super(AptCache.AcquireProgress, self).__init__(*args, **kwargs)
             self.fetched = []
@@ -176,15 +194,31 @@ class AptCache(object):
             os.makedirs(self.cache_root_dir)
 
     def clear_cache(self):
+        """
+        Removes all cache information. This causes the next update to retrieve
+        fresh repository files.
+        """
         shutil.rmtree(self.cache_root_dir)
         self._create_cache_directory()
 
     def update_sources_list(self):
+        """
+        Updates the ``sources.list`` file used to list repositories for which
+        package information should be cached.
+        """
         with open(self.sources_list_path, 'w') as sources_list:
             for repository in Repository.objects.all():
                 sources_list.write(repository.sources_list_entry + '\n')
 
     def update_apt_conf(self):
+        """
+        Updates the ``apt.conf`` file which gives general settings for the
+        :class:`apt.cache.Cache`.
+
+        In particular, this updates the list of all architectures which should
+        be considered in package updates based on architectures that the
+        repositories support.
+        """
         with open(self.conf_file_path, 'w') as conf_file:
             conf_file.write('APT::Architectures { ')
             for architecture in Architecture.objects.all():
@@ -192,12 +226,23 @@ class AptCache(object):
             conf_file.write('};\n')
 
     def _configure_apt(self):
+        """
+        Initializes the :mod:`apt_pkg` module global settings.
+        """
         apt_pkg.init_config()
         apt_pkg.init_system()
         apt_pkg.read_config_file(apt_pkg.config, self.conf_file_path)
         apt_pkg.config.set('Dir::Etc', self.cache_root_dir)
 
     def _index_file_full_path(self, file_name):
+        """
+        Returns the absolute path for the given cached index file.
+
+        :param file_name: The name of the cached index file.
+        :type file_name: string
+
+        :rtype: string
+        """
         return os.path.join(
             self.cache_root_dir,
             'var/lib/apt/lists',
@@ -205,6 +250,12 @@ class AptCache(object):
         )
 
     def _match_index_file_to_repository(self, sources_file):
+        """
+        Returns the :class:`Repository <pts.core.models.Repository>` instance
+        which matches the given cached ``Sources`` file.
+
+        :rtype: :class:`Repository <pts.core.models.Repository>`
+        """
         sources_list = apt_pkg.SourceList()
         sources_list.read_main_list()
         component_url = None
@@ -219,6 +270,20 @@ class AptCache(object):
                 return repository
 
     def update_repositories(self, force_download=False):
+        """
+        Initiates a cache update.
+
+        :param force_download: If set to ``True`` causes the cache to be
+            cleared before starting the update, thus making sure all index
+            files are downloaded again.
+
+        :returns: A two-tuple ``(updated_sources, updated_packages)``. Each of
+            the tuple's members is a list of
+            (:class:`Repository <pts.core.models.Repository>`, ``file_name``)
+            pairs representing the repository which was updated and the file
+            which contains the fresh information. The file is either a
+            ``Sources`` or a ``Packages`` file, respectively.
+        """
         if force_download:
             self.clear_cache()
 
@@ -250,8 +315,8 @@ class AptCache(object):
 
 class PackageUpdateTask(BaseTask):
     """
-    A subclass of the BaseTask providing some methods specific to tasks dealing
-    with package updates.
+    A subclass of the :class:`BaseTask <pts.core.tasks.BaseTask>` providing
+    some methods specific to tasks dealing with package updates.
     """
     def __init__(self, force_update=False, *args, **kwargs):
         super(PackageUpdateTask, self).__init__(*args, **kwargs)
@@ -264,7 +329,13 @@ class PackageUpdateTask(BaseTask):
 
 from pts.core.utils.packages import extract_information_from_sources_entry
 class UpdateRepositoriesTask(PackageUpdateTask):
+    """
+    Performs an update of repository information.
 
+    New (source and binary) packages are created if necessary and old ones are
+    deleted. An event is emitted for each situation, allowing other tasks to
+    perform updates based on updated package information.
+    """
     PRODUCES_EVENTS = (
         'new-source-package',
         'new-source-package-version',
@@ -423,9 +494,20 @@ class UpdateRepositoriesTask(PackageUpdateTask):
     def _remove_query_set_if_count_zero(self, qs, count_field, event_generator=None):
         """
         Removes elements from the given query set if their count of the given
-        count_field is 0.
-        If provided, uses the event_generator callback to generate an event
-        for each of the removed instances.
+        ``count_field`` is ``0``.
+
+        :param qs: Instances which should be deleted in case their count of the
+            field ``count_field`` is 0.
+        :type qs: :class:`QuerySet <django.db.models.query.QuerySet>`
+
+        :param count_field: Each instance in ``qs`` that has a 0 count for the
+            field with this name is deleted.
+        :type count_field: string
+
+        :param event_generator: A ``callable`` which returns a
+            ``(name, arguments)`` pair describing the event which should be
+            raised based on the model instance given to it as an argument.
+        :type event_generator: ``callable``
         """
         qs = qs.annotate(count=models.Count(count_field))
         qs = qs.filter(count=0)
@@ -519,6 +601,9 @@ class UpdateRepositoriesTask(PackageUpdateTask):
 
 
 class UpdatePackageGeneralInformation(PackageUpdateTask):
+    """
+    Updates the general information regarding packages.
+    """
     DEPENDS_ON_EVENTS = (
         'new-source-package-version-in-repository',
         'lost-source-package-version-in-repository',
@@ -570,6 +655,9 @@ class UpdatePackageGeneralInformation(PackageUpdateTask):
 
 
 class UpdateVersionInformation(PackageUpdateTask):
+    """
+    Updates extracted version information about packages.
+    """
     DEPENDS_ON_EVENTS = (
         'new-source-package-version-in-repository',
         'lost-source-package-version-in-repository',
@@ -620,6 +708,11 @@ class UpdateVersionInformation(PackageUpdateTask):
 
 
 class UpdateSourceToBinariesInformation(PackageUpdateTask):
+    """
+    Updates extracted source-binary mapping for packages.
+    These are the binary packages which appear in the binary panel on each
+    source package's Web page.
+    """
     DEPENDS_ON_EVENTS = (
         'new-source-package-version-in-repository',
         'lost-source-package-version-in-repository',

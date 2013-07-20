@@ -7,7 +7,7 @@
 # this distribution and at http://deb.li/ptslicense. No part of the Package
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
-
+"""Utility data structures for the PTS."""
 from __future__ import unicode_literals
 from collections import deque
 from copy import deepcopy
@@ -118,8 +118,8 @@ class DAG(object):
         """
         Adds an edge between two nodes.
 
-        The method raises an exception if the edge would introduce a cycle in
-        the graph structure.
+        :raises InvalidDAGException: If the edge would introduce a cycle in the
+            graph structure.
         """
         # Check for a cycle
         if node1 in self.nodes_reachable_from(node2):

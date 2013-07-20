@@ -13,7 +13,7 @@ Module for encoding and decoding Variable Envelope Return Path addresses.
 
 It is implemented following the recommendations laid out in
 `VERP <http://cr.yp.to/proto/verp.txt>`_ and
-`<http://cr.yp.to/proto/verp.txt>`_
+`<http://www.courier-mta.org/draft-varshavchik-verp-smtpext.txt>`_
 
 
 >>> from pts.core.utils import verp
@@ -43,6 +43,18 @@ def encode(sender_address, recipient_address, separator='-'):
     Encodes ``sender_address``, ``recipient_address`` to a VERP compliant
     address to be used as the envelope-from (return-path) address.
 
+    :param sender_address: The email address of the sender
+    :type sender_address: string
+
+    :param recipient_address: The email address of the recipient
+    :type recipient_address: string
+
+    :param separator: The separator to be used between the sender's local
+        part and the encoded recipient's local part in the resulting
+        VERP address.
+
+    :rtype: string
+
     >>> str(encode('itny-out@domain.com', 'node42!ann@old.example.com'))
     'itny-out-node42+21ann=old.example.com@domain.com'
     >>> str(encode('itny-out@domain.com', 'tom@old.example.com'))
@@ -70,6 +82,13 @@ def decode(verp_address, separator='-'):
     """
     Decodes the given VERP encoded from address and returns the original
     sender address and recipient address, returning them as a tuple.
+
+    :param verp_address: The return path address
+    :type sender_address: string
+
+    :param separator: The separator to be expected between the sender's local
+        part and the encoded recipient's local part in the given
+        ``verp_address``
 
     >>> from_email, to_email = 'bounce@domain.com', 'user@other.com'
     >>> decode(encode(from_email, to_email)) == (from_email, to_email)

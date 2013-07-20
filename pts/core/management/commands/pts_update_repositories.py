@@ -7,7 +7,14 @@
 # this distribution and at http://deb.li/ptslicense. No part of the Package
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
+"""
+Implements a command to initiate the update of package information found in
+registered repositories.
 
+It launches an
+:class:`UpdateRepositoriesTask <pts.core.retrieve_data.UpdateRepositoriesTask>`
+task.
+"""
 from __future__ import unicode_literals
 from django.core.management.base import BaseCommand
 from optparse import make_option

@@ -7,7 +7,7 @@
 # this distribution and at http://deb.li/ptslicense. No part of the Package
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
-
+"""Utilities for processing Debian package information."""
 from __future__ import unicode_literals
 from pts.core.utils.email_messages import (
     name_and_address_from_string as parse_address,
@@ -18,6 +18,14 @@ from pts.core.utils.email_messages import (
 def extract_vcs_information(stanza):
     """
     Extracts the VCS information from a package's Sources entry.
+
+    :param stanza: The ``Sources`` entry from which to extract the VCS info.
+        Maps ``Sources`` key names to values.
+    :type stanza: dict
+
+    :returns: VCS information regarding the package. Contains the following keys:
+        type[, browser, url]
+    :rtype: dict
     """
     vcs = {}
     for key, value in stanza.items():
@@ -33,6 +41,11 @@ def extract_vcs_information(stanza):
 def extract_dsc_file_name(stanza):
     """
     Extracts the name of the .dsc file from a package's Sources entry.
+
+    :param stanza: The ``Sources`` entry from which to extract the VCS info.
+        Maps ``Sources`` key names to values.
+    :type stanza: dict
+
     """
     for file in stanza.get('files', []):
         if file.get('name', '').endswith('.dsc'):
@@ -43,10 +56,11 @@ def extract_dsc_file_name(stanza):
 
 def extract_information_from_sources_entry(stanza):
     """
-    Extracts information from a Sources file entry and returns it in the form
-    of a dictionary.
-    The input parameter should be a case-insensitive dictionary (or contain
-    lower-case keys only) containing the entry's key-value pairs.
+    Extracts information from a ``Sources`` file entry and returns it in the
+    form of a dictionary.
+
+    :param stanza: The raw entry's key-value pairs.
+    :type stanza: Case-insensitive dict
     """
     binaries = [
         binary.strip()

@@ -7,7 +7,7 @@
 # this distribution and at http://deb.li/ptslicense. No part of the Package
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
-
+"""Implements the core panels shown on package pages."""
 from __future__ import unicode_literals
 from django.utils import six
 from pts.core.utils.plugins import PluginRegistry
@@ -21,9 +21,8 @@ class BasePanel(six.with_metaclass(PluginRegistry)):
     """
     A base class representing panels which are displayed on a package page.
 
-    To include a panel on the package page, the users must subclass this class
-    and include the path to the new class in the project settings in order to
-    have it displayed on the page.
+    To include a panel on the package page, users only need to create a
+    subclass and implement the necessary properties and methods.
     """
     #: A list of available positions
     # NOTE: This is a good candidate for Python3.4's Enum.
@@ -41,7 +40,7 @@ class BasePanel(six.with_metaclass(PluginRegistry)):
         """
         Should return a dictionary representing context variables necessary for
         the panel.
-        When the panels template is rendered, it will have access to the values
+        When the panel's template is rendered, it will have access to the values
         in this dictionary.
         """
         return {}
@@ -49,8 +48,8 @@ class BasePanel(six.with_metaclass(PluginRegistry)):
     @property
     def position(self):
         """
-        The property should be one of the available POSITIONS signalling where
-        the panel should be positioned in the page.
+        The property should be one of the available :attr:`POSITIONS` signalling
+        where the panel should be positioned in the page.
         """
         return 'center'
 
@@ -81,11 +80,12 @@ class BasePanel(six.with_metaclass(PluginRegistry)):
 
 def get_panels_for_package(package):
     """
-    A convenience method which accesses the BasePanel's list of children and
-    instantiates them for the given package.
+    A convenience method which accesses the :class:`BasePanel`'s list of
+    children and instantiates them for the given package.
 
-    Returns a dict mapping the page position to a list of Panels which should
-    be rendered in that position.
+    :returns: A dict mapping the page position to a list of Panels which should
+        be rendered in that position.
+    :rtype: dict
     """
     from collections import defaultdict
 
@@ -99,6 +99,24 @@ def get_panels_for_package(package):
 
 
 class GeneralInformationPanel(BasePanel):
+    """
+    This panel displays general information regarding a package.
+
+    - name
+    - version (in the default repository)
+    - maintainer
+    - uploaders
+    - architectures
+    - standards version
+    - VCS
+
+    Several vendor-specific functions can be implemented which augment this
+    panel:
+
+    - :func:`get_developer_information_url <pts.vendor.skeleton.rules.get_developer_information_url>`
+    - :func:`get_maintainer_extra <pts.vendor.skeleton.rules.get_maintainer_extra>`
+    - :func:`get_uploader_extra <pts.vendor.skeleton.rules.get_uploader_extra>`
+    """
     position = 'center'
     title = 'general'
     template_name = 'core/panels/general.html'
@@ -178,6 +196,16 @@ class GeneralInformationPanel(BasePanel):
 
 
 class VersionsInformationPanel(BasePanel):
+    """
+    This panel displays the versions of the package in each of the repositories
+    it is found in.
+
+    Several vendor-specific functions can be implemented which augment this
+    panel:
+
+    - :func:`get_package_information_site_url <pts.vendor.skeleton.rules.get_package_information_site_url>`
+    - :func:`get_external_version_information_urls <pts.vendor.skeleton.rules.get_external_version_information_urls>`
+    """
     position = 'left'
     title = 'versions'
     template_name = 'core/panels/versions.html'
@@ -208,6 +236,14 @@ class VersionsInformationPanel(BasePanel):
 
 
 class BinariesInformationPanel(BasePanel):
+    """
+    This panel displays a list of binary package names which a given source
+    package produces.
+
+    If implemented, the
+    :func:`get_package_information_site_url <pts.vendor.skeleton.rules.get_package_information_site_url>`
+    provides the link used for each binary package name.
+    """
     position = 'right'
     title = 'binaries'
     template_name = 'core/panels/binaries.html'

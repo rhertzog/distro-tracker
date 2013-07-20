@@ -30,8 +30,8 @@ from pts.core.models import MailingList
 
 def create_source_package(arguments):
     """
-    Creates and returns a new SourcePackage instance based on the
-    parameters given in the arguments.
+    Creates and returns a new :class:`SourcePackage <pts.core.models.SourcePackage>`
+    instance based on the parameters given in the arguments.
 
     It takes care to automatically create any missing maintainers, package
     names, etc.

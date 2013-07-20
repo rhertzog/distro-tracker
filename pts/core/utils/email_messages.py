@@ -90,17 +90,18 @@ def get_decoded_message_payload(message, default_charset='utf-8'):
 
 class BytesEmailMessage(object):
     """
-    A wrapper around an ``email.message.Message`` object which changes its
-    ``as_string`` method to always return bytes.
+    A wrapper around an :class:`email.message.Message` object which changes its
+    :meth:`as_string <email.message.Message.as_string>` method to always return
+    :class:`bytes`.
 
     This means that in Python3 the message will not end up with modified
-    Content-Transfer-Encoding header and content when the given content is
+    ``Content-Transfer-Encoding`` header and content when the given content is
     parsed from bytes. Rather, it returns the original bytes, as expected.
 
     To obtain an instance of this object, clients should generally use the
-    helper method ``message_from_bytes`` given in this module, but passing
-    an already existing ``email.message.Message`` object to the constructor if
-    the desired behavior of ``as_string`` is desired is possible too.
+    helper function :func:`message_from_bytes` given in this module, but passing
+    an already existing :class:`email.message.Message` object to the constructor
+    if the desired behavior of :meth:`as_string` is desired is possible too.
     """
     def __init__(self, message):
         self.message = message
@@ -124,6 +125,9 @@ class BytesEmailMessage(object):
         return self.message.__len__()
 
     def as_string(self, unixfrom=False, maxheaderlen=0):
+        """
+        Returns the payload of the message encoded as bytes.
+        """
         if six.PY3:
             from email.generator import BytesGenerator as Generator
         else:
@@ -138,7 +142,7 @@ class BytesEmailMessage(object):
 
 def message_from_bytes(message_bytes):
     """
-    Returns a Message object from the given bytes.
+    Returns a :class:`BytesEmailMessage` object from the given bytes.
 
     The function is used to achieve Python2/3 compatibility by returning an
     object whose as_string method has the same behavior in both versions.
@@ -158,31 +162,39 @@ def message_from_bytes(message_bytes):
 
 class CustomEmailMessage(EmailMessage):
     """
-    A subclass of ``django.core.mail.EmailMessage`` which allows users to use
-    an ``email.message.Message`` instance to define the body of the message.
+    A subclass of :class:`django.core.mail.EmailMessage` which allows users to
+    ise an :class:`email.message.Message` instance to define the body of the
+    message.
 
-    If ``msg`` is set, the ``body`` attribute is ignored.
+    If :attr:`msg` is set, the :attr:`body <django.core.mail.EmailMessage.body>`
+    attribute is ignored.
 
-    If the user wants to attach additional parts to the message, the ``attach``
-    method can be used but the user must ensure that the given ``msg`` instance
-    is a multipart message.
+    If the user wants to attach additional parts to the message, the
+    :meth:`attach` method can be used but the user must ensure that the given
+    ``msg`` instance is a multipart message before doing so.
 
     Effectively, this is also a wrapper which allows sending instances of
-    ``email.message.Message`` via Django email backends.
+    :class:`email.message.Message` via Django email backends.
     """
     def __init__(self, msg=None, *args, **kwargs):
         """
-        Use the keyword argument ``msg`` to set the ``email.message.Message``
+        Use the keyword argument ``msg`` to set the :class:`email.message.Message`
         instance which should be used to define the body of the message.
         The original object is copied.
 
         If no ``msg`` is set, the object's behaviour is identical to
-        ``EmailMessage``.
+        :class:`django.core.mail.EmailMessage`
         """
         super(CustomEmailMessage, self).__init__(*args, **kwargs)
         self.msg = msg
 
     def message(self):
+        """
+        Returns the underlying :class:`email.message.Message` object.
+        In case the user did not set a :attr:`msg` attribute for this instance
+        the parent :meth:`EmailMessage.message <django.core.mail.EmailMessage.message>`
+        method is used.
+        """
         if self.msg:
             msg = self._attach_all()
             return msg

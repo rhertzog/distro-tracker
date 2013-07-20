@@ -7,7 +7,7 @@
 # this distribution and at http://deb.li/ptslicense. No part of the Package
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
-
+"""Additional PTS-specific template tags."""
 from __future__ import unicode_literals
 from django import template
 
@@ -15,11 +15,18 @@ register = template.Library()
 
 
 class RepeatNode(template.Node):
+    """
+    A :class:`Node <django.template.base.Node>` for implementing the :func:`repeat`
+    template tag.
+    """
     def __init__(self, nodelist, count):
         self.nodelist = nodelist
         self.count = template.Variable(count)
 
     def render(self, context):
+        """
+        Renders the contents of the template tag :attr:`count` times.
+        """
         output = self.nodelist.render(context)
         return output * int(self.count.resolve(context))
 
@@ -43,4 +50,10 @@ def repeat(parser, token):
 
 @register.filter(name='zip')
 def zip_iterables(first, second):
+    """
+    A convenience template filter to :func:`zip` two sequences in the template.
+
+    Using this filter it is possible to iterate through the values of two
+    sequences in the same time in the template itself.
+    """
     return zip(first, second)

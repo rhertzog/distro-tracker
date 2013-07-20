@@ -7,7 +7,7 @@
 # this distribution and at http://deb.li/ptslicense. No part of the Package
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
-
+"""Views for the :mod:`pts.core` app."""
 from __future__ import unicode_literals
 from django.shortcuts import render, redirect
 from django.http import Http404
@@ -21,6 +21,9 @@ from pts.core.panels import get_panels_for_package
 
 
 def package_page(request, package_name):
+    """
+    Renders the package page.
+    """
     package = get_web_package(package_name)
     if not package:
         raise Http404
@@ -34,10 +37,20 @@ def package_page(request, package_name):
 
 
 def legacy_package_url_redirect(request, package_hash, package_name):
+    """
+    Redirects access to URLs in the form of the "old" PTS package URLs to the
+    new package URLs.
+
+    .. note::
+       The "old" package URL is: /<hash>/<package_name>.html
+    """
     return redirect('pts-package-page', package_name=package_name, permanent=True)
 
 
 class PackageSearchView(View):
+    """
+    A view which responds to package search queries.
+    """
     def get(self, request):
         if 'package_name' not in self.request.GET:
             raise Http404
@@ -53,6 +66,12 @@ class PackageSearchView(View):
 
 
 class PackageAutocompleteView(View):
+    """
+    A view which responds to package auto-complete queries.
+
+    Renders a JSON list of package names matching the given query, meaning
+    their name starts with the given query parameter.
+    """
     @method_decorator(cache_control(must_revalidate=True, max_age=3600))
     def get(self, request):
         if 'q' not in request.GET:

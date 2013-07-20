@@ -23,6 +23,14 @@ import requests
 
 
 def parse_cache_control_header(header):
+    """
+    Parses the given Cache-Control header's values.
+
+    :returns: The key-value pairs found in the header.
+        If some key did not have an associated value in the header, ``None``
+        is used instead.
+    :rtype: dict
+    """
     parts = header.split(',')
     cache_control = {}
     for part in parts:
@@ -82,6 +90,8 @@ class HttpCache(object):
     def get_content(self, url):
         """
         Returns the content of the cached response for the given URL.
+
+        :rtype: :class:`bytes`
         """
         if url in self:
             with open(self._content_cache_file_path(url), 'rb') as content_file:
@@ -90,6 +100,8 @@ class HttpCache(object):
     def get_headers(self, url):
         """
         Returns the HTTP headers of the cached response for the given URL.
+
+        :rtype: dict
         """
         if url in self:
             with open(self._header_cache_file_path(url), 'r') as header_file:

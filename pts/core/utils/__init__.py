@@ -7,7 +7,7 @@
 # this distribution and at http://deb.li/ptslicense. No part of the Package
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
-
+"""Various utilities for the PTS project."""
 from __future__ import unicode_literals
 from django.template.loader import render_to_string
 from django.http import HttpResponse
@@ -21,7 +21,7 @@ from .email_messages import message_from_bytes
 
 def get_or_none(model, **kwargs):
     """
-    Gets a Django Model object from the database or returns None if it
+    Gets a Django Model object from the database or returns ``None`` if it
     does not exist.
     """
     try:
@@ -35,9 +35,10 @@ def pts_render_to_string(template_name, context=None):
     A custom function to render a template to a string which injects extra
     PTS-specific information to the context, such as the name of the derivative.
 
-    This function is necessary since Django's TEMPLATE_CONTEXT_PROCESSORS only
-    work when using a RequestContext, wheras this function can be called
-    independently from any HTTP request.
+    This function is necessary since Django's
+    :data:`TEMPLATE_CONTEXT_PROCESSORS <pts.project.settings.TEMPLATE_CONTEXT_PROCESSORS>
+    only work when using a :class:`RequestContext <django.template.RequestContext>`,
+    whereas this function can be called independently from any HTTP request.
     """
     from pts.core import context_processors
     if context is None:
@@ -49,6 +50,16 @@ def pts_render_to_string(template_name, context=None):
 
 
 def render_to_json_response(response):
+    """
+    Helper function creating an :class:`HttpResponse <django.http.HttpResponse>`
+    by serializing the given ``response`` object to a JSON string.
+
+    The resulting HTTP response has Content-Type set to application/json.
+
+    :param response: The object to be serialized in the response. It must be
+        serializable by the :mod:`json` module.
+    :rtype: :class:`HttpResponse <django.http.HttpResponse>`
+    """
     return HttpResponse(
         json.dumps(response),
         content_type='application/json'
@@ -56,6 +67,26 @@ def render_to_json_response(response):
 
 
 class PrettyPrintList(object):
+    """
+    A class which wraps the built-in :class:`list` object so that when it is
+    converted to a string, its contents are printed using the given
+    :attr:`delimiter`.
+
+    The default delimiter is a space.
+
+    >>> a = PrettyPrintList([1, 2, 3])
+    >>> print(a)
+    1 2 3
+    >>> print(PrettyPrintList([u'one', u'2', u'3']))
+    one 2 3
+    >>> print(PrettyPrintList([1, 2, 3], delimiter=', '))
+    1, 2, 3
+    >>> # Still acts as a list
+    >>> a == [1, 2, 3]
+    True
+    >>> a == ['1', '2', '3']
+    False
+    """
     def __init__(self, l=None, delimiter=' '):
         if l is None:
             self._list = []
@@ -88,6 +119,13 @@ class PrettyPrintList(object):
 
 
 class SpaceDelimitedTextField(models.TextField):
+    """
+    A custom Django model field which stores a list of strings.
+
+    It stores the list in a :class:`TextField <django.db.models.TextField>`
+    as a space delimited list. It is mashalled back to a :class:`PrettyPrintList`
+    in the Python domain.
+    """
     __metaclass__ = models.SubfieldBase
 
     description = "Stores a space delimited list of strings"
@@ -117,6 +155,7 @@ class SpaceDelimitedTextField(models.TextField):
         return self.get_prep_value(value)
 
 
+#: A map of currently available VCS systems' shorthands to their names.
 VCS_SHORTHAND_TO_NAME = {
     'svn': 'Subversion',
     'git': 'Git',
@@ -131,5 +170,11 @@ VCS_SHORTHAND_TO_NAME = {
 def get_vcs_name(shorthand):
     """
     Returns a full name for the VCS given its shorthand.
+
+    If the given shorthand is unknown an empty string is returned.
+
+    :param shorthand: The shorthand of a VCS for which a name is required.
+
+    :rtype: string
     """
     return VCS_SHORTHAND_TO_NAME.get(shorthand, '')
