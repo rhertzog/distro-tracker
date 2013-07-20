@@ -393,9 +393,7 @@ class Job(object):
                     logger.info("Successfully executed task {task}".format(
                         task=task.task_name()))
                 except Exception as e:
-                    logger.error(
-                        "Problem processing a task. "
-                        "Exception: {e}".format(e=e))
+                    logger.exception("Problem processing a task.")
                 # Update dependent tasks based on events raised.
                 # The update is performed regardless of a possible failure in
                 # order not to miss some events.
