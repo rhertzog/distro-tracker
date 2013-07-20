@@ -9,9 +9,9 @@
 # this distribution and at http://deb.li/ptslicense. No part of the Package
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
-
 """
-This module contains the tests for the dispatch functionality of PTS.
+This module contains the tests for the dispatch functionality
+(:py:mod:`pts.dispatch` module) of PTS.
 """
 from __future__ import unicode_literals
 from django.test import TestCase
@@ -40,29 +40,61 @@ logging.disable(logging.CRITICAL)
 
 
 class DispatchTestHelperMixin(object):
+    """
+    A mixin containing methods to assist testing dispatch functionality.
+    """
     def clear_message(self):
+        """
+        Clears the test message being built.
+        """
         self.message = Message()
         self.headers = []
 
     def set_package_name(self, package_name):
+        """
+        Sets the name of the test package.
+
+        :param package_name: The new name of the test package
+        """
         self.package_name = package_name
         self.add_header('To', '{package}@{pts_fqdn}'.format(
             package=self.package_name,
             pts_fqdn=PTS_FQDN))
 
     def set_message_content(self, content):
+        """
+        Sets the content of the test message.
+
+        :param content: New content
+        """
         self.message.set_payload(content)
 
     def add_header(self, header_name, header_value):
+        """
+        Adds a header to the test message.
+
+        :param header_name: The name of the header which is to be added
+        :param header_value: The value of the header which is to be added
+        """
         self.message.add_header(header_name, header_value)
         self.headers.append((header_name, header_value))
 
     def set_header(self, header_name, header_value):
+        """
+        Sets a header of the test message to the given value.
+        If the header previously existed in the message, it is overwritten.
+
+        :param header_name: The name of the header to be set
+        :param header_value: The new value of the header to be set.
+        """
         if header_name in self.message:
             del self.message[header_name]
         self.add_header(header_name, header_value)
 
     def run_dispatch(self, sent_to_address=None):
+        """
+        Starts the dispatch process.
+        """
         dispatch.process(
             force_bytes(self.message.as_string(), 'utf-8'),
             sent_to_address

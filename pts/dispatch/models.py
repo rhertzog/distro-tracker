@@ -7,7 +7,9 @@
 # this distribution and at http://deb.li/ptslicense. No part of the Package
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
-
+"""
+Defines models specific for the :py:mod:`pts.dispatch` app.
+"""
 from __future__ import unicode_literals
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
@@ -16,7 +18,22 @@ from pts.core.models import EmailUser
 
 
 class EmailUserBounceStatsManager(models.Manager):
+    """
+    A custom :py:class:`Manager <django.db.models.Manager>` for the
+    :py:class:`EmailUserBounceStats` model.
+    """
     def get_bounce_stats(self, email, date):
+        """
+        Gets the :py:class:`EmailUserBounceStats` instance for the given
+        :py:class:`EmailUser <pts.core.models.EmailUser>` on the given ``date``
+
+        :param email: The email of the
+            :py:class:`EmailUser <pts.core.models.EmailUser>`
+        :type email: string
+
+        :param date: The date of the required stats
+        :type date: :py:class:`datetime.datetime`
+        """
         user = self.get(email=email)
         bounce_stats, created = user.bouncestats_set.get_or_create(date=date)
         if created:
@@ -24,11 +41,35 @@ class EmailUserBounceStatsManager(models.Manager):
         return bounce_stats
 
     def add_bounce_for_user(self, email, date):
+        """
+        Registers a bounced email for a given
+        :py:class:`EmailUser <pts.core.models.EmailUser>`
+
+        :param email: The email of the
+            :py:class:`EmailUser <pts.core.models.EmailUser>` for which a
+            bounce will be logged
+        :type email: string
+
+        :param date: The date of the bounce
+        :type date: :py:class:`datetime.datetime`
+        """
         bounce_stats = self.get_bounce_stats(email, date)
         bounce_stats.mails_bounced += 1
         bounce_stats.save()
 
     def add_sent_for_user(self, email, date):
+        """
+        Registers a sent email for a given
+        :py:class:`EmailUser <pts.core.models.EmailUser>`
+
+        :param email: The email of the
+            :py:class:`EmailUser <pts.core.models.EmailUser>` for which a
+            sent email will be logged
+        :type email: string
+
+        :param date: The date of the sent email
+        :type date: :py:class:`datetime.datetime`
+        """
         bounce_stats = self.get_bounce_stats(email, date)
         bounce_stats.mails_sent += 1
         bounce_stats.save()
@@ -36,7 +77,7 @@ class EmailUserBounceStatsManager(models.Manager):
     def limit_bounce_information(self, email):
         """
         Makes sure not to keep more records than the number of days set by
-        ``PTS_MAX_DAYS_TOLERATE_BOUNCE``.
+        :py:attr:`PTS_MAX_DAYS_TOLERATE_BOUNCE <pts.project.settings.PTS_MAX_DAYS_TOLERATE_BOUNCE>`
         """
         user = self.get(email=email)
         days = settings.PTS_MAX_DAYS_TOLERATE_BOUNCE
@@ -45,6 +86,14 @@ class EmailUserBounceStatsManager(models.Manager):
 
 
 class EmailUserBounceStats(EmailUser):
+    """
+    A proxy model for the :py:class:`EmailUser <pts.core.models.EmailUser>`
+    model.
+    It is defined in order to implement additional bounce stats-related
+    methods without needlessly adding them to the public interface of
+    :py:class:`EmailUser <pts.core.models.EmailUser>` when only the
+    :py:mod:`pts.dispatch` app should use them.
+    """
     class Meta:
         proxy = True
 
@@ -66,6 +115,11 @@ class EmailUserBounceStats(EmailUser):
 
 @python_2_unicode_compatible
 class BounceStats(models.Model):
+    """
+    A model representing a user's bounce statistics.
+
+    It stores the number of sent and bounced mails for a particular date.
+    """
     email_user = models.ForeignKey(EmailUserBounceStats)
     mails_sent = models.IntegerField(default=0)
     mails_bounced = models.IntegerField(default=0)
