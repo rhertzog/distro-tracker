@@ -12,4 +12,5 @@ Contents:
    :maxdepth: 2
 
    setup/setup
+   API Documentation <api/modules>
 
