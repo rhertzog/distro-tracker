@@ -544,17 +544,6 @@ class Repository(models.Model):
             for component in self.components
         ]
 
-    def get_source_package(self, package_name):
-        """
-        Returns the canonical `SourcePackage` with the given name, if found in
-        the repository. This means the `SourcePackage` instance with the
-        highest version is returned.
-        """
-        qs = self.source_packages.all()
-        if qs.count() == 0:
-            return None
-        return max(qs, key=lambda x: AptPkgVersion(x.version))
-
     def get_source_package_entry(self, package_name):
         """
         Returns the canonical `SourcePackageRepositoryEntry` with the given name, if found in

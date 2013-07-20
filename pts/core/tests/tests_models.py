@@ -617,41 +617,6 @@ class RepositoryTests(TestCase):
         self.assertFalse(
             self.repository.has_source_package(self.source_package))
 
-    def test_get_source_package_1(self):
-        """
-        Tests retrieving a source package from a repository when there is only
-        one version of the package found in the repository.
-        """
-        self.repository.add_source_package(self.source_package)
-
-        src_pkg = self.repository.get_source_package(self.source_package.name)
-
-        self.assertEqual(src_pkg, self.source_package)
-
-    def test_get_source_package_2(self):
-        """
-        Tests retrieving a source package from a repository when there are
-        multiple versions of the package found in the repository.
-        """
-        self.repository.add_source_package(self.source_package)
-        higher_version_pkg = SourcePackage.objects.create(
-            source_package_name=self.src_pkg_name, version='10.0.0')
-        self.repository.add_source_package(higher_version_pkg)
-
-        src_pkg = self.repository.get_source_package(self.source_package.name)
-
-        # The highest version is chosen.
-        self.assertEqual(src_pkg, higher_version_pkg)
-
-    def test_get_source_package_3(self):
-        """
-        Tests retrieving a source package from a repository when the given
-        source package is not found in the repository.
-        """
-        self.assertIsNone(
-            self.repository.get_source_package(self.source_package.name)
-        )
-
 
 class SourcePackageTests(TestCase):
     fixtures = ['repository-test-fixture.json']
