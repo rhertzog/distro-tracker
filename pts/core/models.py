@@ -569,22 +569,6 @@ class Repository(models.Model):
         )
         return entry
 
-    def update_source_package(self, package, **kwargs):
-        """
-        The method updates a `SourcePackage` which is already found in the
-        repository.
-
-        The parameters needed for the corresponding
-        `SourcePackageRepositoryEntry` should be in the keyword arguments.
-        """
-        entry = SourcePackageRepositoryEntry.objects.get(
-            repository=self,
-            source_package=package
-        )
-        entry.update(**kwargs)
-        entry.save()
-        return entry
-
     def has_source_package_name(self, source_package_name):
         """
         Returns True if the Repository instance contains at least one version

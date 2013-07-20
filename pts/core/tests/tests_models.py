@@ -530,31 +530,6 @@ class RepositoryTests(TestCase):
         self.assertEqual(e.priority, 'source')
         self.assertEqual(e.section, 'admin')
 
-    def test_update_source_entry(self):
-        """
-        Tests updating a source entry.
-        """
-        SourcePackageRepositoryEntry.objects.create(
-            source_package=self.source_package,
-            repository=self.repository
-        )
-
-        self.repository.update_source_package(self.source_package, **{
-            'priority': 'source',
-        })
-
-        # Still only one repository entry.
-        self.assertEqual(SourcePackageRepositoryEntry.objects.count(), 1)
-        e = SourcePackageRepositoryEntry.objects.all()[0]
-        # Stil linked to the same source package.
-        self.assertEqual(e.source_package, self.source_package)
-        # Still linked to the same repository
-        self.assertEqual(e.repository, self.repository)
-        # Updated field
-        self.assertEqual(e.priority, 'source')
-        # The other is not changed
-        self.assertEqual(e.section, '')
-
     def test_has_source_package_name_1(self):
         """
         Tests the has_source_package_name when the given source package is
