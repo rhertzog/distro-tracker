@@ -462,57 +462,6 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         self.assertEqual(self.user.subscription_set.count(), subscription_count)
 
 
-from pts.dispatch.custom_email_message import CustomEmailMessage
-from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email import encoders
-
-
-class CustomEmailMessageTest(TestCase):
-    """
-    Tests the ``CustomEmailMessage`` class.
-    """
-    def create_multipart(self):
-        """
-        Helper method creates a multipart message.
-        """
-        msg = MIMEMultipart()
-        msg.attach(self.prepare_part(b'data'))
-        return msg
-
-    def prepare_part(self, data):
-        part = MIMEBase('application', 'octet-stream')
-        part.set_payload(data)
-        encoders.encode_base64(part)
-        return part
-
-    def test_sent_message_same_as_original(self):
-        """
-        Tests that an ``email.message.Message`` instance sent by using the
-        ``CustomEmailMessage`` class is the same as the original message.
-        """
-        msg = self.create_multipart()
-        custom_message = CustomEmailMessage(msg=msg, to=['recipient'])
-
-        custom_message.send()
-
-        self.assertEqual(msg.as_string(), mail.outbox[0].message().as_string())
-
-    def test_attachment_included(self):
-        """
-        Tests that an attachment included in the ``CustomEmailMessage``
-        instance is sent with the rest of the message.
-        """
-        msg = self.create_multipart()
-        attachment = self.prepare_part(b'new_data')
-        msg.attach(attachment)
-        custom_message = CustomEmailMessage(msg=msg, to=['recipient'])
-
-        custom_message.send()
-
-        self.assertIn(attachment, mail.outbox[0].message().get_payload())
-
-
 class BounceStatsTest(TestCase):
     """
     Tests for the ``pts.dispatch.models`` handling users' bounce information.

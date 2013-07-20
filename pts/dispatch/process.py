@@ -22,7 +22,7 @@ from pts.core.utils import get_or_none
 from pts.core.utils import pts_render_to_string
 from pts.core.utils import verp
 
-from pts.dispatch.custom_email_message import CustomEmailMessage
+from pts.core.utils.email_messages import CustomEmailMessage
 from pts.dispatch.models import EmailUserBounceStats
 
 from pts.core.models import PackageName
