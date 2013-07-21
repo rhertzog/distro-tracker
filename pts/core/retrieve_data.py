@@ -636,12 +636,13 @@ class UpdatePackageGeneralInformation(PackageUpdateTask):
 
     @clear_all_events_on_exception
     def execute(self):
+        package_names = set(
+            event.arguments['name']
+            for event in self.get_all_events()
+        )
         with transaction.commit_on_success():
-            for event in self.get_all_events():
-                package_name = event.arguments['name']
-                package = get_or_none(SourcePackageName, name=package_name)
-                if not package:
-                    continue
+            qs = SourcePackageName.objects.filter(name__in=package_names)
+            for package in qs:
                 entry = package.main_entry
                 if entry is None:
                     continue
@@ -693,13 +694,13 @@ class UpdateVersionInformation(PackageUpdateTask):
 
     @clear_all_events_on_exception
     def execute(self):
+        package_names = set(
+            event.arguments['name']
+            for event in self.get_all_events()
+        )
         with transaction.commit_on_success():
-            for event in self.get_all_events():
-                package_name = event.arguments['name']
-                package = get_or_none(SourcePackageName, name=package_name)
-                if not package:
-                    continue
-
+            qs = SourcePackageName.objects.filter(name__in=package_names)
+            for package in qs:
                 versions, _ = PackageExtractedInfo.objects.get_or_create(
                     key='versions',
                     package=package)
@@ -739,13 +740,13 @@ class UpdateSourceToBinariesInformation(PackageUpdateTask):
 
     @clear_all_events_on_exception
     def execute(self):
+        package_names = set(
+            event.arguments['name']
+            for event in self.get_all_events()
+        )
         with transaction.commit_on_success():
-            for event in self.get_all_events():
-                package_name = event.arguments['name']
-                package = get_or_none(SourcePackageName, name=package_name)
-                if not package:
-                    continue
-
+            qs = SourcePackageName.objects.filter(name__in=package_names)
+            for package in qs:
                 binaries, _ = PackageExtractedInfo.objects.get_or_create(
                     key='binaries',
                     package=package)
