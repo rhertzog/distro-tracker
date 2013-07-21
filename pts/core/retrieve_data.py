@@ -611,6 +611,32 @@ class UpdateRepositoriesTask(PackageUpdateTask):
 
         self._clear_processed_repository_entries()
 
+    def _mark_sources_file_not_processed(self, repository, sources_file_name):
+        """
+        The ``Sources`` file with the given name, belonging to the given
+        repository was not updated, so this method marks all package versions
+        found in it as still existing to avoid deleting them.
+        """
+        # Extract all package versions from the sources file
+        with open(sources_file_name, 'r') as sources_file:
+            packages = {
+                stanza['package']: stanza['version']
+                for stanza in deb822.Sources.iter_paragraphs(sources_file)
+            }
+
+        # Only issue one DB query to retrieve the entries for packages with
+        # the given names
+        repository_entries = SourcePackageRepositoryEntry.objects.filter(
+            repository=repository)
+        repository_entries = repository_entries.filter(
+            source_package__source_package_name__name__in=packages.keys())
+        repository_entries = repository_entries.select_related()
+        # For each of those entries, make sure to keep only the ones
+        # corresponding to the version found in the sources file
+        for entry in repository_entries:
+            if entry.source_package.version == packages[entry.source_package.name]:
+                self._add_processed_repository_entry(entry)
+
     @clear_all_events_on_exception
     def execute(self):
         apt_cache = AptCache()
@@ -626,11 +652,21 @@ class UpdateRepositoriesTask(PackageUpdateTask):
 
         with transaction.commit_on_success():
             for repository, sources_files in repository_files.items():
+                # First update package information based on updated files
                 for sources_file in sources_files:
                     self._update_sources_file(repository, sources_file)
+
+                # Mark package versions found in un-updated files as still existing
+                all_sources = apt_cache.get_sources_files_for_repository(repository)
+                for sources_file in all_sources:
+                    if sources_file not in sources_files:
+                        self._mark_sources_file_not_processed(
+                            repository, sources_file)
+
                 # When all the files for the repository are handled, update
                 # which packages are still found in it.
                 self._update_repository_entries(repository)
+
             # When all repositories are handled, update which packages are
             # still found in at least one repository.
             self._remove_obsolete_packages()

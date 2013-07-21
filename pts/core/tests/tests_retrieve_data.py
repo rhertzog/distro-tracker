@@ -639,6 +639,61 @@ class RetrieveSourcesInformationTest(TestCase):
             ['lost-binary-package']
         )
 
+    @mock.patch('pts.core.retrieve_data.AptCache.get_sources_files_for_repository')
+    @mock.patch('pts.core.retrieve_data.AptCache.update_repositories')
+    def test_update_multiple_sources_files(self,
+                                           mock_update_repositories,
+                                           mock_all_sources):
+        """
+        Tests the update scenario where only one of the Sources files is
+        updated. For example, only the main component of a repository is
+        updated whereas contrib and non-free were not.
+        """
+        src_pkg = create_source_package({
+            'name': 'dummy-package',
+            'binary_packages': ['dummy-package-binary'],
+            'version': '1.0.0',
+            'maintainer': {
+                'name': 'Maintainer',
+                'email': 'maintainer@domain.com'
+            },
+            'architectures': ['amd64', 'all'],
+            'dsc_file_name': 'file.dsc'
+        })
+        self.repository.add_source_package(src_pkg)
+        # Updated sources - only 1 file
+        self.set_mock_sources(mock_update_repositories, 'Sources')
+        # All sources - 2 files
+        mock_all_sources.return_value = [
+            self.get_path_to('Sources'),
+            self.get_path_to('Sources-minimal')
+        ]
+        # Sanity check - only 1 source package exists
+        self.assertEqual(SourcePackageName.objects.count(), 1)
+
+        self.run_update()
+
+        # The package from the file which was not updated is still there
+        self.assert_package_by_name_in(
+            'dummy-package',
+            SourcePackageName.objects.all()
+        )
+        # It is still in the repository
+        self.assertEqual(
+            1,
+            SourcePackageRepositoryEntry.objects.filter(
+                repository=self.repository,
+                source_package__source_package_name__name='dummy-package').count(),
+        )
+        # The matching binary package is also there
+        self.assert_package_by_name_in(
+            'dummy-package-binary',
+            BinaryPackageName.objects.all()
+        )
+        # The new package from the updated file is there
+        self.assertEqual(SourcePackageName.objects.count(), 2)
+
+
 class RetrieveSourcesFailureTest(TransactionTestCase):
     """
     Tests retrieving source package information from a repository when there is
