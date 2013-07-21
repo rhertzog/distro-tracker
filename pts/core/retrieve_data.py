@@ -269,6 +269,42 @@ class AptCache(object):
             if component_url in repository.component_urls:
                 return repository
 
+    def _get_all_cached_files(self):
+        """
+        Returns a list of all cached files.
+        """
+        lists_directory = os.path.join(self.cache_root_dir, 'var/lib/apt/lists')
+        return [
+            file_name
+            for file_name in os.listdir(lists_directory)
+            if os.path.isfile(os.path.join(lists_directory, file_name))
+        ]
+
+    def get_sources_files_for_repository(self, repository):
+        """
+        Returns all ``Sources`` files which are cached for the given
+        repository.
+
+        For instance, ``Sources`` files for different suites are cached
+        separately.
+
+        :param repository: The repository for which to return all cached
+            ``Sources`` files
+        :type repository: :class:`Repository <pts.core.models.Repository>`
+
+        :rtype: ``iterable`` of strings
+        """
+        all_sources_files = [
+            file_name
+            for file_name in self._get_all_cached_files()
+            if file_name.endswith('Sources')
+        ]
+        return [
+            self._index_file_full_path(sources_file_name)
+            for sources_file_name in all_sources_files
+            if self._match_index_file_to_repository(sources_file_name) == repository
+        ]
+
     def update_repositories(self, force_download=False):
         """
         Initiates a cache update.
