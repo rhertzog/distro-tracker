@@ -1002,7 +1002,7 @@ class HttpCacheTest(SimpleTestCase):
         cache.update(url)
 
         # Run the update again
-        response, updated = cache.update(url, conditional=False)
+        response, updated = cache.update(url, force=True)
 
         # Make sure that we ask for a non-cached version
         mock_requests.get.assert_called_with(url, headers={

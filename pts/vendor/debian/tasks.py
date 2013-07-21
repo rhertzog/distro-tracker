@@ -42,7 +42,7 @@ class RetrieveDebianMaintainersTask(BaseTask):
         if not self.force_update and not cache.is_expired(url):
             # No need to do anything when the previously cached value is fresh
             return
-        response, updated = cache.update(url, conditional=not self.force_update)
+        response, updated = cache.update(url, force=self.force_update)
         response.raise_for_status()
         if not updated:
             # No need to do anything if the cached item was still not updated
@@ -101,7 +101,7 @@ class RetrieveLowThresholdNmuTask(BaseTask):
         cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
         if not self.force_update and not cache.is_expired(url):
             return
-        response, updated = cache.update(url, conditional=not self.force_update)
+        response, updated = cache.update(url, force=self.force_update)
         response.raise_for_status()
         if not updated:
             return

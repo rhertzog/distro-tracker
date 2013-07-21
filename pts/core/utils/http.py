@@ -105,20 +105,22 @@ class HttpCache(object):
             os.remove(self._content_cache_file_path(url))
             os.remove(self._header_cache_file_path(url))
 
-    def update(self, url, conditional=True):
+    def update(self, url, force=False):
         """
         Performs an update of the cached resource. This means that it validates
         that its most current version is found in the cache by doing a
         conditional GET request.
-        To force the method to perform a full GET request, the conditional flag
-        can be set to False.
 
-        Returns the original HTTP response and a Boolean indicating whether the
-        cached value was updated.
+        :param force: To force the method to perform a full GET request, set
+            the parameter to ``True``
+
+        :returns: The original HTTP response and a Boolean indicating whether the
+            cached value was updated.
+        :rtype: two-tuple of (:class:`requests.Response`, ``Boolean``)
         """
         cached_headers = self.get_headers(url)
         headers = {}
-        if conditional:
+        if not force:
             if 'last-modified' in cached_headers:
                 headers['If-Modified-Since'] = cached_headers['last-modified']
             if 'etag' in cached_headers:
