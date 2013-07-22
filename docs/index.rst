@@ -9,8 +9,9 @@ Welcome to Package Tracking System's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    setup/setup
+   about
    API Documentation <api/modules>
 
