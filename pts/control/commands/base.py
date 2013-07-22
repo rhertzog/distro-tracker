@@ -51,11 +51,15 @@ class Command(six.with_metaclass(MetaCommand)):
 
     META = {}
     """
-    Meta information about the command, such as:
-     - Description
-     - Name
-     - List of aliases
-     - Preferred position in the help output
+    Meta information about the command, given as key/value pairs. Expected
+    keys are:
+     - ``description`` - Description of the command which will be shown in the
+        help output
+     - ``name`` - Name of the command. Makes it possible to match command lines
+        in control messages to command classes since each command line starts
+        with the name of the command.
+     - ``aliases`` - List of alternative names for the command
+     - ``position`` - Preferred position in the help output
     """
     REGEX_LIST = ()
     """

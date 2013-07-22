@@ -13,5 +13,6 @@ Contents:
 
    setup/setup
    about
+   design
    API Documentation <api/modules>
 
