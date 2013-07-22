@@ -162,8 +162,8 @@ def message_from_bytes(message_bytes):
 
 class CustomEmailMessage(EmailMessage):
     """
-    A subclass of :class:`django.core.mail.EmailMessage` which allows users to
-    ise an :class:`email.message.Message` instance to define the body of the
+    A subclass of :class:`django.core.mail.EmailMessage` which can be fed
+    an :class:`email.message.Message` instance to define the body of the
     message.
 
     If :attr:`msg` is set, the :attr:`body <django.core.mail.EmailMessage.body>`

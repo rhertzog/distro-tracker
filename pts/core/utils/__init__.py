@@ -123,7 +123,7 @@ class SpaceDelimitedTextField(models.TextField):
     A custom Django model field which stores a list of strings.
 
     It stores the list in a :class:`TextField <django.db.models.TextField>`
-    as a space delimited list. It is mashalled back to a :class:`PrettyPrintList`
+    as a space delimited list. It is marshalled back to a :class:`PrettyPrintList`
     in the Python domain.
     """
     __metaclass__ = models.SubfieldBase

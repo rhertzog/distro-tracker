@@ -546,7 +546,7 @@ class BinaryPackageNameManager(models.Manager):
 @python_2_unicode_compatible
 class BinaryPackageName(BasePackageName):
     """
-    A model respresenting a single binary package name.
+    A model representing a single binary package name.
 
     Binary package versions must all reference an existing instance of this
     type.
