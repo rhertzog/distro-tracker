@@ -10,5 +10,5 @@ Contents:
 
    setup
    webserver
-   mailbot/exim
+   mailbot
 
