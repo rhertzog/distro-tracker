@@ -11,8 +11,7 @@ Contents:
 .. toctree::
    :maxdepth: 3
 
-   setup/setup
    about
    design
    API Documentation <api/modules>
-
+   setup/index
