@@ -434,3 +434,22 @@ class LinksPanel(ListPanel):
                 template = self.TEMPLATE
             html = template.format(text=text, url=url, tooltip=tooltip)
             super(LinksPanel.SimpleLinkItem, self).__init__(html)
+
+
+class GeneralInfoLinkPanelItems(LinksPanel.ItemProvider):
+    """
+    Provides the :class:`LinksPanel` with links derived from general package
+    information.
+
+    For now, this is only the homepage of the package, if available.
+    """
+    def get_panel_items(self):
+        items = []
+        if self.package.main_version.homepage:
+            items.append(
+                LinksPanel.SimpleLinkItem(
+                    'Homepage',
+                    self.package.main_version.homepage
+                ),
+            )
+        return items
