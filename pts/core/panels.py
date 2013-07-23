@@ -265,3 +265,112 @@ class BinariesInformationPanel(BasePanel):
                 binary['url'] = url
 
         return binaries
+
+
+class PanelItem(object):
+    """
+    The base class for all items embeddable in panels.
+
+    Lets the users define the panel item's content in two ways:
+
+    - A template and a context accessible to the template as item.context
+      variable
+    - Define the HTML output directly. This string needs to be marked safe,
+      otherwise it will be HTML encoded in the output.
+    """
+    #: The template to render when this item should be rendered
+    template_name = None
+    #: Context to be available when the template is rendered
+    context = None
+    #: HTML output to be placed in the page when the item should be rendered
+    html_output = None
+
+
+class PanelItemProvider(six.with_metaclass(PluginRegistry)):
+    """
+    A base class for classes which produce :class:`PanelItem` instances.
+
+    Each panel which wishes to allow clients to register item providers needs
+    a separate subclass of this class.
+    """
+    @classmethod
+    def all_panel_item_providers(cls):
+        """
+        Returns all subclasses of the given :class:`PanelItemProvider`
+        subclass.
+
+        Makes it possible for each :class:`ListPanel` to have its own separate
+        set of providers derived from its base ItemProvider.
+        """
+        return [
+            item_provider
+            for item_provider in cls.plugins
+            if issubclass(item_provider, cls)
+        ]
+
+    def __init__(self, package):
+        self.package = package
+
+    def get_panel_items(self):
+        """
+        The main method which needs to return a list of :class:`PanelItem`
+        instances which the provider wants rendered in the panel.
+        """
+        return []
+
+
+class ListPanelMeta(PluginRegistry):
+    """
+    A meta class for the :class:`ListPanel`. Makes sure that each subclass of
+    :class:`ListPanel` has a new :class:`PanelItemProvider` subclass.
+    """
+    def __init__(cls, name, bases, attrs):
+        super(ListPanelMeta, cls).__init__(name, bases, attrs)
+        if name != 'NewBase':
+            cls.ItemProvider = type(
+                str('{name}ItemProvider'.format(name=name)),
+                (PanelItemProvider,),
+                {}
+            )
+
+
+class ListPanel(BasePanel, six.with_metaclass(ListPanelMeta)):
+    """
+    The base class for panels which would like to present an extensible list of
+    items.
+
+    The subclasses only need to add the :attr:`position <BasePanel.position>`
+    and :attr:`title <BasePanel.title>` attributes, the rendering is handled
+    automatically, based on the registered list of item providers for the
+    panel.
+
+    Clients can add items to the panel by implementing a subclass of the
+    :class:`ListPanel.ItemProvider` class.
+
+    It is possible to change the :attr:`template_name <BasePanel.template_name>`
+    too, but making sure all the same context variable names are used in the
+    custom template.
+    """
+    template_name = 'core/panels/list-panel.html'
+
+    def get_items(self):
+        """
+        Returns a list of :class:`PanelItem` instances for the current panel
+        instance. This means the items are prepared for the package given to
+        the panel instance.
+        """
+        panel_providers = self.ItemProvider.all_panel_item_providers()
+        items = []
+        for panel_provider_class in panel_providers:
+            panel_provider = panel_provider_class(self.package)
+            items.extend(panel_provider.get_panel_items())
+        return items
+
+    @property
+    def context(self):
+        return {
+            'items': self.get_items()
+        }
+# This should be a sort of "abstract" panel which should never be rendered on
+# its own, so it is removed from the list of registered panels.
+ListPanel.unregister_plugin()
