@@ -10,6 +10,7 @@
 """Implements the core panels shown on package pages."""
 from __future__ import unicode_literals
 from django.utils import six
+from django.utils.safestring import mark_safe
 from pts.core.utils.plugins import PluginRegistry
 from pts.core.utils import get_vcs_name
 from pts import vendor
@@ -284,6 +285,30 @@ class PanelItem(object):
     context = None
     #: HTML output to be placed in the page when the item should be rendered
     html_output = None
+
+
+class TemplatePanelItem(PanelItem):
+    """
+    A subclass of :class:`PanelItem` which gives a more convenient interface
+    for defining items rendered by a template + context.
+    """
+    def __init__(self, template_name, context=None):
+        self.template_name = template_name
+        self.context = context
+
+
+class HtmlPanelItem(PanelItem):
+    """
+    A subclass of :class:`PanelItem` which gives a more convenient interface
+    for defining items which already provide HTML text.
+    Takes care of marking the given text as safe.
+    """
+    def __init__(self, html):
+        self._html = mark_safe(html)
+
+    @property
+    def html_output(self):
+        return self._html
 
 
 class PanelItemProvider(six.with_metaclass(PluginRegistry)):
