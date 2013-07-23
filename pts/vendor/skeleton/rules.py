@@ -193,3 +193,14 @@ def get_uploader_extra(developer_email, package_name=None):
         displayed.
     """
     pass
+
+
+def allow_package(stanza):
+    """
+    The function provides a way for vendors to exclude some packages from being
+    saved in the database.
+
+    :param stanza: The raw package entry from a ``Sources`` file.
+    :type stanza: case-insensitive dict
+    """
+    pass

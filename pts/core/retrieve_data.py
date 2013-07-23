@@ -472,7 +472,12 @@ class UpdateRepositoriesTask(PackageUpdateTask):
 
     def _update_sources_file(self, repository, sources_file):
         for stanza in deb822.Sources.iter_paragraphs(file(sources_file)):
-            db.reset_queries()
+            allow, implemented = vendor.call('allow_package', stanza)
+            if allow is not None and implemented and not allow:
+                # The vendor-provided function indicates that the package
+                # should not be included
+                continue
+
             src_pkg_name, created = SourcePackageName.objects.get_or_create(
                 name=stanza['package']
             )
