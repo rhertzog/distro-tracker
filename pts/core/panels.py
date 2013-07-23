@@ -399,3 +399,38 @@ class ListPanel(BasePanel, six.with_metaclass(ListPanelMeta)):
 # This should be a sort of "abstract" panel which should never be rendered on
 # its own, so it is removed from the list of registered panels.
 ListPanel.unregister_plugin()
+
+
+class LinksPanel(ListPanel):
+    """
+    This panel displays a list of important links for a given source package.
+
+    Clients can add items to the panel by implementing a subclass of the
+    :class:`LinksPanel.ItemProvider` class.
+    """
+    position = 'right'
+    title = 'Links'
+
+    class SimpleLinkItem(HtmlPanelItem):
+        """
+        A convenience :class:`PanelItem` which renders a simple link in the
+        panel, by having the text, url and, optionally, the tooltip text
+        given in the constructor.
+        """
+        TEMPLATE = '<a href="{url}">{text}</a>'
+        TEMPLATE_TOOLTIP = (
+            '<a href="{url}"'
+            ' class="has-tooltip"'
+            ' data-toggle="tooltip"'
+            ' title="{tooltip}">'
+            '{text}'
+            '</a>'
+        )
+
+        def __init__(self, text, url, tooltip=None):
+            if tooltip:
+                template = self.TEMPLATE_TOOLTIP
+            else:
+                template = self.TEMPLATE
+            html = template.format(text=text, url=url, tooltip=tooltip)
+            super(LinksPanel.SimpleLinkItem, self).__init__(html)
