@@ -237,3 +237,18 @@ def get_uploader_extra(developer_email, package_name=None):
             return [{
                 'display': 'dm',
             }]
+
+
+def allow_package(stanza):
+    """
+    The function provides a way for vendors to exclude some packages from being
+    saved in the database.
+
+    In Debian's case, this is done for packages where the ``Extra-Source-Only``
+    is set since those packages are in the repository only for various
+    compliance reasons.
+
+    :param stanza: The raw package entry from a ``Sources`` file.
+    :type stanza: case-insensitive dict
+    """
+    return 'Extra-Source-Only' not in stanza

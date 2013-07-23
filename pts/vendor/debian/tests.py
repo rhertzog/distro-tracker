@@ -19,8 +19,11 @@ from django.core import mail
 from django.utils.six.moves import mock
 from pts.dispatch.tests import DispatchTestHelperMixin, DispatchBaseTest
 from pts.core.models import PackageName
+from pts.core.models import SourcePackageName
+from pts.core.models import Repository
 from pts.core.models import ContributorEmail
 from pts.core.tasks import run_task
+from pts.core.retrieve_data import UpdateRepositoriesTask
 from pts.vendor.debian.rules import get_package_information_site_url
 from pts.vendor.debian.rules import get_maintainer_extra
 from pts.vendor.debian.rules import get_uploader_extra
@@ -28,6 +31,8 @@ from pts.vendor.debian.rules import get_developer_information_url
 from pts.vendor.debian.tasks import RetrieveDebianMaintainersTask
 from pts.vendor.debian.tasks import RetrieveLowThresholdNmuTask
 from pts.vendor.debian.models import DebianContributor
+
+import os
 
 
 __all__ = ('DispatchDebianSpecificTest', 'DispatchBaseDebianSettingsTest')
@@ -502,3 +507,57 @@ class DebianContributorExtraTest(TestCase):
         ],
             get_uploader_extra('dummy@debian.org', 'package-name')
         )
+
+
+@override_settings(PTS_VENDOR_RULES='pts.vendor.debian.rules')
+class RetrieveSourcesInformationDebian(TestCase):
+    """
+    Tests the Debian-specifi aspects of retrieving package information from a
+    repository.
+    """
+    fixtures = ['repository-test-fixture.json']
+
+    def setUp(self):
+        self.repository = Repository.objects.all()[0]
+
+    @mock.patch('pts.core.retrieve_data.AptCache.update_repositories')
+    def test_extra_source_only_ignored(self, mock_update_repositories):
+        """
+        Tests that the packages with the 'Extra-Source-Only' key are ignored.
+        """
+        sources_contents = (
+            """Package: dummy-package
+Binary: dummy-package-binary
+Version: 1.0.0
+Maintainer: Maintainer <maintainer@domain.com>
+Architecture: all amd64
+Files:
+ 22700cab41effa76f45968aeee39cdb1 3041 file.dsc
+
+Package: src-pkg
+Binary: other-package
+Version: 2.2
+Maintainer: Maintainer <maintainer@domain.com>
+Architecture: all amd64
+Extra-Source-Only: yes
+Files:
+ 227ffeabc4357876f45968aeee39cdb1 3041 file.dsc
+""")
+        sources_file_path = os.path.join(os.path.dirname(__file__), 'Sources')
+        with open(sources_file_path, 'w') as f:
+            f.write(sources_contents)
+        mock_update_repositories.return_value = (
+            [(self.repository, sources_file_path)],
+            []
+        )
+        # Sanity check - no source packages before running the task
+        self.assertEqual(0, SourcePackageName.objects.count())
+
+        run_task(UpdateRepositoriesTask)
+
+        # Only one package exists
+        self.assertEqual(1, SourcePackageName.objects.count())
+        # It is the one without the Extra-Source-Only: yes
+        self.assertEqual('dummy-package', SourcePackageName.objects.all()[0].name)
+
+        os.remove(sources_file_path)
