@@ -409,7 +409,7 @@ class LinksPanel(ListPanel):
     :class:`LinksPanel.ItemProvider` class.
     """
     position = 'right'
-    title = 'Links'
+    title = 'links'
 
     class SimpleLinkItem(HtmlPanelItem):
         """
