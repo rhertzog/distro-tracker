@@ -1,0 +1,18 @@
+{% extends 'core/panels/panel.html' %}
+{% block panel-header %}
+{{ panel.title }}
+{% endblock %}
+
+{% block panel-body %}
+<ul class="list-group list-group-flush">
+    {% for item in panel.context.items %}
+    <li class="list-group-item">
+        {% if item.template_name %}
+            {% include item.template_name %}
+        {% else %}
+            {{ item.html_output }}
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}
