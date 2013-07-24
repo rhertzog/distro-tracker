@@ -14,12 +14,17 @@ from django.utils import six
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.safestring import mark_safe
 from django.core.urlresolvers import reverse
+from django.conf import settings
 from pts.core.utils import get_or_none
 from pts.core.utils import SpaceDelimitedTextField
 from pts.core.utils import verify_signature
 from pts.core.utils.plugins import PluginRegistry
+from pts.core.utils.email_messages import decode_header
 
 from debian.debian_support import AptPkgVersion
+from email import message_from_string
+from email.utils import getaddresses
+from email.iterators import typed_subpart_iterator
 
 
 @python_2_unicode_compatible
@@ -1309,3 +1314,64 @@ class RstNewsRenderer(NewsRenderer):
     """
     content_type = 'text/x-rst'
     template_name = 'core/news-rst.html'
+
+
+class EmailNewsRenderer(NewsRenderer):
+    """
+    Renders news content as an email message.
+    """
+    content_type = 'message/rfc822'
+    template_name = 'core/news-email.html'
+
+    @property
+    def context(self):
+        msg = message_from_string(self.news.content)
+        # Extract headers first
+        DEFAULT_HEADERS = (
+            'From',
+            'To',
+            'Subject',
+        )
+        EMAIL_HEADERS = (
+            'from',
+            'to',
+            'cc',
+            'bcc',
+            'resent-from',
+            'resent-to',
+            'resent-cc',
+            'resent-bcc',
+        )
+        USER_DEFINED_HEADERS = getattr(settings, 'PTS_EMAIL_NEWS_HEADERS', ())
+        ALL_HEADERS = [
+            header.lower()
+            for header in DEFAULT_HEADERS + USER_DEFINED_HEADERS
+        ]
+
+        headers = {}
+        for header_name, header_value in msg.items():
+            if header_name.lower() not in ALL_HEADERS:
+                continue
+            header_value = decode_header(header_value)
+            if header_name.lower() in EMAIL_HEADERS:
+                headers[header_name] = {
+                    'emails': [
+                        {
+                            'email': email,
+                            'name': name,
+                        }
+                        for name, email in getaddresses([header_value])
+                    ]
+                }
+            else:
+                headers[header_name] = {'value': header_value}
+
+        plain_text_payloads = [
+            part.get_payload(decode=True)
+            for part in typed_subpart_iterator(msg, 'text', 'plain')
+        ]
+
+        return {
+            'headers': headers,
+            'parts': plain_text_payloads,
+        }

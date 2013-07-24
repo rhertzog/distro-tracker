@@ -1,0 +1,20 @@
+<ul class="email-news-headers">
+{% for header, header_value in context.headers.items %}
+<li><b>{{ header }}</b>: 
+    {% if header_value.emails %}
+        {% for email in header_value.emails %}
+            {% if forloop.counter0 %},{% endif %}
+            <a href="mailto:{{ email.email }}" target="_blank">{{ email.name }} &lt;{{ email.email }}&gt;</a>
+        {% endfor %}
+    {% else %}
+        {{ header_value.value }}
+    {% endif %}
+</li>
+{% endfor %}
+</ul>
+
+<div class="email-news-body">
+{% for part in context.parts %}
+{{ part|linebreaks }}
+{% endfor %}
+</div>
