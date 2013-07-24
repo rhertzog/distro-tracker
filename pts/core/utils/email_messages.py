@@ -17,6 +17,7 @@ from django.utils import six
 from email.mime.base import MIMEBase
 import re
 import copy
+import email
 
 
 def extract_email_address_from_header(header):
@@ -215,3 +216,23 @@ class CustomEmailMessage(EmailMessage):
                 else:
                     msg.attach(self._create_attachment(*attachment))
         return msg
+
+
+def decode_header(header):
+    """
+    Decodes an email message header and returns it coded as a unicode
+    string.
+
+    This is necessary since it is possible that a header is made of multiple
+    differently encoded parts which makes :func:`email.header.decode_header`
+    insufficient.
+    """
+    if header is None:
+        return ''
+    decoded_header = email.header.decode_header(header)
+    # Join all the different parts of the header into a single unicode string
+    return ''.join((
+        (part.decode(encoding)
+         if encoding is not None else
+         part)
+        for part, encoding in decoded_header))

@@ -30,11 +30,14 @@ from pts.core.utils.packages import extract_vcs_information
 from pts.core.utils.packages import extract_dsc_file_name
 from pts.core.utils.datastructures import DAG, InvalidDAGException
 from pts.core.utils.email_messages import CustomEmailMessage
+from pts.core.utils.email_messages import decode_header
 from pts.core.utils.http import HttpCache
 
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
+from email.header import Header
 from email import encoders
+
 
 from debian import deb822
 import os
@@ -1085,3 +1088,33 @@ class VerifySignatureTest(SimpleTestCase):
         wrong.
         """
         self.assertIsNone(verify_signature(b"This is not a signature"))
+
+
+class DecodeHeaderTest(SimpleTestCase):
+    """
+    Tests for :func:`pts.core.utils.email_messages.decode_header`.
+    """
+    def test_decode_header_iso(self):
+        """
+        Single part iso-8859-1 encoded text.
+        """
+        h = Header(b'M\xfcnchen', 'iso-8859-1')
+        header_text = decode_header(h)
+        self.assertEqual('München', header_text)
+
+    def test_decode_header_utf8(self):
+        """
+        Single part utf-8 encoded text.
+        """
+        h = Header(b'M\xc3\xbcnchen', 'utf-8')
+        header_text = decode_header(h)
+        self.assertEqual('München', header_text)
+
+    def test_decode_header_multipart(self):
+        """
+        Two part header: iso-8859-1 and utf-8
+        """
+        h = Header(b'M\xfcnchen', 'iso-8859-1')
+        h.append(b' M\xc3\xbcnchen', 'utf-8')
+        header_text = decode_header(h)
+        self.assertEqual('München München', header_text)
