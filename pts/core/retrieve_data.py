@@ -14,7 +14,7 @@ from pts.core.models import PseudoPackageName, PackageName
 from pts.core.models import Repository
 from pts.core.models import SourcePackageRepositoryEntry
 from pts.core.models import ContributorEmail
-from pts.core.models import SourcePackageMaintainer
+from pts.core.models import ContributorName
 from pts.core.models import SourcePackage
 from pts.core.models import PackageExtractedInfo
 from pts.core.models import BinaryPackageName
@@ -434,7 +434,7 @@ class UpdateRepositoriesTask(PackageUpdateTask):
         if 'maintainer' in entry:
             maintainer_email, _ = ContributorEmail.objects.get_or_create(
                 email=entry['maintainer']['email'])
-            maintainer = SourcePackageMaintainer.objects.get_or_create(
+            maintainer = ContributorName.objects.get_or_create(
                 contributor_email=maintainer_email,
                 name=entry['maintainer'].get('name', ''))[0]
             entry['maintainer'] = maintainer
@@ -461,7 +461,7 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                         email=email)
                 else:
                     contributor_email = existing_contributor_emails[email]
-                uploaders.append(SourcePackageMaintainer.objects.get_or_create(
+                uploaders.append(ContributorName.objects.get_or_create(
                     contributor_email=contributor_email,
                     name=name)[0]
                 )

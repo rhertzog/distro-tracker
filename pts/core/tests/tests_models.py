@@ -23,7 +23,7 @@ from pts.core.models import Architecture
 from pts.core.models import PseudoPackageName
 from pts.core.models import Repository
 from pts.core.models import ContributorEmail
-from pts.core.models import SourcePackageMaintainer
+from pts.core.models import ContributorName
 from pts.core.models import SourcePackage
 from pts.core.models import MailingList
 
@@ -41,7 +41,7 @@ def create_source_package(arguments):
         maintainer = arguments['maintainer']
         maintainer_email = ContributorEmail.objects.get_or_create(
             email=maintainer['email'])[0]
-        kwargs['maintainer'] = SourcePackageMaintainer.objects.get_or_create(
+        kwargs['maintainer'] = ContributorName.objects.get_or_create(
             contributor_email=maintainer_email,
             name=maintainer.get('name', ''))[0]
     if 'name' in arguments:

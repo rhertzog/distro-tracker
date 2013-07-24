@@ -839,9 +839,12 @@ class ContributorEmail(models.Model):
 
 
 @python_2_unicode_compatible
-class SourcePackageMaintainer(models.Model):
+class ContributorName(models.Model):
     """
-    Represents the maintainer of a single source package.
+    Represents a name associated with a :class:`ContributorEmail`.
+
+    A single contributor, as identified by his email, may have different
+    written names in different contexts.
     """
     contributor_email = models.ForeignKey(ContributorEmail)
     name = models.CharField(max_length=60, blank=True)
@@ -850,14 +853,13 @@ class SourcePackageMaintainer(models.Model):
         unique_together = ('contributor_email', 'name')
 
     def __str__(self):
-        return "{name} <{email}>, maintainer of source package {pkg}".format(
+        return "{name} <{email}>".format(
             name=self.name,
-            email=self.contributor_email,
-            pkg=self.source_package)
+            email=self.contributor_email)
 
     def to_dict(self):
         """
-        Returns a dictionary representing a :class:`SourcePackageMaintainer`
+        Returns a dictionary representing a :class:`ContributorName`
         instance.
 
         :rtype: dict
@@ -887,11 +889,11 @@ class SourcePackage(models.Model):
     binary_packages = models.ManyToManyField(BinaryPackageName, blank=True)
 
     maintainer = models.ForeignKey(
-        SourcePackageMaintainer,
+        ContributorName,
         related_name='source_package',
         null=True)
     uploaders = models.ManyToManyField(
-        SourcePackageMaintainer,
+        ContributorName,
         related_name='source_packages_uploads_set'
     )
 
