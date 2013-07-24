@@ -1272,3 +1272,11 @@ class NewsRenderer(six.with_metaclass(PluginRegistry)):
                 return news_renderer
 
         return None
+
+
+class PlainTextNewsRenderer(NewsRenderer):
+    """
+    Renders a text/plain content type by placing the text in a <pre> HTML block
+    """
+    content_type = 'text/plain'
+    template_name = 'core/news-plain.html'
