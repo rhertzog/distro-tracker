@@ -49,7 +49,9 @@ PTS_CONTACT_EMAIL = 'owner@' + PTS_FQDN
 #: processing should happen.
 #: It does not necessarily have to be in the same domain as specified in
 #: :py:data:`pts.project.settings.PTS_FQDN`.
-PTS_BOUNCE_NO_REPLY_EMAIL = 'bounces-likely-spam@' + PTS_FQDN
+PTS_BOUNCES_EMAIL = 'bounces@' + PTS_FQDN
+#: The email address which should receive bounces that are a result of spam.
+PTS_BOUNCES_LIKELY_SPAM_EMAIL = PTS_BOUNCES_EMAIL
 
 #: The maximum number of news to include in the news panel of a package page
 PTS_NEWS_PANEL_LIMIT = 30

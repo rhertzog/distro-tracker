@@ -13,7 +13,7 @@ Module implementing the processing of email control messages.
 from __future__ import unicode_literals
 from email.iterators import typed_subpart_iterator
 
-from django.core.mail import EmailMessage, send_mail
+from django.core.mail import EmailMessage
 from django.utils import six
 from django.template.loader import render_to_string
 from pts.core.utils import pts_render_to_string
@@ -29,6 +29,7 @@ import re
 
 from django.conf import settings
 PTS_CONTACT_EMAIL = settings.PTS_CONTACT_EMAIL
+PTS_BOUNCES_EMAIL = settings.PTS_BOUNCES_EMAIL
 PTS_CONTROL_EMAIL = settings.PTS_CONTROL_EMAIL
 
 
@@ -51,8 +52,9 @@ def send_response(original_message, message_text, cc=None):
         subject='Re: ' + subject,
         to=[original_message['From']],
         cc=cc,
-        from_email=PTS_CONTACT_EMAIL,
+        from_email=PTS_BOUNCES_EMAIL,
         headers={
+            'From': PTS_CONTACT_EMAIL,
             'X-Loop': PTS_CONTROL_EMAIL,
             'References': ' '.join((original_message.get('References', ''),
                                     original_message.get('Message-ID', ''))),
@@ -119,12 +121,15 @@ class ConfirmationSet(object):
         )
         subject = 'CONFIRM ' + command_confirmation.confirmation_key
 
-        send_mail(
+        EmailMessage(
             subject=subject,
-            message=message,
-            from_email=PTS_CONTROL_EMAIL,
-            recipient_list=[email]
-        )
+            to=[email],
+            from_email=PTS_BOUNCES_EMAIL,
+            headers={
+                'From': PTS_CONTROL_EMAIL,
+            },
+            body=message,
+        ).send()
 
     def ask_confirmation_all(self):
         """
