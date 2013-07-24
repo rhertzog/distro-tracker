@@ -10,11 +10,13 @@
 """Models for the :mod:`pts.core` app."""
 from __future__ import unicode_literals
 from django.db import models
+from django.utils import six
 from django.utils.encoding import python_2_unicode_compatible
 from django.core.urlresolvers import reverse
 from pts.core.utils import get_or_none
 from pts.core.utils import SpaceDelimitedTextField
 from pts.core.utils import verify_signature
+from pts.core.utils.plugins import PluginRegistry
 
 from debian.debian_support import AptPkgVersion
 
@@ -1217,3 +1219,56 @@ class News(models.Model):
             signed_by.append(signer_name)
 
         self.signed_by = signed_by
+
+
+class NewsRenderer(six.with_metaclass(PluginRegistry)):
+    """
+    Base class which is used to register subclasses to render a :class:`News`
+    instance's contents into an HTML page.
+
+    Each :class:`News` instance has a :attr:`News.content_type` field which
+    is used to select the correct renderer for its type.
+    """
+    #: Each :class:`NewsRenderer` subclass sets a content type that it can
+    #: render into HTML
+    content_type = None
+    #: A renderer can define a template name which will be included when its
+    #: output is required
+    template_name = None
+    #: The context is made available to the renderer's template, if available.
+    #: By default this is only the news instance which should be rendered.
+    @property
+    def context(self):
+        return {
+            'news': self.news
+        }
+    #: Pure HTML which is included when the renderer's output is required.
+    #: Must be marked safe with :func:`django.utils.safestring.mark_safe`
+    #: or else it will be HTML encoded!
+    html_output = None
+
+    def __init__(self, news):
+        """
+        :type news: :class:`pts.core.models.News`
+        """
+        self.news = news
+
+    @classmethod
+    def get_renderer_for_content_type(cls, content_type):
+        """
+        Returns one of the :class:`NewsRenderer` subclasses which implements
+        rendering the given content type. If there is more than one such class,
+        it is undefined which one is returned from this method. If there is
+        not renderer for the given type, ``None`` is returned.
+
+        :param content_type: The Content-Type for which a renderer class should
+            be returned.
+        :type content_type: string
+
+        :rtype: :class:`NewsRenderer` subclass or ``None``
+        """
+        for news_renderer in cls.plugins:
+            if news_renderer.content_type == content_type:
+                return news_renderer
+
+        return None
