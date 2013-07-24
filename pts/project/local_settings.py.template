@@ -79,6 +79,10 @@ PTS_KEYRING_DIRECTORY = '/path/to/keyring/directory'
 #: in apps' "static/" subdirectories and in STATICFILES_DIRS.
 STATIC_ROOT = '/path/to/static/root/directory'
 
+# Absolute filesystem path to the directory that will hold user-uploaded files.
+# Example: "/var/www/example.com/media/"
+MEDIA_ROOT = ''
+
 #: Make this unique, and don't share it with anybody.
 #: DO NOT USE THE EXAMPLE KEY GIVEN BELOW
 SECRET_KEY = 'etu2#5lv=!0(g9l31mw=cpwhioy!egg60lb5o3_67d83#(wu-u'

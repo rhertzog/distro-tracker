@@ -12,6 +12,7 @@ from __future__ import unicode_literals
 from django.db import models
 from django.utils import six
 from django.utils.encoding import python_2_unicode_compatible
+from django.utils.functional import cached_property
 from django.utils.safestring import mark_safe
 from django.core.urlresolvers import reverse
 from django.conf import settings
@@ -1198,7 +1199,14 @@ class News(models.Model):
     package = models.ForeignKey(PackageName)
     title = models.CharField(max_length=255)
     content_type = models.CharField(max_length=100, default='text/plain')
-    content = models.TextField(blank=True)
+    _db_content = models.TextField(blank=True)
+    news_file = models.FileField(
+        upload_to=lambda instance, filename: '/'.join((
+            'news',
+            instance.package.name,
+            filename
+        )),
+        blank=True)
     created_by = models.CharField(max_length=100, blank=True)
     datetime_created = models.DateTimeField(auto_now_add=True)
     signed_by = models.ManyToManyField(
@@ -1207,6 +1215,22 @@ class News(models.Model):
 
     def __str__(self):
         return self.title
+
+    @cached_property
+    def content(self):
+        """
+        Returns either the content of the message saved in the database or
+        retrieves it from the news file found in the filesystem.
+
+        The property is cached so that a single instance of :class:`News` does
+        not have to read a file every time its content is accessed.
+        """
+        if self._db_content:
+            return self._db_content
+        self.news_file.open('r')
+        content = self.news_file.read()
+        self.news_file.close()
+        return content
 
     def save(self, *args, **kwargs):
         super(News, self).save(*args, **kwargs)
