@@ -14,6 +14,7 @@ from django.utils.encoding import python_2_unicode_compatible
 from django.core.urlresolvers import reverse
 from pts.core.utils import get_or_none
 from pts.core.utils import SpaceDelimitedTextField
+from pts.core.utils import verify_signature
 
 from debian.debian_support import AptPkgVersion
 
@@ -1179,3 +1180,40 @@ class RunningJob(models.Model):
         else:
             return "Running Job (started {date})".format(
                 date=self.datetime_created)
+
+
+@python_2_unicode_compatible
+class News(models.Model):
+    """
+    A model used to describe a news item regarding a package.
+    """
+    package = models.ForeignKey(PackageName)
+    title = models.CharField(max_length=255)
+    content = models.TextField(blank=True)
+    created_by = models.CharField(max_length=100, blank=True)
+    datetime_created = models.DateTimeField(auto_now_add=True)
+    signed_by = models.ManyToManyField(
+        ContributorName,
+        related_name='signed_news_set')
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        super(News, self).save(*args, **kwargs)
+
+        signers = verify_signature(self.content)
+        if signers is None:
+            # No signature
+            return
+
+        signed_by = []
+        for name, email in signers:
+            signer_email, _ = ContributorEmail.objects.get_or_create(
+                email=email)
+            signer_name, _ = ContributorName.objects.get_or_create(
+                name=name,
+                contributor_email=signer_email)
+            signed_by.append(signer_name)
+
+        self.signed_by = signed_by
