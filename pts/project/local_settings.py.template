@@ -51,6 +51,9 @@ PTS_CONTACT_EMAIL = 'owner@' + PTS_FQDN
 #: :py:data:`pts.project.settings.PTS_FQDN`.
 PTS_BOUNCE_NO_REPLY_EMAIL = 'bounces-likely-spam@' + PTS_FQDN
 
+#: The maximum number of news to include in the news panel of a package page
+PTS_NEWS_PANEL_LIMIT = 30
+
 #: A module implementing vendor-specific functionality which the PTS can hook
 #: into.
 #: For more information see :py:mod:`pts.vendor`.
@@ -61,6 +64,9 @@ PTS_VENDOR_RULES = 'pts.vendor.debian.rules'
 #: For example, it is used to store the APT cache of repository information and
 #: the cache of retrieved Web resources.
 PTS_CACHE_DIRECTORY = '/path/to/a/directory'
+
+#: This directory should contain a GPG keyring of known public keys
+PTS_KEYRING_DIRECTORY = '/path/to/keyring/directory'
 
 #: Absolute path to the directory static files should be collected to.
 #: Don't put anything in this directory yourself; store your static files

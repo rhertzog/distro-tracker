@@ -25,6 +25,7 @@ from pts.core.utils import verp
 from pts.core.utils import message_from_bytes
 from pts.core.utils import SpaceDelimitedTextField
 from pts.core.utils import PrettyPrintList
+from pts.core.utils import verify_signature
 from pts.core.utils.packages import extract_vcs_information
 from pts.core.utils.packages import extract_dsc_file_name
 from pts.core.utils.datastructures import DAG, InvalidDAGException
@@ -36,7 +37,9 @@ from email.mime.base import MIMEBase
 from email import encoders
 
 from debian import deb822
+import os
 import time
+import gpgme
 
 
 class VerpModuleTest(SimpleTestCase):
@@ -1009,3 +1012,76 @@ class HttpCacheTest(SimpleTestCase):
             'Cache-Control': 'no-cache'
         })
         self.assertTrue(updated)
+
+
+TEST_KEYRING_DIRECTORY = os.path.join(
+    os.path.dirname(__file__), 'test-keyring')
+
+@override_settings(PTS_KEYRING_DIRECTORY=TEST_KEYRING_DIRECTORY)
+class VerifySignatureTest(SimpleTestCase):
+    """
+    Tests the :func:`pts.core.utils.verify_signature` function.
+    """
+    def import_key_from_test_file(self, file_name):
+        """
+        Helper function which imports the given test key file into the test
+        keyring.
+        """
+        old = os.environ.get('GNUPGHOME', None)
+        os.environ['GNUPGHOME'] = TEST_KEYRING_DIRECTORY
+        ctx = gpgme.Context()
+        file_path = os.path.join(
+            os.path.dirname(__file__),
+            'tests-data/keys',
+            file_name
+        )
+        with open(file_path, 'rb') as key_file:
+            ctx.import_(key_file)
+
+        if old:
+            os.environ['GNUPGHOME'] = old
+
+    def setUp(self):
+        if not os.path.exists(TEST_KEYRING_DIRECTORY):
+            os.makedirs(TEST_KEYRING_DIRECTORY)
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(TEST_KEYRING_DIRECTORY)
+
+    def test_signed_message(self):
+        """
+        Tests extracting the signature from a correctly signed message when the
+        signer is found in the keyring.
+        """
+        self.import_key_from_test_file('key1.pub')
+        file_path = os.path.join(
+            os.path.dirname(__file__),
+            'tests-data/signed-message'
+        )
+        expected = [
+            ('PTS Tests', 'fake-address@domain.com')
+        ]
+
+        with open(file_path, 'rb') as f:
+            self.assertEqual(expected, verify_signature(f.read()))
+
+    def test_signed_message_unknown_key(self):
+        """
+        Tests extracting the signature from a correctly signed message when the
+        signer is not found in the keyring.
+        """
+        file_path = os.path.join(
+            os.path.dirname(__file__),
+            'tests-data/signed-message'
+        )
+
+        with open(file_path, 'rb') as f:
+            self.assertSequenceEqual([], verify_signature(f.read()))
+
+    def test_incorrect_signature(self):
+        """
+        Tests extracting signature information when the signature itself is
+        wrong.
+        """
+        self.assertIsNone(verify_signature(b"This is not a signature"))

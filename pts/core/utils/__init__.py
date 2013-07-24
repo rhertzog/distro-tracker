@@ -12,7 +12,11 @@ from __future__ import unicode_literals
 from django.template.loader import render_to_string
 from django.http import HttpResponse
 from django.db import models
+from django.utils import six
+from django.conf import settings
+import os
 import json
+import gpgme
 
 from .email_messages import extract_email_address_from_header
 from .email_messages import get_decoded_message_payload
@@ -178,3 +182,46 @@ def get_vcs_name(shorthand):
     :rtype: string
     """
     return VCS_SHORTHAND_TO_NAME.get(shorthand, '')
+
+
+def verify_signature(content):
+    """
+    The function extracts any possible signature information found in the given
+    content.
+
+    Uses the :data:`pts.project.local_settings.PTS_KEYRING_DIRECTORY` setting
+    to access the keyring. If this setting does not exist, no signatures can
+    be validated.
+
+    :returns: Information about the signers of the content as a list or
+        ``None`` if there is no (valid) signature.
+    :rtype: list of ``(name, email)`` pairs or ``None``
+    :type content: :class:`bytes`
+    """
+    keyring_directory = getattr(settings, 'PTS_KEYRING_DIRECTORY', None)
+    if not keyring_directory:
+        # The vendor has not provided a keyring
+        return None
+
+    os.environ['GNUPGHOME'] = keyring_directory
+    ctx = gpgme.Context()
+
+    # Try to verify the given content
+    plain = six.BytesIO()
+    try:
+        signatures = ctx.verify(six.BytesIO(content), None, plain)
+    except gpgme.GpgmeError:
+        return None
+
+    # Extract signer information
+    signers = []
+    for signature in signatures:
+        key_missing = bool(signature.summary & gpgme.SIGSUM_KEY_MISSING)
+
+        if key_missing:
+            continue
+
+        key = ctx.get_key(signature.fpr)
+        signers.append((key.uids[0].name, key.uids[0].email))
+
+    return signers
