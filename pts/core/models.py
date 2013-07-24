@@ -12,6 +12,7 @@ from __future__ import unicode_literals
 from django.db import models
 from django.utils import six
 from django.utils.encoding import python_2_unicode_compatible
+from django.utils.safestring import mark_safe
 from django.core.urlresolvers import reverse
 from pts.core.utils import get_or_none
 from pts.core.utils import SpaceDelimitedTextField
@@ -1286,3 +1287,17 @@ class PlainTextNewsRenderer(NewsRenderer):
     """
     content_type = 'text/plain'
     template_name = 'core/news-plain.html'
+
+
+class HtmlNewsRenderer(NewsRenderer):
+    """
+    Renders a text/html content type by simply emitting it to the output.
+
+    When creating news with a text/html type, you must be careful to properly
+    santize any user-provided data or risk security vulnerabilities.
+    """
+    content_type = 'text/html'
+
+    @property
+    def html_output(self):
+        return mark_safe(self.news.content)
