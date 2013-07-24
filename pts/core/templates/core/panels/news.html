@@ -7,7 +7,8 @@
 <ul class="list-group list-group-flush">
     {% for news_item in panel.context.news %}
     <li class="list-group-item">
-        [{{ news_item.datetime_created|date:"Y-m-d" }}] {{ news_item.title }}
+        [{{ news_item.datetime_created|date:"Y-m-d" }}]
+        <a href="{% url 'pts-news-page' news_item.pk %}">{{ news_item.title }}</a>
         {% if news_item.created_by %}({{ news_item.created_by }}){% endif %}
         {% if news_item.signed_by.all %}
             (signed by: 

@@ -10,6 +10,7 @@
 """Views for the :mod:`pts.core` app."""
 from __future__ import unicode_literals
 from django.shortcuts import render, redirect
+from django.shortcuts import get_object_or_404
 from django.http import Http404
 from django.utils.decorators import method_decorator
 from django.views.generic import View
@@ -17,6 +18,7 @@ from django.views.decorators.cache import cache_control
 from pts.core.models import get_web_package
 from pts.core.utils import render_to_json_response
 from pts.core.models import SourcePackageName, PackageName, PseudoPackageName
+from pts.core.models import News, NewsRenderer
 from pts.core.panels import get_panels_for_package
 
 
@@ -95,3 +97,21 @@ class PackageAutocompleteView(View):
         AUTOCOMPLETE_ITEMS_LIMIT = 10
         filtered = filtered[:AUTOCOMPLETE_ITEMS_LIMIT]
         return render_to_json_response([package['name'] for package in filtered])
+
+
+def news_page(request, news_id):
+    """
+    Displays a news item's full content.
+    """
+    news = get_object_or_404(News, pk=news_id)
+
+    renderer_class = NewsRenderer.get_renderer_for_content_type(news.content_type)
+    if renderer_class is None:
+        renderer_class = NewsRenderer.get_renderer_for_content_type('text/plain')
+
+    renderer = renderer_class(news)
+    print news.content_type
+    return render(request, 'core/news.html', {
+        'news_renderer': renderer,
+        'news': news,
+    })

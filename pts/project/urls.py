@@ -7,7 +7,6 @@
 # this distribution and at http://deb.li/ptslicense. No part of the Package
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
-
 """The URL routes for the PTS project."""
 
 from __future__ import unicode_literals
@@ -30,6 +29,8 @@ urlpatterns = patterns('',
         name='pts-api-package-autocomplete'),
 
     url(r'^admin/', include(admin.site.urls)),
+    url(r'^news/(?P<news_id>\d+)$', 'pts.core.views.news_page',
+        name='pts-news-page'),
 
     # The package page view. It must be listed *after* the admin URL so that
     # the admin URL is not interpreted as a package named "admin".

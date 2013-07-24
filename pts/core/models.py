@@ -1191,6 +1191,7 @@ class News(models.Model):
     """
     package = models.ForeignKey(PackageName)
     title = models.CharField(max_length=255)
+    content_type = models.CharField(max_length=100, default='text/plain')
     content = models.TextField(blank=True)
     created_by = models.CharField(max_length=100, blank=True)
     datetime_created = models.DateTimeField(auto_now_add=True)
@@ -1219,6 +1220,11 @@ class News(models.Model):
             signed_by.append(signer_name)
 
         self.signed_by = signed_by
+
+    def get_absolute_url(self):
+        return reverse('pts-news-page', kwargs={
+            'news_id': self.pk,
+        })
 
 
 class NewsRenderer(six.with_metaclass(PluginRegistry)):
