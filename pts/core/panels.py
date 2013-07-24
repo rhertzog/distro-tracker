@@ -9,6 +9,7 @@
 # distributed except according to the terms contained in the LICENSE file.
 """Implements the core panels shown on package pages."""
 from __future__ import unicode_literals
+from django.conf import settings
 from django.utils import six
 from django.utils.safestring import mark_safe
 from pts.core.utils.plugins import PluginRegistry
@@ -16,6 +17,7 @@ from pts.core.utils import get_vcs_name
 from pts import vendor
 from pts.core.models import PackageExtractedInfo
 from pts.core.models import MailingList
+from pts.core.models import News
 
 
 class BasePanel(six.with_metaclass(PluginRegistry)):
@@ -453,3 +455,17 @@ class GeneralInfoLinkPanelItems(LinksPanel.ItemProvider):
                 ),
             )
         return items
+
+
+class NewsPanel(BasePanel):
+    _DEFAULT_NEWS_LIMIT = 30
+    NEWS_LIMIT = getattr(settings, 'PTS_NEWS_PANEL_LIMIT', _DEFAULT_NEWS_LIMIT)
+
+    template_name = 'core/panels/news.html'
+    title = 'news'
+
+    @property
+    def context(self):
+        return {
+            'news': News.objects.filter(package=self.package)[:self.NEWS_LIMIT]
+        }

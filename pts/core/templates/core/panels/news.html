@@ -1,0 +1,23 @@
+{% extends 'core/panels/panel.html' %}
+{% block panel-header %}
+{{ panel.title }}
+{% endblock %}
+
+{% block panel-body %}
+<ul class="list-group list-group-flush">
+    {% for news_item in panel.context.news %}
+    <li class="list-group-item">
+        [{{ news_item.datetime_created|date:"Y-m-d" }}] {{ news_item.title }}
+        {% if news_item.created_by %}({{ news_item.created_by }}){% endif %}
+        {% if news_item.signed_by.all %}
+            (signed by: 
+            {% for signer in news_item.signed_by.all %}
+            {% if forloop.counter0 %},{% endif %}
+            {{ signer.name }}
+            {% endfor %}
+            )
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}
