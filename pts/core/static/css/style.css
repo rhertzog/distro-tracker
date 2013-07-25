@@ -125,6 +125,9 @@
   min-width: 27%;
   float: left;
 }
+.list-group-item > .list-item-key.versions-repository {
+  min-width: 40%;
+}
 .list-group-item > .list-item-value {
   float: left;
 }

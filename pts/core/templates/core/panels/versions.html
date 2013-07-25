@@ -2,7 +2,7 @@
 
 {% block panel-header %}
 <div class="row-fluid">
-<div class="span11">
+<div class="pull-left">
     <span>{{ panel.title }}</span>
     {% if panel.context.external_resources %}
     {% for external in panel.context.external_resources %}
@@ -12,7 +12,7 @@
     {% endfor %}
     {% endif %}
 </div>
-<div class="span1">
+<div class="pull-right">
     {% if panel.context.default_pool_url %}
     <a href="{{ panel.context.default_pool_url }}" class="has-tooltip" data-toggle="tooltip" title="pool directory"><i class="icon-folder-open"></i></a>
     {% endif %}
@@ -24,13 +24,14 @@
     {% for item in panel.context.version_list %}
     <div class="row-fluid">
     <li class="list-group-item">
-        <div class="span3"><b>{{ item.repository_shorthand }}:</b></div>
-        <div class="span8">
+        <div class="list-item-key versions-repository"><b>{{ item.repository_shorthand }}:</b></div>
+        <div class="list-item-value">
             {% with url=item.url|default:"#" %}
             <a href="{{ url }}">{{ item.version }}</a>
             {% endwith %}
         </div>
-        <div class="span1"><a href="{{ item.dsc_file_url }}" class="has-tooltip" data-toggle="tooltip" title=".dsc, use dget on this link to retrieve source package"><i class="icon-download-alt"></i></a></div>
+        <div class="pull-right"><a href="{{ item.dsc_file_url }}" class="has-tooltip" data-toggle="tooltip" title=".dsc, use dget on this link to retrieve source package"><i class="icon-download-alt"></i></a></div>
+        <div class="clear"></div>
     </li>
     </div>
     {% endfor %}
