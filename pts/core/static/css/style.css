@@ -18,6 +18,21 @@
     background: #D70751;
 }
 
+.scrollable {
+  max-height: 310px;
+  position: relative;
+  overflow: hidden;
+}
+@media (max-width: 480px) {
+  /* Make mobile browser handle their own scrolling to make sure it works
+   * correctly for touch gestures.
+   */
+  .scrollable {
+    overflow: auto;
+  }
+}
+
+
 /* Typeahead style */
 .tt-dropdown-menu {
   min-width: 220px;

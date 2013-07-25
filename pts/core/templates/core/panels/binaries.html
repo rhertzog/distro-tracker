@@ -5,6 +5,7 @@
 
 {% block panel-body %}
 <ul class="list-group list-group-flush">
+    <div class="scrollable">
     {% for item in panel.context %}
     <li class="list-group-item">
         {% with url=item.url|default:"#" %}
@@ -12,5 +13,6 @@
         {% endwith %}
     </li>
     {% endfor %}
+    </div>
 </ul>
 {% endblock %}
