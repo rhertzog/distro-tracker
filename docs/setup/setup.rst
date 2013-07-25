@@ -13,6 +13,7 @@ The Package Tracking System currently depends on the following Python packages:
 - django-jsonfield
 - python-debian
 - python-apt
+- python-gpgme
 
 For Python2.7, the following additional packages are required:
 
@@ -51,7 +52,7 @@ Static Assets
 
 Once the local settings are filled in, the static assets like images,
 Javascript and CSS files should be moved to the directory given in the
-:data:`STATIC_ROOT <pts.project.settings.STATIC_ROOT>` setting. This is
+:data:`STATIC_ROOT <pts.project.local_settings.STATIC_ROOT>` setting. This is
 necessary since Django does not serve static resources, but requires a Web
 server for that.
 
@@ -63,6 +64,17 @@ $ ./manage.py collectstatic
 .. note::
    Make sure the directory given in
    :data:`STATIC_ROOT <pts.project.settings.STATIC_ROOT>` exists. 
+
+Keyrings
+--------
+
+The :data:`pts.project.local_settings.PTS_KEYRING_DIRECTORY` lets you define a
+path to a directory containing known public PGP keys. These keys are used when
+verifying various signed content, such as news.
+
+You may add a ``gpg.conf`` file in this directory with additional ``keyring``
+directives if you want to include more keys than the ones found in
+``pubring.gpg`` file.
 
 .. _tests_setup:
 
