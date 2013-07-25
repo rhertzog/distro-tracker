@@ -16,5 +16,10 @@ $(function() {
         }
     ]);
 
-    $('.has-tooltip').tooltip();
+    $('.has-tooltip').tooltip({
+        'delay': {
+            'show': 500,
+            'hide': 50
+        }
+    });
 });
