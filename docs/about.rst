@@ -100,6 +100,7 @@ following panels:
 - General package information panel
 - Versions panel
 - Binaries panel
+- News panel
 
 Vendors can easily customize and add new panels to the page. For more
 information refer to the
