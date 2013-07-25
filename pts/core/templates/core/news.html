@@ -2,7 +2,7 @@
 
 {% block content %}
 <h1 class="text-center">{{ news.title }}</h1>
-<div class="row">
+<div class="row-fluid">
     {% if news_renderer.template_name %}
     {% include news_renderer.template_name with context=news_renderer.context %}
     {% else %}
