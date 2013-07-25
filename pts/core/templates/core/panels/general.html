@@ -58,7 +58,7 @@
     <li class="list-group-item">
         <div class="list-item-key"><b>uploaders:</b></div>
         <div class="list-item-value">
-        <ul>
+        <ul class="inline">
             {% for uploader in context.uploaders %}
             <li>
                 {% with mailto="mailto:"|add:uploader.email %}
