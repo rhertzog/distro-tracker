@@ -7,16 +7,20 @@
 <ul class="list-group list-group-flush">
     {% for news_item in panel.context.news %}
     <li class="list-group-item">
-        [{{ news_item.datetime_created|date:"Y-m-d" }}]
-        <a href="{% url 'pts-news-page' news_item.pk %}">{{ news_item.title }}</a>
-        {% if news_item.created_by %}({{ news_item.created_by }}){% endif %}
+        [<span class="news-date">{{ news_item.datetime_created|date:"Y-m-d" }}</span>]
+        <a href="{% url 'pts-news-page' news_item.pk %}">
+            <span class="news-title">{{ news_item.title }}</span>
+        </a>
+        {% if news_item.created_by %}(<span class="news-creator">{{ news_item.created_by }}</span>){% endif %}
         {% if news_item.signed_by.all %}
-            (signed by: 
+        {% spaceless %}
+            <span>(signed by: </span>
             {% for signer in news_item.signed_by.all %}
-            {% if forloop.counter0 %},{% endif %}
-            {{ signer.name }}
+            <span class="news-signer">{{ signer.name }}</span>
+            {% if not forloop.last %}<span>, </span>{% endif %}
             {% endfor %}
-            )
+            <span>)</span>
+        {% endspaceless %}
         {% endif %}
     </li>
     {% endfor %}
