@@ -24,7 +24,7 @@
     {% for item in panel.context.version_list %}
     <div class="row-fluid">
     <li class="list-group-item">
-        <div class="list-item-key versions-repository"><b>{{ item.repository_shorthand }}:</b></div>
+        <div class="list-item-key versions-repository"><b><span class="has-tooltip" data-title="{{ item.repository_name }}" data-toggle="tooltip">{{ item.repository_shorthand }}:</span></b></div>
         <div class="list-item-value">
             {% with url=item.url|default:"#" %}
             <a href="{{ url }}">{{ item.version }}</a>

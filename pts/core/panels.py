@@ -451,7 +451,8 @@ class GeneralInfoLinkPanelItems(LinksPanel.ItemProvider):
             items.append(
                 LinksPanel.SimpleLinkItem(
                     'Homepage',
-                    self.package.main_version.homepage
+                    self.package.main_version.homepage,
+                    'upstream web homepage'
                 ),
             )
         return items
