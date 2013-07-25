@@ -3,6 +3,9 @@
 {% block content %}
 <h1 class="text-center">{{ news.title }}</h1>
 <div class="row-fluid">
+    <h4 class="text-center">News for package <a href="{% url 'pts-package-page' news.package %}">{{ news.package }}</a></h4>
+</div>
+<div class="row-fluid">
     {% if news_renderer.template_name %}
     {% include news_renderer.template_name with context=news_renderer.context %}
     {% else %}
