@@ -120,7 +120,7 @@ class GeneralInformationPanel(BasePanel):
     - :func:`get_maintainer_extra <pts.vendor.skeleton.rules.get_maintainer_extra>`
     - :func:`get_uploader_extra <pts.vendor.skeleton.rules.get_uploader_extra>`
     """
-    position = 'center'
+    position = 'left'
     title = 'general'
     template_name = 'core/panels/general.html'
 
@@ -247,7 +247,7 @@ class BinariesInformationPanel(BasePanel):
     :func:`get_package_information_site_url <pts.vendor.skeleton.rules.get_package_information_site_url>`
     provides the link used for each binary package name.
     """
-    position = 'right'
+    position = 'left'
     title = 'binaries'
     template_name = 'core/panels/binaries.html'
 
