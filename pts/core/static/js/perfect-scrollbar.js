@@ -6,7 +6,8 @@
   // The default settings for the plugin
   var defaultSettings = {
     wheelSpeed: 10,
-    wheelPropagation: false
+    wheelPropagation: false,
+    scrollbarYMinHeight: 50
   };
 
   $.fn.perfectScrollbar = function (suppliedSettings, option) {
@@ -55,9 +56,13 @@
           scrollbarYRight = parseInt($scrollbarY.css('right'), 10);
 
       var updateContentScrollTop = function () {
-        var scrollTop = parseInt(scrollbarYTop * contentHeight / containerHeight, 10);
-        $this.scrollTop(scrollTop);
-        $scrollbarX.css({bottom: scrollbarXBottom - scrollTop});
+        // Calculate the portion of visible content based on the scroller's
+        // position (percent of content scrolled)
+        var maxTop = containerHeight - scrollbarYHeight;
+        var percentScrolled = scrollbarYTop / maxTop;
+        var destY = percentScrolled * (contentHeight - containerHeight);
+
+        $this.scrollTop(destY);
       };
 
       var updateContentScrollLeft = function () {
@@ -87,7 +92,12 @@
         }
         if (containerHeight < contentHeight) {
           scrollbarYHeight = parseInt(containerHeight * containerHeight / contentHeight, 10);
-          scrollbarYTop = parseInt($this.scrollTop() * containerHeight / contentHeight, 10);
+          if (scrollbarYHeight < settings.scrollbarYMinHeight) {
+            scrollbarYHeight = settings.scrollbarYMinHeight;
+          }
+          // Calculate the position of the scrollbar drag element based on the portion of visible content
+          var maxTop = containerHeight - scrollbarYHeight;
+          scrollbarYTop = $this.scrollTop() * maxTop / (contentHeight - containerHeight) + 1;
         }
         else {
           scrollbarYHeight = 0;
@@ -134,6 +144,7 @@
         else {
           scrollbarYTop = newTop;
         }
+
         $scrollbarY.css({top: scrollbarYTop + $this.scrollTop()});
       };
 
@@ -334,8 +345,11 @@
             $scrollbarY.hide().show();
           };
           updateContentScrollTop = function () {
-            var scrollTop = parseInt(scrollbarYTop * contentHeight / containerHeight, 10);
-            $this.scrollTop(scrollTop);
+            var maxTop = containerHeight - scrollbarYHeight;
+            var percentScrolled = scrollbarYTop / maxTop;
+            var destY = percentScrolled * (contentHeight - containerHeight);
+
+            $this.scrollTop(destY);
             $scrollbarX.css({bottom: scrollbarXBottom});
             $scrollbarX.hide().show();
           };
