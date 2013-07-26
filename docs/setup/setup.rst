@@ -6,18 +6,18 @@ Setting up the Package Tracking System
 Requirements
 ------------
 
-The Package Tracking System currently depends on the following Python packages:
+The Package Tracking System currently depends on the following Debian packages:
 
-- Django
-- requests
-- django-jsonfield
+- python-django (>= 1.5)
+- python-requests
+- python-django-jsonfield
 - python-debian
 - python-apt
 - python-gpgme
 
 For Python2.7, the following additional packages are required:
 
-- mock
+- python-mock
 
 .. _database_setup:
 
