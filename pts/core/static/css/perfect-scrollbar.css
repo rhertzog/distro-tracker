@@ -18,8 +18,8 @@
     font-size: 0; /* fixed scrollbar height in xp sp3 ie6 */
 }
 
-.ps-container:hover .ps-scrollbar-x,
-.ps-container.hover .ps-scrollbar-x {
+.ps-container .ps-scrollbar-x,
+.ps-container .ps-scrollbar-x {
     opacity: 0.6;
     filter: alpha(opacity = 60);
 }
@@ -56,8 +56,8 @@
     font-size: 0; /* fixed scrollbar height in xp sp3 ie6 */
 }
 
-.ps-container:hover .ps-scrollbar-y,
-.ps-container.hover .ps-scrollbar-y {
+.ps-container .ps-scrollbar-y,
+.ps-container .ps-scrollbar-y {
     opacity: 0.6;
     filter: alpha(opacity = 60);
 }
