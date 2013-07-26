@@ -274,11 +274,15 @@ class AptCache(object):
         Returns a list of all cached files.
         """
         lists_directory = os.path.join(self.cache_root_dir, 'var/lib/apt/lists')
-        return [
-            file_name
-            for file_name in os.listdir(lists_directory)
-            if os.path.isfile(os.path.join(lists_directory, file_name))
-        ]
+        try:
+            return [
+                file_name
+                for file_name in os.listdir(lists_directory)
+                if os.path.isfile(os.path.join(lists_directory, file_name))
+            ]
+        except OSError:
+            # The directory structure does not exist => nothing is cached
+            return []
 
     def get_sources_files_for_repository(self, repository):
         """
