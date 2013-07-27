@@ -14,6 +14,7 @@ import urllib
 import requests
 from django.conf import settings
 from pts.core.models import PackageBugStats
+from pts.core.models import BinaryPackageBugStats
 from pts.core.utils import get_decoded_message_payload
 from pts.core.utils import get_or_none
 from pts.core.utils.http import HttpCache
@@ -497,3 +498,47 @@ def get_bug_panel_stats(package_name):
         'graph_url': graph_url.format(
             package_hash=package_hash, package_name=package_name),
     }
+
+
+def get_binary_package_bug_stats(binary_name):
+    """
+    Returns the bug statistics for the given binary package.
+
+    Debian's implementation filters out some of the stored bug category stats.
+    It also provides a different, more verbose, display name for each of them.
+    The included categories and their names are:
+
+    - rc - critical, grave serious
+    - normal - important and normal
+    - wishlist - wishlist and minor
+    - fixed - pending and fixed
+    """
+    stats = get_or_none(BinaryPackageBugStats, package__name=binary_name)
+    if stats is None:
+        return
+    category_descriptions = {
+        'rc': {
+            'display_name': 'critical, grave and serious',
+        },
+        'normal': {
+            'display_name': 'important and normal',
+        },
+        'wishlist': {
+            'display_name': 'wishlist and minor',
+        },
+        'fixed': {
+            'display_name': 'pending and fixed',
+        },
+    }
+
+    def extend_category(category, extra_parameters):
+        category.update(extra_parameters)
+        return category
+
+    # Filter the bug stats to only include some categories and add a custom
+    # display name for each of them.
+    return [
+        extend_category(category, category_descriptions[category['category_name']])
+        for category in stats.stats
+        if category['category_name'] in category_descriptions.keys()
+    ]
