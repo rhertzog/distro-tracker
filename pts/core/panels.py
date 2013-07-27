@@ -14,10 +14,12 @@ from django.utils import six
 from django.utils.safestring import mark_safe
 from pts.core.utils.plugins import PluginRegistry
 from pts.core.utils import get_vcs_name
+from pts.core.utils import get_or_none
 from pts import vendor
 from pts.core.models import PackageExtractedInfo
 from pts.core.models import MailingList
 from pts.core.models import News
+from pts.core.models import BinaryPackageBugStats
 
 
 class BasePanel(six.with_metaclass(PluginRegistry)):
@@ -243,13 +245,58 @@ class BinariesInformationPanel(BasePanel):
     This panel displays a list of binary package names which a given source
     package produces.
 
-    If implemented, the
-    :func:`get_package_information_site_url <pts.vendor.skeleton.rules.get_package_information_site_url>`
-    provides the link used for each binary package name.
+    If there are existing bug statistics for some of the binary packages, a
+    list of bug counts is also displayed.
+
+    If implemented, the following functions can augment the information of
+    this panel:
+
+    - :func:`get_package_information_site_url <pts.vendor.skeleton.rules.get_package_information_site_url>`
+      provides the link used for each binary package name.
+    - :func:`get_binary_package_bug_stats <pts.vendor.skeleton.rules.get_binary_package_bug_stats>`
+      provides bug statistics for a given binary package in terms of a list of
+      bug counts for different categories. If this is implemented, the panel
+      will display only the categories returned by this function, not all stats
+      found in the database.
+    - :func:`get_bug_tracker_url <pts.vendor.skeleton.rules.get_bug_tracker_url>`
+      provides a link to an external bug tracker based on the name of a package
+      and the bug category.
     """
     position = 'left'
     title = 'binaries'
     template_name = 'core/panels/binaries.html'
+
+    def _get_binary_bug_stats(self, binary_name):
+        bug_stats, implemented = vendor.call(
+            'get_binary_package_bug_stats', binary_name)
+        if not implemented:
+            # The vendor does not provide a custom list of bugs, so the default
+            # is to display all bug info known for the package.
+            stats = get_or_none(
+                BinaryPackageBugStats, package__name=binary_name)
+            if stats is not None:
+                bug_stats = stats.stats
+
+        if bug_stats is None:
+            return
+        # Try to get the URL to the bug tracker for the given categories
+        for category in bug_stats:
+            url, implemented = vendor.call(
+                'get_bug_tracker_url',
+                binary_name,
+                'binary',
+                category['category_name'])
+            if not implemented:
+                continue
+            category['url'] = url
+        # Include the total bug count and corresponding tracker URL
+        all_bugs_url, implemented = vendor.call(
+            'get_bug_tracker_url', binary_name, 'binary', 'all')
+        return {
+            'total_count': sum(category['bug_count'] for category in bug_stats),
+            'all_bugs_url': all_bugs_url,
+            'categories': bug_stats,
+        }
 
     @property
     def context(self):
@@ -257,15 +304,23 @@ class BinariesInformationPanel(BasePanel):
             package=self.package, key='binaries')
         binaries = info.value
         for binary in binaries:
-            if 'repository_name' not in binary:
-                continue
-            url, implemented = vendor.call('get_package_information_site_url', **{
-                'package_name': binary['name'],
-                'repository_name': binary['repository_name'],
-                'source_package': False,
-            })
-            if implemented and url:
-                binary['url'] = url
+            # For each binary try to include known bug stats
+            bug_stats = self._get_binary_bug_stats(binary['name'])
+            if bug_stats is not None:
+                binary['bug_stats'] = bug_stats
+
+            # For each binary try to include a link to an external package-info
+            # site.
+            if 'repository_name' in binary:
+                url, implemented = vendor.call(
+                    'get_package_information_site_url', **{
+                        'package_name': binary['name'],
+                        'repository_name': binary['repository_name'],
+                        'source_package': False,
+                    }
+                )
+                if implemented and url:
+                    binary['url'] = url
 
         return binaries
 

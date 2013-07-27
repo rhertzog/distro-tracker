@@ -11,6 +11,33 @@
         {% with url=item.url|default:"#" %}
         <a href="{{ url }}" class="has-tooltip" data-toggle="tooltip" title="{{ item.repository_name }}">{{ item.name }}</a>
         {% endwith %}
+
+        {% if item.bug_stats %}
+        {% spaceless %}
+        <small><span>(</span>
+
+        {% if item.bug_stats.all_bugs_url %}
+            <a href="{{ item.bug_stats.all_bugs_url }}">{{ item.bug_stats.total_count }} bugs</a>:
+        {% else %}
+            <span>{{ item.bug_stats.total_count }} bugs:</span>
+        {% endif %}
+
+        {% for category in item.bug_stats.categories %}
+            {# Display either a custom display name or the category name on mouseover #}
+            {% with display=category.display_name|default:category.category_name %}
+            {% if category.url %}
+                <a href="{{ category.url }}" title="{{ display }}">{{ category.bug_count }}</a>
+            {% else %}
+                <span title="{{ display }}">{{ category.bug_count }}</span>
+            {% endif %}
+            {% endwith %}
+
+            {% if not forloop.last %}<span>,&nbsp;</span>{% endif %}
+        {% endfor %}
+
+        <span>)</span></small>
+        {% endspaceless %}
+        {% endif %}
     </li>
     {% endfor %}
     </div>
