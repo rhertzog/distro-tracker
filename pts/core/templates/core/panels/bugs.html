@@ -1,0 +1,24 @@
+{% extends 'core/panels/panel.html' %}
+{% block panel-header %}
+{{ panel.title }}
+{% endblock %}
+
+{% block panel-body %}
+<ul class="list-group list-group-flush">
+    {% block bugs-list %}
+    {% for category in panel.context %}{% if category.category_name %}
+    <div class="row-fluid">
+    <li class="list-group-item">
+        {% with name=category.display_name|default:category.category_name %}
+        <div class="list-item-key"><b><span class="has-tooltip" data-title="{{ category.description }}" data-toggle="tooltip">{{ category.category_name }}:</span></b></div>
+        {% endwith %}
+        <div class="list-item-value">
+            <span>{{ category.bug_count }}</span>
+        </div>
+        <div class="clear"></div>
+    </li>
+    </div>
+    {% endif %}{% endfor %}
+    {% endblock %}
+</ul>
+{% endblock %}

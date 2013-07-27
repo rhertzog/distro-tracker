@@ -470,3 +470,74 @@ class NewsPanel(BasePanel):
         return {
             'news': News.objects.filter(package=self.package)[:self.NEWS_LIMIT]
         }
+
+
+class BugsPanel(BasePanel):
+    """
+    The panel displays bug statistics for the package.
+
+    This panel is highly customizable to make sure that the PTS can be
+    integrated with any bug tracker.
+
+    The default for the package is to display the bug count for all bug
+    categories found in the
+    :class:`PackageBugStats <pts.core.models.PackageBugStats>`
+    instance which corresponds to the package. The sum of all bugs from
+    all categories is also displayed as the first row of the panel.
+
+    A vendor can choose to implement the
+    :func:`get_bug_panel_stats <pts.vendor.skeleton.rules.pts_bug_panel_stats>`
+    function in order to provide a custom list of bug categories to be
+    displayed in the panel. This is useful if, for example, the vendor does
+    not want to display the count of all bug categories.
+    Refer to the function's documentation for the format of the return value.
+
+    Finally, for vendors which require an even higher degree of customization,
+    it is possible to provide a
+    :data:`PTS_BUGS_PANEL_TEMPLATE <pts.project.local_settings.PTS_BUGS_PANEL_TEMPLATE>`
+    settings value which gives the path to a template which should be used to
+    render the panel. It is recommended that this template extends
+    ``core/panels/bugs.html``, but not mandatory. If a custom
+    :func:`get_bug_panel_stats <pts.vendor.skeleton.rules.pts_bug_panel_stats>`
+    function is also defined then its return value is simply passed to the
+    and does not require any special format; the vendor's template can access
+    this value in the ``panel.context`` context variable and can use it any way
+    it wants.
+
+    This customization should be used only by vendors whose bug statistics have
+    a significantly different format than the expected ``category: count``
+    format.
+    """
+    position = 'right'
+    title = 'bugs'
+    _default_template_name = 'core/panels/bugs.html'
+
+    @property
+    def template_name(self):
+        return getattr(
+            settings, 'PTS_BUGS_PANEL_TEMPLATE', self._default_template_name)
+
+    @property
+    def context(self):
+        result, implemented = vendor.call(
+            'get_bug_panel_stats', self.package.name)
+        # implemented = False
+        if not implemented:
+            # If the vendor does not provide custom categories to be displayed
+            # in the panel, the default is to make each stored category a
+            # separate entry.
+            stats = self.package.bug_stats.stats
+            # Also adds a total of all those bugs
+            total = sum(category['bug_count'] for category in stats)
+            stats.insert(0, {
+                'category_name': 'all',
+                'bug_count': total,
+            })
+            result = stats
+
+        # Either the vendor decided not to provide any info for this package
+        # or there is no known info.
+        if not result:
+            return {}
+
+        return result
