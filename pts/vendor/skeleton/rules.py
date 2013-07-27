@@ -204,3 +204,58 @@ def allow_package(stanza):
     :type stanza: case-insensitive dict
     """
     pass
+
+
+def get_bug_tracker_url(package_name, package_type, category_name):
+    """
+    The function provides a way for vendors to give a URL to a bug tracker
+    based on a package name, its type and the bug category name.
+
+    This function is used by :class:`BugsPanel <pts.core.panels.BugsPanel>` to
+    include a link to the bug tracking site on top of the known bug statistics.
+
+    :param package_name: The name of the package for which the bug tracker URL
+        should be provided.
+    :param package_type: The type of the package for which the bug tracker URL
+        should be provided. It is one of: ``source``, ``pseudo`` or ``binary``.
+    :param category_name: The name of the bug tracker category for which the
+        URL should be provided.
+
+    :returns: The bug tracker URL for the package and given category.
+    :rtype: string or ``None`` if the vendor does not have a bug tracker URL
+        for the given parameters.
+    """
+    pass
+
+
+def get_bug_panel_stats(package_name):
+    """
+    The function provides a way for vendors to customize the bug categories
+    displayed in the :class:`BugsPanel <pts.core.panels.BugsPanel>`.
+
+    This is useful if the vendor does not want to have all categories which are
+    stored in the :class:`PackageBugStats <pts.core.models.PackageBugStats>`
+    displayed on the package page.
+
+    In this case the return value must be a list of dicts where each element
+    describes a single bug category for the given package.
+
+    Each dict has to provide at minimum the following keys:
+
+    - ``category_name`` - the name of the bug category
+    - ``bug_count`` - the number of known bugs for the given package and category
+
+    Optionally, the following keys can be provided:
+
+    - ``display_name`` - a name for the bug category which is displayed in the
+      list. If this is not provided, the ``category_name`` is used instead.
+    - ``description`` - text further explaining the category which shows up in a
+      tooltip when mousing over the display name.
+
+    Another use case is when the vendor provides a custom
+    :data:`PTS_BUGS_PANEL_TEMPLATE <pts.project.local_settings.PTS_BUGS_PANEL_TEMPLATE>`
+    in which case the return value is passed to the template in the
+    ``panel.context`` context variable and does not need to follow any special
+    format.
+    """
+    pass
