@@ -259,3 +259,29 @@ def get_bug_panel_stats(package_name):
     format.
     """
     pass
+
+
+def get_binary_package_bug_stats(binary_name):
+    """
+    The function provides a way for vendors to provide customized bug stats
+    for binary packages.
+
+    This function is used by the
+    :class:`BinariesInformationPanel <pts.core.panels.BinariesInformationPanel>`
+    to display the bug information next to the binary name.
+
+    It should return a list of dicts where each element describes a single bug
+    category for the given package.
+
+    Each dict has to provide at minimum the following keys:
+
+    - ``category_name`` - the name of the bug category
+    - ``bug_count`` - the number of known bugs for the given package and category
+
+    Optionally, the following keys can be provided:
+
+    - ``display_name`` - a name for the bug category. It is used by the
+      :class:`BinariesInformationPanel <pts.core.panels.BinariesInformationPanel>`
+      to display a tooltip when mousing over the bug count number.
+    """
+    pass
