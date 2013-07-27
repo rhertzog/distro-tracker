@@ -1,0 +1,41 @@
+{% extends 'core/panels/bugs.html' %}
+
+{# Add the bug history graph to the panel's heading #}
+{% block panel-header %}
+{{ block.super }}
+<span><a href="{{ panel.context.graph_url }}"><i class="icon-picture has-tooltip" data-title="bug history graph" data-toggle="tooltip"></i></a></span>
+{% endblock %}
+
+{% block bugs-list %}
+    {% for category in panel.context.categories %}
+    <div class="row-fluid">
+    <li class="list-group-item">
+        <div class="list-item-key"><b><span class="has-tooltip" data-title="{{ category.description }}" data-toggle="tooltip">{{ category.display_name }}:</span></b></div>
+        <div class="list-item-value">
+            <span>
+            {% if category.url %}
+            <a href="{{ category.url }}">{{ category.bug_count }}</a>
+            {% else %}
+            {{ category.bug_count }}
+            {% endif %}
+            </span>
+            {# Add merged bug count if it was given #}
+            {% spaceless %}
+            {% if category.merged %}
+            <span>(</span>
+            {% if category.merged.url %}
+            <a href="{{ category.merged.url }}">
+            {% endif %}
+            <span>{{ category.merged.bug_count }}</span>
+            {% if category.url %}
+            </a>
+            {% endif %}
+            <span>)</span>
+            {% endif %}
+            {% endspaceless %}
+        </div>
+        <div class="clear"></div>
+    </li>
+    </div>
+    {% endfor %}
+{% endblock %}

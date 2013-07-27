@@ -55,6 +55,8 @@ PTS_BOUNCES_LIKELY_SPAM_EMAIL = PTS_BOUNCES_EMAIL
 
 #: The maximum number of news to include in the news panel of a package page
 PTS_NEWS_PANEL_LIMIT = 30
+#: A custom template which the bugs panel should use
+PTS_BUGS_PANEL_TEMPLATE = 'debian/bugs.html'
 
 #: A list of extra headers to include when rendering an email news item.
 #: See: :class:`pts.core.models.EmailNewsRenderer`

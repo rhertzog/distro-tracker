@@ -10,8 +10,10 @@
 
 from __future__ import unicode_literals
 import re
+import urllib
 import requests
 from django.conf import settings
+from pts.core.models import PackageBugStats
 from pts.core.utils import get_decoded_message_payload
 from pts.core.utils import get_or_none
 from pts.core.utils.http import HttpCache
@@ -252,3 +254,246 @@ def allow_package(stanza):
     :type stanza: case-insensitive dict
     """
     return 'Extra-Source-Only' not in stanza
+
+
+def get_bug_tracker_url(package_name, package_type, category_name):
+    """
+    Returns a URL to the BTS for the given package for the given bug category
+    name.
+
+    The following categories are recognized for Debian's implementation:
+
+    - ``all`` - all bugs for the package
+    - ``all-merged`` - all bugs, including the merged ones
+    - ``rc`` - release critical bugs
+    - ``rc-merged`` - release critical bugs, including the merged ones
+    - ``normal`` - bugs tagged as normal and important
+    - ``normal`` - bugs tagged as normal and important, including the merged ones
+    - ``wishlist`` - bugs tagged as wishlist and minor
+    - ``wishlist-merged`` - bugs tagged as wishlist and minor, including the
+      merged ones
+    - ``fixed`` - bugs tagged as fixed and pending
+    - ``fixed-merged`` - bugs tagged as fixed and pending, including the merged
+      ones
+
+    :param package_name: The name of the package for which the BTS link should
+        be provided.
+    :param package_type: The type of the package for which the BTS link should
+        be provided. For Debian this is one of: ``source``, ``pseudo``,
+        ``binary``.
+    :param category_name: The name of the bug category for which the BTS
+        link should be provided. It is one of the categories listed above.
+
+    :rtype: :class:`string` or ``None`` if there is no BTS bug for the given
+        category.
+    """
+    URL_PARAMETERS = {
+        'all': {
+            'repeatmerged': 'no',
+        },
+        'rc': {
+            'archive': 'no',
+            'pend-exc': 'pending-fixed',
+            'pend-exc': 'fixed',
+            'pend-exc': 'done',
+            'sev-inc': 'critical',
+            'sev-inc': 'grave',
+            'sev-inc': 'serious',
+            'repeatmerged': 'no',
+        },
+        'normal': {
+            'archive': 'no',
+            'pend-exc': 'pending-fixed',
+            'pend-exc': 'fixed',
+            'pend-exc': 'done',
+            'sev-inc': 'important',
+            'sev-inc': 'normal',
+            'repeatmerged': 'no',
+        },
+        'wishlist': {
+            'archive': 'no',
+            'pend-exc': 'pending-fixed',
+            'pend-exc': 'fixed',
+            'pend-exc': 'done',
+            'sev-inc': 'minor',
+            'sev-inc': 'wishlist',
+            'repeatmerged': 'no',
+        },
+        'fixed': {
+            'archive': 'no',
+            'pend-inc': 'pending-fixed',
+            'pend-inc': 'fixed',
+            'repeatmerged': 'no'
+        },
+        'all-merged': {
+            'repeatmerged': 'yes',
+        },
+        'rc-merged': {
+            'archive': 'no',
+            'pend-exc': 'pending-fixed',
+            'pend-exc': 'fixed',
+            'pend-exc': 'done',
+            'sev-inc': 'critical',
+            'sev-inc': 'grave',
+            'sev-inc': 'serious',
+            'repeatmerged': 'yes',
+        },
+        'normal-merged': {
+            'archive': 'no',
+            'pend-exc': 'pending-fixed',
+            'pend-exc': 'fixed',
+            'pend-exc': 'done',
+            'sev-inc': 'important',
+            'sev-inc': 'normal',
+            'repeatmerged': 'yes',
+        },
+        'wishlist-merged': {
+            'archive': 'no',
+            'pend-exc': 'pending-fixed',
+            'pend-exc': 'fixed',
+            'pend-exc': 'done',
+            'sev-inc': 'minor',
+            'sev-inc': 'wishlist',
+            'repeatmerged': 'yes',
+        },
+        'fixed-merged': {
+            'archive': 'no',
+            'pend-inc': 'pending-fixed',
+            'pend-inc': 'fixed',
+            'repeatmerged': 'yes'
+        },
+    }
+    if category_name not in URL_PARAMETERS:
+        return
+
+    domain = 'http://bugs.debian.org/'
+    query_parameters = URL_PARAMETERS[category_name]
+
+    if package_type == 'source':
+        query_parameters['src'] = package_name
+    elif package_type == 'binary':
+        if category_name == 'all':
+            # All bugs for a binary package don't follow the same pattern as
+            # the rest of the URLs.
+            return domain + package_name
+        # A URL for the binary package does not include the repeatmerged
+        # parameter.
+        del query_parameters['repeatmerged']
+        query_parameters['which'] = 'pkg'
+        query_parameters['data'] = package_name
+
+    return (
+        domain +
+        '/cgi-bin/pkgreport.cgi?' +
+        urllib.urlencode(query_parameters)
+    )
+
+
+def get_bug_panel_stats(package_name):
+    """
+    Returns bug statistics which are to be displayed in the bugs panel
+    (:class:`BugsPanel <pts.core.panels.BugsPanel>`).
+
+    Debian wants to include the merged bug count for each bug category
+    (but only if the count is different than non-merged bug count) so this
+    function is used in conjunction with a custom bug panel template which
+    displays this bug count in parentheses next to the non-merged count.
+
+    Each bug category count (merged and non-merged) is linked to a URL in the
+    BTS which displays more information about the bugs found in that category.
+
+    A verbose name is included for each of the categories.
+
+    The function includes a URL to a bug history graph which is displayed in
+    the rendered template.
+    """
+    bug_stats = get_or_none(PackageBugStats, package__name=package_name)
+    if not bug_stats:
+        return
+
+    # Map category names to their bug panel display names and descriptions
+    category_descriptions = {
+        'rc': {
+            'display_name': 'RC',
+            'description': 'Release Critical',
+        },
+        'normal': {
+            'display_name': 'I&N',
+            'description': 'Important and Normal',
+        },
+        'wishlist': {
+            'display_name': 'M&W',
+            'description': 'Minor and Wishlist',
+        },
+        'fixed': {
+            'display_name': 'F&P',
+            'description': 'Fixed and Pending',
+        },
+    }
+    stats = bug_stats.stats
+    categories = []
+    total, total_merged = 0, 0
+    # From all known bug stats, extract only the ones relevant for the panel
+    for category in stats:
+        category_name = category['category_name']
+        if category_name not in category_descriptions.keys():
+            continue
+        # Add main bug count
+        category_stats = {
+            'category_name': category['category_name'],
+            'bug_count': category['bug_count'],
+        }
+        # Add merged bug count
+        if category['merged_count'] != category['bug_count']:
+            category_stats['merged'] = {
+                'bug_count': category['merged_count'],
+            }
+        # Add descriptions
+        category_stats.update(category_descriptions[category_name])
+
+        categories.append(category_stats)
+        # Keep a running total of all and all-merged bugs
+        total += category['bug_count']
+        total_merged += category['merged_count']
+
+    # Add another "category" with the bug totals.
+    all_category = {
+        'category_name': 'all',
+        'display_name': 'all',
+        'bug_count': total,
+    }
+    if total != total_merged:
+        all_category['merged'] = {
+            'bug_count': total_merged,
+        }
+    # The totals are the first displayed row.
+    categories.insert(0, all_category)
+
+    # Add URLs for all categories
+    for category in categories:
+        # URL for the non-merged category
+        url = get_bug_tracker_url(
+            package_name, 'source', category['category_name'])
+        category['url'] = url
+
+        # URL for the merged category
+        if 'merged' in category:
+            url_merged = get_bug_tracker_url(
+                package_name, 'source', category['category_name'] + '-merged')
+            category['merged']['url'] = url_merged
+
+    # Debian also includes a custom graph of bug history
+    graph_url = (
+        'http://qa.debian.org/data/bts/graphs/{package_hash}/{package_name}.png'
+    )
+    if package_name.startswith('lib'):
+        package_hash = package_name[:4]
+    else:
+        package_hash = package_name[0]
+
+    # Final context variables which are available in the template
+    return {
+        'categories': categories,
+        'graph_url': graph_url.format(
+            package_hash=package_hash, package_name=package_name),
+    }
