@@ -1399,3 +1399,30 @@ class EmailNewsRenderer(NewsRenderer):
             'headers': headers,
             'parts': plain_text_payloads,
         }
+
+
+@python_2_unicode_compatible
+class PackageBugStats(models.Model):
+    """
+    Model for bug statistics of source and pseudo packages (packages modelled
+    by the :class:`PackageName` model).
+    """
+    package = models.OneToOneField(PackageName, related_name='bug_stats')
+    stats = JSONField(blank=True)
+
+    def __str__(self):
+        return '{package} bug stats: {stats}'.format(
+            package=self.package, stats=self.stats)
+
+
+@python_2_unicode_compatible
+class BinaryPackageBugStats(models.Model):
+    """
+    Model for bug statistics of binary packages (:class:`BinaryPackageName`).
+    """
+    package = models.OneToOneField(BinaryPackageName, related_name='bug_stats')
+    stats = JSONField(blank=True)
+
+    def __str__(self):
+        return '{package} bug stats: {stats}'.format(
+            package=self.package, stats=self.stats)
