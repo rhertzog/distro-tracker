@@ -16,6 +16,7 @@ from pts.core.models import SourcePackageRepositoryEntry
 from pts.core.models import ContributorEmail
 from pts.core.models import ContributorName
 from pts.core.models import SourcePackage
+from pts.core.models import News
 from pts.core.models import PackageExtractedInfo
 from pts.core.models import BinaryPackageName
 from pts.core.utils import get_or_none
@@ -833,3 +834,70 @@ class UpdateSourceToBinariesInformation(PackageUpdateTask):
                     package=package)
                 binaries.value = self._get_all_binaries(package)
                 binaries.save()
+
+
+class GenerateNewsFromRepositoryUpdates(BaseTask):
+    DEPENDS_ON_EVENTS = (
+        'new-source-package-version',
+        'new-source-package-version-in-repository',
+        'lost-source-package-version-in-repository',
+    )
+
+    def execute(self):
+        package_changes = {}
+        new_source_versions = {}
+        for event in self.get_all_events():
+            package_name, version = event.arguments['name'], event.arguments['version']
+            package_changes.setdefault(package_name, [])
+            package_changes[package_name].append(event)
+
+            new_source_versions.setdefault(package_name, [])
+            if event.name == 'new-source-package-version':
+                new_source_versions[package_name].append(version)
+
+        # Retrieve all relevant packages from the db
+        packages = PackageName.objects.filter(name__in=package_changes.keys())
+
+        for package in packages:
+            package_name = package.name
+            events = package_changes[package_name]
+
+            # Group all the events for this package by repository
+            repository_events = {}
+            for event in events:
+                if event.name == 'new-source-package-version':
+                    continue
+                repository = event.arguments['repository']
+                repository_events.setdefault(repository, [])
+                repository_events[repository].append(event)
+
+            # Process each event for each repository.
+            for repository_name, events in repository_events.items():
+                event_names = [event.name for event in events]
+                repository_has_new_version = (
+                    'new-source-package-version-in-repository' in event_names)
+                for event in events:
+                    # First time seeing this version?
+                    version = event.arguments['version']
+                    new_source_version = version in new_source_versions[package_name]
+                    title = None
+                    if event.name == 'new-source-package-version-in-repository':
+                        if new_source_version:
+                            title = "Accepted {pkg} version {ver} to {repo}"
+                        else:
+                            title = "{pkg} version {ver} MIGRATED to {repo}"
+                    elif event.name == 'lost-source-package-version-in-repository':
+                        if not repository_has_new_version:
+                            # If there was no new version added to the repository instead of
+                            # this one, add a removed event.
+                            title = "{pkg} version {ver} REMOVED from {repo}"
+
+                    if title is not None:
+                        News.objects.create(
+                            package=package,
+                            title=title.format(
+                                pkg=package_name,
+                                repo=event.arguments['repository'],
+                                ver=version
+                            )
+                        )
