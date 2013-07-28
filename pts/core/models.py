@@ -1227,10 +1227,11 @@ class News(models.Model):
         """
         if self._db_content:
             return self._db_content
-        self.news_file.open('r')
-        content = self.news_file.read()
-        self.news_file.close()
-        return content
+        elif self.news_file:
+            self.news_file.open('r')
+            content = self.news_file.read()
+            self.news_file.close()
+            return content
 
     def save(self, *args, **kwargs):
         super(News, self).save(*args, **kwargs)
