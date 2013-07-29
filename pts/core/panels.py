@@ -363,6 +363,20 @@ class VersionedLinks(BasePanel):
         return versioned_links
 
 
+class DscLinkProvider(VersionedLinks.LinkProvider):
+    icons = [
+        mark_safe(
+            '<i title=".dsc, use dget on this link to retrieve source package"'
+            '   class="icon-download-alt"></i>'),
+    ]
+
+    def get_link_for_icon(self, package, index):
+        if index >= len(self.icons):
+            return None
+        if package.main_entry:
+            return package.main_entry.dsc_file_url
+
+
 class BinariesInformationPanel(BasePanel):
     """
     This panel displays a list of binary package names which a given source
