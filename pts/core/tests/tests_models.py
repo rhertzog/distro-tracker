@@ -600,6 +600,52 @@ class RepositoryTests(TestCase):
         self.assertFalse(
             self.repository.has_source_package(self.source_package))
 
+    def test_get_source_package_repository_entry_single(self):
+        """
+        Tests the
+        :meth:`get_source_package_entry <pts.core.models.Repository.get_source_package_entry>`
+        method when there is only one version of the given package in the
+        repository.
+        """
+        entry = self.repository.add_source_package(self.source_package)
+
+        # When passing a SourcePackageName
+        self.assertEqual(
+            self.repository.get_source_package_entry(
+                self.source_package.source_package_name),
+            entry)
+
+        # When passing a string
+        self.assertEqual(
+            self.repository.get_source_package_entry(
+                self.source_package.source_package_name.name),
+            entry)
+
+    def test_get_source_package_repository_entry_multiple(self):
+        """
+        Tests the
+        :meth:`get_source_package_entry <pts.core.models.Repository.get_source_package_entry>`
+        method when there are multiple versions of the given package in the
+        repository.
+        """
+        higher_version_package = SourcePackage.objects.create(
+            source_package_name=self.src_pkg_name, version='2.0.0')
+        self.repository.add_source_package(self.source_package)
+        expected_entry = self.repository.add_source_package(
+            higher_version_package)
+
+        # When passing a SourcePackageName
+        self.assertEqual(
+            self.repository.get_source_package_entry(
+                self.source_package.source_package_name),
+            expected_entry)
+
+        # When passing a string
+        self.assertEqual(
+            self.repository.get_source_package_entry(
+                self.source_package.source_package_name.name),
+            expected_entry)
+
 
 class SourcePackageTests(TestCase):
     fixtures = ['repository-test-fixture.json']

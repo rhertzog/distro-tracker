@@ -727,7 +727,6 @@ class Repository(models.Model):
             for component in self.components
         ]
 
-
     def get_source_package_entry(self, package_name):
         """
         Returns the canonical :class:`SourcePackageRepositoryEntry` with the
@@ -741,15 +740,21 @@ class Repository(models.Model):
 
         :param package_name: The name of the package for which the entry should
             be returned
-        :type package_name: string
+        :type package_name: string or :class:`SourcePackageName`
 
         :rtype: :class:`SourcePackageRepositoryEntry` or ``None``
         """
+        if isinstance(package_name, SourcePackageName):
+            package_name = package_name.name
         qs = self.sourcepackagerepositoryentry_set.filter(
-            source_package__source_package_name=package_name)
-        if qs.count() == 0:
+            source_package__source_package_name__name=package_name)
+        qs = qs.select_related()
+        try:
+            return max(
+                qs,
+                key=lambda x: AptPkgVersion(x.source_package.version))
+        except ValueError:
             return None
-        return max(qs, key=lambda x: AptPkgVersion(x.source_package.version))
 
     def add_source_package(self, package, **kwargs):
         """
