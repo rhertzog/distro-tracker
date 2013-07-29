@@ -15,6 +15,7 @@ from __future__ import unicode_literals
 from hashlib import md5
 from django.utils import timezone
 from django.utils.http import parse_http_date
+from django.conf import settings
 import os
 import time
 import json
@@ -166,3 +167,36 @@ class HttpCache(object):
     def _url_hash(self, url):
         return md5(url.encode('utf-8')).hexdigest()
 
+
+def get_resource_content(url, cache=None):
+    """
+    A helper function which returns the content of the resource found at the
+    given URL.
+
+    If the resource is already cached in the ``cache`` object and the cached
+    content has not expired, the function will not do any HTTP requests and
+    will return the cached content.
+
+    If the resource is stale or not cached at all, it is from the Web.
+
+    :param url: The URL of the resource to be retrieved
+    :param cache: A cache object which should be used to look up and store
+        the cached resource. If it is not provided, an instance of
+        :class:`HttpCache` with a
+        :data:`pts.project.local_settings.PTS_CACHE_DIRECTORY` cache directory
+        is used.
+    :type cache: :class:`HttpCache` or an object with an equivalent interface
+
+    :returns: The bytes representation of the resource found at the given url
+    :rtype: bytes
+    """
+    if cache is None:
+        cache_directory_path = settings.PTS_CACHE_DIRECTORY
+        cache = HttpCache(cache_directory_path)
+
+    try:
+        if cache.is_expired(url):
+            cache.update(url)
+        return cache.get_content(url)
+    except:
+        pass

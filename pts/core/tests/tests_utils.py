@@ -32,6 +32,7 @@ from pts.core.utils.datastructures import DAG, InvalidDAGException
 from pts.core.utils.email_messages import CustomEmailMessage
 from pts.core.utils.email_messages import decode_header
 from pts.core.utils.http import HttpCache
+from pts.core.utils.http import get_resource_content
 
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
@@ -1015,6 +1016,41 @@ class HttpCacheTest(SimpleTestCase):
             'Cache-Control': 'no-cache'
         })
         self.assertTrue(updated)
+
+    def test_get_resource_content_utlity_function_cached(self):
+        """
+        Tests the :func:`pts.core.utils.http.get_resource_content` utility
+        function when the resource is cached in the given cache instance.
+        """
+        mock_cache = mock.create_autospec(HttpCache)
+        mock_cache.is_expired.return_value = False
+        expected_content = b"Some content"
+        mock_cache.get_content.return_value = expected_content
+        url = 'http://some.url.com'
+
+        content = get_resource_content(url, mock_cache)
+
+        # The expected content is retrieved
+        self.assertEqual(content, expected_content)
+        # The function did not update the cache
+        self.assertFalse(mock_cache.update.called)
+
+    def test_get_resource_content_utility_function_not_cached(self):
+        """
+        Tests the :func:`pts.core.utils.http.get_resource_content` utility
+        function when the resource is not cached in the given cache instance.
+        """
+        mock_cache = mock.create_autospec(HttpCache)
+        mock_cache.is_expired.return_value = True
+        expected_content = b"Some content"
+        mock_cache.get_content.return_value = expected_content
+        url = 'http://some.url.com'
+
+        content = get_resource_content(url, mock_cache)
+
+        self.assertEqual(content, expected_content)
+        # The function updated the cache
+        mock_cache.update.assert_called_once_with(url)
 
 
 TEST_KEYRING_DIRECTORY = os.path.join(
