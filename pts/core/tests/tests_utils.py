@@ -1089,6 +1089,24 @@ class VerifySignatureTest(SimpleTestCase):
         """
         self.assertIsNone(verify_signature(b"This is not a signature"))
 
+    def test_utf8_content(self):
+        """
+        Tests extracting the signature from a message passed as unicode text
+        instead of bytes.
+        """
+        self.import_key_from_test_file('key1.pub')
+        file_path = os.path.join(
+            os.path.dirname(__file__),
+            'tests-data/signed-message'
+        )
+        expected = [
+            ('PTS Tests', 'fake-address@domain.com')
+        ]
+
+        with open(file_path, 'rb') as f:
+            content = f.read().decode('utf-8')
+            self.assertEqual(expected, verify_signature(content))
+
 
 class DecodeHeaderTest(SimpleTestCase):
     """

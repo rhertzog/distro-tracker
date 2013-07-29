@@ -193,6 +193,8 @@ def verify_signature(content):
     to access the keyring. If this setting does not exist, no signatures can
     be validated.
 
+    :type content: :class:`bytes` or :class:`string`
+
     :returns: Information about the signers of the content as a list or
         ``None`` if there is no (valid) signature.
     :rtype: list of ``(name, email)`` pairs or ``None``
@@ -203,6 +205,9 @@ def verify_signature(content):
         # The vendor has not provided a keyring
         return None
 
+    if isinstance(content, six.text_type):
+        content = content.encode('utf-8')
+
     os.environ['GNUPGHOME'] = keyring_directory
     ctx = gpgme.Context()
 
@@ -210,7 +215,7 @@ def verify_signature(content):
     plain = six.BytesIO()
     try:
         signatures = ctx.verify(six.BytesIO(content), None, plain)
-    except gpgme.GpgmeError:
+    except gpgme.GpgmeError as e:
         return None
 
     # Extract signer information
