@@ -753,6 +753,52 @@ class SourcePackageTests(TestCase):
 
         self.assertIsNone(entry.dsc_file_url)
 
+    def test_get_version_entry_default_repo(self):
+        """
+        Tests that the
+        :class:`SourcePackageRepositoryEntry <pts.core.models.SourcePackageRepositoryEntry>`
+        matching the default repository is always returned from the
+        :meth:`SourcePackage.main_entry <pts.core.models.SourcePackage.main_entry>`
+        property.
+        """
+        # Make sure the repository is default
+        self.repository.default = True
+        self.repository.save()
+        non_default_repository = Repository.objects.create(name='non-default')
+        default_entry = self.repository.add_source_package(self.source_package)
+        non_default_repository.add_source_package(self.source_package)
+
+        self.assertEqual(self.source_package.main_entry, default_entry)
+
+    def test_get_version_entry_non_default_repo(self):
+        """
+        Tests that the
+        :class:`SourcePackageRepositoryEntry <pts.core.models.SourcePackageRepositoryEntry>`
+        matching the repository with the highest
+        :attr:`position <pts.core.models.Repository.position>` field is returned
+        from
+        :meth:`SourcePackage.main_entry <pts.core.models.SourcePackage.main_entry>`
+        when the package is not found in the default repository.
+        """
+        self.repository.default = False
+        self.repository.save()
+        higher_position_repository = Repository.objects.create(
+            name='higher-position', position=self.repository.position + 1)
+        # Add the package to both repositories
+        self.repository.add_source_package(self.source_package)
+        expected_entry = higher_position_repository.add_source_package(
+            self.source_package)
+
+        self.assertEqual(self.source_package.main_entry, expected_entry)
+
+    def test_get_version_entry_no_repo(self):
+        """
+        Tests that the
+        :meth:`SourcePackage.main_entry <pts.core.models.SourcePackage.main_entry>`
+        property returns ``None`` when the version is not found in any repository.
+        """
+        self.assertIsNone(self.source_package.main_entry)
+
 
 class BinaryPackageTests(TestCase):
     fixtures = ['repository-test-fixture.json']

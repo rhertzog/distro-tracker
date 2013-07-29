@@ -928,6 +928,37 @@ class SourcePackage(models.Model):
         """
         return self.source_package_name.name
 
+    @cached_property
+    def main_entry(self):
+        """
+        Returns the
+        :class:`SourcePackageRepositoryEntry <pts.core.models.SourcePackageRepositoryEntry>`
+        found in the instance's :attr:`repository_entries` which should be
+        considered the main entry for this version.
+
+        If the version is found in the default repository, the entry for the
+        default repository is returned.
+
+        Otherwise, the entry for the repository with the highest
+        :attr:`position <pts.core.models.Repository.position>` field is
+        returned.
+
+        If the source package version is not found in any repository,
+        ``None`` is returned.
+        """
+        default_repository_entry_qs = self.repository_entries.filter(
+            repository__default=True)
+        try:
+            return default_repository_entry_qs[0]
+        except IndexError:
+            pass
+
+        # Return the entry in the repository with the highest position number
+        try:
+            return self.repository_entries.order_by('-repository__position')[0]
+        except IndexError:
+            return None
+
     def update(self, **kwargs):
         """
         The method updates all of the instance attributes based on the keyword
