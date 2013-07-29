@@ -593,6 +593,6 @@ class BugsPanel(BasePanel):
         # Either the vendor decided not to provide any info for this package
         # or there is no known info.
         if not result:
-            return {}
+            return []
 
         return result
