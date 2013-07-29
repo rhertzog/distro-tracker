@@ -165,6 +165,34 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
 
         self.assert_all_headers_found(expected_headers)
 
+    def test_legacy_keyword_override_cvs(self):
+        """
+        Tests that keywords used by the old PTS which have been replaced are
+        properly mapped to their new values by the Debian-specific module.
+        """
+        address = '{name}_{keyword}'.format(
+            name=self.package_name, keyword='cvs')
+        # Subscribed to the new keyword
+        self.subscribe_user_with_keyword('user@domain.com', 'vcs')
+
+        self.run_dispatch(address)
+
+        self.assert_header_equal('X-PTS-Keyword', 'vcs')
+
+    def test_legacy_keyword_override_ddtp(self):
+        """
+        Tests that keywords used by the old PTS which have been replaced are
+        properly mapped to their new values by the Debian-specific module.
+        """
+        address = '{name}_{keyword}'.format(
+            name=self.package_name, keyword='ddtp')
+        # Subscribed to the new keyword
+        self.subscribe_user_with_keyword('user@domain.com', 'translation')
+
+        self.run_dispatch(address)
+
+        self.assert_header_equal('X-PTS-Keyword', 'translation')
+
 
 class GetPseudoPackageListTest(TestCase):
     @mock.patch('pts.core.utils.http.requests')

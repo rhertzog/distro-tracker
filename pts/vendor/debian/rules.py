@@ -15,6 +15,7 @@ import requests
 from django.conf import settings
 from pts.core.models import PackageBugStats
 from pts.core.models import BinaryPackageBugStats
+from pts.dispatch.process import get_keyword_from_address
 from pts.core.utils import get_decoded_message_payload
 from pts.core.utils import get_or_none
 from pts.core.utils.http import HttpCache
@@ -29,11 +30,20 @@ def get_keyword(local_part, msg):
     keyword matching.
 
     Debian provides matching for the following keywords:
+
      - bts-control
      - bts
      - upload-source
      - upload-binary
      - archive
+
+    It also automatically maps the following legacy keywords to their new names,
+    if the keyword is given in the local part of the message:
+
+    - katie-other - archive
+    - buildd - build
+    - ddtp - translation
+    - cvs - vcs
 
     :param local_part: The local part of the email address to which the message
         was sent
@@ -42,6 +52,16 @@ def get_keyword(local_part, msg):
     :param msg: The original received package message
     :type msg: :py:class:`Message <email.message.Message>`
     """
+    legacy_mapping = {
+        'katie-other': 'archive',
+        'buildd': 'build',
+        'ddtp': 'translation',
+        'cvs': 'vcs',
+    }
+    keyword_in_address = get_keyword_from_address(local_part)
+    if keyword_in_address in legacy_mapping:
+        return legacy_mapping[keyword_in_address]
+
     re_accepted_installed = re.compile('^Accepted|INSTALLED|ACCEPTED')
     re_comments_regarding = re.compile(r'^Comments regarding .*\.changes$')
 

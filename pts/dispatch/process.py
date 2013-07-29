@@ -112,9 +112,14 @@ def get_keyword(local_part, msg):
     """
     Extracts the keywoword from the given message.
 
-    If the keyword cannot be extracted from the local_part of the email address
-    where the email was received, it uses a vendor provided function to try and
-    obtain the keyword. If that also fails, it returns "default" as the keyword.
+    The function first tries using a vendor-provided function
+    :func:`get_keyword <pts.vendor.skeleton.rules.get_keyword>`.
+
+    If the vendor did not implement this function or does not return a keyword
+    for the given message, the function tries extracting the keyword from the
+    ``local_part`` of the address (using :func:`get_keyword_from_address`).
+
+    If this also does not yield a keyword, ``default`` is returned.
 
     :param local_part: The local part of the email address to which the message
         was sent.
@@ -126,12 +131,13 @@ def get_keyword(local_part, msg):
     :returns: The name of the keyword.
     :rtype: string
     """
-    keyword = get_keyword_from_address(local_part)
+    # Use a vendor-provided function to try and classify the message.
+    keyword, _ = vendor.call('get_keyword', local_part, msg)
     if keyword:
         return keyword
 
-    # Use a vendor-provided function to try and classify the message.
-    keyword, _ = vendor.call('get_keyword', local_part, msg)
+    # Otherwise try getting the keyword from the address
+    keyword = get_keyword_from_address(local_part)
     if keyword:
         return keyword
 
