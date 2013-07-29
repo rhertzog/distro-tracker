@@ -766,7 +766,6 @@ class UpdateVersionInformation(PackageUpdateTask):
                 'repository_name': entry.repository.name,
                 'repository_shorthand': entry.repository.shorthand,
                 'version': entry.source_package.version,
-                'dsc_file_url': entry.dsc_file_url,
             })
         versions = {
             'version_list': version_list,
