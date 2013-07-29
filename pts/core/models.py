@@ -266,7 +266,7 @@ class SourcePackageName(PackageName):
             'package_name': self.name
         })
 
-    @property
+    @cached_property
     def main_version(self):
         """
         Returns the main version of this :class:`SourcePackageName` instance.
@@ -283,12 +283,13 @@ class SourcePackageName(PackageName):
         else:
             qs = self.source_package_versions.all()
 
-        if qs.exists():
+        qs.select_related()
+        try:
             return max(qs, key=lambda x: AptPkgVersion(x.version))
-        else:
+        except ValueError:
             return None
 
-    @property
+    @cached_property
     def main_entry(self):
         """
         Returns the :class:`SourcePackageRepositoryEntry` which represents the
@@ -306,12 +307,13 @@ class SourcePackageName(PackageName):
             qs = SourcePackageRepositoryEntry.objects.filter(
                 source_package__source_package_name=self)
 
-        if qs.exists():
+        qs = qs.select_related()
+        try:
             return max(
                 qs,
                 key=lambda x: AptPkgVersion(x.source_package.version)
             )
-        else:
+        except ValueError:
             return None
 
     @property
