@@ -15,6 +15,9 @@ Tests for the PTS core module's models.
 """
 from __future__ import unicode_literals
 from django.test import TestCase
+from django.conf import settings
+from django.test.utils import override_settings
+from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError
 from pts.core.models import Subscription, EmailUser, PackageName, BinaryPackageName
 from pts.core.models import SourcePackageName, SourcePackageRepositoryEntry
@@ -22,10 +25,15 @@ from pts.core.models import Keyword
 from pts.core.models import Architecture
 from pts.core.models import PseudoPackageName
 from pts.core.models import Repository
+from pts.core.models import News
 from pts.core.models import ContributorEmail
 from pts.core.models import ContributorName
 from pts.core.models import SourcePackage
 from pts.core.models import MailingList
+
+import shutil
+import tempfile
+import contextlib
 
 
 def create_source_package(arguments):
@@ -880,3 +888,64 @@ class MailingListTest(TestCase):
 
         email = 'user@no.registered.domain'
         self.assertIsNone(MailingList.objects.get_by_email(email))
+
+
+@contextlib.contextmanager
+def make_temp_directory(suffix=''):
+    """
+    Helper context manager which creates a temporary directory on enter and
+    cleans it up on exit.
+    """
+    temp_dir_name = tempfile.mkdtemp(suffix=suffix)
+    yield temp_dir_name
+    shutil.rmtree(temp_dir_name)
+
+
+class NewsTests(TestCase):
+    """
+    Tests for the :class:`pts.core.models.News` model.
+    """
+    def setUp(self):
+        self.package = SourcePackageName.objects.create(name='dummy-package')
+
+    def test_content_from_db(self):
+        """
+        Tests that the :meth:`pts.core.models.News.content` property returns
+        the correct contents when they are found in the database.
+        """
+        expected_content = 'This is some news content'
+        news = News.objects.create(
+            title='some title',
+            _db_content=expected_content,
+            package=self.package
+        )
+
+        self.assertEqual(news.content, expected_content)
+
+    def test_content_from_file(self):
+        """
+        Tests that the :meth:`pts.core.models.News.content` property returns
+        the correct contents when they are found in a file.
+        """
+        expected_content = 'This is some news content'
+        with make_temp_directory('-pts-media') as temp_media_dir:
+            with self.settings(MEDIA_ROOT=temp_media_dir):
+                # Create a temporary file for the content
+                content_file = ContentFile(expected_content, name='tmp-content')
+                # Create the news item with the given content file
+                news = News.objects.create(
+                    title='some title',
+                    package=self.package,
+                    news_file=content_file
+                )
+
+                self.assertEqual(news.content, expected_content)
+
+    def test_no_content(self):
+        """
+        Tests that the :meth:`pts.core.models.News.content` property returns
+        no content when neither the database content nor file content is set.
+        """
+        news = News.objects.create(title='some title', package=self.package)
+
+        self.assertIsNone(news.content)
