@@ -822,7 +822,9 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
             should be passed to the generation task when it runs.
         """
         # Make sure the source package name object exists
-        SourcePackageName.objects.get_or_create(name=name)
+        src_pkg_name, _ = SourcePackageName.objects.get_or_create(name=name)
+        SourcePackage.objects.get_or_create(
+            source_package_name=src_pkg_name, version=version)
         # Add all events for a newly created source package which the task will
         # receive.
         if events:
@@ -844,6 +846,22 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         :param events: A flag indicating whether the corresponding events
             should be passed to the generation task when it runs.
         """
+        qs = Repository.objects.filter(name=repository)
+        repo, _ = Repository.objects.get_or_create(name=repository, defaults={
+            'shorthand': repository,
+            'suite': 'suite',
+            'components': ['component']
+        })
+
+        source_package = SourcePackage.objects.get(
+            source_package_name__name=name,
+            version=version)
+
+        entry = SourcePackageRepositoryEntry(
+            repository=repo,
+            source_package=source_package)
+        entry.save()
+
         if events:
             self.add_mock_events('new-source-package-version-in-repository', {
                 'name': name,
@@ -1234,3 +1252,23 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
                 name, version, repository)
             # The news is linked with the correct package
             self.assertEqual(news.package.name, name)
+
+    @mock.patch('pts.core.retrieve_data.get_resource_content')
+    def test_dsc_file_in_news_content(self, mock_get_resource_content):
+        """
+        Tests that the dsc file is found in the content of a news item created
+        when a new package version appears.
+        """
+        name = 'package'
+        version = '1.0.0'
+        repository = 'repo'
+        self.create_source_package(name, version)
+        self.add_source_package_to_repository(name, version, repository)
+        expected_content = 'This is fake content'
+        mock_get_resource_content.return_value = expected_content.encode('utf-8')
+
+        self.run_task()
+
+        self.assertEqual(1, News.objects.count())
+        news = News.objects.all()[0]
+        self.assertEqual(news.content, expected_content)

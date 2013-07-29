@@ -1199,7 +1199,7 @@ class News(models.Model):
     package = models.ForeignKey(PackageName)
     title = models.CharField(max_length=255)
     content_type = models.CharField(max_length=100, default='text/plain')
-    _db_content = models.TextField(blank=True)
+    _db_content = models.TextField(blank=True, null=True)
     news_file = models.FileField(
         upload_to=lambda instance, filename: '/'.join((
             'news',

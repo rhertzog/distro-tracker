@@ -20,6 +20,7 @@ from pts.core.models import News
 from pts.core.models import PackageExtractedInfo
 from pts.core.models import BinaryPackageName
 from pts.core.utils import get_or_none
+from pts.core.utils.http import get_resource_content
 from pts.core.tasks import BaseTask
 from pts.core.tasks import clear_all_events_on_exception
 from pts.core.models import SourcePackageName, Architecture
@@ -843,6 +844,17 @@ class GenerateNewsFromRepositoryUpdates(BaseTask):
         'lost-source-package-version-in-repository',
     )
 
+    def get_dsc_file(self, package, version):
+        """
+        Helper method which returns the contents of the dsc file for the given
+        package and version.
+        """
+        package_version = package.source_package_versions.get(version=version)
+        entry = package_version.repository_entries.all()[0]
+        content = get_resource_content(entry.dsc_file_url)
+        if content:
+            return content.decode('utf-8')
+
     def execute(self):
         package_changes = {}
         new_source_versions = {}
@@ -856,7 +868,7 @@ class GenerateNewsFromRepositoryUpdates(BaseTask):
                 new_source_versions[package_name].append(version)
 
         # Retrieve all relevant packages from the db
-        packages = PackageName.objects.filter(name__in=package_changes.keys())
+        packages = SourcePackageName.objects.filter(name__in=package_changes.keys())
 
         for package in packages:
             package_name = package.name
@@ -880,10 +892,11 @@ class GenerateNewsFromRepositoryUpdates(BaseTask):
                     # First time seeing this version?
                     version = event.arguments['version']
                     new_source_version = version in new_source_versions[package_name]
-                    title = None
+                    title, content = None, None
                     if event.name == 'new-source-package-version-in-repository':
                         if new_source_version:
                             title = "Accepted {pkg} version {ver} to {repo}"
+                            content = self.get_dsc_file(package, version)
                         else:
                             title = "{pkg} version {ver} MIGRATED to {repo}"
                     elif event.name == 'lost-source-package-version-in-repository':
@@ -899,5 +912,6 @@ class GenerateNewsFromRepositoryUpdates(BaseTask):
                                 pkg=package_name,
                                 repo=event.arguments['repository'],
                                 ver=version
-                            )
+                            ),
+                            _db_content=content
                         )
