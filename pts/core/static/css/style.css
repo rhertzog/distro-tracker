@@ -143,8 +143,17 @@
 .list-group-item > .list-item-key.versions-repository {
   min-width: 40%;
 }
+.list-group-item > .list-item-key.versioned-links-version {
+  min-width: 40%
+}
 .list-group-item > .list-item-value {
   float: left;
+}
+.versioned-links-icons .versioned-links-icon {
+  margin-right: 2px;
+}
+.versioned-links-icons .versioned-links-icon-inactive {
+  opacity: 0.5;
 }
 
 .list-group-item:first-child {

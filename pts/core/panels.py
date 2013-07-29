@@ -20,6 +20,7 @@ from pts.core.models import PackageExtractedInfo
 from pts.core.models import MailingList
 from pts.core.models import News
 from pts.core.models import BinaryPackageBugStats
+from debian.debian_support import AptPkgVersion
 
 
 class BasePanel(six.with_metaclass(PluginRegistry)):
@@ -238,6 +239,128 @@ class VersionsInformationPanel(BasePanel):
             version_info['external_resources'] = external_resources
 
         return version_info
+
+
+class VersionedLinks(BasePanel):
+    """
+    A panel displaying links specific for source package versions.
+
+    The panel exposes an endpoint which allows for extending the displayed
+    content. This is achieved by implementing a
+    :class:`VersionedLinks.LinkProvider` subclass.
+    """
+    position = 'left'
+    title = 'versioned links'
+    template_name = 'core/panels/versioned-links.html'
+
+    class LinkProvider(six.with_metaclass(PluginRegistry)):
+        """
+        A base class for classes which should provide a list of version
+        specific links.
+
+        Subclasses need to define the :attr:`icons` property and implement the
+        :meth:`get_link_for_icon` method.
+        """
+        #: A list of strings representing icons for links that the class
+        #: provides.
+        #: Each string is an HTML representation of the icon.
+        #: If the string should be considered safe and rendered in the
+        #: resulting template without HTML encoding it, it should be marked
+        #: with :func:`django.utils.safestring.mark_safe`.
+        #: It requires each icon to be a string to discourage using complex
+        #: markup for icons. Using a template is possible by making
+        #: :attr:`icons` a property and rendering the template as string before
+        #: returning it in the list.
+        icons = []
+
+        def get_link_for_icon(self, package, icon_index):
+            """
+            Return a URL for the given package version which should be used for
+            the icon at the given index in the :attr:`icons` property.
+            If no link can be given for the icon, ``None`` should be returned
+            instead.
+
+            :type package: :class:`SourcePackage <pts.core.models.SourcePackage>`
+            :type icon_index: int
+
+            :rtype: :class:`string` or ``None``
+            """
+            return None
+
+        def get_links(self, package):
+            """
+            For each of the icons returned by the :attr:`icons` property, returns
+            a URL specific for the given package.
+
+            The order of the URLs must match the order of the icons (matching
+            links and icons need to have the same index). Consequently, the
+            length of the returned list is the same as the length of the
+            :attr:`icons` property.
+
+            If no link can be given for some icon, ``None`` should be put instead.
+
+            This method has a default implementation which calls the
+            :meth:`get_link_for_icon` for each icon defined in the :attr:`icons`
+            property. This should be enough for all intents and purposes and
+            the method should not need to be overridden by subclasses.
+
+            :param package: The source package instance for which links should
+                be provided
+            :type package: :class:`SourcePackage <pts.core.models.SourcePackage>`
+
+            :returns: List of URLs for the package
+            :rtype: list
+            """
+            return [
+                self.get_link_for_icon(package, index)
+                for index, icon in enumerate(self.icons)
+            ]
+
+        @classmethod
+        def get_providers(cls):
+            """
+            Helper classmethod returning a list of instances of all registered
+            :class:`VersionedLinks.LinkProvider` subclasses.
+            """
+            return [
+                klass()
+                for klass in cls.plugins
+                if klass is not cls
+            ]
+
+    @property
+    def context(self):
+        # Make sure we display the versions in a version-number increasing order
+        versions = sorted(
+            self.package.source_package_versions.all(),
+            key=lambda x: AptPkgVersion(x.version)
+        )
+        # Icons must be the same for each version
+        icons = [
+            icon
+            for link_provider in VersionedLinks.LinkProvider.get_providers()
+            for icon in link_provider.icons
+        ]
+
+        versioned_links = []
+        for package in versions:
+            links = [
+                link
+                for link_provider in VersionedLinks.LinkProvider.get_providers()
+                for link in link_provider.get_links(package)
+            ]
+            versioned_links.append({
+                'number': package.version,
+                'links': [
+                    {
+                        'icon_html': icon,
+                        'url': link,
+                    }
+                    for icon, link in zip(icons, links)
+                ]
+            })
+
+        return versioned_links
 
 
 class BinariesInformationPanel(BasePanel):
