@@ -19,6 +19,7 @@ from pts import vendor
 from pts.core.models import PackageExtractedInfo
 from pts.core.models import MailingList
 from pts.core.models import News
+from pts.core.models import ExtractedSourceFile
 from pts.core.models import BinaryPackageBugStats
 from debian.debian_support import AptPkgVersion
 
@@ -375,6 +376,31 @@ class DscLinkProvider(VersionedLinks.LinkProvider):
             return None
         if package.main_entry:
             return package.main_entry.dsc_file_url
+
+
+class SourceFilesLinkProvider(VersionedLinks.LinkProvider):
+    icons = [
+        'changelog',
+        'copyright',
+        'rules',
+        'control',
+    ]
+
+    _file_names =[
+        'changelog',
+        'copyright',
+        'rules',
+        'control',
+    ]
+
+    def get_link_for_icon(self, package, index):
+        file_name = self._file_names[index]
+        try:
+            extracted = package.extracted_source_files.get(name=file_name)
+        except ExtractedSourceFile.DoesNotExist:
+            return
+
+        return extracted.extracted_file.url
 
 
 class BinariesInformationPanel(BasePanel):
