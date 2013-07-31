@@ -38,6 +38,7 @@ import apt
 import sys
 import shutil
 import apt_pkg
+import tarfile
 import logging
 import requests
 import subprocess
@@ -364,7 +365,22 @@ class AptCache(object):
 
         return updated_sources, updated_packages
 
-    def retrieve_source(self, source_name, version):
+    def _get_format(self, record):
+        """
+        Returns the Format field value of the given source package record.
+        """
+        record = deb822.Deb822(record)
+        return record['format']
+
+    def _extract_quilt_package(self, debian_tar_path, outdir):
+        """
+        Extracts the given tarball to the given output directory.
+        """
+        with tarfile.open(debian_tar_path) as debian_tar:
+            debian_tar.extractall(outdir)
+
+    def retrieve_source(self, source_name, version,
+                        debian_directory_only=False):
         """
         Retrieve the source package files for the given source package version.
 
@@ -372,6 +388,10 @@ class AptCache(object):
         :type source_name: string
         :param version: The version of the source package
         :type version: string
+        :param debian_directory_only: Flag indicating if the method should try
+            to retrieve only the debian directory of the source package. This
+            is usually only possible when the package format is 3.0 (quilt).
+        :type debian_directory_only: Boolean
 
         :returns: The path to the directory containing the extracted source
             package files.
@@ -404,6 +424,10 @@ class AptCache(object):
             source_name)
         if not os.path.exists(dest_dir_path):
             os.makedirs(dest_dir_path)
+
+        package_format = self._get_format(source_records.record)
+        QUILT_FORMAT = '3.0 (quilt)'
+
         dsc_file_path = None
         files = []
         acquire = apt_pkg.Acquire(apt.progress.base.AcquireProgress())
@@ -413,6 +437,11 @@ class AptCache(object):
             # Remember the dsc file path so it can be passed to dpkg-source
             if file_type == 'dsc':
                 dsc_file_path = dest_file_path
+            if debian_directory_only and package_format == QUILT_FORMAT:
+                if file_type != 'diff':
+                    # Only retrieve the .debian.tar.* file for quilt packages
+                    # when only the debian directory is wanted
+                    continue
             files.append(apt_pkg.AcquireFile(
                 acquire,
                 source_records.index.archive_uri(path),
@@ -437,8 +466,13 @@ class AptCache(object):
         if os.path.exists(outdir):
             # dpkg-source expects this directory not to exist
             shutil.rmtree(outdir)
-        # Let dpkg-source handle the extraction
-        subprocess.check_call(["dpkg-source", "-x", dsc_file_path, outdir])
+
+        if debian_directory_only and package_format == QUILT_FORMAT:
+            # dpkg-source cannot extract an incomplete package
+            self._extract_quilt_package(acquire.items[0].destfile, outdir)
+        else:
+            # Let dpkg-source handle the extraction in all other cases
+            subprocess.check_call(["dpkg-source", "-x", dsc_file_path, outdir])
 
         return outdir
 
@@ -1053,7 +1087,8 @@ class ExtractSourcePackageFiles(BaseTask):
         cache = AptCache()
         source_directory = cache.retrieve_source(
             source_package.source_package_name.name,
-            source_package.version)
+            source_package.version,
+            debian_directory_only=True)
         debian_directory = os.path.join(source_directory, 'debian')
 
         files_to_extract = [
