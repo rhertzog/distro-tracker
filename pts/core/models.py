@@ -28,6 +28,7 @@ from email.utils import getaddresses
 from email.iterators import typed_subpart_iterator
 
 import os
+import re
 
 
 @python_2_unicode_compatible
@@ -928,7 +929,7 @@ class SourcePackage(models.Model):
         return '{pkg}, version {ver}'.format(
             pkg=self.source_package_name, ver=self.version)
 
-    @property
+    @cached_property
     def name(self):
         """
         A convenience property returning the name of the package as a string.
@@ -967,6 +968,47 @@ class SourcePackage(models.Model):
             return self.repository_entries.order_by('-repository__position')[0]
         except IndexError:
             return None
+
+    def get_changelog_entry(self):
+        """
+        Retrieve the changelog entry which corresponds to this package version.
+
+        If there is no changelog associated with the version returns ``None``
+
+        :rtype: :class:`string` or ``None``
+        """
+        # If there is no changelog, return immediately
+        try:
+            changelog = self.extracted_source_files.get(name='changelog')
+        except ExtractedSourceFile.DoesNotExist:
+            return
+
+        # Setup regexps to recognize the beginning and end of the wanted
+        # changelog section.
+        changelog_entry_template = '^{name} \({version}\) .*; urgency=.*'
+        re_version_to_extract = re.compile(changelog_entry_template.format(
+            name=re.escape(self.name), version=re.escape(self.version)))
+        re_new_version_changelog = re.compile(
+            changelog_entry_template.format(name=re.escape(self.name), version='.*'))
+
+        changelog_content = six.StringIO()
+        changelog.extracted_file.open()
+        # Let the File context manager close the file
+        with changelog.extracted_file as changelog_file:
+            matched = False
+            for line in changelog_file:
+                line = line.decode('utf-8')
+                if matched:
+                    if re_new_version_changelog.match(line):
+                        break
+                    changelog_content.write(line)
+                else:
+                    if re_version_to_extract.match(line):
+                        matched = True
+                        changelog_content.write(line)
+
+        # Remove trailing whitespace
+        return changelog_content.getvalue().strip()
 
     def update(self, **kwargs):
         """

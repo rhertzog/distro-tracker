@@ -24,6 +24,7 @@ from pts.core.models import PseudoPackageName
 from pts.core.models import Repository
 from pts.core.models import News
 from pts.core.models import SourcePackage
+from pts.core.models import ExtractedSourceFile
 from pts.core.models import MailingList
 from .common import make_temp_directory
 from .common import create_source_package
@@ -792,6 +793,120 @@ class SourcePackageTests(TestCase):
         property returns ``None`` when the version is not found in any repository.
         """
         self.assertIsNone(self.source_package.main_entry)
+
+    def test_changelog_entry_only(self):
+        """
+        Tests that the
+        :meth:`get_changelog_entry <pts.core.models.SourcePackage.get_changelog_entry>`
+        returns the changelog part correctly when it is the only entry in the
+        changelog file.
+        """
+        changelog_entry = (
+            "{pkg} ({ver}) suite; urgency=high\n\n"
+            "  * New stable release:\n"
+            "    - Feature 1\n"
+            "    - Feature 2\n\n"
+            " -- Maintaner <email@domain.com> Mon, 1 July 2013 09:00:00 +0000"
+        ).format(pkg=self.source_package.name, ver=self.source_package.version)
+
+        changelog_content = changelog_entry
+        with make_temp_directory('-pts-media') as temp_media_dir:
+            ExtractedSourceFile.objects.create(
+                source_package=self.source_package,
+                extracted_file=ContentFile(changelog_content, name='changelog'),
+                name='changelog')
+            self.assertEqual(
+                self.source_package.get_changelog_entry(),
+                changelog_entry)
+
+    def test_changelog_entry_beginning(self):
+        """
+        Tests that the
+        :meth:`get_changelog_entry <pts.core.models.SourcePackage.get_changelog_entry>`
+        returns the changelog part correctly when it is the latest entry in the
+        changelog file.
+        """
+        changelog_entry = (
+            "{pkg} ({ver}) suite; urgency=high\n\n"
+            "  * New stable release:\n"
+            "    - Feature 1\n"
+            "    - Feature 2\n\n"
+            " -- Maintaner <email@domain.com> Mon, 1 July 2013 09:00:00 +0000"
+        ).format(pkg=self.source_package.name, ver=self.source_package.version)
+        other_content = (
+            "{pkg} ({ver}) suite; urgency=high\n\n"
+            "  * New stable release:\n"
+            "    - Feature\n\n"
+            " -- Maintaner <email@domain.com> Mon, 1 July 2013 09:00:00 +0000"
+        ).format(pkg=self.source_package.name, ver='9.9.9')
+        changelog_content = changelog_entry + '\n' + other_content
+
+        with make_temp_directory('-pts-media') as temp_media_dir:
+            ExtractedSourceFile.objects.create(
+                source_package=self.source_package,
+                extracted_file=ContentFile(changelog_content, name='changelog'),
+                name='changelog')
+            self.assertEqual(
+                self.source_package.get_changelog_entry(),
+                changelog_entry)
+
+    def test_changelog_entry_not_first(self):
+        """
+        Tests that the
+        :meth:`get_changelog_entry <pts.core.models.SourcePackage.get_changelog_entry>`
+        returns the changelog part correctly when it is not the latest entry in the
+        changelog file.
+        """
+        changelog_entry = (
+            "{pkg} ({ver}) suite; urgency=high\n\n"
+            "  * New stable release:\n"
+            "    - Feature 1\n"
+            "    - Feature 2\n\n"
+            " -- Maintaner <email@domain.com> Mon, 1 July 2013 09:00:00 +0000"
+        ).format(pkg=self.source_package.name, ver=self.source_package.version)
+        other_content = (
+            "{pkg} ({ver}) suite; urgency=high\n\n"
+            "  * New stable release:\n"
+            "    - Feature\n\n"
+            " -- Maintaner <email@domain.com> Mon, 1 July 2013 09:00:00 +0000"
+        ).format(pkg=self.source_package.name, ver='9.9.9')
+        changelog_content = other_content + '\n' + changelog_entry
+
+        with make_temp_directory('-pts-media') as temp_media_dir:
+            ExtractedSourceFile.objects.create(
+                source_package=self.source_package,
+                extracted_file=ContentFile(changelog_content, name='changelog'),
+                name='changelog')
+            self.assertEqual(
+                self.source_package.get_changelog_entry(),
+                changelog_entry)
+
+    def test_changelog_entry_regex_meta_chars(self):
+        """
+        Tests that the
+        :meth:`get_changelog_entry <pts.core.models.SourcePackage.get_changelog_entry>`
+        returns the changelog part correctly when the version contains a
+        regex meta character.
+        """
+        self.source_package.version = self.source_package.version + '+deb7u1'
+        self.source_package.save()
+        changelog_entry = (
+            "{pkg} ({ver}) suite; urgency=high\n\n"
+            "  * New stable release:\n"
+            "    - Feature 1\n"
+            "    - Feature 2\n\n"
+            " -- Maintaner <email@domain.com> Mon, 1 July 2013 09:00:00 +0000"
+        ).format(pkg=self.source_package.name, ver=self.source_package.version)
+        changelog_content = changelog_entry
+
+        with make_temp_directory('-pts-media') as temp_media_dir:
+            ExtractedSourceFile.objects.create(
+                source_package=self.source_package,
+                extracted_file=ContentFile(changelog_content, name='changelog'),
+                name='changelog')
+            self.assertEqual(
+                self.source_package.get_changelog_entry(),
+                changelog_entry)
 
 
 class BinaryPackageTests(TestCase):
