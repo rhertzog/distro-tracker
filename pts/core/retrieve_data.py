@@ -930,23 +930,42 @@ class GenerateNewsFromRepositoryUpdates(BaseTask):
         'new-source-package-version',
         'new-source-package-version-in-repository',
         'lost-source-package-version-in-repository',
+        # Run after all source files have been retrieved
+        'source-files-extracted',
     )
 
-    def get_dsc_file(self, package, version):
+    def generate_accepted_news_content(self, package, version):
         """
-        Helper method which returns the contents of the dsc file for the given
-        package and version.
+        Generates the content for a news item created when a package version is
+        first created.
+
+        :type package: :class:`SourcePackageName <pts.core.models.SourcePackageName>`
+        :type version: :class:`string`
         """
         package_version = package.source_package_versions.get(version=version)
         entry = package_version.repository_entries.all()[0]
+
+        # Add dsc file
         content = get_resource_content(entry.dsc_file_url)
         if content:
-            return content.decode('utf-8')
+            content = content.decode('utf-8')
+        else:
+            content = ''
+
+        # Add changelog entries since last update...
+        changelog_content = package_version.get_changelog_entry()
+        if changelog_content:
+            content = content + '\nChanges:\n' + changelog_content
+
+        return content
 
     def execute(self):
         package_changes = {}
         new_source_versions = {}
         for event in self.get_all_events():
+            if event.name == 'source-files-extracted':
+                continue
+
             package_name, version = event.arguments['name'], event.arguments['version']
             package_changes.setdefault(package_name, [])
             package_changes[package_name].append(event)
@@ -984,7 +1003,8 @@ class GenerateNewsFromRepositoryUpdates(BaseTask):
                     if event.name == 'new-source-package-version-in-repository':
                         if new_source_version:
                             title = "Accepted {pkg} version {ver} to {repo}"
-                            content = self.get_dsc_file(package, version)
+                            content = self.generate_accepted_news_content(
+                                package, version)
                         else:
                             title = "{pkg} version {ver} MIGRATED to {repo}"
                     elif event.name == 'lost-source-package-version-in-repository':

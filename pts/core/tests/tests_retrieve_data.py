@@ -16,6 +16,7 @@ Tests for the PTS core data retrieval.
 from __future__ import unicode_literals
 from django.test import TestCase, TransactionTestCase
 from django.test.utils import override_settings
+from django.core.files.base import ContentFile
 from django.utils.six.moves import mock
 from pts.core.tasks import run_task
 from pts.core.models import Subscription, EmailUser, PackageName, BinaryPackageName
@@ -23,6 +24,7 @@ from pts.core.models import SourcePackageName, SourcePackage
 from pts.core.models import SourcePackageRepositoryEntry
 from pts.core.models import PseudoPackageName
 from pts.core.models import Repository
+from pts.core.models import ExtractedSourceFile
 from pts.core.models import News
 from pts.core.tasks import Job
 from pts.core.tasks import JobState
@@ -33,6 +35,7 @@ from pts.core.retrieve_data import retrieve_repository_info
 
 from pts.core.tasks import BaseTask
 from .common import create_source_package
+from .common import make_temp_directory
 
 import os
 import sys
@@ -823,7 +826,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         """
         # Make sure the source package name object exists
         src_pkg_name, _ = SourcePackageName.objects.get_or_create(name=name)
-        SourcePackage.objects.get_or_create(
+        src_pkg, _ = SourcePackage.objects.get_or_create(
             source_package_name=src_pkg_name, version=version)
         # Add all events for a newly created source package which the task will
         # receive.
@@ -832,6 +835,8 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
                 'name': name,
                 'version': version,
             })
+
+        return src_pkg
 
     def add_source_package_to_repository(self, name, version, repository,
                                          events=True):
@@ -1272,3 +1277,32 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         self.assertEqual(1, News.objects.count())
         news = News.objects.all()[0]
         self.assertEqual(news.content, expected_content)
+
+    def test_changelog_entry_in_news_content(self):
+        """
+        Tests that the news item created for new source package versions
+        contains the changelog entry for the version.
+        """
+        name = 'package'
+        version = '1.0.0'
+        repository = 'repo'
+        src_pkg = self.create_source_package(name, version)
+        self.add_source_package_to_repository(name, version, repository)
+        changelog_entry = (
+            "package (1.0.0) suite; urgency=high\n\n"
+            "  * New stable release:\n"
+            "    - Feature 1\n"
+            "    - Feature 2\n\n"
+            " -- Maintaner <email@domain.com> Mon, 1 July 2013 09:00:00 +0000"
+        )
+        with make_temp_directory('-pts-media') as temp_media_dir:
+            ExtractedSourceFile.objects.create(
+                source_package=src_pkg,
+                extracted_file=ContentFile(changelog_entry, name='changelog'),
+                name='changelog')
+
+            self.run_task()
+
+            self.assertEqual(News.objects.count(), 1)
+            news = News.objects.all()[0]
+            self.assertIn(changelog_entry, news.content)
