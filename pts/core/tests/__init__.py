@@ -20,3 +20,4 @@ from .tests_retrieve_data import *
 from .tests_tasks import *
 from .tests_utils import *
 from .tests_views import *
+from .tests_management import *
