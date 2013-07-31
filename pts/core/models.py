@@ -27,6 +27,8 @@ from email import message_from_string
 from email.utils import getaddresses
 from email.iterators import typed_subpart_iterator
 
+import os
+
 
 @python_2_unicode_compatible
 class Keyword(models.Model):
@@ -1093,6 +1095,34 @@ class SourcePackageRepositoryEntry(models.Model):
             return base_url + '/' + self.source_package.directory
         else:
             return None
+
+
+@python_2_unicode_compatible
+class ExtractedSourceFile(models.Model):
+    """
+    Model representing a single file extracted from a source package archive.
+    """
+    source_package = models.ForeignKey(
+        SourcePackage,
+        related_name='extracted_source_files')
+    extracted_file = models.FileField(
+        upload_to=lambda instance, filename: '/'.join((
+            'packages',
+            (instance.source_package.name[0]
+             if not instance.source_package.name.startswith('lib') else
+             instance.source_package.name[:4]),
+            instance.source_package.name,
+            os.path.basename(filename) + '-' + instance.source_package.version
+        )))
+    name = models.CharField(max_length=100)
+    date_extracted = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('source_package', 'name')
+
+    def __str__(self):
+        return 'Extracted file {extracted_file} of package {package}'.format(
+            extracted_file=self.extracted_file, package=self.source_package)
 
 
 @python_2_unicode_compatible
