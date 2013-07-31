@@ -532,12 +532,15 @@ def run_task(initial_task, parameters=None):
     This is a convenience function which delegates this to a :class:`Job` class
     instance.
 
-    :param initial_task: The task which should be run.
-    :type initial_task: :class:`BaseTask` subclass
+    :param initial_task: The task which should be run. Either the class object
+        of the task or a string giving the task's name.
+    :type initial_task: :class:`BaseTask` subclass or :class:`string`
 
     :param parameters: Additional parameters which are given to each task
     before it is executed.
     """
+    if isinstance(initial_task, six.text_type):
+        initial_task = BaseTask.get_task_class_by_name(initial_task)
     job = Job(initial_task)
     return job.run(parameters)
 

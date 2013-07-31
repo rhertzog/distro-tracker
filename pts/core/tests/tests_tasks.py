@@ -160,6 +160,19 @@ class JobTests(SimpleTestCase):
         self.assert_executed_tasks_equal([A, B])
         self.assert_task_dependency_preserved(A, [B])
 
+    def test_run_job_by_task_name(self):
+        """
+        Tests that the :func:`pts.core.tasks.run_task` function correctly
+        runs a task when given its name, not a task class object.
+        """
+        A = self.create_task_class(('a',), (), ('a',))
+        B = self.create_task_class((), ('a',), ())
+
+        run_task(A.task_name())
+
+        self.assert_executed_tasks_equal([A, B])
+        self.assert_task_dependency_preserved(A, [B])
+
     def test_run_job_no_dependency(self):
         """
         Tests running a job consisting of no dependencies.
