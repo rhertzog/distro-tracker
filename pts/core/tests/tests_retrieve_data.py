@@ -32,7 +32,7 @@ from pts.core.retrieve_data import UpdateRepositoriesTask
 from pts.core.retrieve_data import retrieve_repository_info
 
 from pts.core.tasks import BaseTask
-from .tests_models import create_source_package
+from .common import create_source_package
 
 import os
 import sys
