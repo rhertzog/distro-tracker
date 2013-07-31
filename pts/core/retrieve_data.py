@@ -37,6 +37,7 @@ import sys
 import shutil
 import apt_pkg
 import requests
+import subprocess
 
 
 class InvalidRepositoryException(Exception):
@@ -147,6 +148,10 @@ def retrieve_repository_info(sources_list_entry):
         repository_information[key] = release.get(key, default)
 
     return repository_information
+
+
+class SourcePackageRetrieveError(Exception):
+    pass
 
 
 class AptCache(object):
@@ -353,6 +358,84 @@ class AptCache(object):
             ))
 
         return updated_sources, updated_packages
+
+    def retrieve_source(self, source_name, version):
+        """
+        Retrieve the source package files for the given source package version.
+
+        :param source_name: The name of the source package
+        :type source_name: string
+        :param version: The version of the source package
+        :type version: string
+
+        :returns: The path to the directory containing the extracted source
+            package files.
+        :rtype: string
+        """
+        self.update_sources_list()
+        self.update_apt_conf()
+        self._configure_apt()
+        cache = apt.cache.Cache(rootdir=self.cache_root_dir)
+
+        source_records = apt_pkg.SourceRecords()
+        source_records.restart()
+        # Find the cached record matching this source package and version
+        found = False
+        while source_records.lookup(source_name):
+            if source_records.version == version:
+                found = True
+                break
+
+        if not found:
+            # Package version does not exist in the cache
+            raise SourcePackageRetrieveError(
+                "Could not retrieve package {pkg} version {ver}:"
+                " No such version found in the cache".format(
+                    pkg=source_name, ver=version))
+
+        dest_dir_path = os.path.join(
+            self.cache_root_dir,
+            'packages',
+            source_name)
+        if not os.path.exists(dest_dir_path):
+            os.makedirs(dest_dir_path)
+        dsc_file_path = None
+        files = []
+        acquire = apt_pkg.Acquire(apt.progress.base.AcquireProgress())
+        for md5, size, path, file_type in source_records.files:
+            base = os.path.basename(path)
+            dest_file_path = os.path.join(dest_dir_path, base)
+            # Remember the dsc file path so it can be passed to dpkg-source
+            if file_type == 'dsc':
+                dsc_file_path = dest_file_path
+            files.append(apt_pkg.AcquireFile(
+                acquire,
+                source_records.index.archive_uri(path),
+                md5,
+                size,
+                base,
+                destfile=dest_file_path
+            ))
+
+        acquire.run()
+
+        # Check if all items are correctly retrieved
+        for item in acquire.items:
+            if item.status != item.STAT_DONE:
+                raise SourcePackageRetrieveError(
+                    'Could not retrieve file {file}: {error}'.format(
+                        file=item.destfile, error=item.error_text))
+
+        # Extract the retrieved source files
+        outdir = source_records.package + '-' + source_records.version
+        outdir = os.path.join(dest_dir_path, outdir)
+        if os.path.exists(outdir):
+            # dpkg-source expects this directory not to exist
+            shutil.rmtree(outdir)
+        # Let dpkg-source handle the extraction
+        subprocess.check_call(["dpkg-source", "-x", dsc_file_path, outdir])
+
+        return outdir
 
 
 class PackageUpdateTask(BaseTask):
