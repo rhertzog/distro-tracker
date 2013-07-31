@@ -200,6 +200,11 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True,
         },
+        'pts.core.retrieve_data': {
+            'handlers': ['console-timestamp'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
         'pts.vendor.debian': {
             'handlers': ['console-timestamp'],
             'level': 'DEBUG',
