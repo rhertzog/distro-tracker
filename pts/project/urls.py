@@ -43,3 +43,14 @@ urlpatterns = patterns('',
     # Uncomment the admin/doc line below to enable admin documentation:
     # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
 )
+
+
+from django.conf import settings
+if settings.DEBUG:
+    urlpatterns = patterns('',
+        (r'^media/(?P<path>.*)$',
+         'django.views.static.serve', {
+            'document_root': settings.MEDIA_ROOT
+          }
+        ),
+    ) + urlpatterns
