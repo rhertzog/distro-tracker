@@ -851,7 +851,6 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         :param events: A flag indicating whether the corresponding events
             should be passed to the generation task when it runs.
         """
-        qs = Repository.objects.filter(name=repository)
         repo, _ = Repository.objects.get_or_create(name=repository, defaults={
             'shorthand': repository[:10],
             'suite': 'suite',
