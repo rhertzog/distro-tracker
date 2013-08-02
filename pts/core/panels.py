@@ -388,31 +388,6 @@ class DscLinkProvider(VersionedLinks.LinkProvider):
             return package.main_entry.dsc_file_url
 
 
-class SourceFilesLinkProvider(VersionedLinks.LinkProvider):
-    icons = [
-        'changelog',
-        'copyright',
-        'rules',
-        'control',
-    ]
-
-    _file_names =[
-        'changelog',
-        'copyright',
-        'rules',
-        'control',
-    ]
-
-    def get_link_for_icon(self, package, index):
-        file_name = self._file_names[index]
-        try:
-            extracted = package.extracted_source_files.get(name=file_name)
-        except ExtractedSourceFile.DoesNotExist:
-            return
-
-        return extracted.extracted_file.url
-
-
 class BinariesInformationPanel(BasePanel):
     """
     This panel displays a list of binary package names which a given source
