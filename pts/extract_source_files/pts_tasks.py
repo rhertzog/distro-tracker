@@ -40,11 +40,21 @@ class ExtractSourcePackageFiles(BaseTask):
         'source-files-extracted',
     )
 
-    def extract_files(self, source_package):
+    ALL_FILES_TO_EXTRACT = (
+        'changelog',
+        'copyright',
+        'rules',
+        'control',
+        'watch',
+    )
+
+    def extract_files(self, source_package, files_to_extract=None):
         """
         Extract files for just the given source package.
 
         :type source_package: :class:`SourcePackage <pts.core.models.SourcePackage>`
+        :type files_to_extract: An iterable of file names which should be
+            extracted
         """
         cache = AptCache()
         source_directory = cache.retrieve_source(
@@ -53,13 +63,9 @@ class ExtractSourcePackageFiles(BaseTask):
             debian_directory_only=True)
         debian_directory = os.path.join(source_directory, 'debian')
 
-        files_to_extract = [
-            'changelog',
-            'copyright',
-            'rules',
-            'control',
-            'watch',
-        ]
+        if files_to_extract is None:
+            files_to_extract = self.ALL_FILES_TO_EXTRACT
+
         for file_name in files_to_extract:
             file_path = os.path.join(debian_directory, file_name)
             if not os.path.exists(file_path):
