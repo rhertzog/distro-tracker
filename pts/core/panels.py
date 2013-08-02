@@ -22,6 +22,9 @@ from pts.core.models import News
 from pts.core.models import ExtractedSourceFile
 from pts.core.models import BinaryPackageBugStats
 from debian.debian_support import AptPkgVersion
+from collections import defaultdict
+
+import importlib
 
 
 class BasePanel(six.with_metaclass(PluginRegistry)):
@@ -94,7 +97,14 @@ def get_panels_for_package(package):
         be rendered in that position.
     :rtype: dict
     """
-    from collections import defaultdict
+    # First import panels from installed apps.
+    for app in settings.INSTALLED_APPS:
+        try:
+            module_name = app + '.' + 'pts_panels'
+            importlib.import_module(module_name)
+        except ImportError:
+            # The app does not implement PTS package panels.
+            pass
 
     panels = defaultdict(lambda: [])
     for panel_class in BasePanel.plugins:
