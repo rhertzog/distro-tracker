@@ -1093,3 +1093,34 @@ class NewsTests(TestCase):
         news = News.objects.create(title='some title', package=self.package)
 
         self.assertIsNone(news.content)
+
+    def test_create_db_content(self):
+        """
+        Tests the :meth:`pts.core.models.NewsManager.create` method when it
+        should create an instance whose content is stored in the database.
+        """
+        expected_content = 'Some content'
+        news = News.objects.create(
+            title='some title',
+            content=expected_content,
+            package=self.package)
+
+        self.assertEqual(news._db_content, expected_content)
+        self.assertFalse(news.news_file)
+
+    def test_create_file_content(self):
+        """
+        Tests the :meth:`pts.core.models.NewsManager.create` method when it
+        should create an instance whose content is stored in a file.
+        """
+        expected_content = 'Some content'
+        with make_temp_directory('-pts-media') as temp_media_dir:
+            with self.settings(MEDIA_ROOT=temp_media_dir):
+                news = News.objects.create(
+                    title='some title',
+                    file_content=expected_content,
+                    package=self.package)
+
+                self.assertTrue(news.news_file)
+                self.assertIsNone(news._db_content)
+                self.assertEqual(news.content, expected_content)

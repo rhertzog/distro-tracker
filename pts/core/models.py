@@ -16,6 +16,7 @@ from django.utils.functional import cached_property
 from django.utils.safestring import mark_safe
 from django.core.urlresolvers import reverse
 from django.conf import settings
+from django.core.files.base import ContentFile
 from pts.core.utils import get_or_none
 from pts.core.utils import SpaceDelimitedTextField
 from pts.core.utils import verify_signature
@@ -1301,6 +1302,34 @@ class RunningJob(models.Model):
                 date=self.datetime_created)
 
 
+class NewsManager(models.Manager):
+    """
+    A custom :class:`Manager <django.db.models.Manager>` for the
+    :class:`News` model.
+    """
+    def create(self, **kwargs):
+        """
+        Overrides the default create method to allow for easier creation of
+        News with different content backing (DB or file).
+
+        If there is a ``content`` parameter in the kwargs, the news content is
+        saved to the database.
+
+        If there is a ``file_content`` parameter in the kwargs, the news content
+        is saved to a file.
+
+        If none of those parameters are given, the method works as expected.
+        """
+        if 'content' in kwargs:
+            db_content = kwargs.pop('content')
+            kwargs['_db_content'] = db_content
+        if 'file_content' in kwargs:
+            file_content = kwargs.pop('file_content')
+            kwargs['news_file'] = ContentFile(file_content, name='news-file')
+
+        return super(NewsManager, self).create(**kwargs)
+
+
 @python_2_unicode_compatible
 class News(models.Model):
     """
@@ -1322,6 +1351,8 @@ class News(models.Model):
     signed_by = models.ManyToManyField(
         ContributorName,
         related_name='signed_news_set')
+
+    objects = NewsManager()
 
     def __str__(self):
         return self.title
