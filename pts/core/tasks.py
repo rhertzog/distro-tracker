@@ -77,6 +77,13 @@ class BaseTask(six.with_metaclass(PluginRegistry)):
         #: A reference to the job to which this task belongs, if any
         self.job = job
 
+    def is_initial_task(self):
+        """
+        :returns True: If the task is the first task in a job.
+        :returns False: If the task is not the first task in a job.
+        """
+        return len(self.job.job_state.processed_tasks) == 0
+
     def execute(self):
         """
         Performs the actual processing of the task.
