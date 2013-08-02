@@ -18,8 +18,10 @@ from pts.core.utils.plugins import PluginRegistry
 from pts.core.utils.datastructures import DAG
 from pts.core.models import RunningJob
 from django.utils import six
+from django.conf import settings
 
 from collections import defaultdict
+import importlib
 import logging
 import sys
 
@@ -539,6 +541,15 @@ def run_task(initial_task, parameters=None):
     :param parameters: Additional parameters which are given to each task
     before it is executed.
     """
+    # Import tasks implemented by all installed apps
+    for app in settings.INSTALLED_APPS:
+        try:
+            module_name = app + '.' + 'pts_tasks'
+            importlib.import_module(module_name)
+        except ImportError:
+            # The app does not implement PTS tasks.
+            pass
+
     if isinstance(initial_task, six.text_type):
         initial_task = BaseTask.get_task_class_by_name(initial_task)
     job = Job(initial_task)
