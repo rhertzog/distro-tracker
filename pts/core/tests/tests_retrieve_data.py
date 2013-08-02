@@ -853,7 +853,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         """
         qs = Repository.objects.filter(name=repository)
         repo, _ = Repository.objects.get_or_create(name=repository, defaults={
-            'shorthand': repository,
+            'shorthand': repository[:10],
             'suite': 'suite',
             'components': ['component']
         })
