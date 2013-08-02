@@ -28,8 +28,10 @@ def make_temp_directory(suffix=''):
     cleans it up on exit.
     """
     temp_dir_name = tempfile.mkdtemp(suffix=suffix)
-    yield temp_dir_name
-    shutil.rmtree(temp_dir_name)
+    try:
+        yield temp_dir_name
+    finally:
+        shutil.rmtree(temp_dir_name)
 
 
 def create_source_package(arguments):
