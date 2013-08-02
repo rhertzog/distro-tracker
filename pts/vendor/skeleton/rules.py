@@ -285,3 +285,25 @@ def get_binary_package_bug_stats(binary_name):
       to display a tooltip when mousing over the bug count number.
     """
     pass
+
+def create_news_from_email_message(message):
+    """
+    The function provides a way for vendors to customize the news created from
+    received emails.
+
+    The function should create a :class:`pts.core.models.News` model instance
+    for any news items it wishes to generate out of the received email message.
+    The content type of the created :class:`News <pts.core.models.News>` does
+    not have to be ``message/rfc822`` if the created news is only based on
+    information found in the message. It should be set to ``message/rfc822`` if
+    the content of the news is set to the content of the email message to make
+    sure it is rendered appropriately.
+
+    The function :func:`pts.mail_news.process.create_news` can be used to
+    create simple news from the message after determining that it should in
+    fact be created.
+
+    The function should return a list of created :class:`News <pts.core.models.News>`
+    instances or ``None`` if it did not create any.
+    """
+    pass
