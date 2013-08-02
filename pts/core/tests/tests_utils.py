@@ -120,7 +120,7 @@ Content-Transfer-Encoding: 8bit
         Helper method returning a mock SMTP connection object.
         """
         import smtplib
-        return mock.create_autospec(smtplib.SMTP('localhost'), return_value={})
+        return mock.create_autospec(smtplib.SMTP, return_value={})
 
     def test_as_string_returns_bytes(self):
         """
