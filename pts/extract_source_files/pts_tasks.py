@@ -77,7 +77,43 @@ class ExtractSourcePackageFiles(BaseTask):
                     extracted_file=extracted_file,
                     name=file_name)
 
+    def _execute_initial(self):
+        """
+        When the task is directly ran, instead of relying on events to know
+        which packages' source files should be retrieved, the task scans all
+        existing packages and adds any missing source packages for each of
+        them.
+        """
+        # First remove all source files which are no longer to be included.
+        qs = ExtractedSourceFile.objects.exclude(name__in=self.ALL_FILES_TO_EXTRACT)
+        qs.delete()
+
+        # Retrieves the packages and all the associated files with each of them
+        # in only two db queries.
+        source_packages = SourcePackage.objects.all()
+        source_packages.prefetch_related('extracted_source_files')
+
+        # Find the difference of packages and extract only those for each
+        # package
+        for source_package in source_packages:
+            extracted_files = [
+                extracted_file.name
+                for extracted_file in source_package.extracted_source_files.all()
+            ]
+            files_to_extract = [
+                file_name
+                for file_name in self.ALL_FILES_TO_EXTRACT
+                if file_name not in extracted_files
+            ]
+            if files_to_extract:
+                self.extract_files(source_package, files_to_extract)
+
     def execute(self):
+        if self.is_initial_task():
+            return self._execute_initial()
+
+        # When the task is not the initial task, then all the packages it
+        # should process should come from received events.
         new_version_pks = [
             event.arguments['pk']
             for event in self.get_all_events()
