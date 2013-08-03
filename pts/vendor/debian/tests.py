@@ -629,6 +629,12 @@ class DebianNewsFromEmailTest(TestCase):
         """
         return 'Accepted {pkg} {ver} (source all)'.format(pkg=pkg, ver=version)
 
+    def get_removed_from_testing_subject(self, pkg):
+        """
+        Helper method providing the subject of an email from testing watch.
+        """
+        return '{pkg} REMOVED from testing'.format(pkg=pkg)
+
     def test_source_upload_news(self):
         """
         Tests the news created when a notification of a new source upload is
@@ -758,3 +764,48 @@ class DebianNewsFromEmailTest(TestCase):
         self.process_mail()
 
         self.assertEqual(2, News.objects.count())
+
+    def test_testing_watch_news(self):
+        """
+        Tests that an email received from the Testing Watch is turned into a
+        news item.
+        """
+        subject = self.get_removed_from_testing_subject(self.package_name)
+        self.set_subject(subject)
+        content = (
+            "FYI: The status of the {pkg} source package\n"
+            "in Debian's testing distribution has changed.\n\n"
+            "  Previous version: 1.0.0\n"
+            "  Current version: (not in testing)\n"
+            "  Hint: some hint..."
+        ).format(pkg=self.package_name)
+        self.set_message_content(content)
+        self.add_header('X-Testing-Watch-Package', self.package.name)
+
+        self.process_mail()
+
+        self.assertEqual(1, News.objects.count())
+        news = News.objects.all()[0]
+        self.assertEqual(subject, news.title)
+        self.assertIn(content, news.content)
+
+    def test_testing_watch_package_no_exist(self):
+        """
+        Tests that an email received from the Testing Watch which references
+        a package not tracked by the PTS does not create any news items.
+        """
+        subject = self.get_removed_from_testing_subject('no-exist')
+        self.set_subject(subject)
+        content = (
+            "FYI: The status of the {pkg} source package\n"
+            "in Debian's testing distribution has changed.\n\n"
+            "  Previous version: 1.0.0\n"
+            "  Current version: (not in testing)\n"
+            "  Hint: some hint..."
+        ).format(pkg='no-exist')
+        self.set_message_content(content)
+        self.add_header('X-Testing-Watch-Package', 'no-exist')
+
+        self.process_mail()
+
+        self.assertEqual(0, News.objects.count())

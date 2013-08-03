@@ -621,3 +621,21 @@ def create_news_from_email_message(message):
                 content_type='message/rfc822',
                 created_by=news_from))
         return created_news
+    # Testing Watch?
+    elif 'X-Testing-Watch-Package' in message:
+        package_name = message['X-Testing-Watch-Package']
+        package = get_or_none(SourcePackageName, name=package_name)
+        if not package:
+            # This package is not tracked by the PTS
+            return
+        title = message.get('Subject', '')
+        if not title:
+            title = 'Testing Watch Message'
+        return [
+            News.objects.create(
+                title=title,
+                content=message.as_string(),
+                package=package,
+                content_type='message/rfc822',
+                created_by='Britney')
+        ]
