@@ -661,3 +661,100 @@ class DebianNewsFromEmailTest(TestCase):
         self.process_mail()
 
         self.assertEqual(0, News.objects.count())
+
+    def test_dak_rm_news(self):
+        """
+        Tests that a dak rm message creates a news.
+        """
+        subject = 'Removed package(s) from unstable'
+        self.set_subject(subject)
+        content = (
+            'We believe that the bug you reported is now fixed; the following\n'
+            'package(s) have been removed from unstable:\n\n'
+            '{pkg} |  {ver} | source, all'
+        ).format(pkg=self.package_name, ver=self.package.version)
+        self.set_message_content(content)
+        self.add_header('X-DAK', 'dak rm')
+        self.add_header('X-Debian', 'DAK')
+        sender = 'Some Sender <email@domain.com>'
+        self.add_header('Sender', sender)
+
+        self.process_mail()
+
+        self.assertEqual(1, News.objects.count())
+        news = News.objects.all()[0]
+        self.assertEqual(news.package.name, self.package.name)
+        self.assertEqual(news.title, 'Removed {ver} from unstable'.format(
+            ver=self.package.version))
+        self.assertEqual(news.created_by, sender)
+
+    def test_dak_rm_no_package(self):
+        """
+        Tests that a dak rm message referencing a package which the PTS does
+        not track, does not create any news.
+        """
+        subject = 'Removed package(s) from unstable'
+        self.set_subject(subject)
+        content = (
+            'We believe that the bug you reported is now fixed; the following\n'
+            'package(s) have been removed from unstable:\n\n'
+            '{pkg} |  {ver} | source, all'
+        ).format(pkg='does-not-exist', ver='1.0.0')
+        self.set_message_content(content)
+        self.add_header('X-DAK', 'dak rm')
+        self.add_header('X-Debian', 'DAK')
+        sender = 'Some Sender <email@domain.com>'
+        self.add_header('Sender', sender)
+
+        self.process_mail()
+
+        self.assertEqual(0, News.objects.count())
+
+    def test_dak_not_rm(self):
+        """
+        Tests that a message with an X-DAK header different from ``dak rm``
+        does not create any news item.
+        """
+        subject = 'Removed package(s) from unstable'
+        self.set_subject(subject)
+        content = (
+            'We believe that the bug you reported is now fixed; the following\n'
+            'package(s) have been removed from unstable:\n\n'
+            '{pkg} |  {ver} | source, all'
+        ).format(pkg=self.package_name, ver=self.package.version)
+        self.set_message_content(content)
+        self.add_header('X-DAK', 'dak somethingelse')
+        self.add_header('X-Debian', 'DAK')
+        sender = 'Some Sender <email@domain.com>'
+        self.add_header('Sender', sender)
+
+        self.process_mail()
+
+        self.assertEqual(0, News.objects.count())
+
+    def test_multiple_removes(self):
+        """
+        Tests that multiple news items are created when the dak rm message
+        contains multiple remove notifications.
+        """
+        subject = 'Removed package(s) from unstable'
+        self.set_subject(subject)
+        content = (
+            'We believe that the bug you reported is now fixed; the following\n'
+            'package(s) have been removed from unstable:\n\n'
+        )
+        content += (
+            '{pkg} |  {ver} | source, all\n'
+        ).format(pkg=self.package_name, ver=self.package.version)
+        content += (
+            '{pkg} |  {ver} | source, all\n'
+        ).format(pkg=self.package_name, ver='2.0.0')
+        self.set_message_content(content)
+        self.add_header('X-DAK', 'dak rm')
+        self.add_header('X-Debian', 'DAK')
+        sender = 'Some Sender <email@domain.com>'
+        self.add_header('Sender', sender)
+
+        self.process_mail()
+
+        self.assertEqual(2, News.objects.count())

@@ -586,3 +586,38 @@ def create_news_from_email_message(message):
         package = get_or_none(SourcePackageName, name=package_name)
         if package:
             return [create_news(message, package)]
+    # DAK rm?
+    elif 'X-DAK' in message:
+        x_dak = message['X-DAK']
+        katie = x_dak.split()[1]
+
+        if katie != 'rm':
+            # Only rm mails are processed.
+            return
+
+        body = get_decoded_message_payload(message)
+        if not body:
+            # The content cannot be decoded.
+            return
+        # Find all lines giving information about removed source packages
+        re_rmline = re.compile(r"^\s*(\S+)\s*\|\s*(\S+)\s*\|.*source", re.M)
+        source_removals = re_rmline.findall(body)
+        # Find the suite from which the packages have been removed
+        suite = re.search(r"have been removed from (\S+):", body).group(1)
+        news_from = message.get('Sender', '')
+        # Add a news item for each source removal.
+        created_news = []
+        for removal in source_removals:
+            package_name, version = removal
+            package = get_or_none(SourcePackageName, name=package_name)
+            if not package:
+                # This package is not tracked by the PTS
+                continue
+            title = "Removed {ver} from {suite}".format(ver=version, suite=suite)
+            created_news.append(News.objects.create(
+                title=title,
+                content=message.as_string(),
+                package=package,
+                content_type='message/rfc822',
+                created_by=news_from))
+        return created_news
