@@ -135,6 +135,7 @@ INSTALLED_APPS = (
     'pts.dispatch',
     'pts.vendor',
     'pts.vendor.debian',
+    'pts.mail_news',
 )
 
 # A sample logging configuration. The only tangible logging
