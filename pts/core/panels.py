@@ -744,3 +744,12 @@ class BugsPanel(BasePanel):
             return []
 
         return result
+
+class TodosPanel(ListPanel):
+    position = 'center'
+    title = 'todos'
+
+
+class ProblemsPanel(ListPanel):
+    position = 'center'
+    title = 'problems'
