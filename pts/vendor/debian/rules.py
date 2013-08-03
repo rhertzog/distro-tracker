@@ -14,6 +14,8 @@ import urllib
 import requests
 from django.conf import settings
 from pts.core.models import PackageBugStats
+from pts.core.models import News
+from pts.core.models import SourcePackageName
 from pts.core.models import BinaryPackageBugStats
 from pts.dispatch.process import get_keyword_from_address
 from pts.core.utils import get_decoded_message_payload
@@ -21,6 +23,7 @@ from pts.core.utils import get_or_none
 from pts.core.utils.http import HttpCache
 from .models import DebianContributor
 from pts.vendor.common import PluginProcessingError
+from pts.mail_news.process import create_news
 
 
 def get_keyword(local_part, msg):
@@ -562,3 +565,24 @@ def get_binary_package_bug_stats(binary_name):
         for category in stats.stats
         if category['category_name'] in category_descriptions.keys()
     ]
+
+
+def create_news_from_email_message(message):
+    """
+    In Debian's implementation, this function creates news when the received
+    mail's origin is either the testing watch or katie.
+    """
+    subject = message.get("Subject", None)
+    if not subject:
+        return
+    subject_words = subject.split()
+
+    # Source upload?
+    if len(subject_words) > 1 and subject_words[0] in ('Accepted', 'Installed'):
+        if 'source' not in subject:
+            # Only source uploads should be considered.
+            return
+        package_name = subject_words[1]
+        package = get_or_none(SourcePackageName, name=package_name)
+        if package:
+            return [create_news(message, package)]

@@ -17,8 +17,11 @@ from django.test import TestCase, SimpleTestCase
 from django.test.utils import override_settings
 from django.core import mail
 from django.utils.six.moves import mock
+from django.utils.encoding import force_bytes
 from pts.dispatch.tests import DispatchTestHelperMixin, DispatchBaseTest
+from pts.core.models import News
 from pts.core.models import PackageName
+from pts.core.models import SourcePackage
 from pts.core.models import SourcePackageName
 from pts.core.models import Repository
 from pts.core.models import ContributorEmail
@@ -31,6 +34,9 @@ from pts.vendor.debian.rules import get_developer_information_url
 from pts.vendor.debian.tasks import RetrieveDebianMaintainersTask
 from pts.vendor.debian.tasks import RetrieveLowThresholdNmuTask
 from pts.vendor.debian.models import DebianContributor
+from pts.mail_news.process import process
+
+from email.message import Message
 
 import os
 
@@ -589,3 +595,69 @@ Files:
         self.assertEqual('dummy-package', SourcePackageName.objects.all()[0].name)
 
         os.remove(sources_file_path)
+
+
+@override_settings(PTS_VENDOR_RULES='pts.vendor.debian.rules')
+class DebianNewsFromEmailTest(TestCase):
+    """
+    Tests creating Debian-specific news from received emails.
+    """
+    def setUp(self):
+        self.package_name = SourcePackageName.objects.create(name='dummy-package')
+        self.package = SourcePackage.objects.create(
+            source_package_name=self.package_name, version='1.0.0')
+        self.message = Message()
+
+    def set_subject(self, subject):
+        if 'Subject' in self.message:
+           del self.message['Subject']
+        self.message['Subject'] = subject
+
+    def add_header(self, header_name, header_value):
+        self.message[header_name] = header_value
+
+    def set_message_content(self, content):
+        self.message.set_payload(content)
+
+    def process_mail(self):
+        process(force_bytes(self.message.as_string(), 'utf-8'))
+
+    def get_accepted_subject(self, pkg, version):
+        """
+        Helper method returning the subject of an email notifying of a new
+        source upload.
+        """
+        return 'Accepted {pkg} {ver} (source all)'.format(pkg=pkg, ver=version)
+
+    def test_source_upload_news(self):
+        """
+        Tests the news created when a notification of a new source upload is
+        received.
+        """
+        subject = self.get_accepted_subject(
+            self.package_name, self.package.version)
+        self.set_subject(subject)
+        content = 'Content'
+        self.set_message_content(content)
+
+        self.process_mail()
+
+        self.assertEqual(1, News.objects.count())
+        news = News.objects.all()[0]
+        self.assertEqual(news.package.name, self.package.name)
+        self.assertEqual(subject, news.title)
+        self.assertIn(content, news.content)
+
+    def test_source_upload_package_does_not_exist(self):
+        """
+        Tests that no news are created when the notification of a new source
+        upload for a package not tracked by the PTS is received.
+        """
+        subject = self.get_accepted_subject('no-exist', '1.0.0')
+        self.set_subject(subject)
+        content = 'Content'
+        self.set_message_content(content)
+
+        self.process_mail()
+
+        self.assertEqual(0, News.objects.count())
