@@ -21,6 +21,8 @@ from django.utils.encoding import force_bytes
 from pts.core.models import SourcePackageName, SourcePackage
 from pts.core.models import News
 from pts.mail_news.process import process
+from pts.mail_news.management.commands.pts_receive_news import (
+    Command as MailNewsCommand)
 
 from email.message import Message
 
@@ -129,3 +131,16 @@ class BasicNewsGeneration(TestCase):
         self.assertTrue(mock_vendor_call.called)
         # The correct vendor function was asked for?
         self.assertEqual(mock_vendor_call.call_args[0][0], 'create_news_from_email_message')
+
+
+class MailNewsManagementCommandTest(SimpleTestCase):
+    """
+    Tests that the :mod:`pts.mail_news.management.commands.pts_receive_news`
+    management command calls the correct function.
+    """
+    @mock.patch('pts.mail_news.management.commands.pts_receive_news.process')
+    def test_calls_process(self, mock_process):
+        cmd = MailNewsCommand()
+        cmd.input_file = mock.create_autospec(six.BytesIO)
+
+        mock_process.assert_called()
