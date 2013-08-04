@@ -14,6 +14,7 @@ files in the :class:`pts.core.panels.VersionedLinks` panel.
 from __future__ import unicode_literals
 from pts.core.panels import VersionedLinks
 from pts.core.models import ExtractedSourceFile
+from django.utils.safestring import mark_safe
 
 
 class SourceFilesLinkProvider(VersionedLinks.LinkProvider):
@@ -22,10 +23,10 @@ class SourceFilesLinkProvider(VersionedLinks.LinkProvider):
     :class:`pts.core.panels.VersionedLinks` panel.
     """
     icons = [
-        'changelog',
-        'copyright',
-        'rules',
-        'control',
+        mark_safe('<i class="icon-plus-sign" title="changelog"></i>'),
+        mark_safe('<i class="icon-pencil" title="copyright"></i>'),
+        mark_safe('<i class="icon-cog" title="rules"></i>'),
+        mark_safe('<i class="icon-info-sign" title="control"></i>'),
     ]
 
     _file_names =[
