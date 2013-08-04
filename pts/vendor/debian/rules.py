@@ -349,6 +349,12 @@ def get_bug_tracker_url(package_name, package_type, category_name):
             'pend-inc': 'fixed',
             'repeatmerged': 'no'
         },
+        'patch': {
+            'include': 'tags:patch',
+            'exclude': 'tags:pending',
+            'pend-exc': 'done',
+            'repeatmerged': 'no',
+        },
         'all-merged': {
             'repeatmerged': 'yes',
         },
@@ -386,6 +392,12 @@ def get_bug_tracker_url(package_name, package_type, category_name):
             'pend-inc': 'fixed',
             'repeatmerged': 'yes'
         },
+        'patch-merged': {
+            'include': 'tags:patch',
+            'exclude': 'tags:pending',
+            'pend-exc': 'done',
+            'repeatmerged': 'yes',
+        },
     }
     if category_name not in URL_PARAMETERS:
         return
@@ -408,7 +420,7 @@ def get_bug_tracker_url(package_name, package_type, category_name):
 
     return (
         domain +
-        '/cgi-bin/pkgreport.cgi?' +
+        'cgi-bin/pkgreport.cgi?' +
         urllib.urlencode(query_parameters)
     )
 
