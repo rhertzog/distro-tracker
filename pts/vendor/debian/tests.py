@@ -32,10 +32,10 @@ from pts.vendor.debian.rules import get_package_information_site_url
 from pts.vendor.debian.rules import get_maintainer_extra
 from pts.vendor.debian.rules import get_uploader_extra
 from pts.vendor.debian.rules import get_developer_information_url
-from pts.vendor.debian.tasks import RetrieveDebianMaintainersTask
-from pts.vendor.debian.tasks import RetrieveLowThresholdNmuTask
+from pts.vendor.debian.pts_tasks import RetrieveDebianMaintainersTask
+from pts.vendor.debian.pts_tasks import RetrieveLowThresholdNmuTask
 from pts.vendor.debian.models import DebianContributor
-from pts.vendor.debian.tasks import UpdateLintianStatsTask
+from pts.vendor.debian.pts_tasks import UpdateLintianStatsTask
 from pts.vendor.debian.models import LintianStats
 from pts.mail_news.process import process
 
@@ -790,7 +790,7 @@ class DebianNewsFromEmailTest(TestCase):
 
 class UpdateLintianStatsTaskTest(TestCase):
     """
-    Tests for the :class:`pts.vendor.debian.tasks.UpdateLintianStatsTask` task.
+    Tests for the :class:`pts.vendor.debian.pts_tasks.UpdateLintianStatsTask` task.
     """
     def setUp(self):
         self.package_name = SourcePackageName.objects.create(name='dummy-package')
