@@ -19,12 +19,13 @@ from pts import vendor
 from pts.core.models import PackageExtractedInfo
 from pts.core.models import MailingList
 from pts.core.models import News
-from pts.core.models import ExtractedSourceFile
 from pts.core.models import BinaryPackageBugStats
 from debian.debian_support import AptPkgVersion
 from collections import defaultdict
 
 import importlib
+import logging
+logger = logging.getLogger(__name__)
 
 
 class BasePanel(six.with_metaclass(PluginRegistry)):
@@ -593,7 +594,15 @@ class ListPanel(BasePanel, six.with_metaclass(ListPanelMeta)):
         items = []
         for panel_provider_class in panel_providers:
             panel_provider = panel_provider_class(self.package)
-            items.extend(panel_provider.get_panel_items())
+            try:
+                new_panel_items = panel_provider.get_panel_items()
+            except:
+                logger.exception(
+                    'Panel provider {provider}: error generating items.'.format(
+                        provider=panel_provider.__class__))
+                continue
+            if new_panel_items is not None:
+                items.extend(new_panel_items)
         return items
 
     @property
