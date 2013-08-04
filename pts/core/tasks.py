@@ -48,7 +48,9 @@ class BaseTask(six.with_metaclass(PluginRegistry)):
     ..note::
       Subclasses of this class are automatically registered when created which
       allows the :class:`BaseTask` to have the full picture of all tasks and
-      their mutual dependencies.
+      their mutual dependencies. However, to make sure the subclass is always
+      loaded, make sure to place it in a ``pts_tasks`` module at the top level
+      of a Django app.
     """
     DEPENDS_ON_EVENTS = ()
     PRODUCES_EVENTS = ()

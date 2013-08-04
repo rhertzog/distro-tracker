@@ -123,6 +123,11 @@ of strings giving names of events which the task produces and depends on,
 respectively. The :meth:`execute() <pts.core.tasks.BaseTask.execute>` method
 implements the task's functionality.
 
+.. note::
+   All task classes should be placed in a module called ``pts_tasks`` found at
+   the top level of an installed Django app. Tasks in apps which are not
+   installed will never be run.
+
 When running a task, a :class:`pts.core.tasks.Job` instance is created which
 keeps track of raised events, completed tasks and the order in which the tasks
 should run. It stores its state using the :class:`pts.core.tasks.JobState`
@@ -201,6 +206,11 @@ information to the page.
 It is recommended that the panel inherits from the ``core/panels/panel.html``
 template and fills in its contents to the blocks defined in the template, so
 that the page remains visually consistent. This is not mandatory, however.
+
+.. note::
+   All panel classes should be placed in a module called ``pts_tasks`` found at
+   the top level of an installed Django app. Panels from apps which are not
+   installed will never appear on a package page.
 
 The PTS implements some general panels which could be used by any vendor.
 Refer to the documentation of each panel in :mod:`pts.core.panels` to see

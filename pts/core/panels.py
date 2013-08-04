@@ -34,6 +34,10 @@ class BasePanel(six.with_metaclass(PluginRegistry)):
 
     To include a panel on the package page, users only need to create a
     subclass and implement the necessary properties and methods.
+
+    .. note::
+       To make sure the subclass is loaded, make sure to put it in a
+       ``pts_panels`` module at the top level of a Django app.
     """
     #: A list of available positions
     # NOTE: This is a good candidate for Python3.4's Enum.
