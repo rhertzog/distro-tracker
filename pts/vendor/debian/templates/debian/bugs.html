@@ -10,7 +10,15 @@
     {% for category in panel.context.categories %}
     <div class="row-fluid">
     <li class="list-group-item">
-        <div class="list-item-key"><b><span class="has-tooltip" data-title="{{ category.description }}" data-toggle="tooltip">{{ category.display_name }}:</span></b></div>
+        <div class="list-item-key">
+            {% if category.display_name == "gift" %}
+            <a href="https://wiki.debian.org/qa.debian.org/GiftTag">
+            {% endif %}
+            <b><span class="has-tooltip" data-title="{{ category.description }}" data-toggle="tooltip">{{ category.display_name }}:</span></b>
+            {% if category.display_name == "gift" %}
+            </a>
+            {% endif %}
+        </div>
         <div class="list-item-value">
             <span>
             {% if category.url %}

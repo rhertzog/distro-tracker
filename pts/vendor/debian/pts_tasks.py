@@ -290,6 +290,13 @@ class UpdatePackageBugStats(BaseTask):
         except:
             logger.exception("Could not get bugs tagged help")
 
+        # Add in gift bugs from the BTS SOAP interface
+        try:
+            gift_bugs = self._get_tagged_bug_stats('gift', 'debian-qa@lists.debian.org')
+            self._extend_bug_stats(bug_stats, help_bugs, 'help')
+        except:
+            logger.exception("Could not get bugs tagged gift")
+
         with transaction.commit_on_success():
             # Clear previous stats
             PackageBugStats.objects.all().delete()

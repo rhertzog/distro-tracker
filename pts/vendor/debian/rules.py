@@ -361,6 +361,10 @@ def get_bug_tracker_url(package_name, package_type, category_name):
             'pend-exc': 'fixed',
             'pend-exc': 'done',
         },
+        'gift': {
+            'users': 'debian-qa@lists.debian.org',
+            'tag': 'gift',
+        },
         'all-merged': {
             'repeatmerged': 'yes',
         },
@@ -471,7 +475,13 @@ def get_bug_panel_stats(package_name):
             'display_name': 'F&P',
             'description': 'Fixed and Pending',
         },
+        'gift': {
+            'display_name': 'gift',
+        }
     }
+    # Some bug categories should not be included in the count.
+    exclude_from_count = ('gift',)
+
     stats = bug_stats.stats
     categories = []
     total, total_merged = 0, 0
@@ -486,17 +496,19 @@ def get_bug_panel_stats(package_name):
             'bug_count': category['bug_count'],
         }
         # Add merged bug count
-        if category['merged_count'] != category['bug_count']:
-            category_stats['merged'] = {
-                'bug_count': category['merged_count'],
-            }
+        if 'merged_count' in category:
+            if category['merged_count'] != category['bug_count']:
+                category_stats['merged'] = {
+                    'bug_count': category['merged_count'],
+                }
         # Add descriptions
         category_stats.update(category_descriptions[category_name])
-
         categories.append(category_stats)
+
         # Keep a running total of all and all-merged bugs
-        total += category['bug_count']
-        total_merged += category['merged_count']
+        if category_name not in exclude_from_count:
+            total += category['bug_count']
+            total_merged += category.get('merged_count', 0)
 
     # Add another "category" with the bug totals.
     all_category = {
