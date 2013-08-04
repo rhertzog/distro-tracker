@@ -17,6 +17,8 @@ from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 
 from pts.core.utils import SpaceDelimitedTextField
+from pts.core.models import PackageName
+from jsonfield import JSONField
 
 
 @python_2_unicode_compatible
@@ -31,3 +33,16 @@ class DebianContributor(models.Model):
 
     def __str__(self):
         return 'Debian contributor <{email}>'.format(email=self.email)
+
+
+@python_2_unicode_compatible
+class LintianStats(models.Model):
+    """
+    Model for lintian stats of packages.
+    """
+    package = models.OneToOneField(PackageName, related_name='lintian_stats')
+    stats = JSONField()
+
+    def __str__(self):
+        return 'Lintian stats for package {package}'.format(
+            package=self.package)

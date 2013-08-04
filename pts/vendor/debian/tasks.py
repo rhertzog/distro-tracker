@@ -22,6 +22,7 @@ from pts.core.models import PackageBugStats
 from pts.core.models import BinaryPackageBugStats
 from pts.core.models import PackageName
 from pts.core.models import BinaryPackageName
+from pts.vendor.debian.models import LintianStats
 from pts.core.utils.http import HttpCache
 from .models import DebianContributor
 import re
@@ -278,3 +279,63 @@ class UpdatePackageBugStats(BaseTask):
         # resource (with a different structure) than stats for binary packages.
         self.update_source_and_pseudo_bugs()
         self.update_binary_bugs()
+
+
+class UpdateLintianStatsTask(BaseTask):
+    """
+    Updates packages' lintian stats.
+    """
+    def __init__(self, force_update=False, *args, **kwargs):
+        super(UpdateLintianStatsTask, self).__init__(*args, **kwargs)
+        self.force_update = force_update
+
+    def set_parameters(self, parameters):
+        if 'force_update' in parameters:
+            self.force_update = parameters['force_update']
+
+    def get_lintian_stats(self):
+        url = 'http://lintian.debian.org/qa-list.txt'
+        cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
+        response, updated = cache.update(url, force=self.force_update)
+        response.raise_for_status()
+        if not updated:
+            return
+
+        all_stats = {}
+        categories = (
+            'errors',
+            'warnings',
+            'pedantics',
+            'experimentals',
+            'overriddens',
+        )
+        for line in response.iter_lines():
+            package, stats = line.split(None, 1)
+            stats = stats.split()
+            try:
+                all_stats[package] = {
+                    category: int(count)
+                    for count, category in zip(stats, categories)
+                }
+            except ValueError:
+                logger.exception(
+                    'Failed to parse lintian information for {pkg}: {line}'.format(
+                        pkg=package, line=line))
+                continue
+
+        return all_stats
+
+    def execute(self):
+        all_lintian_stats = self.get_lintian_stats()
+        if not all_lintian_stats:
+            return
+
+        # Discard all old stats
+        LintianStats.objects.all().delete()
+        # Create all the new stats in a single SQL query.
+        packages = PackageName.objects.filter(name__in=all_lintian_stats.keys())
+        stats = [
+            LintianStats(package=package, stats=all_lintian_stats[package.name])
+            for package in packages
+        ]
+        LintianStats.objects.bulk_create(stats)

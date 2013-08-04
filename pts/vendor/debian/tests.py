@@ -35,6 +35,8 @@ from pts.vendor.debian.rules import get_developer_information_url
 from pts.vendor.debian.tasks import RetrieveDebianMaintainersTask
 from pts.vendor.debian.tasks import RetrieveLowThresholdNmuTask
 from pts.vendor.debian.models import DebianContributor
+from pts.vendor.debian.tasks import UpdateLintianStatsTask
+from pts.vendor.debian.models import LintianStats
 from pts.mail_news.process import process
 
 from email.message import Message
@@ -784,3 +786,146 @@ class DebianNewsFromEmailTest(TestCase):
         self.process_mail()
 
         self.assertEqual(0, News.objects.count())
+
+
+class UpdateLintianStatsTaskTest(TestCase):
+    """
+    Tests for the :class:`pts.vendor.debian.tasks.UpdateLintianStatsTask` task.
+    """
+    def setUp(self):
+        self.package_name = SourcePackageName.objects.create(name='dummy-package')
+        self.package = SourcePackage(
+            source_package_name=self.package_name, version='1.0.0')
+
+    def run_task(self):
+        """
+        Runs the lintian stats update task.
+        """
+        task = UpdateLintianStatsTask()
+        task.execute()
+
+    def assert_correct_category_stats(self, stats, expected_stats):
+        """
+        Helper method which asserts that the given stats match the expected stats.
+
+        :param stats: Mapping category names to count
+        :type stats: dict
+        :param expected_stats: A list of counts as given by the Web lintian
+            resource
+        :type expected_stats: list
+        """
+        categories = (
+            'errors',
+            'warnings',
+            'pedantics',
+            'experimentals',
+            'overriddens',
+        )
+        for category, count in zip(categories, expected_stats):
+            self.assertEqual(stats[category], count)
+
+    @mock.patch('pts.core.utils.http.requests')
+    def test_stats_created(self, mock_requests):
+        """
+        Tests that stats are created for a package that previously did not have
+        any lintian stats.
+        """
+        set_mock_response(mock_requests, text="dummy-package 1 2 3 4 5 6")
+
+        self.run_task()
+
+        # The stats have been created
+        self.assertEqual(1, LintianStats.objects.count())
+        # They are associated with the correct package.
+        stats = LintianStats.objects.all()[0]
+        self.assertEqual(stats.package.name, 'dummy-package')
+        # The category counts themselves are correct
+        self.assert_correct_category_stats(stats.stats, [1, 2, 3, 4, 5, 6])
+
+    @mock.patch('pts.core.utils.http.requests')
+    def test_stats_updated(self, mock_requests):
+        """
+        Tests that when a package already had associated linian stats, they are
+        correctly updated after running the task.
+        """
+        set_mock_response(mock_requests, text="dummy-package 6 5 4 3 2 1")
+        # Create the pre-existing stats for the package
+        LintianStats.objects.create(
+            package=self.package_name, stats=[1, 2, 3, 4, 5, 6])
+
+        self.run_task()
+
+        # Still only one lintian stats object
+        self.assertEqual(1, LintianStats.objects.count())
+        # The package is still correct
+        stats = LintianStats.objects.all()[0]
+        self.assertEqual(stats.package.name, 'dummy-package')
+        # The stats have been updated
+        self.assert_correct_category_stats(stats.stats, [6, 5, 4, 3, 2, 1])
+
+    @mock.patch('pts.core.utils.http.requests')
+    def test_stats_created_multiple_packages(self, mock_requests):
+        """
+        Tests that stats are correctly creatd when there are stats for
+        multiple packages in the response.
+        """
+        # Create a second package.
+        SourcePackageName.objects.create(name='other-package')
+        response = (
+            "dummy-package 6 5 4 3 2 1\n"
+            "other-package 1 2 3 4 5 6"
+        )
+        set_mock_response(mock_requests, text=response)
+
+        self.run_task()
+
+        # Stats created for both packages
+        self.assertEqual(2, LintianStats.objects.count())
+        all_names = [stats.package.name for stats in LintianStats.objects.all()]
+        self.assertIn('dummy-package', all_names)
+        self.assertIn('other-package', all_names)
+
+    @mock.patch('pts.core.utils.http.requests')
+    def test_unknown_package(self, mock_requests):
+        """
+        Tests that when an unknown package is encountered, no stats are created.
+        """
+        set_mock_response(mock_requests, text="no-exist 1 2 3 4 5 6")
+
+        self.run_task()
+
+        # There are no stats
+        self.assertEqual(0, LintianStats.objects.count())
+
+    @mock.patch('pts.core.utils.http.requests')
+    def test_parse_error(self, mock_requests):
+        """
+        Tests that when a parse error is encountered for a single package, it
+        is skipped without affected the rest of the packages in the response.
+        """
+        # Create a second package.
+        SourcePackageName.objects.create(name='other-package')
+        response = (
+            "dummy-package 6 5 4 3 2 1\n"
+            "other-package 1 2 a 4 5 6"
+        )
+        set_mock_response(mock_requests, text=response)
+
+        self.run_task()
+
+        # Only one package has stats
+        self.assertEqual(1, LintianStats.objects.count())
+        stats = LintianStats.objects.all()[0]
+        self.assertEqual(stats.package.name, 'dummy-package')
+
+    @mock.patch('pts.core.utils.http.requests')
+    def test_correct_url_used(self, mock_requests):
+        """
+        Tests that lintian stats are retrieved from the correct URL.
+        """
+        self.run_task()
+
+        # We only care about the URL used, not the headers or other arguments
+        self.assertEqual(
+            mock_requests.get.call_args[0][0],
+            'http://lintian.debian.org/qa-list.txt')
