@@ -1,0 +1,11 @@
+{% with lintian_stats=item.context.lintian_stats %}
+<a href="{{ item.context.lintian_url }}" title="report about packaging issues spotted by lintian">lintian</a>
+{% if lintian_stats.errors or lintian_stats.warnings %}
+{% with warnings=lintian_stats.warnings|default:"0" %}
+{% with errors=lintian_stats.errors|default:"0" %}
+<small>(<span title="errors">{{ errors }}</span>, <span title="warnings">{{ warnings }}</span>)</small>
+{% endwith %}
+{% endwith %}
+{% endif %}
+{% endwith %}
+

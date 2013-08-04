@@ -873,6 +873,10 @@ class ContributorName(models.Model):
     class Meta:
         unique_together = ('contributor_email', 'name')
 
+    @cached_property
+    def email(self):
+        return self.contributor_email.email
+
     def __str__(self):
         return "{name} <{email}>".format(
             name=self.name,
