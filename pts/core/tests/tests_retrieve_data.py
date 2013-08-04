@@ -32,6 +32,7 @@ from pts.core.tasks import Event
 from pts.core.retrieve_data import GenerateNewsFromRepositoryUpdates
 from pts.core.retrieve_data import UpdateRepositoriesTask
 from pts.core.retrieve_data import retrieve_repository_info
+from pts.core.tests.common import set_mock_response
 
 from pts.core.tasks import BaseTask
 from .common import create_source_package
@@ -215,16 +216,6 @@ class RetrievePseudoPackagesTest(TestCase):
 
 
 class RetrieveRepositoryInfoTests(TestCase):
-    def set_mock_response(self, mock_requests, text="", status_code=200):
-        """
-        Helper method which sets a mock response to the given mock_requests
-        module.
-        """
-        mock_response = mock_requests.models.Response()
-        mock_response.status_code = status_code
-        mock_response.text = text
-        mock_requests.get.return_value = mock_response
-
     @mock.patch('pts.core.admin.requests')
     def test_sources_list_entry_validation(self, mock_requests):
         from pts.core.admin import validate_sources_list_entry
@@ -239,7 +230,7 @@ class RetrieveRepositoryInfoTests(TestCase):
         with self.assertRaises(ValidationError):
             validate_sources_list_entry('deb thisisnotaurl part3 part4')
         ## Make sure requests returns 404
-        self.set_mock_response(mock_requests, status_code=404)
+        set_mock_response(mock_requests, status_code=404)
         # There is no Release file at the given URL
         with self.assertRaises(ValidationError):
             validate_sources_list_entry('deb http://does-not-matter.com/ part3 part4')
@@ -263,7 +254,7 @@ class RetrieveRepositoryInfoTests(TestCase):
             'Version: 7.1\n'
             'Description: Debian 7.1 Released 15 June 2013\n'
         )
-        self.set_mock_response(mock_requests, mock_response_text)
+        set_mock_response(mock_requests, mock_response_text)
 
         repository_info = retrieve_repository_info(
             'deb http://repository.com/ stable')
@@ -293,7 +284,7 @@ class RetrieveRepositoryInfoTests(TestCase):
             'Version: 7.1\n'
             'Description: Debian 7.1 Released 15 June 2013\n'
         )
-        self.set_mock_response(mock_requests, mock_response_text)
+        set_mock_response(mock_requests, mock_response_text)
 
         from pts.core.retrieve_data import InvalidRepositoryException
         with self.assertRaises(InvalidRepositoryException):
@@ -311,7 +302,7 @@ class RetrieveRepositoryInfoTests(TestCase):
             'Version: 7.1\n'
             'Description: Debian 7.1 Released 15 June 2013\n'
         )
-        self.set_mock_response(mock_requests, mock_response_text)
+        set_mock_response(mock_requests, mock_response_text)
 
         repository_info = retrieve_repository_info(
             'deb http://repository.com/ stable')

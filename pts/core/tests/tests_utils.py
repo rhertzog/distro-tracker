@@ -20,7 +20,7 @@ from django.core import mail
 from django.utils import six
 from django.utils.http import http_date
 from django.utils.six.moves import mock
-
+from pts.core.tests.common import set_mock_response
 from pts.core.utils import verp
 from pts.core.utils import message_from_bytes
 from pts.core.utils import SpaceDelimitedTextField
@@ -709,19 +709,11 @@ Section: libs
 
 class HttpCacheTest(SimpleTestCase):
     def set_mock_response(self, mock_requests, headers=None, status_code=200):
-        """
-        Helper method which sets a mock response to the given mock_requests
-        module.
-        """
-        if headers is None:
-            headers = {}
-        mock_response = mock_requests.models.Response()
-        mock_response.status_code = status_code
-        mock_response.ok = status_code < 400
-        mock_response.content = self.response_content
-        mock_response.headers = headers
-
-        mock_requests.get.return_value = mock_response
+        set_mock_response(
+            mock_requests,
+            text=self.response_content.decode('utf-8'),
+            headers=headers,
+            status_code=status_code)
 
     def setUp(self):
         # Set up a cache directory to use in the tests

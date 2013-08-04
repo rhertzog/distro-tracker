@@ -77,3 +77,28 @@ def create_source_package(arguments):
 
     src_pkg.save()
     return src_pkg
+
+
+def set_mock_response(mock_requests, text="", headers=None, status_code=200):
+    """
+    Helper method which sets a mock response to the given mock requests
+    module.
+
+    It takes care to correctly set the return value of all useful requests
+    module functions.
+
+    :param mock_requests: A mock requests module.
+    :param text: The text of the response.
+    :param headers: The headers of the response.
+    :param status_code: The status code of the response.
+    """
+    if headers is None:
+        headers = {}
+    mock_response = mock_requests.models.Response()
+    mock_response.headers = headers
+    mock_response.status_code = status_code
+    mock_response.ok = status_code < 400
+    mock_response.text = text
+    mock_response.content = text.encode('utf-8')
+    mock_response.iter_lines.return_value = text.splitlines()
+    mock_requests.get.return_value = mock_response

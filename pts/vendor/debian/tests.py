@@ -25,6 +25,7 @@ from pts.core.models import SourcePackage
 from pts.core.models import SourcePackageName
 from pts.core.models import Repository
 from pts.core.models import ContributorEmail
+from pts.core.tests.common import set_mock_response
 from pts.core.tasks import run_task
 from pts.core.retrieve_data import UpdateRepositoriesTask
 from pts.vendor.debian.rules import get_package_information_site_url
@@ -283,26 +284,13 @@ class GetDeveloperInformationSiteUrlTest(SimpleTestCase):
 
 
 class RetrieveLowThresholdNmuTest(TestCase):
-    def set_mock_response(self, mock_requests, text="", status_code=200):
-        """
-        Helper method which sets a mock response to the given mock_requests
-        module.
-        """
-        mock_response = mock_requests.models.Response()
-        mock_response.status_code = status_code
-        mock_response.ok = status_code < 400
-        mock_response.text = text
-        mock_response.content = text.encode('utf-8')
-        mock_response.iter_lines.return_value = text.splitlines()
-        mock_requests.get.return_value = mock_response
-
     @mock.patch('pts.core.utils.http.requests')
     def test_developer_did_not_exist(self, mock_requests):
         """
         Tests updating the list of developers that allow the low threshold
         NMU when the developer did not previously exist in the database.
         """
-        self.set_mock_response(mock_requests,
+        set_mock_response(mock_requests,
             "Text text text\n"
             "text more text...\n"
             " 1. [[DeveloperName|Name]] - "
@@ -323,7 +311,7 @@ class RetrieveLowThresholdNmuTest(TestCase):
         NMU when the developer was previously registered in the database.
         """
         email = ContributorEmail.objects.create(email='dummy@debian.org')
-        self.set_mock_response(mock_requests,
+        set_mock_response(mock_requests,
             "Text text text\n"
             "text more text...\n"
             " 1. [[DeveloperName|Name]] - "
@@ -347,7 +335,7 @@ class RetrieveLowThresholdNmuTest(TestCase):
         email = ContributorEmail.objects.create(email='dummy@debian.org')
         DebianContributor.objects.create(email=email,
                                          agree_with_low_threshold_nmu=True)
-        self.set_mock_response(mock_requests,
+        set_mock_response(mock_requests,
             "Text text text\n"
             "text more text...\n"
             " 1. [[DeveloperName|Name]] - "
@@ -362,19 +350,6 @@ class RetrieveLowThresholdNmuTest(TestCase):
 
 
 class RetrieveDebianMaintainersTest(TestCase):
-    def set_mock_response(self, mock_requests, text="", status_code=200):
-        """
-        Helper method which sets a mock response to the given mock_requests
-        module.
-        """
-        mock_response = mock_requests.models.Response()
-        mock_response.status_code = status_code
-        mock_response.ok = status_code < 400
-        mock_response.content = text.encode('utf-8')
-        mock_response.text = text
-        mock_response.iter_lines.return_value = text.splitlines()
-        mock_requests.get.return_value = mock_response
-
     @mock.patch('pts.core.utils.http.requests')
     def test_developer_did_not_exist(self, mock_requests):
         """
@@ -384,7 +359,7 @@ class RetrieveDebianMaintainersTest(TestCase):
         Tests updating the list of developers that allow the low threshold
         NMU when the developer did not previously exist in the database.
         """
-        self.set_mock_response(mock_requests,
+        set_mock_response(mock_requests,
             "Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
             "Uid: Dummy Developer <dummy@debian.org>\n"
             "Allow: dummy-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E),\n"
@@ -409,7 +384,7 @@ class RetrieveDebianMaintainersTest(TestCase):
         in the database.
         """
         ContributorEmail.objects.create(email='dummy@debian.org')
-        self.set_mock_response(mock_requests,
+        set_mock_response(mock_requests,
             "Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
             "Uid: Dummy Developer <dummy@debian.org>\n"
             "Allow: dummy-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E),\n"
@@ -439,7 +414,7 @@ class RetrieveDebianMaintainersTest(TestCase):
                                          is_debian_maintainer=True,
                                          allowed_packages=['one'])
 
-        self.set_mock_response(mock_requests,
+        set_mock_response(mock_requests,
             "Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
             "Uid: Dummy Developer <dummy@debian.org>\n"
             "Allow: dummy-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E),\n"
@@ -467,7 +442,7 @@ class RetrieveDebianMaintainersTest(TestCase):
                                          is_debian_maintainer=True,
                                          allowed_packages=['one'])
 
-        self.set_mock_response(mock_requests,
+        set_mock_response(mock_requests,
             "Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
             "Uid: Dummy Developer <different-developer@debian.org>\n"
             "Allow: dummy-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E),\n"
