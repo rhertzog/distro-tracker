@@ -26,6 +26,7 @@ from pts.vendor.debian.models import LintianStats
 from pts.core.utils.http import HttpCache
 from .models import DebianContributor
 import re
+import SOAPpy
 from debian import deb822
 
 import logging
@@ -184,6 +185,68 @@ class UpdatePackageBugStats(BaseTask):
             return
         return response
 
+    def _get_tagged_bug_stats(self, tag, user=None):
+        """
+        Using the BTS SOAP interface, retrieves the statistics of bugs with a
+        particular tag.
+
+        :param tag: The tag for which the statistics are required.
+        :type tag: string
+        :param user: The email of the user who tagged the bug with the given
+            tag.
+        :type user: string
+
+        :returns: A dict mapping package names to the count of bugs with the
+            given tag.
+        """
+        url = 'http://bugs.debian.org/cgi-bin/soap.cgi'
+        namespace = 'Debbugs/SOAP'
+        server = SOAPpy.SOAPProxy(url, namespace)
+        if user:
+            bugs = server.get_usertag(user, tag)
+            bugs = bugs[0]
+        else:
+            bugs = server.get_bugs('tag', tag)
+
+        # Match each retrieved bug ID to a package and then find the aggregate
+        # count for each package.
+        bug_stats = {}
+        statuses = server.get_status(bugs)
+        statuses = statuses[0]
+        for status in statuses:
+            status = status['value']
+            if status['done'] or status['fixed'] or status['pending'] == 'fixed':
+                continue
+
+            package_name = status['package']
+            bug_stats.setdefault(package_name, 0)
+            bug_stats[package_name] += 1
+
+        return bug_stats
+
+    def _extend_bug_stats(self, bug_stats, extra_stats, category_name):
+        """
+        Helper method which adds extra bug stats to an already existing list of
+        stats.
+
+        :param bug_stats: An already existing list of bug stats. Maps package
+            names to list of bug category descriptions.
+        :type bug_stats: dict
+        :param extra_stats: Extra bug stats which should be added to
+            ``bug_stats``. Maps package names to integers representing bug
+            counts.
+        :type extra_stats: dict
+        :param category_name: The name of the bug category which is being added
+        :type category_name: string
+        """
+        for package, count in extra_stats.items():
+            bug_stats.setdefault(package, [])
+            bug_stats[package].append({
+                'category_name': category_name,
+                'bug_count': count,
+            })
+
+
     def update_source_and_pseudo_bugs(self):
         """
         Performs the update of bug statistics for source and pseudo packages.
@@ -219,6 +282,13 @@ class UpdatePackageBugStats(BaseTask):
                 for category_name, (bug_count, merged_count) in zip(
                     self.bug_categories, zip(bug_counts[::2], bug_counts[1::2]))
             ]
+
+        # Add in help bugs from the BTS SOAP interface
+        try:
+            help_bugs = self._get_tagged_bug_stats('help')
+            self._extend_bug_stats(bug_stats, help_bugs, 'help')
+        except:
+            logger.exception("Could not get bugs tagged help")
 
         with transaction.commit_on_success():
             # Clear previous stats
