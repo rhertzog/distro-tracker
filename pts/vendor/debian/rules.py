@@ -355,6 +355,12 @@ def get_bug_tracker_url(package_name, package_type, category_name):
             'pend-exc': 'done',
             'repeatmerged': 'no',
         },
+        'help': {
+            'tag': 'help',
+            'pend-exc': 'pending-fixed',
+            'pend-exc': 'fixed',
+            'pend-exc': 'done',
+        },
         'all-merged': {
             'repeatmerged': 'yes',
         },

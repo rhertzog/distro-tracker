@@ -55,6 +55,33 @@ class DebianBugTodos(TodosPanel.ItemProvider):
         return items
 
 
+class DebianBugProblems(ProblemsPanel.ItemProvider):
+    def get_panel_items(self):
+        items = []
+        try:
+            bug_stats = self.package.bug_stats.stats
+        except PackageBugStats.DoesNotExist:
+            return []
+        # Find the statistics on the help bug category
+        patch_bug_stats = next((
+            category
+            for category in bug_stats
+            if category['category_name'] == 'help'),
+            None
+        )
+        if patch_bug_stats and patch_bug_stats['bug_count'] > 0:
+            items.append(
+                TemplatePanelItem("debian/help-bugs-problem.html", {
+                    'bug_stats': patch_bug_stats,
+                    'url': vendor.call(
+                        'get_bug_tracker_url',
+                        self.package.name, 'source', 'help')[0],
+                })
+            )
+
+        return items
+
+
 
 class StandardsVersionTodo(TodosPanel.ItemProvider):
     """
