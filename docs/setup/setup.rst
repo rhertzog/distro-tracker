@@ -14,6 +14,8 @@ The Package Tracking System currently depends on the following Debian packages:
 - python-debian
 - python-apt
 - python-gpgme
+- pyyaml
+- python-soappy
 
 For Python2.7, the following additional packages are required:
 
