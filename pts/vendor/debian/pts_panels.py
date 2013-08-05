@@ -14,6 +14,7 @@ from __future__ import unicode_literals
 from pts.core.models import PackageBugStats
 from pts.core.utils import get_or_none
 from pts.core.models import SourcePackageName
+from pts.core.panels import BasePanel
 from pts.core.panels import LinksPanel
 from pts.core.panels import TodosPanel
 from pts.core.panels import ProblemsPanel
@@ -222,3 +223,15 @@ class LintianTodo(TodosPanel.ItemProvider):
             ]
 
         return []
+
+
+class TransitionsPanel(BasePanel):
+    template_name = 'debian/transitions-panel.html'
+    position = 'center'
+    title = 'testing migrations'
+
+    @property
+    def context(self):
+        return {
+            'transitions': self.package.package_transitions.all(),
+        }

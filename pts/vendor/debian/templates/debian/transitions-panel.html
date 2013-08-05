@@ -1,0 +1,42 @@
+{% extends 'core/panels/panel.html' %}
+
+{% block panel-body %}
+<ul class="list-group list-group-flush">
+    {% for transition in panel.context.transitions %}
+    <li class="list-group-item">
+        {% if transition.status == 'planned' %}
+        <span>This package will soon be part of the <a href="http://release.debian.org/transitions/html/{{ transition.transition_name }}.html">{{ transition.transition_name }}</a> transition. You might want to ensure that your package is ready for it.</span>
+        {% elif transition.status == 'ongoing' %}
+        <span>This package is part of the ongoing testing transition known as <a href="http://release.debian.org/transitions/html/{{ transition.transition_name }}.html">{{ transition.transition_name }}</a>.</span>
+        {% if not transition.reject %}
+        <span>
+          Please avoid uploads unrelated to this transition, they would
+          likely delay it and require supplementary work from the release
+          managers. On the other hand, if your package has problems
+          preventing it to migrate to testing, please fix them
+          as soon as possible.
+        </span>
+        {% endif %}
+        {% else %}
+        {{ transition }}
+        {% endif %}
+
+        <span>
+          You can probably find supplementary information in the
+          <a href="http://lists.debian.org/debian-release/">debian-release
+          archives</a> or in the corresponding
+          <a href="http://bugs.debian.org/cgi-bin/pkgreport.cgi?users=release.debian.org@packages.debian.org;tag=transition">release.debian.org
+          bug</a>.
+        </span>
+
+        {% if transition.reject %}
+        <span><strong>Uploads to unstable will be rejected</strong> while
+        the transition is ongoing; you might want to upload to
+        experimental in the meantime, or
+        contact <tt><a href="mailto:debian-release@lists.debian.org">debian-release</a></tt>
+        if an upload is really necessary.</span>
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}
