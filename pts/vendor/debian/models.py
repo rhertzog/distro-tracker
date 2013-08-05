@@ -46,3 +46,15 @@ class LintianStats(models.Model):
     def __str__(self):
         return 'Lintian stats for package {package}'.format(
             package=self.package)
+
+
+@python_2_unicode_compatible
+class PackageTransition(models.Model):
+    package = models.ForeignKey(PackageName, related_name='package_transitions')
+    transition_name = models.CharField(max_length=50)
+    status = models.CharField(max_length=50, blank=True, null=True)
+    reject = models.BooleanField(default=False)
+
+    def __str__(self):
+        return "Transition {name} ({status}) for package {pkg}".format(
+            name=self.transition_name, status=self.status, pkg=self.package)

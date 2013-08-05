@@ -15,6 +15,7 @@ Debian-specific tasks.
 from __future__ import unicode_literals
 from django.db import transaction
 from django.conf import settings
+from django.utils import six
 
 from pts.core.tasks import BaseTask
 from pts.core.models import ContributorEmail
@@ -23,10 +24,12 @@ from pts.core.models import BinaryPackageBugStats
 from pts.core.models import PackageName
 from pts.core.models import BinaryPackageName
 from pts.vendor.debian.models import LintianStats
+from pts.vendor.debian.models import PackageTransition
 from pts.core.utils.http import HttpCache
 from .models import DebianContributor
 import re
 import SOAPpy
+import yaml
 from debian import deb822
 
 import logging
@@ -416,3 +419,89 @@ class UpdateLintianStatsTask(BaseTask):
             for package in packages
         ]
         LintianStats.objects.bulk_create(stats)
+
+
+class UpdateTransitionsTask(BaseTask):
+    REJECT_LIST_URL = 'http://ftp-master.debian.org/transitions.yaml'
+    PACKAGE_TRANSITION_LIST_URL = (
+        'http://release.debian.org/transitions/export/packages.yaml')
+
+    def __init__(self, force_update=False, *args, **kwargs):
+        super(UpdateTransitionsTask, self).__init__(*args, **kwargs)
+        self.force_update = force_update
+        self.cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
+
+    def set_parameters(self, parameters):
+        if 'force_update' in parameters:
+            self.force_update = parameters['force_update']
+
+    def _get_yaml_resource(self, url):
+        """
+        Gets the YAML resource at the given URL and returns it as a Python
+        object.
+        """
+        content = self.cache.get_content(url)
+        return yaml.load(six.BytesIO(content))
+
+    def _add_reject_transitions(self, packages):
+        """
+        Adds the transitions which cause uploads to be rejected to the
+        given ``packages`` dict.
+        """
+        reject_list = self._get_yaml_resource(self.REJECT_LIST_URL)
+        for id, transition in reject_list.items():
+            for package in transition['packages']:
+                packages.setdefault(package, {})
+                packages[package].setdefault(id, {})
+                packages[package][id]['reject'] = True
+                packages[package][id]['status'] = 'ongoing'
+
+    def _add_package_transition_list(self, packages):
+        """
+        Adds the ongoing and planned transitions to the given ``packages``
+        dict.
+        """
+        package_transition_list = self._get_yaml_resource(
+            self.PACKAGE_TRANSITION_LIST_URL)
+
+        wanted_transition_statuses = ('ongoing', 'planned')
+        for package_info in package_transition_list:
+            package_name = package_info['name']
+            for transition_name, status in package_info['list']:
+                if status not in wanted_transition_statuses:
+                    # Skip transitions with an unwated status
+                    continue
+
+                packages.setdefault(package_name, {})
+                packages[package_name].setdefault(transition_name, {})
+                packages[package_name][transition_name]['status'] = status
+
+    def execute(self):
+        # Update the relevant resources first
+        _, updated_reject_list = self.cache.update(
+            self.REJECT_LIST_URL, force=self.force_update)
+        _, updated_package_transition_list = self.cache.update(
+            self.PACKAGE_TRANSITION_LIST_URL, force=self.force_update)
+
+        if not updated_reject_list and not updated_package_transition_list:
+            # Nothing to do - at least one needs to be updated...
+            return
+
+        package_transitions = {}
+        self._add_reject_transitions(package_transitions)
+        self._add_package_transition_list(package_transitions)
+
+        PackageTransition.objects.all().delete()
+        # Get the packages which have transitions
+        packages = PackageName.objects.filter(
+            name__in=package_transitions.keys())
+        transitions = []
+        for package in packages:
+            for transition_name, data in package_transitions[package.name].items():
+                transitions.append(PackageTransition(
+                    package=package,
+                    transition_name=transition_name,
+                    status=data.get('status', None),
+                    reject=data.get('reject', False)))
+
+        PackageTransition.objects.bulk_create(transitions)
