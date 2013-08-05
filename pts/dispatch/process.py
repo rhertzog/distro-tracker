@@ -217,6 +217,10 @@ def add_new_headers(received_message, package_name, keyword):
         new_headers.extend(extra_vendor_headers)
 
     for header_name, header_value in new_headers:
+        # Make sure we are adding bytes to the message
+        header_name, header_value = (
+            header_name.encode('utf-8'),
+            header_value.encode('utf-8'))
         received_message[header_name] = header_value
 
 
