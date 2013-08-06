@@ -58,3 +58,12 @@ class PackageTransition(models.Model):
     def __str__(self):
         return "Transition {name} ({status}) for package {pkg}".format(
             name=self.transition_name, status=self.status, pkg=self.package)
+
+
+@python_2_unicode_compatible
+class PackageExcuses(models.Model):
+    package = models.OneToOneField(PackageName, related_name='excuses')
+    excuses = JSONField()
+
+    def __str__(self):
+        return "Excuses for the package {pkg}".format(pkg=self.package)

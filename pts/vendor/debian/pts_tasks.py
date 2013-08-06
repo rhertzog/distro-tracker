@@ -16,6 +16,7 @@ from __future__ import unicode_literals
 from django.db import transaction
 from django.conf import settings
 from django.utils import six
+from django.core.urlresolvers import reverse
 
 from pts.core.tasks import BaseTask
 from pts.core.models import ContributorEmail
@@ -25,12 +26,15 @@ from pts.core.models import PackageName
 from pts.core.models import BinaryPackageName
 from pts.vendor.debian.models import LintianStats
 from pts.vendor.debian.models import PackageTransition
+from pts.vendor.debian.models import PackageExcuses
 from pts.core.utils.http import HttpCache
 from .models import DebianContributor
 import re
 import SOAPpy
 import yaml
 from debian import deb822
+from copy import deepcopy
+from BeautifulSoup import BeautifulSoup as soup
 
 import logging
 logger = logging.getLogger(__name__)
@@ -505,3 +509,119 @@ class UpdateTransitionsTask(BaseTask):
                     reject=data.get('reject', False)))
 
         PackageTransition.objects.bulk_create(transitions)
+
+
+class UpdateExcusesTask(BaseTask):
+    def __init__(self, force_update=False, *args, **kwargs):
+        super(UpdateExcusesTask, self).__init__(*args, **kwargs)
+        self.force_update = force_update
+        self.cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
+
+    def set_parameters(self, parameters):
+        if 'force_update' in parameters:
+            self.force_update = parameters['force_update']
+
+    def _adapt_excuse_links(self, excuse):
+        """
+        If the excuse contains any anchor links, convert them to links to PTS
+        package pages. Return the original text unmodified, otherwise.
+        """
+        re_anchor_href = re.compile(r'^#(.*)$')
+        html = soup(excuse)
+        for a_tag in html.findAll('a', {'href': True}):
+            href = a_tag['href']
+            match = re_anchor_href.match(href)
+            if not match:
+                continue
+            package = match.group(1)
+            a_tag['href'] = reverse('pts-package-page', kwargs={
+                'package_name': package
+            })
+
+        return str(html)
+
+    def _get_excuses(self, content_lines):
+        """
+        Gets the excuses for each package from the given iterator of lines
+        representing the excuses html file.
+        Returns them as a dict mapping package names to a list of excuses.
+        """
+        try:
+            # Skip all HTML before the first list
+            while '<ul>' not in next(content_lines):
+                pass
+        except StopIteration:
+            logger.warning("Invalid format of excuses file")
+            return
+
+        top_level_list = True
+        package = ""
+        package_excuses = {}
+        excuses = []
+        for line in content_lines:
+            line = line.decode('utf-8')
+            if '</ul>' in line:
+                # The inner list is closed -- all excuses for the package are
+                # processed and we're back to the top-level list.
+                top_level_list = True
+                if '/' in package:
+                    continue
+                # Done with the package
+                package_excuses[package] = deepcopy(excuses)
+                continue
+
+            if '<ul>' in line:
+                # Entering the list of excuses
+                top_level_list = False
+                continue
+            
+            if top_level_list:
+                # The entry in the top level list outside of an inner list is
+                # a <li> item giving the name of the package for which the
+                # excuses follow.
+                words = re.split("[><() ]", line)
+                package = words[6]
+                excuses = []
+                top_level_list = False
+                continue
+
+            component = 'main'
+            line = line.strip()
+            for subline in line.split("<li>"):
+                if not subline:
+                    continue
+                # We ignore these excuses
+                if 'Section:' in subline:
+                    component = re.sub(r'Section: *(.*)', '\\1', subline)
+                    continue
+                if 'Maintainer:' in subline:
+                    continue
+
+                # Extract the rest of the excuses
+                # If it contains a link to an anchor convert it to a link to a
+                # package page.
+                excuses.append(self._adapt_excuse_links(subline))
+
+        return package_excuses
+
+    def execute(self):
+        url = 'http://ftp-master.debian.org/testing/update_excuses.html'
+        response, updated = self.cache.update(url, force=self.force_update)
+        if not updated:
+            return
+
+        content_lines = response.iter_lines()
+        package_excuses = self._get_excuses(content_lines)
+        if not package_excuses:
+            return
+
+        PackageExcuses.objects.all().delete()
+        # Save the excuses now
+        packages = PackageName.objects.filter(name__in=package_excuses.keys())
+        excuses = [
+            PackageExcuses(
+                package=package,
+                excuses=package_excuses[package.name])
+            for package in packages
+        ]
+        PackageExcuses.objects.bulk_create(excuses)
