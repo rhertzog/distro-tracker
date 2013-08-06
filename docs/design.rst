@@ -208,7 +208,7 @@ template and fills in its contents to the blocks defined in the template, so
 that the page remains visually consistent. This is not mandatory, however.
 
 .. note::
-   All panel classes should be placed in a module called ``pts_tasks`` found at
+   All panel classes should be placed in a module called ``pts_panels`` found at
    the top level of an installed Django app. Panels from apps which are not
    installed will never appear on a package page.
 

@@ -1283,7 +1283,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
             "  * New stable release:\n"
             "    - Feature 1\n"
             "    - Feature 2\n\n"
-            " -- Maintaner <email@domain.com> Mon, 1 July 2013 09:00:00 +0000"
+            " -- Maintainer <email@domain.com> Mon, 1 July 2013 09:00:00 +0000"
         )
         with make_temp_directory('-pts-media') as temp_media_dir:
             ExtractedSourceFile.objects.create(

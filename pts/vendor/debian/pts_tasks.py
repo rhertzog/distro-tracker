@@ -473,7 +473,7 @@ class UpdateTransitionsTask(BaseTask):
             package_name = package_info['name']
             for transition_name, status in package_info['list']:
                 if status not in wanted_transition_statuses:
-                    # Skip transitions with an unwated status
+                    # Skip transitions with an unwanted status
                     continue
 
                 packages.setdefault(package_name, {})

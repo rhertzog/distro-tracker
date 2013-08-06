@@ -66,16 +66,16 @@ class DebianBugProblems(ProblemsPanel.ItemProvider):
         except PackageBugStats.DoesNotExist:
             return []
         # Find the statistics on the help bug category
-        patch_bug_stats = next((
+        help_bug_stats = next((
             category
             for category in bug_stats
             if category['category_name'] == 'help'),
             None
         )
-        if patch_bug_stats and patch_bug_stats['bug_count'] > 0:
+        if help_bug_stats and help_bug_stats['bug_count'] > 0:
             items.append(
                 TemplatePanelItem("debian/help-bugs-problem.html", {
-                    'bug_stats': patch_bug_stats,
+                    'bug_stats': help_bug_stats,
                     'url': vendor.call(
                         'get_bug_tracker_url',
                         self.package.name, 'source', 'help')[0],
