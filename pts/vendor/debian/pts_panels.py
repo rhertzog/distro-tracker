@@ -11,6 +11,7 @@
 # distributed except according to the terms contained in the LICENSE file.
 
 from __future__ import unicode_literals
+from django.utils.safestring import mark_safe
 from pts.core.models import PackageBugStats
 from pts.core.utils import get_or_none
 from pts.core.models import SourcePackageName
@@ -21,6 +22,7 @@ from pts.core.panels import ProblemsPanel
 from pts.core.panels import TemplatePanelItem
 from pts.core.panels import HtmlPanelItem
 from pts.vendor.debian.models import LintianStats
+from pts.vendor.debian.models import PackageExcuses
 from pts import vendor
 
 import re
@@ -232,6 +234,14 @@ class TransitionsPanel(BasePanel):
 
     @property
     def context(self):
+        try:
+            excuses = self.package.excuses.excuses
+        except PackageExcuses.DoesNotExist:
+            excuses = None
+        if excuses:
+            excuses = [mark_safe(excuse) for excuse in excuses]
         return {
             'transitions': self.package.package_transitions.all(),
+            'excuses': excuses,
+            'package_name': self.package.name,
         }
