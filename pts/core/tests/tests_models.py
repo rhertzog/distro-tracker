@@ -806,7 +806,7 @@ class SourcePackageTests(TestCase):
             "  * New stable release:\n"
             "    - Feature 1\n"
             "    - Feature 2\n\n"
-            " -- Maintainer <email@domain.com> Mon, 1 July 2013 09:00:00 +0000"
+            " -- Maintainer <email@domain.com>  Mon, 1 July 2013 09:00:00 +0000"
         ).format(pkg=self.source_package.name, ver=self.source_package.version)
 
         changelog_content = changelog_entry
@@ -831,13 +831,13 @@ class SourcePackageTests(TestCase):
             "  * New stable release:\n"
             "    - Feature 1\n"
             "    - Feature 2\n\n"
-            " -- Maintainer <email@domain.com> Mon, 1 July 2013 09:00:00 +0000"
+            " -- Maintainer <email@domain.com>  Mon, 1 July 2013 09:00:00 +0000"
         ).format(pkg=self.source_package.name, ver=self.source_package.version)
         other_content = (
             "{pkg} ({ver}) suite; urgency=high\n\n"
             "  * New stable release:\n"
             "    - Feature\n\n"
-            " -- Maintainer <email@domain.com> Mon, 1 July 2013 09:00:00 +0000"
+            " -- Maintainer <email@domain.com>  Mon, 1 July 2013 09:00:00 +0000"
         ).format(pkg=self.source_package.name, ver='9.9.9')
         changelog_content = changelog_entry + '\n' + other_content
 
@@ -862,13 +862,13 @@ class SourcePackageTests(TestCase):
             "  * New stable release:\n"
             "    - Feature 1\n"
             "    - Feature 2\n\n"
-            " -- Maintainer <email@domain.com> Mon, 1 July 2013 09:00:00 +0000"
+            " -- Maintainer <email@domain.com>  Mon, 1 July 2013 09:00:00 +0000"
         ).format(pkg=self.source_package.name, ver=self.source_package.version)
         other_content = (
             "{pkg} ({ver}) suite; urgency=high\n\n"
             "  * New stable release:\n"
             "    - Feature\n\n"
-            " -- Maintainer <email@domain.com> Mon, 1 July 2013 09:00:00 +0000"
+            " -- Maintainer <email@domain.com>  Mon, 1 July 2013 09:00:00 +0000"
         ).format(pkg=self.source_package.name, ver='9.9.9')
         changelog_content = other_content + '\n' + changelog_entry
 
@@ -895,7 +895,7 @@ class SourcePackageTests(TestCase):
             "  * New stable release:\n"
             "    - Feature 1\n"
             "    - Feature 2\n\n"
-            " -- Maintainer <email@domain.com> Mon, 1 July 2013 09:00:00 +0000"
+            " -- Maintainer <email@domain.com>  Mon, 1 July 2013 09:00:00 +0000"
         ).format(pkg=self.source_package.name, ver=self.source_package.version)
         changelog_content = changelog_entry
 

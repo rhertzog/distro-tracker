@@ -12,6 +12,7 @@ from __future__ import unicode_literals
 from django.db import models
 from django.utils import six
 from django.utils.encoding import python_2_unicode_compatible
+from django.utils.encoding import force_text
 from django.utils.functional import cached_property
 from django.utils.safestring import mark_safe
 from django.core.urlresolvers import reverse
@@ -24,12 +25,12 @@ from pts.core.utils.plugins import PluginRegistry
 from pts.core.utils.email_messages import decode_header
 
 from debian.debian_support import AptPkgVersion
+from debian import changelog as debian_changelog
 from email import message_from_string
 from email.utils import getaddresses
 from email.iterators import typed_subpart_iterator
 
 import os
-import re
 
 
 @python_2_unicode_compatible
@@ -984,36 +985,22 @@ class SourcePackage(models.Model):
         """
         # If there is no changelog, return immediately
         try:
-            changelog = self.extracted_source_files.get(name='changelog')
+            extracted_changelog = self.extracted_source_files.get(name='changelog')
         except ExtractedSourceFile.DoesNotExist:
             return
 
-        # Setup regexps to recognize the beginning and end of the wanted
-        # changelog section.
-        changelog_entry_template = '^{name} \({version}\) .*; urgency=.*'
-        re_version_to_extract = re.compile(changelog_entry_template.format(
-            name=re.escape(self.name), version=re.escape(self.version)))
-        re_new_version_changelog = re.compile(
-            changelog_entry_template.format(name=re.escape(self.name), version='.*'))
-
-        changelog_content = six.StringIO()
-        changelog.extracted_file.open()
+        extracted_changelog.extracted_file.open()
         # Let the File context manager close the file
-        with changelog.extracted_file as changelog_file:
-            matched = False
-            for line in changelog_file:
-                line = line.decode('utf-8')
-                if matched:
-                    if re_new_version_changelog.match(line):
-                        break
-                    changelog_content.write(line)
-                else:
-                    if re_version_to_extract.match(line):
-                        matched = True
-                        changelog_content.write(line)
+        with extracted_changelog.extracted_file as changelog_file:
+            changelog_content = changelog_file.read()
 
-        # Remove trailing whitespace
-        return changelog_content.getvalue().strip()
+        changelog = debian_changelog.Changelog(changelog_content.splitlines())
+        # Return the entry corresponding to the package version, or ``None``
+        return next((
+            force_text(entry).strip()
+            for entry in changelog
+            if entry.version == self.version),
+            None)
 
     def update(self, **kwargs):
         """
