@@ -10,3 +10,4 @@
 """
 Tests for the :mod:`pts.mail` app.
 """
+from .tests_dispatch import *

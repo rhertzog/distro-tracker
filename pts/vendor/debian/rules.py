@@ -17,7 +17,7 @@ from pts.core.models import PackageBugStats
 from pts.core.models import News
 from pts.core.models import SourcePackageName
 from pts.core.models import BinaryPackageBugStats
-from pts.dispatch.process import get_keyword_from_address
+from pts.mail.dispatch.process import get_keyword_from_address
 from pts.core.utils import get_decoded_message_payload
 from pts.core.utils import get_or_none
 from pts.core.utils.http import HttpCache

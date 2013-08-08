@@ -18,7 +18,7 @@ from django.test.utils import override_settings
 from django.core import mail
 from django.utils.six.moves import mock
 from django.utils.encoding import force_bytes
-from pts.dispatch.tests import DispatchTestHelperMixin, DispatchBaseTest
+from pts.mail.tests.tests_dispatch import DispatchTestHelperMixin, DispatchBaseTest
 from pts.core.models import News
 from pts.core.models import PackageName
 from pts.core.models import SourcePackage

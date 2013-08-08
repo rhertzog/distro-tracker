@@ -132,7 +132,6 @@ INSTALLED_APPS = (
     # 'django.contrib.admindocs',
     'pts.core',
     'pts.control',
-    'pts.dispatch',
     'pts.vendor',
     'pts.vendor.debian',
     'pts.mail_news',
@@ -192,7 +191,7 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True,
         },
-        'pts.dispatch': {
+        'pts.mail': {
             'handlers': ['console'],
             'level': 'DEBUG',
             'propagate': True,

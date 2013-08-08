@@ -19,7 +19,7 @@ from __future__ import unicode_literals
 from django.test import SimpleTestCase
 from django.test.utils import override_settings
 
-from pts.dispatch.tests import DispatchBaseTest
+from pts.mail.tests.tests_dispatch import DispatchBaseTest
 import sys
 import inspect
 import importlib
