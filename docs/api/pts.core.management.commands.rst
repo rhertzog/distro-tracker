@@ -9,6 +9,14 @@ commands Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`pts_run_task` Module
+--------------------------
+
+.. automodule:: pts.core.management.commands.pts_run_task
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`pts_update_pseudo_packages` Module
 ----------------------------------------
 

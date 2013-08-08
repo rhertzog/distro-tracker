@@ -9,6 +9,22 @@ tests Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`common` Module
+--------------------
+
+.. automodule:: pts.core.tests.common
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`tests_management` Module
+------------------------------
+
+.. automodule:: pts.core.tests.tests_management
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`tests_models` Module
 --------------------------
 

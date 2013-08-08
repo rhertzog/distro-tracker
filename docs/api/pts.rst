@@ -14,10 +14,10 @@ Subpackages
 
 .. toctree::
 
-    pts.control
     pts.core
-    pts.dispatch
+    pts.extract_source_files
     pts.functional_tests
+    pts.mail
     pts.project
     pts.vendor
 

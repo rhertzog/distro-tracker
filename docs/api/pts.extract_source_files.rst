@@ -1,10 +1,10 @@
-debian Package
-==============
+extract_source_files Package
+============================
 
-:mod:`debian` Package
----------------------
+:mod:`extract_source_files` Package
+-----------------------------------
 
-.. automodule:: pts.vendor.debian
+.. automodule:: pts.extract_source_files
     :members:
     :undoc-members:
     :show-inheritance:
@@ -12,7 +12,7 @@ debian Package
 :mod:`models` Module
 --------------------
 
-.. automodule:: pts.vendor.debian.models
+.. automodule:: pts.extract_source_files.models
     :members:
     :undoc-members:
     :show-inheritance:
@@ -20,7 +20,7 @@ debian Package
 :mod:`pts_panels` Module
 ------------------------
 
-.. automodule:: pts.vendor.debian.pts_panels
+.. automodule:: pts.extract_source_files.pts_panels
     :members:
     :undoc-members:
     :show-inheritance:
@@ -28,15 +28,7 @@ debian Package
 :mod:`pts_tasks` Module
 -----------------------
 
-.. automodule:: pts.vendor.debian.pts_tasks
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`rules` Module
--------------------
-
-.. automodule:: pts.vendor.debian.rules
+.. automodule:: pts.extract_source_files.pts_tasks
     :members:
     :undoc-members:
     :show-inheritance:
@@ -44,7 +36,7 @@ debian Package
 :mod:`tests` Module
 -------------------
 
-.. automodule:: pts.vendor.debian.tests
+.. automodule:: pts.extract_source_files.tests
     :members:
     :undoc-members:
     :show-inheritance:

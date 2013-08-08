@@ -4,7 +4,7 @@ commands Package
 :mod:`commands` Package
 -----------------------
 
-.. automodule:: pts.control.commands
+.. automodule:: pts.mail.control.commands
     :members:
     :undoc-members:
     :show-inheritance:
@@ -12,7 +12,7 @@ commands Package
 :mod:`base` Module
 ------------------
 
-.. automodule:: pts.control.commands.base
+.. automodule:: pts.mail.control.commands.base
     :members:
     :undoc-members:
     :show-inheritance:
@@ -20,7 +20,7 @@ commands Package
 :mod:`confirmation` Module
 --------------------------
 
-.. automodule:: pts.control.commands.confirmation
+.. automodule:: pts.mail.control.commands.confirmation
     :members:
     :undoc-members:
     :show-inheritance:
@@ -28,7 +28,7 @@ commands Package
 :mod:`keywords` Module
 ----------------------
 
-.. automodule:: pts.control.commands.keywords
+.. automodule:: pts.mail.control.commands.keywords
     :members:
     :undoc-members:
     :show-inheritance:
@@ -36,7 +36,7 @@ commands Package
 :mod:`misc` Module
 ------------------
 
-.. automodule:: pts.control.commands.misc
+.. automodule:: pts.mail.control.commands.misc
     :members:
     :undoc-members:
     :show-inheritance:
