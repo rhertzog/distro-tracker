@@ -361,6 +361,7 @@ class AptCache(object):
         dest_dir_path = os.path.join(
             self.cache_root_dir,
             'packages',
+            source_name[0] if not source_name.startswith('lib') else source_name[:4],
             source_name)
         if not os.path.exists(dest_dir_path):
             os.makedirs(dest_dir_path)
