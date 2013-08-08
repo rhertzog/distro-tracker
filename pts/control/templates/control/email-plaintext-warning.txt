@@ -1,4 +1,0 @@
-Warning: your message's body could not be decoded.
-
-Try again with a simple plain-text message.
-
