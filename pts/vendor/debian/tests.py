@@ -37,7 +37,7 @@ from pts.vendor.debian.pts_tasks import RetrieveLowThresholdNmuTask
 from pts.vendor.debian.models import DebianContributor
 from pts.vendor.debian.pts_tasks import UpdateLintianStatsTask
 from pts.vendor.debian.models import LintianStats
-from pts.mail_news.process import process
+from pts.mail.mail_news import process
 
 from email.message import Message
 

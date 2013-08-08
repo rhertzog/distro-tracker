@@ -11,3 +11,4 @@
 Tests for the :mod:`pts.mail` app.
 """
 from .tests_dispatch import *
+from .tests_mail_news import *

@@ -299,7 +299,7 @@ def create_news_from_email_message(message):
     the content of the news is set to the content of the email message to make
     sure it is rendered appropriately.
 
-    The function :func:`pts.mail_news.process.create_news` can be used to
+    The function :func:`pts.mail.mail_news.process.create_news` can be used to
     create simple news from the message after determining that it should in
     fact be created.
 

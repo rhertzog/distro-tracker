@@ -23,7 +23,7 @@ from pts.core.utils import get_or_none
 from pts.core.utils.http import HttpCache
 from .models import DebianContributor
 from pts.vendor.common import PluginProcessingError
-from pts.mail_news.process import create_news
+from pts.mail.mail_news.process import create_news
 
 
 def get_keyword(local_part, msg):

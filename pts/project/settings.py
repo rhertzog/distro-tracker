@@ -134,7 +134,6 @@ INSTALLED_APPS = (
     'pts.control',
     'pts.vendor',
     'pts.vendor.debian',
-    'pts.mail_news',
     'pts.mail',
 )
 
