@@ -21,10 +21,16 @@ were made.
 Email Interface
 ---------------
 
-There are two aspects to the email interface in the PTS: the control message
-processing and dispatching received package messages to the correct
-subscribers. These are implemented in the :mod:`pts.control` and
-:mod:`pts.dispatch` Django apps, respectively.
+There are three aspects to the email interface in the PTS: the control message
+processing, dispatching received package messages to the correct
+subscribers and creating news items based on received emails.
+
+This is implemented in the :mod:`pts.mail` app. The three mentioned
+functionalities are found in the following subpackages and modules of this app:
+
+- :mod:`pts.mail.control.control`
+- :mod:`pts.mail.dispatch`
+- :mod:`pts.mail.mail_news`
 
 .. _control_email_design:
 
@@ -32,36 +38,36 @@ Email Control Messages
 ++++++++++++++++++++++
 
 The PTS expects the system's MTA to pipe any received control emails to the
-:mod:`pts.control.management.commands.control_process` Django management
+:mod:`pts.mail.management.commands.pts_control` Django management
 command. For information how to set this up, refer to the
 :ref:`mailbot setup <mailbot>`.
 
 The actual processing of the received command email message is implemented in
-:func:`pts.control.process.process`. It does this by retrieving the message's
+:func:`pts.mail.control.process.process`. It does this by retrieving the message's
 payload and feeding it into an instance of
-:class:`pts.control.commands.CommandProcessor`.
+:class:`pts.mail.control.commands.CommandProcessor`.
 
-The :class:`CommandProcessor <pts.control.commands.CommandProcessor>` takes
+The :class:`CommandProcessor <pts.mail.control.commands.CommandProcessor>` takes
 care of parsing and executing all given commands.
 
-All available commands are implemented in the :mod:`pts.control.commands`
+All available commands are implemented in the :mod:`pts.mail.control.commands`
 module. Each command must be a subclass of the
-:mod:`pts.control.commands.base.Command` class. There are three attributes of the
+:mod:`pts.mail.control.commands.base.Command` class. There are three attributes of the
 class that subclasses must override:
 
-- :attr:`META <pts.control.commands.base.Command.META>` - most importantly
+- :attr:`META <pts.mail.control.commands.base.Command.META>` - most importantly
   provides the command name
-- :attr:`REGEX_LIST <pts.control.commands.base.Command.REGEX_LIST>` - allows
+- :attr:`REGEX_LIST <pts.mail.control.commands.base.Command.REGEX_LIST>` - allows
   matching a string to the command
-- :meth:`handle() <pts.control.commands.base.Command.handle>` - implements the command
+- :meth:`handle() <pts.mail.control.commands.base.Command.handle>` - implements the command
   processing
 
-The class :class:`pts.control.commands.CommandFactory` produces instances of
-the correct :class:`Command <pts.control.commands.base.Command>` subclasses
+The class :class:`pts.mail.control.commands.CommandFactory` produces instances of
+the correct :class:`Command <pts.mail.control.commands.base.Command>` subclasses
 based on a given line.
 
 Commands which require confirmation are easily implemented by decorating the
-class with the :func:`pts.control.commands.confirmation.needs_confirmation`
+class with the :func:`pts.mail.control.commands.confirmation.needs_confirmation`
 class decorator. In addition to that, two more methods can be implemented, but
 are not mandatory:
 
@@ -84,14 +90,35 @@ Email Dispatch
 
 As is the case for control message processing, the PTS expects the system's MTA
 to pipe any received package emails to a management command -
-:mod:`pts.dispatch.management.commands.dispatch`. For information how to set
+:mod:`pts.mail.management.commands.pts_dispatch`. For information how to set
 this up, refer to the :ref:`mailbot setup <mailbot>`.
 
 The function that performs the processing of a received package message is
-:func:`pts.dispatch.process.process`. In order to tag the received message
+:func:`pts.mail.dispatch.process`. In order to tag the received message
 with a keyword, it uses a vendor-provided function
 :func:`get_keyword <pts.vendor.skeleton.rules.get_keyword>`. In case a vendor
 has not implemented this function, the message is tagged as ``default``.
+
+News from Email Messages
+++++++++++++++++++++++++
+
+The PTS allows for automatic news creation based on received emails. It is necessary
+to set up the MTA to pipe received emails which should potentially be turned into
+news items to the management command
+:mod:`pts.mail.management.commands.pts_receive_news`.
+
+News are created as :class:`pts.core.models.News` objects and each of the
+model's instances associated with a particular package is displayed in the
+:class:`NewsPanel <pts.core.panels.NewsPanel>`.
+
+By default, any messages given the the management command which contain the
+``X-PTS-Package`` header are turned into news items with the content type of
+the news item being ``message/rfc822`` and the content the entire message.
+
+However, it is also possible to implement a vendor-specific function
+:func:`pts.vendor.skeleton.rules.create_news_from_email_message` which will be
+given the received email message object and can create custom news items based
+on vendor-specific rules.
 
 .. _tasks_design:
 

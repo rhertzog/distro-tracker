@@ -34,8 +34,10 @@ Management commands
 In order to have the received email messages properly processed they need to
 be passed to the management commands implemented in the PTS.
 
-* ``control_process`` - handles control messages
-* ``dispatch`` - handles package messages
+* :mod:`pts_control <pts.mail.management.commands.pts_control>` - handles control messages
+* :mod:`pts_dispatch <pts.mail.management.commands.pts_dispatch>` - handles package messages
+* :mod:`pts_receive_news <pts.mail.management.commands.pts_receive_news>` -
+  handles messages which should be turned into news items
 
 These commands expect the received email message on standard input, which
 means that the system's MTA needs to be setup to forward appropriate mails to
@@ -59,7 +61,7 @@ and the system user which owns the application is called ``pts`` the contents of
 
 And the ``.forward`` file should be::
    
-   | python path/to/manage.py control_process
+   | python path/to/manage.py pts_control
 
 Mails received at ``PTS_CONTACT_EMAIL`` should be saved or forwarded to the PTS
 administrators. This can be done by adding an additional alias to
@@ -84,7 +86,7 @@ are not recognized. Such router and transport could be::
 
   pts_dispatch_pipe:
     driver = pipe
-    command = python /path/to/manage.py dispatch
+    command = python /path/to/manage.py pts_dispatch
     user = pts
     group = mail
     log_output
@@ -111,14 +113,16 @@ The file ``/etc/postfix/virtual`` would be::
   postmaster@pts.debian.net postmaster@localhost
   owner@pts.debian.net pts-owner@localhost
   control@pts.debian.net pts-control@localhost
+  _news@pts.debian.net pts-news@localhost
   # Catchall for package emails
   @pts.debian.net pts-dispatch@localhost
 
 The ``/etc/aliases`` file should then include the following lines::
   
   pts-owner: some-admin-user
-  pts-control: "| python /path/to/manage.py control_process"
-  pts-dispatch: "| python /path/to/manage.py dispatch"
+  pts-control: "| python /path/to/manage.py pts_control"
+  pts-dispatch: "| python /path/to/manage.py pts_dispatch"
+  pts-news: "| python /path/to/manage.py pts_receive_news"
 
 Then, the ``main.cf`` file should be edited to include::
 
@@ -131,6 +135,7 @@ Then, the ``main.cf`` file should be edited to include::
 
 This way, all messages which are sent to the owner are delivered to the local
 user ``some-admin-user``, messages sent to the control address are piped to
-the ``control_process`` management command and messages sent to any other
-address on the given domain are passed to the ``dispatch`` management
+the ``pts_control`` management command, mesages which should be turned into
+news items to the ``pts_receive_news`` command and messages sent to any other
+address on the given domain are passed to the ``pts_dispatch`` management
 command.
