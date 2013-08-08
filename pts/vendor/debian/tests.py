@@ -357,10 +357,6 @@ class RetrieveDebianMaintainersTest(TestCase):
         """
         Tests updating the DM list when a new developer is to be added.
         """
-        """
-        Tests updating the list of developers that allow the low threshold
-        NMU when the developer did not previously exist in the database.
-        """
         set_mock_response(mock_requests,
             "Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
             "Uid: Dummy Developer <dummy@debian.org>\n"
