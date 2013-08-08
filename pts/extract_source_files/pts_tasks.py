@@ -106,7 +106,13 @@ class ExtractSourcePackageFiles(BaseTask):
                 if file_name not in extracted_files
             ]
             if files_to_extract:
-                self.extract_files(source_package, files_to_extract)
+                try:
+                    self.extract_files(source_package, files_to_extract)
+                except:
+                    logger.exception(
+                        'Problem extracting source files for'
+                        ' {pkg} version {ver}'.format(
+                            pkg=source_package, ver=source_package.version))
 
     def execute(self):
         if self.is_initial_task():
