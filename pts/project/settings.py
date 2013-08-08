@@ -131,7 +131,6 @@ INSTALLED_APPS = (
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
     'pts.core',
-    'pts.control',
     'pts.vendor',
     'pts.vendor.debian',
     'pts.mail',
@@ -183,11 +182,6 @@ LOGGING = {
         'django.request': {
             'handlers': ['mail_admins'],
             'level': 'ERROR',
-            'propagate': True,
-        },
-        'pts.control': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
             'propagate': True,
         },
         'pts.mail': {
