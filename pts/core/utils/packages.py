@@ -141,6 +141,7 @@ class AptCache(object):
 
         self.sources = []
         self.packages = []
+        self.source_cache_directory = os.path.join(self.cache_root_dir, 'packages')
 
     def _create_cache_directory(self):
         if not os.path.exists(self.cache_root_dir):
@@ -324,6 +325,42 @@ class AptCache(object):
         with tarfile.open(debian_tar_path) as debian_tar:
             debian_tar.extractall(outdir)
 
+    def get_package_source_cache_directory(self, package_name):
+        """
+        Returns the path to the directory where a particular source package is
+        cached.
+
+        :param package_name: The name of the source package
+        :type package_name: string
+
+        :rtype: string
+        """
+        package_hash = (
+            package_name[0]
+            if not package_name.startswith('lib') else
+            package_name[:4]
+        )
+        return os.path.join(
+            self.source_cache_directory,
+            package_hash,
+            package_name)
+
+    def get_source_version_cache_directory(self, package_name, version):
+        """
+        Returns the path to the directory where a particular source package
+        version files are extracted.
+
+        :param package_name: The name of the source package
+        :type package_name: string
+
+        :param version: The version of the source package
+        :type version: string
+
+        :rtype: string
+        """
+        package_dir = self.get_package_source_cache_directory(package_name)
+        return os.path.join(package_dir, package_name + '-' + version)
+
     def retrieve_source(self, source_name, version,
                         debian_directory_only=False):
         """
@@ -361,11 +398,7 @@ class AptCache(object):
                 " No such version found in the cache".format(
                     pkg=source_name, ver=version))
 
-        dest_dir_path = os.path.join(
-            self.cache_root_dir,
-            'packages',
-            source_name[0] if not source_name.startswith('lib') else source_name[:4],
-            source_name)
+        dest_dir_path = self.get_package_source_cache_directory(source_name)
         if not os.path.exists(dest_dir_path):
             os.makedirs(dest_dir_path)
 
@@ -405,8 +438,7 @@ class AptCache(object):
                         file=item.destfile, error=item.error_text))
 
         # Extract the retrieved source files
-        outdir = source_records.package + '-' + source_records.version
-        outdir = os.path.join(dest_dir_path, outdir)
+        outdir = self.get_source_version_cache_directory(source_name, version)
         if os.path.exists(outdir):
             # dpkg-source expects this directory not to exist
             shutil.rmtree(outdir)
