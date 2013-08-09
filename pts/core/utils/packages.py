@@ -187,6 +187,14 @@ class AptCache(object):
         apt_pkg.read_config_file(apt_pkg.config, self.conf_file_path)
         apt_pkg.config.set('Dir::Etc', self.cache_root_dir)
 
+    def configure_cache(self):
+        """
+        Configures the cache based on the most current repository information.
+        """
+        self.update_sources_list()
+        self.update_apt_conf()
+        self._configure_apt()
+
     def _index_file_full_path(self, file_name):
         """
         Returns the absolute path for the given cached index file.
@@ -280,10 +288,7 @@ class AptCache(object):
         if force_download:
             self.clear_cache()
 
-        self.update_sources_list()
-        self.update_apt_conf()
-
-        self._configure_apt()
+        self.configure_cache()
 
         cache = apt.cache.Cache(rootdir=self.cache_root_dir)
         progress = AptCache.AcquireProgress()
@@ -337,11 +342,9 @@ class AptCache(object):
             package files.
         :rtype: string
         """
-        self.update_sources_list()
-        self.update_apt_conf()
-        self._configure_apt()
-        cache = apt.cache.Cache(rootdir=self.cache_root_dir)
+        self.configure_cache()
 
+        cache = apt.cache.Cache(rootdir=self.cache_root_dir)
         source_records = apt_pkg.SourceRecords()
         source_records.restart()
         # Find the cached record matching this source package and version
