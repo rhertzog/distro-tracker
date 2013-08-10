@@ -1202,7 +1202,7 @@ class AptCacheTests(TestCase):
             AptCacheTests.stub_acquire, content=content))
 
     def assert_cache_size_equal(self, size):
-        self.assertEqual(size, self.cache._cache_size)
+        self.assertEqual(size, self.cache.cache_size)
 
     def test_cache_size_increase_after_acquire(self):
         """

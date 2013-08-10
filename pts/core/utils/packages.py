@@ -149,9 +149,15 @@ class AptCache(object):
             settings, 'PTS_APT_CACHE_MAX_SIZE', self.DEFAULT_MAX_SIZE)
         #: The directory where source package files are cached
         self.source_cache_directory = os.path.join(self.cache_root_dir, 'packages')
-        self._cache_size = self.get_directory_size(self.source_cache_directory)  # in bytes
+        self._cache_size = None  # Evaluate the cache size lazily
 
         self.configure_cache()
+
+    @property
+    def cache_size(self):
+        if self._cache_size is None:
+            self._cache_size = self.get_directory_size(self.source_cache_directory)
+        return self._cache_size
 
     def get_directory_size(self, directory_path):
         """
@@ -524,7 +530,7 @@ class AptCache(object):
             package files.
         :rtype: string
         """
-        if self._cache_size > self.cache_max_size:
+        if self.cache_size > self.cache_max_size:
             # If the maximum allowed cache size has been exceeded, clear the cache
             self.clear_cached_sources()
 
