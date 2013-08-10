@@ -385,6 +385,12 @@ class AptCache(object):
 
         return source_records
 
+    def _extract_dpkg_source(self, dsc_file_path, outdir):
+        """
+        Uses dpkg-source to extract the source package.
+        """
+        subprocess.check_call(["dpkg-source", "-x", dsc_file_path, outdir])
+
     def retrieve_source(self, source_name, version,
                         debian_directory_only=False):
         """
@@ -457,6 +463,6 @@ class AptCache(object):
             self._extract_quilt_package(acquire.items[0].destfile, outdir)
         else:
             # Let dpkg-source handle the extraction in all other cases
-            subprocess.check_call(["dpkg-source", "-x", dsc_file_path, outdir])
+            self._extract_dpkg_source(dsc_file_path, outdir)
 
         return outdir
