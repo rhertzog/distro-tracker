@@ -1066,6 +1066,16 @@ class VerifySignatureTest(SimpleTestCase):
         if old:
             os.environ['GNUPGHOME'] = old
 
+    def get_test_file_path(self, file_name):
+        """
+        Helper method returning the full path to the test file with the given
+        name.
+        """
+        return os.path.join(
+            os.path.dirname(__file__),
+            'tests-data',
+            file_name)
+
     def setUp(self):
         self.TEST_KEYRING_DIRECTORY = tempfile.mkdtemp(suffix='-test-keyring')
 
@@ -1080,10 +1090,7 @@ class VerifySignatureTest(SimpleTestCase):
         """
         with self.settings(PTS_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
             self.import_key_from_test_file('key1.pub')
-            file_path = os.path.join(
-                os.path.dirname(__file__),
-                'tests-data/signed-message'
-            )
+            file_path = self.get_test_file_path('signed-message')
             expected = [
                 ('PTS Tests', 'fake-address@domain.com')
             ]
@@ -1097,10 +1104,7 @@ class VerifySignatureTest(SimpleTestCase):
         signer is not found in the keyring.
         """
         with self.settings(PTS_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
-            file_path = os.path.join(
-                os.path.dirname(__file__),
-                'tests-data/signed-message'
-            )
+            file_path = self.get_test_file_path('signed-message')
 
             with open(file_path, 'rb') as f:
                 self.assertSequenceEqual([], verify_signature(f.read()))
@@ -1120,10 +1124,7 @@ class VerifySignatureTest(SimpleTestCase):
         """
         with self.settings(PTS_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
             self.import_key_from_test_file('key1.pub')
-            file_path = os.path.join(
-                os.path.dirname(__file__),
-                'tests-data/signed-message'
-            )
+            file_path = self.get_test_file_path('signed-message')
             expected = [
                 ('PTS Tests', 'fake-address@domain.com')
             ]
