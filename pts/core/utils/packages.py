@@ -104,6 +104,8 @@ class AptCache(object):
     """
     A class for handling cached package information.
     """
+    QUILT_FORMAT = '3.0 (quilt)'
+
     class AcquireProgress(apt.progress.base.AcquireProgress):
         """
         Instances of this class can be passed to :meth:`apt.cache.Cache.update`
@@ -391,35 +393,30 @@ class AptCache(object):
         """
         subprocess.check_call(["dpkg-source", "-x", dsc_file_path, outdir])
 
-    def retrieve_source(self, source_name, version,
-                        debian_directory_only=False):
+    def _apt_acquire_package(self,
+                             source_records,
+                             dest_dir_path,
+                             debian_directory_only):
         """
-        Retrieve the source package files for the given source package version.
+        Using :class:`apt_pkg.Acquire`, retrieves the source files for the
+        source package described by the current source_records record.
 
-        :param source_name: The name of the source package
-        :type source_name: string
-        :param version: The version of the source package
-        :type version: string
-        :param debian_directory_only: Flag indicating if the method should try
-            to retrieve only the debian directory of the source package. This
-            is usually only possible when the package format is 3.0 (quilt).
-        :type debian_directory_only: Boolean
+        :param source_records: The record describing the source package whose
+            files should be retrieved.
+        :type source_records: :class:`apt_pkg.Acquire`
 
-        :returns: The path to the directory containing the extracted source
-            package files.
-        :rtype: string
+        :param dest_dir_path: The path to the directory where the downloaded
+            files should be saved.
+        :type dest_dir_path: string
+
+        :param debian_directory_only: A flag indicating whether only the debian
+            directory should be downloaded.
+
+        :returns: A two-tuple of the :class:`apt_pkg.Acquire` instance used to
+            acquire the source files and the path to the acquired dsc file of
+            the package.
         """
-        self.configure_cache()
-
-        source_records = self._get_apt_source_records(source_name, version)
-
-        dest_dir_path = self.get_package_source_cache_directory(source_name)
-        if not os.path.exists(dest_dir_path):
-            os.makedirs(dest_dir_path)
-
         package_format = self._get_format(source_records.record)
-        QUILT_FORMAT = '3.0 (quilt)'
-
         dsc_file_path = None
         files = []
         acquire = apt_pkg.Acquire(apt.progress.base.AcquireProgress())
@@ -429,7 +426,7 @@ class AptCache(object):
             # Remember the dsc file path so it can be passed to dpkg-source
             if file_type == 'dsc':
                 dsc_file_path = dest_file_path
-            if debian_directory_only and package_format == QUILT_FORMAT:
+            if debian_directory_only and package_format == self.QUILT_FORMAT:
                 if file_type != 'diff':
                     # Only retrieve the .debian.tar.* file for quilt packages
                     # when only the debian directory is wanted
@@ -452,13 +449,44 @@ class AptCache(object):
                     'Could not retrieve file {file}: {error}'.format(
                         file=item.destfile, error=item.error_text))
 
+        return acquire, dsc_file_path
+
+    def retrieve_source(self, source_name, version,
+                        debian_directory_only=False):
+        """
+        Retrieve the source package files for the given source package version.
+
+        :param source_name: The name of the source package
+        :type source_name: string
+        :param version: The version of the source package
+        :type version: string
+        :param debian_directory_only: Flag indicating if the method should try
+            to retrieve only the debian directory of the source package. This
+            is usually only possible when the package format is 3.0 (quilt).
+        :type debian_directory_only: Boolean
+
+        :returns: The path to the directory containing the extracted source
+            package files.
+        :rtype: string
+        """
+        source_records = self._get_apt_source_records(source_name, version)
+
+        dest_dir_path = self.get_package_source_cache_directory(source_name)
+        if not os.path.exists(dest_dir_path):
+            os.makedirs(dest_dir_path)
+
+        # Download the source files
+        acquire, dsc_file_path = self._apt_acquire_package(
+            source_records, dest_dir_path, debian_directory_only)
+
         # Extract the retrieved source files
         outdir = self.get_source_version_cache_directory(source_name, version)
         if os.path.exists(outdir):
             # dpkg-source expects this directory not to exist
             shutil.rmtree(outdir)
 
-        if debian_directory_only and package_format == QUILT_FORMAT:
+        package_format = self._get_format(source_records.record)
+        if debian_directory_only and package_format == self.QUILT_FORMAT:
             # dpkg-source cannot extract an incomplete package
             self._extract_quilt_package(acquire.items[0].destfile, outdir)
         else:
