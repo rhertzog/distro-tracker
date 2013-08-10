@@ -361,6 +361,30 @@ class AptCache(object):
         package_dir = self.get_package_source_cache_directory(package_name)
         return os.path.join(package_dir, package_name + '-' + version)
 
+    def _get_apt_source_records(self, source_name, version):
+        """
+        Returns a :class:`apt_pkg.SourceRecords` instance where the given
+        source package is the current working record.
+        """
+        cache = apt.cache.Cache(rootdir=self.cache_root_dir)
+        source_records = apt_pkg.SourceRecords()
+        source_records.restart()
+        # Find the cached record matching this source package and version
+        found = False
+        while source_records.lookup(source_name):
+            if source_records.version == version:
+                found = True
+                break
+
+        if not found:
+            # Package version does not exist in the cache
+            raise SourcePackageRetrieveError(
+                "Could not retrieve package {pkg} version {ver}:"
+                " No such version found in the cache".format(
+                    pkg=source_name, ver=version))
+
+        return source_records
+
     def retrieve_source(self, source_name, version,
                         debian_directory_only=False):
         """
@@ -381,22 +405,7 @@ class AptCache(object):
         """
         self.configure_cache()
 
-        cache = apt.cache.Cache(rootdir=self.cache_root_dir)
-        source_records = apt_pkg.SourceRecords()
-        source_records.restart()
-        # Find the cached record matching this source package and version
-        found = False
-        while source_records.lookup(source_name):
-            if source_records.version == version:
-                found = True
-                break
-
-        if not found:
-            # Package version does not exist in the cache
-            raise SourcePackageRetrieveError(
-                "Could not retrieve package {pkg} version {ver}:"
-                " No such version found in the cache".format(
-                    pkg=source_name, ver=version))
+        source_records = self._get_apt_source_records(source_name, version)
 
         dest_dir_path = self.get_package_source_cache_directory(source_name)
         if not os.path.exists(dest_dir_path):
