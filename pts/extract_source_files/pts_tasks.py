@@ -48,6 +48,10 @@ class ExtractSourcePackageFiles(BaseTask):
         'watch',
     )
 
+    def __init__(self, *args, **kwargs):
+        super(ExtractSourcePackageFiles, self).__init__(*args, **kwargs)
+        self.cache = None
+
     def extract_files(self, source_package, files_to_extract=None):
         """
         Extract files for just the given source package.
@@ -56,8 +60,10 @@ class ExtractSourcePackageFiles(BaseTask):
         :type files_to_extract: An iterable of file names which should be
             extracted
         """
-        cache = AptCache()
-        source_directory = cache.retrieve_source(
+        if self.cache is None:
+            self.cache = AptCache()
+
+        source_directory = self.cache.retrieve_source(
             source_package.source_package_name.name,
             source_package.version,
             debian_directory_only=True)
