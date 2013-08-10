@@ -14,6 +14,7 @@ from pts.core.utils.email_messages import (
     names_and_addresses_from_string as parse_addresses
 )
 from django.conf import settings
+from django.utils.encoding import force_bytes
 
 from debian import deb822
 from pts.core.models import Repository
@@ -161,6 +162,11 @@ class AptCache(object):
 
         :rtype: int
         """
+        # Convert the directory path to bytes to make sure all os calls deal
+        # with bytes, not unicode objects.
+        # This way any file names with invalid utf-8 names, are correctly
+        # handled, without causing an error.
+        directory_path = force_bytes(directory_path)
         total_size = 0
         for dirpath, dirnames, filenames in os.walk(directory_path):
             for file_name in filenames:
@@ -179,7 +185,7 @@ class AptCache(object):
         Removes all cache information. This causes the next update to retrieve
         fresh repository files.
         """
-        shutil.rmtree(self.cache_root_dir)
+        self._remove_dir(self.cache_root_dir)
         self._create_cache_directory()
 
     def update_sources_list(self):
@@ -388,11 +394,25 @@ class AptCache(object):
         package_dir = self.get_package_source_cache_directory(package_name)
         return os.path.join(package_dir, package_name + '-' + version)
 
+    def _remove_dir(self, directory_path):
+        """
+        Removes the given directory, including any subdirectories and files.
+        The method makes sure to correctly handle the situation where the
+        directory contains files with names which are invalid utf-8.
+        """
+        # Convert the directory path to bytes to make sure all os calls deal
+        # with bytes, not unicode objects.
+        # This way any file names with invalid utf-8 names, are correctly
+        # handled, without causing an error.
+        directory_path = force_bytes(directory_path)
+        if os.path.exists(directory_path):
+            shutil.rmtree(directory_path)
+
     def clear_cached_sources(self):
         """
         Clears all cached package source files.
         """
-        shutil.rmtree(self.source_cache_directory)
+        self._remove_dir(self.source_cache_directory)
         self._cache_size = self.get_directory_size(self.source_cache_directory)
 
     def _get_apt_source_records(self, source_name, version):
@@ -522,9 +542,8 @@ class AptCache(object):
 
         # Extract the retrieved source files
         outdir = self.get_source_version_cache_directory(source_name, version)
-        if os.path.exists(outdir):
-            # dpkg-source expects this directory not to exist
-            shutil.rmtree(outdir)
+        # dpkg-source expects this directory not to exist
+        self._remove_dir(outdir)
 
         package_format = self._get_format(source_records.record)
         if debian_directory_only and package_format == self.QUILT_FORMAT:
