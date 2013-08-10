@@ -19,13 +19,16 @@ from django.test.utils import override_settings
 from django.core import mail
 from django.utils import six
 from django.utils.http import http_date
+from django.utils.functional import curry
 from django.utils.six.moves import mock
 from pts.core.tests.common import set_mock_response
+from pts.core.tests.common import make_temp_directory
 from pts.core.utils import verp
 from pts.core.utils import message_from_bytes
 from pts.core.utils import SpaceDelimitedTextField
 from pts.core.utils import PrettyPrintList
 from pts.core.utils import verify_signature
+from pts.core.utils.packages import AptCache
 from pts.core.utils.packages import extract_vcs_information
 from pts.core.utils.packages import extract_dsc_file_name
 from pts.core.utils.datastructures import DAG, InvalidDAGException
@@ -1164,3 +1167,111 @@ class DecodeHeaderTest(SimpleTestCase):
         h.append(b' M\xc3\xbcnchen', 'utf-8')
         header_text = decode_header(h)
         self.assertEqual('München München', header_text)
+
+class AptCacheTests(TestCase):
+    """
+    Tests for :class:`pts.core.utils.packages.AptCache`.
+    """
+    @staticmethod
+    def stub_acquire(source_records, dest_dir, debian_dir_only, content):
+        # Create a file in the destination directory
+        file_name = 'temp'
+        file_path = os.path.join(dest_dir, file_name)
+        # Create a file of the given size
+        with open(file_path, 'wb') as f:
+            f.write(content)
+        return None, 'ekrem'
+
+    def create_cache(self):
+        """
+        Helper method which creates an :class:`pts.core.utils.packages.AptCache`
+        instance which is used for testing. Some of its methods are replaced by
+        mocks and stubs to avoid HTTP calls.
+        """
+        self.cache = AptCache()
+        self.cache._get_apt_source_records = mock.MagicMock()
+        self.cache._get_format = mock.MagicMock(return_value='1.0')
+        self.cache._extract_dpkg_source = mock.MagicMock()
+
+    def set_stub_acquire_content(self, content):
+        """
+        Helper method which sets the content of a file which is created by the
+        cache instance when retrieve_source is called.
+        """
+        self.cache._apt_acquire_package = mock.MagicMock(side_effect=curry(
+            AptCacheTests.stub_acquire, content=content))
+
+    def assert_cache_size_equal(self, size):
+        self.assertEqual(size, self.cache._cache_size)
+
+    def test_cache_size_increase_after_acquire(self):
+        """
+        Tests that the cache correctly increases its size after acquiring new
+        files.
+        """
+        with make_temp_directory('-pts-cache') as cache_directory:
+            with self.settings(
+                    PTS_CACHE_DIRECTORY=cache_directory,
+                    PTS_APT_CACHE_MAX_SIZE=10):
+                self.create_cache()
+                # Sanity check: old size is 0 as nothing was ever cached in the
+                # brand new directory
+                self.assert_cache_size_equal(0)
+                content = b'a' * 5  # 5 bytes
+                self.set_stub_acquire_content(content)
+
+                self.cache.retrieve_source('dummy-package', '1.0.0')
+
+                self.assert_cache_size_equal(5)
+
+    def test_cache_multiple_insert_no_remove(self):
+        """
+        Tests that the cache does not remove packages unless the size limit is
+        exceeded.
+        """
+        with make_temp_directory('-pts-cache') as cache_directory:
+            with self.settings(
+                    PTS_CACHE_DIRECTORY=cache_directory,
+                    PTS_APT_CACHE_MAX_SIZE=10):
+                self.create_cache()
+                # Sanity check: old size is 0 as nothing was ever cached in the
+                # brand new directory
+                self.assert_cache_size_equal(0)
+                content = b'a' * 5  # 5 bytes
+                self.set_stub_acquire_content(content)
+                # Add one file.
+                self.cache.retrieve_source('dummy-package', '1.0.0')
+                self.assert_cache_size_equal(5)
+                # Same content in another file
+                self.set_stub_acquire_content(content)
+
+                self.cache.retrieve_source('package', '1.0.0')
+
+                # Both files are now saved.
+                self.assert_cache_size_equal(10)
+
+    def test_clear_cache(self):
+        """
+        Tests that the cache removes packages when it exceeds its allocated
+        size.
+        """
+        with make_temp_directory('-pts-cache') as cache_directory:
+            with self.settings(
+                    PTS_CACHE_DIRECTORY=cache_directory,
+                    PTS_APT_CACHE_MAX_SIZE=10):
+                self.create_cache()
+                # Sanity check: old size is 0 as nothing was ever cached in the
+                # brand new directory
+                self.assert_cache_size_equal(0)
+                initial_content = b'a' * 11
+                self.set_stub_acquire_content(initial_content)
+                # Set initial source content
+                self.cache.retrieve_source('dummy-package', '1.0.0')
+                self.assert_cache_size_equal(11)
+                content = b'a' * 7
+                self.set_stub_acquire_content(content)
+
+                self.cache.retrieve_source('package', '1.0.0')
+
+                # Only the second content is found in the package
+                self.assert_cache_size_equal(7)

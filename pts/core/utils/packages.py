@@ -104,6 +104,7 @@ class AptCache(object):
     """
     A class for handling cached package information.
     """
+    DEFAULT_MAX_SIZE = 1 * 1024 ** 3  # 1 GiB
     QUILT_FORMAT = '3.0 (quilt)'
 
     class AcquireProgress(apt.progress.base.AcquireProgress):
@@ -143,7 +144,31 @@ class AptCache(object):
 
         self.sources = []
         self.packages = []
+        self.cache_max_size = getattr(
+            settings, 'PTS_APT_CACHE_MAX_SIZE', self.DEFAULT_MAX_SIZE)
+        #: The directory where source package files are cached
         self.source_cache_directory = os.path.join(self.cache_root_dir, 'packages')
+        self._cache_size = self.get_directory_size(self.source_cache_directory)  # in bytes
+
+        self.configure_cache()
+
+    def get_directory_size(self, directory_path):
+        """
+        Returns the total space taken by the given directory in bytes.
+
+        :param directory_path: The path to the directory
+        :type directory_path: string
+
+        :rtype: int
+        """
+        total_size = 0
+        for dirpath, dirnames, filenames in os.walk(directory_path):
+            for file_name in filenames:
+                file_path = os.path.join(dirpath, file_name)
+                stat = os.lstat(file_path)
+                total_size += stat.st_size
+
+        return total_size
 
     def _create_cache_directory(self):
         if not os.path.exists(self.cache_root_dir):
@@ -363,6 +388,13 @@ class AptCache(object):
         package_dir = self.get_package_source_cache_directory(package_name)
         return os.path.join(package_dir, package_name + '-' + version)
 
+    def clear_cached_sources(self):
+        """
+        Clears all cached package source files.
+        """
+        shutil.rmtree(self.source_cache_directory)
+        self._cache_size = self.get_directory_size(self.source_cache_directory)
+
     def _get_apt_source_records(self, source_name, version):
         """
         Returns a :class:`apt_pkg.SourceRecords` instance where the given
@@ -469,11 +501,17 @@ class AptCache(object):
             package files.
         :rtype: string
         """
+        if self._cache_size > self.cache_max_size:
+            # If the maximum allowed cache size has been exceeded, clear the cache
+            self.clear_cached_sources()
+
         source_records = self._get_apt_source_records(source_name, version)
 
         dest_dir_path = self.get_package_source_cache_directory(source_name)
         if not os.path.exists(dest_dir_path):
             os.makedirs(dest_dir_path)
+        # Remember the size of the directory in the beginning
+        old_size = self.get_directory_size(dest_dir_path)
 
         # Download the source files
         acquire, dsc_file_path = self._apt_acquire_package(
@@ -492,5 +530,11 @@ class AptCache(object):
         else:
             # Let dpkg-source handle the extraction in all other cases
             self._extract_dpkg_source(dsc_file_path, outdir)
+
+        # Update the current cache size based on the changes made by getting
+        # this source package.
+        new_size = self.get_directory_size(dest_dir_path)
+        size_delta = new_size - old_size
+        self._cache_size += size_delta
 
         return outdir

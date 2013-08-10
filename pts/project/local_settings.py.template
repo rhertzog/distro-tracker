@@ -81,6 +81,10 @@ PTS_VENDOR_RULES = 'pts.vendor.debian.rules'
 #: the cache of retrieved Web resources.
 PTS_CACHE_DIRECTORY = '/path/to/a/directory'
 
+#: The maximum size that the :class:`pts.core.utils.packages.AptCache` should
+#: consume for all of its cached source files, given in bytes.
+PTS_APT_CACHE_MAX_SIZE = 5 * 1024 ** 3  # 5 GiB
+
 #: This directory should contain a GPG keyring of known public keys
 PTS_KEYRING_DIRECTORY = '/path/to/keyring/directory'
 
