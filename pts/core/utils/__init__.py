@@ -16,7 +16,10 @@ from django.utils import six
 from django.conf import settings
 import os
 import json
+import lzma
 import gpgme
+import tarfile
+import contextlib
 
 from .email_messages import extract_email_address_from_header
 from .email_messages import get_decoded_message_payload
@@ -230,3 +233,35 @@ def verify_signature(content):
         signers.append((key.uids[0].name, key.uids[0].email))
 
     return signers
+
+
+def extract_tar_archive(archive_path, destination_directory):
+    """
+    Extracts the given tarball to the given destination directory.
+    It automatically handles the following compressed archives on both Python2
+    and Python3.
+
+    - gz
+    - xz
+    - bz2
+    - lzma
+
+    :param archive_path: The path to the archive which should be extracted.
+    :type archive_path: string
+
+    :param destination_directory: The directory where the files should be
+        extracted to. The directory does not have to exist prior to calling
+        this function; it will be automatically created, if not.
+    :type destination_directory: string
+    """
+    # lzma (.lzma and .xz) compressed archives are not automatically
+    # uncompressed on python2.
+    if archive_path.endswith('.xz') or archive_path.endswith('.lzma'):
+        if not six.PY3:
+            with contextlib.closing(lzma.LZMAFile(archive_path)) as lzma_file:
+                with tarfile.open(fileobj=lzma_file) as archive_file:
+                    archive_file.extractall(destination_directory)
+            return
+    # In all other cases, tarfile handles compression automatically
+    with tarfile.open(archive_path) as archive_file:
+        archive_file.extractall(destination_directory)

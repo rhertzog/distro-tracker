@@ -17,6 +17,7 @@ from django.conf import settings
 from django.utils.encoding import force_bytes
 
 from debian import deb822
+from pts.core.utils import extract_tar_archive
 from pts.core.models import Repository
 from pts.core.models import Architecture
 
@@ -24,7 +25,6 @@ import os
 import apt
 import shutil
 import apt_pkg
-import tarfile
 import subprocess
 
 
@@ -361,8 +361,7 @@ class AptCache(object):
         """
         Extracts the given tarball to the given output directory.
         """
-        with tarfile.open(debian_tar_path) as debian_tar:
-            debian_tar.extractall(outdir)
+        extract_tar_archive(debian_tar_path, outdir)
 
     def get_package_source_cache_directory(self, package_name):
         """

@@ -21,6 +21,7 @@ The Package Tracking System currently depends on the following Debian packages:
 For Python2.7, the following additional packages are required:
 
 - python-mock
+- python-lzma
 
 .. _database_setup:
 
