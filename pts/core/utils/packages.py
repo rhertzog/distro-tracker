@@ -345,7 +345,7 @@ class AptCache(object):
         record = deb822.Deb822(record)
         return record['format']
 
-    def _extract_quilt_package(self, debian_tar_path, outdir):
+    def _extract_quilt_package_debian_tar(self, debian_tar_path, outdir):
         """
         Extracts the given tarball to the given output directory.
         """
@@ -419,10 +419,14 @@ class AptCache(object):
 
         return source_records
 
-    def _extract_dpkg_source(self, dsc_file_path, outdir):
+    def _extract_dpkg_source(self, retrieved_files, outdir):
         """
         Uses dpkg-source to extract the source package.
         """
+        dsc_file_path = next(
+            file_path
+            for file_path in retrieved_files
+            if file_path.endswith('.dsc'))
         subprocess.check_call(["dpkg-source", "-x", dsc_file_path, outdir])
 
     def _apt_acquire_package(self,
@@ -444,20 +448,16 @@ class AptCache(object):
         :param debian_directory_only: A flag indicating whether only the debian
             directory should be downloaded.
 
-        :returns: A two-tuple of the :class:`apt_pkg.Acquire` instance used to
-            acquire the source files and the path to the acquired dsc file of
-            the package.
+        :returns: A list of absolute paths of all retrieved source files.
+        :rtype: list of strings
         """
         package_format = self._get_format(source_records.record)
-        dsc_file_path = None
+        # A reference to each AcquireFile instance must be kept
         files = []
         acquire = apt_pkg.Acquire(apt.progress.base.AcquireProgress())
         for md5, size, path, file_type in source_records.files:
             base = os.path.basename(path)
             dest_file_path = os.path.join(dest_dir_path, base)
-            # Remember the dsc file path so it can be passed to dpkg-source
-            if file_type == 'dsc':
-                dsc_file_path = dest_file_path
             if debian_directory_only and package_format == self.QUILT_FORMAT:
                 if file_type != 'diff':
                     # Only retrieve the .debian.tar.* file for quilt packages
@@ -474,14 +474,17 @@ class AptCache(object):
 
         acquire.run()
 
-        # Check if all items are correctly retrieved
+        # Check if all items are correctly retrieved and build the list of file
+        # paths.
+        retrieved_paths = []
         for item in acquire.items:
             if item.status != item.STAT_DONE:
                 raise SourcePackageRetrieveError(
                     'Could not retrieve file {file}: {error}'.format(
                         file=item.destfile, error=item.error_text))
+            retrieved_paths.append(item.destfile)
 
-        return acquire, dsc_file_path
+        return retrieved_paths
 
     def retrieve_source(self, source_name, version,
                         debian_directory_only=False):
@@ -514,7 +517,7 @@ class AptCache(object):
         old_size = self.get_directory_size(dest_dir_path)
 
         # Download the source files
-        acquire, dsc_file_path = self._apt_acquire_package(
+        retrieved_files = self._apt_acquire_package(
             source_records, dest_dir_path, debian_directory_only)
 
         # Extract the retrieved source files
@@ -526,10 +529,10 @@ class AptCache(object):
         package_format = self._get_format(source_records.record)
         if debian_directory_only and package_format == self.QUILT_FORMAT:
             # dpkg-source cannot extract an incomplete package
-            self._extract_quilt_package(acquire.items[0].destfile, outdir)
+            self._extract_quilt_package_debian_tar(retrieved_files[0], outdir)
         else:
             # Let dpkg-source handle the extraction in all other cases
-            self._extract_dpkg_source(dsc_file_path, outdir)
+            self._extract_dpkg_source(retrieved_files, outdir)
 
         # Update the current cache size based on the changes made by getting
         # this source package.
