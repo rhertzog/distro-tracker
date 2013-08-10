@@ -47,6 +47,7 @@ from debian import deb822
 import os
 import time
 import gpgme
+import tempfile
 
 
 class VerpModuleTest(SimpleTestCase):
@@ -720,13 +721,7 @@ class HttpCacheTest(SimpleTestCase):
 
     def setUp(self):
         # Set up a cache directory to use in the tests
-        import os
-        self.cache_directory = os.path.join(
-            os.path.dirname(__file__),
-            'test-cache'
-        )
-        if not os.path.exists(self.cache_directory):
-            os.makedirs(self.cache_directory)
+        self.cache_directory = tempfile.mkdtemp(suffix='test-cache')
         # Set up a simple response content
         self.response_content = 'Simple response'
         self.response_content = self.response_content.encode('utf-8')
@@ -1048,10 +1043,6 @@ class HttpCacheTest(SimpleTestCase):
         mock_cache.update.assert_called_once_with(url)
 
 
-TEST_KEYRING_DIRECTORY = os.path.join(
-    os.path.dirname(__file__), 'test-keyring')
-
-@override_settings(PTS_KEYRING_DIRECTORY=TEST_KEYRING_DIRECTORY)
 class VerifySignatureTest(SimpleTestCase):
     """
     Tests the :func:`pts.core.utils.verify_signature` function.
@@ -1062,7 +1053,7 @@ class VerifySignatureTest(SimpleTestCase):
         keyring.
         """
         old = os.environ.get('GNUPGHOME', None)
-        os.environ['GNUPGHOME'] = TEST_KEYRING_DIRECTORY
+        os.environ['GNUPGHOME'] = self.TEST_KEYRING_DIRECTORY
         ctx = gpgme.Context()
         file_path = os.path.join(
             os.path.dirname(__file__),
@@ -1076,67 +1067,70 @@ class VerifySignatureTest(SimpleTestCase):
             os.environ['GNUPGHOME'] = old
 
     def setUp(self):
-        if not os.path.exists(TEST_KEYRING_DIRECTORY):
-            os.makedirs(TEST_KEYRING_DIRECTORY)
+        self.TEST_KEYRING_DIRECTORY = tempfile.mkdtemp(suffix='-test-keyring')
 
     def tearDown(self):
         import shutil
-        shutil.rmtree(TEST_KEYRING_DIRECTORY)
+        shutil.rmtree(self.TEST_KEYRING_DIRECTORY)
 
     def test_signed_message(self):
         """
         Tests extracting the signature from a correctly signed message when the
         signer is found in the keyring.
         """
-        self.import_key_from_test_file('key1.pub')
-        file_path = os.path.join(
-            os.path.dirname(__file__),
-            'tests-data/signed-message'
-        )
-        expected = [
-            ('PTS Tests', 'fake-address@domain.com')
-        ]
+        with self.settings(PTS_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
+            self.import_key_from_test_file('key1.pub')
+            file_path = os.path.join(
+                os.path.dirname(__file__),
+                'tests-data/signed-message'
+            )
+            expected = [
+                ('PTS Tests', 'fake-address@domain.com')
+            ]
 
-        with open(file_path, 'rb') as f:
-            self.assertEqual(expected, verify_signature(f.read()))
+            with open(file_path, 'rb') as f:
+                self.assertEqual(expected, verify_signature(f.read()))
 
     def test_signed_message_unknown_key(self):
         """
         Tests extracting the signature from a correctly signed message when the
         signer is not found in the keyring.
         """
-        file_path = os.path.join(
-            os.path.dirname(__file__),
-            'tests-data/signed-message'
-        )
+        with self.settings(PTS_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
+            file_path = os.path.join(
+                os.path.dirname(__file__),
+                'tests-data/signed-message'
+            )
 
-        with open(file_path, 'rb') as f:
-            self.assertSequenceEqual([], verify_signature(f.read()))
+            with open(file_path, 'rb') as f:
+                self.assertSequenceEqual([], verify_signature(f.read()))
 
     def test_incorrect_signature(self):
         """
         Tests extracting signature information when the signature itself is
         wrong.
         """
-        self.assertIsNone(verify_signature(b"This is not a signature"))
+        with self.settings(PTS_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
+            self.assertIsNone(verify_signature(b"This is not a signature"))
 
     def test_utf8_content(self):
         """
         Tests extracting the signature from a message passed as unicode text
         instead of bytes.
         """
-        self.import_key_from_test_file('key1.pub')
-        file_path = os.path.join(
-            os.path.dirname(__file__),
-            'tests-data/signed-message'
-        )
-        expected = [
-            ('PTS Tests', 'fake-address@domain.com')
-        ]
+        with self.settings(PTS_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
+            self.import_key_from_test_file('key1.pub')
+            file_path = os.path.join(
+                os.path.dirname(__file__),
+                'tests-data/signed-message'
+            )
+            expected = [
+                ('PTS Tests', 'fake-address@domain.com')
+            ]
 
-        with open(file_path, 'rb') as f:
-            content = f.read().decode('utf-8')
-            self.assertEqual(expected, verify_signature(content))
+            with open(file_path, 'rb') as f:
+                content = f.read().decode('utf-8')
+                self.assertEqual(expected, verify_signature(content))
 
 
 class DecodeHeaderTest(SimpleTestCase):

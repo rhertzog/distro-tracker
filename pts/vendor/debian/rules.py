@@ -17,13 +17,13 @@ from pts.core.models import PackageBugStats
 from pts.core.models import News
 from pts.core.models import SourcePackageName
 from pts.core.models import BinaryPackageBugStats
-from pts.mail.dispatch.process import get_keyword_from_address
+from pts.mail.dispatch import get_keyword_from_address
 from pts.core.utils import get_decoded_message_payload
 from pts.core.utils import get_or_none
 from pts.core.utils.http import HttpCache
 from .models import DebianContributor
 from pts.vendor.common import PluginProcessingError
-from pts.mail.mail_news.process import create_news
+from pts.mail.mail_news import create_news
 
 
 def get_keyword(local_part, msg):

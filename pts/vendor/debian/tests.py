@@ -19,6 +19,7 @@ from django.core import mail
 from django.utils.six.moves import mock
 from django.utils.encoding import force_bytes
 from pts.mail.tests.tests_dispatch import DispatchTestHelperMixin, DispatchBaseTest
+from pts.core.tests.common import make_temp_directory
 from pts.core.models import News
 from pts.core.models import PackageName
 from pts.core.models import SourcePackage
@@ -519,7 +520,7 @@ class DebianContributorExtraTest(TestCase):
 @override_settings(PTS_VENDOR_RULES='pts.vendor.debian.rules')
 class RetrieveSourcesInformationDebian(TestCase):
     """
-    Tests the Debian-specifi aspects of retrieving package information from a
+    Tests the Debian-specific aspects of retrieving package information from a
     repository.
     """
     fixtures = ['repository-test-fixture.json']
@@ -550,24 +551,23 @@ Extra-Source-Only: yes
 Files:
  227ffeabc4357876f45968aeee39cdb1 3041 file.dsc
 """)
-        sources_file_path = os.path.join(os.path.dirname(__file__), 'Sources')
-        with open(sources_file_path, 'w') as f:
-            f.write(sources_contents)
-        mock_update_repositories.return_value = (
-            [(self.repository, sources_file_path)],
-            []
-        )
-        # Sanity check - no source packages before running the task
-        self.assertEqual(0, SourcePackageName.objects.count())
+        with make_temp_directory('-mock-repo-cache') as temp_dir_name:
+            sources_file_path = os.path.join(temp_dir_name, 'Sources')
+            with open(sources_file_path, 'w') as f:
+                f.write(sources_contents)
+            mock_update_repositories.return_value = (
+                [(self.repository, sources_file_path)],
+                []
+            )
+            # Sanity check - no source packages before running the task
+            self.assertEqual(0, SourcePackageName.objects.count())
 
-        run_task(UpdateRepositoriesTask)
+            run_task(UpdateRepositoriesTask)
 
-        # Only one package exists
-        self.assertEqual(1, SourcePackageName.objects.count())
-        # It is the one without the Extra-Source-Only: yes
-        self.assertEqual('dummy-package', SourcePackageName.objects.all()[0].name)
-
-        os.remove(sources_file_path)
+            # Only one package exists
+            self.assertEqual(1, SourcePackageName.objects.count())
+            # It is the one without the Extra-Source-Only: yes
+            self.assertEqual('dummy-package', SourcePackageName.objects.all()[0].name)
 
 
 @override_settings(PTS_VENDOR_RULES='pts.vendor.debian.rules')
