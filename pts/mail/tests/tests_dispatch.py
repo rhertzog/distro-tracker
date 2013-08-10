@@ -180,6 +180,23 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
 
         self.package = PackageName.objects.create(name=self.package_name)
 
+    def test_dispatched_mail_to_bytes(self):
+        """
+        Tests that the message instance to be sent to subscribers can be
+        serialized to bytes with no errors when the body contains utf-8
+        """
+        self.subscribe_user_to_package('user@domain.com', self.package_name)
+        self.set_message_content('üößšđžčć한글')
+        self.message.set_charset('utf-8')
+
+        self.run_dispatch()
+
+        msg = mail.outbox[0]
+        # No exception thrown trying to get the entire message's content as bytes
+        content = msg.message().as_string()
+        # The content is actually bytes
+        self.assertTrue(isinstance(content, bytes))
+
     def test_dispatch_to_subscribers(self):
         """
         Tests the dispatch functionality when there users subscribed to it.
