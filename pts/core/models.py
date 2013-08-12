@@ -21,6 +21,7 @@ from django.core.files.base import ContentFile
 from pts.core.utils import get_or_none
 from pts.core.utils import SpaceDelimitedTextField
 from pts.core.utils import verify_signature
+from pts.core.utils import pts_render_to_string
 from pts.core.utils.plugins import PluginRegistry
 from pts.core.utils.email_messages import decode_header
 
@@ -1559,3 +1560,57 @@ class BinaryPackageBugStats(models.Model):
     def __str__(self):
         return '{package} bug stats: {stats}'.format(
             package=self.package, stats=self.stats)
+
+
+@python_2_unicode_compatible
+class ActionItemType(models.Model):
+    type_name = models.TextField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.type_name
+
+
+@python_2_unicode_compatible
+class ActionItem(models.Model):
+    """
+    Model for entries of the "action needed" panel.
+    """
+    #: All available severity levels
+    SEVERITY_LEVELS = {
+        'wishlist': 0,
+        'low': 1,
+        'normal': 2,
+        'high': 3,
+        'critical': 4,
+    }
+    package = models.ForeignKey(PackageName, related_name='action_items')
+    item_type = models.ForeignKey(ActionItemType, related_name='action_items')
+    short_description = models.TextField()
+    # Choices expects the choices to have a list of tuples (value, display)
+    # which is reversed to what a dict's items method gives
+    severity = models.IntegerField(
+        choices=((value, key) for key, value in SEVERITY_LEVELS.items()),
+        default=SEVERITY_LEVELS['normal'])
+    created_timestamp = models.DateTimeField(auto_now_add=True)
+    last_updated_timestamp = models.DateTimeField(auto_now=True)
+    extra_data = JSONField(blank=True, null=True)
+    full_description_template = models.CharField(
+        max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return '{package} - {desc} ({severity})'.format(
+            package=self.package,
+            desc=self.short_description,
+            severity=self.get_severity_display())
+
+    @cached_property
+    def full_description(self):
+        if not self.full_description_template:
+            return ''
+        try:
+            return mark_safe(
+                pts_render_to_string(self.full_description_template, {
+                    'item': self,
+                }))
+        except:
+            return ''

@@ -15,11 +15,13 @@ Tests for the PTS core module's models.
 """
 from __future__ import unicode_literals
 from django.test import TestCase
+from django.test.utils import override_settings
 from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError
 from pts.core.models import Subscription, EmailUser, PackageName, BinaryPackageName
 from pts.core.models import SourcePackageName, SourcePackageRepositoryEntry
 from pts.core.models import Keyword
+from pts.core.models import ActionItem, ActionItemType
 from pts.core.models import PseudoPackageName
 from pts.core.models import Repository
 from pts.core.models import News
@@ -28,6 +30,8 @@ from pts.core.models import ExtractedSourceFile
 from pts.core.models import MailingList
 from .common import make_temp_directory
 from .common import create_source_package
+
+import os
 
 
 class SubscriptionManagerTest(TestCase):
@@ -1124,3 +1128,75 @@ class NewsTests(TestCase):
                 self.assertTrue(news.news_file)
                 self.assertIsNone(news._db_content)
                 self.assertEqual(news.content, expected_content)
+
+
+@override_settings(TEMPLATE_DIRS=(os.path.join(
+    os.path.dirname(__file__),
+    'tests-data/tests-templates'),))
+class ActionItemTests(TestCase):
+    """
+    Tests for the :class:`pts.core.models.ActionItem` model.
+    """
+    def setUp(self):
+        self.package = PackageName.objects.create(name='dummy-package')
+        self.action_type = ActionItemType.objects.create(type_name='test-type')
+
+    def test_full_description_from_template(self):
+        """
+        Tests that the :attr:`pts.core.models.ActionItem.full_description`
+        property returns content by rendering the correct template.
+        """
+        action_item = ActionItem.objects.create(
+            package=self.package,
+            item_type=self.action_type,
+            short_description='Short description of item',
+            full_description_template='action-item-test.html')
+
+        self.assertIn(
+            "Item's PK is {pk}".format(pk=action_item.pk),
+            action_item.full_description)
+        self.assertIn(
+            "Short description: Short description of item",
+            action_item.full_description)
+
+    def test_full_description_unexisting_template(self):
+        """
+        Tests that the :attr:`pts.core.models.ActionItem.full_description`
+        returns an empty full description if the given template does not
+        exist.
+        """
+        action_item = ActionItem.objects.create(
+            package=self.package,
+            item_type=self.action_type,
+            short_description='Short description of item',
+            full_description_template='this-template-does-not-exist.html')
+
+        self.assertEqual('', action_item.full_description)
+
+    def test_full_description_no_template_given(self):
+        """
+        Tests that the :attr:`pts.core.models.ActionItem.full_description`
+        returns an empty full description if no template is set for the item.
+        """
+        action_item = ActionItem.objects.create(
+            package=self.package,
+            item_type=self.action_type,
+            short_description='Short description of item')
+
+        self.assertEqual('', action_item.full_description)
+
+    def test_full_description_extra_data(self):
+        """
+        Tests that the :attr:`pts.core.models.ActionItem.full_description`
+        returns a description which can use the extra_data of a
+        :class:`pts.core.models.ActionItem`.
+        """
+        action_item = ActionItem.objects.create(
+            package=self.package,
+            item_type=self.action_type,
+            short_description='Short description of item',
+            full_description_template='action-item-test.html')
+        action_item.extra_data = ['data1', 'data2']
+        action_item.save()
+
+        self.assertIn("data1, data2", action_item.full_description)

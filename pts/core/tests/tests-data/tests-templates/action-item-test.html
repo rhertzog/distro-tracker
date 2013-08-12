@@ -1,0 +1,3 @@
+Item's PK is {{ item.pk }}.
+Short description: {{ item.short_description|safe }}.
+{% for data in item.extra_data %}{{ data }}, {% endfor %}
