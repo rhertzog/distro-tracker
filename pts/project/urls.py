@@ -13,6 +13,7 @@ from __future__ import unicode_literals
 from django.conf.urls import patterns, include, url
 from django.views.generic import TemplateView
 from pts.core.views import PackageSearchView, PackageAutocompleteView
+from pts.core.views import ActionItemJsonView, ActionItemView
 
 from django.contrib import admin
 admin.autodiscover()
@@ -28,9 +29,14 @@ urlpatterns = patterns('',
     url(r'^api/package/search/autocomplete$', PackageAutocompleteView.as_view(),
         name='pts-api-package-autocomplete'),
 
+    url(r'^api/action-items/(?P<item_pk>\d+)$', ActionItemJsonView.as_view(),
+        name='pts-api-action-item'),
+
     url(r'^admin/', include(admin.site.urls)),
     url(r'^news/(?P<news_id>\d+)$', 'pts.core.views.news_page',
         name='pts-news-page'),
+    url(r'^action-items/(?P<item_pk>\d+)$', ActionItemView.as_view(),
+        name='pts-action-item'),
 
     # The package page view. It must be listed *after* the admin URL so that
     # the admin URL is not interpreted as a package named "admin".

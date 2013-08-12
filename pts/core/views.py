@@ -18,6 +18,7 @@ from django.views.decorators.cache import cache_control
 from pts.core.models import get_web_package
 from pts.core.utils import render_to_json_response
 from pts.core.models import SourcePackageName, PackageName, PseudoPackageName
+from pts.core.models import ActionItem
 from pts.core.models import News, NewsRenderer
 from pts.core.panels import get_panels_for_package
 
@@ -115,3 +116,24 @@ def news_page(request, news_id):
         'news_renderer': renderer,
         'news': news,
     })
+
+
+class ActionItemJsonView(View):
+    """
+    View renders a :class:`pts.core.models.ActionItem` in a JSON response.
+    """
+    @method_decorator(cache_control(must_revalidate=True, max_age=3600))
+    def get(self, request, item_pk):
+        item = get_object_or_404(ActionItem, pk=item_pk)
+        return render_to_json_response(item.to_dict())
+
+
+class ActionItemView(View):
+    """
+    View renders a :class:`pts.core.models.ActionItem` in an HTML response.
+    """
+    def get(self, request, item_pk):
+        item = get_object_or_404(ActionItem, pk=item_pk)
+        return render(request, 'core/action-item.html', {
+            'item': item,
+        })

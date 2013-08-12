@@ -15,12 +15,16 @@ Tests for the PTS core views.
 """
 from __future__ import unicode_literals
 from django.test import TestCase
+from django.test.utils import override_settings
 from pts.core.models import PackageName, BinaryPackageName
 from pts.core.models import SourcePackageName, SourcePackage
 from pts.core.models import PseudoPackageName
+from pts.core.models import ActionItem, ActionItemType
 import json
 
 from django.core.urlresolvers import reverse
+
+import os
 
 
 class PackageViewTest(TestCase):
@@ -274,3 +278,55 @@ class PackageAutocompleteViewTest(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
+@override_settings(TEMPLATE_DIRS=(os.path.join(
+    os.path.dirname(__file__),
+    'tests-data/tests-templates'),))
+class ActionItemJsonViewTest(TestCase):
+    """
+    Tests for the :class:`pts.core.views.ActionItemJsonView`.
+    """
+    def setUp(self):
+        self.package = SourcePackageName.objects.create(name='dummy-package')
+        self.action_type = ActionItemType.objects.create(type_name='test')
+
+    def test_item_exists(self):
+        """
+        Tests that the JSON response correctly returns an item's content.
+        """
+        expected_short_description = 'Short description of item'
+        action_item = ActionItem.objects.create(
+            package=self.package,
+            item_type=self.action_type,
+            short_description=expected_short_description,
+            full_description_template='action-item-test.html')
+        response = self.client.get(reverse('pts-api-action-item', kwargs={
+            'item_pk': action_item.pk,
+        }))
+
+        response = json.loads(response.content.decode('utf-8'))
+        # Correct short description
+        self.assertEqual(
+            expected_short_description,
+            response['short_description'])
+        # Package name included
+        self.assertEqual(
+            'dummy-package',
+            response['package']['name'])
+        # Full description from rendered template
+        self.assertIn("Item's PK is", response['full_description'])
+        # Template name NOT included
+        self.assertNotIn('full_description_template', response)
+
+    def test_item_does_not_exist(self):
+        """
+        Tests that the JSON ActionItem view returns 404 when the item does not
+        exist.
+        """
+        does_not_exist = 100
+        # Sanity check - the PK actually does not exist
+        self.assertEqual(0, ActionItem.objects.filter(pk=does_not_exist).count())
+        response = self.client.get(reverse('pts-api-action-item', kwargs={
+            'item_pk': does_not_exist,
+        }))
+
+        self.assertEqual(response.status_code, 404)

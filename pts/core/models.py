@@ -1603,6 +1603,11 @@ class ActionItem(models.Model):
             desc=self.short_description,
             severity=self.get_severity_display())
 
+    def get_absolute_url(self):
+        return reverse('pts-action-item', kwargs={
+            'item_pk': self.pk,
+        })
+
     @cached_property
     def full_description(self):
         if not self.full_description_template:
@@ -1614,3 +1619,13 @@ class ActionItem(models.Model):
                 }))
         except:
             return ''
+
+    def to_dict(self):
+        return {
+            'short_description': self.short_description,
+            'package': {
+                'name': self.package.name,
+                'id': self.package.id,
+            },
+            'full_description': self.full_description,
+        }
