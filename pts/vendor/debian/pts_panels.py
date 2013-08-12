@@ -12,7 +12,6 @@
 
 from __future__ import unicode_literals
 from django.utils.safestring import mark_safe
-from pts.core.models import PackageBugStats
 from pts.core.utils import get_or_none
 from pts.core.models import SourcePackageName
 from pts.core.panels import BasePanel
@@ -23,65 +22,6 @@ from pts.core.panels import TemplatePanelItem
 from pts.core.panels import HtmlPanelItem
 from pts.vendor.debian.models import LintianStats
 from pts.vendor.debian.models import PackageExcuses
-from pts import vendor
-
-
-class DebianBugTodos(TodosPanel.ItemProvider):
-    def get_panel_items(self):
-        items = []
-        try:
-            bug_stats = self.package.bug_stats.stats
-        except PackageBugStats.DoesNotExist:
-            return []
-        # Find the statistics on the patch bug category
-        patch_bug_stats = next((
-            category
-            for category in bug_stats
-            if category['category_name'] == 'patch'),
-            None
-        )
-        if patch_bug_stats and patch_bug_stats['bug_count'] > 0:
-            items.append(
-                TemplatePanelItem("debian/patch-bugs-todo.html", {
-                    'bug_stats': patch_bug_stats,
-                    'url': vendor.call(
-                        'get_bug_tracker_url',
-                        self.package.name, 'source', 'patch')[0],
-                    'merged_url': vendor.call(
-                        'get_bug_tracker_url',
-                        self.package.name, 'source', 'patch-merged')[0],
-                })
-            )
-
-        return items
-
-
-class DebianBugProblems(ProblemsPanel.ItemProvider):
-    def get_panel_items(self):
-        items = []
-        try:
-            bug_stats = self.package.bug_stats.stats
-        except PackageBugStats.DoesNotExist:
-            return []
-        # Find the statistics on the help bug category
-        help_bug_stats = next((
-            category
-            for category in bug_stats
-            if category['category_name'] == 'help'),
-            None
-        )
-        if help_bug_stats and help_bug_stats['bug_count'] > 0:
-            items.append(
-                TemplatePanelItem("debian/help-bugs-problem.html", {
-                    'bug_stats': help_bug_stats,
-                    'url': vendor.call(
-                        'get_bug_tracker_url',
-                        self.package.name, 'source', 'help')[0],
-                })
-            )
-
-        return items
-
 
 
 class StandardsVersionTodo(TodosPanel.ItemProvider):
