@@ -12,6 +12,9 @@
 
 from __future__ import unicode_literals
 from django.utils.safestring import mark_safe
+from django.utils.http import urlencode
+from pts.core.utils import get_or_none
+from pts.core.models import Repository
 from pts.core.panels import BasePanel
 from pts.core.panels import LinksPanel
 from pts.core.panels import TemplatePanelItem
@@ -46,6 +49,33 @@ class LintianLink(LinksPanel.ItemProvider):
             ]
 
         return []
+
+
+class BuildLogCheckLinks(LinksPanel.ItemProvider):
+    def get_panel_items(self):
+        has_experimental = False
+        experimental_repo = get_or_none(Repository, name='experimental')
+        if experimental_repo:
+            has_experimental = experimental_repo.has_source_package_name(
+                self.package.name)
+
+        query_string = urlencode({'p': self.package.name})
+        try:
+            self.package.build_logcheck_stats
+            has_checks = True
+        except:
+            has_checks = False
+        logcheck_url = "http://qa.debian.org/bls/packages/{hash}/{pkg}.html".format(
+            hash=self.package.name[0], pkg=self.package.name)
+
+        return [
+            TemplatePanelItem('debian/logcheck-links.html', {
+                'package_query_string': query_string,
+                'has_checks': has_checks,
+                'logcheck_url': logcheck_url,
+                'has_experimental': has_experimental,
+            })
+        ]
 
 
 class TransitionsPanel(BasePanel):
