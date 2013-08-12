@@ -6,9 +6,10 @@
     <div class="row-fluid">
     <li class="list-group-item">
         {# The short description is allowed to contain some HTML markup #}
+        <span title="severity" class="text-info">[{{ item.get_severity_display }}]</span>
         <span>{{ item.short_description|safe }}</span>
         {% if item.full_description_template %}
-        <span>
+        <span title="details">
         <a href="{% url 'pts-action-item' item.pk %}" class="has-popover action-needed-details" data-href="{% url 'pts-api-action-item' item.pk %}">
             <i class="icon-question-sign"></i>
         </a>
