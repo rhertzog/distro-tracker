@@ -25,6 +25,7 @@ from pts.project.settings import INSTALLED_APPS
 #: Apps to add to the default :data:`pts.project.settings.INSTALLED_APPS`.
 INSTALLED_APPS = INSTALLED_APPS + (
     'pts.extract_source_files',
+    'pts.stdver_warnings',
 )
 
 #: The name of the vendor. Equivalent to the Vendor field of an
