@@ -105,3 +105,14 @@ class PackageExcuses(models.Model):
 
     def __str__(self):
         return "Excuses for the package {pkg}".format(pkg=self.package)
+
+
+@python_2_unicode_compatible
+class BuildLogCheckStats(models.Model):
+    package = models.OneToOneField(
+        SourcePackageName,
+        related_name='build_logcheck_stats')
+    stats = JSONField()
+
+    def __str__(self):
+        return "Build logcheck stats for {pkg}".format(pkg=self.package)
