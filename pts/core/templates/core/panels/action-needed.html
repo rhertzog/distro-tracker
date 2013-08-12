@@ -1,0 +1,21 @@
+{% extends 'core/panels/panel.html' %}
+
+{% block panel-body %}
+<ul class="list-group list-group-flush">
+    {% for item in panel.context.items %}
+    <div class="row-fluid">
+    <li class="list-group-item">
+        {# The short description is allowed to contain some HTML markup #}
+        <span>{{ item.short_description|safe }}</span>
+        {% if item.full_description_template %}
+        <span>
+        <a href="{% url 'pts-action-item' item.pk %}" class="has-popover action-needed-details" data-href="{% url 'pts-api-action-item' item.pk %}">
+            <i class="icon-question-sign"></i>
+        </a>
+        </span>
+        {% endif %}
+    </li>
+    </div>
+    {% endfor %}
+</ul>
+{% endblock %}

@@ -16,6 +16,7 @@ from pts.core.utils.plugins import PluginRegistry
 from pts.core.utils import get_vcs_name
 from pts.core.utils import get_or_none
 from pts import vendor
+from pts.core.models import ActionItem
 from pts.core.models import PackageExtractedInfo
 from pts.core.models import MailingList
 from pts.core.models import News
@@ -766,3 +767,19 @@ class TodosPanel(ListPanel):
 class ProblemsPanel(ListPanel):
     position = 'center'
     title = 'problems'
+
+
+class ActionNeededPanel(BasePanel):
+    title = 'action needed'
+    template_name = 'core/panels/action-needed.html'
+    position = 'center'
+
+    @property
+    def context(self):
+        action_items = ActionItem.objects.filter(package=self.package)
+        action_items = action_items.order_by(
+            '-severity', '-last_updated_timestamp')
+
+        return {
+            'items': action_items,
+        }
