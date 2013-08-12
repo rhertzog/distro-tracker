@@ -25,8 +25,6 @@ from pts.vendor.debian.models import LintianStats
 from pts.vendor.debian.models import PackageExcuses
 from pts import vendor
 
-import re
-
 
 class DebianBugTodos(TodosPanel.ItemProvider):
     def get_panel_items(self):
@@ -136,34 +134,6 @@ class StandardsVersionProblem(ProblemsPanel.ItemProvider):
         return []
 
 
-def _get_lintian_url(package, maintainer, full=False):
-    """
-    Returns the lintian URL for the given package.
-
-    :param package: The name of the package for which the URL should be built
-    :type package: string
-    :param maintainer: The email of the maintainer of the package
-    :type maintainer: string
-    :param full: Whether the URL should include the full lintian report or only
-        the errors and warnings.
-    :type full: Boolean
-    """
-    # First adapt the maintainer URL to the form expected by lintian.debian.org
-    lintian_maintainer_email = re.sub(
-        r"""[àáèéëêòöøîìùñ~/\(\)" ']""",
-        '_',
-        maintainer)
-
-    report = 'full' if full else 'maintainer'
-
-    return (
-        'http://lintian.debian.org/{report}/{maintainer}.html#{pkg}'.format(
-            report=report,
-            maintainer=lintian_maintainer_email,
-            pkg=package)
-    )
-
-
 class LintianLink(LinksPanel.ItemProvider):
     """
     If there are any known lintian issues for the package, provides a link to
@@ -175,21 +145,17 @@ class LintianLink(LinksPanel.ItemProvider):
         except LintianStats.DoesNotExist:
             return []
 
-        lintian_stats = lintian_stats.stats
-        if sum(lintian_stats.values()):
+        if sum(lintian_stats.stats.values()):
             warnings, errors = (
-                lintian_stats.get('warnings', 0),
-                lintian_stats.get('errors', 0))
+                lintian_stats.stats.get('warnings', 0),
+                lintian_stats.stats.get('errors', 0))
             has_errors_or_warnings = warnings or errors
             # Get the full URL only if the package does not have any errors or
             # warnings
-            url = _get_lintian_url(
-                self.package.name,
-                self.package.main_version.maintainer.email,
-                not has_errors_or_warnings)
+            url = lintian_stats.get_lintian_url(full=not has_errors_or_warnings)
             return [
                 TemplatePanelItem('debian/lintian-link.html', {
-                    'lintian_stats': lintian_stats,
+                    'lintian_stats': lintian_stats.stats,
                     'lintian_url': url,
                 })
             ]
@@ -208,14 +174,13 @@ class LintianTodo(TodosPanel.ItemProvider):
         except LintianStats.DoesNotExist:
             return []
 
+        url = lintian_stats.get_lintian_url()
+
         lintian_stats = lintian_stats.stats
         warnings = lintian_stats.get('warnings', 0)
         errors = lintian_stats.get('errors', 0)
 
         if warnings + errors > 0:
-            url = _get_lintian_url(
-                self.package.name,
-                self.package.main_version.maintainer.email)
             return [
                 TemplatePanelItem('debian/lintian-todo.html', {
                     'errors': errors,

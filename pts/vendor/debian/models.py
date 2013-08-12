@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Copyright 2013 The Debian Package Tracking System Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/ptsauthors
@@ -17,8 +19,12 @@ from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 
 from pts.core.utils import SpaceDelimitedTextField
+from pts.core.utils import get_or_none
 from pts.core.models import PackageName
+from pts.core.models import SourcePackageName
 from jsonfield import JSONField
+
+import re
 
 
 @python_2_unicode_compatible
@@ -46,6 +52,38 @@ class LintianStats(models.Model):
     def __str__(self):
         return 'Lintian stats for package {package}'.format(
             package=self.package)
+
+    def get_lintian_url(self, full=False):
+        """
+        Returns the lintian URL for the package matching the
+        :class:`LintianStats <pts.vendor.debian.models.LintianStats>`.
+
+        :param full: Whether the URL should include the full lintian report or only
+            the errors and warnings.
+        :type full: Boolean
+        """
+        package = get_or_none(SourcePackageName, pk=self.package.pk)
+        if not package:
+            return ''
+        maintainer_email = ''
+        if package.main_version:
+            maintainer = package.main_version.maintainer
+            if maintainer:
+                maintainer_email = maintainer.email
+        # First adapt the maintainer URL to the form expected by lintian.debian.org
+        lintian_maintainer_email = re.sub(
+            r"""[àáèéëêòöøîìùñ~/\(\)" ']""",
+            '_',
+            maintainer_email)
+
+        report = 'full' if full else 'maintainer'
+
+        return (
+            'http://lintian.debian.org/{report}/{maintainer}.html#{pkg}'.format(
+                report=report,
+                maintainer=lintian_maintainer_email,
+                pkg=self.package)
+        )
 
 
 @python_2_unicode_compatible
