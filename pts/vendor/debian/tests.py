@@ -38,6 +38,7 @@ from pts.vendor.debian.rules import get_developer_information_url
 from pts.vendor.debian.pts_tasks import UpdatePackageBugStats
 from pts.vendor.debian.pts_tasks import RetrieveDebianMaintainersTask
 from pts.vendor.debian.pts_tasks import RetrieveLowThresholdNmuTask
+from pts.vendor.debian.pts_tasks import UpdateExcusesTask
 from pts.vendor.debian.models import DebianContributor
 from pts.vendor.debian.pts_tasks import UpdateLintianStatsTask
 from pts.vendor.debian.models import LintianStats
@@ -1436,3 +1437,124 @@ class DebianBugActionItemsTests(TestCase):
             help_item = package.action_items.get(
                 item_type=self.get_help_action_type())
             self.assertEqual(help_item.extra_data['bug_count'], help_bug_count)
+
+
+class UpdateExcusesTaskActionItemTest(TestCase):
+    """
+    Tests for the creating of action items by the
+    :class:`pts.vendor.debian.pts_tasks.UpdateExcusesTask`.
+    """
+    def setUp(self):
+        self.package_name = SourcePackageName.objects.create(name='dummy-package')
+        self.package = SourcePackage(
+            source_package_name=self.package_name, version='1.0.0')
+
+        self.task = UpdateExcusesTask()
+        self.task._get_update_excuses_content = mock.MagicMock()
+
+    def run_task(self):
+        self.task.execute()
+
+    def get_test_file_path(self, file_name):
+        return os.path.join(os.path.dirname(__file__), 'tests-data', file_name)
+
+    def set_update_excuses_content(self, content):
+        """
+        Sets the stub content of the update_excuses.html that the task will
+        have access to.
+        """
+        self.task._get_update_excuses_content.return_value = iter(
+            content.splitlines())
+
+    def set_update_excuses_content_from_file(self, file_name):
+        """
+        Sets the stub content of the update_excuses.html that the task will
+        have access to based on the content of the test file with the given
+        name.
+        """
+        with open(self.get_test_file_path(file_name), 'r') as f:
+            content = f.read()
+
+        self.set_update_excuses_content(content)
+
+    def get_action_item_type(self):
+        return ActionItemType.objects.get_or_create(
+            type_name=UpdateExcusesTask.ACTION_ITEM_TYPE_NAME)[0]
+
+    def test_action_item_created(self):
+        """
+        Tests that an action item is created when a package has not moved to
+        testing after the allocated period.
+        """
+        self.set_update_excuses_content_from_file('update_excuses-1.html')
+        # Sanity check: no action items currently
+        self.assertEqual(0, ActionItem.objects.count())
+        expected_data = {
+            'age': '20',
+            'limit': '10',
+        }
+
+        self.run_task()
+
+        # An action item is created
+        self.assertEqual(1, ActionItem.objects.count())
+        # Correct type
+        item = ActionItem.objects.all()[0]
+        self.assertEqual(
+            item.item_type.type_name,
+            UpdateExcusesTask.ACTION_ITEM_TYPE_NAME)
+        # Correct extra data
+        self.assertDictEqual(item.extra_data, expected_data)
+
+    def test_action_item_not_created(self):
+        """
+        Tests that an action item is not created when the allocated time period
+        has not yet passed.
+        """
+        self.set_update_excuses_content_from_file('update_excuses-2.html')
+        # Sanity check: no action items currently
+        self.assertEqual(0, ActionItem.objects.count())
+
+        self.run_task()
+
+        # Still no action items
+        self.assertEqual(0, ActionItem.objects.count())
+
+    def test_action_item_removed(self):
+        """
+        Tests that an already existing action item is removed when the package
+        is no longer problematic.
+        """
+        # Create an item for the package prior to running the task
+        ActionItem.objects.create(
+            package=self.package_name,
+            item_type=self.get_action_item_type(),
+            short_description="Desc")
+        self.set_update_excuses_content_from_file('update_excuses-2.html')
+
+        self.run_task()
+
+        # The action item is removed.
+        self.assertEqual(0, ActionItem.objects.count())
+
+    def test_action_item_updated(self):
+        """
+        Tests that an already existing action item's extra data is updated.
+        """
+        ActionItem.objects.create(
+            package=self.package_name,
+            item_type=self.get_action_item_type(),
+            short_description="Desc")
+        self.set_update_excuses_content_from_file('update_excuses-1.html')
+        expected_data = {
+            'age': '20',
+            'limit': '10',
+        }
+
+        self.run_task()
+
+        # Still just one item
+        self.assertEqual(1, ActionItem.objects.count())
+        # Extra data updated?
+        item = ActionItem.objects.all()[0]
+        self.assertDictEqual(expected_data, item.extra_data)

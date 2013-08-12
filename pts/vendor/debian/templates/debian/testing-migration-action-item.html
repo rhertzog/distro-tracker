@@ -1,0 +1,4 @@
+<span>The package has not entered <a href="http://ftp-master.debian.org/testing/update_excuses.html#{{ item.package.name }}">testing</a> even though the {{ item.extra_data.limit }}-day delay is over.</span>
+{% if item.extra_data.check_why_url %}
+<span><a href="{{ item.extra_data.check_why_url }}">Check why</a>.</span>
+{% endif %}

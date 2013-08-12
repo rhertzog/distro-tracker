@@ -17,6 +17,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.conf import settings
 from django.utils import six
+from django.utils.http import urlencode
 from django.core.urlresolvers import reverse
 
 from pts.core.tasks import BaseTask
@@ -25,6 +26,7 @@ from pts.core.models import ContributorEmail
 from pts.core.models import PackageBugStats
 from pts.core.models import BinaryPackageBugStats
 from pts.core.models import PackageName
+from pts.core.models import SourcePackageName
 from pts.core.models import BinaryPackageName
 from pts.vendor.debian.models import LintianStats
 from pts.vendor.debian.models import PackageTransition
@@ -717,10 +719,16 @@ class UpdateTransitionsTask(BaseTask):
 
 
 class UpdateExcusesTask(BaseTask):
+    ACTION_ITEM_TYPE_NAME = 'debian-testing-migration'
+    ITEM_DESCRIPTION = (
+        "The package has not entered testing even though the delay is over")
+
     def __init__(self, force_update=False, *args, **kwargs):
         super(UpdateExcusesTask, self).__init__(*args, **kwargs)
         self.force_update = force_update
         self.cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
+        self.action_item_type, _ = ActionItemType.objects.get_or_create(
+            type_name=self.ACTION_ITEM_TYPE_NAME)
 
     def set_parameters(self, parameters):
         if 'force_update' in parameters:
@@ -745,11 +753,17 @@ class UpdateExcusesTask(BaseTask):
 
         return str(html)
 
-    def _get_excuses(self, content_lines):
+    def _get_excuses_and_problems(self, content_lines):
         """
         Gets the excuses for each package from the given iterator of lines
         representing the excuses html file.
-        Returns them as a dict mapping package names to a list of excuses.
+        Also finds a list of packages which have not migrated to testing even
+        after the necessary time has passed.
+
+        :returns: A two-tuple where the first element is a dict mapping
+            package names to a list of excuses. The second element is a dict
+            mapping package names to a problem information. Problem information
+            is a dict with the keys ``age`` and ``limit``.
         """
         try:
             # Skip all HTML before the first list
@@ -762,6 +776,7 @@ class UpdateExcusesTask(BaseTask):
         top_level_list = True
         package = ""
         package_excuses = {}
+        problematic = {}
         excuses = []
         for line in content_lines:
             line = line.decode('utf-8')
@@ -802,31 +817,104 @@ class UpdateExcusesTask(BaseTask):
                 if 'Maintainer:' in subline:
                     continue
 
+                # Check if there is a problem for the package.
+                if 'days old (needed' in subline:
+                    words = subline.split()
+                    age, limit = words[0], words[4]
+                    if age != limit:
+                        # It is problematic only when the age is strictly
+                        # greater than the limit.
+                        problematic[package] = {
+                            'age': age,
+                            'limit': limit,
+                        }
+
                 # Extract the rest of the excuses
                 # If it contains a link to an anchor convert it to a link to a
                 # package page.
                 excuses.append(self._adapt_excuse_links(subline))
 
-        return package_excuses
+        return package_excuses, problematic
 
-    def execute(self):
+    def _create_action_item(self, package, extra_data):
+        """
+        Creates a :class:`pts.core.models.ActionItem` for the given package
+        including the given extra data. The item indicates that there is a
+        problem with the package migrating to testing.
+        """
+        action_item = next((
+            item
+            for item in package.action_items.all()
+            if item.item_type.type_name == self.ACTION_ITEM_TYPE_NAME),
+            None)
+        if action_item is None:
+            action_item = ActionItem(
+                package=package,
+                item_type=self.action_item_type,
+                full_description_template='debian/testing-migration-action-item.html')
+
+        action_item.short_description = self.ITEM_DESCRIPTION
+        if package.main_entry:
+            section = package.main_entry.section
+            if section not in ('contrib', 'non-free'):
+                query_string = urlencode({'package': package.name})
+                extra_data['check_why_url'] = (
+                    'http://release.debian.org/migration/testing.pl'
+                    '?{query_string}'.format(query_string=query_string))
+
+        action_item.extra_data = extra_data
+        action_item.save()
+
+    def _remove_obsolete_action_items(self, problematic):
+        """
+        Remove action items for packages which are no longer problematic.
+        """
+        obsolete_items = ActionItem.objects.filter(
+            item_type=self.action_item_type)
+        obsolete_items = obsolete_items.exclude(
+            package__name__in=problematic.keys())
+        obsolete_items.delete()
+
+    def _get_update_excuses_content(self):
+        """
+        Function returning the content of the update_excuses.html file as an
+        terable of lines.
+        Returns ``None`` if the content in the cache is up to date.
+        """
         url = 'http://ftp-master.debian.org/testing/update_excuses.html'
         response, updated = self.cache.update(url, force=self.force_update)
         if not updated:
             return
 
         content_lines = response.iter_lines()
-        package_excuses = self._get_excuses(content_lines)
-        if not package_excuses:
+
+    def execute(self):
+        content_lines = self._get_update_excuses_content()
+        if not content_lines:
             return
 
+        result = self._get_excuses_and_problems(content_lines)
+        if not result:
+            return
+        package_excuses, problematic = result
+
+        # Remove stale excuses data and action items which are not still
+        # problematic.
+        self._remove_obsolete_action_items(problematic)
         PackageExcuses.objects.all().delete()
-        # Save the excuses now
-        packages = PackageName.objects.filter(name__in=package_excuses.keys())
-        excuses = [
-            PackageExcuses(
+
+        excuses = []
+        packages = SourcePackageName.objects.filter(
+            name__in=package_excuses.keys())
+        packages.prefetch_related('action_items')
+        for package in packages:
+            excuse = PackageExcuses(
                 package=package,
                 excuses=package_excuses[package.name])
-            for package in packages
-        ]
+            excuses.append(excuse)
+            if package.name in problematic:
+                self._create_action_item(package, problematic[package.name])
+
+        # Create all excuses in a single query
         PackageExcuses.objects.bulk_create(excuses)
+
