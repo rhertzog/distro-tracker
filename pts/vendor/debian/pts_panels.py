@@ -163,35 +163,6 @@ class LintianLink(LinksPanel.ItemProvider):
         return []
 
 
-class LintianTodo(TodosPanel.ItemProvider):
-    """
-    If there are either warnings or errors for the package, provides a todo
-    item.
-    """
-    def get_panel_items(self):
-        try:
-            lintian_stats = self.package.lintian_stats
-        except LintianStats.DoesNotExist:
-            return []
-
-        url = lintian_stats.get_lintian_url()
-
-        lintian_stats = lintian_stats.stats
-        warnings = lintian_stats.get('warnings', 0)
-        errors = lintian_stats.get('errors', 0)
-
-        if warnings + errors > 0:
-            return [
-                TemplatePanelItem('debian/lintian-todo.html', {
-                    'errors': errors,
-                    'warnings': warnings,
-                    'lintian_url': url,
-                }),
-            ]
-
-        return []
-
-
 class TransitionsPanel(BasePanel):
     template_name = 'debian/transitions-panel.html'
     position = 'center'
