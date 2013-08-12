@@ -23,6 +23,45 @@ $(function() {
         }
     });
 
+    /**
+     * Activate popovers for action needed items. They show the full
+     * description of the item.
+     */
+    $('.has-popover.action-needed-details').popover({
+        html: true
+    });
+    /**
+     * Asynchronously retrieve full descriptions of action needed items.
+     */
+    $('.has-popover.action-needed-details').click(function(evt) {
+        evt.preventDefault();
+        var $this = $(this);
+        // Retrieve the content only if it hasn't already been retrieved
+        if ($this.attr('data-content') !== undefined) {
+            return;
+        }
+        // The url is given in the href data attribute.
+        var href = $this.attr('data-href');
+        if (href === undefined) {
+            return false;
+        }
+        $.get(href, function(data) {
+            $this.attr('data-content', data.full_description);
+            $this.popover('show');
+            console.debug(data);
+        })
+    });
+    /**
+     * Dismiss popovers when a user clicks anywhere outside of them.
+     */
+    $('body').on('click', function (e) {
+        $('.has-popover').each(function () {
+            if (!$(this).is(e.target) && $(this).has(e.target).length === 0 && $('.popover').has(e.target).length === 0) {
+                $(this).popover('hide');
+            }
+        });
+    });
+
     // Activate scrolling for divs. Lets us have a visually nicer scroll bar
     // in a cross-browser compatible way for panels with
     $('.scrollable').each(function(index) {

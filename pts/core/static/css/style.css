@@ -235,6 +235,10 @@ a.list-group-item.active .list-group-item-text {
   border-bottom: 0;
 }
 
+.action-needed-details:hover {
+  text-decoration: none;
+}
+
 .clear {
   clear: both;
 }
