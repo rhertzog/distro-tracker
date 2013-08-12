@@ -1,0 +1,15 @@
+{% spaceless %}
+{% with bug_count=item.extra_data.bug_count %}
+<span>The <abbr title="Bug Tracking System">BTS</abbr> contains </span>
+<span>
+{% if item.extra_data.url %}
+<a href="{{ item.extra_data.url }}">{{ bug_count }} bug{% if bug_count > 1 %}s{% endif %}</a>
+{% else %}
+{{ bug_count }} bug{% if bug_count > 1 %}s{% endif %}
+{% endif %}
+</span>
+<span> tagged <a href="http://www.debian.org/Bugs/Developer#tags">help</a>, please consider helping the maintainer in dealing with
+    {% if bug_count > 1 %}them{% else %}it{% endif %}.
+</span>
+{% endwith %}
+{% endspaceless %}

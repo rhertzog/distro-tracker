@@ -14,6 +14,7 @@ Debian-specific tasks.
 
 from __future__ import unicode_literals
 from django.db import transaction
+from django.db.models import Q
 from django.conf import settings
 from django.utils import six
 from django.core.urlresolvers import reverse
@@ -29,7 +30,10 @@ from pts.vendor.debian.models import LintianStats
 from pts.vendor.debian.models import PackageTransition
 from pts.vendor.debian.models import PackageExcuses
 from pts.core.utils.http import HttpCache
+from pts.core.utils.http import get_resource_content
 from .models import DebianContributor
+from pts import vendor
+
 import re
 import SOAPpy
 import yaml
@@ -158,6 +162,21 @@ class RetrieveLowThresholdNmuTask(BaseTask):
 
 
 class UpdatePackageBugStats(BaseTask):
+    """
+    Updates the BTS bug stats for all packages (source, binary and pseudo).
+    Creates :class:`pts.core.ActionItem` instances for packages which have bugs
+    tagged help or patch.
+    """
+    PATCH_BUG_ACTION_ITEM_TYPE_NAME = 'debian-patch-bugs-warning'
+    HELP_BUG_ACTION_ITEM_TYPE_NAME = 'debian-help-bugs-warning'
+
+    PATCH_ITEM_SHORT_DESCRIPTION = (
+        '<a href="{url}">{count}</a> tagged patch in the '
+        '<abbr title="Bug Tracking System">BTS</abbr>')
+    HELP_ITEM_SHORT_DESCRIPTION = (
+        '<a href="{url}">{count}</a> tagged help in the '
+        '<abbr title="Bug Tracking System">BTS</abbr>')
+
     bug_categories = (
         'rc',
         'normal',
@@ -170,28 +189,12 @@ class UpdatePackageBugStats(BaseTask):
         super(UpdatePackageBugStats, self).__init__(*args, **kwargs)
         self.force_update = force_update
         self.cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
-
-    def _get_response(self, url):
-        """
-        Helper method which returns either the resource at the given URL or
-        ``None``, depending on the :attr:`UpdatePackageBugStats.force_update`
-        flag and cache status.
-
-        :param url: The URL of the resource to retrieve.
-
-        :returns None: If the resource found at the given URL is still fresh in
-            the cache and the :attr:`UpdatePackageBugStats.force_update` was
-            set to ``False``
-        :returns requests.Response: If the cached resource has expired or
-            :attr:`UpdatePackageBugStats.force_update` was set to ``True``
-        """
-        if not self.force_update and not self.cache.is_expired(url):
-            return
-        response, updated = self.cache.update(url, force=self.force_update)
-        response.raise_for_status()
-        if not updated:
-            return
-        return response
+        # The :class:`pts.core.models.ActionItemType` instances which this task
+        # can create.
+        self.patch_item_type, _ = ActionItemType.objects.get_or_create(
+            type_name=self.PATCH_BUG_ACTION_ITEM_TYPE_NAME)
+        self.help_item_type, _ = ActionItemType.objects.get_or_create(
+            type_name=self.HELP_BUG_ACTION_ITEM_TYPE_NAME)
 
     def _get_tagged_bug_stats(self, tag, user=None):
         """
@@ -254,19 +257,144 @@ class UpdatePackageBugStats(BaseTask):
                 'bug_count': count,
             })
 
+    def _create_patch_bug_action_item(self, package, bug_stats):
+        """
+        Creates a :class:`pts.core.models.ActionItem` instance for the given
+        package if it contains any bugs tagged patch.
 
-    def update_source_and_pseudo_bugs(self):
+        :param package: The package for which the action item should be
+            updated.
+        :type package: :class:`pts.core.models.PackageName`
+        :param bug_stats: A dictionary mapping category names to structures
+            describing those categories. Those structures should be
+            identical to the ones stored in the :class:`PackageBugStats`
+            instance.
+        :type bug_stats: dict
         """
-        Performs the update of bug statistics for source and pseudo packages.
+        # Get the old action item, if any
+        action_item = next((
+            item
+            for item in package.action_items.all()
+            if item.item_type.type_name == self.PATCH_BUG_ACTION_ITEM_TYPE_NAME),
+            None)
+
+        if 'patch' not in bug_stats or bug_stats['patch']['bug_count'] == 0:
+            # Remove the old action item, since the package does not have any
+            # bugs tagged patch anymore.
+            if action_item is not None:
+                action_item.delete()
+            return
+
+        # If the package has bugs tagged patch, update the action item
+        if action_item is None:
+            action_item = ActionItem(
+                package=package,
+                item_type=self.patch_item_type,
+                full_description_template='debian/patch-bugs-action-item.html')
+
+        bug_count = bug_stats['patch']['bug_count']
+        # Include the URL in the short description
+        url, _ = vendor.call('get_bug_tracker_url', package.name, 'source', 'patch')
+        if not url:
+            url = ''
+        # Include the bug count in the short description
+        count = '{bug_count} bug'.format(bug_count=bug_count)
+        if bug_count > 1:
+            count += 's'
+        action_item.short_description = self.PATCH_ITEM_SHORT_DESCRIPTION.format(
+            url=url, count=count)
+        # Set additional URLs and merged bug count in the extra data for a full
+        # description
+        action_item.extra_data = {
+            'bug_count': bug_count,
+            'merged_count': bug_stats['patch'].get('merged_count', 0),
+            'url': url,
+            'merged_url': vendor.call(
+                'get_bug_tracker_url', package.name, 'source', 'patch-merged')[0],
+        }
+        action_item.save()
+
+    def _create_help_bug_action_item(self, package, bug_stats):
         """
+        Creates a :class:`pts.core.models.ActionItem` instance for the given
+        package if it contains any bugs tagged help.
+
+        :param package: The package for which the action item should be
+            updated.
+        :type package: :class:`pts.core.models.PackageName`
+        :param bug_stats: A dictionary mapping category names to structures
+            describing those categories. Those structures should be
+            identical to the ones stored in the :class:`PackageBugStats`
+            instance.
+        :type bug_stats: dict
+        """
+        # Get the old action item, if any
+        action_item = next((
+            item
+            for item in package.action_items.all()
+            if item.item_type.type_name == self.HELP_BUG_ACTION_ITEM_TYPE_NAME),
+            None)
+
+        if 'help' not in bug_stats or bug_stats['help']['bug_count'] == 0:
+            # Remove the old action item, since the package does not have any
+            # bugs tagged patch anymore.
+            if action_item is not None:
+                action_item.delete()
+            return
+
+        # If the package has bugs tagged patch, update the action item
+        if action_item is None:
+            action_item = ActionItem(
+                package=package,
+                item_type=self.help_item_type,
+                full_description_template='debian/help-bugs-action-item.html')
+
+        bug_count = bug_stats['help']['bug_count']
+        # Include the URL in the short description
+        url, _ = vendor.call('get_bug_tracker_url', package.name, 'source', 'help')
+        if not url:
+            url = ''
+        # Include the bug count in the short description
+        count = '{bug_count} bug'.format(bug_count=bug_count)
+        if bug_count > 1:
+            count += 's'
+        action_item.short_description = self.HELP_ITEM_SHORT_DESCRIPTION.format(
+            url=url, count=count)
+        # Set additional URLs and merged bug count in the extra data for a full
+        # description
+        action_item.extra_data = {
+            'bug_count': bug_count,
+            'url': url,
+        }
+        action_item.save()
+
+    def _create_action_items(self, package_bug_stats):
+        """
+        Method which creates a :class:`pts.core.models.ActionItem` instance
+        for a package based on the given package stats.
+
+        For now, an action item is created if the package either has bugs
+        tagged as help or patch.
+        """
+        # Transform the bug stats to a structure easier to pass to functions
+        # for particular bug-category action items.
+        bug_stats = {
+            category['category_name']: category
+            for category in package_bug_stats.stats
+        }
+        package = package_bug_stats.package
+        self._create_patch_bug_action_item(package, bug_stats)
+        self._create_help_bug_action_item(package, bug_stats)
+
+    def _get_udd_bug_stats(self):
         url = 'http://udd.debian.org/cgi-bin/ddpo-bugs.cgi'
-        response = self._get_response(url)
-        if not response:
+        response_content = get_resource_content(url)
+        if not response_content:
             return
 
         # Each line in the response should be bug stats for a single package
         bug_stats = {}
-        for line in response.iter_lines():
+        for line in response_content.splitlines():
             line = line.decode('utf-8')
             package_name, bug_counts = line.split(':', 1)
             # Merged counts are in parentheses so remove those before splitting
@@ -291,6 +419,26 @@ class UpdatePackageBugStats(BaseTask):
                     self.bug_categories, zip(bug_counts[::2], bug_counts[1::2]))
             ]
 
+        return bug_stats
+
+    def _remove_obsolete_action_items(self, package_names):
+        """
+        Removes action items for packages which no longer have any bug stats.
+        """
+        obsolete_items = ActionItem.objects.filter(
+            Q(item_type=self.patch_item_type) | Q(item_type=self.help_item_type))
+        obsolete_items = obsolete_items.exclude(package__name__in=package_names)
+        obsolete_items.delete()
+
+    def update_source_and_pseudo_bugs(self):
+        """
+        Performs the update of bug statistics for source and pseudo packages.
+        """
+        # First get the bug stats exposed by the UDD.
+        bug_stats = self._get_udd_bug_stats()
+        if not bug_stats:
+            bug_stats = {}
+
         # Add in help bugs from the BTS SOAP interface
         try:
             help_bugs = self._get_tagged_bug_stats('help')
@@ -308,12 +456,23 @@ class UpdatePackageBugStats(BaseTask):
         with transaction.commit_on_success():
             # Clear previous stats
             PackageBugStats.objects.all().delete()
+            self._remove_obsolete_action_items(bug_stats.keys())
+            # Get all packages which have updated stats, along with their
+            # action items in 2 DB queries.
             packages = PackageName.objects.filter(name__in=bug_stats.keys())
-            # Create new stats in a single query
-            stats = [
-                PackageBugStats(package=package, stats=bug_stats[package.name])
-                for package in packages
-            ]
+            packages.prefetch_related('action_items')
+
+            # Update stats and action items.
+            stats = []
+            for package in packages:
+                # Save the raw package bug stats
+                package_bug_stats = PackageBugStats(
+                    package=package, stats=bug_stats[package.name])
+                stats.append(package_bug_stats)
+
+                # Add action items for the package.
+                self._create_action_items(package_bug_stats)
+
             PackageBugStats.objects.bulk_create(stats)
 
     def update_binary_bugs(self):
@@ -321,13 +480,13 @@ class UpdatePackageBugStats(BaseTask):
         Performs the update of bug statistics for binary packages.
         """
         url = 'http://udd.debian.org/cgi-bin/bugs-binpkgs-pts.cgi'
-        response = self._get_response(url)
-        if not response:
+        response_content = get_resource_content(url)
+        if not response_content:
             return
 
         # Extract known binary package bug stats: each line is a separate pkg
         bug_stats = {}
-        for line in response.iter_lines():
+        for line in response_content.splitlines():
             line = line.decode('utf-8')
             package_name, bug_counts = line.split(None, 1)
             bug_counts = bug_counts.split()

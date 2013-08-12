@@ -1,0 +1,18 @@
+{% spaceless %}
+<span>The <abbr title="Bug Tracking System">BTS</abbr> contains </span>
+<span>
+{% if item.extra_data.url %}
+<a href="{{ item.extra_data.url }}">patches fixing {{ item.extra_data.bug_count }} bug{% if item.extra_data.bug_count > 1 %}s{% endif %}</a>
+{% else %}
+patches fixing {{ item.extra_data.bug_count }} bug{% if item.extra_data.bug_count > 1 %}s{% endif %}
+{% endif %}
+<span>
+{% if item.extra_data.merged_count != item.extra_data.bug_count %}
+    {% if item.extra_data.merged_url %}
+    <span> (<a href="{{ item.extra_data.merged_url }}">{{ item.extra_data.merged_count }}</a> if counting merged bugs)</span>
+    {% else %}
+    <span> ({{ item.extra_data.merged_count }} if counting merged bugs)</span>
+    {% endif %}
+{% endif %}
+<span>, consider including or untagging them.</span>
+{% endspaceless %}

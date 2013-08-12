@@ -18,6 +18,7 @@ from django.test.utils import override_settings
 from django.core import mail
 from django.utils.six.moves import mock
 from django.utils.encoding import force_bytes
+from django.utils.functional import curry
 from pts.mail.tests.tests_dispatch import DispatchTestHelperMixin, DispatchBaseTest
 from pts.core.tests.common import make_temp_directory
 from pts.core.models import ActionItem, ActionItemType
@@ -34,6 +35,7 @@ from pts.vendor.debian.rules import get_package_information_site_url
 from pts.vendor.debian.rules import get_maintainer_extra
 from pts.vendor.debian.rules import get_uploader_extra
 from pts.vendor.debian.rules import get_developer_information_url
+from pts.vendor.debian.pts_tasks import UpdatePackageBugStats
 from pts.vendor.debian.pts_tasks import RetrieveDebianMaintainersTask
 from pts.vendor.debian.pts_tasks import RetrieveLowThresholdNmuTask
 from pts.vendor.debian.models import DebianContributor
@@ -1114,3 +1116,323 @@ class UpdateLintianStatsTaskTest(TestCase):
 
         # An action item is created.
         self.assertEqual(2, self.package_name.action_items.count())
+
+
+class DebianBugActionItemsTests(TestCase):
+    """
+    Tests the creation of :class:`pts.core.ActionItem` instances based on
+    Debian bug stats.
+    """
+    @staticmethod
+    def stub_tagged_bugs(tag, user=None, help_bugs=None, gift_bugs=None):
+        if tag == 'help':
+            return help_bugs
+        elif tag == 'gift':
+            return gift_bugs
+
+    def setUp(self):
+        self.package_name = SourcePackageName.objects.create(name='dummy-package')
+        self.package = SourcePackage(
+            source_package_name=self.package_name, version='1.0.0')
+
+        self.task = UpdatePackageBugStats()
+        self.udd_bugs = {}
+        self.help_bugs = {}
+        self.gift_bugs = {}
+        # Stub the data providing methods
+        self.task._get_udd_bug_stats = mock.MagicMock(
+            return_value=self.udd_bugs)
+        self.task._get_tagged_bug_stats = mock.MagicMock(
+            side_effect=curry(
+                DebianBugActionItemsTests.stub_tagged_bugs,
+                help_bugs=self.help_bugs,
+                gift_bugs=self.gift_bugs))
+        # Ignore binary package bugs for action item tests.
+        self.task.update_binary_bugs = mock.MagicMock()
+
+    def run_task(self):
+        self.task.execute()
+
+    def add_patch_bug(self, package, bug_count):
+        """
+        Helper method adding patch bugs to the stub return value.
+        """
+        self.add_udd_bug_category(package, 'patch', bug_count)
+
+    def add_udd_bug_category(self, package, category, bug_count):
+        """
+        Adds stats for a bug category to the stub response, as if the category
+        was found in the UDD bug stats.
+        """
+        self.udd_bugs.setdefault(package, [])
+        self.udd_bugs[package].append({
+            'category_name': category,
+            'bug_count': bug_count,
+        })
+
+    def add_help_bug(self, package, bug_count):
+        """
+        Helper method adding help bugs to the stub return value.
+        """
+        self.help_bugs[package] = bug_count
+
+    def get_patch_action_type(self):
+        """
+        Helper method returning a :class:`pts.core.models.ActionItemType` for
+        the debian patch bug warning action item type.
+        """
+        return ActionItemType.objects.get_or_create(
+            type_name=UpdatePackageBugStats.PATCH_BUG_ACTION_ITEM_TYPE_NAME)[0]
+
+    def get_help_action_type(self):
+        """
+        Helper method returning a :class:`pts.core.models.ActionItemType` for
+        the debian help bug warning action item type.
+        """
+        return ActionItemType.objects.get_or_create(
+            type_name=UpdatePackageBugStats.HELP_BUG_ACTION_ITEM_TYPE_NAME)[0]
+
+
+    def test_patch_bug_action_item(self):
+        """
+        Tests that an action item is created when there are bugs tagged patch.
+        """
+        bug_count = 2
+        self.add_patch_bug(self.package_name.name, bug_count)
+        # Sanity check: no items
+        self.assertEqual(0, ActionItem.objects.count())
+
+        self.run_task()
+
+        # Action item created.
+        self.assertEqual(1, ActionItem.objects.count())
+        # The item is of the correct type
+        item = ActionItem.objects.all()[0]
+        self.assertEqual(
+            item.item_type.type_name, 
+            UpdatePackageBugStats.PATCH_BUG_ACTION_ITEM_TYPE_NAME)
+        # The item references the correct package.
+        self.assertEqual(item.package.name, self.package_name.name)
+        # It contains the extra data
+        self.assertEqual(item.extra_data['bug_count'], bug_count)
+
+    def test_patch_bug_action_item_updated(self):
+        """
+        Tests that an already existing action item is updated after running the
+        task.
+        """
+        # Create a previously existing action item for the patch type.
+        ActionItem.objects.create(
+            package=self.package_name,
+            item_type=self.get_patch_action_type(),
+            short_description="Desc")
+        bug_count = 2
+        self.add_patch_bug(self.package_name.name, bug_count)
+
+        self.run_task()
+
+        # Still only one item...
+        self.assertEqual(1, self.package_name.action_items.count())
+        # It contains updated data
+        item = self.package_name.action_items.all()[0]
+        self.assertEqual(item.extra_data['bug_count'], bug_count)
+
+    def test_patch_bug_action_item_removed(self):
+        """
+        Tests that an already existing action item is removed after the update
+        does not contain any more bugs in the patch category.
+        """
+        # Create a previously existing action item for the patch type.
+        ActionItem.objects.create(
+            package=self.package_name,
+            item_type=self.get_patch_action_type(),
+            short_description="Desc")
+        bug_count = 0
+        self.add_patch_bug(self.package_name.name, bug_count)
+
+        self.run_task()
+
+        # No more action items.
+        self.assertEqual(0, self.package_name.action_items.count())
+
+    def test_patch_bug_action_item_removed_no_data(self):
+        """
+        Tests that an already existing action item is removed if the update
+        does not give any stats at all.
+        """
+        # Create a previously existing action item for the patch type.
+        ActionItem.objects.create(
+            package=self.package_name,
+            item_type=self.get_patch_action_type(),
+            short_description="Desc")
+
+        self.run_task()
+
+        # No more action items.
+        self.assertEqual(0, self.package_name.action_items.count())
+
+    def test_patch_bug_action_item_removed_no_data_for_category(self):
+        """
+        Tests that an already existing action item is removed if the update
+        does not contain stats for the patch category, but does contain
+        stats for different categories.
+        """
+        # Create a previously existing action item for the patch type.
+        ActionItem.objects.create(
+            package=self.package_name,
+            item_type=self.get_patch_action_type(),
+            short_description="Desc")
+        self.add_udd_bug_category(self.package_name.name, 'normal', 1)
+
+        self.run_task()
+
+        # No more action items.
+        self.assertEqual(0, self.package_name.action_items.count())
+
+    def test_help_bug_action_item(self):
+        """
+        Tests that an action item is created when there are bugs tagged help.
+        """
+        bug_count = 2
+        self.add_help_bug(self.package_name.name, bug_count)
+        # Sanity check: no items
+        self.assertEqual(0, ActionItem.objects.count())
+
+        self.run_task()
+
+        # Action item created.
+        self.assertEqual(1, ActionItem.objects.count())
+        # The item references the correct package.
+        item = ActionItem.objects.all()[0]
+        self.assertEqual(item.package.name, self.package_name.name)
+        # It contains the extra data
+        self.assertEqual(item.extra_data['bug_count'], bug_count)
+
+    def test_help_action_item_updated(self):
+        """
+        Tests that an already existing action item is updated after running the
+        task.
+        """
+        # Create a previously existing action item for the help type.
+        ActionItem.objects.create(
+            package=self.package_name,
+            item_type=self.get_help_action_type(),
+            short_description="Desc")
+        bug_count = 2
+        self.add_help_bug(self.package_name.name, bug_count)
+
+        self.run_task()
+
+        # Still only one item...
+        self.assertEqual(1, self.package_name.action_items.count())
+        # It contains updated data
+        item = self.package_name.action_items.all()[0]
+        self.assertEqual(item.extra_data['bug_count'], bug_count)
+
+    def test_help_bug_action_item_removed(self):
+        """
+        Tests that an already existing action item is removed after the update
+        does not contain any more bugs in the help category.
+        """
+        # Create a previously existing action item for the patch type.
+        ActionItem.objects.create(
+            package=self.package_name,
+            item_type=self.get_help_action_type(),
+            short_description="Desc")
+        bug_count = 0
+        self.add_help_bug(self.package_name.name, bug_count)
+
+        self.run_task()
+
+        # No more action items.
+        self.assertEqual(0, self.package_name.action_items.count())
+
+    def test_help_bug_action_item_removed_no_data(self):
+        """
+        Tests that an already existing action item is removed if the update
+        does not give any stats at all.
+        """
+        # Create a previously existing action item for the patch type.
+        ActionItem.objects.create(
+            package=self.package_name,
+            item_type=self.get_help_action_type(),
+            short_description="Desc")
+
+        self.run_task()
+
+        # No more action items.
+        self.assertEqual(0, self.package_name.action_items.count())
+
+    def test_help_bug_action_item_removed_no_data_for_category(self):
+        """
+        Tests that an already existing action item is removed if the update
+        does not contain stats for the help category, but does contain
+        stats for different categories.
+        """
+        # Create a previously existing action item for the patch type.
+        ActionItem.objects.create(
+            package=self.package_name,
+            item_type=self.get_help_action_type(),
+            short_description="Desc")
+        self.add_udd_bug_category(self.package_name.name, 'normal', 1)
+
+        self.run_task()
+
+        # No more action items.
+        self.assertEqual(0, self.package_name.action_items.count())
+
+    def test_multiple_action_items_for_package(self):
+        """
+        Tests that multiple :class:`pts.core.models.ActionItem` instances are
+        created for a package if it contains both patch and help bugs.
+        """
+        patch_bug_count = 2
+        help_bug_count = 5
+        self.add_patch_bug(self.package_name.name, patch_bug_count)
+        self.add_help_bug(self.package_name.name, help_bug_count)
+        # Sanity check: no action items
+        self.assertEqual(0, self.package_name.action_items.count())
+
+        self.run_task()
+
+        # Two action items.
+        self.assertEqual(2, self.package_name.action_items.count())
+        # Correct respective bug counts
+        patch_item = self.package_name.action_items.get(
+            item_type=self.get_patch_action_type())
+        self.assertEqual(patch_item.extra_data['bug_count'], patch_bug_count)
+        help_item = self.package_name.action_items.get(
+            item_type=self.get_help_action_type())
+        self.assertEqual(help_item.extra_data['bug_count'], help_bug_count)
+
+    def test_action_item_for_multiple_packages(self):
+        """
+        Tests that action items are correctly created when more than one
+        package has bug warnings.
+        """
+        stats = (
+            (2, 5),
+            (1, 1),
+        )
+        packages = (
+            self.package_name,
+            PackageName.objects.create(name='other-package'),
+        )
+        # Create the stub response
+        for package, bug_stats in zip(packages, stats):
+            patch_bug_count, help_bug_count = bug_stats
+            self.add_patch_bug(package.name, patch_bug_count)
+            self.add_help_bug(package.name, help_bug_count)
+
+        self.run_task()
+
+        # Each package has two action items
+        for package, bug_stats in zip(packages, stats):
+            patch_bug_count, help_bug_count = bug_stats
+            self.assertEqual(2, package.action_items.count())
+            patch_item = package.action_items.get(
+                item_type=self.get_patch_action_type())
+            self.assertEqual(patch_item.extra_data['bug_count'], patch_bug_count)
+            help_item = package.action_items.get(
+                item_type=self.get_help_action_type())
+            self.assertEqual(help_item.extra_data['bug_count'], help_bug_count)
