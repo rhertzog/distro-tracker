@@ -1,7 +1,0 @@
-{% with lastsv=item.context.lastsv %}
-{% with standards_version=item.context.standards_version %}
-The package should be updated to follow the last version of <a href="http://www.debian.org/doc/debian-policy/">Debian Policy</a>
-(Standards-Version <a href="http://www.debian.org/doc/debian-policy/upgrading-checklist.html#s-{{ lastsv }}.0">{{ lastsv }}</a> instead of
-<a href="http://www.debian.org/doc/debian-policy/upgrading-checklist.html#s-{{ standards_version }}.0">{{ standards_version }}</a>).
-{% endwith %}
-{% endwith %}
