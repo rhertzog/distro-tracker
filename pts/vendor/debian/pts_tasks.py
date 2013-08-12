@@ -29,6 +29,7 @@ from pts.core.models import PackageName
 from pts.core.models import SourcePackageName
 from pts.core.models import BinaryPackageName
 from pts.vendor.debian.models import LintianStats
+from pts.vendor.debian.models import BuildLogCheckStats
 from pts.vendor.debian.models import PackageTransition
 from pts.vendor.debian.models import PackageExcuses
 from pts.core.utils.http import HttpCache
@@ -918,3 +919,102 @@ class UpdateExcusesTask(BaseTask):
         # Create all excuses in a single query
         PackageExcuses.objects.bulk_create(excuses)
 
+
+class UpdateBuildLogCheckStats(BaseTask):
+    ACTION_ITEM_TYPE_NAME = 'debian-build-logcheck'
+    ITEM_DESCRIPTION = "Build log checks report {report}"
+
+    def __init__(self, force_update=False, *args, **kwargs):
+        super(UpdateBuildLogCheckStats, self).__init__(*args, **kwargs)
+        self.force_update = force_update
+        self.cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
+        self.action_item_type, _ = ActionItemType.objects.get_or_create(
+            type_name=self.ACTION_ITEM_TYPE_NAME)
+
+    def set_parameters(self, parameters):
+        if 'force_update' in parameters:
+            self.force_update = parameters['force_update']
+
+    def _get_buildd_content(self):
+        url = 'http://qa.debian.org/bls/logcheck.txt'
+        return get_resource_content(url)
+
+    def get_buildd_stats(self):
+        content = self._get_buildd_content()
+        stats = {}
+        for line in content.splitlines():
+            pkg, errors, warnings = line.split("|")[:3]
+            try:
+                errors, warnings = int(errors), int(warnings)
+            except ValueError:
+                continue
+            stats[pkg] = {
+                'errors': errors,
+                'warnings': warnings,
+            }
+        return stats
+
+    def _remove_obsolete_action_items(self, stats):
+        obsolete_items = ActionItem.objects.filter(item_type=self.action_item_type)
+        obsolete_items = obsolete_items.exclude(package__name__in=stats.keys())
+        obsolete_items.delete()
+
+    def create_action_item(self, package, stats):
+        """
+        Creates a :class:`pts.core.models.ActionItem` instance for the given
+        package if the build logcheck stats indicate
+        """
+        action_item = next((
+            item
+            for item in package.action_items.all()
+            if item.item_type.type_name == self.ACTION_ITEM_TYPE_NAME),
+            None)
+        errors = stats.get('errors', 0) > 0
+        warnings = stats.get('warnings', 0) > 0
+
+        if not errors and not warnings:
+            # Remove the previous action item since the package no longer has
+            # errors/warnings.
+            if action_item is not None:
+                action_item.delete()
+            return
+
+        if action_item is None:
+            action_item = ActionItem(
+                package=package,
+                item_type=self.action_item_type,
+                full_description_template='debian/logcheck-action-item.html')
+
+        if errors and warnings:
+            report = 'errors and warnings'
+        elif errors:
+            report = 'errors'
+        elif warnings:
+            report = 'warnings'
+
+        action_item.short_description = self.ITEM_DESCRIPTION.format(report=report)
+        action_item.extra_data = stats
+        action_item.save()
+
+
+    def execute(self):
+        # Build a dict with stats from both buildd and clang
+        stats = self.get_buildd_stats()
+
+        BuildLogCheckStats.objects.all().delete()
+        self._remove_obsolete_action_items(stats)
+
+        packages = SourcePackageName.objects.filter(name__in=stats.keys())
+        packages = packages.prefetch_related('action_items')
+
+        logcheck_stats = []
+        for package in packages:
+            logcheck_stat = BuildLogCheckStats(
+                package=package,
+                stats=stats[package.name])
+            logcheck_stats.append(logcheck_stat)
+
+            self.create_action_item(package, stats[package.name])
+
+        # One SQL query to create all the stats.
+        BuildLogCheckStats.objects.bulk_create(logcheck_stats)

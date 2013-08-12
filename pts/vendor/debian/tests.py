@@ -35,6 +35,7 @@ from pts.vendor.debian.rules import get_package_information_site_url
 from pts.vendor.debian.rules import get_maintainer_extra
 from pts.vendor.debian.rules import get_uploader_extra
 from pts.vendor.debian.rules import get_developer_information_url
+from pts.vendor.debian.pts_tasks import UpdateBuildLogCheckStats
 from pts.vendor.debian.pts_tasks import UpdatePackageBugStats
 from pts.vendor.debian.pts_tasks import RetrieveDebianMaintainersTask
 from pts.vendor.debian.pts_tasks import RetrieveLowThresholdNmuTask
@@ -1558,3 +1559,143 @@ class UpdateExcusesTaskActionItemTest(TestCase):
         # Extra data updated?
         item = ActionItem.objects.all()[0]
         self.assertDictEqual(expected_data, item.extra_data)
+
+
+class UpdateBuildLogCheckStatsActionItemTests(TestCase):
+    """
+    Tests that :class:`pts.core.models.ActionItem` instances are correctly
+    created when running the
+    :class:`pts.vendor.debian.pts_tasks.UpdateBuildLogCheckStats` task.
+    """
+    def setUp(self):
+        self.package_name = SourcePackageName.objects.create(name='dummy-package')
+        self.package = SourcePackage(
+            source_package_name=self.package_name, version='1.0.0')
+
+        self.task = UpdateBuildLogCheckStats()
+        self.task._get_buildd_content = mock.MagicMock()
+
+    def set_buildd_content(self, content):
+        """
+        Sets the stub value for buildd data which the task will see once it
+        runs.
+        """
+        self.task._get_buildd_content.return_value = content
+
+    def run_task(self):
+        self.task.execute()
+
+    def get_action_item_type(self):
+        return ActionItemType.objects.get_or_create(
+            type_name=UpdateBuildLogCheckStats.ACTION_ITEM_TYPE_NAME)[0]
+
+    def test_action_item_created(self):
+        """
+        Tests that a new action item is created when a package has errors
+        or warnings.
+        """
+        expected_data = {
+            'errors': 1,
+            'warnings': 2,
+        }
+        self.set_buildd_content("dummy-package|1|2|0|0")
+        # Sanity check: no action item
+        self.assertEqual(0, ActionItem.objects.count())
+
+        self.run_task()
+
+        # Action item created
+        self.assertEqual(1, ActionItem.objects.count())
+        item = ActionItem.objects.all()[0]
+        self.assertEqual(
+            item.item_type.type_name,
+            self.get_action_item_type().type_name)
+        # Contains the correct extra data
+        self.assertDictEqual(expected_data, item.extra_data)
+
+    def test_action_item_not_created(self):
+        """
+        Tests that a new action item is not created when the package does not
+        have any errors or warnings.
+        """
+        # Package has some buildd stats, but no warnings or errors
+        self.set_buildd_content("dummy-package|0|0|1|1")
+        # Sanity check: no action item
+        self.assertEqual(0, ActionItem.objects.count())
+
+        self.run_task()
+
+        # No item created.
+        self.assertEqual(0, ActionItem.objects.count())
+
+    def test_action_item_updated(self):
+        """
+        Tests that an already existing action item is updated when the task
+        runs.
+        """
+        # Create an action item which exists before that task is run
+        ActionItem.objects.create(
+            package=self.package_name,
+            item_type=self.get_action_item_type(),
+            short_description="Desc")
+        expected_data = {
+            'errors': 1,
+            'warnings': 2,
+        }
+        self.set_buildd_content("dummy-package|1|2|1|1")
+
+        self.run_task()
+
+        # Stll just one action item
+        self.assertEqual(1, ActionItem.objects.count())
+        # The extra data has been updated?
+        item = ActionItem.objects.all()[0]
+        self.assertEqual(expected_data, item.extra_data)
+
+    def test_action_item_removed(self):
+        """
+        Tests that an already existing action item is removed when the package
+        no longer has any warnings or errors (but still has buildd stats).
+        """
+        ActionItem.objects.create(
+            package=self.package_name,
+            item_type=self.get_action_item_type(),
+            short_description="Desc")
+        self.set_buildd_content("dummy-package|0|0|1|1")
+
+        self.run_task()
+
+        # No longer has any action items.
+        self.assertEqual(0, ActionItem.objects.count())
+
+    def test_action_item_removed_all_stats(self):
+        """
+        Tests that an already existing action item is removed when the package
+        no longer has any buildd stats.
+        """
+        ActionItem.objects.create(
+            package=self.package_name,
+            item_type=self.get_action_item_type(),
+            short_description="Desc")
+        self.set_buildd_content("other-package|0|1|1|1")
+
+        self.run_task()
+
+        # No longer has any action items.
+        self.assertEqual(0, ActionItem.objects.count())
+
+    def test_action_item_multiple_packages(self):
+        """
+        Tests that an action item is correctly created for multple packages
+        found in the buildd response.
+        """
+        other_package = SourcePackageName.objects.create(name='other-package')
+        self.set_buildd_content(
+            "other-package|0|1|1|1\n"
+            "dummy-package|1|1|0|0")
+
+        self.run_task()
+
+        # Both packages have an action item
+        self.assertEqual(1, other_package.action_items.count())
+        self.assertEqual(1, self.package_name.action_items.count())
