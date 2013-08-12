@@ -19,6 +19,7 @@ from django.utils import six
 from django.core.urlresolvers import reverse
 
 from pts.core.tasks import BaseTask
+from pts.core.models import ActionItem, ActionItemType
 from pts.core.models import ContributorEmail
 from pts.core.models import PackageBugStats
 from pts.core.models import BinaryPackageBugStats
@@ -369,6 +370,8 @@ class UpdateLintianStatsTask(BaseTask):
     """
     Updates packages' lintian stats.
     """
+    ACTION_ITEM_TYPE_NAME = 'lintian-warnings-and-errors'
+
     def __init__(self, force_update=False, *args, **kwargs):
         super(UpdateLintianStatsTask, self).__init__(*args, **kwargs)
         self.force_update = force_update
@@ -414,14 +417,57 @@ class UpdateLintianStatsTask(BaseTask):
         if not all_lintian_stats:
             return
 
+        lintian_action_item_type, _ = ActionItemType.objects.get_or_create(
+            type_name=self.ACTION_ITEM_TYPE_NAME)
+
         # Discard all old stats
         LintianStats.objects.all().delete()
-        # Create all the new stats in a single SQL query.
+
         packages = PackageName.objects.filter(name__in=all_lintian_stats.keys())
-        stats = [
-            LintianStats(package=package, stats=all_lintian_stats[package.name])
-            for package in packages
-        ]
+        packages.prefetch_related('action_items')
+        # Remove action items for packages which no longer have associated
+        # lintian data.
+        obsolete_items = ActionItem.objects.filter(item_type=lintian_action_item_type)
+        obsolete_items = obsolete_items.exclude(package__in=packages)
+        obsolete_items.delete()
+
+        stats = []
+        for package in packages:
+            package_stats = all_lintian_stats[package.name]
+            # Save the raw lintian stats.
+            lintian_stats = LintianStats(package=package, stats=package_stats)
+            stats.append(lintian_stats)
+
+            # Create an ActionItem if there are errors or warnings
+            warnings, errors = (
+                package_stats.get('warnings'), package_stats.get('errors', 0))
+            # Get the old action item for this warning, if it exists.
+            lintian_action_item = next((
+                item
+                for item in package.action_items.all()
+                if item.item_type == lintian_action_item_type),
+                None)
+            if warnings or errors:
+                # The item didn't previously have an action item: create it now
+                if lintian_action_item is None:
+                    lintian_action_item = ActionItem(
+                        package=package,
+                        item_type=lintian_action_item_type,
+                        short_description='lintian reports errors or warnings',
+                        full_description_template='debian/lintian-action-item.html')
+
+                lintian_action_item.extra_data = {
+                    'warnings': warnings,
+                    'errors': errors,
+                    'lintian_url': lintian_stats.get_lintian_url()
+                }
+                lintian_action_item.save()
+            else:
+                if lintian_action_item:
+                    # If the item previously existed, delete it now since there
+                    # are no longer any warnings/errors.
+                    lintian_action_item.delete()
+
         LintianStats.objects.bulk_create(stats)
 
 

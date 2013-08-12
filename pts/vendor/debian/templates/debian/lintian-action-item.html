@@ -1,0 +1,14 @@
+{% with warnings=item.extra_data.warnings %}
+{% with errors=item.extra_data.errors %}
+<a href="http://lintian.debian.org">Lintian</a> reports
+<a href="{{ item.extra_data.lintian_url }}">
+{% if errors %}
+<span>{{ errors }} error{% if errors > 1 %}s{% endif %}</span>
+{% if warnings %}and{% endif %}
+{% endif %}
+{% if warnings %}
+<span>{{ warnings }} warning{% if warnings > 1 %}s{% endif %}</span>
+{% endif %}
+</a>
+about this package. You should make the package <i>lintian clean</i> getting rid of them.
+{% endwith %}{% endwith %}

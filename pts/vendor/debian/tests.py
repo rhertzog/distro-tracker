@@ -20,6 +20,7 @@ from django.utils.six.moves import mock
 from django.utils.encoding import force_bytes
 from pts.mail.tests.tests_dispatch import DispatchTestHelperMixin, DispatchBaseTest
 from pts.core.tests.common import make_temp_directory
+from pts.core.models import ActionItem, ActionItemType
 from pts.core.models import News
 from pts.core.models import PackageName
 from pts.core.models import SourcePackage
@@ -820,6 +821,14 @@ class UpdateLintianStatsTaskTest(TestCase):
         for category, count in zip(categories, expected_stats):
             self.assertEqual(stats[category], count)
 
+    def assert_action_item_warnings_and_errors_count(self, item, errors=0, warnings=0):
+        """
+        Helper method which checks if an instance of :class:`pts.core.ActionItem`
+        contains the given error and warning count in its extra_data.
+        """
+        self.assertEqual(item.extra_data['errors'], errors)
+        self.assertEqual(item.extra_data['warnings'], warnings)
+
     @mock.patch('pts.core.utils.http.requests')
     def test_stats_created(self, mock_requests):
         """
@@ -925,3 +934,183 @@ class UpdateLintianStatsTaskTest(TestCase):
         self.assertEqual(
             mock_requests.get.call_args[0][0],
             'http://lintian.debian.org/qa-list.txt')
+
+    @mock.patch('pts.core.utils.http.requests')
+    def test_action_item_created_errors(self, mock_requests):
+        """
+        Tests that an action item is created when the package has errors.
+        """
+        errors, warnings = 2, 0
+        response = "dummy-package {err} {warn} 0 0 0 0".format(
+            err=errors, warn=warnings)
+        set_mock_response(mock_requests, text=response)
+        # Sanity check: there were no action items in the beginning
+        self.assertEqual(0, ActionItem.objects.count())
+
+        self.run_task()
+
+        # An action item is created.
+        self.assertEqual(1, ActionItem.objects.count())
+        # The correct number of errors and warnings is stored in the item
+        item = ActionItem.objects.all()[0]
+        self.assert_action_item_warnings_and_errors_count(item, errors, warnings)
+        # It has the correct type
+        self.assertEqual(
+            item.item_type.type_name,
+            UpdateLintianStatsTask.ACTION_ITEM_TYPE_NAME)
+
+    @mock.patch('pts.core.utils.http.requests')
+    def test_action_item_created_warnings(self, mock_requests):
+        """
+        Tests that an action item is created when the package has warnings.
+        """
+        errors, warnings = 2, 0
+        response = "dummy-package {err} {warn} 0 0 0 0".format(
+            err=errors, warn=warnings)
+        set_mock_response(mock_requests, text=response)
+        # Sanity check: there were no action items in the beginning
+        self.assertEqual(0, ActionItem.objects.count())
+
+        self.run_task()
+
+        # An action item is created.
+        self.assertEqual(1, ActionItem.objects.count())
+        # The correct number of errors and warnings is stored in the item
+        item = ActionItem.objects.all()[0]
+        self.assert_action_item_warnings_and_errors_count(item, errors, warnings)
+
+    @mock.patch('pts.core.utils.http.requests')
+    def test_action_item_created_errors_and_warnings(self, mock_requests):
+        """
+        Tests that an action item is created when the package has errors and
+        warnings.
+        """
+        errors, warnings = 2, 0
+        response = "dummy-package {err} {warn} 0 0 0 0".format(
+            err=errors, warn=warnings)
+        set_mock_response(mock_requests, text=response)
+        # Sanity check: there were no action items in the beginning
+        self.assertEqual(0, ActionItem.objects.count())
+
+        self.run_task()
+
+        # An action item is created.
+        self.assertEqual(1, ActionItem.objects.count())
+        # The item is linked to the correct package
+        item = ActionItem.objects.all()[0]
+        self.assertEqual(item.package.name, self.package_name.name)
+        # The correct number of errors and warnings is stored in the item
+        self.assert_action_item_warnings_and_errors_count(item, errors, warnings)
+
+    @mock.patch('pts.core.utils.http.requests')
+    def test_action_item_not_created(self, mock_requests):
+        """
+        Tests that no action item is created when the package has no errors or
+        warnings.
+        """
+        response = "dummy-package 0 0 5 4 3 2"
+        set_mock_response(mock_requests, text=response)
+        # Sanity check: there were no action items in the beginning
+        self.assertEqual(0, ActionItem.objects.count())
+
+        self.run_task()
+
+        # Still no action items.
+        self.assertEqual(0, ActionItem.objects.count())
+
+    @mock.patch('pts.core.utils.http.requests')
+    def test_action_item_removed(self, mock_requests):
+        """
+        Tests that a previously existing action item is removed if the updated
+        stats no longer contain errors or warnings.
+        """
+        # Make sure an item exists for the package
+        item_type, _ = ActionItemType.objects.get_or_create(
+            type_name=UpdateLintianStatsTask.ACTION_ITEM_TYPE_NAME)
+        ActionItem.objects.create(
+            package=self.package_name,
+            item_type=item_type,
+            short_description="Short description...",
+            extra_data={'errors': 1, 'warnings': 2})
+        response = "dummy-package 0 0 5 4 3 2"
+        set_mock_response(mock_requests, text=response)
+
+        self.run_task()
+
+        # There are no action items any longer.
+        self.assertEqual(0, self.package_name.action_items.count())
+
+    @mock.patch('pts.core.utils.http.requests')
+    def test_action_item_removed_no_data(self, mock_requests):
+        """
+        Tests that a previously existing action item is removed when the
+        updated stats no longer contain any information for the package.
+        """
+        item_type, _ = ActionItemType.objects.get_or_create(
+            type_name=UpdateLintianStatsTask.ACTION_ITEM_TYPE_NAME)
+        ActionItem.objects.create(
+            package=self.package_name,
+            item_type=item_type,
+            short_description="Short description...",
+            extra_data={'errors': 1, 'warnings': 2})
+        response = "some-package 0 0 5 4 3 2"
+        set_mock_response(mock_requests, text=response)
+
+        self.run_task()
+
+        # There are no action items any longer.
+        self.assertEqual(0, self.package_name.action_items.count())
+
+    @mock.patch('pts.core.utils.http.requests')
+    def test_action_item_created_multiple_packages(self, mock_requests):
+        """
+        Tests that action items are created correctly when there are stats
+        for multiple different packages in the response.
+        """
+        other_package = PackageName.objects.create(name='other-package')
+        errors, warnings = (2, 0), (0, 2)
+        response = (
+            "dummy-package {err1} {warn1} 0 0 0 0\n"
+            "other-package {err2} {warn2} 0 0 0 0"
+            "some-package 0 0 0 0 0 0".format(
+                err1=errors[0], warn1=warnings[0],
+                err2=errors[1], warn2=warnings[1])
+        )
+        set_mock_response(mock_requests, text=response)
+        # Sanity check: there were no action items in the beginning
+        self.assertEqual(0, ActionItem.objects.count())
+
+        self.run_task()
+
+        # Action items are created for two packages.
+        self.assertEqual(1, self.package_name.action_items.count())
+        self.assertEqual(1, other_package.action_items.count())
+        # The items contain correct data.
+        item = self.package_name.action_items.all()[0]
+        self.assert_action_item_warnings_and_errors_count(item, errors[0], warnings[0])
+        item = other_package.action_items.all()[0]
+        self.assert_action_item_warnings_and_errors_count(item, errors[1], warnings[1])
+
+    @mock.patch('pts.core.utils.http.requests')
+    def test_update_does_not_affect_other_item_types(self, mock_requests):
+        """
+        Tests that running an update of lintian stats does not cause other
+        package categories to be removed.
+        """
+        # Create an item for the package with a different type.
+        other_type = ActionItemType.objects.create(type_name='other-type')
+        ActionItem.objects.create(
+            item_type=other_type,
+            package=self.package_name,
+            short_description='Desc.')
+        errors, warnings = 2, 0
+        response = "dummy-package {err} {warn} 0 0 0 0".format(
+            err=errors, warn=warnings)
+        set_mock_response(mock_requests, text=response)
+        # Sanity check: exactly one action item in the beginning
+        self.assertEqual(1, ActionItem.objects.count())
+
+        self.run_task()
+
+        # An action item is created.
+        self.assertEqual(2, self.package_name.action_items.count())
