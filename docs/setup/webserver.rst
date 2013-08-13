@@ -20,6 +20,10 @@ file in sites-available with the following settings::
             ServerName pts.some.domain
 
             DocumentRoot /path/to/assets/
+            # To make sure all static file assets with no extension
+            # (such as extracted source files) have the correct Content-Type
+            DefaultType text/plain
+            AddDefaultCharset utf-8
 
             ErrorLog ${APACHE_LOG_DIR}/pts/error.log
             LogLevel warn
