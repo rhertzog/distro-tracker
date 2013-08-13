@@ -10,6 +10,7 @@
 """Implements the core panels shown on package pages."""
 from __future__ import unicode_literals
 from django.conf import settings
+from django.utils.functional import cached_property
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import six
 from django.utils.safestring import mark_safe
@@ -217,7 +218,7 @@ class GeneralInformationPanel(BasePanel):
             if url:
                 uploader['developer_info_url'] = url
 
-    @property
+    @cached_property
     def context(self):
         try:
             info = PackageExtractedInfo.objects.get(
@@ -265,7 +266,7 @@ class VersionsInformationPanel(BasePanel):
     title = 'versions'
     template_name = 'core/panels/versions.html'
 
-    @property
+    @cached_property
     def context(self):
         try:
             info = PackageExtractedInfo.objects.get(
@@ -392,7 +393,7 @@ class VersionedLinks(BasePanel):
         for icon in link_provider.icons
     ]
 
-    @property
+    @cached_property
     def context(self):
         # Only process source files
         if not isinstance(self.package, SourcePackageName):
@@ -502,7 +503,7 @@ class BinariesInformationPanel(BasePanel):
             'categories': bug_stats,
         }
 
-    @property
+    @cached_property
     def context(self):
         try:
             info = PackageExtractedInfo.objects.get(
@@ -668,7 +669,7 @@ class ListPanel(BasePanel, six.with_metaclass(ListPanelMeta)):
                 items.extend(new_panel_items)
         return items
 
-    @property
+    @cached_property
     def context(self):
         return {
             'items': self.get_items()
@@ -746,7 +747,7 @@ class NewsPanel(BasePanel):
     template_name = 'core/panels/news.html'
     title = 'news'
 
-    @property
+    @cached_property
     def context(self):
         return {
             'news': News.objects.filter(package=self.package)[:self.NEWS_LIMIT]
@@ -803,7 +804,7 @@ class BugsPanel(BasePanel):
         return getattr(
             settings, 'PTS_BUGS_PANEL_TEMPLATE', self._default_template_name)
 
-    @property
+    @cached_property
     def context(self):
         result, implemented = vendor.call(
             'get_bug_panel_stats', self.package.name)
@@ -849,7 +850,7 @@ class ActionNeededPanel(BasePanel):
     panel_importance = 5
     position = 'center'
 
-    @property
+    @cached_property
     def context(self):
         action_items = ActionItem.objects.filter(package=self.package)
         action_items = action_items.order_by(

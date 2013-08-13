@@ -1481,7 +1481,7 @@ class EmailNewsRenderer(NewsRenderer):
     content_type = 'message/rfc822'
     template_name = 'core/news-email.html'
 
-    @property
+    @cached_property
     def context(self):
         msg = message_from_string(self.news.content)
         # Extract headers first
