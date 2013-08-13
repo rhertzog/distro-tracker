@@ -691,6 +691,7 @@ class GeneralInfoLinkPanelItems(LinksPanel.ItemProvider):
 
 class NewsPanel(BasePanel):
     _DEFAULT_NEWS_LIMIT = 30
+    panel_importance = 1
     NEWS_LIMIT = getattr(settings, 'PTS_NEWS_PANEL_LIMIT', _DEFAULT_NEWS_LIMIT)
 
     template_name = 'core/panels/news.html'
@@ -741,6 +742,7 @@ class BugsPanel(BasePanel):
     """
     position = 'right'
     title = 'bugs'
+    panel_importance = 1
     _default_template_name = 'core/panels/bugs.html'
 
     @property
@@ -786,6 +788,7 @@ class ProblemsPanel(ListPanel):
 class ActionNeededPanel(BasePanel):
     title = 'action needed'
     template_name = 'core/panels/action-needed.html'
+    panel_importance = 5
     position = 'center'
 
     @property

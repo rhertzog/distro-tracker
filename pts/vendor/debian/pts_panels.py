@@ -80,6 +80,7 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
 
 class TransitionsPanel(BasePanel):
     template_name = 'debian/transitions-panel.html'
+    panel_importance = 2
     position = 'center'
     title = 'testing migrations'
 
