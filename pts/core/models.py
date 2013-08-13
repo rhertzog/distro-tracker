@@ -1628,4 +1628,10 @@ class ActionItem(models.Model):
                 'id': self.package.id,
             },
             'full_description': self.full_description,
+            'severity': {
+                'name': self.get_severity_display(),
+                'level': self.severity,
+            },
+            'created': self.created_timestamp.strftime('%Y-%m-%d'),
+            'updated': self.last_updated_timestamp.strftime('%Y-%m-%d'),
         }

@@ -2,10 +2,19 @@
 
 {% block content %}
 <h1 class="text-center">{{ item.short_description|safe }}</h1>
-<div class="row-fluid">
-    <h4 class="text-center">Action needed for package <a href="{% url 'pts-package-page' item.package %}">{{ item.package }}</a></h4>
-    <div class="text-info text-center">severity: {{ item.get_severity_display }}</div>
+<div>
+<dl class="dl-horizontal">
+    <dt>package:</dt>
+    <dd><a href="{% url 'pts-package-page' item.package %}">{{ item.package.name }}</a></dd>
+    <dt>severity:</dt>
+    <dd>{{ item.get_severity_display }}</dd>
+    <dt>created:</dt>
+    <dd>{{ item.created_timestamp|date:"Y-m-d" }}</dd>
+    <dt>last updated:</dt>
+    <dd>{{ item.last_updated_timestamp|date:"Y-m-d" }}</dd>
+</ul>
 </div>
+<hr>
 <div class="row-fluid">
     {% include item.full_description_template %}
 </div>

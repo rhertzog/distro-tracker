@@ -43,12 +43,18 @@ $(function() {
         // The url is given in the href data attribute.
         var href = $this.attr('data-href');
         if (href === undefined) {
-            return false;
+            return;
         }
         $.get(href, function(data) {
+            // Build the meta data based on the response
+            var meta_data = "<div>Severity: " + data.severity.name + "</div>";
+            meta_data += "<div>Created: " + data.created + "</div>";
+            meta_data += "<div>Last Updated: " + data.updated + "</div>";
+            // Meta data goes into the title
+            $this.attr('data-original-title', meta_data);
+            // The content is the description
             $this.attr('data-content', data.full_description);
             $this.popover('show');
-            console.debug(data);
         })
     });
     /**
