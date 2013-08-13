@@ -98,13 +98,23 @@ The information currently provided for each package is divided into the
 following panels:
 
 - General package information panel
+  (:class:`GeneralInformationPanel <pts.core.panels.GeneralInformationPanel>`)
 - Versions panel
+  (:class:`VersionsInformationPanel <pts.core.panels.VersionsInformationPanel>`)
 - Binaries panel
+  (:class:`BinariesInformationPanel <pts.core.panels.BinariesInformationPanel>`)
 - News panel
+  (:class:`NewsPanel <pts.core.panels.NewsPanel>`)
+- Bugs panel
+  (:class:`BugsPanel <pts.core.panels.BugsPanel>`)
+- Action needed panel
+  (:class:`ActionNeededPanel <pts.core.panels.ActionNeededPanel>`)
 
 Vendors can easily customize and add new panels to the page. For more
 information refer to the
-:ref:`design overview documentation <panels_web_design>` regarding panels.
+:ref:`design overview documentation <panels_web_design>` regarding panels and
+the individual documentation for each of the core panel classes for ways to
+extend them.
 
 .. _rss_about:
 

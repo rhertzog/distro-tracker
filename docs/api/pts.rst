@@ -19,5 +19,6 @@ Subpackages
     pts.functional_tests
     pts.mail
     pts.project
+    pts.stdver_warnings
     pts.vendor
 

@@ -777,6 +777,13 @@ class BugsPanel(BasePanel):
 
 
 class ActionNeededPanel(BasePanel):
+    """
+    The panel displays a list of :class:`ActionItem <pts.core.models.ActionItem>`
+    model instances which are associated with the package.
+
+    This means that all other modules can create action items which are
+    displayed for a package in this panel by creating instances of that class.
+    """
     title = 'action needed'
     template_name = 'core/panels/action-needed.html'
     panel_importance = 5
