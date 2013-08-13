@@ -102,6 +102,14 @@ class BasePanel(six.with_metaclass(PluginRegistry)):
         """
         return 0
 
+    @property
+    def has_content(self):
+        """
+        Returns a bool indicating whether the panel actually has any content to
+        display for the package.
+        """
+        return True
+
 
 def get_panels_for_package(package):
     """
@@ -125,10 +133,10 @@ def get_panels_for_package(package):
     for panel_class in BasePanel.plugins:
         if panel_class is not BasePanel:
             panel = panel_class(package)
-            panels[panel.position].append(panel)
+            if panel.has_content:
+                panels[panel.position].append(panel)
 
     # Each columns' panels are sorted in the order of decreasing importance
-
     return dict({
         key: list(sorted(value, key=lambda x: -x.panel_importance))
         for key, value in panels.items()
