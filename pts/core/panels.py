@@ -667,7 +667,7 @@ class GeneralInfoLinkPanelItems(LinksPanel.ItemProvider):
         if self.package.main_version.homepage:
             items.append(
                 LinksPanel.SimpleLinkItem(
-                    'Homepage',
+                    'homepage',
                     self.package.main_version.homepage,
                     'upstream web homepage'
                 ),
