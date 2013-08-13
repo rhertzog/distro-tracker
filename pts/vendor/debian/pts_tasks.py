@@ -194,10 +194,12 @@ class UpdatePackageBugStats(BaseTask):
         self.cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
         # The :class:`pts.core.models.ActionItemType` instances which this task
         # can create.
-        self.patch_item_type, _ = ActionItemType.objects.get_or_create(
-            type_name=self.PATCH_BUG_ACTION_ITEM_TYPE_NAME)
-        self.help_item_type, _ = ActionItemType.objects.get_or_create(
-            type_name=self.HELP_BUG_ACTION_ITEM_TYPE_NAME)
+        self.patch_item_type = ActionItemType.objects.create_or_update(
+            type_name=self.PATCH_BUG_ACTION_ITEM_TYPE_NAME,
+            full_description_template='debian/patch-bugs-action-item.html')
+        self.help_item_type = ActionItemType.objects.create_or_update(
+            type_name=self.HELP_BUG_ACTION_ITEM_TYPE_NAME,
+            full_description_template='debian/help-bugs-action-item.html')
 
     def _get_tagged_bug_stats(self, tag, user=None):
         """
@@ -292,8 +294,7 @@ class UpdatePackageBugStats(BaseTask):
         if action_item is None:
             action_item = ActionItem(
                 package=package,
-                item_type=self.patch_item_type,
-                full_description_template='debian/patch-bugs-action-item.html')
+                item_type=self.patch_item_type)
 
         bug_count = bug_stats['patch']['bug_count']
         # Include the URL in the short description
@@ -349,8 +350,7 @@ class UpdatePackageBugStats(BaseTask):
         if action_item is None:
             action_item = ActionItem(
                 package=package,
-                item_type=self.help_item_type,
-                full_description_template='debian/help-bugs-action-item.html')
+                item_type=self.help_item_type)
 
         bug_count = bug_stats['help']['bug_count']
         # Include the URL in the short description
@@ -579,8 +579,9 @@ class UpdateLintianStatsTask(BaseTask):
         if not all_lintian_stats:
             return
 
-        lintian_action_item_type, _ = ActionItemType.objects.get_or_create(
-            type_name=self.ACTION_ITEM_TYPE_NAME)
+        lintian_action_item_type = ActionItemType.objects.create_or_update(
+            type_name=self.ACTION_ITEM_TYPE_NAME,
+            full_description_template='debian/lintian-action-item.html')
 
         # Discard all old stats
         LintianStats.objects.all().delete()
@@ -615,8 +616,7 @@ class UpdateLintianStatsTask(BaseTask):
                     lintian_action_item = ActionItem(
                         package=package,
                         item_type=lintian_action_item_type,
-                        short_description='lintian reports errors or warnings',
-                        full_description_template='debian/lintian-action-item.html')
+                        short_description='lintian reports errors or warnings')
 
                 lintian_action_item.extra_data = {
                     'warnings': warnings,
@@ -728,8 +728,9 @@ class UpdateExcusesTask(BaseTask):
         super(UpdateExcusesTask, self).__init__(*args, **kwargs)
         self.force_update = force_update
         self.cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
-        self.action_item_type, _ = ActionItemType.objects.get_or_create(
-            type_name=self.ACTION_ITEM_TYPE_NAME)
+        self.action_item_type = ActionItemType.objects.create_or_update(
+            type_name=self.ACTION_ITEM_TYPE_NAME,
+            full_description_template='debian/testing-migration-action-item.html')
 
     def set_parameters(self, parameters):
         if 'force_update' in parameters:
@@ -851,8 +852,7 @@ class UpdateExcusesTask(BaseTask):
         if action_item is None:
             action_item = ActionItem(
                 package=package,
-                item_type=self.action_item_type,
-                full_description_template='debian/testing-migration-action-item.html')
+                item_type=self.action_item_type)
 
         action_item.short_description = self.ITEM_DESCRIPTION
         if package.main_entry:

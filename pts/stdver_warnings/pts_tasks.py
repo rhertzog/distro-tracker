@@ -30,14 +30,15 @@ class UpdateStandardsVersionWarnings(BaseTask):
     )
 
     ACTION_ITEM_TYPE = 'debian-std-ver-outdated'
-
+    FULL_DESCRIPTION_TEMPLATE = 'stdver_warnings/standards-version-action-item.html'
     ITEM_DESCRIPTION = "Standards version of the package is outdated."
 
     def __init__(self, force_update=False, *args, **kwargs):
         super(UpdateStandardsVersionWarnings, self).__init__(*args, **kwargs)
         self.force_update = force_update
-        self.action_type, _ = ActionItemType.objects.get_or_create(
-            type_name=self.ACTION_ITEM_TYPE)
+        self.action_type = ActionItemType.objects.create_or_update(
+            type_name=self.ACTION_ITEM_TYPE,
+            full_description_template=self.FULL_DESCRIPTION_TEMPLATE)
 
     def set_parameters(self, parameters):
         if 'force_update' in parameters:
@@ -108,8 +109,7 @@ class UpdateStandardsVersionWarnings(BaseTask):
         if action_item is None:
             action_item = ActionItem(
                 package=package,
-                item_type=self.action_type,
-                full_description_template='stdver_warnings/standards-version-action-item.html')
+                item_type=self.action_type)
 
         # Remove the minor patch level from the package's Std-Ver, if it has it
         if standards_version.count('.') == 3:

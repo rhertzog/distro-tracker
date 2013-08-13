@@ -287,7 +287,9 @@ class ActionItemJsonViewTest(TestCase):
     """
     def setUp(self):
         self.package = SourcePackageName.objects.create(name='dummy-package')
-        self.action_type = ActionItemType.objects.create(type_name='test')
+        self.action_type = ActionItemType.objects.create(
+            type_name='test',
+            full_description_template='action-item-test.html')
 
     def test_item_exists(self):
         """
@@ -297,8 +299,7 @@ class ActionItemJsonViewTest(TestCase):
         action_item = ActionItem.objects.create(
             package=self.package,
             item_type=self.action_type,
-            short_description=expected_short_description,
-            full_description_template='action-item-test.html')
+            short_description=expected_short_description)
         response = self.client.get(reverse('pts-api-action-item', kwargs={
             'item_pk': action_item.pk,
         }))

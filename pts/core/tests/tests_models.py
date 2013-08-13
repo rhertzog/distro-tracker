@@ -1141,16 +1141,23 @@ class ActionItemTests(TestCase):
         self.package = PackageName.objects.create(name='dummy-package')
         self.action_type = ActionItemType.objects.create(type_name='test-type')
 
+    def set_action_type_template(self, template_name):
+        """
+        Sets the template name for the test action item type.
+        """
+        self.action_type.full_description_template = template_name
+        self.action_type.save()
+
     def test_full_description_from_template(self):
         """
         Tests that the :attr:`pts.core.models.ActionItem.full_description`
         property returns content by rendering the correct template.
         """
+        self.set_action_type_template('action-item-test.html')
         action_item = ActionItem.objects.create(
             package=self.package,
             item_type=self.action_type,
-            short_description='Short description of item',
-            full_description_template='action-item-test.html')
+            short_description='Short description of item')
 
         self.assertIn(
             "Item's PK is {pk}".format(pk=action_item.pk),
@@ -1165,11 +1172,11 @@ class ActionItemTests(TestCase):
         returns an empty full description if the given template does not
         exist.
         """
+        self.set_action_type_template('this-template-does-not-exist.html')
         action_item = ActionItem.objects.create(
             package=self.package,
             item_type=self.action_type,
-            short_description='Short description of item',
-            full_description_template='this-template-does-not-exist.html')
+            short_description='Short description of item')
 
         self.assertEqual('', action_item.full_description)
 
@@ -1191,11 +1198,11 @@ class ActionItemTests(TestCase):
         returns a description which can use the extra_data of a
         :class:`pts.core.models.ActionItem`.
         """
+        self.set_action_type_template('action-item-test.html')
         action_item = ActionItem.objects.create(
             package=self.package,
             item_type=self.action_type,
-            short_description='Short description of item',
-            full_description_template='action-item-test.html')
+            short_description='Short description of item')
         action_item.extra_data = ['data1', 'data2']
         action_item.save()
 

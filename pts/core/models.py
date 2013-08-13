@@ -1562,9 +1562,46 @@ class BinaryPackageBugStats(models.Model):
             package=self.package, stats=self.stats)
 
 
+class ActionItemTypeManager(models.Manager):
+    """
+    A custom :class:`Manager <django.db.models.Manager>` for the
+    :class:`ActionItemType` model.
+    """
+    def create_or_update(self, type_name, full_description_template):
+        """
+        Method either creates the template with the given name and description
+        template or makes sure to update an existing instance of that name
+        to have the given template.
+
+        :param type_name: The name of the :class:`ActionItemType` instance to
+            create.
+        :type type_name: string
+        :param full_description_template: The description template that the
+            returned :class:`ActionItemType` instance should have.
+        :type full_description_template: string
+
+        :returns: :class:`ActionItemType` instance
+        """
+        item_type, created = self.get_or_create(type_name=type_name, defaults={
+            'full_description_template': full_description_template
+        })
+        if created:
+            return item_type
+        # If it wasn't just created check if the template needs to be updated
+        if item_type.full_description_template != full_description_template:
+            item_type.full_description_template = full_description_template
+            item_type.save()
+
+        return item_type
+
+
 @python_2_unicode_compatible
 class ActionItemType(models.Model):
     type_name = models.TextField(max_length=100, unique=True)
+    full_description_template = models.CharField(
+        max_length=255, blank=True, null=True)
+
+    objects = ActionItemTypeManager()
 
     def __str__(self):
         return self.type_name
@@ -1594,8 +1631,6 @@ class ActionItem(models.Model):
     created_timestamp = models.DateTimeField(auto_now_add=True)
     last_updated_timestamp = models.DateTimeField(auto_now=True)
     extra_data = JSONField(blank=True, null=True)
-    full_description_template = models.CharField(
-        max_length=255, blank=True, null=True)
 
     class Meta:
         unique_together = ('package', 'item_type')
@@ -1610,6 +1645,10 @@ class ActionItem(models.Model):
         return reverse('pts-action-item', kwargs={
             'item_pk': self.pk,
         })
+
+    @property
+    def full_description_template(self):
+        return self.item_type.full_description_template
 
     def set_severity(self, severity):
         """
