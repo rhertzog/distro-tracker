@@ -987,10 +987,13 @@ class UpdateBuildLogCheckStats(BaseTask):
 
         if errors and warnings:
             report = 'errors and warnings'
+            action_item.set_severity('high')
         elif errors:
             report = 'errors'
+            action_item.set_severity('high')
         elif warnings:
             report = 'warnings'
+            action_item.set_severity('low')
 
         action_item.short_description = self.ITEM_DESCRIPTION.format(report=report)
         action_item.extra_data = stats

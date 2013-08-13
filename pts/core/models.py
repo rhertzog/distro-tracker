@@ -1611,6 +1611,21 @@ class ActionItem(models.Model):
             'item_pk': self.pk,
         })
 
+    def set_severity(self, severity):
+        """
+        Sets the severity of the :class:`ActionItem` based on the given
+        severity name.
+
+        :param severity: The name of the severity which should be set for the
+            package. It should be one of the keys of the :data:`SEVERITY_LEVELS`
+            dict.
+        :type severity: string
+        """
+        severity_level = self.SEVERITY_LEVELS.get(severity, None)
+        if severity_level is None:
+            return
+        self.severity = severity_level
+
     @cached_property
     def full_description(self):
         if not self.full_description_template:

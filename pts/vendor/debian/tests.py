@@ -1612,6 +1612,34 @@ class UpdateBuildLogCheckStatsActionItemTests(TestCase):
             self.get_action_item_type().type_name)
         # Contains the correct extra data
         self.assertDictEqual(expected_data, item.extra_data)
+        # The severity is high since it contains both errors and warnings
+        self.assertEqual('high', item.get_severity_display())
+
+    def test_action_item_warning_low_severity(self):
+        """
+        Tests that action items have low severity if the package only has
+        warnings.
+        """
+        self.set_buildd_content("dummy-package|0|1|0|0")
+
+        self.run_task()
+
+        self.assertEqual(1, ActionItem.objects.count())
+        item = ActionItem.objects.all()[0]
+        self.assertEqual('low', item.get_severity_display())
+
+    def test_action_item_error_high_severity(self):
+        """
+        Tests that action items have high severity if the package has only
+        errors.
+        """
+        self.set_buildd_content("dummy-package|1|0|0|0")
+
+        self.run_task()
+
+        self.assertEqual(1, ActionItem.objects.count())
+        item = ActionItem.objects.all()[0]
+        self.assertEqual('high', item.get_severity_display())
 
     def test_action_item_not_created(self):
         """
