@@ -93,6 +93,15 @@ class BasePanel(six.with_metaclass(PluginRegistry)):
         """
         return None
 
+    @property
+    def panel_importance(self):
+        """
+        Returns and integer giving the importance of a package.
+        The panels in a single column are always positioned in decreasing
+        importance order.
+        """
+        return 0
+
 
 def get_panels_for_package(package):
     """
@@ -118,7 +127,12 @@ def get_panels_for_package(package):
             panel = panel_class(package)
             panels[panel.position].append(panel)
 
-    return dict(panels)
+    # Each columns' panels are sorted in the order of decreasing importance
+
+    return dict({
+        key: list(sorted(value, key=lambda x: -x.panel_importance))
+        for key, value in panels.items()
+    })
 
 
 class GeneralInformationPanel(BasePanel):
