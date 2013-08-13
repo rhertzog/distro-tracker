@@ -128,6 +128,8 @@ class StandardsVersionActionItemTests(TestCase):
             self.package.standards_version,
             item.extra_data['standards_version'])
         self.assertFalse(item.extra_data['severely_outdated'])
+        # This is a wishlist severity issue
+        self.assertEqual('wishlist', item.get_severity_display())
 
     def test_action_item_severely_outdated_policy(self):
         """
@@ -151,6 +153,8 @@ class StandardsVersionActionItemTests(TestCase):
         # Contains the correct package standards version in extra data
         item = ActionItem.objects.all()[0]
         self.assertTrue(item.extra_data['severely_outdated'])
+        # This is a high severity issue
+        self.assertEqual('high', item.get_severity_display())
 
     def test_no_action_item_policy_up_to_date(self):
         """

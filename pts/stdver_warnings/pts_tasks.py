@@ -102,6 +102,11 @@ class UpdateStandardsVersionWarnings(BaseTask):
         if standards_version.count('.') == 3:
             standards_version, _ = standards_version.rsplit('.', 1)
 
+        if severely_outdated:
+            action_item.set_severity('high')
+        else:
+            action_item.set_severity('wishlist')
+
         action_item.short_description = self.ITEM_DESCRIPTION
         action_item.extra_data = {
             'lastsv': policy_version,
