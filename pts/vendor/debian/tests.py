@@ -39,6 +39,7 @@ from pts.vendor.debian.pts_tasks import UpdateBuildLogCheckStats
 from pts.vendor.debian.pts_tasks import UpdatePackageBugStats
 from pts.vendor.debian.pts_tasks import RetrieveDebianMaintainersTask
 from pts.vendor.debian.pts_tasks import RetrieveLowThresholdNmuTask
+from pts.vendor.debian.pts_tasks import DebianWatchFileScannerUpdate
 from pts.vendor.debian.pts_tasks import UpdateExcusesTask
 from pts.vendor.debian.models import DebianContributor
 from pts.vendor.debian.pts_tasks import UpdateLintianStatsTask
@@ -48,6 +49,7 @@ from pts.mail.mail_news import process
 from email.message import Message
 
 import os
+import yaml
 
 
 __all__ = ('DispatchDebianSpecificTest', 'DispatchBaseDebianSettingsTest')
@@ -1754,3 +1756,131 @@ class UpdateBuildLogCheckStatsActionItemTests(TestCase):
         # Both packages have an action item
         self.assertEqual(1, other_package.action_items.count())
         self.assertEqual(1, self.package_name.action_items.count())
+
+
+class DebianWatchFileScannerUpdateTests(TestCase):
+    """
+    Tests that :class:`pts.core.models.ActionItem` instances are correctly
+    created when running the
+    :class:`pts.vendor.debian.pts_tasks.UpdateBuildLogCheckStats` task.
+    """
+    def setUp(self):
+        self.package = SourcePackageName.objects.create(name='dummy-package')
+
+        self.task = DebianWatchFileScannerUpdate()
+        self.task._get_udd_dehs_content = mock.MagicMock()
+
+    def run_task(self):
+        self.task.execute()
+
+    def set_udd_dehs_content(self, content):
+        """
+        Sets the stub content returned to the task as UDD DEHS data.
+        :param content: A list of dicts of information returned by UDD. The
+            content given as a response to the task will be the YAML encoded
+            representation of this list.
+        """
+        self.task._get_udd_dehs_content.return_value = yaml.safe_dump(
+            content,
+            default_flow_style=False)
+
+    def get_item_type(self, type_name):
+        """
+        Helper method returning a :class:`pts.core.models.ActionItemType`
+        instance with the given type name.
+        """
+        return ActionItemType.objects.get_or_create(type_name=type_name)[0]
+
+    def test_new_upstream_version_item_created(self):
+        """
+        Tests that a new upstream version item is created when a package has
+        a newer upstream version according to DEHS data retrieved from UDD.
+        """
+        version = '2.0.0'
+        url = 'http://some.url.here'
+        dehs = [
+            {
+                'package': self.package.name,
+                'status': 'Newer version available',
+                'upstream-url': url,
+                'upstream-version': version,
+            }
+        ]
+        self.set_udd_dehs_content(dehs)
+        # Sanity check: no action items
+        self.assertEqual(0, ActionItem.objects.count())
+
+        self.run_task()
+
+        # Action item created.
+        self.assertEqual(1, ActionItem.objects.count())
+        # Action item correct type
+        item = ActionItem.objects.all()[0]
+        self.assertEqual(
+            'new-upstream-version',
+            item.item_type.type_name)
+        # Correct full description template
+        self.assertEqual(
+            DebianWatchFileScannerUpdate.ACTION_ITEM_TEMPLATES['new-upstream-version'],
+            item.full_description_template)
+        # Correct extra data
+        expected_data = {
+            'upstream_version': version,
+            'upstream_url': url,
+        }
+        self.assertDictEqual(expected_data, item.extra_data)
+        # High severity item
+        self.assertEqual('high', item.get_severity_display())
+
+    def test_new_upstream_version_item_removed(self):
+        """
+        Tests that a new upstream version item is removed when a package no
+        longer has a newer upstream version.
+        """
+        # Make sure the package previously had an action item.
+        item_type = self.get_item_type('new-upstream-version')
+        ActionItem.objects.create(
+            package=self.package,
+            item_type=item_type,
+            short_description='Desc')
+        dehs = []
+        self.set_udd_dehs_content(dehs)
+
+        self.run_task()
+
+        # Action item removed
+        self.assertEqual(0, ActionItem.objects.count())
+
+    def test_new_upstream_version_item_updated(self):
+        """
+        Tests that a new upstream version action item is updated when there is
+        newer data available for the package.
+        """
+        item_type = self.get_item_type('new-upstream-version')
+        ActionItem.objects.create(
+            package=self.package,
+            item_type=item_type,
+            short_description='Desc')
+        url = 'http://some.url'
+        version = '2.0.0'
+        dehs = [
+            {
+                'package': self.package.name,
+                'status': 'Newer version available',
+                'upstream-url': url,
+                'upstream-version': version,
+            }
+        ]
+        self.set_udd_dehs_content(dehs)
+
+        self.run_task()
+
+        # Still the one action item
+        self.assertEqual(1, ActionItem.objects.count())
+        # Extra data updated
+        item = ActionItem.objects.all()[0]
+        expected_data = {
+            'upstream_url': url,
+            'upstream_version': version,
+        }
+        self.assertEqual(expected_data, item.extra_data)

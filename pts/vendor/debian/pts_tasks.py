@@ -1023,3 +1023,129 @@ class UpdateBuildLogCheckStats(BaseTask):
 
         # One SQL query to create all the stats.
         BuildLogCheckStats.objects.bulk_create(logcheck_stats)
+
+
+class DebianWatchFileScannerUpdate(BaseTask):
+    ACTION_ITEM_TYPE_NAMES = (
+        'new-upstream-version',
+    )
+    ACTION_ITEM_TEMPLATES = {
+        'new-upstream-version': "debian/new-upstream-version-action-item.html",
+    }
+    ITEM_DESCRIPTIONS = {
+        'new-upstream-version': (
+            'A new upstream version is available: <a href="{url}">{version}</a>'),
+    }
+
+    def __init__(self, force_update=False, *args, **kwargs):
+        super(DebianWatchFileScannerUpdate, self).__init__(*args, **kwargs)
+        self.force_update = force_update
+        self.cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
+        self.action_item_types = {
+            type_name: ActionItemType.objects.create_or_update(
+                type_name=type_name,
+                full_description_template=self.ACTION_ITEM_TEMPLATES.get(
+                    type_name, None))
+            for type_name in self.ACTION_ITEM_TYPE_NAMES
+        }
+        # Map item type names to bound methods which perform the update of an
+        # action item of that type
+        self._ACTION_ITEM_UPDATE_METHODS = {
+            'new-upstream-version': self.update_upstream_version_item,
+        }
+
+    def set_parameters(self, parameters):
+        if 'force_update' in parameters:
+            self.force_update = parameters['force_update']
+
+    def _get_udd_dehs_content(self):
+        url = 'http://qa.debian.org/cgi-bin/udd-dehs'
+        return get_resource_content(url)
+
+    def _remove_obsolete_action_items(self, item_type_name, non_obsolete_packages):
+        """
+        Removes any existing :class:`ActionItem` with the given type name based
+        on the list of package names which should still have the items based on
+        the processed stats.
+        """
+        action_item_type = self.action_item_types[item_type_name]
+
+        obsolete_items = ActionItem.objects.filter(
+            item_type=action_item_type)
+        obsolete_items = obsolete_items.exclude(
+            package__name__in=non_obsolete_packages)
+        obsolete_items.delete()
+
+    def get_udd_dehs_stats(self, stats):
+        """
+        Gets the DEHS stats from the UDD and puts them in the given ``stats``
+        dictionary.
+        The keys of the dict are package names.
+
+        :returns: A a two-tuple where the first item is a list of packages
+            which have new upstream versions and the second is a list of
+            packages which have watch failures.
+        """
+        content = self._get_udd_dehs_content()
+        dehs_data = yaml.load(six.BytesIO(content))
+        all_new_versions, all_failures = [], []
+        for entry in dehs_data:
+            package_name = entry['package']
+            if 'status' in entry and 'Newer version' in entry['status']:
+                stats.setdefault(package_name, {})
+                stats[package_name]['new-upstream-version'] = {
+                    'upstream_version': entry['upstream-version'],
+                    'upstream_url': entry['upstream-url'],
+                }
+                all_new_versions.append(package_name)
+            if 'warnings' in entry:
+                stats.setdefault(package_name, {})
+                stats[package_name]['watch-failure'] = {
+                    'error': entry['warnings'],
+                }
+                all_failures.append(package_name)
+
+        return all_new_versions, all_failures
+
+    def update_upstream_version_item(self, package, stats):
+        """
+        The method updates the action item for the given package based on the
+        given stats.
+        If the package previously did not have any action item of this type,
+        it is created.
+        """
+        item_type = 'new-upstream-version'
+        action_item = package.get_action_item_for_type(item_type)
+        if action_item is None:
+            # Create an action item...
+            action_item = ActionItem(
+                package=package,
+                item_type=self.action_item_types[item_type])
+
+        description_template = self.ITEM_DESCRIPTIONS[item_type]
+        description = description_template.format(
+            version=stats['upstream_version'],
+            url=stats['upstream_url'])
+        action_item.short_description = description
+        action_item.set_severity('high')
+        action_item.extra_data = stats
+
+        action_item.save()
+
+    def execute(self):
+        stats = {}
+        new_upstream_version, failures = self.get_udd_dehs_stats(stats)
+
+        # Remove obsolete action items for each of the categories...
+        self._remove_obsolete_action_items(
+            'new-upstream-version', new_upstream_version)
+
+        packages = SourcePackageName.objects.filter(
+            name__in=stats.keys())
+        packages = packages.prefetch_related('action_items')
+
+        # Update action items for each package
+        for package in packages:
+            for type_name, method in self._ACTION_ITEM_UPDATE_METHODS.items():
+                if type_name in stats[package.name]:
+                    method(package, stats[package.name][type_name])
