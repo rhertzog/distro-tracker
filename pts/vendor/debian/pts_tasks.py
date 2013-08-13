@@ -592,6 +592,10 @@ class UpdateLintianStatsTask(BaseTask):
                     item_type=self.lintian_action_item_type,
                     short_description='lintian reports errors or warnings')
 
+            # If there are errors make the item a high severity issue
+            if errors:
+                lintian_action_item.set_severity('high')
+
             lintian_action_item.extra_data = {
                 'warnings': warnings,
                 'errors': errors,

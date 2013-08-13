@@ -962,13 +962,15 @@ class UpdateLintianStatsTaskTest(TestCase):
         self.assertEqual(
             item.item_type.type_name,
             UpdateLintianStatsTask.ACTION_ITEM_TYPE_NAME)
+        # It is a high severity issue
+        self.assertEqual('high', item.get_severity_display())
 
     @mock.patch('pts.core.utils.http.requests')
     def test_action_item_created_warnings(self, mock_requests):
         """
         Tests that an action item is created when the package has warnings.
         """
-        errors, warnings = 2, 0
+        errors, warnings = 0, 2
         response = "dummy-package {err} {warn} 0 0 0 0".format(
             err=errors, warn=warnings)
         set_mock_response(mock_requests, text=response)
@@ -982,6 +984,8 @@ class UpdateLintianStatsTaskTest(TestCase):
         # The correct number of errors and warnings is stored in the item
         item = ActionItem.objects.all()[0]
         self.assert_action_item_warnings_and_errors_count(item, errors, warnings)
+        # It is a normal severity issue
+        self.assertEqual('normal', item.get_severity_display())
 
     @mock.patch('pts.core.utils.http.requests')
     def test_action_item_created_errors_and_warnings(self, mock_requests):
@@ -989,7 +993,7 @@ class UpdateLintianStatsTaskTest(TestCase):
         Tests that an action item is created when the package has errors and
         warnings.
         """
-        errors, warnings = 2, 0
+        errors, warnings = 2, 2
         response = "dummy-package {err} {warn} 0 0 0 0".format(
             err=errors, warn=warnings)
         set_mock_response(mock_requests, text=response)
@@ -1005,6 +1009,8 @@ class UpdateLintianStatsTaskTest(TestCase):
         self.assertEqual(item.package.name, self.package_name.name)
         # The correct number of errors and warnings is stored in the item
         self.assert_action_item_warnings_and_errors_count(item, errors, warnings)
+        # It is a high severity issue since it contains both errors and warnings
+        self.assertEqual('high', item.get_severity_display())
 
     @mock.patch('pts.core.utils.http.requests')
     def test_action_item_not_created(self, mock_requests):
