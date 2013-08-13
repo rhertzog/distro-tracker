@@ -234,6 +234,21 @@ class PackageName(BasePackageName):
     def __str__(self):
         return self.name
 
+    def get_action_item_for_type(self, action_item_type):
+        """
+        :param: The name of the :class:`ActionItemType` of the
+            :class:`ActionItem` which is to be returned.
+
+        :returns: An action item with the given type name which is associated
+            to this :class:`PackageName` instance. ``None`` if the package
+            has no action items of that type.
+        :rtype: :class:`ActionItem` or ``None``
+        """
+        return next((
+            item
+            for item in self.action_items.all()
+            if item.item_type.type_name == action_item_type),
+            None)
 
 class PseudoPackageName(PackageName):
     """

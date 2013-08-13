@@ -277,11 +277,8 @@ class UpdatePackageBugStats(BaseTask):
         :type bug_stats: dict
         """
         # Get the old action item, if any
-        action_item = next((
-            item
-            for item in package.action_items.all()
-            if item.item_type.type_name == self.PATCH_BUG_ACTION_ITEM_TYPE_NAME),
-            None)
+        action_item = package.get_action_item_for_type(
+            self.PATCH_BUG_ACTION_ITEM_TYPE_NAME)
 
         if 'patch' not in bug_stats or bug_stats['patch']['bug_count'] == 0:
             # Remove the old action item, since the package does not have any
@@ -333,11 +330,8 @@ class UpdatePackageBugStats(BaseTask):
         :type bug_stats: dict
         """
         # Get the old action item, if any
-        action_item = next((
-            item
-            for item in package.action_items.all()
-            if item.item_type.type_name == self.HELP_BUG_ACTION_ITEM_TYPE_NAME),
-            None)
+        action_item = package.get_action_item_for_type(
+            self.HELP_BUG_ACTION_ITEM_TYPE_NAME)
 
         if 'help' not in bug_stats or bug_stats['help']['bug_count'] == 0:
             # Remove the old action item, since the package does not have any
@@ -605,11 +599,8 @@ class UpdateLintianStatsTask(BaseTask):
             warnings, errors = (
                 package_stats.get('warnings'), package_stats.get('errors', 0))
             # Get the old action item for this warning, if it exists.
-            lintian_action_item = next((
-                item
-                for item in package.action_items.all()
-                if item.item_type == lintian_action_item_type),
-                None)
+            lintian_action_item = package.get_action_item_for_type(
+                lintian_action_item_type.type_name)
             if warnings or errors:
                 # The item didn't previously have an action item: create it now
                 if lintian_action_item is None:
@@ -844,11 +835,7 @@ class UpdateExcusesTask(BaseTask):
         including the given extra data. The item indicates that there is a
         problem with the package migrating to testing.
         """
-        action_item = next((
-            item
-            for item in package.action_items.all()
-            if item.item_type.type_name == self.ACTION_ITEM_TYPE_NAME),
-            None)
+        action_item = package.get_action_item_for_type(self.ACTION_ITEM_TYPE_NAME)
         if action_item is None:
             action_item = ActionItem(
                 package=package,
@@ -964,11 +951,8 @@ class UpdateBuildLogCheckStats(BaseTask):
         Creates a :class:`pts.core.models.ActionItem` instance for the given
         package if the build logcheck stats indicate
         """
-        action_item = next((
-            item
-            for item in package.action_items.all()
-            if item.item_type.type_name == self.ACTION_ITEM_TYPE_NAME),
-            None)
+        action_item = package.get_action_item_for_type(self.ACTION_ITEM_TYPE_NAME)
+
         errors = stats.get('errors', 0) > 0
         warnings = stats.get('warnings', 0) > 0
 

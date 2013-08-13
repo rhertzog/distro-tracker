@@ -71,19 +71,6 @@ class UpdateStandardsVersionWarnings(BaseTask):
 
         return policy_version
 
-    def get_action_item(self, package):
-        """
-        :returns: A :class:`pts.core.models.ActionItem` instance of the
-            :attr:`ACTION_ITEM_TYPE` for the given package.
-            ``None`` if the package previously did not have an ActionItem
-            of that type.
-        """
-        return next((
-            item
-            for item in package.action_items.all()
-            if item.item_type.type_name == self.ACTION_ITEM_TYPE),
-            None)
-
     def create_action_item(self, package, policy_version):
         """
         Creates a :class:`pts.core.models.ActionItem` instance if the
@@ -93,7 +80,7 @@ class UpdateStandardsVersionWarnings(BaseTask):
         if not package.main_version:
             return
         # Get the old action item entry
-        action_item = self.get_action_item(package)
+        action_item = package.get_action_item_for_type(self.ACTION_ITEM_TYPE)
         standards_version = package.main_version.standards_version
         if standards_version.startswith(policy_version):
             # The std-ver of the package is up to date.
