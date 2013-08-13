@@ -10,6 +10,7 @@
 """Implements the core panels shown on package pages."""
 from __future__ import unicode_literals
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils import six
 from django.utils.safestring import mark_safe
 from pts.core.utils.plugins import PluginRegistry
@@ -218,8 +219,13 @@ class GeneralInformationPanel(BasePanel):
 
     @property
     def context(self):
-        info = PackageExtractedInfo.objects.get(
-            package=self.package, key='general')
+        try:
+            info = PackageExtractedInfo.objects.get(
+                package=self.package, key='general')
+        except PackageExtractedInfo.DoesNotExist:
+            # There is no general info for the package
+            return
+
         general = info.value
         # Add source package URL
         url, implemented = vendor.call('get_package_information_site_url', **{
@@ -239,6 +245,10 @@ class GeneralInformationPanel(BasePanel):
 
         return general
 
+    @property
+    def has_content(self):
+        return bool(self.context)
+
 
 class VersionsInformationPanel(BasePanel):
     """
@@ -257,8 +267,12 @@ class VersionsInformationPanel(BasePanel):
 
     @property
     def context(self):
-        info = PackageExtractedInfo.objects.get(
-            package=self.package, key='versions')
+        try:
+            info = PackageExtractedInfo.objects.get(
+                package=self.package, key='versions')
+        except PackageExtractedInfo.DoesNotExist:
+            return
+
         version_info = info.value
         package_name = info.package.name
         for item in version_info['version_list']:
@@ -278,6 +292,10 @@ class VersionsInformationPanel(BasePanel):
             version_info['external_resources'] = external_resources
 
         return version_info
+
+    @property
+    def has_content(self):
+        return bool(self.context)
 
 
 class VersionedLinks(BasePanel):
@@ -366,20 +384,24 @@ class VersionedLinks(BasePanel):
                 for klass in cls.plugins
                 if klass is not cls
             ]
+    #: All icons that the panel displays for each version.
+    #: Icons must be the same for each version.
+    ALL_ICONS = [
+        icon
+        for link_provider in LinkProvider.get_providers()
+        for icon in link_provider.icons
+    ]
 
     @property
     def context(self):
+        # Only process source files
+        if not isinstance(self.package, SourcePackageName):
+            return
         # Make sure we display the versions in a version-number increasing order
         versions = sorted(
             self.package.source_package_versions.all(),
             key=lambda x: AptPkgVersion(x.version)
         )
-        # Icons must be the same for each version
-        icons = [
-            icon
-            for link_provider in VersionedLinks.LinkProvider.get_providers()
-            for icon in link_provider.icons
-        ]
 
         versioned_links = []
         for package in versions:
@@ -395,11 +417,17 @@ class VersionedLinks(BasePanel):
                         'icon_html': icon,
                         'url': link,
                     }
-                    for icon, link in zip(icons, links)
+                    for icon, link in zip(ICONS, links)
                 ]
             })
 
         return versioned_links
+
+    @property
+    def has_content(self):
+        # Do not display the panel if there are no icons or the package has no
+        # versions.
+        return bool(self.ALL_ICONS) and bool(self.context)
 
 
 class DscLinkProvider(VersionedLinks.LinkProvider):
@@ -476,8 +504,12 @@ class BinariesInformationPanel(BasePanel):
 
     @property
     def context(self):
-        info = PackageExtractedInfo.objects.get(
-            package=self.package, key='binaries')
+        try:
+            info = PackageExtractedInfo.objects.get(
+                package=self.package, key='binaries')
+        except PackageExtractedInfo.DoesNotExist:
+            return
+
         binaries = info.value
         for binary in binaries:
             # For each binary try to include known bug stats
@@ -499,6 +531,10 @@ class BinariesInformationPanel(BasePanel):
                     binary['url'] = url
 
         return binaries
+
+    @property
+    def has_content(self):
+        return bool(self.context)
 
 
 class PanelItem(object):
@@ -637,6 +673,11 @@ class ListPanel(BasePanel, six.with_metaclass(ListPanelMeta)):
         return {
             'items': self.get_items()
         }
+
+    @property
+    def has_content(self):
+        return bool(self.context['items'])
+
 # This should be a sort of "abstract" panel which should never be rendered on
 # its own, so it is removed from the list of registered panels.
 ListPanel.unregister_plugin()
@@ -711,6 +752,10 @@ class NewsPanel(BasePanel):
             'news': News.objects.filter(package=self.package)[:self.NEWS_LIMIT]
         }
 
+    @property
+    def has_content(self):
+        return bool(self.context['news'])
+
 
 class BugsPanel(BasePanel):
     """
@@ -767,7 +812,10 @@ class BugsPanel(BasePanel):
             # If the vendor does not provide custom categories to be displayed
             # in the panel, the default is to make each stored category a
             # separate entry.
-            stats = self.package.bug_stats.stats
+            try:
+                stats = self.package.bug_stats.stats
+            except ObjectDoesNotExist:
+                return
             # Also adds a total of all those bugs
             total = sum(category['bug_count'] for category in stats)
             stats.insert(0, {
@@ -782,6 +830,10 @@ class BugsPanel(BasePanel):
             return []
 
         return result
+
+    @property
+    def has_content(self):
+        return bool(self.context)
 
 
 class ActionNeededPanel(BasePanel):
@@ -806,3 +858,7 @@ class ActionNeededPanel(BasePanel):
         return {
             'items': action_items,
         }
+
+    @property
+    def has_content(self):
+        return bool(self.context['items'])

@@ -15,6 +15,7 @@ from django.utils.safestring import mark_safe
 from django.utils.http import urlencode
 from pts.core.utils import get_or_none
 from pts.core.models import Repository
+from pts.core.models import SourcePackageName
 from pts.core.panels import BasePanel
 from pts.core.panels import LinksPanel
 from pts.core.panels import TemplatePanelItem
@@ -53,6 +54,10 @@ class LintianLink(LinksPanel.ItemProvider):
 
 class BuildLogCheckLinks(LinksPanel.ItemProvider):
     def get_panel_items(self):
+        if not isinstance(self.package, SourcePackageName):
+            # Only source packages can have build log check info
+            return
+
         has_experimental = False
         experimental_repo = get_or_none(Repository, name='experimental')
         if experimental_repo:
@@ -97,3 +102,7 @@ class TransitionsPanel(BasePanel):
             'excuses': excuses,
             'package_name': self.package.name,
         }
+
+    @property
+    def has_content(self):
+        return bool(self.context['transitions']) or bool(self.context['excuses'])
