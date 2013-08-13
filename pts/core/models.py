@@ -1597,6 +1597,9 @@ class ActionItem(models.Model):
     full_description_template = models.CharField(
         max_length=255, blank=True, null=True)
 
+    class Meta:
+        unique_together = ('package', 'item_type')
+
     def __str__(self):
         return '{package} - {desc} ({severity})'.format(
             package=self.package,
