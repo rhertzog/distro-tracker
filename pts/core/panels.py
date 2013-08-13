@@ -775,15 +775,6 @@ class BugsPanel(BasePanel):
 
         return result
 
-class TodosPanel(ListPanel):
-    position = 'center'
-    title = 'todos'
-
-
-class ProblemsPanel(ListPanel):
-    position = 'center'
-    title = 'problems'
-
 
 class ActionNeededPanel(BasePanel):
     title = 'action needed'
