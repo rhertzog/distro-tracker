@@ -18,6 +18,7 @@ from pts.core.utils.plugins import PluginRegistry
 from pts.core.utils import get_vcs_name
 from pts.core.utils import get_or_none
 from pts import vendor
+from pts.core.models import SourcePackageName
 from pts.core.models import ActionItem
 from pts.core.models import PackageExtractedInfo
 from pts.core.models import MailingList
@@ -385,13 +386,16 @@ class VersionedLinks(BasePanel):
                 for klass in cls.plugins
                 if klass is not cls
             ]
-    #: All icons that the panel displays for each version.
-    #: Icons must be the same for each version.
-    ALL_ICONS = [
-        icon
-        for link_provider in LinkProvider.get_providers()
-        for icon in link_provider.icons
-    ]
+
+    def __init__(self, *args, **kwargs):
+        super(VersionedLinks, self).__init__(*args, **kwargs)
+        #: All icons that the panel displays for each version.
+        #: Icons must be the same for each version.
+        self.ALL_ICONS = [
+            icon
+            for link_provider in VersionedLinks.LinkProvider.get_providers()
+            for icon in link_provider.icons
+        ]
 
     @cached_property
     def context(self):
@@ -418,7 +422,7 @@ class VersionedLinks(BasePanel):
                         'icon_html': icon,
                         'url': link,
                     }
-                    for icon, link in zip(ICONS, links)
+                    for icon, link in zip(self.ALL_ICONS, links)
                 ]
             })
 
