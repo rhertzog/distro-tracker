@@ -1039,16 +1039,26 @@ class DebianWatchFileScannerUpdate(BaseTask):
         'watch-file-available': "debian/watch-file-available-action-item.html",
     }
     ITEM_DESCRIPTIONS = {
-        'new-upstream-version': (
-            'A new upstream version is available: <a href="{url}">{version}</a>'),
-        'watch-failure': (
+        'new-upstream-version': lambda item: (
+            'A new upstream version is available: '
+            '<a href="{url}">{version}</a>'.format(
+                url=item.extra_data['upstream_url'],
+                version=item.extra_data['upstream_version'])),
+        'watch-failure': lambda item: (
             'Problems while searching for a new upstream version'),
-        'watch-file-broken': (
+        'watch-file-broken': lambda item: (
             'Problem with the debian/watch file included in the package'),
-        'watch-file-available': (
+        'watch-file-available': lambda item: (
             'An updated debian/watch file is '
             '<a href="http://qa.debian.org/cgi-bin/watchfile.cgi?package={package}">'
-            'available</a>.'),
+            'available</a>.'.format(
+                package=item.package.name)),
+    }
+    ITEM_SEVERITIES = {
+        'new-upstream-version': 'high',
+        'watch-failure': 'high',
+        'watch-file-broken': 'low',
+        'watch-file-available': 'wishlist',
     }
 
     def __init__(self, force_update=False, *args, **kwargs):
@@ -1061,14 +1071,6 @@ class DebianWatchFileScannerUpdate(BaseTask):
                 full_description_template=self.ACTION_ITEM_TEMPLATES.get(
                     type_name, None))
             for type_name in self.ACTION_ITEM_TYPE_NAMES
-        }
-        # Map item type names to bound methods which perform the update of an
-        # action item of that type
-        self._ACTION_ITEM_UPDATE_METHODS = {
-            'new-upstream-version': self.update_upstream_version_item,
-            'watch-failure': self.update_watch_failure_item,
-            'watch-file-broken': self.update_watch_file_broken_item,
-            'watch-file-available': self.update_watch_file_available_item,
         }
 
     def set_parameters(self, parameters):
@@ -1177,14 +1179,26 @@ class DebianWatchFileScannerUpdate(BaseTask):
 
         return packages
 
-    def update_upstream_version_item(self, package, stats):
+    def update_action_item(self, item_type, package, stats):
         """
-        The method updates the ``new-upstream-version``action item for the
-        given package based on the given stats.
-        If the package previously did not have any action item of this type,
-        it is created.
+        Updates the action item of the given type for the given package based
+        on the given stats.
+
+        The severity of the item is defined by the :attr:`ITEM_SEVERITIES` dict.
+
+        The short descriptions are created by passing the :class:`ActionItem`
+        (with extra data already set) to the callables defined in
+        :attr:`ITEM_DESCRIPTIONS`.
+
+        :param item_type: The type of the :class:`ActionItem` that should be
+            updated.
+        :type item_type: string
+        :param package: The package to which this action item should be
+            associated.
+        :type package: :class:`pts.core.models.PackageName`
+        :param stats: The stats which are used to create the action item.
+        :type stats: :class:`dict`
         """
-        item_type = 'new-upstream-version'
         action_item = package.get_action_item_for_type(item_type)
         if action_item is None:
             # Create an action item...
@@ -1192,80 +1206,10 @@ class DebianWatchFileScannerUpdate(BaseTask):
                 package=package,
                 item_type=self.action_item_types[item_type])
 
-        description_template = self.ITEM_DESCRIPTIONS[item_type]
-        description = description_template.format(
-            version=stats['upstream_version'],
-            url=stats['upstream_url'])
-        action_item.short_description = description
-        action_item.set_severity('high')
+        if item_type in self.ITEM_SEVERITIES:
+            action_item.set_severity(self.ITEM_SEVERITIES[item_type])
         action_item.extra_data = stats
-
-        action_item.save()
-
-    def update_watch_failure_item(self, package, stats):
-        """
-        The method updates the ``watch-failure``action item for the
-        given package based on the given stats.
-        If the package previously did not have any action item of this type,
-        it is created.
-        """
-        item_type = 'watch-failure'
-        action_item = package.get_action_item_for_type(item_type)
-        if action_item is None:
-            # Create an action item...
-            action_item = ActionItem(
-                package=package,
-                item_type=self.action_item_types[item_type])
-
-        description = self.ITEM_DESCRIPTIONS[item_type]
-        action_item.short_description = description
-        action_item.set_severity('high')
-        action_item.extra_data = stats
-
-        action_item.save()
-
-    def update_watch_file_broken_item(self, package, stats):
-        """
-        The method updates the ``watch-file-broken``action item for the
-        given package based on the given stats.
-        If the package previously did not have any action item of this type,
-        it is created.
-        """
-        item_type = 'watch-file-broken'
-        action_item = package.get_action_item_for_type(item_type)
-        if action_item is None:
-            # Create an action item...
-            action_item = ActionItem(
-                package=package,
-                item_type=self.action_item_types[item_type])
-
-        description = self.ITEM_DESCRIPTIONS[item_type]
-        action_item.short_description = description
-        action_item.set_severity('low')
-        action_item.extra_data = stats
-
-        action_item.save()
-
-    def update_watch_file_available_item(self, package, stats):
-        """
-        The method updates the ``watch-file-available``action item for the
-        given package based on the given stats.
-        If the package previously did not have any action item of this type,
-        it is created.
-        """
-        item_type = 'watch-file-available'
-        action_item = package.get_action_item_for_type(item_type)
-        if action_item is None:
-            # Create an action item...
-            action_item = ActionItem(
-                package=package,
-                item_type=self.action_item_types[item_type])
-
-        description_template = self.ITEM_DESCRIPTIONS[item_type]
-        description = description_template.format(package=package.name)
-        action_item.short_description = description
-        action_item.set_severity('wishlist')
-        action_item.extra_data = stats
+        action_item.short_description = self.ITEM_DESCRIPTIONS[item_type](action_item)
 
         action_item.save()
 
@@ -1274,13 +1218,16 @@ class DebianWatchFileScannerUpdate(BaseTask):
         new_upstream_version, failures = self.get_udd_dehs_stats(stats)
         watch_broken = self.get_watch_broken_stats(stats)
         watch_available = self.get_watch_available_stats(stats)
+        updated_packages_per_type = {
+            'new-upstream-version': new_upstream_version,
+            'watch-failure': failures,
+            'watch-file-broken': watch_broken,
+            'watch-file-available': watch_available,
+        }
 
         # Remove obsolete action items for each of the categories...
-        self._remove_obsolete_action_items(
-            'new-upstream-version', new_upstream_version)
-        self._remove_obsolete_action_items('watch-failure', failures)
-        self._remove_obsolete_action_items('watch-file-broken', watch_broken)
-        self._remove_obsolete_action_items('watch-file-available', watch_available)
+        for item_type, packages in updated_packages_per_type.items():
+            self._remove_obsolete_action_items(item_type, packages)
 
         packages = SourcePackageName.objects.filter(
             name__in=stats.keys())
@@ -1288,6 +1235,8 @@ class DebianWatchFileScannerUpdate(BaseTask):
 
         # Update action items for each package
         for package in packages:
-            for type_name, method in self._ACTION_ITEM_UPDATE_METHODS.items():
+            for type_name in self.ACTION_ITEM_TYPE_NAMES:
                 if type_name in stats[package.name]:
-                    method(package, stats[package.name][type_name])
+                    # method(package, stats[package.name][type_name])
+                    self.update_action_item(
+                        type_name, package, stats[package.name][type_name])
