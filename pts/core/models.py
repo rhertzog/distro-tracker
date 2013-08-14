@@ -1622,6 +1622,31 @@ class ActionItemType(models.Model):
         return self.type_name
 
 
+class ActionItemManager(models.Manager):
+    """
+    A custom :class:`Manager <django.db.models.Manager>` for the
+    :class:`ActionItem` model.
+    """
+    def delete_obsolete_items(self, item_types, non_obsolete_packages):
+        """
+        The method removes :class:`ActionItem` instances which have one of the
+        given types and are not associated to one of the non obsolete packages.
+
+        :param item_types: A list of action item types to be considered for
+            removal.
+        :type item_types: list of :class:`ActionItemType` instances
+        :param non_obsolete_packages: A list of package names whose items are not
+            to be removed.
+        :type non_obsolete_packages: list of strings
+        """
+        if len(item_types) == 1:
+            qs = self.filter(item_type=item_types[0])
+        else:
+            qs = self.filter(item_type__in=item_types)
+        qs = qs.exclude(package__name__in=non_obsolete_packages)
+        qs.delete()
+
+
 @python_2_unicode_compatible
 class ActionItem(models.Model):
     """
@@ -1646,6 +1671,8 @@ class ActionItem(models.Model):
     created_timestamp = models.DateTimeField(auto_now_add=True)
     last_updated_timestamp = models.DateTimeField(auto_now=True)
     extra_data = JSONField(blank=True, null=True)
+
+    objects = ActionItemManager()
 
     class Meta:
         unique_together = ('package', 'item_type')

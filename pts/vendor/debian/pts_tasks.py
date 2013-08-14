@@ -424,10 +424,9 @@ class UpdatePackageBugStats(BaseTask):
         """
         Removes action items for packages which no longer have any bug stats.
         """
-        obsolete_items = ActionItem.objects.filter(
-            Q(item_type=self.patch_item_type) | Q(item_type=self.help_item_type))
-        obsolete_items = obsolete_items.exclude(package__name__in=package_names)
-        obsolete_items.delete()
+        ActionItem.objects.delete_obsolete_items(
+            item_types=[self.patch_item_type, self.help_item_type],
+            non_obsolete_packages=package_names)
 
     def update_source_and_pseudo_bugs(self):
         """
@@ -623,10 +622,8 @@ class UpdateLintianStatsTask(BaseTask):
         packages.prefetch_related('action_items')
         # Remove action items for packages which no longer have associated
         # lintian data.
-        obsolete_items = ActionItem.objects.filter(
-            item_type=self.lintian_action_item_type)
-        obsolete_items = obsolete_items.exclude(package__in=packages)
-        obsolete_items.delete()
+        ActionItem.objects.delete_obsolete_items(
+            [self.lintian_action_item_type], all_lintian_stats.keys())
 
         stats = []
         for package in packages:
@@ -874,11 +871,9 @@ class UpdateExcusesTask(BaseTask):
         """
         Remove action items for packages which are no longer problematic.
         """
-        obsolete_items = ActionItem.objects.filter(
-            item_type=self.action_item_type)
-        obsolete_items = obsolete_items.exclude(
-            package__name__in=problematic.keys())
-        obsolete_items.delete()
+        ActionItem.objects.delete_obsolete_items(
+            item_types=[self.action_item_type],
+            non_obsolete_packages=problematic.keys())
 
     def _get_update_excuses_content(self):
         """
@@ -960,11 +955,6 @@ class UpdateBuildLogCheckStats(BaseTask):
             }
         return stats
 
-    def _remove_obsolete_action_items(self, stats):
-        obsolete_items = ActionItem.objects.filter(item_type=self.action_item_type)
-        obsolete_items = obsolete_items.exclude(package__name__in=stats.keys())
-        obsolete_items.delete()
-
     def create_action_item(self, package, stats):
         """
         Creates a :class:`pts.core.models.ActionItem` instance for the given
@@ -1007,7 +997,8 @@ class UpdateBuildLogCheckStats(BaseTask):
         stats = self.get_buildd_stats()
 
         BuildLogCheckStats.objects.all().delete()
-        self._remove_obsolete_action_items(stats)
+        ActionItem.objects.delete_obsolete_items(
+            [self.action_item_type], stats.keys())
 
         packages = SourcePackageName.objects.filter(name__in=stats.keys())
         packages = packages.prefetch_related('action_items')
@@ -1096,12 +1087,9 @@ class DebianWatchFileScannerUpdate(BaseTask):
         the processed stats.
         """
         action_item_type = self.action_item_types[item_type_name]
-
-        obsolete_items = ActionItem.objects.filter(
-            item_type=action_item_type)
-        obsolete_items = obsolete_items.exclude(
-            package__name__in=non_obsolete_packages)
-        obsolete_items.delete()
+        ActionItem.objects.delete_obsolete_items(
+            item_types=[action_item_type],
+            non_obsolete_packages=non_obsolete_packages)
 
     def get_udd_dehs_stats(self, stats):
         """
