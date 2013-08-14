@@ -1030,11 +1030,13 @@ class DebianWatchFileScannerUpdate(BaseTask):
         'new-upstream-version',
         'watch-failure',
         'watch-file-broken',
+        'watch-file-available',
     )
     ACTION_ITEM_TEMPLATES = {
         'new-upstream-version': "debian/new-upstream-version-action-item.html",
         'watch-failure': "debian/watch-failure-action-item.html",
         'watch-file-broken': "debian/watch-file-broken-action-item.html",
+        'watch-file-available': "debian/watch-file-available-action-item.html",
     }
     ITEM_DESCRIPTIONS = {
         'new-upstream-version': (
@@ -1043,6 +1045,10 @@ class DebianWatchFileScannerUpdate(BaseTask):
             'Problems while searching for a new upstream version'),
         'watch-file-broken': (
             'Problem with the debian/watch file included in the package'),
+        'watch-file-available': (
+            'An updated debian/watch file is '
+            '<a href="http://qa.debian.org/cgi-bin/watchfile.cgi?package={package}">'
+            'available</a>.'),
     }
 
     def __init__(self, force_update=False, *args, **kwargs):
@@ -1062,6 +1068,7 @@ class DebianWatchFileScannerUpdate(BaseTask):
             'new-upstream-version': self.update_upstream_version_item,
             'watch-failure': self.update_watch_failure_item,
             'watch-file-broken': self.update_watch_file_broken_item,
+            'watch-file-available': self.update_watch_file_available_item,
         }
 
     def set_parameters(self, parameters):
@@ -1074,6 +1081,10 @@ class DebianWatchFileScannerUpdate(BaseTask):
 
     def _get_watch_broken_content(self):
         url = 'http://qa.debian.org/watch/watch-broken.txt'
+        return get_resource_content(url)
+
+    def _get_watch_available_content(self):
+        url = 'http://qa.debian.org/watch/watch-avail.txt'
         return get_resource_content(url)
 
     def _remove_obsolete_action_items(self, item_type_name, non_obsolete_packages):
@@ -1141,6 +1152,27 @@ class DebianWatchFileScannerUpdate(BaseTask):
             stats.setdefault(package_name, {})
             # For now no extra data needed for this type of item.
             stats[package_name]['watch-file-broken'] = None
+            packages.append(package_name)
+
+        return packages
+
+    def get_watch_available_stats(self, stats):
+        """
+        Gets the stats of files which have available watch files, as per
+        `<http://qa.debian.org/watch/watch-avail.txt>`_.
+        It updates the given dictionary ``stats`` to contain these stats
+        as an additional key ``watch-file-available`` for each package that has
+        the stats.
+
+        :returns: A list of packages which have available watch files.
+        """
+        content = self._get_watch_available_content()
+        packages = []
+        for package_name in content.splitlines():
+            package_name = package_name.strip()
+            stats.setdefault(package_name, {})
+            # For now no extra data needed for this type of item.
+            stats[package_name]['watch-file-available'] = None
             packages.append(package_name)
 
         return packages
@@ -1214,16 +1246,41 @@ class DebianWatchFileScannerUpdate(BaseTask):
 
         action_item.save()
 
+    def update_watch_file_available_item(self, package, stats):
+        """
+        The method updates the ``watch-file-available``action item for the
+        given package based on the given stats.
+        If the package previously did not have any action item of this type,
+        it is created.
+        """
+        item_type = 'watch-file-available'
+        action_item = package.get_action_item_for_type(item_type)
+        if action_item is None:
+            # Create an action item...
+            action_item = ActionItem(
+                package=package,
+                item_type=self.action_item_types[item_type])
+
+        description_template = self.ITEM_DESCRIPTIONS[item_type]
+        description = description_template.format(package=package.name)
+        action_item.short_description = description
+        action_item.set_severity('wishlist')
+        action_item.extra_data = stats
+
+        action_item.save()
+
     def execute(self):
         stats = {}
         new_upstream_version, failures = self.get_udd_dehs_stats(stats)
         watch_broken = self.get_watch_broken_stats(stats)
+        watch_available = self.get_watch_available_stats(stats)
 
         # Remove obsolete action items for each of the categories...
         self._remove_obsolete_action_items(
             'new-upstream-version', new_upstream_version)
         self._remove_obsolete_action_items('watch-failure', failures)
         self._remove_obsolete_action_items('watch-file-broken', watch_broken)
+        self._remove_obsolete_action_items('watch-file-available', watch_available)
 
         packages = SourcePackageName.objects.filter(
             name__in=stats.keys())
