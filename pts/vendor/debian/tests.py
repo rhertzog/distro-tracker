@@ -1770,6 +1770,7 @@ class DebianWatchFileScannerUpdateTests(TestCase):
         self.task = DebianWatchFileScannerUpdate()
         # Stub the data providing methods: no content by default
         self.task._get_udd_dehs_content = mock.MagicMock(return_value='')
+        self.task._get_watch_broken_content = mock.MagicMock(return_value='')
 
     def run_task(self):
         self.task.execute()
@@ -1784,6 +1785,16 @@ class DebianWatchFileScannerUpdateTests(TestCase):
         self.task._get_udd_dehs_content.return_value = yaml.safe_dump(
             content,
             default_flow_style=False)
+
+    def set_watch_broken_content(self, packages):
+        """
+        Sets the stub content returned to the task as the content of the
+        watch-broken.txt file.
+
+        :param packages: A list of packages which should be returned to
+            indicate a broken watch file.
+        """
+        self.task._get_watch_broken_content.return_value = '\n'.join(packages)
 
     def get_item_type(self, type_name):
         """
@@ -1992,3 +2003,70 @@ class DebianWatchFileScannerUpdateTests(TestCase):
         self.run_task()
 
         self.assertEqual(0, ActionItem.objects.count())
+
+    def test_watch_broken_item_created(self):
+        """
+        Tests that a ``watch-file-broken`` action item is created when the package
+        contains a watch failure as indicated by the watch-broken.txt file.
+        """
+        self.set_watch_broken_content([self.package.name])
+        # Sanity check: no action items
+        self.assertEqual(0, ActionItem.objects.count())
+
+        self.run_task()
+
+        # Action item created.
+        self.assertEqual(1, ActionItem.objects.count())
+        # Action item correct type
+        item = ActionItem.objects.all()[0]
+        self.assertEqual(
+            'watch-file-broken',
+            item.item_type.type_name)
+        # Correct full description template
+        self.assertEqual(
+            DebianWatchFileScannerUpdate.ACTION_ITEM_TEMPLATES['watch-file-broken'],
+            item.full_description_template)
+        # Correct extra data
+        self.assertIsNone(item.extra_data)
+        # Low severity item
+        self.assertEqual('low', item.get_severity_display())
+
+    def test_watch_broken_item_removed(self):
+        """
+        Tests that a ``watch-file-broken`` item is removed when a package no longer
+        has the issue.
+        """
+        # Make sure the package previously had an action item.
+        item_type = self.get_item_type('watch-file-broken')
+        ActionItem.objects.create(
+            package=self.package,
+            item_type=item_type,
+            short_description='Desc')
+
+        self.run_task()
+
+        # Action item removed
+        self.assertEqual(0, ActionItem.objects.count())
+
+    def test_watch_broken_item_updated(self):
+        """
+        Tests that a ``watch-file-broken`` action item is updated when there is
+        newer data available for the package.
+        """
+        item_type = self.get_item_type('watch-file-broken')
+        ActionItem.objects.create(
+            package=self.package,
+            item_type=item_type,
+            short_description='Desc',
+            extra_data={
+                'key': 'value',
+            })
+        self.set_watch_broken_content([self.package.name])
+
+        self.run_task()
+
+        # Still the one action item
+        self.assertEqual(1, ActionItem.objects.count())
+        # Extra data updated
+        item = ActionItem.objects.all()[0]
+        self.assertIsNone(item.extra_data)
