@@ -1028,13 +1028,17 @@ class UpdateBuildLogCheckStats(BaseTask):
 class DebianWatchFileScannerUpdate(BaseTask):
     ACTION_ITEM_TYPE_NAMES = (
         'new-upstream-version',
+        'watch-failure',
     )
     ACTION_ITEM_TEMPLATES = {
         'new-upstream-version': "debian/new-upstream-version-action-item.html",
+        'watch-failure': "debian/watch-failure-action-item.html",
     }
     ITEM_DESCRIPTIONS = {
         'new-upstream-version': (
             'A new upstream version is available: <a href="{url}">{version}</a>'),
+        'watch-failure': (
+            'Problems while searching for a new upstream version'),
     }
 
     def __init__(self, force_update=False, *args, **kwargs):
@@ -1052,6 +1056,7 @@ class DebianWatchFileScannerUpdate(BaseTask):
         # action item of that type
         self._ACTION_ITEM_UPDATE_METHODS = {
             'new-upstream-version': self.update_upstream_version_item,
+            'watch-failure': self.update_watch_failure_item,
         }
 
     def set_parameters(self, parameters):
@@ -1088,6 +1093,9 @@ class DebianWatchFileScannerUpdate(BaseTask):
         """
         content = self._get_udd_dehs_content()
         dehs_data = yaml.load(six.BytesIO(content))
+        if not dehs_data:
+            return [], []
+
         all_new_versions, all_failures = [], []
         for entry in dehs_data:
             package_name = entry['package']
@@ -1101,7 +1109,7 @@ class DebianWatchFileScannerUpdate(BaseTask):
             if 'warnings' in entry:
                 stats.setdefault(package_name, {})
                 stats[package_name]['watch-failure'] = {
-                    'error': entry['warnings'],
+                    'warning': entry['warnings'],
                 }
                 all_failures.append(package_name)
 
@@ -1109,8 +1117,8 @@ class DebianWatchFileScannerUpdate(BaseTask):
 
     def update_upstream_version_item(self, package, stats):
         """
-        The method updates the action item for the given package based on the
-        given stats.
+        The method updates the ``new-upstream-version``action item for the
+        given package based on the given stats.
         If the package previously did not have any action item of this type,
         it is created.
         """
@@ -1132,6 +1140,28 @@ class DebianWatchFileScannerUpdate(BaseTask):
 
         action_item.save()
 
+    def update_watch_failure_item(self, package, stats):
+        """
+        The method updates the ``watch-failure``action item for the
+        given package based on the given stats.
+        If the package previously did not have any action item of this type,
+        it is created.
+        """
+        item_type = 'watch-failure'
+        action_item = package.get_action_item_for_type(item_type)
+        if action_item is None:
+            # Create an action item...
+            action_item = ActionItem(
+                package=package,
+                item_type=self.action_item_types[item_type])
+
+        description = self.ITEM_DESCRIPTIONS[item_type]
+        action_item.short_description = description
+        action_item.set_severity('high')
+        action_item.extra_data = stats
+
+        action_item.save()
+
     def execute(self):
         stats = {}
         new_upstream_version, failures = self.get_udd_dehs_stats(stats)
@@ -1139,6 +1169,8 @@ class DebianWatchFileScannerUpdate(BaseTask):
         # Remove obsolete action items for each of the categories...
         self._remove_obsolete_action_items(
             'new-upstream-version', new_upstream_version)
+        self._remove_obsolete_action_items(
+            'watch-failure', failures)
 
         packages = SourcePackageName.objects.filter(
             name__in=stats.keys())

@@ -1768,7 +1768,8 @@ class DebianWatchFileScannerUpdateTests(TestCase):
         self.package = SourcePackageName.objects.create(name='dummy-package')
 
         self.task = DebianWatchFileScannerUpdate()
-        self.task._get_udd_dehs_content = mock.MagicMock()
+        # Stub the data providing methods: no content by default
+        self.task._get_udd_dehs_content = mock.MagicMock(return_value='')
 
     def run_task(self):
         self.task.execute()
@@ -1884,3 +1885,110 @@ class DebianWatchFileScannerUpdateTests(TestCase):
             'upstream_version': version,
         }
         self.assertEqual(expected_data, item.extra_data)
+
+    def test_watch_failure_item_created(self):
+        """
+        Tests that a ``watch-failure`` action item is created when the package
+        contains a watch failure as indicated by DEHS data returned by UDD.
+        """
+        version = '2.0.0'
+        url = 'http://some.url.here'
+        warning = 'Some warning goes here...'
+        dehs = [
+            {
+                'package': self.package.name,
+                'status': 'up to date',
+                'upstream-url': url,
+                'upstream-version': version,
+                'warnings': warning,
+            }
+        ]
+        self.set_udd_dehs_content(dehs)
+        # Sanity check: no action items
+        self.assertEqual(0, ActionItem.objects.count())
+
+        self.run_task()
+
+        # Action item created.
+        self.assertEqual(1, ActionItem.objects.count())
+        # Action item correct type
+        item = ActionItem.objects.all()[0]
+        self.assertEqual(
+            'watch-failure',
+            item.item_type.type_name)
+        # Correct full description template
+        self.assertEqual(
+            DebianWatchFileScannerUpdate.ACTION_ITEM_TEMPLATES['watch-failure'],
+            item.full_description_template)
+        # Correct extra data
+        expected_data = {
+            'warning': warning,
+        }
+        self.assertDictEqual(expected_data, item.extra_data)
+        # High severity item
+        self.assertEqual('high', item.get_severity_display())
+
+    def test_watch_failure_item_removed(self):
+        """
+        Tests that a ``watch-failure`` item is removed when a package no longer
+        has the issue.
+        """
+        # Make sure the package previously had an action item.
+        item_type = self.get_item_type('watch-failure')
+        ActionItem.objects.create(
+            package=self.package,
+            item_type=item_type,
+            short_description='Desc')
+        dehs = []
+        self.set_udd_dehs_content(dehs)
+
+        self.run_task()
+
+        # Action item removed
+        self.assertEqual(0, ActionItem.objects.count())
+
+    def test_watch_failure_item_updated(self):
+        """
+        Tests that a ``watch-failure`` action item is updated when there is
+        newer data available for the package.
+        """
+        item_type = self.get_item_type('watch-failure')
+        ActionItem.objects.create(
+            package=self.package,
+            item_type=item_type,
+            short_description='Desc',
+            extra_data={
+                'warning': 'Old warning',
+            })
+        version = '2.0.0'
+        url = 'http://some.url.here'
+        warning = 'Some warning goes here...'
+        dehs = [
+            {
+                'package': self.package.name,
+                'status': 'up to date',
+                'upstream-url': url,
+                'upstream-version': version,
+                'warnings': warning,
+            }
+        ]
+        self.set_udd_dehs_content(dehs)
+
+        self.run_task()
+
+        # Still the one action item
+        self.assertEqual(1, ActionItem.objects.count())
+        # Extra data updated
+        item = ActionItem.objects.all()[0]
+        expected_data = {
+            'warning': warning,
+        }
+        self.assertEqual(expected_data, item.extra_data)
+
+    def test_no_dehs_data(self):
+        """
+        Tests that when there is no DEHS data at all, no action items are created.
+        """
+        self.run_task()
+
+        self.assertEqual(0, ActionItem.objects.count())
