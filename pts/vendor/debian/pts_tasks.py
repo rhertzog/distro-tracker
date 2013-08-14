@@ -179,6 +179,8 @@ class UpdatePackageBugStats(BaseTask):
     HELP_ITEM_SHORT_DESCRIPTION = (
         '<a href="{url}">{count}</a> tagged help in the '
         '<abbr title="Bug Tracking System">BTS</abbr>')
+    PATCH_ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/patch-bugs-action-item.html'
+    HELP_ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/help-bugs-action-item.html'
 
     bug_categories = (
         'rc',
@@ -196,10 +198,10 @@ class UpdatePackageBugStats(BaseTask):
         # can create.
         self.patch_item_type = ActionItemType.objects.create_or_update(
             type_name=self.PATCH_BUG_ACTION_ITEM_TYPE_NAME,
-            full_description_template='debian/patch-bugs-action-item.html')
+            full_description_template=self.PATCH_ITEM_FULL_DESCRIPTION_TEMPLATE)
         self.help_item_type = ActionItemType.objects.create_or_update(
             type_name=self.HELP_BUG_ACTION_ITEM_TYPE_NAME,
-            full_description_template='debian/help-bugs-action-item.html')
+            full_description_template=self.HELP_ITEM_FULL_DESCRIPTION_TEMPLATE)
 
     def _get_tagged_bug_stats(self, tag, user=None):
         """
@@ -527,13 +529,14 @@ class UpdateLintianStatsTask(BaseTask):
     Updates packages' lintian stats.
     """
     ACTION_ITEM_TYPE_NAME = 'lintian-warnings-and-errors'
+    ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/lintian-action-item.html'
 
     def __init__(self, force_update=False, *args, **kwargs):
         super(UpdateLintianStatsTask, self).__init__(*args, **kwargs)
         self.force_update = force_update
         self.lintian_action_item_type = ActionItemType.objects.create_or_update(
             type_name=self.ACTION_ITEM_TYPE_NAME,
-            full_description_template='debian/lintian-action-item.html')
+            full_description_template=self.ITEM_FULL_DESCRIPTION_TEMPLATE)
 
     def set_parameters(self, parameters):
         if 'force_update' in parameters:
@@ -727,6 +730,7 @@ class UpdateExcusesTask(BaseTask):
     ACTION_ITEM_TYPE_NAME = 'debian-testing-migration'
     ITEM_DESCRIPTION = (
         "The package has not entered testing even though the delay is over")
+    ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/testing-migration-action-item.html'
 
     def __init__(self, force_update=False, *args, **kwargs):
         super(UpdateExcusesTask, self).__init__(*args, **kwargs)
@@ -734,7 +738,7 @@ class UpdateExcusesTask(BaseTask):
         self.cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
         self.action_item_type = ActionItemType.objects.create_or_update(
             type_name=self.ACTION_ITEM_TYPE_NAME,
-            full_description_template='debian/testing-migration-action-item.html')
+            full_description_template=self.ITEM_FULL_DESCRIPTION_TEMPLATE)
 
     def set_parameters(self, parameters):
         if 'force_update' in parameters:
@@ -923,13 +927,15 @@ class UpdateExcusesTask(BaseTask):
 class UpdateBuildLogCheckStats(BaseTask):
     ACTION_ITEM_TYPE_NAME = 'debian-build-logcheck'
     ITEM_DESCRIPTION = "Build log checks report {report}"
+    ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/logcheck-action-item.html'
 
     def __init__(self, force_update=False, *args, **kwargs):
         super(UpdateBuildLogCheckStats, self).__init__(*args, **kwargs)
         self.force_update = force_update
         self.cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
-        self.action_item_type, _ = ActionItemType.objects.get_or_create(
-            type_name=self.ACTION_ITEM_TYPE_NAME)
+        self.action_item_type = ActionItemType.objects.create_or_update(
+            type_name=self.ACTION_ITEM_TYPE_NAME,
+            full_description_template=self.ITEM_FULL_DESCRIPTION_TEMPLATE)
 
     def set_parameters(self, parameters):
         if 'force_update' in parameters:
@@ -979,8 +985,7 @@ class UpdateBuildLogCheckStats(BaseTask):
         if action_item is None:
             action_item = ActionItem(
                 package=package,
-                item_type=self.action_item_type,
-                full_description_template='debian/logcheck-action-item.html')
+                item_type=self.action_item_type)
 
         if errors and warnings:
             report = 'errors and warnings'

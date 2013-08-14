@@ -964,6 +964,11 @@ class UpdateLintianStatsTaskTest(TestCase):
             UpdateLintianStatsTask.ACTION_ITEM_TYPE_NAME)
         # It is a high severity issue
         self.assertEqual('high', item.get_severity_display())
+        # Correct full description template
+        self.assertEqual(
+            item.full_description_template,
+            UpdateLintianStatsTask.ITEM_FULL_DESCRIPTION_TEMPLATE)
+
 
     @mock.patch('pts.core.utils.http.requests')
     def test_action_item_created_warnings(self, mock_requests):
@@ -1223,6 +1228,10 @@ class DebianBugActionItemsTests(TestCase):
         self.assertEqual(item.package.name, self.package_name.name)
         # It contains the extra data
         self.assertEqual(item.extra_data['bug_count'], bug_count)
+        # Correct full description template
+        self.assertEqual(
+            item.full_description_template,
+            UpdatePackageBugStats.PATCH_ITEM_FULL_DESCRIPTION_TEMPLATE)
 
     def test_patch_bug_action_item_updated(self):
         """
@@ -1315,6 +1324,10 @@ class DebianBugActionItemsTests(TestCase):
         self.assertEqual(item.package.name, self.package_name.name)
         # It contains the extra data
         self.assertEqual(item.extra_data['bug_count'], bug_count)
+        # Correct full description template
+        self.assertEqual(
+            item.full_description_template,
+            UpdatePackageBugStats.HELP_ITEM_FULL_DESCRIPTION_TEMPLATE)
 
     def test_help_action_item_updated(self):
         """
@@ -1512,6 +1525,10 @@ class UpdateExcusesTaskActionItemTest(TestCase):
             UpdateExcusesTask.ACTION_ITEM_TYPE_NAME)
         # Correct extra data
         self.assertDictEqual(item.extra_data, expected_data)
+        # Correct template used
+        self.assertEqual(
+            item.full_description_template,
+            UpdateExcusesTask.ITEM_FULL_DESCRIPTION_TEMPLATE)
 
     def test_action_item_not_created(self):
         """
@@ -1620,6 +1637,10 @@ class UpdateBuildLogCheckStatsActionItemTests(TestCase):
         self.assertDictEqual(expected_data, item.extra_data)
         # The severity is high since it contains both errors and warnings
         self.assertEqual('high', item.get_severity_display())
+        # Full description template correct
+        self.assertEqual(
+            item.full_description_template,
+            UpdateBuildLogCheckStats.ITEM_FULL_DESCRIPTION_TEMPLATE)
 
     def test_action_item_warning_low_severity(self):
         """
