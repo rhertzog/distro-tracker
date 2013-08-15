@@ -237,13 +237,17 @@ class PackageName(BasePackageName):
     def get_action_item_for_type(self, action_item_type):
         """
         :param: The name of the :class:`ActionItemType` of the
-            :class:`ActionItem` which is to be returned.
+            :class:`ActionItem` which is to be returned or an
+            :class:`ActionItemType` instance.
+        :type param: :class:`ActionItemType` or :class:`string`
 
         :returns: An action item with the given type name which is associated
             to this :class:`PackageName` instance. ``None`` if the package
             has no action items of that type.
         :rtype: :class:`ActionItem` or ``None``
         """
+        if isinstance(action_item_type, ActionItemType):
+            action_item_type = action_item_type.type_name
         return next((
             item
             for item in self.action_items.all()
