@@ -341,7 +341,7 @@ class SourcePackageName(PackageName):
         except ValueError:
             return None
 
-    @property
+    @cached_property
     def repositories(self):
         """
         Returns all repositories which contain a source package with this name.

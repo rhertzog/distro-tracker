@@ -16,6 +16,7 @@ from __future__ import unicode_literals
 from django.test import TestCase, SimpleTestCase
 from django.test.utils import override_settings
 from django.core import mail
+from django.core.urlresolvers import reverse
 from django.utils.six.moves import mock
 from django.utils.encoding import force_bytes
 from django.utils.functional import curry
@@ -25,6 +26,7 @@ from pts.core.models import ActionItem, ActionItemType
 from pts.core.models import News
 from pts.core.models import PackageName
 from pts.core.models import SourcePackage
+from pts.core.models import PseudoPackageName
 from pts.core.models import SourcePackageName
 from pts.core.models import Repository
 from pts.core.models import ContributorEmail
@@ -47,6 +49,7 @@ from pts.vendor.debian.pts_tasks import UpdateLintianStatsTask
 from pts.vendor.debian.models import LintianStats
 from pts.mail.mail_news import process
 
+from BeautifulSoup import BeautifulSoup as soup
 from email.message import Message
 
 import os
@@ -2276,3 +2279,86 @@ class UpdateSecurityIssuesTaskTests(TestCase):
             self.assertEqual(1, package.action_items.count())
             item = package.action_items.all()[0]
             self.assertEqual(count, item.extra_data['security_issues_count'])
+
+
+class CodeSearchLinksTest(TestCase):
+    """
+    Tests that the code search links are shown in the package page.
+    """
+    def setUp(self):
+        self.package_name = SourcePackageName.objects.create(name='dummy')
+        self.package = SourcePackage.objects.create(
+            source_package_name=self.package_name,
+            version='1.0.0')
+        self.stable = Repository.objects.create(
+            name='stable', shorthand='stable')
+        self.unstable = Repository.objects.create(
+            name='unstable', shorthand='unstable')
+
+    def get_package_page_response(self, package_name):
+        package_page_url = reverse('pts-package-page', kwargs={
+            'package_name': package_name,
+        })
+        return self.client.get(package_page_url)
+
+    def browse_link_in_content(self, content):
+        html = soup(content)
+        for a_tag in html.findAll('a', {'href': True}):
+            if a_tag['href'].startswith('http://sources.debian.net'):
+                return True
+        return False
+
+    def search_form_in_content(self, content):
+        html = soup(content)
+        return bool(html.find('form', {'class': 'code-search-form'}))
+
+    def test_package_in_stable(self):
+        """
+        Tests that only the browse source code link appears when the package is
+        only in stable.
+        """
+        # Add the package to stable
+        self.stable.add_source_package(self.package)
+
+        response = self.get_package_page_response(self.package.name)
+
+        self.assertTrue(self.browse_link_in_content(response.content))
+        self.assertFalse(self.search_form_in_content(response.content))
+
+    def test_package_not_in_allowed_repository(self):
+        """
+        Tests that no links are added when the package is not found in one of
+        the allowed repositories
+        (:attr:`pts.vendor.debian.pts_panels.SourceCodeSearchLinks.ALLOWED_REPOSITORIES`)
+        """
+        other_repository = Repository.objects.create(name='some-other-repo')
+        other_repository.add_source_package(self.package)
+
+        response = self.get_package_page_response(self.package.name)
+
+        self.assertFalse(self.browse_link_in_content(response.content))
+        self.assertFalse(self.search_form_in_content(response.content))
+
+    def test_package_in_unstable(self):
+        """
+        Tests that the search form is shown in addition to the browse source
+        link if the package is found in unstable.
+        """
+        self.unstable.add_source_package(self.package)
+
+        response = self.get_package_page_response(self.package.name)
+
+        self.assertTrue(self.browse_link_in_content(response.content))
+        self.assertTrue(self.search_form_in_content(response.content))
+
+    def test_pseudo_package(self):
+        """
+        Tests that neither link is shown when the package is a pseudo package,
+        instead of a source package.
+        """
+        pseudo_package = PseudoPackageName.objects.create(name='somepackage')
+
+        response = self.get_package_page_response(pseudo_package.name)
+
+        self.assertFalse(self.browse_link_in_content(response.content))
+        self.assertFalse(self.search_form_in_content(response.content))

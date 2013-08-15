@@ -18,6 +18,7 @@ from pts.core.models import Repository
 from pts.core.models import SourcePackageName
 from pts.core.panels import BasePanel
 from pts.core.panels import LinksPanel
+from pts.core.panels import HtmlPanelItem
 from pts.core.panels import TemplatePanelItem
 from pts.vendor.debian.models import LintianStats
 from pts.vendor.debian.models import PackageExcuses
@@ -81,6 +82,49 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
                 'has_experimental': has_experimental,
             })
         ]
+
+
+class SourceCodeSearchLinks(LinksPanel.ItemProvider):
+    """
+    Add links to sources.debian.net source code browser and the
+    codesearch.debian.net code search (if the package is found in unstable).
+    """
+    #: A list of repositories that cause the sources.debian.net link to be
+    #: displayed if the package is found in one of them.
+    ALLOWED_REPOSITORIES = (
+        'experimental',
+        'unstable',
+        'testing',
+        'stable',
+    )
+    SOURCES_URL_TEMPLATE = 'http://sources.debian.net/src/{package}/latest'
+    SEARCH_FORM_TEMPLATE = (
+        '<form class="code-search-form"'
+        ' action="http://packages.qa.debian.org/cgi-bin/codesearch.cgi"'
+        ' method="get" target="_blank">'
+        '<input type="hidden" name="package" value="{package}">'
+        '<input type="text" name="q" placeholder="search source code">'
+        '</form>')
+    def get_panel_items(self):
+        if not isinstance(self.package, SourcePackageName):
+            # Only source packages can have these links
+            return
+
+        repository_names = [repo.name for repo in self.package.repositories]
+        links = []
+        for repository_name in self.ALLOWED_REPOSITORIES:
+            if repository_name in repository_names:
+                links.append(LinksPanel.SimpleLinkItem(
+                    'browse source code',
+                    self.SOURCES_URL_TEMPLATE.format(package=self.package.name)))
+                break
+
+        if 'unstable' in repository_names:
+            # Add a search form
+            links.append(HtmlPanelItem(self.SEARCH_FORM_TEMPLATE.format(
+                package=self.package.name)))
+
+        return links
 
 
 class TransitionsPanel(BasePanel):

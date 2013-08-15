@@ -33,6 +33,16 @@
 }
 
 
+/* The package source code search form */
+.code-search-form {
+  margin-top: 5px;
+  margin-bottom: 0px;
+}
+.code-search-form input[type="text"] {
+  width: 90%;
+  border-color: rgb(221, 221, 221);
+}
+
 /* Typeahead style */
 .tt-dropdown-menu {
   min-width: 220px;
