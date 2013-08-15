@@ -1,0 +1,2 @@
+<span>There {% if item.extra_data.security_issues_count > 1 %}are{% else %}is{% endif %} <a href="http://security-tracker.debian.org/tracker/source-package/{{ item.package.name }}">{{ item.extra_data.security_issues_count }} open security issue{% if item.extra_data.security_issues_count > 1 %}s{% endif %}</a>.</span>
+<span>Please fix {% if item.extra_data.security_issues_count > 1 %}them{% else %}it{% endif %}.</span>
