@@ -35,6 +35,7 @@ from pts.vendor.debian.rules import get_package_information_site_url
 from pts.vendor.debian.rules import get_maintainer_extra
 from pts.vendor.debian.rules import get_uploader_extra
 from pts.vendor.debian.rules import get_developer_information_url
+from pts.vendor.debian.pts_tasks import UpdateSecurityIssuesTask
 from pts.vendor.debian.pts_tasks import UpdateBuildLogCheckStats
 from pts.vendor.debian.pts_tasks import UpdatePackageBugStats
 from pts.vendor.debian.pts_tasks import RetrieveDebianMaintainersTask
@@ -2150,3 +2151,128 @@ class DebianWatchFileScannerUpdateTests(TestCase):
         # Extra data updated
         item = ActionItem.objects.all()[0]
         self.assertIsNone(item.extra_data)
+
+
+class UpdateSecurityIssuesTaskTests(TestCase):
+    def setUp(self):
+        self.package = SourcePackageName.objects.create(name='dummy-package')
+
+        self.task = UpdateSecurityIssuesTask()
+        # Stub the data providing methods: no content by default
+        self.task._get_issues_content = mock.MagicMock(return_value='')
+
+    def run_task(self):
+        self.task.execute()
+
+    def set_issues_content(self, content):
+        """
+        Sets the stub issues content returned to the task.
+
+        :param content: A list of (package_name, issue_count) pairs.
+        """
+        self.task._get_issues_content.return_value = '\n'.join(
+            '{name}:{count}'.format(name=name, count=count)
+            for name, count in content)
+
+    def get_item_type(self):
+        return ActionItemType.objects.get_or_create(
+            type_name='debian-security-issue')[0]
+
+    def test_action_item_created(self):
+        """
+        Tests that an action item is created when a package has security
+        issues.
+        """
+        issue_count = 2
+        self.set_issues_content([
+            (self.package.name, issue_count),
+        ])
+        # Sanity check: no action items yet
+        self.assertEqual(0, ActionItem.objects.count())
+
+        self.run_task()
+
+        # An action item is created
+        self.assertEqual(1, ActionItem.objects.count())
+        # Correct item type?
+        item = ActionItem.objects.all()[0]
+        self.assertEqual(
+            UpdateSecurityIssuesTask.ACTION_ITEM_TYPE_NAME,
+            item.item_type.type_name)
+        # Correct template?
+        self.assertEqual(
+            UpdateSecurityIssuesTask.ACTION_ITEM_TEMPLATE,
+            item.full_description_template)
+        # Correct extra data?
+        expected_data = {
+            'security_issues_count': issue_count,
+        }
+        self.assertDictEqual(expected_data, item.extra_data)
+
+    def test_action_item_removed(self):
+        """
+        Tests that an action item is removed when a package no longer has
+        security issues.
+        """
+        item_type = self.get_item_type()
+        ActionItem.objects.create(
+            package=self.package,
+            item_type=item_type,
+            short_description="Desc")
+
+        self.run_task()
+
+        # Removed the action item
+        self.assertEqual(0, ActionItem.objects.count())
+
+    def test_action_item_updated(self):
+        """
+        Tests that an action item is updated when there are no package security
+        issue stats.
+        """
+        item_type = self.get_item_type()
+        ActionItem.objects.create(
+            package=self.package,
+            item_type=item_type,
+            short_description="Desc",
+            extra_data={
+                'security_issues_count': 2,
+            })
+        new_count = 5
+        self.set_issues_content([
+            (self.package.name, new_count),
+        ])
+
+        self.run_task()
+
+        # Still only one action item
+        self.assertEqual(1, ActionItem.objects.count())
+        # Updated the extra data?
+        item = ActionItem.objects.all()[0]
+        expected_data = {
+            'security_issues_count': new_count,
+        }
+        self.assertDictEqual(expected_data, item.extra_data)
+
+    def test_multiple_packages(self):
+        """
+        Tests that an :class:`ActionItem <pts.core.models.ActionItem>` is
+        created when there are multiple packages with issues.
+        """
+        counts = [5, 10]
+        packages = [
+            self.package,
+            PackageName.objects.create(name='other-package')
+        ]
+        self.set_issues_content([
+            (package, count)
+            for package, count in zip(packages, counts)
+        ])
+
+        self.run_task()
+
+        # Each package has an action item with the correct count
+        for package, count in zip(packages, counts):
+            self.assertEqual(1, package.action_items.count())
+            item = package.action_items.all()[0]
+            self.assertEqual(count, item.extra_data['security_issues_count'])

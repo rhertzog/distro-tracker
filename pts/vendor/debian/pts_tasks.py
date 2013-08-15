@@ -1228,3 +1228,74 @@ class DebianWatchFileScannerUpdate(BaseTask):
                     # method(package, stats[package.name][type_name])
                     self.update_action_item(
                         type_name, package, stats[package.name][type_name])
+
+
+class UpdateSecurityIssuesTask(BaseTask):
+    ACTION_ITEM_TYPE_NAME = 'debian-security-issue'
+    ACTION_ITEM_TEMPLATE = 'debian/security-issue-action-item.html'
+    ITEM_DESCRIPTION_TEMPLATE = "{count} security {issue}"
+
+    def __init__(self, force_update=False, *args, **kwargs):
+        super(UpdateSecurityIssuesTask, self).__init__(*args, **kwargs)
+        self.force_update = force_update
+        self.cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
+        self.action_item_type = ActionItemType.objects.create_or_update(
+            type_name=self.ACTION_ITEM_TYPE_NAME,
+            full_description_template=self.ACTION_ITEM_TEMPLATE)
+
+    def set_parameters(self, parameters):
+        if 'force_update' in parameters:
+            self.force_update = parameters['force_update']
+
+    def _get_issues_content(self):
+        url = 'https://security-tracker.debian.org/tracker/data/pts/1'
+        import pdb; pdb.set_trace()
+        return get_resource_content(url)
+
+    def get_issues_stats(self):
+        """
+        Gets package issue stats from Debian's security tracker.
+        """
+        content = self._get_issues_content()
+        stats = {}
+        for line in content.splitlines():
+            package_name, count = line.rsplit(':', 1)
+            try:
+                count = int(count)
+            except ValueError:
+                continue
+            stats[package_name] = count
+
+        return stats
+
+    def update_action_item(self, package, security_issue_count):
+        """
+        Updates the ``debian-security-issue`` action item for the given package
+        based on the count of security issues.
+        """
+        action_item = package.get_action_item_for_type(self.action_item_type)
+        if action_item is None:
+            action_item = ActionItem(
+                package=package,
+                item_type=self.action_item_type)
+
+        action_item.short_description = self.ITEM_DESCRIPTION_TEMPLATE.format(
+            count=security_issue_count,
+            issue='issues' if security_issue_count > 1 else 'issue')
+        action_item.extra_data = {
+            'security_issues_count': security_issue_count,
+        }
+        action_item.save()
+
+    def execute(self):
+        stats = self.get_issues_stats()
+
+        ActionItem.objects.delete_obsolete_items(
+            item_types=[self.action_item_type],
+            non_obsolete_packages=stats.keys())
+
+        packages = PackageName.objects.filter(name__in=stats.keys())
+        packages = packages.prefetch_related('action_items')
+
+        for package in packages:
+            self.update_action_item(package, stats[package.name])
