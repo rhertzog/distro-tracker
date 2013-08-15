@@ -84,6 +84,18 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
         ]
 
 
+class PopconLink(LinksPanel.ItemProvider):
+    POPCON_URL = 'http://qa.debian.org/popcon.php?package={package}'
+    def get_panel_items(self):
+        if not isinstance(self.package, SourcePackageName):
+            return
+
+        return [
+            LinksPanel.SimpleLinkItem(
+                'popcon',
+                self.POPCON_URL.format(package=self.package.name))
+        ]
+
 class SourceCodeSearchLinks(LinksPanel.ItemProvider):
     """
     Add links to sources.debian.net source code browser and the

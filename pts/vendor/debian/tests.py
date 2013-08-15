@@ -2362,3 +2362,31 @@ class CodeSearchLinksTest(TestCase):
 
         self.assertFalse(self.browse_link_in_content(response.content))
         self.assertFalse(self.search_form_in_content(response.content))
+
+
+class PopconLinkTest(TestCase):
+    """
+    Tests that the popcon link is added to source package pages.
+    """
+    def get_package_page_response(self, package_name):
+        package_page_url = reverse('pts-package-page', kwargs={
+            'package_name': package_name,
+        })
+        return self.client.get(package_page_url)
+
+    def test_source_package(self):
+        package_name = SourcePackageName.objects.create(name='dummy')
+        package = SourcePackage.objects.create(
+            source_package_name=package_name,
+            version='1.0.0')
+
+        response = self.get_package_page_response(package.name)
+
+        self.assertIn('popcon', response.content)
+
+    def test_pseudo_package(self):
+        package = PseudoPackageName.objects.create(name='somepackage')
+
+        response = self.get_package_page_response(package.name)
+
+        self.assertNotIn('popcon', response.content)
