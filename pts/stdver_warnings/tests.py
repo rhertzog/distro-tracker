@@ -68,6 +68,7 @@ class StandardsVersionActionItemTests(TestCase):
         """
         if initial_task:
             self.job_state.events_for_task.return_value = []
+            self.job_state.processed_tasks = []
         else:
             # If it is not the initial task, add a dummy task to make it look
             # like that.
@@ -80,6 +81,7 @@ class StandardsVersionActionItemTests(TestCase):
         Set the version of the debian-policy package to the given version.
         """
         self.debian_policy.version = policy_version
+        self.debian_policy.standards_version = policy_version.rsplit('.', 1)[0]
         self.debian_policy.save()
 
     def get_action_type(self):
@@ -272,3 +274,35 @@ class StandardsVersionActionItemTests(TestCase):
         # The standards version in the extra data has been updated
         item = self.package_name.action_items.all()[0]
         self.assertEqual('3.9.3', item.extra_data['standards_version'])
+
+    def test_task_directly_called(self):
+        """
+        Tests that when the task is directly called, the Standards-Version of
+        all packages is checked.
+        """
+        policy_version = '3.9.4.0'
+        self.set_debian_policy_version(policy_version)
+        self.package.standards_version = '3.9.3'
+        self.package.save()
+        # Create another package with an outdated standards version
+        outdated_package_name = SourcePackageName.objects.create(name='outdated')
+        outdated_package = SourcePackage.objects.create(
+            source_package_name=outdated_package_name,
+            version='4.0.0',
+            standards_version='3.9.1.0')
+        # Create a package with an up to date standards version
+        up_to_date_package_name = SourcePackageName.objects.create(name='uptodate')
+        up_to_date_package = SourcePackage.objects.create(
+            source_package_name=up_to_date_package_name,
+            version='4.0.0',
+            standards_version='3.9.4')
+        # No events received by the task in this case.
+        # Sanity check: No action items in the beginning
+        self.assertEqual(0, ActionItem.objects.count())
+
+        self.run_task(initial_task=True)
+
+        # An action item is created for the two packages with out dated std-ver.
+        self.assertEqual(2, ActionItem.objects.count())
+        self.assertEqual(1, outdated_package_name.action_items.count())
+        self.assertEqual(1, self.package_name.action_items.count())

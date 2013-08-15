@@ -125,7 +125,7 @@ class UpdateStandardsVersionWarnings(BaseTask):
         if self.is_initial_task():
             # If the task is directly ran, update all packages
             packages = SourcePackageName.objects.all()
-            packages.fetch_related('action_items')
+            packages.prefetch_related('action_items')
         else:
             # If the task is ran as part of a job, get the packages from raised
             # events

@@ -1249,7 +1249,6 @@ class UpdateSecurityIssuesTask(BaseTask):
 
     def _get_issues_content(self):
         url = 'https://security-tracker.debian.org/tracker/data/pts/1'
-        import pdb; pdb.set_trace()
         return get_resource_content(url)
 
     def get_issues_stats(self):
