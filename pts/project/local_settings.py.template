@@ -105,3 +105,10 @@ SECRET_KEY = 'etu2#5lv=!0(g9l31mw=cpwhioy!egg60lb5o3_67d83#(wu-u'
 #: Hosts/domain names that are valid for this site; required if DEBUG is False
 #: See https://docs.djangoproject.com/en/1.5/ref/settings/#allowed-hosts
 ALLOWED_HOSTS = []
+
+
+# Settings for Debian-specific features
+#: A list of suite names which should be used when updating piuparts stats
+PTS_DEBIAN_PIUPARTS_SUITES = (
+    'sid',
+)

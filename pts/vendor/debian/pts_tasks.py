@@ -927,7 +927,6 @@ class UpdateBuildLogCheckStats(BaseTask):
     def __init__(self, force_update=False, *args, **kwargs):
         super(UpdateBuildLogCheckStats, self).__init__(*args, **kwargs)
         self.force_update = force_update
-        self.cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
         self.action_item_type = ActionItemType.objects.create_or_update(
             type_name=self.ACTION_ITEM_TYPE_NAME,
             full_description_template=self.ITEM_FULL_DESCRIPTION_TEMPLATE)
@@ -1055,7 +1054,6 @@ class DebianWatchFileScannerUpdate(BaseTask):
     def __init__(self, force_update=False, *args, **kwargs):
         super(DebianWatchFileScannerUpdate, self).__init__(*args, **kwargs)
         self.force_update = force_update
-        self.cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
         self.action_item_types = {
             type_name: ActionItemType.objects.create_or_update(
                 type_name=type_name,
@@ -1238,7 +1236,6 @@ class UpdateSecurityIssuesTask(BaseTask):
     def __init__(self, force_update=False, *args, **kwargs):
         super(UpdateSecurityIssuesTask, self).__init__(*args, **kwargs)
         self.force_update = force_update
-        self.cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
         self.action_item_type = ActionItemType.objects.create_or_update(
             type_name=self.ACTION_ITEM_TYPE_NAME,
             full_description_template=self.ACTION_ITEM_TEMPLATE)
@@ -1298,3 +1295,98 @@ class UpdateSecurityIssuesTask(BaseTask):
 
         for package in packages:
             self.update_action_item(package, stats[package.name])
+
+
+class UpdatePiuPartsTask(BaseTask):
+    """
+    Retrieves the piuparts stats for all the suites defined in the
+    :data:`pts.project.local_settings.PTS_DEBIAN_PIUPARTS_SUITES`
+    """
+    ACTION_ITEM_TYPE_NAME = 'debian-piuparts-test-fail'
+    ACTION_ITEM_TEMPLATE = 'debian/piuparts-action-item.html'
+    ITEM_DESCRIPTION = (
+        'piuparts found '
+        '<a href="//piuparts.debian.org/sid/source/{hash}/{package}.html">'
+        '(un)installation error(s)'
+        '</a>')
+
+    def __init__(self, force_update=False, *args, **kwargs):
+        super(UpdatePiuPartsTask, self).__init__(*args, **kwargs)
+        self.force_update = force_update
+        self.action_item_type = ActionItemType.objects.create_or_update(
+            type_name=self.ACTION_ITEM_TYPE_NAME,
+            full_description_template=self.ACTION_ITEM_TEMPLATE)
+
+    def set_parameters(self, parameters):
+        if 'force_update' in parameters:
+            self.force_update = parameters['force_update']
+
+    def _get_piuparts_content(self, suite):
+        """
+        :returns: The content of the piuparts report for the given package
+            or ``None`` if there is no data for the particular suite.
+        """
+        url = 'http://piuparts.debian.org/{suite}/sources.txt'
+        return get_resource_content(url.format(suite=suite))
+
+    def get_piuparts_stats(self):
+        suites = getattr(settings, 'PTS_DEBIAN_PIUPARTS_SUITES', [])
+        failing_packages = {}
+        for suite in suites:
+            content = self._get_piuparts_content(suite)
+            if content is None:
+                logger.info("There is no piuparts for suite: {}".format(suite))
+                continue
+
+            for line in content.splitlines():
+                package_name, status = line.split(':', 1)
+                package_name, status = package_name.strip(), status.strip()
+                if status == 'fail':
+                    failing_packages.setdefault(package_name, [])
+                    failing_packages[package_name].append(suite)
+
+        return failing_packages
+
+    def create_action_item(self, package, suites):
+        """
+        Creates an :class:`ActionItem <pts.core.models.ActionItem>` instance
+        for the package based on the list of suites in which the piuparts
+        installation test failed.
+        """
+        action_item = package.get_action_item_for_type(self.action_item_type)
+        if action_item is None:
+            action_item = ActionItem(
+                package=package,
+                item_type=self.action_item_type,
+                short_description=self.ITEM_DESCRIPTION.format(
+                    hash=(
+                        package.name[:4]
+                        if package.name.startswith('lib') else
+                        package.name[0]),
+                    package=package.name,
+                )
+            )
+
+        if action_item.extra_data:
+            existing_items = action_item.extra_data.get('suites', [])
+            if list(sorted(existing_items)) == list(sorted(suites)):
+                # No need to update this item
+                return
+        action_item.extra_data = {
+            'suites': suites,
+        }
+        action_item.save()
+
+    def execute(self):
+        failing_packages = self.get_piuparts_stats()
+
+        ActionItem.objects.delete_obsolete_items(
+            item_types=[self.action_item_type],
+            non_obsolete_packages=failing_packages.keys())
+
+        packages = SourcePackageName.objects.filter(
+            name__in=failing_packages.keys())
+        packages = packages.prefetch_related('action_items')
+
+        for package in packages:
+            self.create_action_item(package, failing_packages[package.name])

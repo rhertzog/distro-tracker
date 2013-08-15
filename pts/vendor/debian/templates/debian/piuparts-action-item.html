@@ -1,0 +1,9 @@
+<div>
+<span>Piuparts stresses package installation, uninstallation, upgrade, ... While doing such tests, one or more errors were found for the following suites:</span>
+<ul>
+{% for suite in item.extra_data.suites %}
+<li><a href="http://www.debian.org/releases/{{ suite }}/">{{ suite }}</a></li>
+{% endfor %}
+</ul>
+<span>You should fix them.</span>
+</div>

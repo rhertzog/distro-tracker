@@ -38,6 +38,7 @@ from pts.vendor.debian.rules import get_maintainer_extra
 from pts.vendor.debian.rules import get_uploader_extra
 from pts.vendor.debian.rules import get_developer_information_url
 from pts.vendor.debian.pts_tasks import UpdateSecurityIssuesTask
+from pts.vendor.debian.pts_tasks import UpdatePiuPartsTask
 from pts.vendor.debian.pts_tasks import UpdateBuildLogCheckStats
 from pts.vendor.debian.pts_tasks import UpdatePackageBugStats
 from pts.vendor.debian.pts_tasks import RetrieveDebianMaintainersTask
@@ -2390,3 +2391,249 @@ class PopconLinkTest(TestCase):
         response = self.get_package_page_response(package.name)
 
         self.assertNotIn('popcon', response.content)
+
+
+class UpdatePiupartsTaskTests(TestCase):
+    suites = []
+
+    @staticmethod
+    def stub_get_piuparts_content(suite, stub_data):
+        return stub_data.get(suite, None)
+
+    def setUp(self):
+        self.package = SourcePackageName.objects.create(name='dummy-package')
+
+        self.task = UpdatePiuPartsTask()
+        # Stub the data providing methods
+        self.return_content = {}
+        self.task._get_piuparts_content = mock.MagicMock(
+            side_effect=curry(
+                UpdatePiupartsTaskTests.stub_get_piuparts_content,
+                stub_data=self.return_content))
+
+        # Clear the actual list of suites
+        self.suites[:] = []
+
+    def run_task(self):
+        self.task.execute()
+
+    def get_action_item_type(self):
+        return ActionItemType.objects.get_or_create(
+            type_name=UpdatePiuPartsTask.ACTION_ITEM_TYPE_NAME)[0]
+
+    def set_suites(self, suites):
+        """
+        Sets the list of suites which the task should use.
+        """
+        for suite in suites:
+            self.suites.append(suite)
+
+    def set_piuparts_content(self, suite, fail_packages, pass_packages=()):
+        """
+        Sets the given list of packages as a stub value which is returned to
+        the task for the given suite.
+        """
+        content = '\n'.join('{}: fail'.format(pkg) for pkg in fail_packages)
+        content += '\n'.join('{}: pass'.format(pkg) for pkg in pass_packages)
+
+        self.return_content[suite] = content
+
+    def assert_get_piuparts_called_with(self, suites):
+        """
+        Asserts that the _get_piuparts_content method was called only with the
+        given suites.
+        """
+        self.assertEqual(
+            len(suites),
+            len(self.task._get_piuparts_content.mock_calls))
+        for suite, mock_call in zip(suites, self.task._get_piuparts_content.call_args_list):
+            self.assertEqual(mock.call(suite), mock_call)
+
+    @override_settings(PTS_DEBIAN_PIUPARTS_SUITES=suites)
+    def test_retrieves_all_suites(self):
+        """
+        Tests that the task tries to retrieve the data for each of the suites
+        given in the
+        :data:`pts.project.local_settings.PTS_DEBIAN_PIUPARTS_SUITES`
+        setting.
+        """
+        suites = ['sid', 'jessie']
+        self.set_suites(suites)
+
+        self.run_task()
+
+        self.assert_get_piuparts_called_with(suites)
+
+    @override_settings(PTS_DEBIAN_PIUPARTS_SUITES=suites)
+    def test_action_item_created(self):
+        """
+        Tests that an action item is created when a source package is found to
+        be failing the piuparts test in a single suite.
+        """
+        packages = [self.package.name]
+        suite = 'jessie'
+        self.set_suites([suite])
+        self.set_piuparts_content(suite, packages)
+
+        self.run_task()
+
+        # Created the action item.
+        self.assertEqual(1, ActionItem.objects.count())
+        # Correct item type?
+        item = ActionItem.objects.all()[0]
+        self.assertEqual(
+            UpdatePiuPartsTask.ACTION_ITEM_TYPE_NAME,
+            item.item_type.type_name)
+        # Correct template?
+        self.assertEqual(
+            UpdatePiuPartsTask.ACTION_ITEM_TEMPLATE,
+            item.full_description_template)
+        # Correct list of failing suites?
+        self.assertEqual([suite], item.extra_data['suites'])
+
+    @override_settings(PTS_DEBIAN_PIUPARTS_SUITES=suites)
+    def test_action_item_not_created(self):
+        """
+        Tests that an action item is not created when a source package is found
+        to be passing the piuparts test.
+        """
+        packages = [self.package.name]
+        suite = 'jessie'
+        self.set_suites([suite])
+        self.set_piuparts_content(suite, [], packages)
+
+        self.run_task()
+
+        # No action item created
+        self.assertEqual(0, ActionItem.objects.count())
+
+    @override_settings(PTS_DEBIAN_PIUPARTS_SUITES=suites)
+    def test_action_item_updated(self):
+        """
+        Tests that an existing action item is updated when there are updated
+        piuparts stats for the package.
+        """
+        # Create an action item: package failing in sid
+        ActionItem.objects.create(
+            package=self.package,
+            item_type=self.get_action_item_type(),
+            short_description="Desc",
+            extra_data={
+                'suites': ['sid']
+            })
+        packages = [self.package.name]
+        suite = 'jessie'
+        self.set_suites([suite])
+        self.set_piuparts_content(suite, packages)
+
+        self.run_task()
+
+        # Still only one action item
+        self.assertEqual(1, ActionItem.objects.count())
+        # Updated a list of suites
+        item = ActionItem.objects.all()[0]
+        self.assertEqual([suite], item.extra_data['suites'])
+
+    @override_settings(PTS_DEBIAN_PIUPARTS_SUITES=suites)
+    def test_action_item_multiple_suites(self):
+        """
+        Tests that an action item contains all suites in which a failure was
+        detected.
+        """
+        packages = [self.package.name]
+        # Suites where piuparts is failing
+        suites = ['sid', 'jessie']
+        # Suites where piuparts is ok
+        pass_suites = ['wheezy']
+        self.set_suites(suites + pass_suites)
+        for suite in suites:
+            self.set_piuparts_content(suite, packages)
+        for suite in pass_suites:
+            self.set_piuparts_content(suite, [], packages)
+
+        self.run_task()
+
+        self.assertEqual(1, ActionItem.objects.count())
+        item = ActionItem.objects.all()[0]
+        # All the suites found in extra data?
+        self.assertEqual(len(suites), len(item.extra_data['suites']))
+        for suite in suites:
+            self.assertIn(suite, item.extra_data['suites'])
+
+    @override_settings(PTS_DEBIAN_PIUPARTS_SUITES=suites)
+    def test_action_item_not_updated_when_unchanged(self):
+        """
+        Tests that an existing action item is not updated when the update
+        detects that the stats have not changed.
+        """
+        # Create an action item: package failing in multiple repositories
+        item = ActionItem.objects.create(
+            package=self.package,
+            item_type=self.get_action_item_type(),
+            short_description="Desc",
+            extra_data={
+                'suites': ['jessie', 'sid']
+            })
+        old_timestamp = item.last_updated_timestamp
+        packages = [self.package.name]
+        # Different order of suites than the one found in the current item
+        # should not affect anything
+        suites = ['sid', 'jessie']
+        self.set_suites(suites)
+        for suite in suites:
+            self.set_piuparts_content(suite, packages)
+
+        self.run_task()
+
+        # Still only one action item
+        self.assertEqual(1, ActionItem.objects.count())
+        # Still the same list of suites
+        item = ActionItem.objects.all()[0]
+        self.assertEqual(['jessie', 'sid'], item.extra_data['suites'])
+        # Time stamp unchanged
+        self.assertEqual(old_timestamp, item.last_updated_timestamp)
+
+    @override_settings(PTS_DEBIAN_PIUPARTS_SUITES=suites)
+    def test_action_item_removed(self):
+        """
+        Tests that an existing action item is removed if the update indicates
+        the package is passing piuparts tests in all suites.
+        """
+        ActionItem.objects.create(
+            package=self.package,
+            item_type=self.get_action_item_type(),
+            short_description="Desc",
+            extra_data={
+                'suites': ['jessie', 'sid']
+            })
+        packages = [self.package.name]
+        # Different order of suites than the one found in the current item
+        # should not affect anything
+        suites = ['sid', 'jessie']
+        self.set_suites(suites)
+        # Set the package as passing in all suites
+        for suite in suites:
+            self.set_piuparts_content(suite, [], packages)
+
+        self.run_task()
+
+        # Action item removed?
+        self.assertEqual(0, ActionItem.objects.count())
+
+    @override_settings(PTS_DEBIAN_PIUPARTS_SUITES=suites)
+    def test_action_item_removed_no_stats(self):
+        """
+        Tests that an existing action item is removed if the update indicates
+        the package no longer has any piuparts stats.
+        """
+        ActionItem.objects.create(
+            package=self.package,
+            item_type=self.get_action_item_type(),
+            short_description="Desc",
+            extra_data={
+                'suites': ['jessie', 'sid']
+            })
+
+        self.run_task()
+
+        self.assertEqual(0, ActionItem.objects.count())
