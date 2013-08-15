@@ -142,7 +142,7 @@ class HttpCache(object):
             # Ask all possible intermediate proxies to return a fresh response
             headers['Cache-Control'] = 'no-cache'
 
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, verify=False)
 
         # Invalidate previously cached value if the response is not valid now
         if not response.ok:

@@ -835,7 +835,7 @@ class HttpCacheTest(SimpleTestCase):
         response, updated = cache.update(url)
 
         self.assertFalse(updated)
-        mock_requests.get.assert_called_with(url, headers={
+        mock_requests.get.assert_called_with(url, verify=False, headers={
             'If-Modified-Since': last_modified,
         })
         # The actual server's response is returned
@@ -944,7 +944,7 @@ class HttpCacheTest(SimpleTestCase):
         response, updated = cache.update(url)
 
         self.assertFalse(updated)
-        mock_requests.get.assert_called_with(url, headers={
+        mock_requests.get.assert_called_with(url, verify=False, headers={
             'If-None-Match': etag,
         })
         # The actual server's response is returned
@@ -1002,7 +1002,7 @@ class HttpCacheTest(SimpleTestCase):
         response, updated = cache.update(url, force=True)
 
         # Make sure that we ask for a non-cached version
-        mock_requests.get.assert_called_with(url, headers={
+        mock_requests.get.assert_called_with(url, verify=False, headers={
             'Cache-Control': 'no-cache'
         })
         self.assertTrue(updated)
