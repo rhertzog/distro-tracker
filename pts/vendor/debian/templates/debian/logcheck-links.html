@@ -1,8 +1,10 @@
 {% with query_string=item.context.package_query_string %}
 <span>buildd: </span>
 <span><a title="buildd.debian.org build logs" href="https://buildd.debian.org/status/package.php?{{ query_string }}">logs</a></span>
+{% if item.context.has_experimental %}
 <span>,</span>
 <span><a title="experimental build logs" href="https://buildd.debian.org/status/package.php?{{ query_string }}&suite=experimental">exp</a></span>
+{% endif %}
 <span>,</span>
 <span><a title="build logs for unofficial ports" href="http://buildd.debian-ports.org/status/package.php?{{ query_string }}">ports</a></span>
 {% if item.context.has_checks %}
