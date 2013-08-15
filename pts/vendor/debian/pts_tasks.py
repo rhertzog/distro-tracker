@@ -886,7 +886,7 @@ class UpdateExcusesTask(BaseTask):
         if not updated:
             return
 
-        content_lines = response.iter_lines()
+        return response.iter_lines()
 
     def execute(self):
         content_lines = self._get_update_excuses_content()
