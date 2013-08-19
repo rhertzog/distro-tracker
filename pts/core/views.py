@@ -137,3 +137,13 @@ class ActionItemView(View):
         return render(request, 'core/action-item.html', {
             'item': item,
         })
+
+
+def legacy_rss_redirect(request, package_hash, package_name):
+    """
+    Redirects old package RSS news feed URLs to the new ones.
+    """
+    return redirect(
+        'pts-package-rss-news-feed',
+        package_name=package_name,
+        permanent=True)

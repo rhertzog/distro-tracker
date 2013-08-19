@@ -306,3 +306,16 @@ class NewsFeedTests(TestCase):
 
             dom_items = self.get_all_dom_items(response.content)
             self.assertEqual(item_limit, len(dom_items))
+
+    def test_legacy_redirect(self):
+        legacy_url = '/{h}/{pkg}/news.rss20.xml'.format(
+            h=self.package.name[0],
+            pkg=self.package.name)
+
+        response = self.client.get(legacy_url)
+
+        # URL permanently redirected to the new url
+        self.assertRedirects(
+            response,
+            self.get_package_news_feed_url(self.package.name),
+            status_code=301)

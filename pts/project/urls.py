@@ -24,6 +24,10 @@ urlpatterns = patterns('',
     url(r'^(?P<package_hash>(lib)?.)/(?P<package_name>(\1).+)\.html$',
         'pts.core.views.legacy_package_url_redirect'),
 
+    # Permanent redirect for the old RSS URL
+    url(r'^(?P<package_hash>(lib)?.)/(?P<package_name>(\1).+)/news\.rss20\.xml$',
+        'pts.core.views.legacy_rss_redirect'),
+
     url(r'^search$', PackageSearchView.as_view(),
         name='pts-package-search'),
 
