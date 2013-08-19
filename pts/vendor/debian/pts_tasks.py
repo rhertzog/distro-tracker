@@ -1390,3 +1390,127 @@ class UpdatePiuPartsTask(BaseTask):
 
         for package in packages:
             self.create_action_item(package, failing_packages[package.name])
+
+
+class UpdateReleaseGoalsTask(BaseTask):
+    """
+    Retrieves the release goals and any bugs associated with the release goal
+    for all packages. Creates :class:`ActionItem` instances for packages which
+    have such bugs.
+    """
+    ACTION_ITEM_TYPE_NAME = 'debian-release-goals-bugs'
+    ACTION_ITEM_TEMPLATE = 'debian/release-goals-action-item.html'
+    ITEM_DESCRIPTION = (
+        "{count} bugs must be fixed to meet some Debian release goals")
+
+    def __init__(self, force_update=False, *args, **kwargs):
+        super(UpdateReleaseGoalsTask, self).__init__(*args, **kwargs)
+        self.force_update = force_update
+        self.action_item_type = ActionItemType.objects.create_or_update(
+            type_name=self.ACTION_ITEM_TYPE_NAME,
+            full_description_template=self.ACTION_ITEM_TEMPLATE)
+
+    def set_parameters(self, parameters):
+        if 'force_update' in parameters:
+            self.force_update = parameters['force_update']
+
+    def _get_release_goals_content(self):
+        """
+        :returns: A tuple consisting of contents of the release goals list and
+            the release bug list. ``None`` if neither of the packages have
+            been when compared to the cached resource.
+        """
+        cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
+        release_goals_url = 'http://release.debian.org/testing/goals.yaml'
+        bugs_list_url = 'http://udd.debian.org/pts-release-goals.cgi'
+        if not self.force_update and (not cache.is_expired(release_goals_url) and
+                not cache.is_expired(bugs_list_url)):
+            return
+
+        release_goals_response, updated_release_goals = cache.update(
+            release_goals_url, force=self.force_update)
+        bug_list_response, updated_bug_list = cache.update(
+            bugs_list_url, force=self.force_update)
+
+        if updated_bug_list or updated_release_goals:
+            return release_goals_response.content, bug_list_response.content
+
+    def get_release_goals_stats(self):
+        content = self._get_release_goals_content()
+        if content is None:
+            return
+
+        release_goals_content, bug_list_content = content
+
+        release_goals = yaml.load(release_goals_content)
+        release_goals_list = release_goals['release-goals']
+        # Map (user, tag) tuples to the release goals.
+        # This is used to match the bugs with the correct release goal.
+        release_goals = {}
+        for goal in release_goals_list:
+            if 'bugs' in goal:
+                user = goal['bugs']['user']
+                for tag in goal['bugs']['usertags']:
+                    release_goals[(user, tag)] = goal
+
+        bugs_processed = set()
+        release_goal_stats = {}
+        # Build a dict mapping package names to a list of bugs matched to a
+        # release goal.
+        bug_list = yaml.load(bug_list_content)
+        for bug in bug_list:
+            user, tag = bug['email'], bug['tag']
+            if (user, tag) not in release_goals:
+                # Cannot match the bug with a release goal...
+                continue
+            release_goal = release_goals[(user, tag)]
+            if release_goal['state'] != 'accepted':
+                continue
+            if bug['id'] in bugs_processed:
+                # Skip any duplicate bugs
+                continue
+            package = bug['source']
+            release_goal_stats.setdefault(package, [])
+            release_goal_stats[package].append({
+                'name': release_goal['name'],
+                'url': release_goal['url'],
+                'id': bug['id'],
+            })
+
+        return release_goal_stats
+
+    def update_action_item(self, package, bug_list):
+        action_item = package.get_action_item_for_type(
+            self.ACTION_ITEM_TYPE_NAME)
+        if action_item is None:
+            action_item = ActionItem(
+                package=package,
+                item_type=self.action_item_type)
+
+        # Check if there were any changes to the package's stats since last
+        # update.
+        if action_item.extra_data:
+            old_data = sorted(action_item.extra_data, key=lambda x: x['id'])
+            bug_list = sorted(bug_list, key=lambda x: x['id'])
+            if old_data == bug_list:
+                # No need to update anything as nothing has changed
+                return
+        action_item.short_description = self.ITEM_DESCRIPTION.format(
+            count=len(bug_list))
+        action_item.extra_data = bug_list
+        action_item.save()
+
+    def execute(self):
+        stats = self.get_release_goals_stats()
+        if stats is None:
+            return
+
+        ActionItem.objects.delete_obsolete_items(
+            item_types=[self.action_item_type],
+            non_obsolete_packages=stats.keys())
+
+        packages = PackageName.objects.filter(name__in=stats.keys())
+        packages = packages.prefetch_related('action_items')
+
+        for package in packages:
+            self.update_action_item(package, stats[package.name])
