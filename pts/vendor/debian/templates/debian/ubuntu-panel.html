@@ -34,6 +34,13 @@
       {% endif %}
     </li>
     {% endif %}
+    {% if ubuntu_package.patch_diff %}
+    <li class="list-group-item">
+      <span>
+      <a href="http://patches.ubuntu.com/{{ ubuntu_package.patch_diff.diff_url }}">patches for {{ ubuntu_package.patch_diff.version }}</a>
+      </span>
+    </li>
+    {% endif %}
 </ul>
 {% endwith %}
 {% endspaceless %}

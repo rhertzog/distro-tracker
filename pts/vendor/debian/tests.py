@@ -3434,3 +3434,26 @@ class UbuntuPanelTests(TestCase):
 
         self.assertIn("10 bugs", response.content)
         self.assertIn("5 patches", response.content)
+
+    def test_patch_diff_displayed(self):
+        """
+        Tests that the Ubuntu patch diff link is displayed in the Ubuntu panel,
+        if it exists for the package.
+        """
+        ubuntu_version = '1.0.0-ubuntu1'
+        diff_url = 'd/dummy-package/dummy-package_1.0.0-ubuntu1'
+        bug_count, patch_count = 10, 5
+        UbuntuPackage.objects.create(
+            package=self.package,
+            version=ubuntu_version,
+            patch_diff={
+                'diff_url': diff_url,
+                'version': ubuntu_version,
+            })
+
+        response = self.get_package_page_response(self.package.name)
+
+        self.assertIn(
+            'patches for {}'.format(ubuntu_version),
+            response.content)
+        self.assertIn(ubuntu_version, response.content)
