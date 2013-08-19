@@ -12,6 +12,7 @@
 
 from __future__ import unicode_literals
 from django.utils.safestring import mark_safe
+from django.utils.functional import cached_property
 from django.utils.http import urlencode
 from pts.core.utils import get_or_none
 from pts.core.models import Repository
@@ -22,6 +23,7 @@ from pts.core.panels import HtmlPanelItem
 from pts.core.panels import TemplatePanelItem
 from pts.vendor.debian.models import LintianStats
 from pts.vendor.debian.models import PackageExcuses
+from pts.vendor.debian.models import UbuntuPackage
 
 
 class LintianLink(LinksPanel.ItemProvider):
@@ -145,7 +147,7 @@ class TransitionsPanel(BasePanel):
     position = 'center'
     title = 'testing migrations'
 
-    @property
+    @cached_property
     def context(self):
         try:
             excuses = self.package.excuses.excuses
@@ -162,3 +164,24 @@ class TransitionsPanel(BasePanel):
     @property
     def has_content(self):
         return bool(self.context['transitions']) or bool(self.context['excuses'])
+
+
+class UbuntuPanel(BasePanel):
+    template_name = 'debian/ubuntu-panel.html'
+    position = 'right'
+    title = 'ubuntu'
+
+    @cached_property
+    def context(self):
+        try:
+            ubuntu_package = self.package.ubuntu_package
+        except UbuntuPackage.DoesNotExist:
+            return
+
+        return {
+            'ubuntu_package': ubuntu_package,
+        }
+
+    @property
+    def has_content(self):
+        return bool(self.context)

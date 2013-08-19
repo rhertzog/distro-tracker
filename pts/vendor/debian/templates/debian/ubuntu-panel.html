@@ -1,0 +1,22 @@
+{% extends 'core/panels/panel.html' %}
+{% load staticfiles %}
+
+{% block panel-header %}
+<span>{{ block.super }}</span>
+<img style="margin-top: -9px;" src="{% static 'img/ubuntu.png' %}">
+<span><a href="https://wiki.ubuntu.com/Ubuntu/ForDebianDevelopers" title="Information about Ubuntu for Debian Developers"><i class="icon-share"></i></a></span>
+{% endblock %}
+
+{% block panel-body %}
+{% with ubuntu_package=panel.context.ubuntu_package %}
+<ul class="list-group list-group-flush">
+    <li class="list-group-item">
+      <div class="list-item-key"><b>version:</b></div>
+      <div class="list-item-value">
+        <a href="https://launchpad.net/ubuntu/+source/{{ ubuntu_package.package.name }}">{{ ubuntu_package.version }}</a>
+      </div>
+      <div class="clear"></div>
+    </li>
+</ul>
+{% endwith %}
+{% endblock %}

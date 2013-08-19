@@ -1533,22 +1533,15 @@ class UpdateUbuntuStatsTask(BaseTask):
 
     def _get_versions_content(self):
         url = 'http://udd.debian.org/cgi-bin/ubuntupackages.cgi'
-        if not self.force_update and not self.cache.is_expired(url):
-            return
-        response, updated = self.cache.update(url, force=self.force_update)
-        if not updated:
-            return
-        return response.content
+        return get_resource_content(url)
 
-    def get_updated_versions(self):
+    def get_ubuntu_versions(self):
         """
         Retrieves the Ubuntu package versions.
 
         :returns: A dict mapping package names to Ubuntu versions.
         """
         content = self._get_versions_content()
-        if content is None:
-            return
 
         package_versions = {}
         for line in content.splitlines():
@@ -1560,15 +1553,13 @@ class UpdateUbuntuStatsTask(BaseTask):
 
 
     def execute(self):
-        package_versions = self.get_updated_versions()
-
-        all_packages = set(package_versions.keys())
+        package_versions = self.get_ubuntu_versions()
 
         obsolete_ubuntu_pkgs = UbuntuPackage.objects.exclude(
-            package__name__in=all_packages)
+            package__name__in=package_versions.keys())
         obsolete_ubuntu_pkgs.delete()
 
-        packages = PackageName.objects.filter(name__in=all_packages)
+        packages = PackageName.objects.filter(name__in=package_versions.keys())
         packages = packages.prefetch_related('ubuntu_package')
 
         for package in packages:

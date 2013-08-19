@@ -3107,3 +3107,55 @@ class UpdateUbuntuStatsTaskTests(TestCase):
 
         # The package is removed.
         self.assertEqual(0, UbuntuPackage.objects.count())
+
+
+class UbuntuPanelTests(TestCase):
+    """
+    Tests for the :class:`pts.vendor.debian.pts_panels.UbuntuPanel` panel.
+    """
+    def setUp(self):
+        self.package = PackageName.objects.create(name='dummy-package')
+
+    def get_package_page_response(self, package_name):
+        package_page_url = reverse('pts-package-page', kwargs={
+            'package_name': package_name,
+        })
+        return self.client.get(package_page_url)
+
+    def ubuntu_panel_in_content(self, content):
+        html = soup(content)
+        for panel in html.findAll('div', {'class': 'panel-heading'}):
+            if 'ubuntu' in str(panel):
+                return True
+
+        return False
+
+    def test_panel_displayed(self):
+        """
+        Tests that the panel is displayed when the package has a known Ubuntu
+        version.
+        """
+        # Create the ubuntu version
+        ubuntu_version = '1.0.0-ubuntu1'
+        UbuntuPackage.objects.create(
+            package=self.package,
+            version=ubuntu_version)
+
+        response = self.get_package_page_response(self.package.name)
+
+        self.assertTrue(self.ubuntu_panel_in_content(response.content))
+        self.assertIn(ubuntu_version, response.content)
+
+    def test_panel_not_displayed(self):
+        """
+        Tests tat the panel is not displayed when the package has no known
+        Ubuntu versions.
+        """
+        # Sanity check: no Ubuntu version for the packag?
+        self.assertEqual(
+            0,
+            UbuntuPackage.objects.filter(package=self.package).count())
+
+        response = self.get_package_page_response(self.package.name)
+
+        self.assertFalse(self.ubuntu_panel_in_content(response.content))
