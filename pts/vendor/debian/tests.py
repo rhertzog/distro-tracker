@@ -3056,6 +3056,7 @@ class UpdateUbuntuStatsTaskTests(TestCase):
         # Stub the data providing method
         self.task._get_versions_content = mock.MagicMock(return_value='')
         self.task._get_bug_stats_content = mock.MagicMock(return_value='')
+        self.task._get_ubuntu_patch_diff_content = mock.MagicMock(return_value='')
 
     def set_versions_content(self, versions):
         """
@@ -3078,6 +3079,17 @@ class UpdateUbuntuStatsTaskTests(TestCase):
         self.task._get_bug_stats_content.return_value = '\n'.join(
             '{pkg}|{cnt}|{merged}'.format(pkg=pkg, cnt=cnt, merged=merged)
             for pkg, cnt, merged in bugs)
+
+    def set_diff_content(self, diffs):
+        """
+        Sets the stub content for the list of diff URLs.
+
+        :param diffs: A list of (package_name, diff_url) pairs which should be
+            found in the response.
+        """
+        self.task._get_ubuntu_patch_diff_content.return_value = '\n'.join(
+            '{pkg} {url}'.format(pkg=pkg, url=url)
+            for pkg, url in diffs)
 
     def run_task(self):
         self.task.execute()
@@ -3233,6 +3245,124 @@ class UpdateUbuntuStatsTaskTests(TestCase):
         ubuntu_pkg = UbuntuPackage.objects.all()[0]
         self.assertIsNone(ubuntu_pkg.bugs)
 
+    def test_ubuntu_package_diff_created(self):
+        """
+        Tests that a :class:`pts.vendor.debian.models.UbuntuPackage`
+        instance which is created for a new Ubuntu package contains the diff
+        info.
+        """
+        version = '1.1-1ubuntu1'
+        self.set_versions_content([
+            (self.package.name, version)
+        ])
+        # Have the patch version be different than the package version
+        patch_version = '1.0-1ubuntu1'
+        diff_url = 'd/dummy-package/dummy-package_{ver}.patch'.format(
+            ver=patch_version)
+        self.set_diff_content([
+            (self.package.name, diff_url),
+        ])
+
+        self.run_task()
+
+        self.assertEqual(1, UbuntuPackage.objects.count())
+        # Has the correct diff info?
+        ubuntu_pkg = UbuntuPackage.objects.all()[0]
+        expected = {
+            'version': patch_version,
+            'diff_url': diff_url,
+        }
+        self.assertDictEqual(expected, ubuntu_pkg.patch_diff)
+
+    def test_ubuntu_package_diff_updated(self):
+        """
+        Tests that an existing :class:`pts.vendor.debian.models.UbuntuPackage`
+        instance is correctly updated to contain the new Ubuntu patch diffs
+        when it previously contained no diff info.
+        """
+        # Create an UbuntuPackage with no patch diff info
+        version = '1.0-1ubuntu1'
+        UbuntuPackage.objects.create(
+            package=self.package,
+            version=version)
+        self.set_versions_content([
+            (self.package.name, version)
+        ])
+        diff_url = 'd/dummy-package/dummy-package_{ver}.patch'.format(
+            ver=version)
+        self.set_diff_content([
+            (self.package.name, diff_url),
+        ])
+
+        self.run_task()
+
+        self.assertEqual(1, UbuntuPackage.objects.count())
+        # The diff info is updated?
+        ubuntu_pkg = UbuntuPackage.objects.all()[0]
+        expected = {
+            'version': version,
+            'diff_url': diff_url,
+        }
+        self.assertDictEqual(expected, ubuntu_pkg.patch_diff)
+
+    def test_ubuntu_package_diff_updated_existing(self):
+        """
+        Tests that an existing :class:`pts.vendor.debian.models.UbuntuPackage`
+        instance is correctly updated to contain the new Ubuntu patch diff info
+        when it previously contained older patch diff info.
+        """
+        version = '1.0-1ubuntu1'
+        UbuntuPackage.objects.create(
+            package=self.package,
+            version=version,
+            patch_diff={
+                'version': '1.0-0',
+                'diff_url': 'http://old.url.com',
+            })
+        self.set_versions_content([
+            (self.package.name, version)
+        ])
+        diff_url = 'd/dummy-package/dummy-package_{ver}.patch'.format(
+            ver=version)
+        self.set_diff_content([
+            (self.package.name, diff_url),
+        ])
+
+        self.run_task()
+
+        self.assertEqual(1, UbuntuPackage.objects.count())
+        # The diff info is updated?
+        ubuntu_pkg = UbuntuPackage.objects.all()[0]
+        expected = {
+            'version': version,
+            'diff_url': diff_url,
+        }
+        self.assertDictEqual(expected, ubuntu_pkg.patch_diff)
+
+    def test_ubuntu_package_diff_removed(self):
+        """
+        Tests that an existing :class:`pts.vendor.debian.models.UbuntuPackage`
+        instance is correctly updated to contain no diff info when there is no
+        diff info found for the package by the update.
+        """
+        version = '1.0-1ubuntu1'
+        UbuntuPackage.objects.create(
+            package=self.package,
+            version=version,
+            patch_diff={
+                'version': '1.0-0',
+                'diff_url': 'http://old.url.com',
+            })
+        self.set_versions_content([
+            (self.package.name, version)
+        ])
+
+        self.run_task()
+
+        self.assertEqual(1, UbuntuPackage.objects.count())
+        # No more patch diff info?
+        ubuntu_pkg = UbuntuPackage.objects.all()[0]
+        self.assertIsNone(ubuntu_pkg.patch_diff)
 
 class UbuntuPanelTests(TestCase):
     """

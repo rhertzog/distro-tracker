@@ -1578,9 +1578,41 @@ class UpdateUbuntuStatsTask(BaseTask):
 
         return bug_stats
 
+    def _get_ubuntu_patch_diff_content(self):
+        url = 'https://patches.ubuntu.com/PATCHES'
+        return get_resource_content(url)
+
+    def get_ubuntu_patch_diffs(self):
+        """
+        Retrieves the Ubuntu patch diff information. The information consists
+        of the diff URL and the version of the Ubuntu package to which the
+        diff belongs to.
+
+        :returns: A dict mapping package names to diff information.
+        """
+        content = self._get_ubuntu_patch_diff_content()
+
+        patch_diffs = {}
+        re_diff_version = re.compile(r'_(\S+)\.patch')
+        for line in content.splitlines():
+            package_name, diff_url = line.split(' ', 1)
+            # Extract the version of the package from the diff url
+            match = re_diff_version.search(diff_url)
+            if not match:
+                # Invalid URL: no version
+                continue
+            version = match.group(1)
+            patch_diffs[package_name] = {
+                'version': version,
+                'diff_url': diff_url
+            }
+
+        return patch_diffs
+
     def execute(self):
         package_versions = self.get_ubuntu_versions()
         bug_stats = self.get_ubuntu_bug_stats()
+        patch_diffs = self.get_ubuntu_patch_diffs()
 
         obsolete_ubuntu_pkgs = UbuntuPackage.objects.exclude(
             package__name__in=package_versions.keys())
@@ -1592,14 +1624,17 @@ class UpdateUbuntuStatsTask(BaseTask):
         for package in packages:
             version = package_versions[package.name]
             bugs = bug_stats.get(package.name, None)
+            diff = patch_diffs.get(package.name, None)
 
             try:
                 ubuntu_package = package.ubuntu_package
                 ubuntu_package.version = version
                 ubuntu_package.bugs = bugs
+                ubuntu_package.patch_diff = diff
                 ubuntu_package.save()
             except UbuntuPackage.DoesNotExist:
                 ubuntu_package = UbuntuPackage.objects.create(
                     package=package,
                     version=version,
-                    bugs=bugs)
+                    bugs=bugs,
+                    patch_diff=diff)
