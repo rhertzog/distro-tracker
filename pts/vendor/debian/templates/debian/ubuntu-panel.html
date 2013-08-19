@@ -8,8 +8,10 @@
 {% endblock %}
 
 {% block panel-body %}
+{% spaceless %}
 {% with ubuntu_package=panel.context.ubuntu_package %}
 <ul class="list-group list-group-flush">
+    {# Package Ubuntu version #}
     <li class="list-group-item">
       <div class="list-item-key"><b>version:</b></div>
       <div class="list-item-value">
@@ -17,6 +19,22 @@
       </div>
       <div class="clear"></div>
     </li>
+    {# Package Ubuntu bug stats #}
+    {% if ubuntu_package.bugs %}
+    <li class="list-group-item">
+      <a href="https://bugs.launchpad.net/ubuntu/+source/{{ ubuntu_package.package.name }}">
+        <span>{{ ubuntu_package.bugs.bug_count }} bug{% if ubuntu_package.bugs.bug_count > 1 %}s{% endif %}</span>
+      </a>
+      {% if ubuntu_package.bugs.patch_count %}
+      <span> (</span>
+      <a href="https://bugs.launchpad.net/ubuntu/+source/{{ ubuntu_package.package.name }}/+patches">
+        <span>{{ ubuntu_package.bugs.patch_count }} patch{% if ubuntu_package.bugs.patch_count > 1 %}es{% endif %}</span>
+      </a>
+      <span>)</span>
+      {% endif %}
+    </li>
+    {% endif %}
 </ul>
 {% endwith %}
+{% endspaceless %}
 {% endblock %}

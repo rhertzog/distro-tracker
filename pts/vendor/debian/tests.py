@@ -3284,3 +3284,23 @@ class UbuntuPanelTests(TestCase):
         response = self.get_package_page_response(self.package.name)
 
         self.assertFalse(self.ubuntu_panel_in_content(response.content))
+
+    def test_bugs_displayed(self):
+        """
+        Tests that the Ubuntu bug counts are displayed in the Ubuntu panel, if
+        they exist for the package.
+        """
+        ubuntu_version = '1.0.0-ubuntu1'
+        bug_count, patch_count = 10, 5
+        UbuntuPackage.objects.create(
+            package=self.package,
+            version=ubuntu_version,
+            bugs={
+                'bug_count': bug_count,
+                'patch_count': patch_count,
+            })
+
+        response = self.get_package_page_response(self.package.name)
+
+        self.assertIn("10 bugs", response.content)
+        self.assertIn("5 patches", response.content)
