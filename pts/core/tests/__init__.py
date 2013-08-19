@@ -22,3 +22,4 @@ from .tests_utils import *
 from .tests_views import *
 from .tests_management import *
 from .tests_panels import *
+from .tests_news_feed import *

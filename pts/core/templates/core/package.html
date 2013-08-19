@@ -3,6 +3,10 @@
 
 {% block title %}{{ block.super }} - {{ package }}{% endblock %}
 
+{% block extra-head %}
+<link rel="alternate" type="application/rss+xml" title="RSS" href="{% url 'pts-package-rss-news-feed' package.name %}">
+{% endblock %}
+
 {% block page-header %}
     <header class="page-header" id="package-page-header">
         <div class="container-fluid">

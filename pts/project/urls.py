@@ -14,6 +14,7 @@ from django.conf.urls import patterns, include, url
 from django.views.generic import TemplateView
 from pts.core.views import PackageSearchView, PackageAutocompleteView
 from pts.core.views import ActionItemJsonView, ActionItemView
+from pts.core.news_feed import PackageNewsFeed
 
 from django.contrib import admin
 admin.autodiscover()
@@ -37,6 +38,10 @@ urlpatterns = patterns('',
         name='pts-news-page'),
     url(r'^action-items/(?P<item_pk>\d+)$', ActionItemView.as_view(),
         name='pts-action-item'),
+
+    # RSS news feed
+    url(r'^(?P<package_name>.+)/rss$', PackageNewsFeed(),
+        name='pts-package-rss-news-feed'),
 
     # The package page view. It must be listed *after* the admin URL so that
     # the admin URL is not interpreted as a package named "admin".

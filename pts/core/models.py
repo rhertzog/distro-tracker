@@ -1462,6 +1462,19 @@ class NewsRenderer(six.with_metaclass(PluginRegistry)):
 
         return None
 
+    def render_to_string(self):
+        """
+        :returns: A safe string representing the rendered HTML output.
+        """
+        if self.template_name:
+            return mark_safe(pts_render_to_string(self.template_name, {
+                'context': self.context,
+            }))
+        elif self.html_output:
+            return mark_safe(self.html_output)
+        else:
+            return ''
+
 
 class PlainTextNewsRenderer(NewsRenderer):
     """
