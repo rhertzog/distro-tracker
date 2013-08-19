@@ -116,3 +116,16 @@ class BuildLogCheckStats(models.Model):
 
     def __str__(self):
         return "Build logcheck stats for {pkg}".format(pkg=self.package)
+
+
+@python_2_unicode_compatible
+class UbuntuPackage(models.Model):
+    package = models.OneToOneField(
+        PackageName,
+        related_name='ubuntu_package')
+    version = models.TextField(max_length=100)
+    bugs = JSONField(null=True, blank=True)
+    patch_diff = JSONField(null=True, blank=True)
+
+    def __str__(self):
+        return "Ubuntu package info for {pkg}".format(pkg=self.package)

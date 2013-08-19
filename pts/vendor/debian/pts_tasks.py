@@ -32,6 +32,7 @@ from pts.vendor.debian.models import LintianStats
 from pts.vendor.debian.models import BuildLogCheckStats
 from pts.vendor.debian.models import PackageTransition
 from pts.vendor.debian.models import PackageExcuses
+from pts.vendor.debian.models import UbuntuPackage
 from pts.core.utils.http import HttpCache
 from pts.core.utils.http import get_resource_content
 from .models import DebianContributor
@@ -1514,3 +1515,70 @@ class UpdateReleaseGoalsTask(BaseTask):
 
         for package in packages:
             self.update_action_item(package, stats[package.name])
+
+
+class UpdateUbuntuStatsTask(BaseTask):
+    """
+    The task updates Ubuntu stats for packages. These stats are displayed in a
+    separate panel.
+    """
+    def __init__(self, force_update=False, *args, **kwargs):
+        super(UpdateUbuntuStatsTask, self).__init__(*args, **kwargs)
+        self.force_update = force_update
+        self.cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
+
+    def set_parameters(self, parameters):
+        if 'force_update' in parameters:
+            self.force_update = parameters['force_update']
+
+    def _get_versions_content(self):
+        url = 'http://udd.debian.org/cgi-bin/ubuntupackages.cgi'
+        if not self.force_update and not self.cache.is_expired(url):
+            return
+        response, updated = self.cache.update(url, force=self.force_update)
+        if not updated:
+            return
+        return response.content
+
+    def get_updated_versions(self):
+        """
+        Retrieves the Ubuntu package versions.
+
+        :returns: A dict mapping package names to Ubuntu versions.
+        """
+        content = self._get_versions_content()
+        if content is None:
+            return
+
+        package_versions = {}
+        for line in content.splitlines():
+            package, version = line.split(' ', 1)
+            version = version.strip()
+            package_versions[package] = version
+
+        return package_versions
+
+
+    def execute(self):
+        package_versions = self.get_updated_versions()
+
+        all_packages = set(package_versions.keys())
+
+        obsolete_ubuntu_pkgs = UbuntuPackage.objects.exclude(
+            package__name__in=all_packages)
+        obsolete_ubuntu_pkgs.delete()
+
+        packages = PackageName.objects.filter(name__in=all_packages)
+        packages = packages.prefetch_related('ubuntu_package')
+
+        for package in packages:
+            version = package_versions[package.name]
+
+            try:
+                ubuntu_package = package.ubuntu_package
+                ubuntu_package.version = version
+                ubuntu_package.save()
+            except UbuntuPackage.DoesNotExist:
+                ubuntu_package = UbuntuPackage.objects.create(
+                    package=package,
+                    version=version)

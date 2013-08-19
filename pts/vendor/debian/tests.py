@@ -37,6 +37,7 @@ from pts.vendor.debian.rules import get_package_information_site_url
 from pts.vendor.debian.rules import get_maintainer_extra
 from pts.vendor.debian.rules import get_uploader_extra
 from pts.vendor.debian.rules import get_developer_information_url
+from pts.vendor.debian.pts_tasks import UpdateUbuntuStatsTask
 from pts.vendor.debian.pts_tasks import UpdateReleaseGoalsTask
 from pts.vendor.debian.pts_tasks import UpdateSecurityIssuesTask
 from pts.vendor.debian.pts_tasks import UpdatePiuPartsTask
@@ -47,6 +48,7 @@ from pts.vendor.debian.pts_tasks import RetrieveLowThresholdNmuTask
 from pts.vendor.debian.pts_tasks import DebianWatchFileScannerUpdate
 from pts.vendor.debian.pts_tasks import UpdateExcusesTask
 from pts.vendor.debian.models import DebianContributor
+from pts.vendor.debian.models import UbuntuPackage
 from pts.vendor.debian.pts_tasks import UpdateLintianStatsTask
 from pts.vendor.debian.models import LintianStats
 from pts.mail.mail_news import process
@@ -3040,3 +3042,68 @@ class UpdateReleaseGoalsTaskTests(TestCase):
         # The item was not changed?
         self.assertEqual(item.pk, old_item.pk)
         self.assertEqual(old_timestamp, item.last_updated_timestamp)
+
+
+class UpdateUbuntuStatsTaskTests(TestCase):
+    """
+    Tests for the :class:`pts.vendor.debian.pts_taks.UpdateUbuntuStatsTask`
+    task.
+    """
+    def setUp(self):
+        self.package = SourcePackageName.objects.create(name='dummy-package')
+
+        self.task = UpdateUbuntuStatsTask()
+        # Stub the data providing method
+        self.task._get_versions_content = mock.MagicMock()
+
+    def set_versions_content(self, versions):
+        """
+        Sets the stub content for the list of Ubuntu package versions.
+
+        :param versions: A list of (package_name, version) pairs which should
+            be found in the response.
+        """
+        self.task._get_versions_content.return_value = '\n'.join(
+            '{pkg} {ver}'.format(pkg=pkg, ver=ver)
+            for pkg, ver in versions)
+
+    def run_task(self):
+        self.task.execute()
+
+    def test_ubuntu_package_created(self):
+        """
+        Tests that a new :class:`pts.vendor.debian.models.UbuntuPackage` model
+        instance is created if an Ubuntu version of the package is found.
+        """
+        version = '1.0-1ubuntu1'
+        self.set_versions_content([
+            (self.package.name, version)
+        ])
+
+        self.run_task()
+
+        # Created an ubuntu package
+        self.assertEqual(1, UbuntuPackage.objects.count())
+        # Has the correct version?
+        ubuntu_pkg = UbuntuPackage.objects.all()[0]
+        self.assertEqual(version, ubuntu_pkg.version)
+        # Linked to the correct package?
+        self.assertEqual(self.package.name, ubuntu_pkg.package.name)
+
+    def test_ubuntu_package_removed(self):
+        """
+        Tests that an existing :class:`pts.vendor.debian.models.UbuntuPackage`
+        instance is removed if an Ubuntu version of the package is no longer
+        found.
+        """
+        version = '1.0-1ubuntu1'
+        # Create an old ubuntu package
+        UbuntuPackage.objects.create(
+            package=self.package,
+            version=version)
+        self.set_versions_content([])
+
+        self.run_task()
+
+        # The package is removed.
+        self.assertEqual(0, UbuntuPackage.objects.count())
