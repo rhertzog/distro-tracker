@@ -1551,9 +1551,36 @@ class UpdateUbuntuStatsTask(BaseTask):
 
         return package_versions
 
+    def _get_bug_stats_content(self):
+        url = 'http://udd.debian.org/cgi-bin/ubuntubugs.cgi'
+        return get_resource_content(url)
+
+    def get_ubuntu_bug_stats(self):
+        """
+        Retrieves the Ubuntu bug stats of a package. Bug stats contain the
+        count of bugs and the count of patches.
+
+        :returns: A dict mapping package names to a dict of package stats.
+        """
+        content = self._get_bug_stats_content()
+
+        bug_stats = {}
+        for line in content.splitlines():
+            package_name, bug_count, patch_count = line.split("|", 2)
+            try:
+                bug_count, patch_count = int(bug_count), int(patch_count)
+            except ValueError:
+                continue
+            bug_stats[package_name] = {
+                'bug_count': bug_count,
+                'patch_count': patch_count,
+            }
+
+        return bug_stats
 
     def execute(self):
         package_versions = self.get_ubuntu_versions()
+        bug_stats = self.get_ubuntu_bug_stats()
 
         obsolete_ubuntu_pkgs = UbuntuPackage.objects.exclude(
             package__name__in=package_versions.keys())
@@ -1564,12 +1591,15 @@ class UpdateUbuntuStatsTask(BaseTask):
 
         for package in packages:
             version = package_versions[package.name]
+            bugs = bug_stats.get(package.name, None)
 
             try:
                 ubuntu_package = package.ubuntu_package
                 ubuntu_package.version = version
+                ubuntu_package.bugs = bugs
                 ubuntu_package.save()
             except UbuntuPackage.DoesNotExist:
                 ubuntu_package = UbuntuPackage.objects.create(
                     package=package,
-                    version=version)
+                    version=version,
+                    bugs=bugs)

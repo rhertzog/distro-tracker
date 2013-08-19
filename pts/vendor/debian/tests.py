@@ -3054,7 +3054,8 @@ class UpdateUbuntuStatsTaskTests(TestCase):
 
         self.task = UpdateUbuntuStatsTask()
         # Stub the data providing method
-        self.task._get_versions_content = mock.MagicMock()
+        self.task._get_versions_content = mock.MagicMock(return_value='')
+        self.task._get_bug_stats_content = mock.MagicMock(return_value='')
 
     def set_versions_content(self, versions):
         """
@@ -3066,6 +3067,17 @@ class UpdateUbuntuStatsTaskTests(TestCase):
         self.task._get_versions_content.return_value = '\n'.join(
             '{pkg} {ver}'.format(pkg=pkg, ver=ver)
             for pkg, ver in versions)
+
+    def set_bugs_content(self, bugs):
+        """
+        Sets the stub content for the list of Ubuntu package bugs.
+
+        :param bugs: A list of (package_name, bug_count, patch_count) tuples
+            which should be found in the response.
+        """
+        self.task._get_bug_stats_content.return_value = '\n'.join(
+            '{pkg}|{cnt}|{merged}'.format(pkg=pkg, cnt=cnt, merged=merged)
+            for pkg, cnt, merged in bugs)
 
     def run_task(self):
         self.task.execute()
@@ -3107,6 +3119,119 @@ class UpdateUbuntuStatsTaskTests(TestCase):
 
         # The package is removed.
         self.assertEqual(0, UbuntuPackage.objects.count())
+
+    def test_ubuntu_package_bugs_created(self):
+        """
+        Tests that a :class:`pts.vendor.debian.models.UbuntuPackage`
+        instance which is created for a new Ubuntu package contains the bugs
+        count.
+        """
+        version = '1.0-1ubuntu1'
+        self.set_versions_content([
+            (self.package.name, version)
+        ])
+        bug_count, patch_count = 5, 1
+        self.set_bugs_content([
+            (self.package.name, bug_count, patch_count),
+        ])
+
+        self.run_task()
+
+        self.assertEqual(1, UbuntuPackage.objects.count())
+        # Has the correct bugs count?
+        ubuntu_pkg = UbuntuPackage.objects.all()[0]
+        expected = {
+            'bug_count': bug_count,
+            'patch_count': patch_count
+        }
+        self.assertDictEqual(expected, ubuntu_pkg.bugs)
+
+    def test_ubuntu_package_bugs_updated(self):
+        """
+        Tests that an existing :class:`pts.vendor.debian.models.UbuntuPackage`
+        instance is correctly updated to contain the new Ubuntu package bugs
+        when it previously contained no bug information.
+        """
+        version = '1.0-1ubuntu1'
+        UbuntuPackage.objects.create(
+            package=self.package,
+            version=version)
+        bug_count, patch_count = 5, 1
+        self.set_bugs_content([
+            (self.package.name, bug_count, patch_count),
+        ])
+        self.set_versions_content([
+            (self.package.name, version),
+        ])
+
+        self.run_task()
+
+        self.assertEqual(1, UbuntuPackage.objects.count())
+        # Has the correct bugs count?
+        ubuntu_pkg = UbuntuPackage.objects.all()[0]
+        expected = {
+            'bug_count': bug_count,
+            'patch_count': patch_count
+        }
+        self.assertDictEqual(expected, ubuntu_pkg.bugs)
+
+    def test_ubuntu_package_bugs_updated_existing(self):
+        """
+        Tests that an existing :class:`pts.vendor.debian.models.UbuntuPackage`
+        instance is correctly updated to contain the new Ubuntu package bugs
+        when it previously contained older bug information.
+        """
+        version = '1.0-1ubuntu1'
+        UbuntuPackage.objects.create(
+            package=self.package,
+            version=version,
+            bugs={
+                'bug_count': 100,
+                'patch_count': 50,
+            })
+        bug_count, patch_count = 5, 1
+        self.set_bugs_content([
+            (self.package.name, bug_count, patch_count),
+        ])
+        self.set_versions_content([
+            (self.package.name, version),
+        ])
+
+        self.run_task()
+
+        self.assertEqual(1, UbuntuPackage.objects.count())
+        # Has the correct bugs count?
+        ubuntu_pkg = UbuntuPackage.objects.all()[0]
+        expected = {
+            'bug_count': bug_count,
+            'patch_count': patch_count
+        }
+        self.assertDictEqual(expected, ubuntu_pkg.bugs)
+
+    def test_ubuntu_package_bug_stats_removed(self):
+        """
+        Tests that an existing :class:`pts.vendor.debian.models.UbuntuPackage`
+        instance is correctly updated to contain no bug stats when there are
+        no bug stats found for the package by the update.
+        """
+        version = '1.0-1ubuntu1'
+        UbuntuPackage.objects.create(
+            package=self.package,
+            version=version,
+            bugs={
+                'bug_count': 100,
+                'patch_count': 50,
+            })
+        self.set_versions_content([
+            (self.package.name, version),
+        ])
+
+        self.run_task()
+
+        self.assertEqual(1, UbuntuPackage.objects.count())
+        # No more bug stats?
+        ubuntu_pkg = UbuntuPackage.objects.all()[0]
+        self.assertIsNone(ubuntu_pkg.bugs)
 
 
 class UbuntuPanelTests(TestCase):
