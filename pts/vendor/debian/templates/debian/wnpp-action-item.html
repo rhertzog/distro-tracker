@@ -1,0 +1,95 @@
+{% spaceless %}
+{% with wnpp_item=item.extra_data.wnpp_info %}
+{% with release=item.extra_data.release %}
+<div>
+{% if wnpp_item.wnpp_type == 'O' %}
+
+{% if release != 'unstable' and release != 'experimental' %}
+<span>The WNPP database contains an O (Orphaned) entry for this
+        package. This is probably an error, as it is neither part of
+        unstable nor experimental.</span>
+{% else %}
+<span><span style="font-weight: bold">This package has been
+        orphaned</span>.  This means that it does not have a real
+        maintainer at the moment. Please consider adopting this package
+        if you are interested in it.</span>
+{% endif %}
+
+{% elif wnpp_item.wnpp_type == 'ITA' %}
+
+{% if release != 'unstable' and release != 'experimental' %}
+<span>  The WNPP database contains an ITA (Intent To Adopt) entry for
+        this package. This is probably an error, as it is neither part
+        of unstable nor experimental.</span>
+{% else %}
+<span>This package has been orphaned, but someone intends to maintain it.</span>
+{% endif %}
+
+{% elif wnpp_item.wnpp_type == 'RFA' %}
+
+{% if release != 'unstable' and release != 'experimental' %}
+<span>The WNPP database contains an RFA (Request For Adoption) entry
+    for this package. This is probably an error, as it is neither
+    part of unstable nor experimental.</span>
+{% else %}
+<span>The current maintainer is looking for someone who can take over
+    maintenance of this package. If you are interested in this
+    package, please consider taking it over. Alternatively you may
+    want to be co-maintainer in order to help the actual
+    maintainer.</span>
+{% endif %}
+
+{% elif wnpp_item.wnpp_type == 'RFH' %}
+
+{% if release != 'unstable' and release != 'experimental' %}
+<span>The WNPP database contains an RFH (Request For Help) entry for
+    this package. This is probably an error, as it is neither part
+    of unstable nor experimental.</span>
+{% else %}
+<span>The current maintainer is looking for someone who can help with
+    the maintenance of this package. If you are interested in this
+    package, please consider helping out. One way you can help is
+    offer to be a co-maintainer or triage bugs in the BTS.</span>
+{% endif %}
+
+{% elif wnpp_item.wnpp_type == 'ITP' %}
+
+{% if release != 'unstable' and release != 'experimental' %}
+    <span>The WNPP database contains an ITP (Intent To Package). This
+    probably means that somebody is going to reintroduce this
+    package into unstable.</span>
+{% else %}
+    <span>The WNPP database contains an ITP (Intent To Package) entry for
+    this package. This is probably an error, as it has already been
+    packaged.</span>
+{% endif %}
+
+{% elif wnpp_item.wnpp_type == 'RFP' %}
+
+{% if release != 'unstable' and release != 'experimental' %}
+    <span>The WNPP database contains an RFP (Request For Package). This
+    probably means that somebody would like to see this package
+    reintroduced into unstable by a volunteer.</span>
+{% else %}
+    <span>The WNPP database contains an RFP (Request For Package) entry
+    for this package.  This is probably an error, as it has already
+    been packaged.</span>
+{% endif %}
+
+{% elif wnpp_item.wnpp_type == 'RM' %}
+
+    <span><span style="font-weight: bold">This package has been requested to
+      be removed</span>.  This means that, when this request gets
+    processed by an ftp-master, this package will no longer be in
+    unstable, and will automatically be removed from testing too
+    afterwards. If for some reason you want keep this package in
+    unstable, please discuss so in the bug.</span>
+{% else %}
+    <span>The WNPP database contains an entry for this package, but it is
+    unclear what kind of entry it is. This is probably an error.</span>
+{% endif %}
+<span> Please see bug number <a href="http://bugs.debian.org/{{ wnpp_item.bug_id }}">#{{ wnpp_item.bug_id }}</a> for more information.</span>
+</div>
+{% endwith %}
+{% endwith %}
+{% endspaceless %}

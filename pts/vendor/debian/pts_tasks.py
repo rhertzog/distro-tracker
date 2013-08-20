@@ -1638,3 +1638,110 @@ class UpdateUbuntuStatsTask(BaseTask):
                     version=version,
                     bugs=bugs,
                     patch_diff=diff)
+
+
+class UpdateWnppStatsTask(BaseTask):
+    """
+    The task updates the WNPP bugs for all packages.
+    """
+    ACTION_ITEM_TYPE_NAME = 'debian-wnpp-issue'
+    ACTION_ITEM_TEMPLATE = 'debian/wnpp-action-item.html'
+    ITEM_DESCRIPTION = '<a href="{url}">{wnpp_type}</a>'
+
+    def __init__(self, force_update=False, *args, **kwargs):
+        super(UpdateWnppStatsTask, self).__init__(*args, **kwargs)
+        self.force_update = force_update
+        self.action_item_type = ActionItemType.objects.create_or_update(
+            type_name=self.ACTION_ITEM_TYPE_NAME,
+            full_description_template=self.ACTION_ITEM_TEMPLATE)
+
+    def set_parameters(self, parameters):
+        if 'force_update' in parameters:
+            self.force_update = parameters['force_update']
+
+    def _get_wnpp_content(self):
+        url = 'http://qa.debian.org/data/bts/wnpp_rm'
+        cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
+        if not cache.is_expired(url):
+            return
+        response, updated = cache.update(url, force=self.force_update)
+        if not updated:
+            return
+        return response.content
+
+    def get_wnpp_stats(self):
+        """
+        Retrieves and parses the wnpp stats for all packages. WNPP stats
+        include the WNPP type and the BTS bug id.
+
+        :returns: A dict mapping package names to wnpp stats.
+        """
+        content = self._get_wnpp_content()
+        if content is None:
+            return
+
+        wnpp_stats = {}
+        for line in content.splitlines():
+            line = line.strip()
+            try:
+                package_name, wnpp_type, bug_id = line.split('|')[0].split()
+                bug_id = int(bug_id)
+            except:
+                # Badly formatted
+                continue
+            # Strip the colon from the end of the package name
+            package_name = package_name[:-1]
+
+            wnpp_stats[package_name] = {
+                'wnpp_type': wnpp_type,
+                'bug_id': bug_id,
+            }
+
+        return wnpp_stats
+
+    def update_action_item(self, package, stats):
+        """
+        Creates an :class:`ActionItem <pts.core.models.ActionItem>` instance
+        for the given type indicating that the package has a WNPP issue.
+        """
+        action_item = package.get_action_item_for_type(self.action_item_type)
+        if not action_item:
+            action_item = ActionItem(
+                package=package,
+                item_type=self.action_item_type)
+
+        # Check if the stats have actually been changed
+        if action_item.extra_data:
+            if action_item.extra_data.get('wnpp_info', None) == stats:
+                # Nothing to do -- stll the same data
+                return
+
+        # Update the data since something has changed
+        try:
+            release = package.main_entry.repository.name
+        except:
+            release = None
+        action_item.short_description = self.ITEM_DESCRIPTION.format(
+            url='http://bugs.debian.org/{}'.format(stats['bug_id']),
+            wnpp_type=stats['wnpp_type'])
+        action_item.extra_data = {
+            'wnpp_info': stats,
+            'release': release,
+        }
+        action_item.save()
+
+    def execute(self):
+        wnpp_stats = self.get_wnpp_stats()
+        if wnpp_stats is None:
+            # Nothing to do: cached content up to date
+            return
+
+        ActionItem.objects.delete_obsolete_items(
+            item_types=[self.action_item_type],
+            non_obsolete_packages=wnpp_stats.keys())
+
+        packages = SourcePackageName.objects.filter(name__in=wnpp_stats.keys())
+        packages = packages.prefetch_related('action_items')
+
+        for package in packages:
+            self.update_action_item(package, wnpp_stats[package.name])

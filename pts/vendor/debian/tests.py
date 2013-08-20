@@ -37,6 +37,7 @@ from pts.vendor.debian.rules import get_package_information_site_url
 from pts.vendor.debian.rules import get_maintainer_extra
 from pts.vendor.debian.rules import get_uploader_extra
 from pts.vendor.debian.rules import get_developer_information_url
+from pts.vendor.debian.pts_tasks import UpdateWnppStatsTask
 from pts.vendor.debian.pts_tasks import UpdateUbuntuStatsTask
 from pts.vendor.debian.pts_tasks import UpdateReleaseGoalsTask
 from pts.vendor.debian.pts_tasks import UpdateSecurityIssuesTask
@@ -3457,3 +3458,217 @@ class UbuntuPanelTests(TestCase):
             'patches for {}'.format(ubuntu_version),
             response.content)
         self.assertIn(ubuntu_version, response.content)
+
+
+class UpdateWnppStatsTaskTests(TestCase):
+    """
+    Tests for the :class:`pts.vendor.debian.pts_tasks.UpdateWnppStatsTask`
+    task.
+    """
+    def setUp(self):
+        self.package = SourcePackageName.objects.create(name='dummy-package')
+
+        self.task = UpdateWnppStatsTask()
+        # Stub the data providing method
+        self.task._get_wnpp_content = mock.MagicMock(return_value='')
+
+    def get_action_item_type(self):
+        return ActionItemType.objects.get_or_create(
+            type_name=UpdateWnppStatsTask.ACTION_ITEM_TYPE_NAME)[0]
+
+    def set_wnpp_content(self, content):
+        """
+        Sets the stub wnpp content which the task will retrieve once it runs.
+        :param content: A list of (package_name, issues) pairs. ``issues`` is
+            a list of dicts describing the WNPP bugs the package has.
+        """
+        self.task._get_wnpp_content.return_value = '\n'.join(
+            '{pkg}: {issues}'.format(
+                pkg=pkg,
+                issues='|'.join(
+                    '{type} {bug_id}'.format(
+                        type=issue['wnpp_type'],
+                        bug_id=issue['bug_id'])
+                    for issue in issues))
+            for pkg, issues in content)
+
+    def run_task(self):
+        self.task.execute()
+
+    def test_action_item_created(self):
+        """
+        Tests that an :class:`ActionItem <pts.core.models.ActionItem>` instance
+        is created when the package has a WNPP bug.
+        """
+        wnpp_type, bug_id = 'O', 12345
+        self.set_wnpp_content([(
+            self.package.name, [{
+                'wnpp_type': wnpp_type,
+                'bug_id': bug_id,
+            }]
+        )])
+
+        self.run_task()
+
+        # An action item has been created
+        self.assertEqual(1, ActionItem.objects.count())
+        # The item has the correct type and template
+        item = ActionItem.objects.all()[0]
+        self.assertEqual(
+            UpdateWnppStatsTask.ACTION_ITEM_TYPE_NAME,
+            item.item_type.type_name)
+        self.assertEqual(
+            UpdateWnppStatsTask.ACTION_ITEM_TEMPLATE,
+            item.full_description_template)
+        # The extra data is correctly set?
+        expected_data = {
+            'wnpp_type': wnpp_type,
+            'bug_id': bug_id,
+        }
+        self.assertEqual(expected_data, item.extra_data['wnpp_info'])
+
+    def test_action_item_updated(self):
+        """
+        Tests that an existing :class:`ActionItem <pts.core.models.ActionItem>`
+        instance is updated when there are changes to the WNPP bug info.
+        """
+        # Create an existing action item
+        old_bug_id = 54321
+        old_item = ActionItem.objects.create(
+            item_type=self.get_action_item_type(),
+            package=self.package,
+            extra_data={
+                'wnpp_info': {
+                    'wnpp_type': 'O',
+                    'bug_id': old_bug_id,
+                }
+            })
+        old_timestamp = old_item.last_updated_timestamp
+        # Set new WNPP info
+        wnpp_type, bug_id = 'O', 12345
+        self.set_wnpp_content([(
+            self.package.name, [{
+                'wnpp_type': wnpp_type,
+                'bug_id': bug_id,
+            }]
+        )])
+
+        self.run_task()
+
+        # Still one action item
+        self.assertEqual(1, ActionItem.objects.count())
+        # The item has been updated
+        item = ActionItem.objects.all()[0]
+        self.assertNotEqual(old_timestamp, item.last_updated_timestamp)
+        # The extra data is updated as well?
+        expected_data = {
+            'wnpp_type': wnpp_type,
+            'bug_id': bug_id,
+        }
+        self.assertEqual(expected_data, item.extra_data['wnpp_info'])
+
+    def test_action_item_not_updated(self):
+        """
+        Tests that an existing :class:`ActionItem <pts.core.models.ActionItem>`
+        instance is not updated when there are no changes to the WNPP bug info.
+        """
+        # Create an existing action item
+        wnpp_type, bug_id = 'O', 12345
+        old_item = ActionItem.objects.create(
+            item_type=self.get_action_item_type(),
+            package=self.package,
+            extra_data={
+                'wnpp_info': {
+                    'wnpp_type': wnpp_type,
+                    'bug_id': bug_id,
+                }
+            })
+        old_timestamp = old_item.last_updated_timestamp
+        # Set "new" WNPP info
+        self.set_wnpp_content([(
+            self.package.name, [{
+                'wnpp_type': wnpp_type,
+                'bug_id': bug_id,
+            }]
+        )])
+
+        self.run_task()
+
+        # Still one action item
+        self.assertEqual(1, ActionItem.objects.count())
+        # The item has not been changed
+        item = ActionItem.objects.all()[0]
+        self.assertEqual(old_timestamp, item.last_updated_timestamp)
+
+    def test_action_item_removed(self):
+        """
+        Tests that an existing :class:`ActionItem <pts.core.models.ActionItem>`
+        instance is removed when there is no more WNPP bug info.
+        """
+        # Create an existing action item
+        wnpp_type, bug_id = 'O', 12345
+        ActionItem.objects.create(
+            item_type=self.get_action_item_type(),
+            package=self.package,
+            extra_data={
+                'wnpp_info': {
+                    'wnpp_type': wnpp_type,
+                    'bug_id': bug_id,
+                },
+            })
+        # Set "new" WNPP info
+
+        self.run_task()
+
+        # Still one action item
+        # No more actino items
+        self.assertEqual(0, ActionItem.objects.count())
+
+    def test_action_item_not_created(self):
+        """
+        Tests that an :class:`ActionItem <pts.core.models.ActionItem>` instance
+        is not created for non existing packages.
+        """
+        wnpp_type, bug_id = 'O', 12345
+        self.set_wnpp_content([(
+            'no-exist', [{
+                'wnpp_type': wnpp_type,
+                'bug_id': bug_id,
+            }]
+        )])
+
+        self.run_task()
+
+        # No action items
+        self.assertEqual(0, ActionItem.objects.count())
+
+    def test_action_item_multiple_packages(self):
+        """
+        Tests that an :class:`ActionItem <pts.core.models.ActionItem>` instance
+        is created for multiple packages.
+        """
+        wnpp = [
+            {
+                'wnpp_type': 'O',
+                'bug_id': 12345,
+            },
+            {
+                'wnpp_type': 'RM',
+                'bug_id': 11111,
+            }
+        ]
+        other_package = PackageName.objects.create(name='other-package')
+        packages = [other_package, self.package]
+        self.set_wnpp_content([
+            (package.name, [wnpp_item])
+            for package, wnpp_item in zip(packages, wnpp)
+        ])
+
+        self.run_task()
+
+        # An action item is created for all packages
+        self.assertEqual(2, ActionItem.objects.count())
+        for package, wnpp_info in zip(packages, wnpp):
+            self.assertEqual(1, package.action_items.count())
+            item = package.action_items.all()[0]
+            self.assertEqual(wnpp_info, item.extra_data['wnpp_info'])
