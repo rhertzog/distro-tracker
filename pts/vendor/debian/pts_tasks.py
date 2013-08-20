@@ -1305,11 +1305,7 @@ class UpdatePiuPartsTask(BaseTask):
     """
     ACTION_ITEM_TYPE_NAME = 'debian-piuparts-test-fail'
     ACTION_ITEM_TEMPLATE = 'debian/piuparts-action-item.html'
-    ITEM_DESCRIPTION = (
-        'piuparts found '
-        '<a href="//piuparts.debian.org/sid/source/{hash}/{package}.html">'
-        '(un)installation error(s)'
-        '</a>')
+    ITEM_DESCRIPTION = 'piuparts found (un)installation error(s)'
 
     def __init__(self, force_update=False, *args, **kwargs):
         super(UpdatePiuPartsTask, self).__init__(*args, **kwargs)
@@ -1359,14 +1355,7 @@ class UpdatePiuPartsTask(BaseTask):
             action_item = ActionItem(
                 package=package,
                 item_type=self.action_item_type,
-                short_description=self.ITEM_DESCRIPTION.format(
-                    hash=(
-                        package.name[:4]
-                        if package.name.startswith('lib') else
-                        package.name[0]),
-                    package=package.name,
-                )
-            )
+                short_description=self.ITEM_DESCRIPTION)
 
         if action_item.extra_data:
             existing_items = action_item.extra_data.get('suites', [])
