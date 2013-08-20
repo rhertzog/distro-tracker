@@ -1,0 +1,15 @@
+CONFIG = {
+    'mode': 'django',
+    #'environment': {
+    #    'PYTHONPATH': '/path/to/custom/python/packages',
+    #},
+    'working_dir': '/var/lib/package-tracking-system/',
+    'user': 'pts',
+    'group': 'pts',
+    'args': (
+        '--bind=unix:/var/lib/package-tracking-system/gunicorn.sock',
+        '--workers=4',
+        'pts.project.settings',
+    ),
+}
+

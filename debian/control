@@ -1,0 +1,75 @@
+Source: package-tracking-system
+Section: web
+Priority: optional
+Maintainer: Raphaël Hertzog <hertzog@debian.org>
+Build-Depends: debhelper (>= 9),
+    python (>= 2.6.6-3~),
+    python-sphinx,
+    python-mock,
+# Usual runtime dependencies
+    python-apt,
+    python-beautifulsoup,
+    python-debian,
+    python-django (>= 1.5),
+    python-django-jsonfield,
+    python-gpgme,
+    python-lzma,
+    python-requests,
+    python-soappy,
+    python-yaml,
+Standards-Version: 3.9.4
+Homepage: http://wiki.debian.org/qa.debian.org/pts
+Vcs-Git: git://anonscm.debian.org/qa/pts.git
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=qa/pts.git;a=summary
+
+Package: package-tracking-system
+Architecture: all
+Depends: python-pts (= ${source:Version}), adduser, gunicorn,
+    ${python:Depends},
+    ${misc:Depends}
+Recommends: postgresql, python-psycopg2
+Description: follow the status of packages of a Debian-based distribution
+ The Package Tracking System offers a web interface to display an overview of
+ each source package provided as well as an email interface to be notified of
+ changes concerning packages that the user monitors.
+ .
+ The main deployment of this software is on http://packages.qa.debian.org
+ but each Debian derivative can have its own instance.
+ .
+ This package provides all the services to run a Package Tracking System
+ instance.
+
+Package: python-pts
+Section: python
+Architecture: all
+Depends: ${python:Depends},
+    python-apt,
+    python-beautifulsoup,
+    python-debian,
+    python-django (>= 1.5),
+    python-django-jsonfield,
+    python-gpgme,
+    python-lzma,
+    python-requests,
+    python-soappy,
+    python-yaml,
+    ${misc:Depends}
+Description: Python libraries of the Package Tracking System
+ The Package Tracking System offers a web interface to display an overview of
+ each source package provided as well as an email interface to be notified of
+ changes concerning packages that the user monitors.
+ .
+ This package provides all the libraries developed as part of the
+ project. Some of them might be useful outside of this project.
+
+Package: package-tracking-system-doc
+Section: doc
+Architecture: all
+Depends: ${misc:Depends}, ${sphinxdoc:Depends}
+Description: documentation of the Package Tracking System
+ The Package Tracking System offers a web interface to display an overview of
+ each source package provided as well as an email interface to be notified of
+ changes concerning packages that the user monitors.
+ .
+ This package provides all the documentation, from setup instructions to API
+ documentation.

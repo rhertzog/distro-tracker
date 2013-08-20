@@ -1,0 +1,21 @@
+#!/bin/sh
+
+set -e 
+
+case "$1" in
+    configure)
+	adduser --system --group --shell /bin/bash \
+	        --gecos "Package Tracking System User" \
+		--home /var/lib/package-tracking-system \
+		pts >/dev/null
+	if [ "$2" = "" ]; then
+	    chown -R pts:pts /var/cache/package-tracking-system \
+			     /var/lib/package-tracking-system \
+			     /var/log/package-tracking-system
+	fi
+    ;;
+esac
+
+#DEBHELPER#
+
+exit 0

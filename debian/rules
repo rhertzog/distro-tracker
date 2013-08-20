@@ -1,0 +1,12 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@ --with python2,sphinxdoc
+
+override_dh_auto_build:
+	dh_auto_build
+	$(MAKE) -C docs html
+
+override_dh_auto_install:
+	dh_auto_install
+	install -m 755 -D manage.py debian/package-tracking-system/usr/bin/pts-manage
