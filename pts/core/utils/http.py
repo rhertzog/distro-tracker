@@ -19,7 +19,7 @@ from django.conf import settings
 import os
 import time
 import json
-from requests.utils import CaseInsensitiveDict
+from requests.structures import CaseInsensitiveDict
 import requests
 
 
