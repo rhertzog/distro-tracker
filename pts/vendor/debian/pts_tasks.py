@@ -21,6 +21,7 @@ from django.utils.http import urlencode
 from django.core.urlresolvers import reverse
 
 from pts.core.tasks import BaseTask
+from pts.core.models import PackageExtractedInfo
 from pts.core.models import ActionItem, ActionItemType
 from pts.core.models import ContributorEmail
 from pts.core.models import PackageBugStats
@@ -42,6 +43,8 @@ import re
 import SOAPpy
 import yaml
 from debian import deb822
+from debian.debian_support import AptPkgVersion
+from debian import debian_support
 from copy import deepcopy
 from BeautifulSoup import BeautifulSoup as soup
 
@@ -1734,3 +1737,102 @@ class UpdateWnppStatsTask(BaseTask):
 
         for package in packages:
             self.update_action_item(package, wnpp_stats[package.name])
+
+
+class UpdateNewQueuePackages(BaseTask):
+    """
+    Updates the versions of source packages found in the NEW queue.
+    """
+    NEW_VERSION_IN_QUEUE_EVENT = 'new-source-package-version-in-new-queue'
+    PRODUCES_EVENTS = (
+        NEW_VERSION_IN_QUEUE_EVENT,
+    )
+    EXTRACTED_INFO_KEY = 'debian-new-queue-info'
+
+    def __init__(self, force_update=False, *args, **kwargs):
+        super(UpdateNewQueuePackages, self).__init__(*args, **kwargs)
+        self.force_update = force_update
+
+    def set_parameters(self, parameters):
+        if 'force_update' in parameters:
+            self.force_update = parameters['force_update']
+
+    def _get_new_content(self):
+        """
+        :returns: The content of the deb822 formatted file giving the list of
+            packages found in NEW.
+            ``None`` if the cached resource is up to date.
+        """
+        url = 'http://ftp-master.debian.org/new.822'
+        cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
+        if not cache.is_expired(url):
+            return
+        response, updated = cache.update(url, force=self.force_update)
+        if not updated:
+            return
+        return response.content
+
+    def extract_package_info(self, content):
+        """
+        Extracts the package information from the content of the NEW queue.
+        :returns: A dict mapping package names to a dict mapping the
+            distribution name in which the package is found to the version
+            information for the most recent version of the package in the dist.
+        """
+        packages = {}
+        for stanza in deb822.Deb822.iter_paragraphs(content.splitlines()):
+            necessary_fields = ('Source', 'Queue', 'Version', 'Distribution')
+            if not all(field in stanza for field in necessary_fields):
+                continue
+            if stanza['Queue'] != 'new':
+                continue
+
+            versions = stanza['Version'].split()
+            # Save only the most recent version
+            version = max(versions, key=lambda x: AptPkgVersion(x))
+
+            package_name = stanza['Source']
+            packages.setdefault(package_name, {})
+            distribution = stanza['Distribution']
+            if distribution in packages[package_name]:
+                current_version = packages[package_name][distribution]['version']
+                if debian_support.version_compare(version, current_version) < 0:
+                    # The already saved version is more recent than this one.
+                    continue
+
+            packages[package_name][distribution] = {
+                'version': version,
+            }
+
+        return packages
+
+    def execute(self):
+        content = self._get_new_content()
+
+        all_package_info = self.extract_package_info(content)
+
+        packages = SourcePackageName.objects.filter(
+            name__in=all_package_info.keys())
+
+        for package in packages:
+            try:
+                new_queue_info = package.packageextractedinfo_set.get(
+                    key=self.EXTRACTED_INFO_KEY)
+            except PackageExtractedInfo.DoesNotExist:
+                new_queue_info = PackageExtractedInfo(
+                    key=self.EXTRACTED_INFO_KEY,
+                    package=package,
+                    value={})
+
+            old_versions = new_queue_info.value
+            for distribution, version in all_package_info[package.name].items():
+                if distribution in old_versions:
+                    if old_versions[distribution]['version'] == version['version']:
+                        continue
+                new_queue_info.value[distribution] = version
+                self.raise_event(self.NEW_VERSION_IN_QUEUE_EVENT, {
+                    'name': package.name,
+                    'version': version['version'],
+                })
+
+            new_queue_info.save()

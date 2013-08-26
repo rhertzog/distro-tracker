@@ -24,6 +24,7 @@ from pts.mail.tests.tests_dispatch import DispatchTestHelperMixin, DispatchBaseT
 from pts.core.tests.common import make_temp_directory
 from pts.core.models import ActionItem, ActionItemType
 from pts.core.models import News
+from pts.core.models import PackageExtractedInfo
 from pts.core.models import PackageName
 from pts.core.models import SourcePackage
 from pts.core.models import PseudoPackageName
@@ -37,6 +38,7 @@ from pts.vendor.debian.rules import get_package_information_site_url
 from pts.vendor.debian.rules import get_maintainer_extra
 from pts.vendor.debian.rules import get_uploader_extra
 from pts.vendor.debian.rules import get_developer_information_url
+from pts.vendor.debian.pts_tasks import UpdateNewQueuePackages
 from pts.vendor.debian.pts_tasks import UpdateWnppStatsTask
 from pts.vendor.debian.pts_tasks import UpdateUbuntuStatsTask
 from pts.vendor.debian.pts_tasks import UpdateReleaseGoalsTask
@@ -3672,3 +3674,198 @@ class UpdateWnppStatsTaskTests(TestCase):
             self.assertEqual(1, package.action_items.count())
             item = package.action_items.all()[0]
             self.assertEqual(wnpp_info, item.extra_data['wnpp_info'])
+
+
+class UpdateNewQueuePackagesTests(TestCase):
+    """
+    Tests for the :class:`pts.vendor.debian.pts_tasks.UpdateNewQueuePackages`
+    task.
+    """
+    def setUp(self):
+        self.package = SourcePackageName.objects.create(name='dummy-package')
+
+        self.task = UpdateNewQueuePackages()
+        # Stub the data providing method
+        self.new_content = ''
+        self.task._get_new_content = mock.MagicMock(return_value='')
+
+    def add_package_to_new(self, package):
+        package_content = '\n'.join(
+            '{}: {}'.format(key, value)
+            for key, value in package.items())
+        self.new_content += package_content + '\n\n'
+
+    def run_task(self):
+        self.task._get_new_content.return_value = self.new_content
+        self.task.execute()
+
+    def get_new_info(self, package):
+        """
+        Helper method which returns the package's
+        :class:`PackageExtractedInfo <pts.core.models.PackageExtractedInfo>`
+        instance containing the NEW queue info, or ``None`` if there is no
+        such instance.
+        """
+        try:
+            return package.packageextractedinfo_set.get(
+                key=UpdateNewQueuePackages.EXTRACTED_INFO_KEY)
+        except PackageExtractedInfo.DoesNotExist:
+            return None
+
+    def test_single_distribution(self):
+        """
+        Tests that the NEW queue information is correctly extracted when the
+        package is found in only one distribution in the NEW queue.
+        """
+        distribution = 'sid'
+        version = '1.0.0'
+        self.add_package_to_new({
+            'Version': version,
+            'Source': self.package.name,
+            'Queue': 'new',
+            'Distribution': distribution,
+        })
+
+        self.run_task()
+
+        new_info = self.get_new_info(self.package)
+        self.assertIsNotNone(new_info)
+        # The distribution is found in the info
+        self.assertIn(distribution, new_info.value)
+        # The correct version is found in the info
+        self.assertEqual(version, new_info.value[distribution]['version'])
+
+    def test_single_distribution_multiple_versions(self):
+        """
+        Tests that the NEW queue information is correctly extracted when the
+        package has multiple versions for a distribution.
+        """
+        distribution = 'sid'
+        latest_version = '3.0.0'
+        self.add_package_to_new({
+            'Version': '1.0 ' + latest_version + ' 2.0',
+            'Source': self.package.name,
+            'Queue': 'new',
+            'Distribution': distribution,
+        })
+
+        self.run_task()
+
+        new_info = self.get_new_info(self.package)
+        self.assertIsNotNone(new_info)
+        # The distribution is found in the info
+        self.assertIn(distribution, new_info.value)
+        # The correct version is found in the info
+        self.assertEqual(latest_version, new_info.value[distribution]['version'])
+
+    def test_multiple_distributions(self):
+        """
+        Tests that the NEW queue information is correctly extracted when the
+        package has mutliple distributions in the NEW queue.
+        """
+        distributions = ['sid', 'stable-security']
+        versions = ['1.0.0', '2.0.0']
+        for dist, ver in zip(distributions, versions):
+            self.add_package_to_new({
+                'Version': ver,
+                'Source': self.package.name,
+                'Queue': 'new',
+                'Distribution': dist,
+            })
+
+        self.run_task()
+
+        new_info = self.get_new_info(self.package)
+        self.assertIsNotNone(new_info)
+        # All distributions found in the info with the correct corresponding
+        # version.
+        for dist, ver in zip(distributions, versions):
+            self.assertIn(dist, new_info.value)
+            # The correct version is found in the info
+            self.assertEqual(ver, new_info.value[dist]['version'])
+
+    def test_multiple_entries_single_distribution(self):
+        """
+        Tests that the latest version is always used for a distribution no
+        matter if it is found in a separate entry instead of being in the same
+        Version field.
+        """
+        distribution = 'sid'
+        latest_version = '3.0.0'
+        self.add_package_to_new({
+            'Version': '1.0',
+            'Source': self.package.name,
+            'Queue': 'new',
+            'Distribution': distribution,
+        })
+        self.add_package_to_new({
+            'Version': latest_version,
+            'Source': self.package.name,
+            'Queue': 'new',
+            'Distribution': distribution,
+        })
+        self.add_package_to_new({
+            'Version': '2.0',
+            'Source': self.package.name,
+            'Queue': 'new',
+            'Distribution': distribution,
+        })
+
+        self.run_task()
+
+        new_info = self.get_new_info(self.package)
+        self.assertIsNotNone(new_info)
+        # The distribution is found in the info
+        self.assertIn(distribution, new_info.value)
+        # The correct version is found in the info
+        self.assertEqual(latest_version, new_info.value[distribution]['version'])
+
+    def test_malformed_entry(self):
+        """
+        Tests that nothing is created when the package's entry is missing the
+        Queue field.
+        """
+        distribution = 'sid'
+        version = '1.0.0'
+        self.add_package_to_new({
+            'Version': version,
+            'Source': self.package.name,
+            'Distribution': distribution,
+        })
+
+        self.run_task()
+
+        new_info = self.get_new_info(self.package)
+        self.assertIsNone(new_info)
+
+    def test_entry_updated(self):
+        """
+        Tests that the NEW info is updated when the entry is updated.
+        """
+        distribution = 'sid'
+        old_version = '1.0.0'
+        version = '2.0.0'
+        # Create an old entry
+        PackageExtractedInfo.objects.create(
+            package=self.package,
+            key=UpdateNewQueuePackages.EXTRACTED_INFO_KEY,
+            value={
+                distribution: {
+                    'version': old_version,
+                }
+            })
+        self.add_package_to_new({
+            'Version': version,
+            'Source': self.package.name,
+            'Queue': 'new',
+            'Distribution': distribution,
+        })
+
+        self.run_task()
+
+        new_info = self.get_new_info(self.package)
+        self.assertIsNotNone(new_info)
+        # The distribution is found in the info
+        self.assertIn(distribution, new_info.value)
+        # The correct version is found in the info
+        self.assertEqual(version, new_info.value[distribution]['version'])
