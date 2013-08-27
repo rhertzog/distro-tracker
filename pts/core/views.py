@@ -39,6 +39,13 @@ def package_page(request, package_name):
     })
 
 
+def package_page_redirect(request, package_name):
+    """
+    Catch-all view which tries to redirect the user to a package page
+    """
+    return redirect('pts-package-page', package_name=package_name)
+
+
 def legacy_package_url_redirect(request, package_hash, package_name):
     """
     Redirects access to URLs in the form of the "old" PTS package URLs to the

@@ -43,17 +43,20 @@ urlpatterns = patterns('',
     url(r'^action-items/(?P<item_pk>\d+)$', ActionItemView.as_view(),
         name='pts-action-item'),
 
-    # RSS news feed
-    url(r'^(?P<package_name>.+)/rss$', PackageNewsFeed(),
-        name='pts-package-rss-news-feed'),
-
-    # The package page view. It must be listed *after* the admin URL so that
-    # the admin URL is not interpreted as a package named "admin".
-    url(r'^(?P<package_name>.+)$', 'pts.core.views.package_page',
-        name='pts-package-page'),
-
     url(r'^$', TemplateView.as_view(template_name='core/index.html'),
         name='pts-index'),
+
+    # Dedicated package page
+    url(r'^pkg/(?P<package_name>[^/]+)/?$', 'pts.core.views.package_page',
+        name='pts-package-page'),
+    # RSS news feed
+    url(r'^pkg/(?P<package_name>.+)/rss$', PackageNewsFeed(),
+        name='pts-package-rss-news-feed'),
+
+    # The package page view catch all. It must be listed *after* the admin URL so that
+    # the admin URL is not interpreted as a package named "admin".
+    url(r'^(?P<package_name>[^/]+)/?$', 'pts.core.views.package_page_redirect',
+        name='pts-package-page-redirect'),
 
     # Uncomment the admin/doc line below to enable admin documentation:
     # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),

@@ -123,6 +123,33 @@ class PackageViewTest(TestCase):
                              self.get_package_url(lib_package),
                              status_code=301)
 
+    def test_catchall_redirect(self):
+        """
+        Tests that requests made to the root domain are redirected to a package
+        page when possible and when it does not conflict with another URL rule.
+        """
+        url = '/{}'.format(self.package.name)
+        response = self.client.get(url, follow=True)
+        # User redirected to the existing package page
+        self.assertRedirects(response, self.get_package_url(self.package.name))
+
+        # Trailing slash
+        url = '/{}/'.format(self.package.name)
+        response = self.client.get(url, follow=True)
+        # User redirected to the existing package page
+        self.assertRedirects(response, self.get_package_url(self.package.name))
+
+        # Admin URLs have precedence to the catch all package redirect
+        url = '/admin/'
+        response = self.client.get(url, follow=True)
+        # No redirects - went directly to the admin
+        self.assertEqual(0, len(response.redirect_chain))
+
+        # Non existing package
+        url = '/{}'.format('no-exist')
+        response = self.client.get(url, follow=True)
+        self.assertEqual(404, response.status_code)
+
 
 class PackageSearchViewTest(TestCase):
     def setUp(self):
