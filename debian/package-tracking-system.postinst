@@ -13,6 +13,12 @@ case "$1" in
 			     /var/lib/package-tracking-system \
 			     /var/log/package-tracking-system
 	fi
+	# Create the secret key
+	if [ ! -f /var/lib/package-tracking-system/key ]; then
+	    pwgen -s -y 50 > /var/lib/package-tracking-system/key
+	    chown pts:pts /var/lib/package-tracking-system/key
+	    chmod 640 /var/lib/package-tracking-system/key
+	fi
     ;;
 esac
 

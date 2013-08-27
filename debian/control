@@ -24,7 +24,7 @@ Vcs-Browser: http://anonscm.debian.org/gitweb/?p=qa/pts.git;a=summary
 
 Package: package-tracking-system
 Architecture: all
-Depends: python-pts (= ${source:Version}), adduser, gunicorn,
+Depends: python-pts (= ${source:Version}), adduser, gunicorn, pwgen,
     ${python:Depends},
     ${misc:Depends}
 Recommends: postgresql, python-psycopg2
