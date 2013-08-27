@@ -3869,3 +3869,61 @@ class UpdateNewQueuePackagesTests(TestCase):
         self.assertIn(distribution, new_info.value)
         # The correct version is found in the info
         self.assertEqual(version, new_info.value[distribution]['version'])
+
+
+class NewQueueVersionsPanelTests(TestCase):
+    """
+    Tests that the NEW queue versions are displayed in the versions panel.
+    """
+    def setUp(self):
+        self.package = PackageName.objects.create(name='dummy-package')
+        self.package.packageextractedinfo_set.create(
+            key='versions', value={})
+
+    def get_package_page_response(self, package_name):
+        package_page_url = reverse('pts-package-page', kwargs={
+            'package_name': package_name,
+        })
+        return self.client.get(package_page_url)
+
+    def add_new_queue_entry(self, distribution, version):
+        info, _ = PackageExtractedInfo.objects.get_or_create(
+            package=self.package, key=UpdateNewQueuePackages.EXTRACTED_INFO_KEY)
+        if not info.value:
+            info.value = {}
+        info.value.update({
+            distribution: {
+                'version': version,
+            }
+        })
+        info.save()
+
+    def test_single_new_version(self):
+        """
+        Tests for when a package has a version in NEW for only one
+        distribution.
+        """
+        distribution = 'sid'
+        version = '1.0.0~sidtest'
+        self.add_new_queue_entry(distribution, version)
+
+        response = self.get_package_page_response(self.package.name)
+
+        self.assertIn('NEW/sid', response.content)
+        self.assertIn(version, response.content)
+
+    def test_multiple_distributions(self):
+        """
+        Tests for when a package has a version in NEW for multiple
+        distributions.
+        """
+        dists = ['sid', 'stable-security']
+        versions = ['1.0.0~sidtest', '1.0.0~stable-sec-test']
+        for dist, ver in zip(dists, versions):
+            self.add_new_queue_entry(dist, ver)
+
+        response = self.get_package_page_response(self.package.name)
+
+        for dist, ver in zip(dists, versions):
+            self.assertIn('NEW/' + dist, response.content)
+            self.assertIn(ver, response.content)

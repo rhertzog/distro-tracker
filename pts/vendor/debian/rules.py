@@ -17,12 +17,14 @@ from pts.core.models import PackageBugStats
 from pts.core.models import News
 from pts.core.models import SourcePackageName
 from pts.core.models import BinaryPackageBugStats
+from pts.core.models import PackageExtractedInfo
 from pts.mail.dispatch import get_keyword_from_address
 from pts.core.utils import get_decoded_message_payload
 from pts.core.utils import get_or_none
 from pts.core.utils.http import HttpCache
 from .models import DebianContributor
 from pts.vendor.common import PluginProcessingError
+from pts.vendor.debian.pts_tasks import UpdateNewQueuePackages
 from pts.mail.mail_news import create_news
 
 
@@ -669,3 +671,26 @@ def create_news_from_email_message(message):
                 content_type='message/rfc822',
                 created_by='Britney')
         ]
+
+
+def get_extra_versions(package):
+    """
+    :returns: The versions of the package found in the NEW queue.
+    """
+    try:
+        info = package.packageextractedinfo_set.get(
+            key=UpdateNewQueuePackages.EXTRACTED_INFO_KEY)
+    except PackageExtractedInfo.DoesNotExist:
+        return
+
+    version_url_template = 'http://ftp-master.debian.org/new/{pkg}_{ver}.html'
+    return [
+        {
+            'version': ver['version'],
+            'repository_shorthand': 'NEW/' + dist,
+            'version_link': version_url_template.format(
+                pkg=package.name, ver=ver['version']),
+            'repository_link': 'http://ftp-master.debian.org/new.html',
+        }
+        for dist, ver in info.value.items()
+    ]

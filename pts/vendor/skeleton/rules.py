@@ -286,6 +286,7 @@ def get_binary_package_bug_stats(binary_name):
     """
     pass
 
+
 def create_news_from_email_message(message):
     """
     The function provides a way for vendors to customize the news created from
