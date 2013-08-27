@@ -8,7 +8,7 @@ Email Address Settings
 
 The first step is to configure the project to use email addresses of your
 choosing. You should modify the following values in
-``pts.project.local_settings.py``:
+``pts/project/settings/local.py``:
 
 * PTS_CONTROL_EMAIL
 

@@ -41,22 +41,23 @@ i.e. psycopg2 for PostgreSQL and MySQL-Python for MySQL, etc.
 Local Settings
 --------------
 
-Before being able to run the PTS, a ``pts.project.local_settings`` file must
-exist. This module provides settings values which are specific for each
-deployment.
+While the PTS tries to guess as much as needed, you generally will want
+to customize some of its parameters. You will do so in
+``pts/project/settings/local.py``. Have a look at the ``defaults.py``
+to learn about all the variables that you can override and extend.
 
-To make things easier, there is a ``pts/project/local_settings.py.template``
-file included which contains all settings values, their descriptions and,
-when possible, sane defaults. After modifying the necessary values, copy
-this file to ``pts/project/local_settings.py``. Each settings variable is
-documented in the ``local_settings.py.template`` file.
+To make things easier, the PTS provides default configuration suitable
+for production use (installed from the Debian package) or for development
+use (running out of a git checkout). Depending on the case, the
+``selected.py`` symlink points either to ``production.py`` or to
+``development.py``.
 
 Static Assets
 -------------
 
 Once the local settings are filled in, the static assets like images,
 Javascript and CSS files should be moved to the directory given in the
-:data:`STATIC_ROOT <pts.project.local_settings.STATIC_ROOT>` setting. This is
+``STATIC_ROOT`` setting. This is
 necessary since Django does not serve static resources, but requires a Web
 server for that.
 
@@ -66,13 +67,12 @@ Django uses to the correct directory::
 $ ./manage.py collectstatic
 
 .. note::
-   Make sure the directory given in
-   :data:`STATIC_ROOT <pts.project.settings.STATIC_ROOT>` exists. 
+   Make sure the directory given in ``STATIC_ROOT`` exists.
 
 Keyrings
 --------
 
-The :data:`pts.project.local_settings.PTS_KEYRING_DIRECTORY` lets you define a
+The ``PTS_KEYRING_DIRECTORY`` lets you define a
 path to a directory containing known public PGP keys. These keys are used when
 verifying various signed content, such as news.
 
@@ -89,7 +89,7 @@ Once everything is set up, be sure to run the test suite to make sure
 everything is actually working as expected. You can do this by issuing the
 following command from the PTS root directory::
 
-$ ./manage.py test core control dispatch vendor
+$ ./manage.py test core mail vendor
 
 Alternatively, you may run the full test suite, including Django's internal
 tests, by doing::

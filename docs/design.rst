@@ -189,7 +189,7 @@ lower-level :func:`pts.vendor.common.get_callable` function, but this should
 be avoided.
 
 All vendor-provided functions must be found in the module given by the
-:data:`pts.project.local_settings.PTS_VENDOR_RULES` settings value.
+``PTS_VENDOR_RULES`` settings value.
 
 .. _packageinfo_design:
 
