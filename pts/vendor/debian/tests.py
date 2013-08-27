@@ -3676,6 +3676,7 @@ class UpdateWnppStatsTaskTests(TestCase):
             self.assertEqual(wnpp_info, item.extra_data['wnpp_info'])
 
 
+@override_settings(PTS_VENDOR_RULES='pts.vendor.debian.rules')
 class UpdateNewQueuePackagesTests(TestCase):
     """
     Tests for the :class:`pts.vendor.debian.pts_tasks.UpdateNewQueuePackages`
@@ -3871,6 +3872,7 @@ class UpdateNewQueuePackagesTests(TestCase):
         self.assertEqual(version, new_info.value[distribution]['version'])
 
 
+@override_settings(PTS_VENDOR_RULES='pts.vendor.debian.rules')
 class NewQueueVersionsPanelTests(TestCase):
     """
     Tests that the NEW queue versions are displayed in the versions panel.
