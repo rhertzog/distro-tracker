@@ -30,7 +30,7 @@ six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
 DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
-PTS_BASE_PATH = dirname(dirname(dirname(__file__)))
+PTS_BASE_PATH = dirname(dirname(dirname(dirname(__file__))))
 
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
@@ -294,9 +294,6 @@ PTS_NEWS_PANEL_LIMIT = 30
 #: The maximum number of RSS news items to include in the news feed
 PTS_RSS_ITEM_LIMIT = 30
 
-#: A custom template which the bugs panel should use
-PTS_BUGS_PANEL_TEMPLATE = 'debian/bugs.html'
-
 #: A list of extra headers to include when rendering an email news item.
 #: See: :class:`pts.core.models.EmailNewsRenderer`
 PTS_EMAIL_NEWS_HEADERS = (
@@ -306,10 +303,3 @@ PTS_EMAIL_NEWS_HEADERS = (
 #: The maximum size that the :class:`pts.core.utils.packages.AptCache` should
 #: consume for all of its cached source files, given in bytes.
 PTS_APT_CACHE_MAX_SIZE = 5 * 1024 ** 3  # 5 GiB
-
-# Settings for Debian-specific features
-#: A list of suite names which should be used when updating piuparts stats
-PTS_DEBIAN_PIUPARTS_SUITES = (
-    'sid',
-)
-

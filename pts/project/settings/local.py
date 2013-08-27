@@ -18,7 +18,16 @@ from .selected import *
 
 # PTS_VENDOR_NAME = "Debian"
 # PTS_VENDOR_URL = "http://www.debian.org"
+# PTS_VENDOR_RULES = "pts.vendor.debian.rules"
+
+# If you override the FQDN, you also have to override other settings
+# whose values are based on it.
 # PTS_FQDN = "packages.qa.debian.org"
+# PTS_CONTROL_EMAIL = 'control@' + PTS_FQDN
+# PTS_CONTACT_EMAIL = 'owner@' + PTS_FQDN
+# PTS_BOUNCES_EMAIL = 'bounces@' + PTS_FQDN
+# PTS_BOUNCES_LIKELY_SPAM_EMAIL = PTS_BOUNCES_EMAIL
+# ALLOWED_HOSTS = [ PTS_FQDN ]
 
 # If you don't use the packaged version of the PTS, put a random secret
 # key here. DO NOT USE THE EXAMPLE KEY GIVEN BELOW.
