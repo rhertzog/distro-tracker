@@ -299,11 +299,18 @@ class VersionsInformationPanel(BasePanel):
         if implemented and external_resources:
             context['external_resources'] = external_resources
 
+        # Add any vendor-provided versions
+        vendor_versions, implemented = vendor.call(
+            'get_extra_versions', self.package)
+        if implemented and vendor_versions:
+            context['vendor_versions'] = vendor_versions
+
         return context
 
     @property
     def has_content(self):
-        return bool(self.context.get('version_info', None))
+        return (bool(self.context.get('version_info', None)) or
+                bool(self.context.get('vendor_versions', None)))
 
 
 class VersionedLinks(BasePanel):

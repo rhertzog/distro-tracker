@@ -38,5 +38,24 @@
     </div>
     {% endfor %}
 {% endwith %}
+
+    {# Add any vendor provided versions #}
+    {% for item in panel.context.vendor_versions %}
+    <div class="row-fluid">
+    <li class="list-group-item">
+        <div class="list-item-key versions-repository">
+            {% if item.repository_link %}<a href="{{ item.repository_link }}">{% endif %}
+            <span title="waiting in the NEW queue for FTP master review"><b>{{ item.repository_shorthand }}:</b></span>
+            {% if item.repository_link %}</a>{% endif %}
+        </div>
+        <div class="list-item-value">
+            {% if item.version_link %}<a href="{{ item.version_link }}">{% endif %}
+            <span>{{ item.version }}</span>
+            {% if item.version_link %}</a> {% endif %}
+        </div>
+        <div class="clear"></div>
+    </li>
+    </div>
+    {% endfor %}
 </ul>
 {% endblock %}

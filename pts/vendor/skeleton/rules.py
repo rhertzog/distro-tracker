@@ -307,3 +307,25 @@ def create_news_from_email_message(message):
     instances or ``None`` if it did not create any.
     """
     pass
+
+
+def get_extra_versions(package):
+    """
+    The function provides additional versions which should be displayed in the
+    versions panel.
+
+    Each version to be displayed should be a dict with the following keys:
+
+    - version
+    - repository_shorthand
+    - version_link - optional
+    - repository_link - optional
+
+    The return value should be a list of such versions or ``None`` if the vendor
+    does not wish to provide any additional versions.
+
+    :param package: The package for which additional versions should be
+        provided.
+    :type package: :class:`PackageName <pts.core.models.PackageName>`
+    """
+    pass
