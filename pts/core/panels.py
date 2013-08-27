@@ -273,31 +273,37 @@ class VersionsInformationPanel(BasePanel):
             info = PackageExtractedInfo.objects.get(
                 package=self.package, key='versions')
         except PackageExtractedInfo.DoesNotExist:
-            return
+            info = None
 
-        version_info = info.value
-        package_name = info.package.name
-        for item in version_info['version_list']:
-            url, implemented = vendor.call('get_package_information_site_url', **{
-                'package_name': package_name,
-                'repository_name': item['repository_name'],
-                'source_package': True,
-            })
-            if implemented and url:
-                item['url'] = url
+        context = {}
+
+        if info:
+            version_info = info.value
+            package_name = info.package.name
+            for item in version_info.get('version_list', ()):
+                url, implemented = vendor.call('get_package_information_site_url', **{
+                    'package_name': package_name,
+                    'repository_name': item['repository_name'],
+                    'source_package': True,
+                })
+                if implemented and url:
+                    item['url'] = url
+
+            context['version_info'] = version_info
+
         # Add in any external version resource links
         external_resources, implemented = (
             vendor.call('get_external_version_information_urls',
                         self.package.name)
         )
         if implemented and external_resources:
-            version_info['external_resources'] = external_resources
+            context['external_resources'] = external_resources
 
-        return version_info
+        return context
 
     @property
     def has_content(self):
-        return bool(self.context)
+        return bool(self.context.get('version_info', None))
 
 
 class VersionedLinks(BasePanel):
