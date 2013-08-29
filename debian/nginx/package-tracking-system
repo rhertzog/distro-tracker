@@ -1,0 +1,29 @@
+server {
+	listen   80;
+        listen   [::]:80 ipv6only=on;
+        listen   443 ssl;
+        listen   [::]:443 ssl ipv6only=on;
+
+	# Replace localhost by the correct FQDN here
+	server_name localhost;
+
+	# Replace this SSL certificate by your own one
+        ssl_certificate         /etc/ssl/certs/ssl-cert-snakeoil.pem;
+        ssl_certificate_key     /etc/ssl/private/ssl-cert-snakeoil.key;
+
+        access_log /var/log/nginx/pts-access.log;
+        error_log /var/log/nginx/pts-error.log error;
+
+	location / {
+		proxy_set_header Host $http_host;
+		proxy_pass http://unix:/var/lib/package-tracking-system/gunicorn.sock;
+	}
+
+	location /static/ {
+		alias /var/lib/package-tracking-system/static/;
+	}
+
+	location /media/ {
+		alias /var/lib/package-tracking-system/media/;
+	}
+}

@@ -4,6 +4,6 @@ Notes concerning the package-tracking-system Debian package
 The PTS "./manage.py" script (as usually provided by Django projects)
 is available system wide as "pts-manage".
 
-The package creates a dedicated "pts" system user that owns the
-package specific directories in /var/lib/ and /var/cache/ and that
-is used to run the various cron jobs that have to be run.
+The package creates a dedicated "pts" system user that owns the package
+specific directories in /var/log, /var/lib/, and /var/cache/ and that is
+used to run the various cron jobs that have to be run.
