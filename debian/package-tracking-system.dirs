@@ -1,5 +1,6 @@
 /var/cache/package-tracking-system
 /var/log/package-tracking-system
 /var/lib/package-tracking-system/static
+/var/lib/package-tracking-system/media
 /var/lib/package-tracking-system/keyring
 /var/lib/package-tracking-system/templates

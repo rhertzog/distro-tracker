@@ -1,1 +1,2 @@
 debian/gunicorn/package-tracking-system etc/gunicorn.d/
+data/templates/README var/lib/package-tracking-system/
