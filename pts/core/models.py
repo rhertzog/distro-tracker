@@ -832,6 +832,38 @@ class Repository(models.Model):
         """
         return self.source_packages.filter(id=source_package.id).exists()
 
+    def has_binary_package(self, binary_package):
+        """
+        Checks whether this :class:`Repository` contains the given
+        :class:`BinaryPackage`.
+
+        :returns True: If it does contain the given :class:`SourcePackage`
+        :returns False: If it does not contain the given :class:`SourcePackage`
+        """
+        qs = self.binary_package_entries.filter(binary_package=binary_package)
+        return qs.exists()
+
+    def add_binary_package(self, package, **kwargs):
+        """
+        The method adds a new class:`BinaryPackage` to the repository.
+
+        :param package: The binary package to add to the repository
+        :type package: :class:`BinaryPackage`
+
+        The parameters needed for the corresponding
+        :class:`BinaryPackageRepositoryEntry` should be in the keyword arguments.
+
+        Returns the newly created :class:`BinaryPackageRepositoryEntry` for the
+        given :class:`BinaryPackage`.
+
+        :rtype: :class:`BinaryPackageRepositoryEntry`
+        """
+        return BinaryPackageRepositoryEntry.objects.create(
+            repository=self,
+            binary_package=package,
+            **kwargs
+        )
+
     @classmethod
     def release_file_url(cls, base_url, suite):
         """
@@ -1063,6 +1095,20 @@ class BinaryPackage(models.Model):
     def __str__(self):
         return 'Binary package {pkg}, version {ver}'.format(
             pkg=self.binary_package_name, ver=self.version)
+
+    def update(self, **kwargs):
+        """
+        The method updates all of the instance attributes based on the keyword
+        arguments.
+        """
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+
+    @cached_property
+    def name(self):
+        """Returns the name of the package"""
+        return self.binary_package_name.name
 
 
 class BinaryPackageRepositoryEntryManager(models.Manager):

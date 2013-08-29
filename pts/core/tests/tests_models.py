@@ -19,6 +19,9 @@ from django.test.utils import override_settings
 from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError
 from pts.core.models import Subscription, EmailUser, PackageName, BinaryPackageName
+from pts.core.models import BinaryPackage
+from pts.core.models import Architecture
+from pts.core.models import BinaryPackageRepositoryEntry
 from pts.core.models import SourcePackageName, SourcePackageRepositoryEntry
 from pts.core.models import Keyword
 from pts.core.models import ActionItem, ActionItemType
@@ -454,6 +457,11 @@ class RepositoryTests(TestCase):
         self.src_pkg_name = SourcePackageName.objects.create(name='dummy-package')
         self.source_package = SourcePackage.objects.create(
             source_package_name=self.src_pkg_name, version='1.0.0')
+        self.bin_pkg_name = BinaryPackageName.objects.create(name='dummy-package')
+        self.binary_package = BinaryPackage.objects.create(
+            binary_package_name=self.bin_pkg_name,
+            version='1.0.0',
+            source_package=self.source_package)
 
     def test_add_source_entry_to_repository(self):
         """
@@ -469,6 +477,24 @@ class RepositoryTests(TestCase):
         self.assertEqual(e.source_package, self.source_package)
         # Correct repository
         self.assertEqual(e.repository, self.repository)
+
+    def test_add_binary_entry_to_repository(self):
+        """
+        Tests adding a new binary package entry (name, version) to a repository
+        instance.
+        """
+        architecture = Architecture.objects.all()[0]
+        self.repository.add_binary_package(
+            self.binary_package,
+            architecture=architecture)
+
+        # An entry is created
+        self.assertEqual(1, BinaryPackageRepositoryEntry.objects.count())
+        e = BinaryPackageRepositoryEntry.objects.all()[0]
+        # Correct binary package
+        self.assertEqual(self.binary_package, e.binary_package)
+        # Correct repository
+        self.assertEqual(self.repository, e.repository)
 
     def test_add_source_entry_to_repository_extra_info(self):
         """
