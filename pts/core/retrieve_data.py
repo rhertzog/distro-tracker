@@ -42,6 +42,7 @@ import re
 import os
 import sys
 import requests
+import itertools
 
 
 class InvalidRepositoryException(Exception):
@@ -624,6 +625,104 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                 BinaryPackageRepositoryEntry.objects.filter(
                     repository=repository))
 
+    def _update_dependencies_for_source(self,
+                                        source_name,
+                                        stanza,
+                                        dependency_types,
+                                        source_to_binary_deps):
+        """
+        Updates the dependencies for a source package based on the ones found
+        in the given ``Packages`` or ``Sources`` stanza.
+
+        :param source_name: The name of the source package for which the
+            dependencies are updated.
+        :param stanza: The ``Packages`` or ``Sources`` entry
+        :param dependency_type: A list of dependency types which should be
+            considered (e.g. Build-Depends, Recommends, etc.)
+        :param source_to_binary_deps: The dictionary which should be updated
+            with the new dependencies. Maps source names to a list of dicts
+            each describing a dependency.
+        """
+        for dependency_type in dependency_types:
+            # The Deb822 instance is case sensitive when it comes to relations
+            dependency_type = dependency_type.lower()
+            dependencies = stanza.relations.get(dependency_type, ())
+
+            for dependency in itertools.chain(*dependencies):
+                binary_name = dependency['name']
+                source_deps = source_to_binary_deps.setdefault(source_name, [])
+                source_deps.append({
+                    'dependency_type': dependency_type,
+                    'binary': binary_name,
+                })
+
+    def update_dependencies(self):
+        """
+        Updates source-to-source package dependencies stemming from
+        build bependencies and their binary packages' dependencies.
+        """
+        # Build the dependency mapping
+        sources_files = self.apt_cache.get_cached_files(
+            lambda file_name: file_name.endswith('Sources'))
+        packages_files = self.apt_cache.get_cached_files(
+            lambda file_name: file_name.endswith('Packages'))
+
+        bin_to_src = {}
+        source_to_binary_deps = {}
+
+        dependency_types = ('Build-Depends', 'Build-Depends-Indep')
+        for sources_file in sources_files:
+            for stanza in deb822.Sources.iter_paragraphs(file(sources_file)):
+                source_name = stanza['package']
+
+                for binary in itertools.chain(*stanza.relations['binary']):
+                    sources_set = bin_to_src.setdefault(binary['name'], set())
+                    sources_set.add(source_name)
+
+                self._update_dependencies_for_source(
+                    source_name,
+                    stanza,
+                    dependency_types,
+                    source_to_binary_deps)
+
+        dependency_types = (
+            'Depends',
+            'Recommends',
+            'Suggests',
+        )
+        for packages_file in packages_files:
+            for stanza in deb822.Packages.iter_paragraphs(file(packages_file)):
+                binary_name = stanza['package']
+                source_name, source_version = self.get_source_for_binary(stanza)
+
+                sources_set = bin_to_src.setdefault(binary_name, set())
+                sources_set.add(source_name)
+
+                self._update_dependencies_for_source(
+                    source_name,
+                    stanza,
+                    dependency_types,
+                    source_to_binary_deps)
+
+        src_to_src_deps = {}
+        for source_name, dependencies in source_to_binary_deps.items():
+            for dependency in dependencies:
+                binary_name = dependency['binary']
+                if binary_name not in bin_to_src:
+                    continue
+
+                for source_dependency in bin_to_src[binary_name]:
+                    if source_name == source_dependency:
+                        continue
+
+                    all_source_deps = src_to_src_deps.setdefault(source_name, [])
+                    all_source_deps.append({
+                        'dependency': dependency,
+                        'source_name': source_dependency,
+                    })
+
+        # FIXME
+
     @clear_all_events_on_exception
     def execute(self):
         self.apt_cache = AptCache()
@@ -633,6 +732,7 @@ class UpdateRepositoriesTask(PackageUpdateTask):
 
         self.update_sources_files(updated_sources)
         self.update_packages_files(updated_packages)
+        # self.update_dependencies()
 
 
 class UpdatePackageGeneralInformation(PackageUpdateTask):
