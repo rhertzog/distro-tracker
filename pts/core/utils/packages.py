@@ -327,6 +327,25 @@ class AptCache(object):
                 file_name.endswith('Sources') and
                 self._match_index_file_to_repository(file_name) == repository))
 
+    def get_packages_files_for_repository(self, repository):
+        """
+        Returns all ``Packages`` files which are cached for the given
+        repository.
+
+        For instance, ``Packages`` files for different suites are cached
+        separately.
+
+        :param repository: The repository for which to return all cached
+            ``Packages`` files
+        :type repository: :class:`Repository <pts.core.models.Repository>`
+
+        :rtype: ``iterable`` of strings
+        """
+        return self.get_cached_files(
+            lambda file_name: (
+                file_name.endswith('Packages') and
+                self._match_index_file_to_repository(file_name) == repository))
+
     def update_repositories(self, force_download=False):
         """
         Initiates a cache update.

@@ -1326,3 +1326,33 @@ class AptCacheTests(TestCase):
                 for expected_source, returned_source in zip(
                         expected_source_files, sources):
                     self.assertTrue(returned_source.endswith(expected_source))
+
+    def test_get_packages_for_repository(self):
+        """
+        Tests that the cache correctly returns a list of cached Packages files
+        for a given repository.
+        """
+        with make_temp_directory('-pts-cache') as cache_directory:
+            with self.settings(PTS_CACHE_DIRECTORY=cache_directory):
+                self.create_cache()
+                repository = Repository.objects.create(
+                    name='stable',
+                    shorthand='stable',
+                    uri='http://cdn.debian.net/debian/dists',
+                    suite='stable')
+                expected_packages_files = [
+                    'main_binary-amd64_Packages',
+                    'main_binary-i386_Packages',
+                ]
+                files = expected_packages_files + [
+                    'Release',
+                    'main_source_Sources',
+                ]
+                self.set_stub_cached_files_for_repository(repository, files)
+
+                packages = self.cache.get_packages_files_for_repository(repository)
+
+                self.assertEqual(len(expected_packages_files), len(packages))
+                for expected, returned in zip(
+                        expected_packages_files, packages):
+                    self.assertTrue(returned.endswith(expected))
