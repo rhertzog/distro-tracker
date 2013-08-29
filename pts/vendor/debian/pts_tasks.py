@@ -925,7 +925,7 @@ class UpdateExcusesTask(BaseTask):
 
 class UpdateBuildLogCheckStats(BaseTask):
     ACTION_ITEM_TYPE_NAME = 'debian-build-logcheck'
-    ITEM_DESCRIPTION = "Build log checks report {report}"
+    ITEM_DESCRIPTION = 'Build log checks report <a href="{url}">{report}</a>'
     ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/logcheck-action-item.html'
 
     def __init__(self, force_update=False, *args, **kwargs):
@@ -965,8 +965,8 @@ class UpdateBuildLogCheckStats(BaseTask):
         """
         action_item = package.get_action_item_for_type(self.ACTION_ITEM_TYPE_NAME)
 
-        errors = stats.get('errors', 0) > 0
-        warnings = stats.get('warnings', 0) > 0
+        errors = stats.get('errors', 0)
+        warnings = stats.get('warnings', 0)
 
         if not errors and not warnings:
             # Remove the previous action item since the package no longer has
@@ -980,17 +980,29 @@ class UpdateBuildLogCheckStats(BaseTask):
                 package=package,
                 item_type=self.action_item_type)
 
+        logcheck_url = "http://qa.debian.org/bls/packages/{hash}/{pkg}.html".format(
+            hash=package.name[0], pkg=package.name)
         if errors and warnings:
-            report = 'errors and warnings'
+            report = '{} error{} and {} warning{}'.format(
+                errors,
+                's' if errors > 1 else '',
+                warnings,
+                's' if warnings > 1 else '')
             action_item.set_severity('high')
         elif errors:
-            report = 'errors'
+            report = '{} error{}'.format(
+                errors,
+                's' if errors > 1 else '')
             action_item.set_severity('high')
         elif warnings:
-            report = 'warnings'
+            report = '{} warning{}'.format(
+                warnings,
+                's' if warnings > 1 else '')
             action_item.set_severity('low')
 
-        action_item.short_description = self.ITEM_DESCRIPTION.format(report=report)
+        action_item.short_description = self.ITEM_DESCRIPTION.format(
+            url=logcheck_url,
+            report=report)
         action_item.extra_data = stats
         action_item.save()
 
