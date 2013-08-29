@@ -97,6 +97,22 @@ def extract_information_from_sources_entry(stanza):
     return entry
 
 
+def extract_information_from_packages_entry(stanza):
+    """
+    Extracts information from a ``Packages`` file entry and returns it in the
+    form of a dictionary.
+
+    :param stanza: The raw entry's key-value pairs.
+    :type stanza: Case-insensitive dict
+    """
+    entry = {
+        'version': stanza['version'],
+        'short_description': stanza.get('description', ''),
+    }
+
+    return entry
+
+
 class SourcePackageRetrieveError(Exception):
     pass
 

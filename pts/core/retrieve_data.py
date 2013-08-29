@@ -13,15 +13,19 @@ from pts import vendor
 from pts.core.models import PseudoPackageName, PackageName
 from pts.core.models import Repository
 from pts.core.models import SourcePackageRepositoryEntry
+from pts.core.models import BinaryPackageRepositoryEntry
 from pts.core.models import ContributorEmail
 from pts.core.models import ContributorName
 from pts.core.models import SourcePackage
 from pts.core.models import News
 from pts.core.models import PackageExtractedInfo
 from pts.core.models import BinaryPackageName
+from pts.core.models import BinaryPackage
 from pts.core.models import ExtractedSourceFile
 from pts.core.utils import get_or_none
 from pts.core.utils.http import get_resource_content
+from pts.core.utils.packages import extract_information_from_sources_entry
+from pts.core.utils.packages import extract_information_from_packages_entry
 from pts.core.utils.packages import AptCache
 from pts.core.tasks import BaseTask
 from pts.core.tasks import clear_all_events_on_exception
@@ -34,6 +38,7 @@ from django.conf import settings
 from django.core.files import File
 
 from debian import deb822
+import re
 import os
 import sys
 import requests
@@ -163,7 +168,6 @@ class PackageUpdateTask(BaseTask):
             self.force_update = parameters['force_update']
 
 
-from pts.core.utils.packages import extract_information_from_sources_entry
 class UpdateRepositoriesTask(PackageUpdateTask):
     """
     Performs an update of repository information.
@@ -270,6 +274,11 @@ class UpdateRepositoriesTask(PackageUpdateTask):
 
         return entry
 
+    def _extract_information_from_packages_entry(self, bin_pkg, stanza):
+        entry = extract_information_from_packages_entry(stanza)
+
+        return entry
+
     def _update_sources_file(self, repository, sources_file):
         for stanza in deb822.Sources.iter_paragraphs(file(sources_file)):
             allow, implemented = vendor.call('allow_package', stanza)
@@ -330,6 +339,70 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                     repository=repository,
                     source_package=src_pkg
                 )
+
+            self._add_processed_repository_entry(entry)
+
+    def get_source_for_binary(self, stanza):
+        """
+        :param stanza: a ``Packages`` file entry
+        :returns: A ``(source_name, source_version)`` pair for the binary
+            package described by the entry
+        """
+        source_name = (
+            stanza['source']
+            if 'source' in stanza else
+            stanza['package'])
+        # Extract the source version, if given in the Source field
+        match = re.match(r'(.+) \((.+)\)', source_name)
+        if match:
+            source_name, source_version = match.group(1), match.group(2)
+        else:
+            source_version = stanza['version']
+
+        return source_name, source_version
+
+    def _update_packages_file(self, repository, packages_file):
+        for stanza in deb822.Packages.iter_paragraphs(file(packages_file)):
+            bin_pkg_name, created = BinaryPackageName.objects.get_or_create(
+                name=stanza['package']
+            )
+            # Find the matching SourcePackage for the binary package
+            source_name, source_version = self.get_source_for_binary(stanza)
+            src_pkg, _ = SourcePackage.objects.get_or_create(
+                source_package_name=SourcePackageName.objects.get_or_create(
+                    name=source_name)[0],
+                version=source_version)
+
+            bin_pkg, created_new_version = BinaryPackage.objects.get_or_create(
+                binary_package_name=bin_pkg_name,
+                version=stanza['version'],
+                source_package=src_pkg
+            )
+            if created_new_version:
+                # Since it's a new version, extract package data from Packages
+                entry = self._extract_information_from_packages_entry(
+                    bin_pkg, stanza)
+                # Update the binary package information based on the newly
+                # extracted data.
+                bin_pkg.update(**entry)
+                bin_pkg.save()
+
+            if not repository.has_binary_package(bin_pkg):
+                # Add it to the repository
+                architecture, _ = Architecture.objects.get_or_create(
+                    name=stanza['architecture'])
+                kwargs = {
+                    'priority': stanza.get('priority', ''),
+                    'section': stanza.get('section', ''),
+                    'architecture': architecture,
+                }
+                entry = repository.add_binary_package(bin_pkg, **kwargs)
+            else:
+                # We get the entry to mark that the package version is still in
+                # the repository.
+                entry = BinaryPackageRepositoryEntry.objects.get(
+                    repository=repository,
+                    binary_package=bin_pkg)
 
             self._add_processed_repository_entry(entry)
 
@@ -521,6 +594,36 @@ class UpdateRepositoriesTask(PackageUpdateTask):
             # still found in at least one repository.
             self._remove_obsolete_packages()
 
+    def update_packages_files(self, updated_packages):
+        """
+        Performs an update of tracked packages based on the updated Packages
+        files.
+
+        :param updated_sources: A list of ``(repository, packages_file_name)``
+            pairs giving the Packages files which were updated and should be
+            used to update the PTS tracked information too.
+        """
+        # Group all files by repository to which they belong
+        repository_files = self.group_files_by_repository(updated_packages)
+
+        for repository, packages_files in repository_files.items():
+            # First update package information based on updated files
+            for packages_file in packages_files:
+                self._update_packages_file(repository, packages_file)
+
+            # Mark package versions found in un-updated files as still existing
+            all_sources = self.apt_cache.get_packages_files_for_repository(repository)
+            for packages_file in all_sources:
+                if packages_file not in packages_files:
+                    self._mark_file_not_processed(
+                        repository, packages_file)
+
+            # When all the files for the repository are handled, update
+            # which packages are still found in it.
+            self._update_repository_entries(
+                BinaryPackageRepositoryEntry.objects.filter(
+                    repository=repository))
+
     @clear_all_events_on_exception
     def execute(self):
         self.apt_cache = AptCache()
@@ -529,6 +632,7 @@ class UpdateRepositoriesTask(PackageUpdateTask):
         )
 
         self.update_sources_files(updated_sources)
+        self.update_packages_files(updated_packages)
 
 
 class UpdatePackageGeneralInformation(PackageUpdateTask):
