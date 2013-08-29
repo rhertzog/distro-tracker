@@ -9,3 +9,5 @@
 local_*.py
 
 docs/_build/
+
+data/pts.sqlite
