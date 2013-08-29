@@ -149,8 +149,6 @@ def retrieve_repository_info(sources_list_entry):
     return repository_information
 
 
-
-
 class PackageUpdateTask(BaseTask):
     """
     A subclass of the :class:`BaseTask <pts.core.tasks.BaseTask>` providing
@@ -394,28 +392,30 @@ class UpdateRepositoriesTask(PackageUpdateTask):
             )
         )
 
-    def _update_repository_entries(self, repository):
+    def _update_repository_entries(self, all_entries_qs, event_generator=None):
         """
-        Removes all repository entries which are no longer found in the given
+        Removes all repository entries which are no longer found in the
         repository after the last update.
+        If the ``event_generator`` argument is provided, an event returned by
+        the function is raised for each removed entry.
+
+        :param all_entries_qs: All currently existing entries which should be
+            filtered to only contain the ones still found after the update.
+        :type all_entries_qs: :class:`QuerySet <django.db.models.query.QuerySet>`
+        :event_generator: Takes a repository entry as a parameter and returns a
+            two-tuple of ``(event_name, event_arguments)``. An event with the
+            return parameters is raised by the function for each removed entry.
+        :type event_generator: callable
         """
-        # Clean up repository versions which no longer exist.
-        repository_entries_qs = (
-            SourcePackageRepositoryEntry.objects.filter(
-                repository=repository))
         # Out of all entries in this repository, only those found in
         # the last update need to stay, so exclude them from the delete
-        repository_entries_qs = repository_entries_qs.exclude(
+        all_entries_qs = all_entries_qs.exclude(
             id__in=self._all_repository_entries)
         # Emit events for all packages that were removed from the repository
-        for entry in repository_entries_qs:
-            source_package = entry.source_package
-            self.raise_event('lost-source-package-version-in-repository', {
-                'name': source_package.name,
-                'version': source_package.version,
-                'repository': entry.repository.name,
-            })
-        repository_entries_qs.delete()
+        if event_generator:
+            for entry in all_entries_qs:
+                self.raise_event(*event_generator(entry))
+        all_entries_qs.delete()
 
         self._clear_processed_repository_entries()
 
@@ -485,7 +485,16 @@ class UpdateRepositoriesTask(PackageUpdateTask):
 
                 # When all the files for the repository are handled, update
                 # which packages are still found in it.
-                self._update_repository_entries(repository)
+                self._update_repository_entries(
+                    SourcePackageRepositoryEntry.objects.filter(
+                        repository=repository),
+                    lambda entry: (
+                        'lost-source-package-version-in-repository', {
+                            'name': entry.source_package.name,
+                            'version': entry.source_package.version,
+                            'repository': entry.repository.name,
+                        })
+                )
 
             # When all repositories are handled, update which packages are
             # still found in at least one repository.
