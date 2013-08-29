@@ -277,13 +277,36 @@ class AptCache(object):
         lists_directory = os.path.join(self.cache_root_dir, 'var/lib/apt/lists')
         try:
             return [
-                file_name
+                os.path.join(lists_directory, file_name)
                 for file_name in os.listdir(lists_directory)
                 if os.path.isfile(os.path.join(lists_directory, file_name))
             ]
         except OSError:
             # The directory structure does not exist => nothing is cached
             return []
+
+    def get_cached_files(self, filter_function=None):
+        """
+        Returns cached files, optionally filtered by the given
+        ``filter_function``
+
+        :param filter_function: Takes a file name as the only parameter and
+            returns a :class:`bool` indicating whether it should be included
+            in the result.
+        :type filter_function: callable
+
+        :returns: A list of cached file names
+        :rtype: list
+        """
+        if filter_function is None:
+            # Include all files if the filter function is not provided
+            filter_function = lambda x: True
+
+        return [
+            file_name
+            for file_name in self._get_all_cached_files()
+            if filter_function(file_name)
+        ]
 
     def get_sources_files_for_repository(self, repository):
         """
@@ -299,16 +322,10 @@ class AptCache(object):
 
         :rtype: ``iterable`` of strings
         """
-        all_sources_files = [
-            file_name
-            for file_name in self._get_all_cached_files()
-            if file_name.endswith('Sources')
-        ]
-        return [
-            self._index_file_full_path(sources_file_name)
-            for sources_file_name in all_sources_files
-            if self._match_index_file_to_repository(sources_file_name) == repository
-        ]
+        return self.get_cached_files(
+            lambda file_name: (
+                file_name.endswith('Sources') and
+                self._match_index_file_to_repository(file_name) == repository))
 
     def update_repositories(self, force_download=False):
         """

@@ -23,6 +23,7 @@ from django.utils.functional import curry
 from django.utils.six.moves import mock
 from pts.core.tests.common import set_mock_response
 from pts.core.tests.common import make_temp_directory
+from pts.core.models import Repository
 from pts.core.utils import verp
 from pts.core.utils import message_from_bytes
 from pts.core.utils import SpaceDelimitedTextField
@@ -1187,6 +1188,10 @@ class AptCacheTests(TestCase):
         self.cache._get_apt_source_records = mock.MagicMock()
         self.cache._get_format = mock.MagicMock(return_value='1.0')
         self.cache._extract_dpkg_source = mock.MagicMock()
+        self.cached_files = []
+        self.cache._get_all_cached_files = mock.MagicMock(
+            return_value=self.cached_files)
+        self.cache._match_index_file_to_repository = mock.MagicMock()
 
     def set_stub_acquire_content(self, content):
         """
@@ -1195,6 +1200,27 @@ class AptCacheTests(TestCase):
         """
         self.cache._apt_acquire_package = mock.MagicMock(side_effect=curry(
             AptCacheTests.stub_acquire, content=content))
+
+    def set_stub_cached_files_for_repository(self, repository, files):
+        """
+        Helper method adds the given list of files to the stub list of cached
+        files for a given repository.
+
+        :param repository: The repository to which these files are associated.
+        :type repository: :class:`Repository <pts.core.models.Repository>`
+        :param files: List of cached file names. The function uses the list to
+            build the stub by prefixing the names with expected repository
+            identifiers.
+        """
+        # Build the prefix from the repository's URI and suite
+        base_uri = repository.uri.rstrip('/')
+        if base_uri.startswith('http://'):
+            base_uri = base_uri[7:]
+        prefix = base_uri + '/' + repository.suite + '/'
+        prefix = prefix.replace('/', '_')
+        for file_name in files:
+            self.cached_files.append(prefix + file_name)
+        self.cache._match_index_file_to_repository.return_value = repository
 
     def assert_cache_size_equal(self, size):
         self.assertEqual(size, self.cache.cache_size)
@@ -1270,3 +1296,33 @@ class AptCacheTests(TestCase):
 
                 # Only the second content is found in the package
                 self.assert_cache_size_equal(7)
+
+    def test_get_sources_for_repository(self):
+        """
+        Tests that the cache correctly returns a list of cached Sources files
+        for a given repository.
+        """
+        with make_temp_directory('-pts-cache') as cache_directory:
+            with self.settings(PTS_CACHE_DIRECTORY=cache_directory):
+                self.create_cache()
+                repository = Repository.objects.create(
+                    name='stable',
+                    shorthand='stable',
+                    uri='http://cdn.debian.net/debian/dists',
+                    suite='stable')
+                expected_source_files = [
+                    'main_source_Sources',
+                    'contrib_source_Sources',
+                ]
+                files = expected_source_files + [
+                    'Release',
+                    'main_binary-amd64_Packages',
+                ]
+                self.set_stub_cached_files_for_repository(repository, files)
+
+                sources = self.cache.get_sources_files_for_repository(repository)
+
+                self.assertEqual(len(expected_source_files), len(sources))
+                for expected_source, returned_source in zip(
+                        expected_source_files, sources):
+                    self.assertTrue(returned_source.endswith(expected_source))
