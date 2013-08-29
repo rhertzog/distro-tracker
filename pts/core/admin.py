@@ -163,7 +163,7 @@ class RepositoryAdminForm(forms.ModelForm):
         return self.cleaned_data
 
 
-class RepositroyAdmin(admin.ModelAdmin):
+class RepositoryAdmin(admin.ModelAdmin):
     """
     Actual configuration for the :class:`Repository <pts.core.models.Repository>`
     admin panel.
@@ -251,4 +251,4 @@ class RepositroyAdmin(admin.ModelAdmin):
     architectures_string.short_description = 'architectures'
 
 
-admin.site.register(Repository, RepositroyAdmin)
+admin.site.register(Repository, RepositoryAdmin)
