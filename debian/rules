@@ -1,5 +1,7 @@
 #!/usr/bin/make -f
 
+NAME = package-tracking-system
+
 %:
 	dh $@ --with python2,sphinxdoc
 
@@ -9,7 +11,16 @@ override_dh_auto_build:
 
 override_dh_auto_install:
 	dh_auto_install
-	install -m 755 -D manage.py debian/package-tracking-system/usr/bin/pts-manage
-	for file in `find debian/tmp/ -name selected.py`; do \
-	    rm $$file && ln -sf production.py $$file; \
+	install -m 755 -D manage.py debian/$(NAME)/usr/bin/pts-manage
+	# Move settings in /etc/
+	for dir in `find debian/tmp/ -type d -wholename '*/pts/project/settings'`; do \
+	    if [ ! -e debian/tmp/etc/$(NAME)/settings ]; then \
+		mkdir -p debian/tmp/etc/$(NAME)/; \
+		mv $$dir debian/tmp/etc/$(NAME)/; \
+	    else \
+		rm -rf $$dir; \
+	    fi; \
+	    ln -sf /etc/$(NAME)/settings $$dir; \
 	done
+	# Replace selected.py with a symlink to production setttings
+	ln -sf production.py debian/tmp/etc/$(NAME)/settings/selected.py
