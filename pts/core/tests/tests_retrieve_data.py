@@ -693,6 +693,60 @@ class RetrieveSourcesInformationTest(TestCase):
         self.assertEqual(SourcePackageName.objects.count(), 2)
 
 
+    @mock.patch('pts.core.retrieve_data.AptCache.get_sources_files_for_repository')
+    @mock.patch('pts.core.retrieve_data.AptCache.update_repositories')
+    def test_update_multiple_versions_in_source_file(self,
+                                                     mock_update_repositories,
+                                                     mock_all_sources):
+        """
+        Tests the update scenario where a Sources file that was not updated
+        contains multiple source versions of the same source package.
+        """
+        src_name = 'dummy-package'
+        versions = ['1.0.0', '2.0.0']
+
+        src_pkgs = [
+            create_source_package({
+                'name': src_name,
+                'binary_packages': ['dummy-package-binary'],
+                'version': version,
+                'maintainer': {
+                    'name': 'Maintainer',
+                    'email': 'maintainer@domain.com'
+                },
+                'architectures': ['amd64', 'all'],
+                'dsc_file_name': 'file.dsc'
+            })
+            for version in versions
+        ]
+        for src_pkg in src_pkgs:
+            self.repository.add_source_package(src_pkg)
+        # Updated sources - only 1 file
+        self.set_mock_sources(mock_update_repositories, 'Sources')
+        # All sources - 2 files
+        mock_all_sources.return_value = [
+            self.get_path_to('Sources'),
+            self.get_path_to('Sources-multiple-versions')
+        ]
+        # Sanity check: both versions exist
+        self.assertEqual(2, SourcePackage.objects.count())
+
+        self.run_update()
+
+        # The package from the file which was not updated is still there
+        self.assert_package_by_name_in(
+            'dummy-package',
+            SourcePackageName.objects.all()
+        )
+        # Both versions are still in the repository
+        entries = SourcePackageRepositoryEntry.objects.filter(
+                repository=self.repository,
+                source_package__source_package_name__name='dummy-package')
+        self.assertEqual(2, entries.count())
+        for entry in entries:
+            self.assertIn(entry.source_package.version, versions)
+
+
 class RetrieveSourcesFailureTest(TransactionTestCase):
     """
     Tests retrieving source package information from a repository when there is

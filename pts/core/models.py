@@ -1065,6 +1065,17 @@ class BinaryPackage(models.Model):
             pkg=self.binary_package_name, ver=self.version)
 
 
+class BinaryPackageRepositoryEntryManager(models.Manager):
+    def filter_by_package_name(self, names):
+        """
+        :returns: A set of :class:`BinaryPackageRepositoryEntry` instances
+            which are associated to a binary package with one of the names
+            given in the ``names`` parameter.
+        :rtype: :class:`QuerySet <django.db.models.query.QuerySet>`
+        """
+        return self.filter(binary_package__binary_package_name__name__in=names)
+
+
 @python_2_unicode_compatible
 class BinaryPackageRepositoryEntry(models.Model):
     """
@@ -1087,12 +1098,30 @@ class BinaryPackageRepositoryEntry(models.Model):
     priority = models.CharField(max_length=50, blank=True)
     section = models.CharField(max_length=50, blank=True)
 
+    objects = BinaryPackageRepositoryEntryManager()
+
     class Meta:
         unique_together = ('binary_package', 'repository', 'architecture')
 
     def __str__(self):
         return '{pkg} ({arch}) in the repository {repo}'.format(
             pkg=self.binary_package, arch=self.architecture, repo=self.repository)
+
+    @cached_property
+    def version(self):
+        """The version of the binary package"""
+        return self.binary_package.version
+
+
+class SourcePackageRepositoryEntryManager(models.Manager):
+    def filter_by_package_name(self, names):
+        """
+        :returns: A set of :class:`SourcePackageRepositoryEntry` instances
+            which are associated to a source package with one of the names
+            given in the ``names`` parameter.
+        :rtype: :class:`QuerySet <django.db.models.query.QuerySet>`
+        """
+        return self.filter(source_package__source_package_name__name__in=names)
 
 
 @python_2_unicode_compatible
@@ -1111,6 +1140,8 @@ class SourcePackageRepositoryEntry(models.Model):
 
     priority = models.CharField(max_length=50, blank=True)
     section = models.CharField(max_length=50, blank=True)
+
+    objects = SourcePackageRepositoryEntryManager()
 
     class Meta:
         unique_together = ('source_package', 'repository')
@@ -1149,6 +1180,13 @@ class SourcePackageRepositoryEntry(models.Model):
             return base_url + '/' + self.source_package.directory
         else:
             return None
+
+    @cached_property
+    def version(self):
+        """
+        Returns the version of the associated source package.
+        """
+        return self.source_package.version
 
 
 @python_2_unicode_compatible

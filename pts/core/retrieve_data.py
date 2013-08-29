@@ -419,30 +419,49 @@ class UpdateRepositoriesTask(PackageUpdateTask):
 
         self._clear_processed_repository_entries()
 
-    def _mark_sources_file_not_processed(self, repository, sources_file_name):
+    def extract_package_versions(self, file_name):
         """
-        The ``Sources`` file with the given name, belonging to the given
-        repository was not updated, so this method marks all package versions
-        found in it as still existing to avoid deleting them.
+        :param file_name: The name of the file from which package versions
+            should be extracted.
+        :type file_name: string
+        :returns: A dict mapping package names to a list of versions found in
+            Deb822 formatted file.
         """
-        # Extract all package versions from the sources file
-        with open(sources_file_name, 'r') as sources_file:
-            packages = {
-                stanza['package']: stanza['version']
-                for stanza in deb822.Sources.iter_paragraphs(sources_file)
-            }
+        with open(file_name, 'r') as packages_file:
+            packages = {}
+            for stanza in deb822.Deb822.iter_paragraphs(packages_file):
+                package_name, version = stanza['package'], stanza['version']
+                packages.setdefault(package_name, [])
+                packages[package_name].append(version)
+
+            return packages
+
+    def _mark_file_not_processed(self, repository, file_name, entry_manager):
+        """
+        The given ``Sources`` or ``Packages`` file has not been changed in the
+        last update. This method marks all package versions found in it as
+        still existing in order to avoid deleting them.
+
+        :param repository: The repository to which the file is associated
+        :type repository: :class:`Repository <pts.core.models.Repository>`
+        :param file_name: The name of the file whose packages should be saved
+        :param entry_manager: The manager instance which handles the package
+            entries.
+        :type entry_manager: :class:`Manager <django.db.models.Manager>`
+        """
+        # Extract all package versions from the file
+        packages = self.extract_package_versions(file_name)
 
         # Only issue one DB query to retrieve the entries for packages with
         # the given names
-        repository_entries = SourcePackageRepositoryEntry.objects.filter(
-            repository=repository)
+        repository_entries = entry_manager.filter_by_package_name(packages.keys())
         repository_entries = repository_entries.filter(
-            source_package__source_package_name__name__in=packages.keys())
+            repository=repository)
         repository_entries = repository_entries.select_related()
         # For each of those entries, make sure to keep only the ones
         # corresponding to the version found in the sources file
         for entry in repository_entries:
-            if entry.source_package.version == packages[entry.source_package.name]:
+            if entry.version in packages[entry.source_package.name]:
                 self._add_processed_repository_entry(entry)
 
     def group_files_by_repository(self, cached_files):
@@ -480,8 +499,10 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                 all_sources = self.apt_cache.get_sources_files_for_repository(repository)
                 for sources_file in all_sources:
                     if sources_file not in sources_files:
-                        self._mark_sources_file_not_processed(
-                            repository, sources_file)
+                        self._mark_file_not_processed(
+                            repository,
+                            sources_file,
+                            SourcePackageRepositoryEntry.objects)
 
                 # When all the files for the repository are handled, update
                 # which packages are still found in it.
