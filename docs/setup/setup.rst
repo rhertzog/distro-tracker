@@ -99,3 +99,7 @@ $ ./manage.py test
 To create the database::
 
 $ ./manage.py syncdb
+
+
+See also the Debian package's README.Debian for some details about the setup.
+ 

@@ -8,9 +8,9 @@ The package does quite some work for you but you still have some things
 to take care of:
 
 1/ by default, the package is configured to use a PostgreSQL database
-   using the default local unix socket and the authenticatios is done
+   using the default local unix socket and the authentication is done
    at the user level. The package creates a "pts" Unix account, you must
-   a "pts" database that can be managed by the "pts" user. You can do
+   create a "pts" database that can be managed by the "pts" user. You can do
    this with:
 
    $ sudo -u postgresql createuser -D -R -S pts

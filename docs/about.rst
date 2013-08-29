@@ -130,3 +130,12 @@ REST interface [coming soon]
 
 RDF metadata [coming soon]
 ++++++++++++
+
+Command-line Interface
+----------------------
+
+You may use some commands to start some tasks for instance. See the list of available commands with ::
+
+ $ ./manage.py --help
+
+
