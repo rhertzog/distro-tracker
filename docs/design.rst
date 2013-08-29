@@ -11,10 +11,15 @@ The Package Tracking System is implemented as a Python application using the
 Python2.7 and Python3.
 
 An important goal of the project is to implement a system which is easily
-customizable so it could serve Debian derivatives too.
+customizable so it could serve Debian derivatives too (vendors).
 
 This document will present an overview of the high-level design choices which
 were made.
+
+Note that a previous version of the PTS pre-existed, but which operated over 
+completely different technology (statically generated documents, etc.). 
+Some features have been kept identical over the rewrite.
+
 
 .. _email_design:
 
@@ -103,15 +108,15 @@ News from Email Messages
 ++++++++++++++++++++++++
 
 The PTS allows for automatic news creation based on received emails. It is necessary
-to set up the MTA to pipe received emails which should potentially be turned into
-news items to the management command
+to set up the MTA so it pipes received emails which should potentially be turned into
+news items, to the management command
 :mod:`pts.mail.management.commands.pts_receive_news`.
 
 News are created as :class:`pts.core.models.News` objects and each of the
 model's instances associated with a particular package is displayed in the
 :class:`NewsPanel <pts.core.panels.NewsPanel>`.
 
-By default, any messages given the the management command which contain the
+By default, any messages given to the management command which contains the
 ``X-PTS-Package`` header are turned into news items with the content type of
 the news item being ``message/rfc822`` and the content the entire message.
 
@@ -139,7 +144,7 @@ framework can build a graph of dependencies between tasks.
 
 When running a single task, all other tasks which are dependent on that one
 are automatically run afterwards, in the correct order and ensuring a task runs
-only once all the tasks it depends on are complete. It also makes sure not to
+only once all the tasks it depends on are completed. It also makes sure not to
 initiate any task for which no events were raised.
 
 In order to implement a task, the :class:`pts.core.tasks.BaseTask` class should

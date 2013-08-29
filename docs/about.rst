@@ -5,7 +5,7 @@ What is the Package Tracking System?
 
 The Package Tracking System allows users to follow package information through
 email messages and a Web presentation. This information may be interesting to
-package maintainers, contributors, advances users, QA members, etc...
+package maintainers, contributors, advanced users, QA members, etc...
 
 The PTS aims to be as extensible and as customizable as possible in order to
 allow Debian derivatives to deploy their own Package Tracking System if they
@@ -16,7 +16,7 @@ so choose.
 Email Interface
 ---------------
 
-The Package Tracking System forwards email mesasges regarding a package to users
+The Package Tracking System forwards email messages regarding a package, to users
 who are subscribed to that package.
 
 The PTS receives email messages for each package on a special address in the
@@ -26,7 +26,7 @@ package's address can be sent by either automated tools or users themselves.
 
 Each package email is first tagged with one of the existing keywords and then
 forwarded only to the subscribers interested in that keyword. Users sending
-package messages to PTS can tag their own messages with a keyword by using a
+package messages to the PTS can tag their own messages with a keyword by using a
 local part of the address in the form of ``<package-name>_<keyword>``.
 
 A user can choose which mails they are interested in, by selecting to either
@@ -56,8 +56,8 @@ Email Control Interface
 +++++++++++++++++++++++
 
 Users can control their subscriptions (packages subscribed to, keywords to
-accept) by sending control commands enclosed in an email message to a bot. The
-designated email address for the control interface is ``control@<pts-domain>``,
+accept) by sending control commands enclosed in an email message to a robot. The
+designated email address for its control interface is ``control@<pts-domain>``,
 by default. This is customizable by vendors.
 
 Control emails contain a list of commands, each in a separate line. Available
@@ -83,16 +83,16 @@ about each command which is to be confirmed.
 Web Interface
 -------------
 
-Each source and pseudo package has its own Web page displaying information
+Each source and pseudo package has its own Web dashboard displaying information
 aggregated from various sources. This page is accessible at the URL
 ``/<package-name>``.
 
 If a binary package name is entered, the user is redirected to the
 corresponding source package's page.
 
-A convenient search form is provided on the frontpage as well as on each
-package's page which allows users to jump to another package page and
-supports autocomplete suggestions for both source and pseudo packages.
+A convenient search form is provided on the front page as well as on each
+package's page which allows users to jump to another package page. It
+supports auto completed suggestions for both source and pseudo packages.
 
 The information currently provided for each package is divided into the
 following panels:
