@@ -980,6 +980,11 @@ class UpdateBuildLogCheckStats(BaseTask):
                 package=package,
                 item_type=self.action_item_type)
 
+        if action_item.extra_data:
+            if action_item.extra_data == stats:
+                # Nothing has changed -- do not update the item
+                return
+
         logcheck_url = "http://qa.debian.org/bls/packages/{hash}/{pkg}.html".format(
             hash=package.name[0], pkg=package.name)
         if errors and warnings:

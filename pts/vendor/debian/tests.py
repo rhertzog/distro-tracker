@@ -1704,10 +1704,11 @@ class UpdateBuildLogCheckStatsActionItemTests(TestCase):
         runs.
         """
         # Create an action item which exists before that task is run
-        ActionItem.objects.create(
+        old_item = ActionItem.objects.create(
             package=self.package_name,
             item_type=self.get_action_item_type(),
             short_description="Desc")
+        old_timestamp = old_item.last_updated_timestamp
         expected_data = {
             'errors': 1,
             'warnings': 2,
@@ -1721,6 +1722,34 @@ class UpdateBuildLogCheckStatsActionItemTests(TestCase):
         # The extra data has been updated?
         item = ActionItem.objects.all()[0]
         self.assertEqual(expected_data, item.extra_data)
+        # The time stamp is updated?
+        self.assertNotEqual(old_timestamp, item.last_updated_timestamp)
+
+    def test_action_item_not_updated(self):
+        """
+        Tests that an already existing action item is unchanged if the new data
+        does not differ from the already stored data.
+        """
+        # Create an action item which exists before that task is run
+        expected_data = {
+            'errors': 1,
+            'warnings': 2,
+        }
+        old_item = ActionItem.objects.create(
+            package=self.package_name,
+            item_type=self.get_action_item_type(),
+            short_description="Desc",
+            extra_data=expected_data)
+        old_timestamp = old_item.last_updated_timestamp
+        self.set_buildd_content("dummy-package|1|2|1|1")
+
+        self.run_task()
+
+        # Stll just one action item
+        self.assertEqual(1, ActionItem.objects.count())
+        item = ActionItem.objects.all()[0]
+        # The item is unchanged
+        self.assertEqual(old_timestamp, item.last_updated_timestamp)
 
     def test_action_item_removed(self):
         """
