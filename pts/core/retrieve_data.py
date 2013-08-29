@@ -445,18 +445,30 @@ class UpdateRepositoriesTask(PackageUpdateTask):
             if entry.source_package.version == packages[entry.source_package.name]:
                 self._add_processed_repository_entry(entry)
 
-    @clear_all_events_on_exception
-    def execute(self):
-        apt_cache = AptCache()
-        updated_sources, updated_packages = (
-            apt_cache.update_repositories(self.force_update)
-        )
-
-        # Group all files by repository to which they belong
+    def group_files_by_repository(self, cached_files):
+        """
+        :param cached_files: A list of ``(repository, file_name)`` pairs
+        :returns: A dict mapping repositories to all file names found for that
+            repository.
+        """
         repository_files = {}
-        for repository, sources_file in updated_sources:
+        for repository, file_name in cached_files:
             repository_files.setdefault(repository, [])
-            repository_files[repository].append(sources_file)
+            repository_files[repository].append(file_name)
+
+        return repository_files
+
+    def update_sources_files(self, updated_sources):
+        """
+        Performs an update of tracked packages based on the updated Sources
+        files.
+
+        :param updated_sources: A list of ``(repository, sources_file_name)``
+            pairs giving the Sources files which were updated and should be
+            used to update the PTS tracked information too.
+        """
+        # Group all files by repository to which they belong
+        repository_files = self.group_files_by_repository(updated_sources)
 
         with transaction.commit_on_success():
             for repository, sources_files in repository_files.items():
@@ -465,7 +477,7 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                     self._update_sources_file(repository, sources_file)
 
                 # Mark package versions found in un-updated files as still existing
-                all_sources = apt_cache.get_sources_files_for_repository(repository)
+                all_sources = self.apt_cache.get_sources_files_for_repository(repository)
                 for sources_file in all_sources:
                     if sources_file not in sources_files:
                         self._mark_sources_file_not_processed(
@@ -478,6 +490,15 @@ class UpdateRepositoriesTask(PackageUpdateTask):
             # When all repositories are handled, update which packages are
             # still found in at least one repository.
             self._remove_obsolete_packages()
+
+    @clear_all_events_on_exception
+    def execute(self):
+        self.apt_cache = AptCache()
+        updated_sources, updated_packages = (
+            self.apt_cache.update_repositories(self.force_update)
+        )
+
+        self.update_sources_files(updated_sources)
 
 
 class UpdatePackageGeneralInformation(PackageUpdateTask):
