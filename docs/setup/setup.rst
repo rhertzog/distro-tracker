@@ -95,3 +95,7 @@ Alternatively, you may run the full test suite, including Django's internal
 tests, by doing::
 
 $ ./manage.py test
+
+To create the database::
+
+$ ./manage.py syncdb

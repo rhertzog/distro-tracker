@@ -219,6 +219,15 @@ All retrieved data can be accessed by using the models found in
 :mod:`pts.core.models`. Refer to that module's documentation for convenient
 APIs for interacting with the extracted information.
 
+Data model
+++++++++++
+
+You may wish to check the data model. This can be done for instance
+with the following command after having installed 'django_extensions'
+in INSTALLED_APPS (see pts.project.setup.locals.py)::
+
+ $ ./manage.py graph_models core | dot -Tpng >graph.png
+
 .. _web_design:
 
 Web Interface

@@ -7,6 +7,8 @@ file which is a symlink to the type of installation to you have
 overrides on top of those type-of-installation-specific settings.
 """
 # Load the selected configuration (selected.py is a symlink to preferred config)
+
+#from .defaults import INSTALLED_APPS
 from .selected import *
 
 ## Add your custom settings here
@@ -32,4 +34,25 @@ from .selected import *
 # If you don't use the packaged version of the PTS, put a random secret
 # key here. DO NOT USE THE EXAMPLE KEY GIVEN BELOW.
 # SECRET_KEY = 'etu2#5lv=!0(g9l31mw=cpwhioy!egg60lb5o3_67d83#(wu-u'
+
+# Uncomment this and the corresponding import, for instance if you need to add 'django_extensions'
+# INSTALLED_APPS = (
+#     'django.contrib.auth',
+#     'django.contrib.contenttypes',
+#     'django.contrib.sessions',
+#     'django.contrib.sites',
+#     'django.contrib.messages',
+#     'django.contrib.staticfiles',
+#     # Uncomment the next line to enable the admin:
+#     'django.contrib.admin',
+#     'django.contrib.markup',
+#     # Uncomment the next line to enable admin documentation:
+#     # 'django.contrib.admindocs',
+#     'django_extensions',
+#     'pts.core',
+#     'pts.vendor',
+#     'pts.vendor.debian',
+#     'pts.mail',
+# )
+
 
