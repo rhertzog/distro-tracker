@@ -19,6 +19,8 @@ case "$1" in
 	    chown pts:pts /var/lib/package-tracking-system/key
 	    chmod 640 /var/lib/package-tracking-system/key
 	fi
+	# Collect the static files
+	su - pts -c "pts-manage -v 0 --noinput"
     ;;
 esac
 

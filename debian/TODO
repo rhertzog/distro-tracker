@@ -1,5 +1,4 @@
 - Add cron entries to update the PTS
 - Add apache/nginx configuration files ready to use with the default
   gunicorn setup
-- Automatically collect static files in postinst
 - Replace embedded jquery files with packaged files
