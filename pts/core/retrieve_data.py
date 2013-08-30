@@ -703,9 +703,7 @@ class GenerateNewsFromRepositoryUpdates(BaseTask):
 
             # Process each event for each repository.
             for repository_name, events in repository_events.items():
-                event_names = [event.name for event in events]
-                repository_has_new_version = (
-                    'new-source-package-version-in-repository' in event_names)
+                package_removed_processed = False
                 for event in events:
                     # First time seeing this version?
                     version = event.arguments['version']
@@ -719,10 +717,16 @@ class GenerateNewsFromRepositoryUpdates(BaseTask):
                         else:
                             title = "{pkg} version {ver} MIGRATED to {repo}"
                     elif event.name == 'lost-source-package-version-in-repository':
-                        if not repository_has_new_version:
-                            # If there was no new version added to the repository instead of
-                            # this one, add a removed event.
-                            title = "{pkg} version {ver} REMOVED from {repo}"
+                        # Check if the repository still has some version of the
+                        # source package. If not, a news item needs to be added
+                        if package_removed_processed:
+                            # Create only one package removed item per
+                            # repository, package pair
+                            continue
+                        package_removed_processed = True
+                        repository = Repository.objects.get(name=repository_name)
+                        if not repository.has_source_package_name(package.name):
+                            title = "{pkg} REMOVED from {repo}"
 
                     if title is not None:
                         News.objects.create(

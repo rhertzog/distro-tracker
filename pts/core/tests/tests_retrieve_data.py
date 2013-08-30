@@ -871,6 +871,10 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         given repository. It makes sure the corresponding events are received
         by the news generation task if the ``events`` flag is set.
         """
+        SourcePackageRepositoryEntry.objects.filter(
+            source_package__source_package_name__name=name,
+            source_package__version=version,
+            repository__name=repository).delete()
         if events:
             self.add_mock_events('lost-source-package-version-in-repository', {
                 'name': name,
@@ -894,11 +898,10 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
             title
         )
 
-    def assert_correct_removed_message(self, title,
-                                       package_name, version, repository):
+    def assert_correct_removed_message(self, title, package_name, repository):
         self.assertEqual(
-            '{pkg} version {ver} REMOVED from {repo}'.format(
-                pkg=package_name, ver=version, repo=repository),
+            '{pkg} REMOVED from {repo}'.format(
+                pkg=package_name, repo=repository),
             title
         )
 
@@ -1129,6 +1132,8 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         version = '1.0.0'
         repository = 'repo'
         self.create_source_package(source_package_name, version, events=False)
+        self.add_source_package_to_repository(
+            source_package_name, version, repository, events=False)
         self.remove_source_package_from_repository(
             source_package_name, version, repository)
 
@@ -1138,13 +1143,14 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         self.assertEqual(1, News.objects.count())
         self.assert_correct_removed_message(
             News.objects.all()[0].title,
-            source_package_name, version, repository
+            source_package_name, repository
         )
 
     def test_multiple_versions_removed_same_repo(self):
         """
         Tests the case where multiple versions of the same package are removed
-        from the same repository.
+        from the same repository and there are no more remaining versions of
+        the package in that repository.
         """
         source_package_name = 'dummy-package'
         versions = ['1.0.0', '1.1.0']
@@ -1152,20 +1158,43 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         for version in versions:
             self.create_source_package(
                 source_package_name, version, events=False)
+            self.add_source_package_to_repository(
+                source_package_name, version, repository, events=False)
             self.remove_source_package_from_repository(
                 source_package_name, version, repository)
 
         self.run_task()
 
-        self.assertEqual(2, News.objects.count())
-        titles = [news.title for news in News.objects.all()]
-        ## This sorts the titles by version number
-        titles.sort()
-        for title, version in zip(titles, versions):
-            self.assert_correct_removed_message(
-                title,
-                source_package_name, version, repository
-            )
+        # Only one news item should be created
+        self.assertEqual(1, News.objects.count())
+        news = News.objects.all()[0]
+        self.assert_correct_removed_message(
+            news.title,
+            source_package_name, repository
+        )
+
+    def test_only_one_version_removed(self):
+        """
+        Tests the case where a version is removed from the repository, but the
+        repository still contains other versions of the same package.
+        """
+        source_package_name = 'dummy-package'
+        versions = ['1.0.0', '1.1.0']
+        repository = 'repo'
+        for version in versions:
+            self.create_source_package(
+                source_package_name, version, events=False)
+            self.add_source_package_to_repository(
+                source_package_name, version, repository, events=False)
+        # Remove only one of the versions
+        removed_version = versions[0]
+        self.remove_source_package_from_repository(
+            source_package_name, removed_version, repository)
+
+        self.run_task()
+
+        # No news are generated
+        self.assertEqual(0, News.objects.count())
 
     def test_migrate_and_remove(self):
         """
@@ -1193,7 +1222,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         self.assertEqual(2, News.objects.count())
         self.assert_correct_removed_message(
             News.objects.all()[0].title,
-            source_package_name, version, repositories[0])
+            source_package_name, repositories[0])
         self.assert_correct_migrated_message(
             News.objects.all()[1].title,
             source_package_name, version, repositories[1])
@@ -1244,7 +1273,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         for name, news, repository in zip(names, all_news, repositories):
             self.assert_correct_removed_message(
                 news.title,
-                name, version, repository)
+                name, repository)
             # The news is linked with the correct package
             self.assertEqual(news.package.name, name)
 
