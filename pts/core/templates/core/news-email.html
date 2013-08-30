@@ -14,7 +14,5 @@
 </ul>
 
 <div class="email-news-body">
-{% for part in context.parts %}
-{{ part|linebreaks }}
-{% endfor %}
+<pre>{% for part in context.parts %}{{ part }}{% endfor %}</pre>
 </div>
