@@ -6,7 +6,7 @@
     {% for item in panel.context %}
     <li class="list-group-item">
         {% with url=item.url|default:"#" %}
-        <a href="{{ url }}" class="has-tooltip" data-toggle="tooltip" title="{{ item.repository_name }}">{{ item.name }}</a>
+        <a href="{{ url }}" title="{{ item.repository_name }}">{{ item.name }}</a>
         {% endwith %}
 
         {% if item.bug_stats %}

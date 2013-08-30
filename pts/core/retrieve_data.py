@@ -149,8 +149,6 @@ def retrieve_repository_info(sources_list_entry):
     return repository_information
 
 
-
-
 class PackageUpdateTask(BaseTask):
     """
     A subclass of the :class:`BaseTask <pts.core.tasks.BaseTask>` providing
@@ -610,9 +608,11 @@ class UpdateSourceToBinariesInformation(PackageUpdateTask):
         Returns a list representing binary packages linked to the given
         source package.
         """
+        repository_name = package.main_entry.repository.name
         return [
             {
                 'name': pkg.name,
+                'repository_name': repository_name,
             }
             for pkg in package.main_version.binary_packages.all()
         ]
@@ -624,7 +624,10 @@ class UpdateSourceToBinariesInformation(PackageUpdateTask):
             for event in self.get_all_events()
         )
         with transaction.commit_on_success():
-            qs = SourcePackageName.objects.filter(name__in=package_names)
+            if self.is_initial_task():
+                qs = SourcePackageName.objects.all()[:1]
+            else:
+                qs = SourcePackageName.objects.filter(name__in=package_names)
             for package in qs:
                 binaries, _ = PackageExtractedInfo.objects.get_or_create(
                     key='binaries',
