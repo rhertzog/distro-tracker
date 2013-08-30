@@ -848,6 +848,10 @@ class UpdateLintianStatsTaskTest(TestCase):
         self.assertEqual(item.extra_data['errors'], errors)
         self.assertEqual(item.extra_data['warnings'], warnings)
 
+    def get_action_item_type(self):
+        return ActionItemType.objects.get_or_create(
+            type_name=UpdateLintianStatsTask.ACTION_ITEM_TYPE_NAME)[0]
+
     @mock.patch('pts.core.utils.http.requests')
     def test_stats_created(self, mock_requests):
         """
@@ -984,6 +988,58 @@ class UpdateLintianStatsTaskTest(TestCase):
             item.full_description_template,
             UpdateLintianStatsTask.ITEM_FULL_DESCRIPTION_TEMPLATE)
 
+    @mock.patch('pts.core.utils.http.requests')
+    def test_action_item_updated(self, mock_requests):
+        """
+        Tests that an existing action item is updated with new data.
+        """
+        # Create an existing action item
+        old_item = ActionItem.objects.create(
+            package=self.package_name,
+            item_type=self.get_action_item_type(),
+            short_description="Short description...",
+            extra_data={'errors': 1, 'warnings': 2})
+        old_timestamp = old_item.last_updated_timestamp
+        errors, warnings = 2, 0
+        response = "dummy-package {err} {warn} 0 0 0 0".format(
+            err=errors, warn=warnings)
+        set_mock_response(mock_requests, text=response)
+
+        self.run_task()
+
+        # An action item is created.
+        self.assertEqual(1, ActionItem.objects.count())
+        # Extra data updated?
+        item = ActionItem.objects.all()[0]
+        self.assert_action_item_warnings_and_errors_count(item, errors, warnings)
+        # The timestamp is updated
+        self.assertNotEqual(old_timestamp, item.last_updated_timestamp)
+
+    @mock.patch('pts.core.utils.http.requests')
+    def test_action_item_not_updated(self, mock_requests):
+        """
+        Tests that an existing action item is left unchanged when the update
+        shows unchanged lintian stats.
+        """
+        errors, warnings = 2, 0
+        # Create an existing action item
+        old_item = ActionItem.objects.create(
+            package=self.package_name,
+            item_type=self.get_action_item_type(),
+            short_description="Short description...",
+            extra_data={'errors': errors, 'warnings': warnings})
+        old_timestamp = old_item.last_updated_timestamp
+        response = "dummy-package {err} {warn} 0 0 0 0".format(
+            err=errors, warn=warnings)
+        set_mock_response(mock_requests, text=response)
+
+        self.run_task()
+
+        # An action item is created.
+        self.assertEqual(1, ActionItem.objects.count())
+        # Item unchanged?
+        item = ActionItem.objects.all()[0]
+        self.assertEqual(old_timestamp, item.last_updated_timestamp)
 
     @mock.patch('pts.core.utils.http.requests')
     def test_action_item_created_warnings(self, mock_requests):
@@ -1055,11 +1111,9 @@ class UpdateLintianStatsTaskTest(TestCase):
         stats no longer contain errors or warnings.
         """
         # Make sure an item exists for the package
-        item_type, _ = ActionItemType.objects.get_or_create(
-            type_name=UpdateLintianStatsTask.ACTION_ITEM_TYPE_NAME)
         ActionItem.objects.create(
             package=self.package_name,
-            item_type=item_type,
+            item_type=self.get_action_item_type(),
             short_description="Short description...",
             extra_data={'errors': 1, 'warnings': 2})
         response = "dummy-package 0 0 5 4 3 2"

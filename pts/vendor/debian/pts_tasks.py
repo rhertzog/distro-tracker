@@ -610,6 +610,12 @@ class UpdateLintianStatsTask(BaseTask):
             'errors': errors,
             'lintian_url': lintian_url,
         }
+        if lintian_action_item.extra_data:
+            old_extra_data = lintian_action_item.extra_data
+            if (old_extra_data['warnings'] == warnings and
+                    old_extra_data['errors'] == errors):
+                # No need to update
+                return
 
         lintian_action_item.extra_data = new_extra_data
 
