@@ -766,8 +766,11 @@ class NewsPanel(BasePanel):
 
     @cached_property
     def context(self):
+        news = News.objects.filter(package=self.package)
+        news = news.order_by('-datetime_created')
+        news = news[:self.NEWS_LIMIT]
         return {
-            'news': News.objects.filter(package=self.package)[:self.NEWS_LIMIT]
+            'news': news
         }
 
     @property
