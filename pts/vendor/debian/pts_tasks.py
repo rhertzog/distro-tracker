@@ -532,6 +532,7 @@ class UpdateLintianStatsTask(BaseTask):
     Updates packages' lintian stats.
     """
     ACTION_ITEM_TYPE_NAME = 'lintian-warnings-and-errors'
+    ITEM_DESCRIPTION = 'lintian reports <a href="url">{report}</a>'
     ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/lintian-action-item.html'
 
     def __init__(self, force_update=False, *args, **kwargs):
@@ -590,29 +591,52 @@ class UpdateLintianStatsTask(BaseTask):
         # Get the old action item for this warning, if it exists.
         lintian_action_item = package.get_action_item_for_type(
             self.lintian_action_item_type.type_name)
-        if warnings or errors:
-            # The item didn't previously have an action item: create it now
-            if lintian_action_item is None:
-                lintian_action_item = ActionItem(
-                    package=package,
-                    item_type=self.lintian_action_item_type,
-                    short_description='lintian reports errors or warnings')
-
-            # If there are errors make the item a high severity issue
-            if errors:
-                lintian_action_item.set_severity('high')
-
-            lintian_action_item.extra_data = {
-                'warnings': warnings,
-                'errors': errors,
-                'lintian_url': lintian_stats.get_lintian_url()
-            }
-            lintian_action_item.save()
-        else:
+        if not warnings and not errors:
             if lintian_action_item:
                 # If the item previously existed, delete it now since there
                 # are no longer any warnings/errors.
                 lintian_action_item.delete()
+            return
+
+        # The item didn't previously have an action item: create it now
+        if lintian_action_item is None:
+            lintian_action_item = ActionItem(
+                package=package,
+                item_type=self.lintian_action_item_type)
+
+        lintian_url = lintian_stats.get_lintian_url()
+        new_extra_data = {
+            'warnings': warnings,
+            'errors': errors,
+            'lintian_url': lintian_url,
+        }
+
+        lintian_action_item.extra_data = new_extra_data
+
+        if errors and warnings:
+            report = '{} error{} and {} warning{}'.format(
+                errors,
+                's' if errors > 1 else '',
+                warnings,
+                's' if warnings > 1 else '')
+        elif errors:
+            report = '{} error{}'.format(
+                errors,
+                's' if errors > 1 else '')
+        elif warnings:
+            report = '{} warning{}'.format(
+                warnings,
+                's' if warnings > 1 else '')
+
+        lintian_action_item.short_description = self.ITEM_DESCRIPTION.format(
+            url=lintian_url,
+            report=report)
+
+        # If there are errors make the item a high severity issue
+        if errors:
+            lintian_action_item.set_severity('high')
+
+        lintian_action_item.save()
 
     def execute(self):
         all_lintian_stats = self.get_lintian_stats()
