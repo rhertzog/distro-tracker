@@ -10,7 +10,9 @@
 """Models for the :mod:`pts.core` app."""
 from __future__ import unicode_literals
 from django.db import models
+from django.db.utils import IntegrityError
 from django.utils import six
+from django.utils import timezone
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.encoding import force_text
 from django.utils.functional import cached_property
@@ -32,6 +34,11 @@ from email.utils import getaddresses
 from email.iterators import typed_subpart_iterator
 
 import os
+import hashlib
+import string
+import random
+
+PTS_CONFIRMATION_EXPIRATION_DAYS = settings.PTS_CONFIRMATION_EXPIRATION_DAYS
 
 
 @python_2_unicode_compatible
@@ -1751,3 +1758,96 @@ class ActionItem(models.Model):
             'created': self.created_timestamp.strftime('%Y-%m-%d'),
             'updated': self.last_updated_timestamp.strftime('%Y-%m-%d'),
         }
+
+
+class ConfirmationException(Exception):
+    """
+    An exception which is raised when the :py:class:`ConfirmationManager`
+    is unable to generate a unique key for a given identifier.
+    """
+    pass
+
+
+class ConfirmationManager(models.Manager):
+    """
+    A custom manager for the :py:class:`Confirmation` model.
+    """
+    def generate_key(self, identifier):
+        """
+        Generates a random key for the given identifier.
+        :param identifier: A string representation of an identifier for the
+            confirmation instance.
+        """
+        chars = string.ascii_letters + string.digits
+        random_string = ''.join(random.choice(chars) for _ in range(16))
+        random_string = random_string.encode('ascii')
+        salt = hashlib.sha1(random_string).hexdigest()
+        hash_input = (salt + identifier).encode('ascii')
+        return hashlib.sha1(hash_input).hexdigest()
+
+    def create_confirmation(self, identifier='', **kwargs):
+        """
+        Creates a :py:class:`Confirmation` object with the given identifier and
+        all the given keyword arguments passed.
+
+        :param identifier: A string representation of an identifier for the
+            confirmation instance.
+        :raises pts.mail.models.ConfirmationException: If it is unable to generate a unique key.
+        """
+        MAX_TRIES = 10
+        errors = 0
+        while errors < MAX_TRIES:
+            confirmation_key = self.generate_key(identifier)
+            try:
+                return self.create(confirmation_key=confirmation_key, **kwargs)
+            except IntegrityError:
+                errors += 1
+
+        raise ConfirmationException(
+            'Unable to generate a confirmation key for {identifier}'.format(
+                identifier=identifier))
+
+    def clean_up_expired(self):
+        """
+        Removes all expired confirmation keys.
+        """
+        for confirmation in self.all():
+            if confirmation.is_expired():
+                confirmation.delete()
+
+    def get(self, *args, **kwargs):
+        """
+        Overrides the default :py:class:`django.db.models.Manager` method so
+        that expired :py:class:`Confirmation` instances are never
+        returned.
+
+        :rtype: :py:class:`Confirmation` or ``None``
+        """
+        instance = super(ConfirmationManager, self).get(*args, **kwargs)
+        return instance if not instance.is_expired() else None
+
+
+@python_2_unicode_compatible
+class Confirmation(models.Model):
+    """
+    An abstract model allowing its subclasses to store and create confirmation
+    keys.
+    """
+    confirmation_key = models.CharField(max_length=40, unique=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+
+    objects = ConfirmationManager()
+
+    class Meta:
+        abstract = True
+
+    def __str__(self):
+        return self.confirmation_key
+
+    def is_expired(self):
+        """
+        :returns True: if the confirmation key has expired
+        :returns False: if the confirmation key is still valid
+        """
+        delta = timezone.now() - self.date_created
+        return delta.days >= PTS_CONFIRMATION_EXPIRATION_DAYS
