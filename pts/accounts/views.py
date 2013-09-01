@@ -21,12 +21,14 @@ from django.contrib.auth import authenticate
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
+from django.http import HttpResponseForbidden
 from pts.accounts.forms import UserCreationForm
 from pts.accounts.forms import ResetPasswordForm
 from pts.accounts.models import User
 from pts.accounts.models import UserRegistrationConfirmation
 from pts.core.utils import pts_render_to_string
 from pts.core.utils import render_to_json_response
+from pts.core.models import Subscription
 
 
 class RegisterUser(CreateView):
@@ -146,3 +148,29 @@ class UserEmailsView(LoginRequiredMixin, View):
         return render_to_json_response([
             email.email for email in user.emails.all()
         ])
+
+
+class SubscribeUserToPackageView(LoginRequiredMixin, View):
+    """
+    Subscribes the user to a package.
+
+    The user whose email address is provided must currently be logged in.
+    """
+    def post(self, request):
+        package = request.POST.get('package', None)
+        email = request.POST.get('email', None)
+
+        if not package or not email:
+            raise Http404
+
+        # Check whether the logged in user is associated with the given email
+        if email not in [e.email for e in request.user.emails.all()]:
+            return HttpResponseForbidden()
+
+        Subscription.objects.create_for(
+            package_name=package,
+            email=email)
+
+        return render_to_json_response({
+            'status': 'ok',
+        })

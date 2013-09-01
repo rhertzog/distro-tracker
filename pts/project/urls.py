@@ -21,6 +21,7 @@ from pts.accounts.views import RegistrationConfirmation
 from pts.accounts.views import AccountProfile
 from pts.accounts.views import SubscriptionsView
 from pts.accounts.views import UserEmailsView
+from pts.accounts.views import SubscribeUserToPackageView
 
 from django.contrib import admin
 admin.autodiscover()
@@ -79,6 +80,8 @@ urlpatterns = patterns('',
 
     url(r'^api/accounts/profile/emails/$', UserEmailsView.as_view(),
         name='pts-api-accounts-emails'),
+    url(r'^api/accounts/profile/subscribe/$', SubscribeUserToPackageView.as_view(),
+        name='pts-api-accounts-subscribe'),
 
     # Dedicated package page
     url(r'^pkg/(?P<package_name>[^/]+)/?$', 'pts.core.views.package_page',

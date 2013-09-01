@@ -249,3 +249,64 @@ class UserEmailsViewTests(TestCase):
         self.assertEqual(
             [email.email for email in self.user.emails.all()],
             json.loads(response.content))
+
+
+class SubscribeUserToPackageViewTests(TestCase):
+    """
+    Tests for the :class:`pts.accounts.views.SubscribeUserToPackageView` view.
+    """
+    def setUp(self):
+        self.password = 'asdf'
+        self.user = User.objects.create_user(
+            main_email='user@domain.com', password=self.password)
+        self.package = PackageName.objects.create(name='dummy-package')
+
+    def log_in_user(self):
+        self.client.login(username=self.user.main_email, password=self.password)
+
+    def post_to_view(self, package=None, email=None):
+        post_params = {}
+        if package:
+            post_params['package'] = package
+        if email:
+            post_params['email'] = email
+        return self.client.post(
+            reverse('pts-api-accounts-subscribe'), post_params)
+
+    def test_subscribe_user(self):
+        self.log_in_user()
+
+        response = self.post_to_view(self.package.name, self.user.main_email)
+
+        # After the POST, the user is subscribed to the package?
+        self.assertTrue(self.user.is_subscribed_to(self.package))
+        self.assertEqual('application/json', response['Content-Type'])
+        expected = {
+            'status': 'ok'
+        }
+        self.assertDictEqual(expected, json.loads(response.content))
+
+    def test_subscribe_not_logged_in(self):
+        """
+        Tests that subscribing does not work when a user is not logged in.
+        """
+        self.post_to_view(self.package.name, self.user.main_email)
+
+        # The user is not subscribed to the package
+        self.assertFalse(self.user.is_subscribed_to(self.package))
+
+    def test_subscribe_logged_in_not_owner(self):
+        """
+        Tests that a logged in user cannot subscribe an email that it does not
+        own to a package.
+        """
+        self.log_in_user()
+        other_user = User.objects.create_user(
+            main_email='other@domain.com', password='asdf')
+
+        response = self.post_to_view(self.package.name, other_user.main_email)
+
+        # The user is not subscribed to the package
+        self.assertFalse(other_user.is_subscribed_to(self.package))
+        # Forbidden status code?
+        self.assertEqual(403, response.status_code)
