@@ -408,8 +408,19 @@ class UserRegistrationTest(SeleniumTestCase):
     def get_registration_url(self):
         return reverse('pts-accounts-register')
 
+    def get_login_url(self):
+        return reverse('pts-accounts-login')
+
+    def get_profile_url(self):
+        return reverse('pts-accounts-profile')
+
+    def create_user(self, main_email, password, associated_emails=()):
+        u = User.objects.create_user(main_email, password=password)
+        for associated_email in associated_emails:
+            u.emails.create(email=associated_email)
+
     def test_user_register(self):
-        profile_url = reverse('pts-accounts-profile')
+        profile_url = self.get_profile_url()
         password_form_id = 'form-reset-password'
         user_email = 'user@domain.com'
         ## Preconditions:
@@ -494,8 +505,7 @@ class UserRegistrationTest(SeleniumTestCase):
         ## Set up a registered user
         user_email = 'user@domain.com'
         associated_email = 'email@domain.com'
-        u = User.objects.create_user(user_email, password='asdf')
-        u.emails.create(email=associated_email)
+        self.create_user(user_email, 'asdf', [associated_email])
 
         # The user goes to the registration page
         self.get_page(self.get_registration_url())
@@ -517,3 +527,60 @@ class UserRegistrationTest(SeleniumTestCase):
         # He stays on the same page and receives an error message
         self.assert_current_url_equal(self.get_registration_url())
         self.assert_in_page_body('email address is already in use')
+
+    def test_login(self):
+        """
+        Tests that a user can log in when he already has an existing account.
+        """
+        ## Set up an account
+        user_email = 'user@domain.com'
+        associated_emails = ['email@domain.com']
+        password = 'asdf'
+        self.create_user(user_email, password, associated_emails)
+
+        # The user opens the front page and tries going to the log in page
+        self.get_page('/')
+        self.assert_in_page_body('Log in')
+        self.click_link('Log in')
+        # The user is now found in the log in page
+        self.assert_current_url_equal(self.get_login_url())
+
+        # There he can see a log in form
+        self.assert_element_with_id_in_page('form-login')
+
+        # He enters the correct email, but an incorrect password
+        self.input_to_element('id_username', user_email)
+        self.input_to_element('id_password', 'fdsa')
+        self.send_enter('id_password')
+        # He is met with an error message
+        self.assert_in_page_body('Please enter a correct email and password')
+
+        # Now the user correctly enters the password. The email should not
+        # need to be entered again.
+        self.input_to_element('id_password', password)
+        self.send_enter('id_password')
+        # The user is redirected to his profile page
+        self.assert_current_url_equal(self.get_profile_url())
+
+    def test_login_associated_email(self):
+        """
+        Tests that a user can log in with an associated email.
+        """
+        ## Set up an account
+        user_email = 'user@domain.com'
+        associated_emails = ['email@domain.com']
+        password = 'asdf'
+        self.create_user(user_email, password, associated_emails)
+
+        # The user goes to the log in page
+        self.get_page(self.get_login_url())
+        # There he can see a log in form
+        self.assert_element_with_id_in_page('form-login')
+
+        # He enters the associated email and account password
+        self.input_to_element('id_username', associated_emails[0])
+        self.input_to_element('id_password', password)
+        self.send_enter('id_password')
+
+        # The user is redirected to his profile page
+        self.assert_current_url_equal(self.get_profile_url())

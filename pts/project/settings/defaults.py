@@ -134,6 +134,7 @@ MIDDLEWARE_CLASSES = (
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
+    'pts.accounts.auth.PtsUserBackend',
 )
 
 AUTH_USER_MODEL = 'accounts.User'

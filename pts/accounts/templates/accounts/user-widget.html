@@ -1,5 +1,7 @@
 {% if user.is_authenticated %}
     <a id="account-logout" href="">Log out</a>
 {% else %}
-    <a id="account-register" href="{% url 'pts-accounts-register' %}">Register</a>
+    <span><a id="account-register" href="{% url 'pts-accounts-register' %}">Register</a></span>
+    <span>|</span>
+    <span><a id="account-login" href="{% url 'pts-accounts-login' %}">Log in</a></span>
 {% endif %}

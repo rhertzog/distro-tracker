@@ -62,6 +62,10 @@ urlpatterns = patterns('',
     url(r'^accounts/profile/$',
         AccountProfile.as_view(),
         name='pts-accounts-profile'),
+    url(r'^accounts/login/$', 'django.contrib.auth.views.login', {
+            'template_name': 'accounts/login.html',
+        },
+        name='pts-accounts-login'),
 
     # Dedicated package page
     url(r'^pkg/(?P<package_name>[^/]+)/?$', 'pts.core.views.package_page',
