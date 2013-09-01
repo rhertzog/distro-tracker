@@ -12,6 +12,7 @@
 from __future__ import unicode_literals
 from django.conf.urls import patterns, include, url
 from django.views.generic import TemplateView
+from django.core.urlresolvers import reverse_lazy
 from pts.core.views import PackageSearchView, PackageAutocompleteView
 from pts.core.views import ActionItemJsonView, ActionItemView
 from pts.core.news_feed import PackageNewsFeed
@@ -66,6 +67,10 @@ urlpatterns = patterns('',
             'template_name': 'accounts/login.html',
         },
         name='pts-accounts-login'),
+    url(r'^accounts/logout/$', 'django.contrib.auth.views.logout', {
+            'next_page': reverse_lazy('pts-index'),
+        },
+        name='pts-accounts-logout'),
 
     # Dedicated package page
     url(r'^pkg/(?P<package_name>[^/]+)/?$', 'pts.core.views.package_page',

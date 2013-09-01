@@ -19,7 +19,7 @@
                 </div>
                 <div class="span3 col col-lg-3">
                     {% include 'core/package-search-form.html' %}
-                    {% include 'accounts/user-widget.html' %}
+                    {% include 'accounts/user-widget.html' with logout_redirect=request.path %}
                 </div>
             </div>
         </div>

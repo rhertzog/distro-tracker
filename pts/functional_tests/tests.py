@@ -414,6 +414,11 @@ class UserRegistrationTest(SeleniumTestCase):
     def get_profile_url(self):
         return reverse('pts-accounts-profile')
 
+    def get_package_url(self, package_name):
+        return reverse('pts-package-page', kwargs={
+            'package_name': package_name,
+        })
+
     def create_user(self, main_email, password, associated_emails=()):
         u = User.objects.create_user(main_email, password=password)
         for associated_email in associated_emails:
@@ -496,6 +501,21 @@ class UserRegistrationTest(SeleniumTestCase):
         # message saying he has been registered.
         self.get_page(profile_url)
         self.assert_not_in_page_body('successfully registered')
+
+        # The user now wishes to log out
+        self.assert_in_page_body('Log out')
+        self.click_link('Log out')
+        # The user is redirected back to the index page since he was found on
+        # a private page prior to logging out.
+        self.assert_current_url_equal('/')
+
+        # From there, he tries logging in with his new account
+        self.click_link('Log in')
+        self.input_to_element('id_username', user_email)
+        self.input_to_element('id_password', password)
+        self.send_enter('id_password')
+        # He is now back at the profile page
+        self.assert_current_url_equal(self.get_profile_url())
 
     def test_user_registered(self):
         """
@@ -584,3 +604,39 @@ class UserRegistrationTest(SeleniumTestCase):
 
         # The user is redirected to his profile page
         self.assert_current_url_equal(self.get_profile_url())
+
+    def test_logout_from_package_page(self):
+        """
+        If a user logs out when on the package page, he should not be
+        redirected to the index.
+        """
+        ## Set up an account
+        user_email = 'user@domain.com'
+        associated_emails = ['email@domain.com']
+        password = 'asdf'
+        self.create_user(user_email, password, associated_emails)
+        ## Set up an existing package
+        package_name = 'dummy-package'
+        SourcePackageName.objects.create(name=package_name)
+
+        # The user logs in
+        self.get_page(self.get_login_url())
+        self.input_to_element('id_username', associated_emails[0])
+        self.input_to_element('id_password', password)
+        self.send_enter('id_password')
+
+        # The user goes to the package page
+        self.get_page('/' + package_name)
+        # From there he can log out...
+        self.assert_in_page_body('Log out')
+        self.click_link('Log out')
+        # The user is still at the package page, but no longer logged in
+        self.assert_current_url_equal(self.get_package_url(package_name))
+        self.assert_not_in_page_body('Log out')
+        self.assert_in_page_body('Log in')
+        # The user tries going to his profile page, but he is definitely
+        # logged out...
+        self.get_page(self.get_profile_url())
+        # ...which means he is redirected to the log in page
+        self.assert_current_url_equal(
+            self.get_login_url() + '?next=' + self.get_profile_url())
