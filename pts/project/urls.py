@@ -20,6 +20,7 @@ from pts.accounts.views import RegisterUser
 from pts.accounts.views import RegistrationConfirmation
 from pts.accounts.views import AccountProfile
 from pts.accounts.views import SubscriptionsView
+from pts.accounts.views import UserEmailsView
 
 from django.contrib import admin
 admin.autodiscover()
@@ -75,6 +76,9 @@ urlpatterns = patterns('',
             'next_page': reverse_lazy('pts-index'),
         },
         name='pts-accounts-logout'),
+
+    url(r'^api/accounts/profile/emails/$', UserEmailsView.as_view(),
+        name='pts-api-accounts-emails'),
 
     # Dedicated package page
     url(r'^pkg/(?P<package_name>[^/]+)/?$', 'pts.core.views.package_page',

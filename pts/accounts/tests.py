@@ -18,6 +18,8 @@ from pts.core.models import PackageName
 from pts.core.models import Subscription
 from django.core.urlresolvers import reverse
 
+import json
+
 
 class UserManagerTests(TestCase):
     """
@@ -200,3 +202,50 @@ class SubscriptionsViewTests(TestCase):
             self.assertEqual(
                 [package.name],
                 [sub.package.name for sub in context_subscriptions[email]])
+
+
+class UserEmailsViewTests(TestCase):
+    """
+    Tests for the :class:`pts.accounts.views.UserEmailsView` view.
+    """
+    def setUp(self):
+        self.password = 'asdf'
+        self.user = User.objects.create_user(
+            main_email='user@domain.com', password=self.password)
+
+    def log_in_user(self):
+        self.client.login(username=self.user.main_email, password=self.password)
+
+    def get_emails_view(self):
+        return self.client.get(reverse('pts-api-accounts-emails'))
+
+    def test_get_list_of_emails_only_main_email(self):
+        self.log_in_user()
+
+        response = self.get_emails_view()
+
+        # The view returns JSON
+        self.assertEqual('application/json', response['Content-Type'])
+        # The array contains only the users main email
+        self.assertEqual(
+            [email.email for email in self.user.emails.all()],
+            json.loads(response.content))
+
+    def test_user_not_logged_in(self):
+        """
+        Tests that when a user is not logged in, no JSON response is given.
+        """
+        response = self.get_emails_view()
+
+        self.assertNotEqual('application/json', response['Content-Type'])
+
+    def test_get_list_of_emails_with_associated_emails(self):
+        self.user.emails.create(email='other@domain.com')
+        self.log_in_user()
+
+        response = self.get_emails_view()
+
+        # The array contains only the users main email
+        self.assertEqual(
+            [email.email for email in self.user.emails.all()],
+            json.loads(response.content))

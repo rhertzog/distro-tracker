@@ -26,6 +26,7 @@ from pts.accounts.forms import ResetPasswordForm
 from pts.accounts.models import User
 from pts.accounts.models import UserRegistrationConfirmation
 from pts.core.utils import pts_render_to_string
+from pts.core.utils import render_to_json_response
 
 
 class RegisterUser(CreateView):
@@ -134,3 +135,14 @@ class SubscriptionsView(LoginRequiredMixin, View):
         return render(request, self.template_name, {
             'subscriptions': subscriptions,
         })
+
+
+class UserEmailsView(LoginRequiredMixin, View):
+    """
+    Returns a JSON encoded list of the currently logged in user's emails.
+    """
+    def get(self, request):
+        user = request.user
+        return render_to_json_response([
+            email.email for email in user.emails.all()
+        ])
