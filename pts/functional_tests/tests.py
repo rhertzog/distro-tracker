@@ -123,8 +123,10 @@ class PackagePageTest(SeleniumTestCase):
         self.package = SourcePackageName.objects.create(name='dummy-package')
         SourcePackageName.objects.create(name='second-package')
         self.binary_package = BinaryPackageName.objects.create(
-            name='binary-package',
-            source_package=self.package)
+            name='binary-package')
+        self.binary_package.sourcepackage_set.create(
+            source_package_name=self.package,
+            version='1.0.0')
 
     def get_package_url(self, package_name):
         """
