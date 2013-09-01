@@ -1,0 +1,12 @@
+{% extends 'core/base.html' %}
+{% block title %}Confirm | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="text-info">
+    <p>You are about to confirm your PTS account {{ view.confirmation.user }}.</p>
+    <p>In order to complete the process, please enter a password for your account.</p>
+</div>
+<div>
+{% include 'accounts/post-form.html' with form_id='form-reset-password' form_submit='Continue' %}
+</div>
+{% endblock %}

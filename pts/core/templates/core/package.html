@@ -17,7 +17,10 @@
                 <div class="span6 col col-lg-6 text-center">
                     <h1>{{ package }}</h1>
                 </div>
-                <div class="span3 col col-lg-3">{% include 'core/package-search-form.html' %}</div>
+                <div class="span3 col col-lg-3">
+                    {% include 'core/package-search-form.html' %}
+                    {% include 'accounts/user-widget.html' %}
+                </div>
             </div>
         </div>
     </header>

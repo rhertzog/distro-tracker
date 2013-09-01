@@ -15,6 +15,9 @@ from django.views.generic import TemplateView
 from pts.core.views import PackageSearchView, PackageAutocompleteView
 from pts.core.views import ActionItemJsonView, ActionItemView
 from pts.core.news_feed import PackageNewsFeed
+from pts.accounts.views import RegisterUser
+from pts.accounts.views import RegistrationConfirmation
+from pts.accounts.views import AccountProfile
 
 from django.contrib import admin
 admin.autodiscover()
@@ -38,6 +41,7 @@ urlpatterns = patterns('',
         name='pts-api-action-item'),
 
     url(r'^admin/', include(admin.site.urls)),
+
     url(r'^news/(?P<news_id>\d+)$', 'pts.core.views.news_page',
         name='pts-news-page'),
     url(r'^action-items/(?P<item_pk>\d+)$', ActionItemView.as_view(),
@@ -45,6 +49,19 @@ urlpatterns = patterns('',
 
     url(r'^$', TemplateView.as_view(template_name='core/index.html'),
         name='pts-index'),
+
+    # Account related URLs
+    url(r'^accounts/register/$', RegisterUser.as_view(),
+        name='pts-accounts-register'),
+    url(r'^accounts/register/success/$',
+        TemplateView.as_view(template_name='accounts/success.html'),
+        name='pts-accounts-register-success'),
+    url(r'^accounts/confirm/(?P<confirmation_key>[^/]+)$',
+        RegistrationConfirmation.as_view(),
+        name='pts-accounts-confirm-registration'),
+    url(r'^accounts/profile/$',
+        AccountProfile.as_view(),
+        name='pts-accounts-profile'),
 
     # Dedicated package page
     url(r'^pkg/(?P<package_name>[^/]+)/?$', 'pts.core.views.package_page',

@@ -1,0 +1,18 @@
+You have registered to the {{ PTS_VENDOR_NAME }} Package Tracking System.
+
+In order to complete your registration, you must confirm that you are the
+owner of this email address by going to the following URL:
+
+http://{{ PTS_SITE_DOMAIN }}{% url 'pts-accounts-confirm-registration' confirmation.confirmation_key %}
+
+If you don't understand why you got this mail, please ignore it,
+nothing will be done unless you follow the given link.
+
+If you have any problem with this service, please contact
+{{ PTS_CONTACT_EMAIL }}.
+
+Thanks,
+
+--
+{{ PTS_VENDOR_NAME }} Package Tracking System
+http://{{ PTS_SITE_DOMAIN }}

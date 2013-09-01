@@ -15,13 +15,16 @@ from __future__ import unicode_literals
 from django.test import LiveServerTestCase
 from django.core.urlresolvers import reverse
 from django.contrib.auth import get_user_model
+from django.core import mail
 from pts.core.models import SourcePackageName, BinaryPackageName
+from pts.accounts.models import UserRegistrationConfirmation
 from pts.core.panels import BasePanel
 
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
 from django.utils.six.moves import mock
+import os
 
 
 class SeleniumTestCase(LiveServerTestCase):
@@ -30,7 +33,10 @@ class SeleniumTestCase(LiveServerTestCase):
     Selenium.
     """
     def setUp(self):
-        self.browser = webdriver.Firefox()
+        os.environ['NO_PROXY'] = 'localhost,127.0.0.1,127.0.1.1'
+        fp = webdriver.FirefoxProfile()
+        fp.set_preference('network.proxy.type', 0)
+        self.browser = webdriver.Firefox(firefox_profile=fp)
         self.browser.implicitly_wait(3)
 
     def tearDown(self):
@@ -57,6 +63,14 @@ class SeleniumTestCase(LiveServerTestCase):
         element = self.browser.find_element_by_id(id)
         element.send_keys(text)
 
+    def clear_element_text(self, id):
+        """
+        Helper method which removes any text already found in the element with
+        the given ID.
+        """
+        element = self.browser.find_element_by_id(id)
+        element.clear()
+
     def click_link(self, link_text):
         """
         Helper method which clicks on the link with the given text.
@@ -76,6 +90,10 @@ class SeleniumTestCase(LiveServerTestCase):
         body = self.browser.find_element_by_tag_name('body')
         self.assertIn(text, body.text)
 
+    def assert_not_in_page_body(self, text):
+        body = self.browser.find_element_by_tag_name('body')
+        self.assertNotIn(text, body.text)
+
     def assert_element_with_id_in_page(self, element_id, custom_message=None):
         """
         Helper method which asserts that the element with the given ID can be
@@ -87,6 +105,16 @@ class SeleniumTestCase(LiveServerTestCase):
             self.browser.find_element_by_id(element_id)
         except NoSuchElementException:
             self.fail(custom_message)
+
+    def assert_current_url_equal(self, url):
+        """
+        Helper method which asserts that the given URL equals the current
+        browser URL.
+        The given URL should not include the domain.
+        """
+        self.assertEqual(
+            self.browser.current_url,
+            self.absolute_url(url))
 
     def set_mock_http_response(self, mock_requests, text, status_code=200):
         mock_response = mock_requests.models.Response()
@@ -361,3 +389,131 @@ class RepositoryAdminTest(SeleniumTestCase):
         # He also sees the information of the newly added repository
         self.assert_in_page_body('jessie')
         self.assert_in_page_body('main non-free')
+
+
+class UserRegistrationTest(SeleniumTestCase):
+    """
+    Tests for the user registration story.
+    """
+    def get_confirmation_url(self, message):
+        """
+        Extracts the confirmation URL from the given email message.
+        Returns ``None`` if the message did not contain a confirmation URL.
+        """
+        match = self.re_confirmation_url.search(message.body)
+        if not match:
+            return None
+        return match.group(1)
+
+    def get_registration_url(self):
+        return reverse('pts-accounts-register')
+
+    def test_user_register(self):
+        profile_url = reverse('pts-accounts-profile')
+        password_form_id = 'form-reset-password'
+        user_email = 'user@domain.com'
+        ## Preconditions:
+        ## No registered users or command confirmations
+        self.assertEqual(0, User.objects.count())
+        self.assertEqual(0, UserRegistrationConfirmation.objects.count())
+
+        ## Start of the test.
+        # The user opens the front page
+        self.get_page('/')
+        # He can see a link to a registration page
+        try:
+            self.browser.find_element_by_link_text("Register")
+        except NoSuchElementException:
+            self.fail("Link for user registration not found on the front page")
+
+        # Upon clicking the link, the user is taken to the registration page
+        self.click_link("Register")
+        self.assert_current_url_equal(self.get_registration_url())
+
+        # He can see a registration form
+        self.assert_element_with_id_in_page('form-register')
+
+        # The user inputs only the email address
+        self.input_to_element("id_main_email", user_email)
+        self.send_enter('id_main_email')
+
+        # The user is notified of a successful registration
+        self.assert_current_url_equal(reverse('pts-accounts-register-success'))
+
+        # The user receives an email with the confirmation URL
+        self.assertEqual(1, len(mail.outbox))
+        ## Get confirmation key from the database
+        self.assertEqual(1, UserRegistrationConfirmation.objects.count())
+        confirmation = UserRegistrationConfirmation.objects.all()[0]
+        self.assertIn(confirmation.confirmation_key, mail.outbox[0].body)
+
+        # The user goes to the confirmation URL
+        confirmation_url = reverse(
+            'pts-accounts-confirm-registration', kwargs={
+                'confirmation_key': confirmation.confirmation_key
+            })
+        self.get_page(confirmation_url)
+
+        # The user is asked to enter his password
+        self.assert_element_with_id_in_page(password_form_id)
+
+        # However, the user first goes back to the index...
+        self.get_page('/')
+        # ...and then goes back to the confirmation page which is still valid
+        self.get_page(confirmation_url)
+
+        password = 'asdf'
+        self.input_to_element('id_password1', password)
+        self.input_to_element('id_password2', password)
+        self.send_enter('id_password2')
+
+        # The user is now successfully logged in with his profile page open
+        self.assert_current_url_equal(profile_url)
+
+        # A message is provided telling the user that he has been registered
+        self.assert_in_page_body('successfully registered')
+
+        # When the user tries opening the confirmation page for the same key
+        # again, it is no longer valid
+        self.get_page(confirmation_url)
+        with self.assertRaises(NoSuchElementException):
+            self.browser.find_element_by_id(password_form_id)
+        ## This is because the confirmation model instance has been removed...
+        self.assertEqual(0, UserRegistrationConfirmation.objects.count())
+
+        # The user goes back to the profile page and this time there is no
+        # message saying he has been registered.
+        self.get_page(profile_url)
+        self.assert_not_in_page_body('successfully registered')
+
+    def test_user_registered(self):
+        """
+        Tests that a user registration fails when there is already a registered
+        user with the given email.
+        """
+        ## Set up a registered user
+        user_email = 'user@domain.com'
+        associated_email = 'email@domain.com'
+        u = User.objects.create_user(user_email, password='asdf')
+        u.emails.create(email=associated_email)
+
+        # The user goes to the registration page
+        self.get_page(self.get_registration_url())
+
+        # The user enters the already existing user's email
+        self.input_to_element('id_main_email', user_email)
+        self.send_enter('id_main_email')
+
+        # He stays on the same page and receives an error message
+        self.assert_current_url_equal(self.get_registration_url())
+        self.assert_in_page_body('email address is already in use')
+
+        # The user now tries using the other email associated with the already
+        # existing user account.
+        self.clear_element_text('id_main_email')
+        self.input_to_element('id_main_email', associated_email)
+        self.send_enter('id_main_email')
+
+        # He stays on the same page and receives an error message
+        self.assert_current_url_equal(self.get_registration_url())
+        self.assert_in_page_body('email address is already in use')

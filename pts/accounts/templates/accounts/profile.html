@@ -1,0 +1,13 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ user }} | {{ block.super}}{% endblock %}
+
+{% block content %}
+{% if messages %}
+<div id="profile-messages">
+    {% for message in messages %}
+    <div class="alert alert-block">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+Hello, {{ user }}.
+{% endblock %}

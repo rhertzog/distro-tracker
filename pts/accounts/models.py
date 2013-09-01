@@ -13,6 +13,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.auth.models import BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
+from pts.core.models import Confirmation
 from pts.core.models import EmailUser
 
 
@@ -74,3 +75,10 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def get_short_name(self):
         return self.get_full_name()
+
+
+class UserRegistrationConfirmation(Confirmation):
+    """
+    A model for user registration confirmations.
+    """
+    user = models.OneToOneField(User, related_name='confirmation')
