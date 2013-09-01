@@ -83,6 +83,12 @@ class EmailUser(models.Model):
     email = models.EmailField(max_length=254, unique=True)
     default_keywords = models.ManyToManyField(Keyword)
 
+    #: A PTS user account to which this email is associated to
+    user = models.ForeignKey(
+        'accounts.User',
+        blank=True, null=True,
+        related_name='emails')
+
     objects = EmailUserManager()
 
     def __str__(self):

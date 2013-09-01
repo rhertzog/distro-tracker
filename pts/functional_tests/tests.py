@@ -14,6 +14,7 @@ Functional tests for the Package Tracking System.
 from __future__ import unicode_literals
 from django.test import LiveServerTestCase
 from django.core.urlresolvers import reverse
+from django.contrib.auth import get_user_model
 from pts.core.models import SourcePackageName, BinaryPackageName
 from pts.core.panels import BasePanel
 
@@ -249,7 +250,7 @@ class PackagePageTest(SeleniumTestCase):
         self.assertIn("Hello, world", column.text)
 
 
-from django.contrib.auth.models import User
+User = get_user_model()
 
 
 class RepositoryAdminTest(SeleniumTestCase):
@@ -257,9 +258,8 @@ class RepositoryAdminTest(SeleniumTestCase):
         super(RepositoryAdminTest, self).setUp()
         # Create a superuser which will be used for the tests
         User.objects.create_superuser(
-            username='admin',
-            password='admin',
-            email='admin@localhost'
+            main_email='admin',
+            password='admin'
         )
 
     def login_to_admin(self, username='admin', password='admin'):

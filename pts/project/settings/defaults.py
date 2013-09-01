@@ -132,6 +132,12 @@ MIDDLEWARE_CLASSES = (
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+)
+
+AUTH_USER_MODEL = 'accounts.User'
+
 ROOT_URLCONF = 'pts.project.urls'
 
 # Python dotted path to the WSGI application used by Django's runserver.
@@ -167,6 +173,7 @@ INSTALLED_APPS = (
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
     'pts.core',
+    'pts.accounts',
     'pts.vendor',
     'pts.vendor.debian',
     'pts.mail',
