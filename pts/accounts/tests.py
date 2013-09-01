@@ -80,6 +80,62 @@ class UserManagerTests(TestCase):
         self.assertEqual(u, email_user.user)
 
 
+class UserTests(TestCase):
+    """
+    Tests for the :class:`pts.accounts.User` class.
+    """
+    def setUp(self):
+        self.user = User.objects.create_user(
+            main_email='user@domain.com', password='asdf')
+        self.package = PackageName.objects.create(name='dummy-package')
+
+    def test_is_subscribed_to_main_email(self):
+        """
+        Tests the
+        :meth:`is_subscribed_to <pts.accounts.models.User.is_subscribed_to>`
+        method when the user is subscribed to the package with his main email
+        only.
+        """
+        email = self.user.emails.all()[0]
+        Subscription.objects.create_for(
+            email=email.email,
+            package_name=self.package.name)
+
+        self.assertTrue(self.user.is_subscribed_to(self.package))
+        self.assertTrue(self.user.is_subscribed_to('dummy-package'))
+
+    def test_is_subscribed_to_associated_email(self):
+        """
+        Tests the
+        :meth:`is_subscribed_to <pts.accounts.models.User.is_subscribed_to>`
+        method when the user is subscribed to the package with one of his
+        associated emails.
+        """
+        email = self.user.emails.create(email='other-email@domain.com')
+        Subscription.objects.create_for(
+            email=email.email,
+            package_name=self.package.name)
+
+        self.assertTrue(self.user.is_subscribed_to(self.package))
+        self.assertTrue(self.user.is_subscribed_to('dummy-package'))
+
+    def test_is_subscribed_to_all_emails(self):
+        """
+        Tests the
+        :meth:`is_subscribed_to <pts.accounts.models.User.is_subscribed_to>`
+        method when the user is subscribed to the package with all of his
+        associated emails.
+        """
+        self.user.emails.create(email='other-email@domain.com')
+        for email in self.user.emails.all():
+            Subscription.objects.create_for(
+                email=email.email,
+                package_name=self.package.name)
+
+        self.assertTrue(self.user.is_subscribed_to(self.package))
+        self.assertTrue(self.user.is_subscribed_to('dummy-package'))
+
+
 class SubscriptionsViewTests(TestCase):
     """
     Tests the :class:`pts.accounts.SubscriptionsView`.

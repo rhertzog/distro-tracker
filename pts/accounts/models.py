@@ -15,6 +15,7 @@ from django.contrib.auth.models import BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
 from pts.core.models import Confirmation
 from pts.core.models import EmailUser
+from pts.core.models import PackageName
 
 
 class UserManager(BaseUserManager):
@@ -76,6 +77,19 @@ class User(AbstractBaseUser, PermissionsMixin):
     def get_short_name(self):
         return self.get_full_name()
 
+    def is_subscribed_to(self, package):
+        """
+        Checks if the user is subscribed to the given package. The user is
+        considered subscribed if at least one of its associated emails is
+        subscribed.
+
+        :param package: The name of the package or a package instance
+        :type package: string or :class:`pts.core.models.PackageName`
+        """
+        if not isinstance(package, PackageName):
+            package = PackageName.objects.get(name=package)
+        qs = package.subscriptions.filter(pk__in=self.emails.all())
+        return qs.exists()
 
 class UserRegistrationConfirmation(Confirmation):
     """
