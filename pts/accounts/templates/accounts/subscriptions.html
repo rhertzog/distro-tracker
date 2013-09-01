@@ -1,0 +1,92 @@
+{% extends 'core/base.html' %}
+{% load staticfiles %}
+{% block title %}Subscriptions | {{ block.super }}{% endblock %}
+
+{% block extra-js %}
+        <script src="{% static 'accounts/js/profile.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row-fluid">
+    <h2 class="text-center">Subscriptions</h2>
+</div>
+
+{% if subscriptions|length != 1 %}
+<div class="accordion" id="accordion-emails">
+{% endif %}
+
+{% for email, email_subscriptions in subscriptions.items %}
+
+{% if subscriptions|length != 1 %}
+{# Group the subscriptions by email, if the account has multiple emails #}
+<div class="accordion-group">
+<div class="accordion-heading">
+<div class="accordion-toggle" data-toggle="collapse" data-target="#emails-{{ forloop.counter }}">
+    <b>{{ email }}</b>
+</div>
+</div>
+<div class="accordion-body collapse in" id="emails-{{ forloop.counter }}">
+<div class="accordion-inner">
+{% endif %}
+
+{% if not email_subscriptions %}
+    {# This email has no subscriptions #}
+    <em>No subscriptions!</em>
+{% else %}
+
+{% with email_number=forloop.counter|stringformat:"s" %}
+{% with accordion_id="subscriptions-accordion-"|add:email_number %}
+<div class="accordion" id="{{ accordion_id }}">
+
+{% for subscription in email_subscriptions %}
+{# Display each subscription in a list, with the details being hidden in a toggleable tray #}
+    {% with subscription_number=forloop.counter|stringformat:"s" %}
+    {% with details_id=accordion_id|add:"-details-"|add:subscription_number %}
+    <div class="accordion-group">
+        <div class="accordion-heading">
+        <div class="accordion-toggle" data-toggle="collapse" data-parent="#{{ accordion_id }}" data-target="#{{ details_id }}">
+            <span class='subscription-package'>
+                {% if subscription.package.get_absolute_url %}
+                <a href="{{ subscription.package.get_absolute_url }}">{{ subscription.package }}</a>
+                {% else %}
+                {{ subscription.package }}
+                {% endif %}
+            </span>
+            <span class='subscription-package-type'>({{ subscription.package.get_package_type_display }})</span>
+            {% if not subscription.active %}
+            <span><i class='icon-exclamation-sign' title='Subscription has not been confirmed'></i></span>
+            {% endif %}
+        </div>
+        </div>
+
+        <div class="accordion-body collapse" id="{{ details_id }}">
+            <div class="accordion-inner">
+            <div><b>Subscription keywords:</b></div>
+            <ul class="inline">
+                {% for keyword in subscription.keywords.all %}
+                <li>{{ keyword }}</li>
+                {% endfor %}
+            </ul>
+            </div>
+        </div>
+    </div>
+    {% endwith %}{% endwith %}
+{% endfor %}
+</div>
+
+{% endwith %}{% endwith %}
+{% endif %}
+
+{% if subscriptions|length != 1 %}
+{# Close the group of subscriptions associated with one of the emails #}
+</div></div></div>
+{% endif %}
+
+{% endfor %}
+
+{% if subscriptions|length != 1 %}
+{# Close the accordion grouping emails #}
+</div>
+{% endif %}
+
+{% endblock %}

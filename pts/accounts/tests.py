@@ -14,6 +14,9 @@ from __future__ import unicode_literals
 from django.test import TestCase
 from pts.accounts.models import User
 from pts.core.models import EmailUser
+from pts.core.models import PackageName
+from pts.core.models import Subscription
+from django.core.urlresolvers import reverse
 
 
 class UserManagerTests(TestCase):
@@ -75,3 +78,69 @@ class UserManagerTests(TestCase):
         self.assertEqual(1, u.emails.count())
         email_user = EmailUser.objects.all()[0]
         self.assertEqual(u, email_user.user)
+
+
+class SubscriptionsViewTests(TestCase):
+    """
+    Tests the :class:`pts.accounts.SubscriptionsView`.
+    """
+    def setUp(self):
+        self.package_name = PackageName.objects.create(name='dummy-package')
+
+        self.password = 'asdf'
+        self.user = User.objects.create_user(
+            main_email='user@domain.com',
+            password=self.password)
+
+    def get_subscriptions_view(self):
+        self.client.login(username=self.user.main_email, password=self.password)
+        return self.client.get(reverse('pts-accounts-subscriptions'))
+
+    def subscribe_email_to_package(self, email, package_name):
+        Subscription.objects.create_for(
+            email=email,
+            package_name=package_name.name)
+
+    def test_one_email(self):
+        """
+        Tests the scenario where the user only has one email associated with
+        his account.
+        """
+        self.subscribe_email_to_package(self.user.main_email, self.package_name)
+
+        response = self.get_subscriptions_view()
+
+        self.assertTemplateUsed(response, 'accounts/subscriptions.html')
+        # The context contains the subscriptions of the user
+        self.assertIn('subscriptions', response.context)
+        context_subscriptions = response.context['subscriptions']
+        email = self.user.emails.all()[0]
+        # The correct email is in the context
+        self.assertIn(email, context_subscriptions)
+        # The packages in the context are correct
+        self.assertEqual(
+            [self.package_name.name],
+            [sub.package.name for sub in context_subscriptions[email]])
+
+    def test_multiple_emails(self):
+        """
+        Tests the scenario where the user has multiple emails associated with
+        his account.
+        """
+        self.user.emails.create(email='other-email@domain.com')
+        packages = [
+            self.package_name,
+            PackageName.objects.create(name='other-package')]
+        for email, package in zip(self.user.emails.all(), packages):
+            self.subscribe_email_to_package(email.email, package)
+
+        response = self.get_subscriptions_view()
+
+        # All the emails are in the context?
+        context_subscriptions = response.context['subscriptions']
+        for email, package in zip(self.user.emails.all(), packages):
+            self.assertIn(email, context_subscriptions)
+            # Each email has the correct package?
+            self.assertEqual(
+                [package.name],
+                [sub.package.name for sub in context_subscriptions[email]])

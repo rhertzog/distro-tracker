@@ -247,6 +247,13 @@ class PackageName(BasePackageName):
     def __str__(self):
         return self.name
 
+    def get_absolute_url(self):
+        if self.package_type in (
+                self.SOURCE_PACKAGE_TYPE, self.PSEUDO_PACKAGE_TYPE):
+            return reverse('pts-package-page', kwargs={
+                'package_name': self.name,
+            })
+
     def get_action_item_for_type(self, action_item_type):
         """
         :param: The name of the :class:`ActionItemType` of the
@@ -266,6 +273,7 @@ class PackageName(BasePackageName):
             for item in self.action_items.all()
             if item.item_type.type_name == action_item_type),
             None)
+
 
 class PseudoPackageName(PackageName):
     """

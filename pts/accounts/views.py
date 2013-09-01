@@ -115,3 +115,22 @@ class AccountProfile(LoginRequiredMixin, View):
             'user': request.user,
         })
 
+
+class SubscriptionsView(LoginRequiredMixin, View):
+    """
+    Displays a user's subscriptions.
+    """
+    template_name = 'accounts/subscriptions.html'
+
+    def get(self, request):
+        user = request.user
+        # Map users emails to the subscriptions of that email
+        subscriptions = {
+            email: sorted([
+                subscription for subscription in email.subscription_set.all()
+            ], key=lambda sub: sub.package.name)
+            for email in user.emails.all()
+        }
+        return render(request, self.template_name, {
+            'subscriptions': subscriptions,
+        })

@@ -19,6 +19,7 @@ from pts.core.news_feed import PackageNewsFeed
 from pts.accounts.views import RegisterUser
 from pts.accounts.views import RegistrationConfirmation
 from pts.accounts.views import AccountProfile
+from pts.accounts.views import SubscriptionsView
 
 from django.contrib import admin
 admin.autodiscover()
@@ -63,6 +64,9 @@ urlpatterns = patterns('',
     url(r'^accounts/profile/$',
         AccountProfile.as_view(),
         name='pts-accounts-profile'),
+    url(r'^accounts/subscriptions/$',
+        SubscriptionsView.as_view(),
+        name='pts-accounts-subscriptions'),
     url(r'^accounts/login/$', 'django.contrib.auth.views.login', {
             'template_name': 'accounts/login.html',
         },
@@ -95,6 +99,11 @@ if settings.DEBUG:
         (r'^media/(?P<path>.*)$',
          'django.views.static.serve', {
             'document_root': settings.MEDIA_ROOT
+          }
+        ),
+        (r'^static/(?P<path>.*)$',
+         'django.views.static.serve', {
+            'document_root': settings.STATIC_ROOT,
           }
         ),
     ) + urlpatterns
