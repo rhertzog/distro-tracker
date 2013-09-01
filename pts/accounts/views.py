@@ -97,7 +97,17 @@ class RegistrationConfirmation(FormView):
         return super(RegistrationConfirmation, self).get(request,confirmation_key)
 
 
-class AccountProfile(View):
+class LoginRequiredMixin(object):
+    """
+    A view mixin which makes sure that the user is logged in before accessing
+    the view.
+    """
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(LoginRequiredMixin, self).dispatch(*args, **kwargs)
+
+
+class AccountProfile(LoginRequiredMixin, View):
     template_name = 'accounts/profile.html'
 
     def get(self, request):
@@ -105,6 +115,3 @@ class AccountProfile(View):
             'user': request.user,
         })
 
-    @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
-        return super(AccountProfile, self).dispatch(*args, **kwargs)
