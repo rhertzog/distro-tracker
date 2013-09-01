@@ -1,5 +1,7 @@
 {% if user.is_authenticated %}
-    <a id="account-logout" href="{% url 'pts-accounts-logout' %}?next={{ logout_redirect }}">Log out</a>
+    <span><a href="{% url 'pts-accounts-profile' %}">Profile</a></span>
+    <span>|</span>
+    <span><a id="account-logout" href="{% url 'pts-accounts-logout' %}?next={{ logout_redirect }}">Log out</a></span>
 {% else %}
     <span><a id="account-register" href="{% url 'pts-accounts-register' %}">Register</a></span>
     <span>|</span>

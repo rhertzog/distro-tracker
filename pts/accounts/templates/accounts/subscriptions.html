@@ -7,9 +7,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="row-fluid">
-    <h2 class="text-center">Subscriptions</h2>
-</div>
+{% include 'accounts/profile-navbar.html' with active_element='subscriptions' %}
 
 {% if subscriptions|length != 1 %}
 <div class="accordion" id="accordion-emails">
@@ -52,7 +50,7 @@
                 {{ subscription.package }}
                 {% endif %}
             </span>
-            <span class='subscription-package-type'>({{ subscription.package.get_package_type_display }})</span>
+            <span class='subscription-package-type label'>{{ subscription.package.get_package_type_display }}</span>
             {% if not subscription.active %}
             <span><i class='icon-exclamation-sign' title='Subscription has not been confirmed'></i></span>
             {% endif %}

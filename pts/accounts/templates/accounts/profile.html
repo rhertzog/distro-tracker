@@ -9,5 +9,6 @@
     {% endfor %}
 </div>
 {% endif %}
+{% include 'accounts/profile-navbar.html' with active_element='profile' %}
 Hello, {{ user }}.
 {% endblock %}

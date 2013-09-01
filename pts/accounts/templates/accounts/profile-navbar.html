@@ -1,0 +1,14 @@
+{% spaceless %}
+<div class="navbar">
+  <div class="navbar-inner">
+    <ul class="nav">
+      <li class="{% if active_element == 'profile' %}active{% endif %}">
+        <a href="{% url 'pts-accounts-profile' %}">Profile</a>
+      </li>
+      <li class="{% if active_element == 'subscriptions' %}active{% endif %}">
+        <a href="{% url 'pts-accounts-subscriptions' %}">Subscriptions</a>
+      </li>
+    </ul>
+  </div>
+</div>
+{% endspaceless %}
