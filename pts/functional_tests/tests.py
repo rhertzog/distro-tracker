@@ -794,3 +794,34 @@ class SubscribeToPackageTest(SeleniumTestCase):
         self.assert_element_with_id_in_page('unsubscribe-button')
         unsubscribe_button = self.get_element_by_id('unsubscribe-button')
         self.assertTrue(unsubscribe_button.is_displayed())
+
+    def test_unsubscribe_all_emails(self):
+        """
+        Tests unsubscribing all user's emails from a package.
+        """
+        ## Set up a user with multiple emails subscribed to a package
+        other_email = 'other-email@domain.com'
+        self.user.emails.create(email=other_email)
+        for email in self.user.emails.all():
+            Subscription.objects.create_for(
+                email=email.email,
+                package_name=self.package.name)
+
+        # The user logs in and opens the package page
+        self.log_in()
+        self.get_page('/' + self.package.name)
+        # There he sees a button allowing him to unsubscribe from the package
+        self.assert_in_page_body('Unsubscribe')
+        self.assert_element_with_id_in_page('unsubscribe-button')
+        # The user decides to unsubscribe and clicks the button...
+        self.get_element_by_id('unsubscribe-button').click()
+        self.wait_response(1)
+
+        ## The user is really unsubscribed from the package
+        self.assertFalse(self.user.is_subscribed_to(self.package))
+
+        # The user sees the subscribe button instead of the unsubscribe button
+        sub_button = self.get_element_by_id('subscribe-button')
+        self.assertTrue(sub_button.is_displayed())
+        unsub_button = self.get_element_by_id('unsubscribe-button')
+        self.assertFalse(unsub_button.is_displayed())

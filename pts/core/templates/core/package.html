@@ -23,11 +23,11 @@
 
                 {% if request.user.is_authenticated %}
                     <div class="btn-group" style="margin-left: 10px;{% if is_subscribed %}display: none;{% endif %}">
-                      <a href="#"><button class="btn" id='subscribe-button' data-package="{{ package }}" data-get-emails="{% url 'pts-api-accounts-emails' %}" data-subscribe="{% url 'pts-api-accounts-subscribe' %}">Subscribe</button></a>
+                      <a href="#"><button class="btn" id='subscribe-button' data-package="{{ package }}" data-get-emails="{% url 'pts-api-accounts-emails' %}" data-url="{% url 'pts-api-accounts-subscribe' %}">Subscribe</button></a>
                     </div>
 
                     <div class="btn-group" style="margin-left: 10px;{% if not is_subscribed %}display: none;{% endif %}">
-                      <button class="btn btn-danger" id='unsubscribe-button'>Unsubscribe</button>
+                      <button class="btn btn-danger" id='unsubscribe-button' data-url="{% url 'pts-api-accounts-unsubscribe' %}" data-package="{{ package }}">Unsubscribe</button>
                       <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
                         <span class="caret"></span>
                       </button>

@@ -94,7 +94,12 @@ $(function() {
         }
     });
 
-    var subscribe_url = $('#subscribe-button').data('subscribe');
+    var subscribe_url = $('#subscribe-button').data('url');
+    var unsubscribe_url = $('#unsubscribe-button').data('url')
+    var toggle_subscription_buttons = function() {
+        $('#subscribe-button').parents('div.btn-group').toggle();
+        $('#unsubscribe-button').parents('div.btn-group').toggle();
+    }
     /**
      * Function subscribes the user with the given email to the given package.
      */
@@ -104,9 +109,16 @@ $(function() {
             'email': email
         }).done(function(data) {
             // Replace the subscribe button with an unsubscribe button
-            $('#subscribe-button').parents('div.btn-group').hide();
-            $('#unsubscribe-button').parents('div.btn-group').show();
+            toggle_subscription_buttons()
         })
+    };
+
+    var unsubscribe_user_from_package = function(package_name) {
+        $.post(unsubscribe_url, {
+            'package': package_name
+        }).done(function(data) {
+            toggle_subscription_buttons()
+        });
     };
 
     var email_chosen_handler = function(evt) {
@@ -138,6 +150,11 @@ $(function() {
                 $('#choose-email-modal').modal('show');
             }
         });
+    });
+
+    $('#unsubscribe-button').click(function(evt) {
+        evt.preventDefault();
+        unsubscribe_user_from_package($(this).data('package'));
     });
 
 });
