@@ -27,7 +27,6 @@ class UserManager(BaseUserManager):
         """
         Creates and saves a User with the given username, email and password.
         """
-        # Necessary to avoid a circular dependency of the modules
         main_email = self.normalize_email(main_email)
         user = self.model(main_email=main_email,
                           is_staff=is_staff,
