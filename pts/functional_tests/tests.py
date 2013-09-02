@@ -18,6 +18,8 @@ from django.contrib.auth import get_user_model
 from django.core import mail
 from pts.core.models import SourcePackageName, BinaryPackageName
 from pts.accounts.models import UserRegistrationConfirmation
+from pts.core.models import EmailUser
+from pts.core.models import Subscription
 from pts.core.panels import BasePanel
 
 from selenium import webdriver
@@ -26,6 +28,7 @@ import selenium.webdriver.support.ui as ui
 from selenium.webdriver.common.keys import Keys
 from django.utils.six.moves import mock
 import os
+import time
 
 
 class SeleniumTestCase(LiveServerTestCase):
@@ -49,6 +52,9 @@ class SeleniumTestCase(LiveServerTestCase):
         given relative URL and the server's live_server_url.
         """
         self.browser.get(self.absolute_url(relative))
+
+    def wait_response(self, seconds):
+        time.sleep(seconds)
 
     def absolute_url(self, relative):
         """
@@ -523,6 +529,36 @@ class UserRegistrationTest(SeleniumTestCase):
         self.send_enter('id_password')
         # He is now back at the profile page
         self.assert_current_url_equal(self.get_profile_url())
+
+    def test_register_email_already_has_subscriptions(self):
+        """
+        Tests that a user can register using an email which already has
+        subscriptions to some packages.
+        """
+        ## Set up such an email
+        email = EmailUser.objects.create(email='user@domain.com')
+        package_name = 'dummy-package'
+        Subscription.objects.create_for(
+            email=email,
+            package_name=package_name)
+        # The user opens the registration page and enters the email
+        self.get_page(self.get_registration_url())
+        self.input_to_element('id_main_email', email.email)
+        self.send_enter('id_main_email')
+        self.wait_response(1)
+
+        # The user is successfully registered
+        self.assertEqual(1, User.objects.count())
+        user = User.objects.all()[0]
+        self.assertEqual(email.email, user.main_email)
+        self.assertEqual(
+            [email.email],
+            [e.email for e in user.emails.all()])
+        # ...a notification is displayed informing him of that
+        self.assert_in_page_body('successfully registered')
+
+        # The existing subscriptions are not removed
+        self.assertTrue(user.is_subscribed_to(package_name))
 
     def test_user_registered(self):
         """

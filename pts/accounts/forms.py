@@ -41,6 +41,16 @@ class UserCreationForm(forms.ModelForm):
         if email_user.user is not None:
             raise forms.ValidationError('The email address is already in use')
 
+        return main_email
+
+    def save(self, *args, **kwargs):
+        user = super(UserCreationForm, self).save(commit=True)
+        email, _ = EmailUser.objects.get_or_create(email=user.main_email)
+        user.emails.add(email)
+        user.save()
+
+        return user
+
 
 class ResetPasswordForm(forms.Form):
     """
