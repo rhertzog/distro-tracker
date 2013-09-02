@@ -20,6 +20,28 @@
                 <div class="span3 col col-lg-3">
                     {% include 'core/package-search-form.html' %}
                     {% include 'accounts/user-widget.html' with logout_redirect=request.path %}
+
+                {% if request.user.is_authenticated %}
+                    <div class="btn-group" style="margin-left: 10px;{% if is_subscribed %}display: none;{% endif %}">
+                      <a href="#"><button class="btn" id='subscribe-button' data-package="{{ package }}" data-get-emails="{% url 'pts-api-accounts-emails' %}" data-subscribe="{% url 'pts-api-accounts-subscribe' %}">Subscribe</button></a>
+                    </div>
+
+                    <div class="btn-group" style="margin-left: 10px;{% if not is_subscribed %}display: none;{% endif %}">
+                      <button class="btn btn-danger" id='unsubscribe-button'>Unsubscribe</button>
+                      <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
+                        <span class="caret"></span>
+                      </button>
+                      <ul class="dropdown-menu">
+                        <li><a href="#">Subscription details</a></li>
+                      </ul>
+                    </div>
+                {% else %}
+                    {# When the user is not authenticated, the subscribe button leads to the log in page instead #}
+                    <div class="btn-group" id='subscribe-not-logged-in-button' style="margin-left: 10px;{% if is_subscribed %}display: none;{% endif %}">
+                      <a href="{% url 'pts-accounts-login' %}"><button class="btn">Subscribe</button></a>
+                    </div>
+                {% endif %}
+
                 </div>
             </div>
         </div>

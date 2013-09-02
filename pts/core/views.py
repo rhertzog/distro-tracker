@@ -33,9 +33,15 @@ def package_page(request, package_name):
     if package.get_absolute_url() != request.path:
         return redirect(package)
 
+    is_subscribed = False
+    if request.user.is_authenticated():
+        # Check if the user is subscribed to the package
+        is_subscribed = request.user.is_subscribed_to(package)
+
     return render(request, 'core/package.html', {
         'package': package,
         'panels': get_panels_for_package(package),
+        'is_subscribed': is_subscribed,
     })
 
 

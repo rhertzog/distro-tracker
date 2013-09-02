@@ -1,4 +1,17 @@
 $(function() {
+    function csrfSafeMethod(method) {
+        // these HTTP methods do not require CSRF protection
+        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+    }
+    $.ajaxSetup({
+        crossDomain: false, // obviates need for sameOrigin test
+        beforeSend: function(xhr, settings) {
+            if (!csrfSafeMethod(settings.type)) {
+                xhr.setRequestHeader("X-CSRFToken", $.cookie('csrftoken'));
+            }
+        }
+    });
+
     $('#package-search-input').typeahead([
         {
             name: 'source-packages',
@@ -79,5 +92,36 @@ $(function() {
         if ($this.css('overflow') !== 'auto') {
             $this.perfectScrollbar();
         }
+    });
+
+
+    $('#subscribe-button').click(function(evt) {
+        evt.preventDefault();
+        var $this = $(this);
+
+        /**
+         * Function takes an email and subscribes it to the current package.
+         */
+        var subscribe_function = function(email) {
+            $.post($this.data('subscribe'), {
+                'package': $this.data('package'),
+                'email': email
+            }).done(function(data) {
+                // Replace the subscribe button with an unsubscribe button
+                $this.parents('div.btn-group').hide();
+                $('#unsubscribe-button').parents('div.btn-group').show();
+            })
+        };
+
+        // Get all the emails of the user.
+        $.get($this.data('get-emails')).done(function(data) {
+            if (data.length === 1) {
+                // Go ahead and subscribe the user since there is only one email
+                return subscribe_function(data[0])
+            } else {
+                // Ask the user to choose which email(s) should be subscribed
+                // to the package.
+            }
+        });
     });
 });

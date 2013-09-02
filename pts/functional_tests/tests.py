@@ -22,6 +22,7 @@ from pts.core.panels import BasePanel
 
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
+import selenium.webdriver.support.ui as ui
 from selenium.webdriver.common.keys import Keys
 from django.utils.six.moves import mock
 import os
@@ -105,6 +106,12 @@ class SeleniumTestCase(LiveServerTestCase):
             self.browser.find_element_by_id(element_id)
         except NoSuchElementException:
             self.fail(custom_message)
+
+    def get_element_by_id(self, element_id):
+        try:
+            return self.browser.find_element_by_id(element_id)
+        except NoSuchElementException:
+            return None
 
     def assert_current_url_equal(self, url):
         """
@@ -640,3 +647,71 @@ class UserRegistrationTest(SeleniumTestCase):
         # ...which means he is redirected to the log in page
         self.assert_current_url_equal(
             self.get_login_url() + '?next=' + self.get_profile_url())
+
+
+class SubscribeToPackageTest(SeleniumTestCase):
+    """
+    Tests for stories regarding subscribing to a package over the Web.
+    """
+    def setUp(self):
+        super(SubscribeToPackageTest, self).setUp()
+        self.package = SourcePackageName.objects.create(name='dummy-package')
+        self.password = 'asdf'
+        self.user = User.objects.create_user(
+            main_email='user@domain.com', password=self.password)
+
+    def get_login_url(self):
+        return reverse('pts-accounts-login')
+
+    def log_in(self):
+        """
+        Helper method which logs the user, without taking any shortcuts (it goes
+        through the steps to fill in the form and submit it).
+        """
+        self.get_page(self.get_login_url())
+        self.input_to_element('id_username', self.user.main_email)
+        self.input_to_element('id_password', self.password)
+        self.send_enter('id_password')
+
+    def test_subscribe_from_package_page(self):
+        """
+        Tests that a user that has only one email address can subscribe to a
+        package directly from the package page.
+        """
+        # The user first logs in to the PTS
+        self.log_in()
+        # The user opens a package page
+        self.get_page('/' + self.package.name)
+
+        # There he sees a button allowing him to subscribe to the package
+        self.assert_element_with_id_in_page('subscribe-button')
+        # So he clicks it.
+        button = self.get_element_by_id('subscribe-button')
+        button.click()
+
+        # The subscribe button is no longer found in the page
+        button = self.get_element_by_id('subscribe-button')
+        ## Give the page a chance to refresh
+        wait = ui.WebDriverWait(self.browser, 1)
+        wait.until(lambda browser: not button.is_displayed())
+        self.assertFalse(button.is_displayed())
+
+        # It has been replaced by the unsubscribe button
+        self.assert_element_with_id_in_page('unsubscribe-button')
+        unsubscribe_button = self.get_element_by_id('unsubscribe-button')
+        self.assertTrue(unsubscribe_button.is_displayed())
+
+        ## The user has really been subscribed to the package?
+        self.assertTrue(self.user.is_subscribed_to(self.package))
+
+    def test_subscribe_not_logged_in(self):
+        """
+        Tests that when a user is not logged in, he is redirected to the log in
+        page instead of being subscribed to the package.
+        """
+        # The user opens the package page
+        self.get_page('/' + self.package.name)
+        # ...and tries subscribing to the package
+        self.get_element_by_id('subscribe-not-logged-in-button').click()
+        # ...only to find himself redirected to the log in page.
+        self.assert_current_url_equal(self.get_login_url())
