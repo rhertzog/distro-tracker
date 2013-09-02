@@ -751,3 +751,46 @@ class SubscribeToPackageTest(SeleniumTestCase):
         self.get_element_by_id('subscribe-not-logged-in-button').click()
         # ...only to find himself redirected to the log in page.
         self.assert_current_url_equal(self.get_login_url())
+
+    def test_subscribe_multiple_associated_emails(self):
+        """
+        Tests that a user is offered a choice which email to use to subscribe
+        to a package when he has multiple associated emails.
+        """
+        ## Set up such a user
+        other_email = 'other-email@domain.com'
+        self.user.emails.create(email=other_email)
+
+        # The user logs in to the PTS
+        self.log_in()
+        # The user opens a package page and clicks to subscribe button
+        self.get_page('/' + self.package.name)
+        self.get_element_by_id('subscribe-button').click()
+        self.wait_response(1)
+
+        # The user is presented with a choice of his emails
+        for email in self.user.emails.all():
+            self.assert_in_page_body(email.email)
+        # The user decides to cancel the subscription by dismissing the popup
+        self.get_element_by_id('cancel-choose-email').click()
+        self.wait_response(1)
+
+        ## The user is not subscribed to anything yet
+        self.assertEqual(0, Subscription.objects.count())
+        # The user clicks the subscribe button again
+        self.get_element_by_id('subscribe-button').click()
+        self.wait_response(1)
+        # ...and chooses to subscribe using his associated email
+        self.assert_element_with_id_in_page('choose-email-1')
+        self.get_element_by_id('choose-email-1').click()
+        self.wait_response(1)
+
+        ## The user is now subscribed to the package with only the clicked email
+        self.assertEqual(1, Subscription.objects.count())
+        sub = Subscription.objects.all()[0]
+        self.assertEqual(other_email, sub.email_user.email)
+
+        # The UI that the user sees reflects this
+        self.assert_element_with_id_in_page('unsubscribe-button')
+        unsubscribe_button = self.get_element_by_id('unsubscribe-button')
+        self.assertTrue(unsubscribe_button.is_displayed())

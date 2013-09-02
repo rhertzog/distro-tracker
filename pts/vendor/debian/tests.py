@@ -2438,8 +2438,9 @@ class CodeSearchLinksTest(TestCase):
 
         response = self.get_package_page_response(self.package.name)
 
-        self.assertTrue(self.browse_link_in_content(response.content))
-        self.assertTrue(self.search_form_in_content(response.content))
+        response_content = response.content.decode('utf-8')
+        self.assertTrue(self.browse_link_in_content(response_content))
+        self.assertTrue(self.search_form_in_content(response_content))
 
     def test_pseudo_package(self):
         """
@@ -2450,8 +2451,9 @@ class CodeSearchLinksTest(TestCase):
 
         response = self.get_package_page_response(pseudo_package.name)
 
-        self.assertFalse(self.browse_link_in_content(response.content))
-        self.assertFalse(self.search_form_in_content(response.content))
+        response_content = response.content.decode('utf-8')
+        self.assertFalse(self.browse_link_in_content(response_content))
+        self.assertFalse(self.search_form_in_content(response_content))
 
 
 class PopconLinkTest(TestCase):
@@ -2472,14 +2474,16 @@ class PopconLinkTest(TestCase):
 
         response = self.get_package_page_response(package.name)
 
-        self.assertIn('popcon', response.content)
+        response_content = response.content.decode('utf8')
+        self.assertIn('popcon', response_content)
 
     def test_pseudo_package(self):
         package = PseudoPackageName.objects.create(name='somepackage')
 
         response = self.get_package_page_response(package.name)
 
-        self.assertNotIn('popcon', response.content)
+        response_content = response.content.decode('utf-8')
+        self.assertNotIn('popcon', response_content)
 
 
 class UpdatePiupartsTaskTests(TestCase):
@@ -3484,8 +3488,9 @@ class UbuntuPanelTests(TestCase):
 
         response = self.get_package_page_response(self.package.name)
 
-        self.assertTrue(self.ubuntu_panel_in_content(response.content))
-        self.assertIn(ubuntu_version, response.content)
+        response_content = response.content.decode('utf8')
+        self.assertTrue(self.ubuntu_panel_in_content(response_content))
+        self.assertIn(ubuntu_version, response_content)
 
     def test_panel_not_displayed(self):
         """
@@ -3518,8 +3523,9 @@ class UbuntuPanelTests(TestCase):
 
         response = self.get_package_page_response(self.package.name)
 
-        self.assertIn("10 bugs", response.content)
-        self.assertIn("5 patches", response.content)
+        response_content = response.content.decode('utf8')
+        self.assertIn("10 bugs", response_content)
+        self.assertIn("5 patches", response_content)
 
     def test_patch_diff_displayed(self):
         """
@@ -3539,10 +3545,11 @@ class UbuntuPanelTests(TestCase):
 
         response = self.get_package_page_response(self.package.name)
 
+        response_content = response.content.decode('utf-8')
         self.assertIn(
             'patches for {}'.format(ubuntu_version),
-            response.content)
-        self.assertIn(ubuntu_version, response.content)
+            response_content)
+        self.assertIn(ubuntu_version, response_content)
 
 
 class UpdateWnppStatsTaskTests(TestCase):
@@ -3994,8 +4001,9 @@ class NewQueueVersionsPanelTests(TestCase):
 
         response = self.get_package_page_response(self.package.name)
 
-        self.assertIn('NEW/sid', response.content)
-        self.assertIn(version, response.content)
+        response_content = response.content.decode('utf-8')
+        self.assertIn('NEW/sid', response_content)
+        self.assertIn(version, response_content)
 
     def test_multiple_distributions(self):
         """
@@ -4009,6 +4017,7 @@ class NewQueueVersionsPanelTests(TestCase):
 
         response = self.get_package_page_response(self.package.name)
 
+        response_content = response.content.decode('utf8')
         for dist, ver in zip(dists, versions):
-            self.assertIn('NEW/' + dist, response.content)
-            self.assertIn(ver, response.content)
+            self.assertIn('NEW/' + dist, response_content)
+            self.assertIn(ver, response_content)

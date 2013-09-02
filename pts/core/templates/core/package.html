@@ -49,6 +49,22 @@
 {% endblock %}
 
 {% block content %}
+{# A hidden modal which would display a list of user emails allowing him to choose which one to subscribe to the package #}
+{% spaceless %}
+<div id="choose-email-modal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3>Choose email to subscribe with</h3>
+  </div>
+  <div class="modal-body">
+    {# The email selection markup goes here #}
+  </div>
+  <div class="modal-footer">
+    <button class="btn" id="cancel-choose-email" data-dismiss="modal" aria-hidden="true">Cancel</button>
+  </div>
+</div>
+{% endspaceless %}
+
     <div class="row-fluid">
         <div class="span3 col col-lg-3" id="pts-package-left">
             {% for panel in panels.left %}
@@ -79,3 +95,11 @@
         </div>
     </div>
 {% endblock %}
+
+{% block extra-js %}{% verbatim %}
+<script id="choose-email-template" type="text/x-handlebars-template">
+{{#each emails}}
+<button class="btn subscribe-select-email" id="choose-email-{{@index}}" data-email="{{this}}" data-package="{{../package_name}}">{{this}}</button>
+{{/each}}
+</script>
+{% endverbatim %}{% endblock %}
