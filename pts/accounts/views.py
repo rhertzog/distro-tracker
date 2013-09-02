@@ -22,6 +22,7 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.http import HttpResponseForbidden
+from django.conf import settings
 from pts.accounts.forms import UserCreationForm
 from pts.accounts.forms import ResetPasswordForm
 from pts.accounts.models import User
@@ -58,7 +59,7 @@ class RegisterUser(CreateView):
             pts_render_to_string('accounts/registration-confirmation-email.txt', {
                 'confirmation': confirmation,
             }),
-            from_email='mlalic@gallifrey',
+            from_email=settings.PTS_CONTACT_EMAIL,
             recipient_list=[user.main_email])
 
 
