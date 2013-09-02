@@ -22,6 +22,7 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.http import HttpResponseForbidden
+from django.http import Http404
 from django.conf import settings
 from pts.accounts.forms import UserCreationForm
 from pts.accounts.forms import ResetPasswordForm
@@ -171,6 +172,37 @@ class SubscribeUserToPackageView(LoginRequiredMixin, View):
         Subscription.objects.create_for(
             package_name=package,
             email=email)
+
+        return render_to_json_response({
+            'status': 'ok',
+        })
+
+
+class UnsubscribeUserView(LoginRequiredMixin, View):
+    """
+    Unsubscribes the currently logged in user from the given package.
+    An email can be optionally provided in which case only the given email is
+    unsubscribed from the package, if the logged in user owns it.
+    """
+    def post(self, request):
+        if 'package' not in request.POST:
+            raise Http404
+
+        package = request.POST['package']
+        user = request.user
+
+        if 'email' not in request.POST:
+            # Unsubscribe all the user's emails from the package
+            qs = Subscription.objects.filter(
+                email_user__in=user.emails.all(),
+                package__name=package)
+        else:
+            # Unsubscribe only the given email from the package
+            qs = Subscription.objects.filter(
+                email_user__email=request.POST['email'],
+                package__name=package)
+
+        qs.delete()
 
         return render_to_json_response({
             'status': 'ok',

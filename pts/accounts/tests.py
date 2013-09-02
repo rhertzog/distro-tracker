@@ -310,3 +310,98 @@ class SubscribeUserToPackageViewTests(TestCase):
         self.assertFalse(other_user.is_subscribed_to(self.package))
         # Forbidden status code?
         self.assertEqual(403, response.status_code)
+
+
+class UnsubscribeUserViewTests(TestCase):
+    """
+    Tests for the :class:`pts.accounts.views.UnsubscribeUserView` view.
+    """
+    def setUp(self):
+        self.package = PackageName.objects.create(name='dummy-package')
+        self.password = 'asdf'
+        self.user = User.objects.create_user(
+            main_email='user@domain.com', password=self.password)
+        self.user.emails.create(email='other@domain.com')
+
+    def subscribe_email_to_package(self, email, package_name):
+        """
+        Creates a subscription for the given email and package.
+        """
+        Subscription.objects.create_for(
+            email=email,
+            package_name=package_name)
+
+    def log_in(self):
+        self.client.login(username=self.user.main_email, password=self.password)
+
+    def post_to_view(self, package, email=None):
+        post_params = {
+            'package': package,
+        }
+        if email:
+            post_params['email'] = email
+        return self.client.post(
+            reverse('pts-api-accounts-unsubscribe'), post_params)
+
+    def test_unsubscribe_all_emails(self):
+        """
+        Tests the scenario where all the user's emails need to be unsubscribed
+        from the given package.
+        """
+        for email in self.user.emails.all():
+            self.subscribe_email_to_package(email.email, self.package.name)
+        # Sanity check: the user is subscribed to the package
+        self.assertTrue(self.user.is_subscribed_to(self.package))
+        # Make sure the user is logged in
+        self.log_in()
+
+        response = self.post_to_view(package=self.package.name)
+
+        # The user is no longer subscribed to the package
+        self.assertFalse(self.user.is_subscribed_to(self.package))
+        self.assertEqual('application/json', response['Content-Type'])
+
+    def test_unsubscribe_not_logged_in(self):
+        """
+        Tests that the user cannot do anything when not logged in.
+        """
+        self.subscribe_email_to_package(self.user.main_email, self.package.name)
+
+        self.post_to_view(self.package.name)
+
+        # The user is still subscribed to the package
+        self.assertTrue(self.user.is_subscribed_to(self.package))
+
+    def test_unsubscribe_one_email(self):
+        """
+        Tests the scenario where only one of the user's email should be
+        unsubscribed from the given package.
+        """
+        for email in self.user.emails.all():
+            self.subscribe_email_to_package(email.email, self.package.name)
+        # Sanity check: the user is subscribed to the package
+        self.assertTrue(self.user.is_subscribed_to(self.package))
+        # Make sure the user is logged in
+        self.log_in()
+
+        self.post_to_view(
+            package=self.package.name, email=self.user.main_email)
+
+        # The user is still considered subscribed to the package
+        self.assertTrue(self.user.is_subscribed_to(self.package))
+        # However, the main email is no longer subscribed
+        for email in self.user.emails.all():
+            if email.email == self.user.main_email:
+                self.assertFalse(email.is_subscribed_to(self.package))
+            else:
+                self.assertTrue(email.is_subscribed_to(self.package))
+
+    def test_package_name_not_provided(self):
+        """
+        Tests the scenario where the package name is not POSTed.
+        """
+        self.log_in()
+
+        response = self.client.post(reverse('pts-api-accounts-unsubscribe'))
+
+        self.assertEqual(404, response.status_code)
