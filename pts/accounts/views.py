@@ -16,6 +16,7 @@ from django.core.urlresolvers import reverse_lazy
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render
+from django.shortcuts import redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate
 from django.contrib.auth import login
@@ -173,9 +174,12 @@ class SubscribeUserToPackageView(LoginRequiredMixin, View):
             package_name=package,
             email=email)
 
-        return render_to_json_response({
-            'status': 'ok',
-        })
+        if request.is_ajax():
+            return render_to_json_response({
+                'status': 'ok',
+            })
+        else:
+            return redirect('pts-package-page', package_name=package)
 
 
 class UnsubscribeUserView(LoginRequiredMixin, View):
@@ -204,6 +208,9 @@ class UnsubscribeUserView(LoginRequiredMixin, View):
 
         qs.delete()
 
-        return render_to_json_response({
-            'status': 'ok',
-        })
+        if request.is_ajax():
+            return render_to_json_response({
+                'status': 'ok',
+            })
+        else:
+            return redirect('pts-package-page', package_name=package)

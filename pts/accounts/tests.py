@@ -264,14 +264,19 @@ class SubscribeUserToPackageViewTests(TestCase):
     def log_in_user(self):
         self.client.login(username=self.user.main_email, password=self.password)
 
-    def post_to_view(self, package=None, email=None):
+    def post_to_view(self, package=None, email=None, ajax=True):
         post_params = {}
         if package:
             post_params['package'] = package
         if email:
             post_params['email'] = email
+        kwargs = {}
+        if ajax:
+            kwargs = {
+                'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest',
+            }
         return self.client.post(
-            reverse('pts-api-accounts-subscribe'), post_params)
+            reverse('pts-api-accounts-subscribe'), post_params, **kwargs)
 
     def test_subscribe_user(self):
         self.log_in_user()
@@ -334,14 +339,19 @@ class UnsubscribeUserViewTests(TestCase):
     def log_in(self):
         self.client.login(username=self.user.main_email, password=self.password)
 
-    def post_to_view(self, package, email=None):
+    def post_to_view(self, package, email=None, ajax=True):
         post_params = {
             'package': package,
         }
         if email:
             post_params['email'] = email
+        kwargs = {}
+        if ajax:
+            kwargs = {
+                'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest',
+            }
         return self.client.post(
-            reverse('pts-api-accounts-unsubscribe'), post_params)
+            reverse('pts-api-accounts-unsubscribe'), post_params, **kwargs)
 
     def test_unsubscribe_all_emails(self):
         """
