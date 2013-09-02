@@ -23,6 +23,7 @@ from pts.accounts.views import SubscriptionsView
 from pts.accounts.views import UserEmailsView
 from pts.accounts.views import SubscribeUserToPackageView
 from pts.accounts.views import UnsubscribeUserView
+from pts.accounts.views import ChooseSubscriptionEmailView
 
 from django.contrib import admin
 admin.autodiscover()
@@ -70,6 +71,9 @@ urlpatterns = patterns('',
     url(r'^accounts/subscriptions/$',
         SubscriptionsView.as_view(),
         name='pts-accounts-subscriptions'),
+    url(r'^accounts/profile/subscriptions/choose-subscription-email/$',
+        ChooseSubscriptionEmailView.as_view(),
+        name='pts-accounts-choose-email'),
     url(r'^accounts/login/$', 'django.contrib.auth.views.login', {
             'template_name': 'accounts/login.html',
         },

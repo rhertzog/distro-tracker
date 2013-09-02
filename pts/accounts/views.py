@@ -214,3 +214,20 @@ class UnsubscribeUserView(LoginRequiredMixin, View):
             })
         else:
             return redirect('pts-package-page', package_name=package)
+
+
+class ChooseSubscriptionEmailView(LoginRequiredMixin, View):
+    """
+    Lets the user choose which email to subscribe to a package with.
+    This is an alternative view when JS is disabled and the appropriate choice
+    cannot be offered in a popup.
+    """
+    template_name = 'accounts/choose-email.html'
+    def get(self, request):
+        if 'package' not in request.GET:
+            raise Http404
+
+        return render(request, self.template_name, {
+            'package': request.GET['package'],
+            'emails': request.user.emails.all(),
+        })

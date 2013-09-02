@@ -27,11 +27,16 @@
                         <form class="subscription-form" action="{% url 'pts-api-accounts-subscribe' %}" method="POST">{% csrf_token %}
                             <input type="hidden" name="package" value="{{ package }}">
                             <input type="hidden" name="email" value="{{ request.user.emails.all.0 }}">
+                        {% else %}
+                        <a href="{% url 'pts-accounts-choose-email' %}?package={{ package }}">
                         {% endif %}
+
                       <button class="btn" id='subscribe-button' data-package="{{ package }}" data-get-emails="{% url 'pts-api-accounts-emails' %}" data-url="{% url 'pts-api-accounts-subscribe' %}">Subscribe</button></a>
 
                         {% if request.user.emails.all|length == 1 %}
-                          </form>
+                        </form>
+                        {% else %}
+                        </a>
                         {% endif %}
                     </div>
 

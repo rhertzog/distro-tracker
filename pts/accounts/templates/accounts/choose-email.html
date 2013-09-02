@@ -1,0 +1,13 @@
+{% extends 'core/base.html' %}
+{% block title %}Register | {{ block.super }}{% endblock %}
+
+{% block content %}
+<h3>Choose email to subscribe to <a href="{% url 'pts-package-page' package %}">{{ package }}</a> with</h3>
+{% for email in emails %}
+<form action="{% url 'pts-api-accounts-subscribe' %}" method="POST" class="subscription-form">{% csrf_token %}
+<input type="hidden" name="email" value="{{ email }}">
+<input type="hidden" name="package" value="{{ package }}">
+<button class="btn subscribe-select-email" id="choose-email-{{ forloop.counter }}" data-email="{{this}}" data-package="{{ package }}">{{ email }}</button>
+</form>
+{% endfor %}
+{% endblock %}
