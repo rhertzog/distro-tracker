@@ -316,6 +316,36 @@ class SubscribeUserToPackageViewTests(TestCase):
         # Forbidden status code?
         self.assertEqual(403, response.status_code)
 
+    def test_subscribe_multiple_emails(self):
+        """
+        Tests that a user can subscribe multiple emails at once.
+        """
+        self.user.emails.create(email='other@domain.com')
+        self.log_in_user()
+
+        self.post_to_view(
+            email=[e.email for e in self.user.emails.all()], package=self.package.name)
+
+        for email in self.user.emails.all():
+            self.assertTrue(email.is_subscribed_to(self.package))
+
+    def test_subscribe_multiple_emails_does_not_own_one(self):
+        """
+        Tests that no subscriptions are created if there is at least one email
+        that the user does not own in the list of emails.
+        """
+        other_email = 'other@domain.com'
+        EmailUser.objects.create(email=other_email)
+        emails = [
+            other_email,
+            self.user.main_email,
+        ]
+        self.log_in_user()
+
+        response = self.post_to_view(email=emails, package=self.package.name)
+
+        self.assertEqual(403, response.status_code)
+
 
 class UnsubscribeUserViewTests(TestCase):
     """

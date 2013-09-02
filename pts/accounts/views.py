@@ -161,25 +161,32 @@ class SubscribeUserToPackageView(LoginRequiredMixin, View):
     """
     def post(self, request):
         package = request.POST.get('package', None)
-        email = request.POST.get('email', None)
+        emails = request.POST.getlist('email', None)
 
-        if not package or not email:
+        if not package or not emails:
             raise Http404
 
-        # Check whether the logged in user is associated with the given email
-        if email not in [e.email for e in request.user.emails.all()]:
-            return HttpResponseForbidden()
+        # Check whether the logged in user is associated with the given emails
+        users_emails = [e.email for e in request.user.emails.all()]
+        for email in emails:
+            if email not in users_emails:
+                return HttpResponseForbidden()
 
-        Subscription.objects.create_for(
-            package_name=package,
-            email=email)
+        # Create the subscriptions
+        for email in emails:
+            Subscription.objects.create_for(
+                package_name=package,
+                email=email)
 
         if request.is_ajax():
             return render_to_json_response({
                 'status': 'ok',
             })
         else:
-            return redirect('pts-package-page', package_name=package)
+            next = request.POST.get('next', None)
+            if not next:
+                return redirect('pts-package-page', package_name=package)
+            return redirect(next)
 
 
 class UnsubscribeUserView(LoginRequiredMixin, View):

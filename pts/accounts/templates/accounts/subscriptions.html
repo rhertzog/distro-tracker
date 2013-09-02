@@ -87,4 +87,24 @@
 </div>
 {% endif %}
 
+<h3>Subscribe</h3>
+        <form class="form-search" id="package-subscribe-form" action="{% url 'pts-api-accounts-subscribe' %}" method="POST">{% csrf_token %}
+            <div class="row-fluid span4" style="margin-bottom: 10px;">
+                <div>Emails which should be subscribed: </div>
+            {% for email in request.user.emails.all %}
+            <label class="checkbox inline">
+              <input type="checkbox" name="email" value="{{ email }}"> {{ email }}
+            </label>
+            {% endfor %}
+            </div>
+            <div class="clear"></div>
+            <div class="span4 col col-lg-4">
+            <label>Enter a {{ PTS_VENDOR_NAME }} source or pseudo package name</label>
+            </div>
+            <input type="hidden" value="{% url 'pts-accounts-subscriptions' %}" name="next">
+            <input type="text" name="package" id='package-search-input' placeholder="Choose package...">
+            <button type="submit" class="btn">Subscribe</button>
+
+        </form>
+
 {% endblock %}
