@@ -54,7 +54,9 @@
 <button class='btn btn-mini btn-danger unsubscribe-all' class="btn btn-mini btn-danger" data-email="{{ email }}">Unsubscribe all</button>
 </form>
     {% endif %}
-    <button class="btn btn-mini modify-default-keywords" data-email="{{ email }}">Modify keywords</button>
+    <a href="{% url 'pts-accounts-profile-keywords' %}?email={{ email }}">
+        <button class="btn btn-mini modify-default-keywords" data-email="{{ email }}">Modify keywords</button>
+    </a>
     <div class="default-keywords" style="display: none;" id="default-keywords-{{ forloop.counter }}">
         <ul>
             {% for keyword in email.default_keywords.all %}

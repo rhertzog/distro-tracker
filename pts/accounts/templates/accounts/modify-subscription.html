@@ -11,6 +11,8 @@
 {% include 'accounts/profile-navbar.html' with active_element='subscriptions' %}
 {% if package %}
 <h3>Modify keywords for subscription to {{ package }} ({{ email }})</h3>
+{% else %}
+<h3>Modify default keywords for {{ email }}</h3>
 {% endif %}
         <form id="choose-keywords-form" action="{% url 'pts-accounts-profile-keywords' %}" method="POST">{% csrf_token %}
             {% for name, value in post.items %}
