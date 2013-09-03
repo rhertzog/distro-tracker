@@ -1,4 +1,2 @@
 - Add cron entries to update the PTS
-- Add apache/nginx configuration files ready to use with the default
-  gunicorn setup
-- Replace embedded jquery files with packaged files
+- Replace embedded javascript files with packaged files
