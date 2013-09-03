@@ -11,6 +11,9 @@
       <li class="{% if active_element == 'change-profile' %}active{% endif %}">
         <a href="{% url 'pts-accounts-profile-modify' %}">Personal Information</a>
       </li>
+      <li class="{% if active_element == 'change-password' %}active{% endif %}">
+        <a href="{% url 'pts-accounts-profile-password-change' %}">Change Password</a>
+      </li>
     </ul>
   </div>
 </div>

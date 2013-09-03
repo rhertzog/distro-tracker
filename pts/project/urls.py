@@ -26,6 +26,7 @@ from pts.accounts.views import UnsubscribeUserView
 from pts.accounts.views import UnsubscribeAllView
 from pts.accounts.views import ChooseSubscriptionEmailView
 from pts.accounts.views import ChangePersonalInfoView
+from pts.accounts.views import PasswordChangeView
 
 from django.contrib import admin
 admin.autodiscover()
@@ -86,6 +87,8 @@ urlpatterns = patterns('',
         name='pts-accounts-logout'),
     url(r'^accounts/profile/modify/$', ChangePersonalInfoView.as_view(),
         name='pts-accounts-profile-modify'),
+    url(r'^accounts/profile/password-change/$', PasswordChangeView.as_view(),
+        name='pts-accounts-profile-password-change'),
 
     url(r'^api/accounts/profile/emails/$', UserEmailsView.as_view(),
         name='pts-api-accounts-emails'),

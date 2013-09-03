@@ -898,3 +898,62 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         self.assertEqual(
             new_last_name,
             self.get_element_by_id('id_last_name').get_attribute('value'))
+
+    def test_change_password(self):
+        """
+        Tests that the user can change his password upon logging in.
+        """
+        # The user logs in
+        self.log_in()
+        # He can see a link for a page letting him change his password
+        self.assert_in_page_body('Change Password')
+        self.click_link('Change Password')
+
+        # He can see the form which is used to enter the new password
+        self.assert_element_with_id_in_page('form-change-password')
+        # The user first enters a wrong current password
+        new_password = 'new-password'
+        self.input_to_element('id_old_password', 'this-password-is-incorrect')
+        self.input_to_element('id_new_password1', new_password)
+        self.input_to_element('id_new_password2', new_password)
+        self.send_enter('id_new_password2')
+        # The user is met with an error saying his current password was
+        # incorrect.
+        self.assert_in_page_body('Your old password was entered incorrectly')
+
+        # The user enters his current password correctly, but forgets the new
+        # password.
+        self.input_to_element('id_old_password', self.password)
+        self.send_enter('id_old_password')
+        # He gets a message informing him that the field is required
+        self.assert_in_page_body('This field is required')
+
+        # This time, the user enters both the old password and fills in the new
+        # password fields, but they are mismatched
+        self.input_to_element('id_old_password', self.password)
+        self.input_to_element('id_new_password1', new_password)
+        self.input_to_element('id_new_password2', new_password + '-miss-match')
+        self.send_enter('id_new_password2')
+        # He gets a message informing him that the password change failed once
+        # again.
+        self.assert_in_page_body("The two password fields didn't match")
+
+        # In the end, the user manages to fill in the form correctly!
+        self.input_to_element('id_old_password', self.password)
+        self.input_to_element('id_new_password1', new_password)
+        self.input_to_element('id_new_password2', new_password)
+        self.send_enter('id_new_password2')
+        # He gets a message informing him of a successful change
+        self.assert_in_page_body('Successfully updated your password')
+
+        # The user logs out in order to try using his new password
+        self.click_link('Log out')
+        # The user tries logging in using his old account password
+        self.log_in()
+        # He is met with an error
+        self.assert_in_page_body('Please enter a correct email and password')
+        # Now he tries with his new password
+        self.password = new_password
+        self.log_in()
+        # The user is finally logged in using his new account details
+        self.assert_current_url_equal(self.get_profile_url())

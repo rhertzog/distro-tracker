@@ -21,6 +21,7 @@ from django.shortcuts import redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate
 from django.contrib.auth import login
+from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.http import HttpResponseForbidden
@@ -145,6 +146,22 @@ class ChangePersonalInfoView(LoginRequiredMixin, MessageMixin, UpdateView):
 
     def get_object(self, queryset=None):
         return self.request.user
+
+
+class PasswordChangeView(LoginRequiredMixin, MessageMixin, FormView):
+    template_name = 'accounts/password-update.html'
+    form_class = PasswordChangeForm
+    success_url = reverse_lazy('pts-accounts-profile-password-change')
+    message = 'Successfully updated your password'
+
+    def get_form_kwargs(self):
+        kwargs = super(PasswordChangeView, self).get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+    def form_valid(self, form, *args, **kwargs):
+        form.save()
+        return super(PasswordChangeView, self).form_valid(form, *args, **kwargs)
 
 
 class AccountProfile(LoginRequiredMixin, View):
