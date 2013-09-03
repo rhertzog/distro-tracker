@@ -5,6 +5,7 @@
 {% block extra-js %}
         <script src="{% static 'accounts/js/profile.js' %}"></script>
         <script type="text/x-pts-url" id="unsubscribe-url">{% url 'pts-api-accounts-unsubscribe' %}</script>
+        <script type="text/x-pts-url" id="unsubscribe-all-url">{% url 'pts-api-accounts-unsubscribe-all' %}</script>
 {% endblock %}
 
 {% block content %}
@@ -22,6 +23,14 @@
 <div class="accordion-heading">
 <div class="accordion-toggle" data-toggle="collapse" data-target="#emails-{{ forloop.counter }}">
     <b>{{ email }}</b>
+    {% if email_subscriptions %}
+<form style="display: inline-block; margin-bottom: 0px;" action="{% url 'pts-api-accounts-unsubscribe-all' %}" method="POST">{% csrf_token %}
+<input type="hidden" name="email" value="{{ email }}">
+<input type="hidden" name="next" value="{% url 'pts-accounts-subscriptions' %}">
+<button class='btn btn-mini btn-danger unsubscribe-all' class="btn btn-mini btn-danger" data-email="{{ email }}">Unsubscribe all</button>
+</form>
+    {% endif %}
+
 </div>
 </div>
 <div class="accordion-body collapse in" id="emails-{{ forloop.counter }}">

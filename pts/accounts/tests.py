@@ -445,3 +445,81 @@ class UnsubscribeUserViewTests(TestCase):
         response = self.client.post(reverse('pts-api-accounts-unsubscribe'))
 
         self.assertEqual(404, response.status_code)
+
+
+class UnsubscribeAllViewTests(TestCase):
+    """
+    Tests for the :class:`pts.accounts.views.UnsubscribeAllView` view.
+    """
+    def setUp(self):
+        self.package = PackageName.objects.create(name='dummy-package')
+        self.password = 'asdf'
+        self.user = User.objects.create_user(
+            main_email='user@domain.com', password=self.password)
+        self.other_email = self.user.emails.create(email='other@domain.com')
+
+    def subscribe_email_to_package(self, email, package_name):
+        """
+        Creates a subscription for the given email and package.
+        """
+        Subscription.objects.create_for(
+            email=email,
+            package_name=package_name)
+
+    def log_in(self):
+        self.client.login(username=self.user.main_email, password=self.password)
+
+    def post_to_view(self, email=None, ajax=True):
+        post_params = {}
+        if email:
+            post_params['email'] = email
+        kwargs = {}
+        if ajax:
+            kwargs = {
+                'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest',
+            }
+        return self.client.post(
+            reverse('pts-api-accounts-unsubscribe-all'), post_params, **kwargs)
+
+    def test_subscriptions_removed(self):
+        """
+        Tests that subscriptions are removed for specified emails.
+        """
+        all_emails = [
+            self.user.main_email,
+            self.other_email.email,
+        ]
+        emails_to_unsubscribe = [
+            self.other_email.email,
+        ]
+        other_package = PackageName.objects.create(name='other-package')
+        for email in self.user.emails.all():
+            self.subscribe_email_to_package(email.email, self.package.name)
+            self.subscribe_email_to_package(email.email, other_package.name)
+
+        self.log_in()
+        self.post_to_view(email=emails_to_unsubscribe)
+
+        for email in all_emails:
+            if email in emails_to_unsubscribe:
+                # These emails no longer have any subscriptions
+                self.assertEqual(
+                    0,
+                    Subscription.objects.filter(email_user__email=email).count())
+            else:
+                # Otherwise, they have all the subscriptions!
+                self.assertEqual(
+                    2,
+                    Subscription.objects.filter(email_user__email=email).count())
+
+    def test_user_not_logged_in(self):
+        """
+        Tests that nothing is removed when the user is not logged in.
+        """
+        for email in self.user.emails.all():
+            self.subscribe_email_to_package(email.email, self.package.name)
+        old_subscription_count = Subscription.objects.count()
+
+        self.post_to_view(email=self.user.main_email)
+
+        self.assertEqual(old_subscription_count, Subscription.objects.count())

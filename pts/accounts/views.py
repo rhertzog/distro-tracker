@@ -226,6 +226,33 @@ class UnsubscribeUserView(LoginRequiredMixin, View):
                 return redirect('pts-package-page', package_name=package)
 
 
+class UnsubscribeAllView(LoginRequiredMixin, View):
+    """
+    The view unsubscribes the currently logged in user from all packages.
+    If an optional ``email`` POST parameter is provided, only removes all
+    subscriptions for the given emails.
+    """
+    def post(self, request):
+        user = request.user
+        if 'email' not in request.POST:
+            emails = user.emails.all()
+        else:
+            emails = user.emails.filter(email__in=request.POST.getlist('email'))
+
+        # Remove all the subscriptions
+        Subscription.objects.filter(email_user__in=emails).delete()
+
+        if request.is_ajax():
+            return render_to_json_response({
+                'status': 'ok',
+            })
+        else:
+            if 'next' in request.POST:
+                return redirect(request.POST['next'])
+            else:
+                return redirect('pts-index')
+
+
 class ChooseSubscriptionEmailView(LoginRequiredMixin, View):
     """
     Lets the user choose which email to subscribe to a package with.

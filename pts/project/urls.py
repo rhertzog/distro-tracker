@@ -23,6 +23,7 @@ from pts.accounts.views import SubscriptionsView
 from pts.accounts.views import UserEmailsView
 from pts.accounts.views import SubscribeUserToPackageView
 from pts.accounts.views import UnsubscribeUserView
+from pts.accounts.views import UnsubscribeAllView
 from pts.accounts.views import ChooseSubscriptionEmailView
 
 from django.contrib import admin
@@ -89,6 +90,8 @@ urlpatterns = patterns('',
         name='pts-api-accounts-subscribe'),
     url(r'^api/accounts/profile/unsubscribe/$', UnsubscribeUserView.as_view(),
         name='pts-api-accounts-unsubscribe'),
+    url(r'^api/accounts/profile/unsubscribe-all/$', UnsubscribeAllView.as_view(),
+        name='pts-api-accounts-unsubscribe-all'),
 
     # Dedicated package page
     url(r'^pkg/(?P<package_name>[^/]+)/?$', 'pts.core.views.package_page',
