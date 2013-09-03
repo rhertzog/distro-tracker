@@ -75,3 +75,12 @@ class ResetPasswordForm(forms.Form):
             raise forms.ValidationError("The two passwords do not match.")
 
         return password2
+
+
+class ChangePersonalInfoForm(forms.ModelForm):
+    """
+    A form providing a way for the user to change his account's personal info.
+    """
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name']

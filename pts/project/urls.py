@@ -25,6 +25,7 @@ from pts.accounts.views import SubscribeUserToPackageView
 from pts.accounts.views import UnsubscribeUserView
 from pts.accounts.views import UnsubscribeAllView
 from pts.accounts.views import ChooseSubscriptionEmailView
+from pts.accounts.views import ChangePersonalInfoView
 
 from django.contrib import admin
 admin.autodiscover()
@@ -83,6 +84,8 @@ urlpatterns = patterns('',
             'next_page': reverse_lazy('pts-index'),
         },
         name='pts-accounts-logout'),
+    url(r'^accounts/profile/modify/$', ChangePersonalInfoView.as_view(),
+        name='pts-accounts-profile-modify'),
 
     url(r'^api/accounts/profile/emails/$', UserEmailsView.as_view(),
         name='pts-api-accounts-emails'),

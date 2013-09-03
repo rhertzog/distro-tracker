@@ -413,7 +413,16 @@ class UserAccountsTestMixin(object):
         self.package = SourcePackageName.objects.create(name='dummy-package')
         self.password = 'asdf'
         self.user = User.objects.create_user(
-            main_email='user@domain.com', password=self.password)
+            main_email='user@domain.com', password=self.password,
+            first_name='', last_name='')
+
+    def refresh_user_object(self):
+        """
+        The method retrieves the user instance from the database forcing any
+        cached properties to reload. This can be used when the user's
+        properties need to be tested for updated values.
+        """
+        self.user = User.objects.get(main_email=self.user.main_email)
 
     def get_login_url(self):
         return reverse('pts-accounts-login')
@@ -827,3 +836,65 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
         self.assertTrue(sub_button.is_displayed())
         unsub_button = self.get_element_by_id('unsubscribe-button')
         self.assertFalse(unsub_button.is_displayed())
+
+
+class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
+    def test_modify_personal_info(self):
+        """
+        Tests that the user is able to change his personal info upon logging
+        in.
+        """
+        # The user logs in
+        self.log_in()
+        # He can see a link for a page letting him modify his personal info
+        self.assert_in_page_body('Personal Information')
+        self.click_link('Personal Information')
+
+        # In the page there is a form allowing him to change his first/last
+        # name.
+        self.assert_element_with_id_in_page('form-change-profile')
+
+        # The user decides to input a new name
+        name = 'Name'
+        old_last_name = self.user.last_name
+        self.input_to_element('id_first_name', name)
+        # ...and submits the form
+        self.send_enter('id_first_name')
+        # The user is met with a notification that the information has been
+        # updated.
+        self.assert_in_page_body('Successfully changed your information')
+        ## The user's name has really changed
+        self.refresh_user_object()
+        self.assertEqual(name, self.user.first_name)
+        ## But the last name has not
+        self.assertEqual(old_last_name, self.user.last_name)
+
+        # The user now wants to update both his first and last name
+        self.clear_element_text('id_first_name')
+        new_first_name, new_last_name = 'Name', 'Last Name'
+        # The user fills in the form
+        self.input_to_element('id_first_name', new_first_name)
+        self.input_to_element('id_last_name', new_last_name)
+        # ...and submits it.
+        self.send_enter('id_last_name')
+
+        # He is faced with another notification of success
+        self.assert_in_page_body('Successfully changed your information')
+        ## The information has actually been updated
+        self.refresh_user_object()
+        self.assertEqual(new_first_name, self.user.first_name)
+        self.assertEqual(new_last_name, self.user.last_name)
+
+        # The user navigates away from the page now
+        self.get_page(self.get_profile_url())
+        # And then goes back
+        self.click_link('Personal Information')
+        # There are no notifications about modification in the page nw
+        self.assert_not_in_page_body('Successfully changed your information')
+        # And the user's first/last name is already filled in the form
+        self.assertEqual(
+            new_first_name,
+            self.get_element_by_id('id_first_name').get_attribute('value'))
+        self.assertEqual(
+            new_last_name,
+            self.get_element_by_id('id_last_name').get_attribute('value'))

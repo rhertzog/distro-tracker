@@ -10,6 +10,7 @@
 """Views for the :mod:`pts.accounts` app."""
 from __future__ import unicode_literals
 from django.views.generic.edit import CreateView
+from django.views.generic.edit import UpdateView
 from django.views.generic.edit import FormView
 from django.views.generic.base import View
 from django.core.urlresolvers import reverse_lazy
@@ -27,6 +28,7 @@ from django.http import Http404
 from django.conf import settings
 from pts.accounts.forms import UserCreationForm
 from pts.accounts.forms import ResetPasswordForm
+from pts.accounts.forms import ChangePersonalInfoForm
 from pts.accounts.models import User
 from pts.accounts.models import UserRegistrationConfirmation
 from pts.core.utils import pts_render_to_string
@@ -111,6 +113,38 @@ class LoginRequiredMixin(object):
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
         return super(LoginRequiredMixin, self).dispatch(*args, **kwargs)
+
+
+class MessageMixin(object):
+    """
+    A View mixin which adds a success info message to the list of messages
+    managed by the :mod:`django.contrib.message` framework in case a form has
+    been successfully processed.
+
+    The message which is added is retrieved by calling the :meth:`get_message`
+    method. Alternatively, a :attr:`message` attribute can be set if no
+    calculations are necessary.
+    """
+    def form_valid(self, *args, **kwargs):
+        message = self.get_message()
+        if message:
+            messages.info(self.request, message)
+        return super(MessageMixin, self).form_valid(*args, **kwargs)
+
+    def get_message(self):
+        if self.message:
+            return self.message
+
+
+class ChangePersonalInfoView(LoginRequiredMixin, MessageMixin, UpdateView):
+    template_name = 'accounts/change-personal-info.html'
+    form_class = ChangePersonalInfoForm
+    model = User
+    success_url = reverse_lazy('pts-accounts-profile-modify')
+    message = 'Successfully changed your information'
+
+    def get_object(self, queryset=None):
+        return self.request.user
 
 
 class AccountProfile(LoginRequiredMixin, View):

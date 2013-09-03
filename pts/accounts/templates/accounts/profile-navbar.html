@@ -8,6 +8,9 @@
       <li class="{% if active_element == 'subscriptions' %}active{% endif %}">
         <a href="{% url 'pts-accounts-subscriptions' %}">Subscriptions</a>
       </li>
+      <li class="{% if active_element == 'change-profile' %}active{% endif %}">
+        <a href="{% url 'pts-accounts-profile-modify' %}">Personal Information</a>
+      </li>
     </ul>
   </div>
 </div>
