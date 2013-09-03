@@ -113,7 +113,9 @@
                 <li class='keyword'>{{ keyword }}</li>
                 {% endfor %}
             </ul>
-            <div class="btn btn-small modify-subscription-keywords" data-email="{{ email }}" data-package="{{ subscription.package }}">Modify</div>
+            <a href="{% url 'pts-accounts-profile-keywords' %}?package={{ subscription.package }}&email={{ email }}">
+                <div class="btn btn-small modify-subscription-keywords" data-email="{{ email }}" data-package="{{ subscription.package }}">Modify</div>
+            </a>
             </div>
         </div>
     </div>

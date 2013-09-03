@@ -1,0 +1,30 @@
+{% extends 'core/base.html' %}
+{% load staticfiles %}
+{% block title %}Subscriptions | {{ block.super }}{% endblock %}
+
+{% block extra-js %}
+        <script src="{% static 'accounts/js/profile.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+
+{% include 'accounts/profile-navbar.html' with active_element='subscriptions' %}
+{% if package %}
+<h3>Modify keywords for subscription to {{ package }} ({{ email }})</h3>
+{% endif %}
+        <form id="choose-keywords-form" action="{% url 'pts-accounts-profile-keywords' %}" method="POST">{% csrf_token %}
+            {% for name, value in post.items %}
+            <input type="hidden" name="{{ name }}" value="{{ value }}">
+            {% endfor %}
+            <input type="hidden" name="next" value="{% url 'pts-accounts-subscriptions' %}">
+                <div id="choose-keywords-list">
+                    {% for keyword in keywords %}
+                    <label class="checkbox">
+                      <input name="keyword[]" class="keyword-choice" type="checkbox" {% if keyword in user_keywords %}checked{% endif %} name="email" value="{{ keyword }}"> {{ keyword }}
+                    </label>
+                    {% endfor %}
+                </div>
+                <button class="btn">Change keywords</button>
+        </form>
+
+{% endblock %}

@@ -103,6 +103,8 @@ urlpatterns = patterns('',
         name='pts-api-accounts-unsubscribe-all'),
     url(r'^api/accounts/profile/keywords/$', ModifyKeywordsView.as_view(),
         name='pts-api-accounts-profile-keywords'),
+    url(r'^accounts/profile/keywords', ModifyKeywordsView.as_view(),
+        name='pts-accounts-profile-keywords'),
 
     # Dedicated package page
     url(r'^pkg/(?P<package_name>[^/]+)/?$', 'pts.core.views.package_page',

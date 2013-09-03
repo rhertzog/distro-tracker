@@ -342,9 +342,8 @@ class ModifyKeywordsView(LoginRequiredMixin, View):
             return HttpResponseForbidden()
 
         email_user.default_keywords = self.get_keywords(keywords)
-        return render_to_json_response({
-            'status': 'ok',
-        })
+
+        return self.render_response()
 
     def modify_subscription_keywords(self, email, package, keywords):
         try:
@@ -359,15 +358,25 @@ class ModifyKeywordsView(LoginRequiredMixin, View):
         for keyword in self.get_keywords(keywords):
             subscription.keywords.add(keyword)
 
-        return render_to_json_response({
-            'status': 'ok',
-        })
+        return self.render_response()
+
+    def render_response(self):
+        if self.request.is_ajax():
+            return render_to_json_response({
+                'status': 'ok',
+            })
+        else:
+            if 'next' in request.POST:
+                return redirect(request.POST['next'])
+            else:
+                return redirect('pts-index')
 
     def post(self, request):
         if 'email' not in request.POST or 'keyword[]' not in request.POST:
             raise Http404
 
         self.user = request.user
+        self.request = request
         email = request.POST['email']
         keywords = request.POST.getlist('keyword[]')
 
@@ -376,3 +385,40 @@ class ModifyKeywordsView(LoginRequiredMixin, View):
                 email, request.POST['package'], keywords)
         else:
             return self.modify_default_keywords(email, keywords)
+
+    def get(self, request):
+        if 'email' not in request.GET:
+            raise Http404
+        email = request.GET['email']
+
+        try:
+            email_user = request.user.emails.get(email=email)
+        except EmailUser.DoesNotExist:
+            return HttpResponseForbidden()
+
+        if 'package' in request.GET:
+            package = request.GET['package']
+            subscription = get_object_or_404(
+                Subscription, email_user=email_user, package__name=package)
+            context = {
+                'post': {
+                    'email': email,
+                    'package': package,
+                },
+                'package': package,
+                'user_keywords': subscription.keywords.all(),
+            }
+        else:
+            context = {
+                'post': {
+                    'email': email,
+                },
+                'user_keywords': email_user.default_keywords.all(),
+            }
+
+        context.update({
+            'keywords': Keyword.objects.order_by('name').all(),
+            'email': email,
+        })
+
+        return render(request, 'accounts/modify-subscription.html', context)
