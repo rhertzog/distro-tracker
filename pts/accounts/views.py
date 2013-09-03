@@ -220,7 +220,10 @@ class UnsubscribeUserView(LoginRequiredMixin, View):
                 'status': 'ok',
             })
         else:
-            return redirect('pts-package-page', package_name=package)
+            if 'next' in request.POST:
+                return redirect(request.POST['next'])
+            else:
+                return redirect('pts-package-page', package_name=package)
 
 
 class ChooseSubscriptionEmailView(LoginRequiredMixin, View):

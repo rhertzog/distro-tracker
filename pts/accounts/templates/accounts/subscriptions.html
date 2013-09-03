@@ -4,6 +4,7 @@
 
 {% block extra-js %}
         <script src="{% static 'accounts/js/profile.js' %}"></script>
+        <script type="text/x-pts-url" id="unsubscribe-url">{% url 'pts-api-accounts-unsubscribe' %}</script>
 {% endblock %}
 
 {% block content %}
@@ -43,6 +44,8 @@
     <div class="accordion-group">
         <div class="accordion-heading">
         <div class="accordion-toggle" data-toggle="collapse" data-parent="#{{ accordion_id }}" data-target="#{{ details_id }}">
+            <div class="row-fluid">
+            <div class="span10">
             <span class='subscription-package'>
                 {% if subscription.package.get_absolute_url %}
                 <a href="{{ subscription.package.get_absolute_url }}">{{ subscription.package }}</a>
@@ -54,6 +57,18 @@
             {% if not subscription.active %}
             <span><i class='icon-exclamation-sign' title='Subscription has not been confirmed'></i></span>
             {% endif %}
+            </div>
+
+            <div class="span2">
+            <form style="margin-bottom: 0px;" action="{% url 'pts-api-accounts-unsubscribe' %}" method="POST">{% csrf_token %}
+            <input type="hidden" name="package" value="{{ subscription.package }}">
+            <input type="hidden" name="email" value="{{ email }}">
+            <input type="hidden" name="next" value="{% url 'pts-accounts-subscriptions' %}">
+            <button class="btn btn-danger unsubscribe-package" data-email="{{ email }}" data-package="{{ subscription.package }}">Unsubscribe</button>
+            </form>
+            <div class="clear"></div>
+            </div>
+            </div>
         </div>
         </div>
 
@@ -99,7 +114,7 @@
             </div>
             <div class="clear"></div>
             <div class="span4 col col-lg-4">
-            <label>Enter a {{ PTS_VENDOR_NAME }} source or pseudo package name</label>
+            <label>Enter a {{ PTS_VENDOR_NAME }} package name</label>
             </div>
             <input type="hidden" value="{% url 'pts-accounts-subscriptions' %}" name="next">
             <input type="text" name="package" id='package-search-input' placeholder="Choose package...">
