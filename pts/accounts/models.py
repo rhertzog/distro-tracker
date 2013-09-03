@@ -31,7 +31,8 @@ class UserManager(BaseUserManager):
         user = self.model(main_email=main_email,
                           is_staff=is_staff,
                           is_active=is_active,
-                          is_superuser=is_superuser)
+                          is_superuser=is_superuser,
+                          **extra_fields)
         user.set_password(password)
         user.save()
 

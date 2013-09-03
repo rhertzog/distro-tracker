@@ -404,22 +404,16 @@ class RepositoryAdminTest(SeleniumTestCase):
         self.assert_in_page_body('main non-free')
 
 
-class UserRegistrationTest(SeleniumTestCase):
+class UserAccountsTestMixin(object):
     """
-    Tests for the user registration story.
+    Defines some common methods for all user account tests.
     """
-    def get_confirmation_url(self, message):
-        """
-        Extracts the confirmation URL from the given email message.
-        Returns ``None`` if the message did not contain a confirmation URL.
-        """
-        match = self.re_confirmation_url.search(message.body)
-        if not match:
-            return None
-        return match.group(1)
-
-    def get_registration_url(self):
-        return reverse('pts-accounts-register')
+    def setUp(self):
+        super(UserAccountsTestMixin, self).setUp()
+        self.package = SourcePackageName.objects.create(name='dummy-package')
+        self.password = 'asdf'
+        self.user = User.objects.create_user(
+            main_email='user@domain.com', password=self.password)
 
     def get_login_url(self):
         return reverse('pts-accounts-login')
@@ -436,6 +430,34 @@ class UserRegistrationTest(SeleniumTestCase):
         u = User.objects.create_user(main_email, password=password)
         for associated_email in associated_emails:
             u.emails.create(email=associated_email)
+
+    def log_in(self):
+        """
+        Helper method which logs the user in, without taking any shortcuts (it goes
+        through the steps to fill in the form and submit it).
+        """
+        self.get_page(self.get_login_url())
+        self.input_to_element('id_username', self.user.main_email)
+        self.input_to_element('id_password', self.password)
+        self.send_enter('id_password')
+
+
+class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
+    """
+    Tests for the user registration story.
+    """
+    def get_confirmation_url(self, message):
+        """
+        Extracts the confirmation URL from the given email message.
+        Returns ``None`` if the message did not contain a confirmation URL.
+        """
+        match = self.re_confirmation_url.search(message.body)
+        if not match:
+            return None
+        return match.group(1)
+
+    def get_registration_url(self):
+        return reverse('pts-accounts-register')
 
     def test_user_register(self):
         profile_url = self.get_profile_url()
@@ -685,30 +707,10 @@ class UserRegistrationTest(SeleniumTestCase):
             self.get_login_url() + '?next=' + self.get_profile_url())
 
 
-class SubscribeToPackageTest(SeleniumTestCase):
+class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
     """
     Tests for stories regarding subscribing to a package over the Web.
     """
-    def setUp(self):
-        super(SubscribeToPackageTest, self).setUp()
-        self.package = SourcePackageName.objects.create(name='dummy-package')
-        self.password = 'asdf'
-        self.user = User.objects.create_user(
-            main_email='user@domain.com', password=self.password)
-
-    def get_login_url(self):
-        return reverse('pts-accounts-login')
-
-    def log_in(self):
-        """
-        Helper method which logs the user, without taking any shortcuts (it goes
-        through the steps to fill in the form and submit it).
-        """
-        self.get_page(self.get_login_url())
-        self.input_to_element('id_username', self.user.main_email)
-        self.input_to_element('id_password', self.password)
-        self.send_enter('id_password')
-
     def test_subscribe_from_package_page(self):
         """
         Tests that a user that has only one email address can subscribe to a
