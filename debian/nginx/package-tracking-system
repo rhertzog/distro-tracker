@@ -5,7 +5,7 @@ server {
         listen   [::]:443 ssl ipv6only=on;
 
 	# Replace localhost by the correct FQDN here
-	server_name localhost;
+	server_name pts;
 
 	# Replace this SSL certificate by your own one
         ssl_certificate         /etc/ssl/certs/ssl-cert-snakeoil.pem;
