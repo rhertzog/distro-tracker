@@ -27,6 +27,7 @@ from pts.accounts.views import UnsubscribeAllView
 from pts.accounts.views import ChooseSubscriptionEmailView
 from pts.accounts.views import ChangePersonalInfoView
 from pts.accounts.views import PasswordChangeView
+from pts.accounts.views import ModifyKeywordsView
 
 from django.contrib import admin
 admin.autodiscover()
@@ -98,6 +99,8 @@ urlpatterns = patterns('',
         name='pts-api-accounts-unsubscribe'),
     url(r'^api/accounts/profile/unsubscribe-all/$', UnsubscribeAllView.as_view(),
         name='pts-api-accounts-unsubscribe-all'),
+    url(r'^api/accounts/profile/keywords/$', ModifyKeywordsView.as_view(),
+        name='pts-api-accounts-profile-keywords'),
 
     # Dedicated package page
     url(r'^pkg/(?P<package_name>[^/]+)/?$', 'pts.core.views.package_page',

@@ -16,6 +16,7 @@ from pts.accounts.models import User
 from pts.core.models import EmailUser
 from pts.core.models import PackageName
 from pts.core.models import Subscription
+from pts.core.models import Keyword
 from django.core.urlresolvers import reverse
 
 import json
@@ -523,3 +524,143 @@ class UnsubscribeAllViewTests(TestCase):
         self.post_to_view(email=self.user.main_email)
 
         self.assertEqual(old_subscription_count, Subscription.objects.count())
+
+
+class ModifyKeywordsViewTests(TestCase):
+    """
+    Tests for the :class:`pts.accounts.views.ModifyKeywordsView` view.
+    """
+    def setUp(self):
+        self.package = PackageName.objects.create(name='dummy-package')
+        self.password = 'asdf'
+        self.user = User.objects.create_user(
+            main_email='user@domain.com', password=self.password)
+        self.other_email = self.user.emails.create(email='other@domain.com')
+
+    def subscribe_email_to_package(self, email, package_name):
+        """
+        Creates a subscription for the given email and package.
+        """
+        return Subscription.objects.create_for(
+            email=email,
+            package_name=package_name)
+
+    def log_in(self):
+        self.client.login(username=self.user.main_email, password=self.password)
+
+    def post_to_view(self, ajax=True, **post_params):
+        if 'keyword' in post_params:
+            post_params['keyword[]'] = post_params['keyword']
+            del post_params['keyword']
+        kwargs = {}
+        if ajax:
+            kwargs = {
+                'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest',
+            }
+        return self.client.post(
+            reverse('pts-api-accounts-profile-keywords'), post_params, **kwargs)
+
+    def get_email_keywords(self, email):
+        email_user = EmailUser.objects.get(email=email)
+        return [keyword.name for keyword in email_user.default_keywords.all()]
+
+    def default_keywords_equal(self, new_keywords):
+        default_keywords = self.get_email_keywords(self.user.main_email)
+        self.assertEqual(len(new_keywords), len(default_keywords))
+        for new_keyword in new_keywords:
+            if new_keyword not in default_keywords:
+                return False
+        return True
+
+    def get_subscription_keywords(self, email, package):
+        subscription = Subscription.objects.get(
+            email_user__email=email, package__name=package)
+        return [keyword.name for keyword in subscription.keywords.all()]
+
+    def subscription_keywords_equal(self, email, package, new_keywords):
+        subscription_keywords = self.get_subscription_keywords(email, package)
+        self.assertEqual(len(new_keywords), len(subscription_keywords))
+        for new_keyword in new_keywords:
+            if new_keyword not in subscription_keywords:
+                return False
+        return True
+
+    def test_modify_default_keywords(self):
+        """
+        Tests that a user's default keywords are modified.
+        """
+        new_keywords = [keyword.name for keyword in Keyword.objects.all()[:2]]
+        self.log_in()
+
+        self.post_to_view(
+            email=self.user.main_email,
+            keyword=new_keywords)
+
+        # The email's keywords are changed
+        self.assertTrue(self.default_keywords_equal(new_keywords))
+
+    def test_user_not_logged_in(self):
+        """
+        Tests that the user cannot do anything when not logged in.
+        """
+        new_keywords = [keyword.name for keyword in Keyword.objects.all()[:2]]
+        old_keywords = self.get_email_keywords(self.user.main_email)
+
+        response = self.post_to_view(
+            email=self.user.main_email,
+            keyword=new_keywords)
+
+        self.assertTrue(self.default_keywords_equal(old_keywords))
+
+    def test_user_does_not_own_email(self):
+        """
+        Tests that when a user does not own the email found in the parameters,
+        no changes are made.
+        """
+        new_email = EmailUser.objects.create(email='new@domain.com')
+        new_keywords = [keyword.name for keyword in Keyword.objects.all()[:2]]
+        old_keywords = self.get_email_keywords(new_email.email)
+        self.log_in()
+
+        response = self.post_to_view(
+            email=new_email.email,
+            keyword=new_keywords)
+
+        self.assertTrue(self.default_keywords_equal(old_keywords))
+        self.assertEqual(403, response.status_code)
+
+    def test_set_subscription_specific_keywords(self):
+        self.subscribe_email_to_package(
+            self.user.main_email, self.package.name)
+        new_keywords = [keyword.name for keyword in Keyword.objects.all()[:2]]
+        self.log_in()
+
+        self.post_to_view(
+            email=self.user.main_email,
+            keyword=new_keywords,
+            package=self.package.name)
+
+        self.assertTrue(self.subscription_keywords_equal(
+            self.user.main_email, self.package.name, new_keywords))
+
+    def test_set_subscription_specific_keywords_is_not_owner(self):
+        """
+        Tests that the user cannot set keywords for a subscription that it does
+        not own.
+        """
+        new_email = EmailUser.objects.create(email='new@domain.com')
+        new_keywords = [keyword.name for keyword in Keyword.objects.all()[:2]]
+        self.subscribe_email_to_package(
+            new_email.email, self.package.name)
+        old_keywords = self.get_subscription_keywords(
+            new_email.email, self.package.name)
+        self.log_in()
+
+        response = self.post_to_view(
+            email=new_email.email,
+            keyword=new_keywords,
+            package=self.package.name)
+
+        self.assertTrue(self.subscription_keywords_equal(
+            new_email.email, self.package.name, old_keywords))
+        self.assertEqual(403, response.status_code)

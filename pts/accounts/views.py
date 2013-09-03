@@ -35,6 +35,8 @@ from pts.accounts.models import UserRegistrationConfirmation
 from pts.core.utils import pts_render_to_string
 from pts.core.utils import render_to_json_response
 from pts.core.models import Subscription
+from pts.core.models import EmailUser
+from pts.core.models import Keyword
 
 
 class RegisterUser(CreateView):
@@ -319,3 +321,58 @@ class ChooseSubscriptionEmailView(LoginRequiredMixin, View):
             'package': request.GET['package'],
             'emails': request.user.emails.all(),
         })
+
+
+class ModifyKeywordsView(LoginRequiredMixin, View):
+    """
+    Lets the logged in user modify his default keywords or
+    subscription-specific keywords.
+    """
+    def get_keywords(self, keywords):
+        """
+        :returns: :class:`Keyword <pts.core.models.Keyword>` instances for the
+            given keyword names.
+        """
+        return Keyword.objects.filter(name__in=keywords)
+
+    def modify_default_keywords(self, email, keywords):
+        try:
+            email_user = self.user.emails.get(email=email)
+        except EmailUser.DoesNotExist:
+            return HttpResponseForbidden()
+
+        email_user.default_keywords = self.get_keywords(keywords)
+        return render_to_json_response({
+            'status': 'ok',
+        })
+
+    def modify_subscription_keywords(self, email, package, keywords):
+        try:
+            email_user = self.user.emails.get(email=email)
+        except EmailUser.DoesNotExist:
+            return HttpResponseForbidden()
+
+        subscription = get_object_or_404(
+            Subscription, email_user=email_user, package__name=package)
+
+        subscription.keywords.clear()
+        for keyword in self.get_keywords(keywords):
+            subscription.keywords.add(keyword)
+
+        return render_to_json_response({
+            'status': 'ok',
+        })
+
+    def post(self, request):
+        if 'email' not in request.POST or 'keyword[]' not in request.POST:
+            raise Http404
+
+        self.user = request.user
+        email = request.POST['email']
+        keywords = request.POST.getlist('keyword[]')
+
+        if 'package' in request.POST:
+            return self.modify_subscription_keywords(
+                email, request.POST['package'], keywords)
+        else:
+            return self.modify_default_keywords(email, keywords)
