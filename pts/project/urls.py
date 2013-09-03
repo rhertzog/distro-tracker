@@ -15,6 +15,7 @@ from django.views.generic import TemplateView
 from django.core.urlresolvers import reverse_lazy
 from pts.core.views import PackageSearchView, PackageAutocompleteView
 from pts.core.views import ActionItemJsonView, ActionItemView
+from pts.core.views import KeywordsView
 from pts.core.news_feed import PackageNewsFeed
 from pts.accounts.views import RegisterUser
 from pts.accounts.views import RegistrationConfirmation
@@ -46,9 +47,10 @@ urlpatterns = patterns('',
 
     url(r'^api/package/search/autocomplete$', PackageAutocompleteView.as_view(),
         name='pts-api-package-autocomplete'),
-
     url(r'^api/action-items/(?P<item_pk>\d+)$', ActionItemJsonView.as_view(),
         name='pts-api-action-item'),
+    url(r'^api/keywords/$', KeywordsView.as_view(),
+        name='pts-api-keywords'),
 
     url(r'^admin/', include(admin.site.urls)),
 

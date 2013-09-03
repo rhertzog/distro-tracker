@@ -20,6 +20,7 @@ from pts.core.utils import render_to_json_response
 from pts.core.models import SourcePackageName, PackageName, PseudoPackageName
 from pts.core.models import ActionItem
 from pts.core.models import News, NewsRenderer
+from pts.core.models import Keyword
 from pts.core.panels import get_panels_for_package
 
 
@@ -160,3 +161,10 @@ def legacy_rss_redirect(request, package_hash, package_name):
         'pts-package-rss-news-feed',
         package_name=package_name,
         permanent=True)
+
+
+class KeywordsView(View):
+    def get(self, request):
+        return render_to_json_response([
+            keyword.name for keyword in Keyword.objects.order_by('name').all()
+        ])

@@ -48,4 +48,56 @@ $(function() {
         });
         return false;
      });
+
+     var all_keywords_url = $('#all-keywords-url').html();
+     $('.modify-subscription-keywords').click(function(evt) {
+        var $this = $(this);
+        var subscription_has_keywords = [];
+        var html = "";
+        $this.closest('.accordion-inner').find('.keyword').each(function(index, element) {
+            keyword = element.textContent;
+            subscription_has_keywords.push(keyword);
+        });
+
+        $.get(all_keywords_url).done(function(keywords) {
+            $.each(keywords, function(index, keyword) {
+                var checked = (
+                    subscription_has_keywords.indexOf(keyword) != -1 ?
+                    ' checked ' :
+                    '');
+                html += (
+                    '<label class="checkbox">' +
+                      '<input class="keyword-choice" type="checkbox" ' + checked + 'value="' + keyword + '"> ' + keyword +
+                    '</label>');
+            });
+            $('#choose-keywords-list').html(html);
+            var $modal = $('#choose-keywords-modal');
+            $modal.data('email', $this.data('email'));
+            $modal.data('package', $this.data('package'));
+            $modal.data('update-id', $this.closest('.accordion-body').attr('id'));
+            $('#choose-keywords-modal').modal('show');
+        });
+        return false;
+     });
+
+    var update_keywords_url = $('#update-keywords-url').html();
+    $('#save-keywords').click(function(evt) {
+        var $modal = $('#choose-keywords-modal');
+        var keywords = [];
+        var new_list_html = "";
+        $('input.keyword-choice:checkbox:checked').each(function(i, el) {
+            var keyword = el.value;
+            keywords.push(keyword);
+            new_list_html += (
+                '<li class="keyword">' + keyword + '</li>');
+        });
+        $.post(update_keywords_url, {
+            'package': $modal.data('package'),
+            'email': $modal.data('email'),
+            'keyword': keywords
+        });
+        $('#' + $modal.data('update-id')).find('ul').html(new_list_html);
+
+        $modal.modal('hide');
+    });
 });

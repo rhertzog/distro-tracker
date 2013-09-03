@@ -6,9 +6,33 @@
         <script src="{% static 'accounts/js/profile.js' %}"></script>
         <script type="text/x-pts-url" id="unsubscribe-url">{% url 'pts-api-accounts-unsubscribe' %}</script>
         <script type="text/x-pts-url" id="unsubscribe-all-url">{% url 'pts-api-accounts-unsubscribe-all' %}</script>
+        <script type="text/x-pts-url" id="all-keywords-url">{% url 'pts-api-keywords' %}</script>
+        <script type="text/x-pts-url" id="update-keywords-url">{% url 'pts-api-accounts-profile-keywords' %}</script>
 {% endblock %}
 
 {% block content %}
+
+{% spaceless %}
+<div id="choose-keywords-modal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3>Choose keywords</h3>
+  </div>
+  <div class="modal-body">
+        <form id="choose-keywords-form">
+                <div id="choose-keywords-list">
+                </div>
+        </form>
+
+  </div>
+  <div class="modal-footer">
+    <button class="btn" id="cancel-choose-email" data-dismiss="modal" aria-hidden="true">Cancel</button>
+    <button class="btn btn-primary" id="save-keywords">Save changes</a>
+  </div>
+</div>
+{% endspaceless %}
+
+
 {% include 'accounts/profile-navbar.html' with active_element='subscriptions' %}
 
 {% if subscriptions|length != 1 %}
@@ -86,9 +110,10 @@
             <div><b>Subscription keywords:</b></div>
             <ul class="inline">
                 {% for keyword in subscription.keywords.all %}
-                <li>{{ keyword }}</li>
+                <li class='keyword'>{{ keyword }}</li>
                 {% endfor %}
             </ul>
+            <div class="btn btn-small modify-subscription-keywords" data-email="{{ email }}" data-package="{{ subscription.package }}">Modify</div>
             </div>
         </div>
     </div>
