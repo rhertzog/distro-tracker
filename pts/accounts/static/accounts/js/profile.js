@@ -50,11 +50,16 @@ $(function() {
      });
 
      var all_keywords_url = $('#all-keywords-url').html();
-     $('.modify-subscription-keywords').click(function(evt) {
-        var $this = $(this);
+
+     /**
+      * Shows a popup with options to modify keywords. It works for both user
+      * default keywords and subscription-specific keywords.
+      */
+     var modify_keywords_popup = function(existing_keywords, modify_options) {
+
         var subscription_has_keywords = [];
         var html = "";
-        $this.closest('.accordion-inner').find('.keyword').each(function(index, element) {
+        existing_keywords.each(function(index, element) {
             keyword = element.textContent;
             subscription_has_keywords.push(keyword);
         });
@@ -71,12 +76,35 @@ $(function() {
                     '</label>');
             });
             $('#choose-keywords-list').html(html);
+
             var $modal = $('#choose-keywords-modal');
-            $modal.data('email', $this.data('email'));
-            $modal.data('package', $this.data('package'));
-            $modal.data('update-id', $this.closest('.accordion-body').attr('id'));
-            $('#choose-keywords-modal').modal('show');
+            for (var key in modify_options) {
+                $modal.data(key, modify_options[key])
+            }
+            $modal.modal('show');
         });
+    };
+
+     $('.modify-subscription-keywords').click(function(evt) {
+        var $this = $(this);
+        modify_keywords_popup(
+            $this.closest('.accordion-inner').find('.keyword'), {
+                'email': $this.data('email'),
+                'package': $this.data('package'),
+                'update-id': $this.closest('.accordion-body').attr('id')
+            }
+        );
+        return false;
+     });
+
+     $('.modify-default-keywords').click(function(evt) {
+        var $this = $(this);
+        modify_keywords_popup(
+            $this.closest('.accordion-toggle').find('.keyword'), {
+                'email': $this.data('email'),
+                'update-id': $this.siblings('.default-keywords').attr('id'),
+            }
+        );
         return false;
      });
 
