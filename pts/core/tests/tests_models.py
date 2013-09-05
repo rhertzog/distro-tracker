@@ -25,13 +25,17 @@ from pts.core.models import ActionItem, ActionItemType
 from pts.core.models import PseudoPackageName
 from pts.core.models import Repository
 from pts.core.models import News
+from pts.core.models import EmailNews
 from pts.core.models import SourcePackage
 from pts.core.models import ExtractedSourceFile
 from pts.core.models import MailingList
 from .common import make_temp_directory
 from .common import create_source_package
 
+from email import message_from_string
+
 import os
+import gpgme
 
 
 class SubscriptionManagerTest(TestCase):
@@ -1056,6 +1060,35 @@ class NewsTests(TestCase):
     def setUp(self):
         self.package = SourcePackageName.objects.create(name='dummy-package')
 
+    def import_key_from_test_file(self, file_name):
+        """
+        Helper function which imports the given test key file into the test
+        keyring.
+        """
+        old = os.environ.get('GNUPGHOME', None)
+        os.environ['GNUPGHOME'] = self.TEST_KEYRING_DIRECTORY
+        ctx = gpgme.Context()
+        file_path = os.path.join(
+            os.path.dirname(__file__),
+            'tests-data/keys',
+            file_name
+        )
+        with open(file_path, 'rb') as key_file:
+            ctx.import_(key_file)
+
+        if old:
+            os.environ['GNUPGHOME'] = old
+
+    def get_test_file_path(self, file_name):
+        """
+        Helper method returning the full path to the test file with the given
+        name.
+        """
+        return os.path.join(
+            os.path.dirname(__file__),
+            'tests-data',
+            file_name)
+
     def test_content_from_db(self):
         """
         Tests that the :meth:`pts.core.models.News.content` property returns
@@ -1128,6 +1161,39 @@ class NewsTests(TestCase):
                 self.assertTrue(news.news_file)
                 self.assertIsNone(news._db_content)
                 self.assertEqual(news.content, expected_content)
+
+    def test_create_email_news_signature(self):
+        """
+        Tests that the signature information is correctly extracted when
+        creating a news item from an email message which was transfer encoded
+        as quoted-printable.
+        """
+        with make_temp_directory('-pts-keyring') as TEST_KEYRING_DIRECTORY:
+            self.TEST_KEYRING_DIRECTORY = TEST_KEYRING_DIRECTORY
+            with self.settings(
+                    PTS_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
+                self.import_key_from_test_file('key1.pub')
+                # The content of the test news item is found in a file
+                file_path = self.get_test_file_path('signed-message-quoted-printable')
+                with open(file_path, 'r') as f:
+                    content = f.read()
+                expected_name = 'PTS Tests'
+                expected_email = 'fake-address@domain.com'
+                sender_name = 'Some User'
+
+                news = EmailNews.objects.create_email_news(
+                    message=message_from_string(content),
+                    package=self.package)
+
+                # The news contains a signature
+                self.assertEqual(1, news.signed_by.count())
+                # The signature information is correct?
+                signer = news.signed_by.all()[0]
+                self.assertEqual(expected_name, signer.name)
+                self.assertEqual(expected_email, signer.email)
+                # The created by field is also set, but to the sender of the
+                # email
+                self.assertEqual(sender_name, news.created_by)
 
 
 @override_settings(TEMPLATE_DIRS=(os.path.join(

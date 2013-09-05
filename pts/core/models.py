@@ -26,11 +26,13 @@ from pts.core.utils import verify_signature
 from pts.core.utils import pts_render_to_string
 from pts.core.utils.plugins import PluginRegistry
 from pts.core.utils.email_messages import decode_header
+from pts.core.utils.email_messages import get_decoded_message_payload
+from pts.core.utils.email_messages import message_from_bytes
 
 from debian.debian_support import AptPkgVersion
 from debian import changelog as debian_changelog
-from email import message_from_string
 from email.utils import getaddresses
+from email.utils import parseaddr
 from email.iterators import typed_subpart_iterator
 
 import os
@@ -1409,7 +1411,7 @@ class News(models.Model):
     def save(self, *args, **kwargs):
         super(News, self).save(*args, **kwargs)
 
-        signers = verify_signature(self.content)
+        signers = verify_signature(self.get_signed_content())
         if signers is None:
             # No signature
             return
@@ -1425,10 +1427,64 @@ class News(models.Model):
 
         self.signed_by = signed_by
 
+    def get_signed_content(self):
+        return self.content
+
     def get_absolute_url(self):
         return reverse('pts-news-page', kwargs={
             'news_id': self.pk,
         })
+
+
+class EmailNewsManager(NewsManager):
+    """
+    A custom :class:`Manager <django.db.models.Manager>` for the
+    :class:`EmailNews` model.
+    """
+    def create_email_news(self, message, package, title=None, created_by=None, **kwargs):
+        """
+        The method creates a news item from the given email message.
+
+        If a title of the message is not given, it automatically generates it
+        based on the sender of the email.
+
+        :param message: The message based on which a news item should be
+            created.
+        :type message: :class:`Message <email.message.Message>`
+        :param package: The package to which the news item refers
+        :type: :class:`PackageName`
+        :param title: The title of the created news item.
+        :param created_by: The identifier of the creator of the news item.
+            If not provided, it is automatically set to the sender of the email
+        :param created_by: string
+        """
+        from_email = decode_header(message.get('From', 'unknown'))
+        if title is None:
+            if 'Subject' in message:
+                title = decode_header(message['Subject'])
+            else:
+                title = 'Email news from {sender}'.format(sender=from_email)
+        if created_by is None:
+            created_by, _ = parseaddr(from_email)
+
+        return self.create(
+            title=title,
+            content=force_text(message.as_string()),
+            package=package,
+            created_by=created_by,
+            content_type='message/rfc822',
+            **kwargs)
+
+
+class EmailNews(News):
+    objects = EmailNewsManager()
+
+    class Meta:
+        proxy = True
+
+    def get_signed_content(self):
+        msg = message_from_bytes(self.content.encode('utf-8'))
+        return get_decoded_message_payload(msg)
 
 
 class NewsRenderer(six.with_metaclass(PluginRegistry)):
@@ -1536,7 +1592,7 @@ class EmailNewsRenderer(NewsRenderer):
 
     @cached_property
     def context(self):
-        msg = message_from_string(self.news.content)
+        msg = message_from_bytes(self.news.content.encode('utf-8'))
         # Extract headers first
         DEFAULT_HEADERS = (
             'From',

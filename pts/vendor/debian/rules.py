@@ -14,7 +14,7 @@ import urllib
 import requests
 from django.conf import settings
 from pts.core.models import PackageBugStats
-from pts.core.models import News
+from pts.core.models import EmailNews
 from pts.core.models import SourcePackageName
 from pts.core.models import BinaryPackageBugStats
 from pts.core.models import PackageExtractedInfo
@@ -25,7 +25,6 @@ from pts.core.utils.http import HttpCache
 from .models import DebianContributor
 from pts.vendor.common import PluginProcessingError
 from pts.vendor.debian.pts_tasks import UpdateNewQueuePackages
-from pts.mail.mail_news import create_news
 
 
 def get_keyword(local_part, msg):
@@ -617,7 +616,7 @@ def create_news_from_email_message(message):
         package_name = subject_words[1]
         package = get_or_none(SourcePackageName, name=package_name)
         if package:
-            return [create_news(message, package)]
+            return [EmailNews.objects.create_email_news(message, package)]
     # DAK rm?
     elif 'X-DAK' in message:
         x_dak = message['X-DAK']
@@ -646,11 +645,10 @@ def create_news_from_email_message(message):
                 # This package is not tracked by the PTS
                 continue
             title = "Removed {ver} from {suite}".format(ver=version, suite=suite)
-            created_news.append(News.objects.create(
+            created_news.append(EmailNews.objects.create_email_news(
                 title=title,
-                content=message.as_string(),
+                message=message,
                 package=package,
-                content_type='message/rfc822',
                 created_by=news_from))
         return created_news
     # Testing Watch?
@@ -664,11 +662,10 @@ def create_news_from_email_message(message):
         if not title:
             title = 'Testing Watch Message'
         return [
-            News.objects.create(
+            EmailNews.objects.create_email_news(
                 title=title,
-                content=message.as_string(),
+                message=message,
                 package=package,
-                content_type='message/rfc822',
                 created_by='Britney')
         ]
 

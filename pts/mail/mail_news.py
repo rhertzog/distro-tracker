@@ -16,6 +16,7 @@ from django.utils.html import escape
 from pts.core.utils import message_from_bytes
 from pts.core.utils import get_or_none
 from pts.core.models import News
+from pts.core.models import EmailNews
 from pts.core.models import PackageName
 from pts import vendor
 
@@ -38,13 +39,7 @@ def create_news(message, package):
     :returns: The created news item
     :rtype: :class:`pts.core.models.News`
     """
-    from_email = message.get('From', 'unknown')
-    return News.objects.create(
-        title=message.get('Subject', 'Email news from {sender}'.format(
-            sender=from_email)),
-        content=message.as_string(),
-        package=package,
-        content_type='message/rfc822')
+    return EmailNews.objects.create_email_news(message, package)
 
 
 def process(message):
