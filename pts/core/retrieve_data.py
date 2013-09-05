@@ -625,7 +625,7 @@ class UpdateSourceToBinariesInformation(PackageUpdateTask):
         )
         with transaction.commit_on_success():
             if self.is_initial_task():
-                qs = SourcePackageName.objects.all()[:1]
+                qs = SourcePackageName.objects.all()
             else:
                 qs = SourcePackageName.objects.filter(name__in=package_names)
             for package in qs:
