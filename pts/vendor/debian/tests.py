@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Copyright 2013 The Debian Package Tracking System Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/ptsauthors
@@ -17,11 +19,13 @@ from django.test import TestCase, SimpleTestCase
 from django.test.utils import override_settings
 from django.core import mail
 from django.core.urlresolvers import reverse
+from django.core.management import call_command
 from django.utils.six.moves import mock
 from django.utils.encoding import force_bytes
 from django.utils.functional import curry
 from pts.mail.tests.tests_dispatch import DispatchTestHelperMixin, DispatchBaseTest
 from pts.core.tests.common import make_temp_directory
+from pts.core.utils.email_messages import message_from_bytes
 from pts.core.models import ActionItem, ActionItemType
 from pts.core.models import News
 from pts.core.models import PackageExtractedInfo
@@ -4021,3 +4025,62 @@ class NewQueueVersionsPanelTests(TestCase):
         for dist, ver in zip(dists, versions):
             self.assertIn('NEW/' + dist, response_content)
             self.assertIn(ver, response_content)
+
+
+class ImportOldNewsTests(TestCase):
+    """
+    Tests the management command for importing old news.
+    """
+    def create_message(self, subject, from_email, date, content):
+        msg = Message()
+        msg['Subject'] = subject.encode('utf-8')
+        msg['From'] = from_email.encode('utf-8')
+        msg['Date'] = date
+        msg.set_payload(content.encode('utf-8'))
+
+        return msg
+
+    def test_news_created(self):
+        packages = ['dpkg', 'dummy', 'asdf', '000']
+        email = 'user@domain.com'
+        subject_template = 'Message to {}'
+        content_template = "Hello Öäüßčćž한글{}"
+        date = 'Mon, 28 Nov 2005 15:47:11 -0800'
+
+        with make_temp_directory('old-pts') as old_pts_root:
+            # Make the expected directory structure and add some news
+            for package in packages:
+                PackageName.objects.create(name=package)
+                news_dir = os.path.join(
+                    old_pts_root, package[0], package, 'news')
+                os.makedirs(news_dir)
+
+                # Add a news for this package
+                msg = self.create_message(
+                    subject_template.format(package),
+                    email,
+                    date,
+                    content_template.format(package))
+                with open(os.path.join(news_dir, 'news.txt'), 'wb') as f:
+                    content = msg.as_string()
+                    f.write(content)
+
+            call_command('pts_import_old_news', old_pts_root)
+
+            # All news items created
+            self.assertEqual(len(packages), News.objects.count())
+            # All news item have the correct associated content
+            for package in packages:
+                news = News.objects.get(package__name=package)
+                subject = subject_template.format(package)
+                content = content_template.format(package)
+                self.assertEqual(subject, news.title)
+                self.assertIn(content, news.content)
+                # The date of the news item is correctly set to the old item's
+                # date?
+                self.assertEqual('2005 11 28', news.datetime_created.strftime('%Y %m %d'))
+                # The news item's content can be seamlessly transformed back to
+                # an email Message object.
+                msg = message_from_bytes(news.content.encode('utf-8'))
+                self.assertEqual(subject, msg['Subject'])
+                self.assertEqual(content, msg.get_payload().decode('utf-8'))
