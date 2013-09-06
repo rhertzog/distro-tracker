@@ -455,6 +455,12 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
     """
     Tests for the user registration story.
     """
+    def setUp(self):
+        super(UserRegistrationTest, self).setUp()
+        # User registration tests do not want any already registered users
+        EmailUser.objects.all().delete()
+        User.objects.all().delete()
+
     def get_confirmation_url(self, message):
         """
         Extracts the confirmation URL from the given email message.
@@ -690,7 +696,7 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
         password = 'asdf'
         self.create_user(user_email, password, associated_emails)
         ## Set up an existing package
-        package_name = 'dummy-package'
+        package_name = 'dummy'
         SourcePackageName.objects.create(name=package_name)
 
         # The user logs in
