@@ -15,6 +15,8 @@ import sys
 
 if __name__ == "__main__":
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "pts.project.settings")
+    os.environ.setdefault("DJANGO_LIVE_TEST_SERVER_ADDRESS",
+                          "localhost:8081-8085")
 
     from django.core.management import execute_from_command_line
 
