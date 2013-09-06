@@ -169,15 +169,10 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # Uncomment the next line to enable the admin:
     'django.contrib.admin',
     'django.contrib.markup',
-    # Uncomment the next line to enable admin documentation:
-    # 'django.contrib.admindocs',
     'pts.core',
     'pts.accounts',
-    'pts.vendor',
-    'pts.vendor.debian',
     'pts.mail',
 )
 

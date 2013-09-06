@@ -14,4 +14,6 @@ INSTALLED_APPS += (
     'pts.stdver_warnings',
     'pts.auto_news',
     'pts.extract_source_files',
+    'pts.vendor',
+    'pts.vendor.debian',
 )

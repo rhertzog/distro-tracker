@@ -8,7 +8,7 @@ overrides on top of those type-of-installation-specific settings.
 """
 # Load the selected configuration (selected.py is a symlink to preferred config)
 
-#from .defaults import INSTALLED_APPS
+from .defaults import INSTALLED_APPS
 from .selected import *
 
 ## Add your custom settings here
@@ -35,24 +35,18 @@ from .selected import *
 # key here. DO NOT USE THE EXAMPLE KEY GIVEN BELOW.
 # SECRET_KEY = 'etu2#5lv=!0(g9l31mw=cpwhioy!egg60lb5o3_67d83#(wu-u'
 
-# Uncomment this and the corresponding import, for instance if you need to add 'django_extensions'
-# INSTALLED_APPS = (
-#     'django.contrib.auth',
-#     'django.contrib.contenttypes',
-#     'django.contrib.sessions',
-#     'django.contrib.sites',
-#     'django.contrib.messages',
-#     'django.contrib.staticfiles',
-#     # Uncomment the next line to enable the admin:
-#     'django.contrib.admin',
-#     'django.contrib.markup',
-#     # Uncomment the next line to enable admin documentation:
-#     # 'django.contrib.admindocs',
-#     'django_extensions',
-#     'pts.core',
-#     'pts.vendor',
-#     'pts.vendor.debian',
-#     'pts.mail',
-# )
+# You can enable supplementary Django applications here, refer to the
+# documation for details about what they do
+INSTALLED_APPS += (
+    # Can be useful to create visualizations of the models
+    # 'django_extensions',
 
+    # Generate warnings for outdated values of the Standards-Version field
+    # 'pts.stdver_warnings',
 
+    # Generate news when packages are uploaded/removed/migrated
+    # 'pts.auto_news',
+
+    # Extract common files from the source package
+    # 'pts.extract_source_files',
+)
