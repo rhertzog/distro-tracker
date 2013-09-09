@@ -1,0 +1,19 @@
+<div>The packages that {{ item.package }} depends on which need a new maintainer are:</div>
+<ul>
+{% for package, all_dependencies in item.extra_data.items %}
+<li>
+<a href="{% url 'pts-package-page' package %}">{{ package }}</a>
+<ul>
+{% for dependency_type, dependencies in all_dependencies.items %}
+<li>{{ dependency_type }}:
+{% for dependency in dependencies %}
+{{ dependency.binary }}
+{% endfor %}
+</li>
+{% endfor %}
+</ul>
+</span>
+</li>
+{% endfor %}
+
+</ul>

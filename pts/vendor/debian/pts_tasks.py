@@ -29,6 +29,7 @@ from pts.core.models import BinaryPackageBugStats
 from pts.core.models import PackageName
 from pts.core.models import SourcePackageName
 from pts.core.models import BinaryPackageName
+from pts.core.models import SourcePackageDeps
 from pts.vendor.debian.models import LintianStats
 from pts.vendor.debian.models import BuildLogCheckStats
 from pts.vendor.debian.models import PackageTransition
@@ -1769,6 +1770,35 @@ class UpdateWnppStatsTask(BaseTask):
         }
         action_item.save()
 
+    def update_depneedsmaint_action_item(self, package_needs_maintainer):
+        short_description_template = (
+            'The package depends on source packages which need a new maintainer.'
+        )
+        package_url = package_needs_maintainer.get_absolute_url()
+        action_item_type = ActionItemType.objects.create_or_update(
+            type_name='debian-depneedsmaint',
+            full_description_template='debian/depneedsmaint-action-item.html')
+        dependencies = SourcePackageDeps.objects.filter(
+            dependency=package_needs_maintainer)
+        action_items = []
+        for dependency in dependencies:
+            package = dependency.source
+            action_item = package.get_action_item_for_type(action_item_type)
+            if not action_item:
+                action_item = ActionItem(
+                    package=package,
+                    item_type=action_item_type,
+                    extra_data={})
+
+            if package_needs_maintainer.name in action_item.extra_data:
+                if action_item.extra_data == dependency.details:
+                    # Nothing has changed
+                    continue
+            action_item.short_description = short_description_template
+            action_item.extra_data[package_needs_maintainer.name] = dependency.details
+
+            action_item.save()
+
     def execute(self):
         wnpp_stats = self.get_wnpp_stats()
         if wnpp_stats is None:
@@ -1778,12 +1808,32 @@ class UpdateWnppStatsTask(BaseTask):
         ActionItem.objects.delete_obsolete_items(
             item_types=[self.action_item_type],
             non_obsolete_packages=wnpp_stats.keys())
+        # Remove obsolete action items for packages whose dependencies need a
+        # new maintainer.
+        packages_need_maintainer = []
+        for name, stats in wnpp_stats.items():
+            if stats['wnpp_type'] in ('O', 'RFA'):
+                packages_need_maintainer.append(name)
+        packages_depneeds_maint = [
+            package.name
+            for package in SourcePackageName.objects.filter(
+                    source_dependencies__dependency__name__in=packages_need_maintainer)
+        ]
+        ActionItem.objects.delete_obsolete_items(
+            item_types=[
+                ActionItemType.objects.get_or_create(type_name='debian-depneedsmaint')[0],
+            ],
+            non_obsolete_packages=packages_depneeds_maint)
 
         packages = SourcePackageName.objects.filter(name__in=wnpp_stats.keys())
         packages = packages.prefetch_related('action_items')
 
         for package in packages:
             self.update_action_item(package, wnpp_stats[package.name])
+            # Update action items for packages which depend on this one to
+            # indicate that a dependency needs a new maintainer.
+            if package.name in packages_need_maintainer:
+                self.update_depneedsmaint_action_item(package)
 
 
 class UpdateNewQueuePackages(BaseTask):
