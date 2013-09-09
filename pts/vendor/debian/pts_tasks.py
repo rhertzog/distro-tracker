@@ -533,7 +533,7 @@ class UpdateLintianStatsTask(BaseTask):
     Updates packages' lintian stats.
     """
     ACTION_ITEM_TYPE_NAME = 'lintian-warnings-and-errors'
-    ITEM_DESCRIPTION = 'lintian reports <a href="url">{report}</a>'
+    ITEM_DESCRIPTION = 'lintian reports <a href="{url}">{report}</a>'
     ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/lintian-action-item.html'
 
     def __init__(self, force_update=False, *args, **kwargs):
