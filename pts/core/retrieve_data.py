@@ -22,6 +22,7 @@ from pts.core.models import PackageExtractedInfo
 from pts.core.models import BinaryPackageName
 from pts.core.models import BinaryPackage
 from pts.core.models import ExtractedSourceFile
+from pts.core.models import SourcePackageDeps
 from pts.core.utils import get_or_none
 from pts.core.utils.http import get_resource_content
 from pts.core.utils.packages import extract_information_from_sources_entry
@@ -626,10 +627,8 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                     repository=repository))
 
     def _update_dependencies_for_source(self,
-                                        source_name,
                                         stanza,
-                                        dependency_types,
-                                        source_to_binary_deps):
+                                        dependency_types):
         """
         Updates the dependencies for a source package based on the ones found
         in the given ``Packages`` or ``Sources`` stanza.
@@ -643,18 +642,19 @@ class UpdateRepositoriesTask(PackageUpdateTask):
             with the new dependencies. Maps source names to a list of dicts
             each describing a dependency.
         """
+        binary_dependencies = []
         for dependency_type in dependency_types:
             # The Deb822 instance is case sensitive when it comes to relations
-            dependency_type = dependency_type.lower()
-            dependencies = stanza.relations.get(dependency_type, ())
+            dependencies = stanza.relations.get(dependency_type.lower(), ())
 
             for dependency in itertools.chain(*dependencies):
                 binary_name = dependency['name']
-                source_deps = source_to_binary_deps.setdefault(source_name, [])
-                source_deps.append({
+                binary_dependencies.append({
                     'dependency_type': dependency_type,
                     'binary': binary_name,
                 })
+
+        return binary_dependencies
 
     def update_dependencies(self):
         """
@@ -662,15 +662,22 @@ class UpdateRepositoriesTask(PackageUpdateTask):
         build bependencies and their binary packages' dependencies.
         """
         # Build the dependency mapping
-        sources_files = self.apt_cache.get_cached_files(
-            lambda file_name: file_name.endswith('Sources'))
-        packages_files = self.apt_cache.get_cached_files(
-            lambda file_name: file_name.endswith('Packages'))
+        try:
+            default_repository = Repository.objects.get(default=True)
+        except Repository.DoesNotExist:
+            return
+
+        sources_files = self.apt_cache.get_sources_files_for_repository(
+            default_repository)
+        packages_files = self.apt_cache.get_packages_files_for_repository(
+            default_repository)
 
         bin_to_src = {}
         source_to_binary_deps = {}
 
-        dependency_types = ('Build-Depends', 'Build-Depends-Indep')
+        # First builds a list of binary dependencies of all source packages
+        # based on the Sources file.
+        source_dependency_types = ('Build-Depends', 'Build-Depends-Indep')
         for sources_file in sources_files:
             for stanza in deb822.Sources.iter_paragraphs(file(sources_file)):
                 source_name = stanza['package']
@@ -679,13 +686,13 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                     sources_set = bin_to_src.setdefault(binary['name'], set())
                     sources_set.add(source_name)
 
-                self._update_dependencies_for_source(
-                    source_name,
+                dependencies = source_to_binary_deps.setdefault(source_name, [])
+                dependencies.extend(self._update_dependencies_for_source(
                     stanza,
-                    dependency_types,
-                    source_to_binary_deps)
+                    source_dependency_types))
 
-        dependency_types = (
+        # Then a list of binary dependencies based on the Packages file.
+        binary_dependency_types = (
             'Depends',
             'Recommends',
             'Suggests',
@@ -698,16 +705,33 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                 sources_set = bin_to_src.setdefault(binary_name, set())
                 sources_set.add(source_name)
 
-                self._update_dependencies_for_source(
-                    source_name,
+                new_dependencies = self._update_dependencies_for_source(
                     stanza,
-                    dependency_types,
-                    source_to_binary_deps)
+                    binary_dependency_types)
+                for dependency in new_dependencies:
+                    dependency['source_binary'] = binary_name
+                dependencies = source_to_binary_deps.setdefault(source_name, [])
+                dependencies.extend(new_dependencies)
 
-        src_to_src_deps = {}
+        # The binary packages are matched with their source packages and each
+        # source to source dependency created.
+        all_sources = {
+            source.name: source
+            for source in SourcePackageName.objects.all()
+        }
+        # Keeps a list of SourcePackageDeps instances which are to be bulk
+        # created in the end.
+        dependency_instances = []
+
         for source_name, dependencies in source_to_binary_deps.items():
+            if source_name not in all_sources:
+                continue
+
+            # All dependencies for the current source package.
+            all_dependencies = {}
             for dependency in dependencies:
                 binary_name = dependency['binary']
+                dependency_type = dependency.pop('dependency_type')
                 if binary_name not in bin_to_src:
                     continue
 
@@ -715,13 +739,28 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                     if source_name == source_dependency:
                         continue
 
-                    all_source_deps = src_to_src_deps.setdefault(source_name, [])
-                    all_source_deps.append({
-                        'dependency': dependency,
-                        'source_name': source_dependency,
-                    })
+                    source_dependencies = all_dependencies.setdefault(source_dependency, {})
+                    source_dependencies.setdefault(dependency_type, [])
+                    if dependency not in source_dependencies[dependency_type]:
+                        source_dependencies[dependency_type].append(dependency)
 
-        # FIXME
+            # Create the dependency instances for the current source package.
+            for dependency_name, details in all_dependencies.items():
+                if dependency_name in all_sources:
+                    build_dep = any(dependency_type in details for dependency_type in source_dependency_types)
+                    binary_dep = any(dependency_type in details for dependency_type in binary_dependency_types)
+                    dependency_instances.append(
+                        SourcePackageDeps(
+                            source=all_sources[source_name],
+                            dependency=all_sources[dependency_name],
+                            build_dep=build_dep,
+                            binary_dep=binary_dep,
+                            repository=default_repository,
+                            details=details))
+
+        # Create all the model instances in one transaction
+        SourcePackageDeps.objects.all().delete()
+        SourcePackageDeps.objects.bulk_create(dependency_instances)
 
     @clear_all_events_on_exception
     def execute(self):
@@ -732,7 +771,7 @@ class UpdateRepositoriesTask(PackageUpdateTask):
 
         self.update_sources_files(updated_sources)
         self.update_packages_files(updated_packages)
-        # self.update_dependencies()
+        self.update_dependencies()
 
 
 class UpdatePackageGeneralInformation(PackageUpdateTask):

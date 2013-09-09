@@ -1835,3 +1835,19 @@ class ActionItem(models.Model):
             'created': self.created_timestamp.strftime('%Y-%m-%d'),
             'updated': self.last_updated_timestamp.strftime('%Y-%m-%d'),
         }
+
+
+@python_2_unicode_compatible
+class SourcePackageDeps(models.Model):
+    source = models.ForeignKey(SourcePackageName, related_name='source_dependencies')
+    dependency = models.ForeignKey(SourcePackageName, related_name='source_dependents')
+    repository = models.ForeignKey(Repository)
+    build_dep = models.BooleanField()
+    binary_dep = models.BooleanField()
+    details = JSONField()
+
+    class Meta:
+        unique_together = ('source', 'dependency', 'repository')
+
+    def __str__(self):
+        return '{} depends on {}'.format(self.source, self.dependency)

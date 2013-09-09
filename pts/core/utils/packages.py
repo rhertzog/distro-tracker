@@ -278,7 +278,7 @@ class AptCache(object):
         component_url = None
         for entry in sources_list.list:
             for index_file in entry.index_files:
-                if sources_file in index_file.describe:
+                if os.path.basename(sources_file) in index_file.describe:
                     split_description = index_file.describe.split()
                     component_url = split_description[0] + split_description[1]
                     break
