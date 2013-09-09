@@ -855,6 +855,38 @@ class Repository(models.Model):
         """
         return self.source_packages.filter(id=source_package.id).exists()
 
+    def has_binary_package(self, binary_package):
+        """
+        Checks whether this :class:`Repository` contains the given
+        :class:`BinaryPackage`.
+
+        :returns True: If it does contain the given :class:`SourcePackage`
+        :returns False: If it does not contain the given :class:`SourcePackage`
+        """
+        qs = self.binary_package_entries.filter(binary_package=binary_package)
+        return qs.exists()
+
+    def add_binary_package(self, package, **kwargs):
+        """
+        The method adds a new class:`BinaryPackage` to the repository.
+
+        :param package: The binary package to add to the repository
+        :type package: :class:`BinaryPackage`
+
+        The parameters needed for the corresponding
+        :class:`BinaryPackageRepositoryEntry` should be in the keyword arguments.
+
+        Returns the newly created :class:`BinaryPackageRepositoryEntry` for the
+        given :class:`BinaryPackage`.
+
+        :rtype: :class:`BinaryPackageRepositoryEntry`
+        """
+        return BinaryPackageRepositoryEntry.objects.create(
+            repository=self,
+            binary_package=package,
+            **kwargs
+        )
+
     @classmethod
     def release_file_url(cls, base_url, suite):
         """
@@ -1087,6 +1119,31 @@ class BinaryPackage(models.Model):
         return 'Binary package {pkg}, version {ver}'.format(
             pkg=self.binary_package_name, ver=self.version)
 
+    def update(self, **kwargs):
+        """
+        The method updates all of the instance attributes based on the keyword
+        arguments.
+        """
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+
+    @cached_property
+    def name(self):
+        """Returns the name of the package"""
+        return self.binary_package_name.name
+
+
+class BinaryPackageRepositoryEntryManager(models.Manager):
+    def filter_by_package_name(self, names):
+        """
+        :returns: A set of :class:`BinaryPackageRepositoryEntry` instances
+            which are associated to a binary package with one of the names
+            given in the ``names`` parameter.
+        :rtype: :class:`QuerySet <django.db.models.query.QuerySet>`
+        """
+        return self.filter(binary_package__binary_package_name__name__in=names)
+
 
 @python_2_unicode_compatible
 class BinaryPackageRepositoryEntry(models.Model):
@@ -1110,12 +1167,30 @@ class BinaryPackageRepositoryEntry(models.Model):
     priority = models.CharField(max_length=50, blank=True)
     section = models.CharField(max_length=50, blank=True)
 
+    objects = BinaryPackageRepositoryEntryManager()
+
     class Meta:
         unique_together = ('binary_package', 'repository', 'architecture')
 
     def __str__(self):
         return '{pkg} ({arch}) in the repository {repo}'.format(
             pkg=self.binary_package, arch=self.architecture, repo=self.repository)
+
+    @cached_property
+    def version(self):
+        """The version of the binary package"""
+        return self.binary_package.version
+
+
+class SourcePackageRepositoryEntryManager(models.Manager):
+    def filter_by_package_name(self, names):
+        """
+        :returns: A set of :class:`SourcePackageRepositoryEntry` instances
+            which are associated to a source package with one of the names
+            given in the ``names`` parameter.
+        :rtype: :class:`QuerySet <django.db.models.query.QuerySet>`
+        """
+        return self.filter(source_package__source_package_name__name__in=names)
 
 
 @python_2_unicode_compatible
@@ -1134,6 +1209,8 @@ class SourcePackageRepositoryEntry(models.Model):
 
     priority = models.CharField(max_length=50, blank=True)
     section = models.CharField(max_length=50, blank=True)
+
+    objects = SourcePackageRepositoryEntryManager()
 
     class Meta:
         unique_together = ('source_package', 'repository')
@@ -1172,6 +1249,13 @@ class SourcePackageRepositoryEntry(models.Model):
             return base_url + '/' + self.source_package.directory
         else:
             return None
+
+    @cached_property
+    def version(self):
+        """
+        Returns the version of the associated source package.
+        """
+        return self.source_package.version
 
 
 @python_2_unicode_compatible
@@ -1921,3 +2005,19 @@ class Confirmation(models.Model):
         """
         delta = timezone.now() - self.date_created
         return delta.days >= PTS_CONFIRMATION_EXPIRATION_DAYS
+
+
+@python_2_unicode_compatible
+class SourcePackageDeps(models.Model):
+    source = models.ForeignKey(SourcePackageName, related_name='source_dependencies')
+    dependency = models.ForeignKey(SourcePackageName, related_name='source_dependents')
+    repository = models.ForeignKey(Repository)
+    build_dep = models.BooleanField()
+    binary_dep = models.BooleanField()
+    details = JSONField()
+
+    class Meta:
+        unique_together = ('source', 'dependency', 'repository')
+
+    def __str__(self):
+        return '{} depends on {}'.format(self.source, self.dependency)

@@ -22,7 +22,9 @@ from pts.core.models import Subscription, EmailUser, PackageName, BinaryPackageN
 from pts.core.models import SourcePackageName, SourcePackage
 from pts.core.models import SourcePackageRepositoryEntry
 from pts.core.models import PseudoPackageName
+from pts.core.models import BinaryPackage
 from pts.core.models import Repository
+from pts.core.models import Architecture
 from pts.core.retrieve_data import UpdateRepositoriesTask
 from pts.core.retrieve_data import retrieve_repository_info
 from pts.core.tests.common import set_mock_response
@@ -351,10 +353,24 @@ class RetrieveSourcesInformationTest(TestCase):
         return TestTask
 
     def set_mock_sources(self, mock_update, file_name):
-        mock_update.return_value = (
-            [(self.repository, self.get_path_to(file_name))],
-            []
-        )
+        old_return = mock_update.return_value
+        if not isinstance(old_return, tuple):
+            old_return = ([], [])
+
+        sources, packages = old_return
+        mock_update.return_value = ([
+            (self.repository, self.get_path_to(file_name))
+        ], packages)
+
+    def set_mock_packages(self, mock_update, file_name):
+        old_return = mock_update.return_value
+        if not isinstance(old_return, tuple):
+            old_return = ([], [])
+
+        sources, packages = old_return
+        mock_update.return_value = sources, [
+            (self.repository, self.get_path_to(file_name))
+        ]
 
     def clear_events(self):
         self.caught_events = []
@@ -683,6 +699,201 @@ class RetrieveSourcesInformationTest(TestCase):
         )
         # The new package from the updated file is there
         self.assertEqual(SourcePackageName.objects.count(), 2)
+
+
+    @mock.patch('pts.core.retrieve_data.AptCache.get_sources_files_for_repository')
+    @mock.patch('pts.core.retrieve_data.AptCache.update_repositories')
+    def test_update_multiple_versions_in_source_file(self,
+                                                     mock_update_repositories,
+                                                     mock_all_sources):
+        """
+        Tests the update scenario where a Sources file that was not updated
+        contains multiple source versions of the same source package.
+        """
+        src_name = 'dummy-package'
+        versions = ['1.0.0', '2.0.0']
+
+        src_pkgs = [
+            create_source_package({
+                'name': src_name,
+                'binary_packages': ['dummy-package-binary'],
+                'version': version,
+                'maintainer': {
+                    'name': 'Maintainer',
+                    'email': 'maintainer@domain.com'
+                },
+                'architectures': ['amd64', 'all'],
+                'dsc_file_name': 'file.dsc'
+            })
+            for version in versions
+        ]
+        for src_pkg in src_pkgs:
+            self.repository.add_source_package(src_pkg)
+        # Updated sources - only 1 file
+        self.set_mock_sources(mock_update_repositories, 'Sources')
+        # All sources - 2 files
+        mock_all_sources.return_value = [
+            self.get_path_to('Sources'),
+            self.get_path_to('Sources-multiple-versions')
+        ]
+        # Sanity check: both versions exist
+        self.assertEqual(2, SourcePackage.objects.count())
+
+        self.run_update()
+
+        # The package from the file which was not updated is still there
+        self.assert_package_by_name_in(
+            'dummy-package',
+            SourcePackageName.objects.all()
+        )
+        # Both versions are still in the repository
+        entries = SourcePackageRepositoryEntry.objects.filter(
+                repository=self.repository,
+                source_package__source_package_name__name='dummy-package')
+        self.assertEqual(2, entries.count())
+        for entry in entries:
+            self.assertIn(entry.source_package.version, versions)
+
+    @mock.patch('pts.core.retrieve_data.AptCache.update_repositories')
+    def test_binary_package_entry_created_1(self, mock_update_repositories):
+        """
+        Tests that a :class:`BinaryPackage <pts.core.models.BinaryPackage>`
+        instance is added to a :class:`Repository <pts.core.models.Repository>`
+        (a :class:`BinaryPackageRepositoryEntry <pts.core.models.BinaryPackageRepositoryEntry>`
+        is created)
+        """
+        package_name = 'chromium-browser'
+        self.set_mock_sources(mock_update_repositories, 'Sources')
+        self.set_mock_packages(mock_update_repositories, 'Packages')
+
+        self.run_update()
+
+        # The source package is still correctly created
+        self.assertEqual(SourcePackageName.objects.count(), 1)
+        source_package = SourcePackageName.objects.all()[0]
+        self.assertEqual(package_name, source_package.name)
+        # All binary names related to the source package are created
+        self.assertEqual(BinaryPackageName.objects.count(), 8)
+        # The binary package is found in the repository
+        self.assertEqual(1, self.repository.binary_package_entries.count())
+        entry = self.repository.binary_package_entries.all()[0]
+        self.assertEqual(
+            package_name,
+            entry.binary_package.binary_package_name.name)
+        # Associated with the correct source package?
+        self.assertEqual(
+            package_name,
+            entry.binary_package.source_package.name)
+
+    @mock.patch('pts.core.retrieve_data.AptCache.update_repositories')
+    def test_binary_package_entry_created_2(self, mock_update_repositories):
+        """
+        Tests that a :class:`BinaryPackage <pts.core.models.BinaryPackage>`
+        instance is added to a :class:`Repository <pts.core.models.Repository>`
+        (a :class:`BinaryPackageRepositoryEntry <pts.core.models.BinaryPackageRepositoryEntry>`
+        is created) when the name of the binary package is different than the
+        name of the source package.
+        """
+        package_name = 'chromium-browser'
+        binary_name = 'chromium-browser-dbg'
+        self.set_mock_sources(mock_update_repositories, 'Sources')
+        self.set_mock_packages(mock_update_repositories, 'Packages-1')
+
+        self.run_update()
+
+        # The source package is still correctly created
+        self.assertEqual(SourcePackageName.objects.count(), 1)
+        source_package = SourcePackageName.objects.all()[0]
+        self.assertEqual(package_name, source_package.name)
+        # All binary names related to the source package are created
+        self.assertEqual(BinaryPackageName.objects.count(), 8)
+        # The binary package is found in the repository
+        self.assertEqual(1, self.repository.binary_package_entries.count())
+        entry = self.repository.binary_package_entries.all()[0]
+        self.assertEqual(
+            binary_name,
+            entry.binary_package.binary_package_name.name)
+        # Associated with the correct source package?
+        self.assertEqual(
+            package_name,
+            entry.binary_package.source_package.name)
+
+    @mock.patch('pts.core.retrieve_data.AptCache.update_repositories')
+    def test_binary_package_entry_created_3(self, mock_update_repositories):
+        """
+        Tests that a :class:`BinaryPackage <pts.core.models.BinaryPackage>`
+        instance is added to a :class:`Repository <pts.core.models.Repository>`
+        (a :class:`BinaryPackageRepositoryEntry <pts.core.models.BinaryPackageRepositoryEntry>`
+        is created) when both the name and the version of the binary package
+        differ to the ones of the source package.
+        """
+        package_name = 'chromium-browser'
+        binary_name = 'chromium-browser-dbg'
+        binary_version = '27.0.1453.110-1~deb7u1+b1'
+        self.set_mock_sources(mock_update_repositories, 'Sources')
+        self.set_mock_packages(mock_update_repositories, 'Packages-2')
+
+        self.run_update()
+
+        # The source package is still correctly created
+        self.assertEqual(SourcePackageName.objects.count(), 1)
+        source_package = SourcePackageName.objects.all()[0]
+        self.assertEqual(package_name, source_package.name)
+        # All binary names related to the source package are created
+        self.assertEqual(BinaryPackageName.objects.count(), 8)
+        # The binary package is found in the repository
+        self.assertEqual(1, self.repository.binary_package_entries.count())
+        entry = self.repository.binary_package_entries.all()[0]
+        self.assertEqual(
+            binary_name,
+            entry.binary_package.binary_package_name.name)
+        # Associated with the correct source package?
+        self.assertEqual(
+            package_name,
+            entry.binary_package.source_package.name)
+        self.assertEqual(
+            binary_version,
+            entry.binary_package.version)
+
+    @mock.patch('pts.core.retrieve_data.AptCache.update_repositories')
+    def test_binary_package_entry_removed(self, mock_update_repositories):
+        """
+        Tests that an existing
+        :class:`BinaryPackageRepositoryEntry <pts.core.models.BinaryPackageRepositoryEntry>`
+        is removed if the updated ``Packages`` file no longer contains it.
+        """
+        binary_name = 'dummy-package-binary'
+        source_package = create_source_package({
+            'name': 'dummy-package',
+            'binary_packages': [binary_name],
+            'version': '1.0.0',
+            'maintainer': {
+                'name': 'Maintainer',
+                'email': 'maintainer@domain.com'
+            },
+            'architectures': ['amd64', 'all'],
+            'dsc_file_name': 'file.dsc'
+        })
+        # Add a binary package to the repository
+        bin_name = BinaryPackageName.objects.all()[0]
+        bin_pkg = BinaryPackage.objects.create(
+            binary_package_name=bin_name,
+            source_package=source_package,
+            version='1.0.0')
+        arch = Architecture.objects.all()[0]
+        self.repository.add_binary_package(bin_pkg, architecture=arch)
+        self.set_mock_sources(mock_update_repositories, 'Sources')
+        # The existing binary package is no longer found in this Packages file
+        self.set_mock_packages(mock_update_repositories, 'Packages-2')
+
+        self.run_update()
+
+        # The entry is removed from the repository
+        bin_pkgs_in_repo = [
+            entry.binary_package.name
+            for entry in self.repository.binary_package_entries.all()
+        ]
+        self.assertNotIn(binary_name, bin_pkgs_in_repo)
 
 
 class RetrieveSourcesFailureTest(TransactionTestCase):
