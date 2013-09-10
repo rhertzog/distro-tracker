@@ -18,6 +18,7 @@ from pts.core.views import ActionItemJsonView, ActionItemView
 from pts.core.views import KeywordsView
 from pts.core.views import CreateTeamView
 from pts.core.views import TeamDetailsView
+from pts.core.views import DeleteTeamView
 from pts.core.news_feed import PackageNewsFeed
 from pts.accounts.views import RegisterUser
 from pts.accounts.views import RegistrationConfirmation
@@ -115,6 +116,11 @@ urlpatterns = patterns('',
         name='pts-team-page-no-slug'),
     url(r'^teams/(?P<pk>\d+)/(?P<slug>.+)/$', TeamDetailsView.as_view(),
         name='pts-team-page'),
+    url(r'^teams/delete/(?P<pk>\d+)/$', DeleteTeamView.as_view(),
+        name='pts-team-delete'),
+    url(r'^teams/delete/success/$',
+        TemplateView.as_view(template_name='core/team-deleted.html'),
+        name='pts-team-deleted'),
 
     # Dedicated package page
     url(r'^pkg/(?P<package_name>[^/]+)/?$', 'pts.core.views.package_page',

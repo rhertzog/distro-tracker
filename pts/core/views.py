@@ -16,7 +16,10 @@ from django.utils.decorators import method_decorator
 from django.views.generic import View
 from django.views.generic.edit import FormView
 from django.views.generic.detail import DetailView
+from django.views.generic import DeleteView
 from django.views.decorators.cache import cache_control
+from django.core.exceptions import PermissionDenied
+from django.core.urlresolvers import reverse_lazy
 from pts.core.models import get_web_package
 from pts.core.forms import CreateTeamForm
 from pts.core.utils import render_to_json_response
@@ -191,3 +194,19 @@ class CreateTeamView(LoginRequiredMixin, FormView):
 class TeamDetailsView(DetailView):
     model = Team
     template_name = 'core/team.html'
+
+
+class DeleteTeamView(DeleteView):
+    model = Team
+    success_url = reverse_lazy('pts-team-deleted')
+    template_name = 'core/team-confirm-delete.html'
+
+    def get_object(self, *args, **kwargs):
+        """
+        Makes sure that the team instance to be deleted is owned by the
+        logged in user.
+        """
+        instance = super(DeleteTeamView, self).get_object(*args, **kwargs)
+        if instance.owner != self.request.user:
+            raise PermissionDenied
+        return instance

@@ -42,11 +42,11 @@
   width: 90%;
   border-color: rgb(221, 221, 221);
 }
-.subscription-form {
+.unstyled-form {
   margin-bottom: 0px;
   display: inline-block;
 }
-.subscription-form .btn-danger {
+.unstyled-form .btn-not-rounded {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 }

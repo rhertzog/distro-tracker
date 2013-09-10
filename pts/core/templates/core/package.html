@@ -24,14 +24,14 @@
                 {% if request.user.is_authenticated %}
                     <div class="btn-group" style="margin-left: 10px;{% if is_subscribed %}display: none;{% endif %}">
                         {% if request.user.emails.all|length == 1 %}
-                        <form class="subscription-form" action="{% url 'pts-api-accounts-subscribe' %}" method="POST">{% csrf_token %}
+                        <form class="unstyled-form" action="{% url 'pts-api-accounts-subscribe' %}" method="POST">{% csrf_token %}
                             <input type="hidden" name="package" value="{{ package }}">
                             <input type="hidden" name="email" value="{{ request.user.emails.all.0 }}">
                         {% else %}
                         <a href="{% url 'pts-accounts-choose-email' %}?package={{ package }}">
                         {% endif %}
 
-                      <button class="btn" id='subscribe-button' data-package="{{ package }}" data-get-emails="{% url 'pts-api-accounts-emails' %}" data-url="{% url 'pts-api-accounts-subscribe' %}">Subscribe</button></a>
+                      <button class="btn" id='subscribe-button' data-package="{{ package }}" data-get-emails="{% url 'pts-api-accounts-emails' %}" data-url="{% url 'pts-api-accounts-subscribe' %}">Subscribe</button>
 
                         {% if request.user.emails.all|length == 1 %}
                         </form>
@@ -41,9 +41,9 @@
                     </div>
 
                     <div class="btn-group" style="margin-left: 10px;{% if not is_subscribed %}display: none;{% endif %}">
-                      <form class="subscription-form" action="{% url 'pts-api-accounts-unsubscribe' %}" method="POST">{% csrf_token %}
+                      <form class="unstyled-form" action="{% url 'pts-api-accounts-unsubscribe' %}" method="POST">{% csrf_token %}
                           <input type="hidden" name="package" value="{{ package }}">
-                          <button class="btn btn-danger" id='unsubscribe-button' data-url="{% url 'pts-api-accounts-unsubscribe' %}" data-package="{{ package }}">Unsubscribe</button>
+                          <button class="btn btn-danger btn-not-rounded" id='unsubscribe-button' data-url="{% url 'pts-api-accounts-unsubscribe' %}" data-package="{{ package }}">Unsubscribe</button>
                       </form>
                       <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
                         <span class="caret"></span>

@@ -1,5 +1,56 @@
-{% extends 'core/base.html' %}
+{% extends "core/base.html" %}
+{% load staticfiles %}
+{% with team=object %}
+
+{% block title %}{{ block.super }} - {{ team }}{% endblock %}
+
+{% block page-header %}
+    <header class="page-header" id="package-page-header">
+        <div class="container-fluid">
+            <div class="row-fluid">
+                <div class="span3 col col-lg-3 text-center">
+                    {% include 'core/logo.html' %}
+                </div>
+                <div class="span6 col col-lg-6 text-center">
+                    <h1>{{ team }}</h1>
+                </div>
+                <div class="span3 col col-lg-3">
+                    {% include 'core/package-search-form.html' %}
+                    {% include 'accounts/user-widget.html' with logout_redirect=request.path %}
+
+                {% if request.user.is_authenticated %}
+                  {% if request.user == team.owner %}
+                  <form class="unstyled-form" action="{% url 'pts-team-delete' team.pk %}" method="GET">
+                  <button class="btn btn-danger" id="delete-team-button">Delete</button>
+                  </form>
+                  {% endif %}
+                {% endif %}
+
+                </div>
+            </div>
+        </div>
+    </header>
+{% endblock %}
 
 {% block content %}
-<h1 class="text-center">{{ object }}</h1>
+{# A hidden modal which asks for confirmation before deleting the team. #}
+{% spaceless %}
+<div id="confirm-team-delete-modal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3>Are you sure you want to delete the team?</h3>
+  </div>
+  <div class="modal-body">
+    <div>This action is final and permanent. Once the team is deleted it will not be possible to restore it.</div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" id="team-delete-cancel-button" data-dismiss="modal" aria-hidden="true">Cancel</button>
+    <form class="unstyled-form" action="{% url 'pts-team-delete' team.pk %}" method="POST">{% csrf_token %}
+    <button class="btn btn-danger" id='confirm-team-delete-button' aria-hidden="true">Delete</button>
+    </form>
+  </div>
+</div>
+{% endspaceless %}
 {% endblock %}
+
+{% endwith %}

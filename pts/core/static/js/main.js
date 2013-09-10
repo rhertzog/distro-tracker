@@ -162,4 +162,9 @@ $(function() {
         unsubscribe_user_from_package($(this).data('package'));
     });
 
+    $('#delete-team-button').click(function(evt) {
+        $('#confirm-team-delete-modal').modal('show');
+        return false;
+    });
+
 });

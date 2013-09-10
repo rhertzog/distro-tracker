@@ -984,6 +984,15 @@ class TeamTests(SeleniumTestCase):
         team = Team.objects.get(name=team_name)
         return team.get_absolute_url()
 
+    def get_delete_team_url(self, team_name):
+        team = Team.objects.get(name=team_name)
+        return reverse('pts-team-delete', kwargs={
+            'pk': team.pk,
+        })
+
+    def get_team_deleted_url(self):
+        return reverse('pts-team-deleted')
+
     def log_in(self):
         """
         Helper method which logs the user in, without taking any shortcuts (it goes
@@ -1034,3 +1043,52 @@ class TeamTests(SeleniumTestCase):
         # This time, the team creation process fails because the team name is
         # not unique.
         self.assert_in_page_body('Team with this Name already exists')
+
+    def test_delete_team(self):
+        """
+        Tests that the owner can delete a team.
+        """
+        ## Set up a team owned by the user
+        team_name = 'Team name'
+        Team.objects.create(owner=self.user, name=team_name)
+
+        # Before logging in the user opens the team page
+        self.get_page(self.get_team_url(team_name))
+        # He does not see the delete button
+        self.assert_not_in_page_body("Delete")
+        # He goes directly to the deletion URL
+        self.get_page(self.get_delete_team_url(team_name))
+        # But permission is denied to the user
+        self.assert_not_in_page_body(team_name)
+
+        # He now logs in
+        self.log_in()
+        self.get_page(self.get_team_url(team_name))
+        # The delete button is now offered to the user
+        self.assert_element_with_id_in_page('delete-team-button')
+        # So the user decides to click it.
+        self.get_element_by_id('delete-team-button').click()
+        self.wait_response(1)
+        # He is now faced with a popup asking him to confirm the team deletion
+        cancel_button = self.get_element_by_id('team-delete-cancel-button')
+        confirm_button = self.get_element_by_id('confirm-team-delete-button')
+        self.assertTrue(confirm_button.is_displayed())
+        self.assertTrue(cancel_button.is_displayed())
+        # The user decides to cancel the deletion
+        cancel_button.click()
+        self.wait_response(1)
+        # He is still found in the team page and the team has not been deleted
+        self.assert_current_url_equal(self.get_team_url(team_name))
+        ## The team is still here
+        self.assertEqual(1, Team.objects.count())
+        # The user now decides he really wants to delete the team
+        self.get_element_by_id('delete-team-button').click()
+        self.wait_response(1)
+        self.get_element_by_id('confirm-team-delete-button').click()
+        self.wait_response(1)
+
+        # He is now taken to a page informing him the team has been
+        # successfully deleted.
+        self.assert_current_url_equal(self.get_team_deleted_url())
+        ## The team is also really deleted?
+        self.assertEqual(0, Team.objects.count())
