@@ -64,7 +64,11 @@
                 <ul class="list-group list-group-flush">
                     <div class="scrollable">
                     {% for package in team.packages.all %}
+                    {% if package.get_absolute_url %}
                     <li class="list-group-item"><a href="{% url 'pts-package-page' package %}">{{ package }}</a></li>
+                    {% else %}
+                    <li class="list-group-item">{{ package }}</li>
+                    {% endif %}
                     {% endfor %}
                     </div>
                 </ul>
@@ -109,6 +113,17 @@
         </div>
     </div>
     <div class="span3 col col-lg-3" id="pts-package-right">
+        {% if user_member_of_team %}
+        <div class="panel">
+            <div class="panel-heading">add packages</div>
+            <div class="panel-body" style="padding-top: 10px;">
+                <form class="form-search unstyled-form" id="add-team-package-form" action="{% url 'pts-team-add-package' team.pk %}" method="POST">{% csrf_token %}
+                    <input type="text" id="id_package_name" name="package" class='package-search-input' placeholder="Choose package...">
+                    <button class="btn">Add</button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 

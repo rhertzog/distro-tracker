@@ -23,6 +23,7 @@ from pts.core.models import ContributorName
 from pts.core.models import ContributorEmail
 from pts.core.models import Team
 from pts.core.models import SourcePackage
+from pts.core.models import PackageName
 from pts.core.models import Subscription
 from pts.core.panels import BasePanel
 
@@ -1223,3 +1224,48 @@ class TeamTests(SeleniumTestCase):
         ## The team's info is actually updated?
         team = Team.objects.all()[0]
         self.assertEqual(new_description, team.description)
+
+    def test_package_management(self):
+        """
+        Tests that adding/removing packages from the team works as expected.
+        """
+        ## Set up a team owned by the user
+        team_name = 'Team name'
+        Team.objects.create(owner=self.user, name=team_name)
+        ## Set up some packages which the user can add to the team
+        package_names = [
+            'pkg1',
+            'pkg2',
+        ]
+        for package_name in package_names:
+            PackageName.objects.create(name=package_name)
+        ## --
+
+        # The user opens the team page without logging in
+        self.get_page(self.get_team_url(team_name))
+        # He cannot see the form to add a package
+        form = self.get_element_by_id('add-team-package-form')
+        self.assertIsNone(form)
+        # The user logs in and opens the team page
+        self.log_in()
+        self.get_page(self.get_team_url(team_name))
+        # He can see the form to add packages now
+        self.assert_element_with_id_in_page('add-team-package-form')
+        # He types the name of the package he wants to add
+        self.input_to_element('id_package_name', package_names[0])
+        # ...and submits the form
+        self.send_enter('id_package_name')
+        self.wait_response(1)
+
+        # The user is still in the team page
+        self.assert_current_url_equal(self.get_team_url(team_name))
+        # He can now see the package he added in the list of packages
+        self.assert_in_page_body(package_names[0])
+
+        # He tries adding a new package: one that does not exist
+        self.input_to_element('id_package_name', 'this-does-not-exist')
+        self.send_enter('id_package_name')
+        self.wait_response(1)
+        # The user is still in the team page, but nothing is changed when it
+        # comes to the list of packages.
+        self.assert_not_in_page_body('this-does-not-exist')

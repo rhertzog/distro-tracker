@@ -2042,7 +2042,7 @@ class Team(models.Model):
         related_name='owned_teams')
 
     packages = models.ManyToManyField(
-        SourcePackageName,
+        PackageName,
         related_name='teams')
     members = models.ManyToManyField(
         EmailUser,

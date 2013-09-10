@@ -12,7 +12,7 @@ $(function() {
         }
     });
 
-    $('#package-search-input').typeahead([
+    $('#package-search-input, .package-search-input').typeahead([
         {
             name: 'source-packages',
             remote: '/api/package/search/autocomplete?q=%QUERY&package_type=source',

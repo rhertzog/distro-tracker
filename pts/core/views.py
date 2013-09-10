@@ -31,6 +31,7 @@ from pts.core.models import Keyword
 from pts.core.models import Team
 from pts.core.panels import get_panels_for_package
 from pts.accounts.views import LoginRequiredMixin
+from pts.core.utils import get_or_none
 
 
 def package_page(request, package_name):
@@ -235,3 +236,29 @@ class UpdateTeamView(UpdateView):
         if instance.owner != self.request.user:
             raise PermissionDenied
         return instance
+
+
+class AddPackageToTeamView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        """
+        Adds the package given in the POST parameters to the team.
+
+        If the currently logged in user is not a team member, a
+        403 Forbidden response is given.
+
+        Once the package is added, the user is redirected back to the team's
+        page.
+        """
+        team = get_object_or_404(Team, pk=pk)
+        if not team.user_is_member(request.user):
+            # Only team mebers are allowed to modify the packages followed by 
+            # the team.
+            raise PermissionDenied
+
+        if 'package' in request.POST:
+            package_name = request.POST['package']
+            package = get_or_none(PackageName, name=package_name)
+            if package:
+                team.packages.add(package)
+
+        return redirect(team)
