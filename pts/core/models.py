@@ -2045,7 +2045,7 @@ class Team(models.Model):
         SourcePackageName,
         related_name='teams')
     members = models.ManyToManyField(
-        'accounts.User',
+        EmailUser,
         related_name='teams')
 
     def __str__(self):
@@ -2060,3 +2060,14 @@ class Team(models.Model):
     @property
     def slug(self):
         return slugify(self.name)
+
+    def user_is_member(self, user):
+        """
+        Checks whether the given user is a member of the team.
+        :param user: The user which should be checked for membership
+        :type user: :class:`pts.accounts.models.User`
+        """
+        return (
+            user == self.owner or
+            self.members.filter(pk__in=user.emails.all()).exists()
+        )

@@ -56,7 +56,8 @@
 
 <div class="row-fluid">
     <div class="span3 col col-lg-3" id="pts-package-left">
-        {% if team.packages.all %}
+        {% if team.public or user_member_of_team %}{# Should display? #}
+        {% if team.packages.all %}{# Anything to display? #}
         <div class="panel">
             <div class="panel-heading">team packages</div>
             <div class="panel-body">
@@ -69,6 +70,7 @@
                 </ul>
             </div>
         </div>
+        {% endif %}
         {% endif %}
     </div>
     <div class="span6 col col-lg-6" id="pts-package-center">

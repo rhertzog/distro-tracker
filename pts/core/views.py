@@ -196,6 +196,14 @@ class TeamDetailsView(DetailView):
     model = Team
     template_name = 'core/team.html'
 
+    def get_context_data(self, **kwargs):
+        context = super(TeamDetailsView, self).get_context_data(**kwargs)
+        if self.request.user.is_authenticated():
+            context['user_member_of_team'] = self.object.user_is_member(
+                self.request.user)
+
+        return context
+
 
 class DeleteTeamView(DeleteView):
     model = Team
