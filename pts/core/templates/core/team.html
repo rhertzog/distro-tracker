@@ -23,6 +23,7 @@
                   <form class="unstyled-form" action="{% url 'pts-team-delete' team.pk %}" method="GET">
                   <button class="btn btn-danger" id="delete-team-button">Delete</button>
                   </form>
+                  <a href="{% url 'pts-team-update' team.pk %}"><button class="btn" id="update-team-button">Update</button></a>
                   {% endif %}
                 {% endif %}
 

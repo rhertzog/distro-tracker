@@ -19,6 +19,7 @@ from pts.core.views import KeywordsView
 from pts.core.views import CreateTeamView
 from pts.core.views import TeamDetailsView
 from pts.core.views import DeleteTeamView
+from pts.core.views import UpdateTeamView
 from pts.core.news_feed import PackageNewsFeed
 from pts.accounts.views import RegisterUser
 from pts.accounts.views import RegistrationConfirmation
@@ -121,6 +122,8 @@ urlpatterns = patterns('',
     url(r'^teams/delete/success/$',
         TemplateView.as_view(template_name='core/team-deleted.html'),
         name='pts-team-deleted'),
+    url(r'^teams/update/(?P<pk>\d+)/$', UpdateTeamView.as_view(),
+        name='pts-team-update'),
 
     # Dedicated package page
     url(r'^pkg/(?P<package_name>[^/]+)/?$', 'pts.core.views.package_page',

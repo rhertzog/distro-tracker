@@ -993,6 +993,12 @@ class TeamTests(SeleniumTestCase):
     def get_team_deleted_url(self):
         return reverse('pts-team-deleted')
 
+    def get_update_team_url(self, team_name):
+        team = Team.objects.get(name=team_name)
+        return reverse('pts-team-update', kwargs={
+            'pk': team.pk,
+        })
+
     def log_in(self):
         """
         Helper method which logs the user in, without taking any shortcuts (it goes
@@ -1092,3 +1098,43 @@ class TeamTests(SeleniumTestCase):
         self.assert_current_url_equal(self.get_team_deleted_url())
         ## The team is also really deleted?
         self.assertEqual(0, Team.objects.count())
+
+    def test_update_team(self):
+        """
+        Tests that the team owner can update the team's basic info.
+        """
+        ## Set up a team owned by the user
+        team_name = 'Team name'
+        Team.objects.create(owner=self.user, name=team_name)
+
+        # Before logging in the user opens the team page
+        self.get_page(self.get_team_url(team_name))
+        # He does not see the update button
+        self.assert_not_in_page_body("Update")
+        # He goes directly to the update URL
+        self.get_page(self.get_update_team_url(team_name))
+        # But permission is denied to the user
+        self.assert_not_in_page_body(team_name)
+
+        # The user now logs in
+        self.log_in()
+        self.get_page(self.get_team_url(team_name))
+        # He can now see the update button
+        self.assert_element_with_id_in_page('update-team-button')
+        self.get_element_by_id('update-team-button').click()
+
+        # He is found on the update page now
+        self.assert_current_url_equal(self.get_update_team_url(team_name))
+        # ...with a form that lets him update the team's info
+        self.assert_element_with_id_in_page('update-team-form')
+        # The user modifies the team's description
+        new_description = "This is a new description"
+        self.input_to_element('id_description', new_description)
+        self.send_enter('id_name')
+        self.wait_response(1)
+
+        # The user is taken back to the team's page
+        self.assert_current_url_equal(self.get_team_url(team_name))
+        ## The team's info is actually updated?
+        team = Team.objects.all()[0]
+        self.assertEqual(new_description, team.description)

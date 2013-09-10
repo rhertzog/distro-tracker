@@ -1,7 +1,8 @@
 {% extends 'core/base.html' %}
+{% with team=object %}
 
 {% block content %}
-<form id="create-team-form" class="form-horizontal" action="{% url 'pts-teams-create' %}" method="POST">{% csrf_token %}
+<form id="update-team-form" class="form-horizontal" action="{% url 'pts-team-update' team.pk %}" method="POST">{% csrf_token %}
 {% if form.errors %}
     {% for error in form.non_field_errors %}
     <div class="alert alert-error">
@@ -29,7 +30,9 @@
     {% endfor %}
 </fieldset>
 <div class="control-group"><div class="controls">
-<button type="submit" class="btn">Create</button>
+<button type="submit" class="btn">Update</button>
 </div></div>
 </form>
 {% endblock %}
+
+{% endwith %}

@@ -15,6 +15,7 @@ from django.http import Http404
 from django.utils.decorators import method_decorator
 from django.views.generic import View
 from django.views.generic.edit import FormView
+from django.views.generic.edit import UpdateView
 from django.views.generic.detail import DetailView
 from django.views.generic import DeleteView
 from django.views.decorators.cache import cache_control
@@ -207,6 +208,22 @@ class DeleteTeamView(DeleteView):
         logged in user.
         """
         instance = super(DeleteTeamView, self).get_object(*args, **kwargs)
+        if instance.owner != self.request.user:
+            raise PermissionDenied
+        return instance
+
+
+class UpdateTeamView(UpdateView):
+    model = Team
+    form_class = CreateTeamForm
+    template_name = 'core/team-update.html'
+
+    def get_object(self, *args, **kwargs):
+        """
+        Makes sure that the team instance to be updated is owned by the
+        logged in user.
+        """
+        instance = super(UpdateTeamView, self).get_object(*args, **kwargs)
         if instance.owner != self.request.user:
             raise PermissionDenied
         return instance
