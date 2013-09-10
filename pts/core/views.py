@@ -14,14 +14,19 @@ from django.shortcuts import get_object_or_404
 from django.http import Http404
 from django.utils.decorators import method_decorator
 from django.views.generic import View
+from django.views.generic.edit import FormView
+from django.views.generic.detail import DetailView
 from django.views.decorators.cache import cache_control
 from pts.core.models import get_web_package
+from pts.core.forms import CreateTeamForm
 from pts.core.utils import render_to_json_response
 from pts.core.models import SourcePackageName, PackageName, PseudoPackageName
 from pts.core.models import ActionItem
 from pts.core.models import News, NewsRenderer
 from pts.core.models import Keyword
+from pts.core.models import Team
 from pts.core.panels import get_panels_for_package
+from pts.accounts.views import LoginRequiredMixin
 
 
 def package_page(request, package_name):
@@ -168,3 +173,21 @@ class KeywordsView(View):
         return render_to_json_response([
             keyword.name for keyword in Keyword.objects.order_by('name').all()
         ])
+
+
+class CreateTeamView(LoginRequiredMixin, FormView):
+    model = Team
+    template_name = 'core/team-create.html'
+    form_class = CreateTeamForm
+
+    def form_valid(self, form):
+        instance = form.save(commit=False)
+        instance.owner = self.request.user
+        instance.save()
+
+        return redirect(instance)
+
+
+class TeamDetailsView(DetailView):
+    model = Team
+    template_name = 'core/team.html'

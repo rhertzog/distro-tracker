@@ -19,6 +19,7 @@ from django.core import mail
 from pts.core.models import SourcePackageName, BinaryPackageName
 from pts.accounts.models import UserRegistrationConfirmation
 from pts.core.models import EmailUser
+from pts.core.models import Team
 from pts.core.models import Subscription
 from pts.core.panels import BasePanel
 
@@ -963,3 +964,73 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         self.log_in()
         # The user is finally logged in using his new account details
         self.assert_current_url_equal(self.get_profile_url())
+
+
+class TeamTests(SeleniumTestCase):
+    def setUp(self):
+        super(TeamTests, self).setUp()
+        self.password = 'asdf'
+        self.user = User.objects.create_user(
+            main_email='user@domain.com', password=self.password,
+            first_name='', last_name='')
+
+    def get_login_url(self):
+        return reverse('pts-accounts-login')
+
+    def get_create_team_url(self):
+        return reverse('pts-teams-create')
+
+    def get_team_url(self, team_name):
+        team = Team.objects.get(name=team_name)
+        return team.get_absolute_url()
+
+    def log_in(self):
+        """
+        Helper method which logs the user in, without taking any shortcuts (it goes
+        through the steps to fill in the form and submit it).
+        """
+        self.get_page(self.get_login_url())
+        self.input_to_element('id_username', self.user.main_email)
+        self.input_to_element('id_password', self.password)
+        self.send_enter('id_password')
+
+    def test_create_team(self):
+        """
+        Tests that a logged in user can create a new team.
+        """
+        # The user tries going to the page to create a new team
+        self.get_page(self.get_create_team_url())
+        # However, he is not signed in so he is redirected to the login
+        self.assertIn(self.get_login_url(), self.browser.current_url)
+        self.wait_response(1)
+        # The user then logs in
+        self.log_in()
+        # ...and tries again
+        self.get_page(self.get_create_team_url())
+        # This time he is presented with a page that has a form allowing him to
+        # create a new team.
+        self.assert_element_with_id_in_page('create-team-form')
+        # The user forgets to input the team name, initialy.
+        self.send_enter('id_name')
+        # Since a name is required, an error is returned
+        self.assert_in_page_body('This field is required')
+        # The user inputs the team name, but not a maintainer email
+        team_name = 'New team'
+        self.input_to_element('id_name', team_name)
+        self.send_enter('id_name')
+        self.wait_response(1)
+        # The user is now redirected to the team's page
+        self.assert_current_url_equal(self.get_team_url(team_name))
+        ## The team actually exists
+        self.assertEqual(1, Team.objects.filter(name=team_name).count())
+        ## The user is its owner
+        team = Team.objects.get(name=team_name)
+        self.assertEqual(self.user, team.owner)
+        # The user goes back to the team creation page now
+        self.get_page(self.get_create_team_url())
+        # He tries creating a new team with the same name
+        self.input_to_element('id_name', team_name)
+        self.send_enter('id_name')
+        # This time, the team creation process fails because the team name is
+        # not unique.
+        self.assert_in_page_body('Team with this Name already exists')

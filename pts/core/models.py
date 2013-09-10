@@ -20,6 +20,7 @@ from django.utils.safestring import mark_safe
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.core.files.base import ContentFile
+from django.template.defaultfilters import slugify
 from pts.core.utils import get_or_none
 from pts.core.utils import SpaceDelimitedTextField
 from pts.core.utils import verify_signature
@@ -2021,3 +2022,41 @@ class SourcePackageDeps(models.Model):
 
     def __str__(self):
         return '{} depends on {}'.format(self.source, self.dependency)
+
+
+@python_2_unicode_compatible
+class Team(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    maintainer_email = models.EmailField(
+        max_length=244,
+        null=True,
+        blank=True)
+    description = models.TextField(blank=True, null=True)
+    url = models.URLField(max_length=255, blank=True, null=True)
+    public = models.BooleanField(default=True)
+
+    owner = models.ForeignKey(
+        'accounts.User',
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='owned_teams')
+
+    packages = models.ManyToManyField(
+        SourcePackageName,
+        related_name='teams')
+    members = models.ManyToManyField(
+        'accounts.User',
+        related_name='teams')
+
+    def __str__(self):
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse('pts-team-page', kwargs={
+            'pk': self.pk,
+            'slug': self.slug,
+        })
+
+    @property
+    def slug(self):
+        return slugify(self.name)

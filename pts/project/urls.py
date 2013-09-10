@@ -16,6 +16,8 @@ from django.core.urlresolvers import reverse_lazy
 from pts.core.views import PackageSearchView, PackageAutocompleteView
 from pts.core.views import ActionItemJsonView, ActionItemView
 from pts.core.views import KeywordsView
+from pts.core.views import CreateTeamView
+from pts.core.views import TeamDetailsView
 from pts.core.news_feed import PackageNewsFeed
 from pts.accounts.views import RegisterUser
 from pts.accounts.views import RegistrationConfirmation
@@ -105,6 +107,14 @@ urlpatterns = patterns('',
         name='pts-api-accounts-profile-keywords'),
     url(r'^accounts/profile/keywords', ModifyKeywordsView.as_view(),
         name='pts-accounts-profile-keywords'),
+
+    # Team-related URLs
+    url(r'^teams/create/$', CreateTeamView.as_view(),
+        name='pts-teams-create'),
+    url(r'^teams/(?P<pk>\d+)/$', TeamDetailsView.as_view(),
+        name='pts-team-page-no-slug'),
+    url(r'^teams/(?P<pk>\d+)/(?P<slug>.+)/$', TeamDetailsView.as_view(),
+        name='pts-team-page'),
 
     # Dedicated package page
     url(r'^pkg/(?P<package_name>[^/]+)/?$', 'pts.core.views.package_page',
