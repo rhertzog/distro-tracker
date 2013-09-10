@@ -1135,6 +1135,8 @@ class TeamTests(SeleniumTestCase):
 
         # The user is taken back to the team's page
         self.assert_current_url_equal(self.get_team_url(team_name))
+        # The updated information is displayed in the page already
+        self.assert_in_page_body(new_description)
         ## The team's info is actually updated?
         team = Team.objects.all()[0]
         self.assertEqual(new_description, team.description)

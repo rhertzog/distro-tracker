@@ -52,6 +52,64 @@
   </div>
 </div>
 {% endspaceless %}
+
+
+<div class="row-fluid">
+    <div class="span3 col col-lg-3" id="pts-package-left">
+        {% if team.packages.all %}
+        <div class="panel">
+            <div class="panel-heading">team packages</div>
+            <div class="panel-body">
+                <ul class="list-group list-group-flush">
+                    <div class="scrollable">
+                    {% for package in team.packages.all %}
+                    <li class="list-group-item"><a href="{% url 'pts-package-page' package %}">{{ package }}</a></li>
+                    {% endfor %}
+                    </div>
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    <div class="span6 col col-lg-6" id="pts-package-center">
+        <div class="panel">
+            <div class="panel-heading">team info</div>
+            <div class="panel-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <div class="list-item-key"><b>name:</b></div>
+                        <div class="list-item-value">{{ team.name }}</div>
+                        <div class="clear"></div>
+                    </li>
+                    {% if team.maintainer_email %}
+                    <li class="list-group-item">
+                        <div class="list-item-key"><b>maintainer email:</b></div>
+                        <div class="list-item-value">{{ team.maintainer_email }}</div>
+                        <div class="clear"></div>
+                    </li>
+                    {% endif %}
+                    {% if team.url %}
+                    <li class="list-group-item">
+                        <div class="list-item-key"><b>url:</b></div>
+                        <div class="list-item-value"><a href="{{ team.url }}">{{ team.url }}</a></div>
+                        <div class="clear"></div>
+                    </li>
+                    {% endif %}
+                    {% if team.description %}
+                    <li class="list-group-item">
+                        <div class="list-item-key"><b>description:</b></div>
+                        <div class="list-item-value">{{ team.description }}</div>
+                        <div class="clear"></div>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="span3 col col-lg-3" id="pts-package-right">
+    </div>
+</div>
+
 {% endblock %}
 
 {% endwith %}
