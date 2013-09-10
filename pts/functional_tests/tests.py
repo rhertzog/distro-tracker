@@ -1231,7 +1231,7 @@ class TeamTests(SeleniumTestCase):
         """
         ## Set up a team owned by the user
         team_name = 'Team name'
-        Team.objects.create(owner=self.user, name=team_name)
+        team = Team.objects.create(owner=self.user, name=team_name)
         ## Set up some packages which the user can add to the team
         package_names = [
             'pkg1',
@@ -1269,3 +1269,32 @@ class TeamTests(SeleniumTestCase):
         # The user is still in the team page, but nothing is changed when it
         # comes to the list of packages.
         self.assert_not_in_page_body('this-does-not-exist')
+
+        # The user now wants to remove the package from the team
+        # He can see a button next to the team's name
+
+        remove_button = self.browser.find_element_by_css_selector(
+            '.remove-package-from-team-button')
+        remove_button.click()
+        self.wait_response(1)
+        # A popup is displayed asking the user to confirm the removal
+        # The user decides to cancel the operation
+        self.get_element_by_id('remove-package-cancel-button').click()
+        self.wait_response(1)
+        # He is still found on the team page and the package is not removed
+        self.assert_current_url_equal(self.get_team_url(team_name))
+        ## The package is not removed?
+        self.assertEqual(1, team.packages.count())
+
+        # The user decides to definitely remove the package now
+        remove_button.click()
+        self.wait_response(1)
+        self.get_element_by_id('confirm-remove-package-button').click()
+        self.wait_response(1)
+
+        # The user is still on the team page, but the package is not longer
+        # a part of the team.
+        self.assert_current_url_equal(self.get_team_url(team_name))
+        self.assert_not_in_page_body(package_names[0])
+        ## The package is really removed from the team
+        self.assertEqual(0, team.packages.count())

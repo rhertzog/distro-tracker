@@ -262,3 +262,51 @@ class AddPackageToTeamView(LoginRequiredMixin, View):
                 team.packages.add(package)
 
         return redirect(team)
+
+
+class RemovePackageFromTeamView(LoginRequiredMixin, View):
+    template_name = 'core/team-remove-package-confirm.html'
+
+    def get_team(self, pk):
+        team = get_object_or_404(Team, pk=pk)
+        if not team.user_is_member(self.request.user):
+            # Only team mebers are allowed to modify the packages followed by
+            # the team.
+            raise PermissionDenied
+
+        return team
+
+    def get(self, request, pk):
+        self.request = request
+        team = self.get_team(pk)
+
+        if 'package' not in request.GET:
+            raise Http404
+        package_name = request.GET['package']
+        package = get_or_none(PackageName, name=package_name)
+
+        return render(self.request, self.template_name, {
+            'package': package,
+            'team': team,
+        })
+
+    def post(self, request, pk):
+        """
+        Removes the package given in the POST parameters from the team.
+
+        If the currently logged in user is not a team member, a
+        403 Forbidden response is given.
+
+        Once the package is removed, the user is redirected back to the team's
+        page.
+        """
+        self.request = request
+        team = self.get_team(pk)
+
+        if 'package' in request.POST:
+            package_name = request.POST['package']
+            package = get_or_none(PackageName, name=package_name)
+            if package:
+                team.packages.remove(package)
+
+        return redirect(team)

@@ -167,4 +167,16 @@ $(function() {
         return false;
     });
 
+    $('.remove-package-from-team-button').click(function(evt) {
+        // Set which package should be removed upon clicking the confirmation
+        // button.
+        var $this = $(this);
+        var $modal = $('#confirm-package-remove-modal');
+        var package_to_remove = $modal.find('#remove-package-name');
+        package_to_remove.val($this.data('package'))
+
+        // It is safe to display the popup now.
+        $modal.modal('show');
+        return false;
+    });
 });
