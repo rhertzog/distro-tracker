@@ -112,11 +112,3 @@
         </div>
     </div>
 {% endblock %}
-
-{% block extra-js %}{% verbatim %}
-<script id="choose-email-template" type="text/x-handlebars-template">
-{{#each emails}}
-<button class="btn subscribe-select-email" id="choose-email-{{@index}}" data-email="{{this}}" data-package="{{../package_name}}">{{this}}</button>
-{{/each}}
-</script>
-{% endverbatim %}{% endblock %}

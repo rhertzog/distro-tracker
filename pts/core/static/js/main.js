@@ -140,11 +140,16 @@ $(function() {
                 // Ask the user to choose which email(s) should be subscribed
                 // to the package.
                 var package_name = $this.data('package');
-                template = Handlebars.compile($('#choose-email-template').html());
-                $('#choose-email-modal .modal-body').html(template({
-                    emails: data,
-                    package_name: package_name
-                }));
+                var html = ""
+                for (var i = 0; i < data.length; ++i) {
+                    var email = data[i]
+                    html += (
+                        '<button class="btn subscribe-select-email" id="choose-email-' + i + '"' +
+                        ' data-email="' + email + '" data-package="' + package_name + '">' + email +
+                        '</button>'
+                    );
+                }
+                $('#choose-email-modal .modal-body').html(html);
                 // Attach a click handler to the created buttons
                 $('.subscribe-select-email').click(email_chosen_handler);
                 $('#choose-email-modal').modal('show');
