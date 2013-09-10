@@ -19,7 +19,10 @@ from django.core import mail
 from pts.core.models import SourcePackageName, BinaryPackageName
 from pts.accounts.models import UserRegistrationConfirmation
 from pts.core.models import EmailUser
+from pts.core.models import ContributorName
+from pts.core.models import ContributorEmail
 from pts.core.models import Team
+from pts.core.models import SourcePackage
 from pts.core.models import Subscription
 from pts.core.panels import BasePanel
 
@@ -999,6 +1002,12 @@ class TeamTests(SeleniumTestCase):
             'pk': team.pk,
         })
 
+    def assert_team_packages_equal(self, team, package_names):
+        team_package_names = [p.name for p in team.packages.all()]
+        self.assertEqual(len(package_names), len(team_package_names))
+        for package_name in package_names:
+            self.assertIn(package_name, team_package_names)
+
     def log_in(self):
         """
         Helper method which logs the user in, without taking any shortcuts (it goes
@@ -1049,6 +1058,80 @@ class TeamTests(SeleniumTestCase):
         # This time, the team creation process fails because the team name is
         # not unique.
         self.assert_in_page_body('Team with this Name already exists')
+
+    def test_create_team_maintainer_email(self):
+        """
+        Tests creating a team with a maintainer email set.
+        The team should become automatically associated with the maintainer's
+        packages.
+        """
+        ## Set up some packages maintained by the same maintainer
+        package_names = [
+            'pkg1',
+            'pkg2',
+        ]
+        maintainer_email = 'maintainer@domain.com'
+        maintainer = ContributorName.objects.create(
+            contributor_email=ContributorEmail.objects.create(
+                email=maintainer_email))
+        for package_name in package_names:
+            SourcePackage.objects.create(
+                source_package_name=SourcePackageName.objects.create(
+                    name=package_name),
+                version='1.0.0',
+                maintainer=maintainer)
+        ## Create a package with no maintainer
+        SourcePackageName.objects.create(name='dummy-package')
+        ## --
+
+        # The user logs in and accesses the create team page.
+        self.log_in()
+        self.get_page(self.get_create_team_url())
+
+        # He inputs both the team name and the maintaner name.
+        team_name = 'Team name'
+        self.input_to_element('id_name', team_name)
+        self.input_to_element('id_maintainer_email', maintainer_email)
+        self.send_enter('id_maintainer_email')
+        self.wait_response(1)
+
+        # The team is successfully created and the user can see the
+        # maintainer's packages already in the team's page
+        for package_name in package_names:
+            self.assert_in_page_body(package_name)
+        ## The team really is associated with the packages?
+        team = Team.objects.all()[0]
+        self.assert_team_packages_equal(team, package_names)
+
+        # The user now wants to associate the team with a different maintainer
+        # that maintains other packages
+        new_package_name = 'pkg3'
+        new_maintainer_email = 'new-maintainer@domain.com'
+        new_maintainer = ContributorName.objects.create(
+            contributor_email=ContributorEmail.objects.create(
+                email=new_maintainer_email))
+        SourcePackage.objects.create(
+            source_package_name=SourcePackageName.objects.create(
+                name=new_package_name),
+            version='1.0.0',
+            maintainer=new_maintainer)
+        self.get_element_by_id('update-team-button').click()
+        # The user modifies the maintainer field
+        self.clear_element_text('id_maintainer_email')
+        self.input_to_element('id_maintainer_email', new_maintainer_email)
+        self.send_enter('id_maintainer_email')
+        self.wait_response(1)
+
+        # The user is directed back to the team page where he can see all the
+        # packages previously associated with the team, as well as the ones
+        # associated to the new maintainer.
+        self.assert_in_page_body(new_package_name)
+        for package_name in package_names:
+            self.assert_in_page_body(package_name)
+
+        ## The team is really associated with all these packages?
+        self.assert_team_packages_equal(
+            team, package_names + [new_package_name])
 
     def test_delete_team(self):
         """
