@@ -19,6 +19,7 @@ from django.test.utils import override_settings
 from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError
 from pts.core.tests.common import temporary_media_dir
+from django.core.urlresolvers import reverse
 from pts.core.models import Subscription, EmailUser, PackageName, BinaryPackageName
 from pts.core.models import BinaryPackage
 from pts.core.models import Architecture
@@ -33,12 +34,15 @@ from pts.core.models import EmailNews
 from pts.core.models import SourcePackage
 from pts.core.models import ExtractedSourceFile
 from pts.core.models import MailingList
+from pts.core.utils import message_from_bytes
+from pts.core.utils.email_messages import get_decoded_message_payload
 from .common import make_temp_directory
 from .common import create_source_package
 
 from email import message_from_string
 
 import os
+import email
 import gpgme
 
 
@@ -1203,7 +1207,8 @@ class NewsTests(TestCase):
                     PTS_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
                 self.import_key_from_test_file('key1.pub')
                 # The content of the test news item is found in a file
-                file_path = self.get_test_file_path('signed-message-quoted-printable')
+                file_path = self.get_test_file_path(
+                    'signed-message-quoted-printable')
                 with open(file_path, 'r') as f:
                     content = f.read()
                 expected_name = 'PTS Tests'
@@ -1223,6 +1228,97 @@ class NewsTests(TestCase):
                 # The created by field is also set, but to the sender of the
                 # email
                 self.assertEqual(sender_name, news.created_by)
+
+    @temporary_media_dir
+    def test_create_email_news_unknown_encoding_utf8(self):
+        """
+        Tests that creating an email news item from a message which does not
+        specify an encoding works correctly when the actual encoding is utf-8.
+        """
+        message = email.message.Message()
+        message['Subject'] = 'Some subject'
+        content = 'è'
+        raw_content = content.encode('utf-8')
+        message.set_payload(raw_content)
+
+        news = EmailNews.objects.create_email_news(
+            message=message,
+            package=self.package)
+
+        # The news is successfully created
+        self.assertEqual(1, EmailNews.objects.count())
+        news = EmailNews.objects.all()[0]
+        # The news can be converted back to a Message instance
+        msg_from_news = message_from_bytes(news.content)
+        # The payload is correct?
+        self.assertEqual(raw_content, msg_from_news.get_payload())
+        # It can be converted correctly to an actual unicode object
+        self.assertEqual(
+            content,
+            get_decoded_message_payload(msg_from_news))
+
+    @temporary_media_dir
+    def test_create_email_news_unknown_encoding_latin1(self):
+        """
+        Tests that creating an email news item from a message which does not
+        specify an encoding works correctly when the actual encoding is
+        latin1.
+        """
+        message = email.message.Message()
+        message['Subject'] = 'Some subject'
+        content = 'è'
+        raw_content = content.encode('latin-1')
+        message.set_payload(raw_content)
+
+        news = EmailNews.objects.create_email_news(
+            message=message,
+            package=self.package)
+
+        # The news is successfully created
+        self.assertEqual(1, EmailNews.objects.count())
+        news = EmailNews.objects.all()[0]
+        # The news can be converted back to a Message instance
+        msg_from_news = message_from_bytes(news.content)
+        # The payload is correct?
+        self.assertEqual(raw_content, msg_from_news.get_payload())
+        # It can be converted correctly to an actual unicode object
+        self.assertEqual(
+            content,
+            get_decoded_message_payload(msg_from_news, 'latin-1'))
+
+    @temporary_media_dir
+    def test_email_news_render(self):
+        """
+        Tests that an email news is correctly rendered when the encoding of the
+        message is unknown.
+        """
+        message = email.message.Message()
+        message['Subject'] = 'Some subject'
+        content = 'è'
+        # Create two news items: one latin-1 the other utf-8 encoded.
+        message.set_payload(content.encode('latin-1'))
+        news_latin = EmailNews.objects.create_email_news(
+            message=message,
+            package=self.package)
+        message.set_payload(content.encode('utf-8'))
+        news_utf = EmailNews.objects.create_email_news(
+            message=message,
+            package=self.package)
+
+        # Check that the latin-1 encoded news is correctly displayed
+        response = self.client.get(reverse('pts-news-page', kwargs={
+            'news_id': news_latin.id,
+        }))
+        # The response contains the correctly decoded content
+        self.assertIn(content, response.content.decode('utf-8'))
+
+        # Check that the utf-8 encoded news is correctly displayed
+        response = self.client.get(reverse('pts-news-page', kwargs={
+            'news_id': news_utf.id,
+        }))
+        # The response contains the correctly decoded content
+        self.assertIn(content, response.content.decode('utf-8'))
+
 
 @override_settings(TEMPLATE_DIRS=(os.path.join(
     os.path.dirname(__file__),

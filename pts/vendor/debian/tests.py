@@ -4049,6 +4049,7 @@ class ImportOldNewsTests(TestCase):
 
         return msg
 
+    @temporary_media_dir
     def test_news_created(self):
         packages = ['dpkg', 'dummy', 'asdf', '000']
         email = 'user@domain.com'
@@ -4082,14 +4083,16 @@ class ImportOldNewsTests(TestCase):
             for package in packages:
                 news = News.objects.get(package__name=package)
                 subject = subject_template.format(package)
-                content = content_template.format(package)
+                content = content_template.format(package).encode('utf-8')
                 self.assertEqual(subject, news.title)
                 self.assertIn(content, news.content)
                 # The date of the news item is correctly set to the old item's
                 # date?
-                self.assertEqual('2005 11 28', news.datetime_created.strftime('%Y %m %d'))
+                self.assertEqual(
+                    '2005 11 28',
+                    news.datetime_created.strftime('%Y %m %d'))
                 # The news item's content can be seamlessly transformed back to
                 # an email Message object.
-                msg = message_from_bytes(news.content.encode('utf-8'))
+                msg = message_from_bytes(news.content)
                 self.assertEqual(subject, msg['Subject'])
-                self.assertEqual(content, msg.get_payload().decode('utf-8'))
+                self.assertEqual(content, msg.get_payload())

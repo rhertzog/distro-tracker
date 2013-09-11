@@ -1461,6 +1461,9 @@ class News(models.Model):
     news_file = models.FileField(
         upload_to=lambda instance, filename: '/'.join((
             'news',
+            (instance.package.name[:4]
+             if instance.package.name.startswith('lib') else
+             instance.package.name[0]),
             instance.package.name,
             filename
         )),
@@ -1554,7 +1557,7 @@ class EmailNewsManager(NewsManager):
 
         return self.create(
             title=title,
-            content=force_text(message.as_string()),
+            file_content=message.as_string(),
             package=package,
             created_by=created_by,
             content_type='message/rfc822',
@@ -1568,8 +1571,15 @@ class EmailNews(News):
         proxy = True
 
     def get_signed_content(self):
-        msg = message_from_bytes(self.content.encode('utf-8'))
-        return get_decoded_message_payload(msg)
+        msg = message_from_bytes(self.content)
+        try:
+            return get_decoded_message_payload(msg)
+        except UnicodeDecodeError:
+            # Decoding can fail with this error if the message does not have a
+            # header specifying the charset and it isn't utf-8 encoded.
+            # We attempt to decode the message using latin-1 as a fallback in
+            # this situation before bailing out by propagating the exception.
+            return get_decoded_message_payload(msg, 'latin-1')
 
 
 class NewsRenderer(six.with_metaclass(PluginRegistry)):
@@ -1677,7 +1687,7 @@ class EmailNewsRenderer(NewsRenderer):
 
     @cached_property
     def context(self):
-        msg = message_from_bytes(self.news.content.encode('utf-8'))
+        msg = message_from_bytes(self.news.content)
         # Extract headers first
         DEFAULT_HEADERS = (
             'From',
@@ -1718,10 +1728,17 @@ class EmailNewsRenderer(NewsRenderer):
             else:
                 headers[header_name] = {'value': header_value}
 
-        plain_text_payloads = [
-            part.get_payload(decode=True)
-            for part in typed_subpart_iterator(msg, 'text', 'plain')
-        ]
+        plain_text_payloads = []
+        for part in typed_subpart_iterator(msg, 'text', 'plain'):
+            try:
+                plain_text_payloads.append(get_decoded_message_payload(part))
+            except UnicodeDecodeError:
+                # Decoding can fail with this error if the message does not have a
+                # header specifying the charset and it isn't utf-8.
+                # We attempt to decode the message using latin-1 as a fallback in
+                # this situation before bailing out by propagating the exception.
+                plain_text_payloads.append(
+                    get_decoded_message_payload(part, 'latin-1'))
 
         return {
             'headers': headers,

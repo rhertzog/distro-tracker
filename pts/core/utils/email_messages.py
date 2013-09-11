@@ -218,7 +218,7 @@ class CustomEmailMessage(EmailMessage):
         return msg
 
 
-def decode_header(header):
+def decode_header(header, default_encoding='utf-8'):
     """
     Decodes an email message header and returns it coded as a unicode
     string.
@@ -234,5 +234,5 @@ def decode_header(header):
     return ''.join((
         (part.decode(encoding)
          if encoding is not None else
-         part)
+         part.decode(default_encoding))
         for part, encoding in decoded_header))

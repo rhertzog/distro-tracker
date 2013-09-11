@@ -138,7 +138,6 @@ def news_page(request, news_id):
         renderer_class = NewsRenderer.get_renderer_for_content_type('text/plain')
 
     renderer = renderer_class(news)
-    print news.content_type
     return render(request, 'core/news.html', {
         'news_renderer': renderer,
         'news': news,
