@@ -25,6 +25,7 @@
                   <button class="btn btn-danger" id="delete-team-button">Delete</button>
                   </form>
                   <a href="{% url 'pts-team-update' team.pk %}"><button class="btn" id="update-team-button">Update</button></a>
+                  <a href="{% url 'pts-team-manage' team.pk %}"><button class="btn" id="manage-team-button">Member management</button></a>
                   {% else %}
                   {% if user_member_of_team %}
                   {# Team meber options #}

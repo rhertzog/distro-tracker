@@ -24,9 +24,11 @@ from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse_lazy
 from pts.core.models import get_web_package
 from pts.core.forms import CreateTeamForm
+from pts.core.forms import AddTeamMemberForm
 from pts.core.utils import render_to_json_response
 from pts.core.models import SourcePackageName, PackageName, PseudoPackageName
 from pts.core.models import ActionItem
+from pts.core.models import EmailUser
 from pts.core.models import News, NewsRenderer
 from pts.core.models import Keyword
 from pts.core.models import Team
@@ -367,6 +369,61 @@ class LeaveTeamView(LoginRequiredMixin, View):
         team.members.remove(*request.user.emails.all())
 
         return redirect(team)
+
+
+class ManageTeamMembers(LoginRequiredMixin, ListView):
+    """
+    Provides the team owner a method to manually add/remove members of the
+    team.
+    """
+    template_name = 'core/team-manage.html'
+    paginate_by = 20
+    context_object_name = 'members_list'
+
+    def get_queryset(self):
+        return self.team.members.all().order_by('email')
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(ManageTeamMembers, self).get_context_data(*args, **kwargs)
+        context['team'] = self.team
+        context['form'] = AddTeamMemberForm()
+        return context
+
+    def get(self, request, pk):
+        self.team = get_object_or_404(Team, pk=pk)
+        # Make sure only the owner can access this page
+        if self.team.owner != request.user:
+            raise PermissionDenied
+        return super(ManageTeamMembers, self).get(request, pk)
+
+
+class RemoveTeamMember(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        self.team = get_object_or_404(Team, pk=pk)
+        if self.team.owner != request.user:
+            raise PermissionDenied
+
+        if 'email' in request.POST:
+            emails = request.POST.getlist('email')
+            self.team.members.remove(*EmailUser.objects.filter(email__in=emails))
+
+        return redirect('pts-team-manage', pk=self.team.pk)
+
+
+class AddTeamMember(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        self.team = get_object_or_404(Team, pk=pk)
+        if self.team.owner != request.user:
+            raise PermissionDenied
+
+        form = AddTeamMemberForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            # Emails that do not exist should be created
+            user, _ = EmailUser.objects.get_or_create(email=email)
+            self.team.members.add(user)
+
+        return redirect('pts-team-manage', pk=self.team.pk)
 
 
 class TeamListView(ListView):

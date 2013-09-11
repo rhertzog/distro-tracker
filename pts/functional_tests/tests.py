@@ -1363,3 +1363,34 @@ class TeamTests(SeleniumTestCase):
         # a link to contact the owner.
         self.get_page(self.get_team_url(team_name))
         self.assert_in_page_body('Contact the owner')
+
+    def test_owner_members_management(self):
+        """
+        Tests that a team owner is able to add/remove members from a separate
+        panel.
+        """
+        ## --
+        team_name = 'Team name'
+        team = Team.objects.create(owner=self.user, name=team_name)
+        ## --
+
+        self.log_in()
+        self.get_page(self.get_team_url(team_name))
+        # The user opens the member management page
+        self.get_element_by_id('manage-team-button').click()
+
+        # The user wants to add a new team member
+        new_team_member = 'member@domain.com'
+        self.input_to_element('id_email', new_team_member)
+        self.send_enter('id_email')
+        self.wait_response(1)
+        # The user is still in the same page, but can see the new member in the
+        # list of all members
+        self.assert_in_page_body(new_team_member)
+
+        # The user now decides to remove the team member
+        button = self.browser.find_element_by_css_selector('.remove-user-button')
+        button.click()
+        self.wait_response(1)
+        # The user is no longer a part of the team
+        self.assert_not_in_page_body(new_team_member)

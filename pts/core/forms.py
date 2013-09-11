@@ -46,3 +46,7 @@ class CreateTeamForm(forms.ModelForm):
         instance.packages.add(*packages)
 
         return instance
+
+
+class AddTeamMemberForm(forms.Form):
+    email = forms.EmailField()
