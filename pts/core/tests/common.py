@@ -34,6 +34,19 @@ def make_temp_directory(suffix=''):
         shutil.rmtree(temp_dir_name)
 
 
+def temporary_media_dir(meth):
+    """
+    Method decorator which creates a temporary media directory which is
+    automatically cleaned up once the method exits.
+    """
+    def wrap(self, *args, **kwargs):
+        with make_temp_directory('-pts-media') as temp_media_dir:
+            with self.settings(MEDIA_ROOT=temp_media_dir):
+                meth(self, *args, **kwargs)
+
+    return wrap
+
+
 def create_source_package(arguments):
     """
     Creates and returns a new :class:`SourcePackage <pts.core.models.SourcePackage>`

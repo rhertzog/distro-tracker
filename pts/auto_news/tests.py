@@ -23,7 +23,7 @@ from pts.core.tasks import Job
 from pts.core.tasks import JobState
 from pts.core.tasks import Event
 from pts.auto_news.pts_tasks import GenerateNewsFromRepositoryUpdates
-from pts.core.tests.common import make_temp_directory
+from pts.core.tests.common import temporary_media_dir
 
 
 class GenerateNewsFromRepositoryUpdatesTest(TestCase):
@@ -543,6 +543,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         news = News.objects.all()[0]
         self.assertEqual(news.content, expected_content)
 
+    @temporary_media_dir
     def test_changelog_entry_in_news_content(self):
         """
         Tests that the news item created for new source package versions
@@ -560,14 +561,13 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
             "    - Feature 2\n\n"
             " -- Maintainer <email@domain.com>  Mon, 1 July 2013 09:00:00 +0000"
         )
-        with make_temp_directory('-pts-media') as temp_media_dir:
-            ExtractedSourceFile.objects.create(
-                source_package=src_pkg,
-                extracted_file=ContentFile(changelog_entry, name='changelog'),
-                name='changelog')
+        ExtractedSourceFile.objects.create(
+            source_package=src_pkg,
+            extracted_file=ContentFile(changelog_entry, name='changelog'),
+            name='changelog')
 
-            self.run_task()
+        self.run_task()
 
-            self.assertEqual(News.objects.count(), 1)
-            news = News.objects.all()[0]
-            self.assertIn(changelog_entry, news.content)
+        self.assertEqual(News.objects.count(), 1)
+        news = News.objects.all()[0]
+        self.assertIn(changelog_entry, news.content)

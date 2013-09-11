@@ -20,6 +20,7 @@ from pts.core.models import SourcePackage, SourcePackageName
 from pts.core.models import ExtractedSourceFile
 from pts.core.tasks import JobState, Event, Job
 from pts.core.tests.common import make_temp_directory
+from pts.core.tests.common import temporary_media_dir
 from pts.extract_source_files.pts_tasks import ExtractSourcePackageFiles
 from django.utils.six.moves import mock
 
@@ -67,6 +68,7 @@ class ExtractSourcePackageFilesTest(TestCase):
         self.task.execute()
 
     @mock.patch('pts.extract_source_files.pts_tasks.AptCache.retrieve_source')
+    @temporary_media_dir
     def test_create_extracted_files(self, mock_cache):
         """
         Tests that the task creates an
@@ -79,7 +81,7 @@ class ExtractSourcePackageFilesTest(TestCase):
             'pk': package.pk,
         })
 
-        with make_temp_directory('-pts-media') as temp_media_dir, make_temp_directory('pts-pkg-dir') as pkg_directory:
+        with make_temp_directory('pts-pkg-dir') as pkg_directory:
             debian_dir = os.path.join(pkg_directory, 'debian')
             os.makedirs(debian_dir)
             changelog_path = os.path.join(debian_dir, 'changelog')
@@ -92,16 +94,16 @@ class ExtractSourcePackageFilesTest(TestCase):
 
             mock_cache.return_value = os.path.join(pkg_directory)
 
-            with self.settings(MEDIA_ROOT=temp_media_dir):
-                self.run_task()
+            self.run_task()
 
-                # Check that the file was created.
-                self.assertEqual(1, ExtractedSourceFile.objects.count())
-                # Check that it has the correct name
-                extracted_file = ExtractedSourceFile.objects.all()[0]
-                self.assertEqual('changelog', extracted_file.name)
+            # Check that the file was created.
+            self.assertEqual(1, ExtractedSourceFile.objects.count())
+            # Check that it has the correct name
+            extracted_file = ExtractedSourceFile.objects.all()[0]
+            self.assertEqual('changelog', extracted_file.name)
 
     @mock.patch('pts.extract_source_files.pts_tasks.AptCache.retrieve_source')
+    @temporary_media_dir
     def test_create_extracted_files_only_wanted_files(self, mock_cache):
         """
         Tests that the task creates an
@@ -114,7 +116,7 @@ class ExtractSourcePackageFilesTest(TestCase):
             'pk': package.pk,
         })
 
-        with make_temp_directory('-pts-media') as temp_media_dir, make_temp_directory('pts-pkg-dir') as pkg_directory:
+        with make_temp_directory('pts-pkg-dir') as pkg_directory:
             debian_dir = os.path.join(pkg_directory, 'debian')
             os.makedirs(debian_dir)
             wanted_files = [
@@ -134,19 +136,19 @@ class ExtractSourcePackageFilesTest(TestCase):
 
             mock_cache.return_value = os.path.join(pkg_directory)
 
-            with self.settings(MEDIA_ROOT=temp_media_dir):
-                self.run_task()
+            self.run_task()
 
-                # Check that only the wanted files are created!
-                self.assertEqual(len(wanted_files), ExtractedSourceFile.objects.count())
-                extracted_names = [
-                    extracted_file.name
-                    for extracted_file in ExtractedSourceFile.objects.all()
-                ]
-                for wanted_file in wanted_files:
-                    self.assertIn(wanted_file, extracted_names)
+            # Check that only the wanted files are created!
+            self.assertEqual(len(wanted_files), ExtractedSourceFile.objects.count())
+            extracted_names = [
+                extracted_file.name
+                for extracted_file in ExtractedSourceFile.objects.all()
+            ]
+            for wanted_file in wanted_files:
+                self.assertIn(wanted_file, extracted_names)
 
     @mock.patch('pts.extract_source_files.pts_tasks.AptCache.retrieve_source')
+    @temporary_media_dir
     def test_task_is_initial_no_existing_files(self, mock_cache):
         """
         Tests the task when it is run as the initial task, but there are no
@@ -156,7 +158,7 @@ class ExtractSourcePackageFilesTest(TestCase):
         package = SourcePackage.objects.create(
             source_package_name=name, version='1.0.0')
 
-        with make_temp_directory('-pts-media') as temp_media_dir, make_temp_directory('pts-pkg-dir') as pkg_directory:
+        with make_temp_directory('pts-pkg-dir') as pkg_directory:
             debian_dir = os.path.join(pkg_directory, 'debian')
             os.makedirs(debian_dir)
             wanted_files = [
@@ -176,20 +178,20 @@ class ExtractSourcePackageFilesTest(TestCase):
 
             mock_cache.return_value = os.path.join(pkg_directory)
 
-            with self.settings(MEDIA_ROOT=temp_media_dir):
-                self.run_task(initial_task=True)
+            self.run_task(initial_task=True)
 
-                # Check that all the wanted files are created!
-                self.assertEqual(len(wanted_files), ExtractedSourceFile.objects.count())
-                extracted_names = [
-                    extracted_file.name
-                    for extracted_file in ExtractedSourceFile.objects.all()
-                ]
-                for wanted_file in wanted_files:
-                    self.assertIn(wanted_file, extracted_names)
+            # Check that all the wanted files are created!
+            self.assertEqual(len(wanted_files), ExtractedSourceFile.objects.count())
+            extracted_names = [
+                extracted_file.name
+                for extracted_file in ExtractedSourceFile.objects.all()
+            ]
+            for wanted_file in wanted_files:
+                self.assertIn(wanted_file, extracted_names)
 
 
     @mock.patch('pts.extract_source_files.pts_tasks.AptCache.retrieve_source')
+    @temporary_media_dir
     def test_task_is_initial_existing_files(self, mock_cache):
         """
         Tests the task when it is run as the initial task, but some files for
@@ -199,7 +201,7 @@ class ExtractSourcePackageFilesTest(TestCase):
         package = SourcePackage.objects.create(
             source_package_name=name, version='1.0.0')
 
-        with make_temp_directory('-pts-media') as temp_media_dir, make_temp_directory('pts-pkg-dir') as pkg_directory:
+        with make_temp_directory('pts-pkg-dir') as pkg_directory:
             debian_dir = os.path.join(pkg_directory, 'debian')
             os.makedirs(debian_dir)
             wanted_files = [
@@ -219,28 +221,28 @@ class ExtractSourcePackageFilesTest(TestCase):
 
             mock_cache.return_value = os.path.join(pkg_directory)
 
-            with self.settings(MEDIA_ROOT=temp_media_dir):
-                # Make a previously extracted file.
-                original_content = 'Original content'
-                ExtractedSourceFile.objects.create(
-                    source_package=package,
-                    name='changelog',
-                    extracted_file=ContentFile(original_content, name='changelog'))
+            # Make a previously extracted file.
+            original_content = 'Original content'
+            ExtractedSourceFile.objects.create(
+                source_package=package,
+                name='changelog',
+                extracted_file=ContentFile(original_content, name='changelog'))
 
-                self.run_task(initial_task=True)
+            self.run_task(initial_task=True)
 
-                # Check that all the wanted files exist.
-                self.assertEqual(len(wanted_files), ExtractedSourceFile.objects.count())
-                # Check that the existing file was not changed.
-                extracted_file = ExtractedSourceFile.objects.get(
-                    name='changelog',
-                    source_package=package)
-                extracted_file.extracted_file.open()
-                content = extracted_file.extracted_file.read()
-                extracted_file.extracted_file.close()
-                self.assertEqual(original_content, content)
+            # Check that all the wanted files exist.
+            self.assertEqual(len(wanted_files), ExtractedSourceFile.objects.count())
+            # Check that the existing file was not changed.
+            extracted_file = ExtractedSourceFile.objects.get(
+                name='changelog',
+                source_package=package)
+            extracted_file.extracted_file.open()
+            content = extracted_file.extracted_file.read()
+            extracted_file.extracted_file.close()
+            self.assertEqual(original_content, content)
 
     @mock.patch('pts.extract_source_files.pts_tasks.AptCache.retrieve_source')
+    @temporary_media_dir
     def test_task_is_initial_existing_file_remove(self, mock_cache):
         """
         Tests the task when it is run as the initial task, but some of the
@@ -250,7 +252,7 @@ class ExtractSourcePackageFilesTest(TestCase):
         package = SourcePackage.objects.create(
             source_package_name=name, version='1.0.0')
 
-        with make_temp_directory('-pts-media') as temp_media_dir, make_temp_directory('pts-pkg-dir') as pkg_directory:
+        with make_temp_directory('pts-pkg-dir') as pkg_directory:
             debian_dir = os.path.join(pkg_directory, 'debian')
             os.makedirs(debian_dir)
             wanted_files = [
@@ -270,22 +272,21 @@ class ExtractSourcePackageFilesTest(TestCase):
 
             mock_cache.return_value = os.path.join(pkg_directory)
 
-            with self.settings(MEDIA_ROOT=temp_media_dir):
-                # Make a previously extracted file.
-                original_content = 'Original content'
-                ExtractedSourceFile.objects.create(
-                    source_package=package,
-                    name='we-dont-want-this-any-more',
-                    extracted_file=ContentFile(original_content, name='changelog'))
+            # Make a previously extracted file.
+            original_content = 'Original content'
+            ExtractedSourceFile.objects.create(
+                source_package=package,
+                name='we-dont-want-this-any-more',
+                extracted_file=ContentFile(original_content, name='changelog'))
 
-                self.run_task(initial_task=True)
+            self.run_task(initial_task=True)
 
-                # Check that all the wanted files exist.
-                self.assertEqual(len(wanted_files), ExtractedSourceFile.objects.count())
-                # Check that only the wanted files exist.
-                extracted_names = [
-                    extracted_file.name
-                    for extracted_file in ExtractedSourceFile.objects.all()
-                ]
-                for wanted_file in wanted_files:
-                    self.assertIn(wanted_file, extracted_names)
+            # Check that all the wanted files exist.
+            self.assertEqual(len(wanted_files), ExtractedSourceFile.objects.count())
+            # Check that only the wanted files exist.
+            extracted_names = [
+                extracted_file.name
+                for extracted_file in ExtractedSourceFile.objects.all()
+            ]
+            for wanted_file in wanted_files:
+                self.assertIn(wanted_file, extracted_names)

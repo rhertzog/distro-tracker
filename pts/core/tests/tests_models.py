@@ -18,6 +18,7 @@ from django.test import TestCase
 from django.test.utils import override_settings
 from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError
+from pts.core.tests.common import temporary_media_dir
 from pts.core.models import Subscription, EmailUser, PackageName, BinaryPackageName
 from pts.core.models import BinaryPackage
 from pts.core.models import Architecture
@@ -828,6 +829,7 @@ class SourcePackageTests(TestCase):
         """
         self.assertIsNone(self.source_package.main_entry)
 
+    @temporary_media_dir
     def test_changelog_entry_only(self):
         """
         Tests that the
@@ -842,17 +844,18 @@ class SourcePackageTests(TestCase):
             "    - Feature 2\n\n"
             " -- Maintainer <email@domain.com>  Mon, 1 July 2013 09:00:00 +0000"
         ).format(pkg=self.source_package.name, ver=self.source_package.version)
-
         changelog_content = changelog_entry
-        with make_temp_directory('-pts-media') as temp_media_dir:
-            ExtractedSourceFile.objects.create(
-                source_package=self.source_package,
-                extracted_file=ContentFile(changelog_content, name='changelog'),
-                name='changelog')
-            self.assertEqual(
-                self.source_package.get_changelog_entry(),
-                changelog_entry)
 
+        ExtractedSourceFile.objects.create(
+            source_package=self.source_package,
+            extracted_file=ContentFile(changelog_content, name='changelog'),
+            name='changelog')
+
+        self.assertEqual(
+            self.source_package.get_changelog_entry(),
+            changelog_entry)
+
+    @temporary_media_dir
     def test_changelog_entry_beginning(self):
         """
         Tests that the
@@ -875,15 +878,16 @@ class SourcePackageTests(TestCase):
         ).format(pkg=self.source_package.name, ver='9.9.9')
         changelog_content = changelog_entry + '\n' + other_content
 
-        with make_temp_directory('-pts-media') as temp_media_dir:
-            ExtractedSourceFile.objects.create(
-                source_package=self.source_package,
-                extracted_file=ContentFile(changelog_content, name='changelog'),
-                name='changelog')
-            self.assertEqual(
-                self.source_package.get_changelog_entry(),
-                changelog_entry)
+        ExtractedSourceFile.objects.create(
+            source_package=self.source_package,
+            extracted_file=ContentFile(changelog_content, name='changelog'),
+            name='changelog')
 
+        self.assertEqual(
+            self.source_package.get_changelog_entry(),
+            changelog_entry)
+
+    @temporary_media_dir
     def test_changelog_entry_not_first(self):
         """
         Tests that the
@@ -906,15 +910,15 @@ class SourcePackageTests(TestCase):
         ).format(pkg=self.source_package.name, ver='9.9.9')
         changelog_content = other_content + '\n' + changelog_entry
 
-        with make_temp_directory('-pts-media') as temp_media_dir:
-            ExtractedSourceFile.objects.create(
-                source_package=self.source_package,
-                extracted_file=ContentFile(changelog_content, name='changelog'),
-                name='changelog')
-            self.assertEqual(
-                self.source_package.get_changelog_entry(),
-                changelog_entry)
+        ExtractedSourceFile.objects.create(
+            source_package=self.source_package,
+            extracted_file=ContentFile(changelog_content, name='changelog'),
+            name='changelog')
+        self.assertEqual(
+            self.source_package.get_changelog_entry(),
+            changelog_entry)
 
+    @temporary_media_dir
     def test_changelog_entry_regex_meta_chars(self):
         """
         Tests that the
@@ -933,14 +937,14 @@ class SourcePackageTests(TestCase):
         ).format(pkg=self.source_package.name, ver=self.source_package.version)
         changelog_content = changelog_entry
 
-        with make_temp_directory('-pts-media') as temp_media_dir:
-            ExtractedSourceFile.objects.create(
-                source_package=self.source_package,
-                extracted_file=ContentFile(changelog_content, name='changelog'),
-                name='changelog')
-            self.assertEqual(
-                self.source_package.get_changelog_entry(),
-                changelog_entry)
+        ExtractedSourceFile.objects.create(
+            source_package=self.source_package,
+            extracted_file=ContentFile(changelog_content, name='changelog'),
+            name='changelog')
+
+        self.assertEqual(
+            self.source_package.get_changelog_entry(),
+            changelog_entry)
 
 
 class BinaryPackageTests(TestCase):
@@ -1129,24 +1133,23 @@ class NewsTests(TestCase):
 
         self.assertEqual(news.content, expected_content)
 
+    @temporary_media_dir
     def test_content_from_file(self):
         """
         Tests that the :meth:`pts.core.models.News.content` property returns
         the correct contents when they are found in a file.
         """
         expected_content = 'This is some news content'
-        with make_temp_directory('-pts-media') as temp_media_dir:
-            with self.settings(MEDIA_ROOT=temp_media_dir):
-                # Create a temporary file for the content
-                content_file = ContentFile(expected_content, name='tmp-content')
-                # Create the news item with the given content file
-                news = News.objects.create(
-                    title='some title',
-                    package=self.package,
-                    news_file=content_file
-                )
+        # Create a temporary file for the content
+        content_file = ContentFile(expected_content, name='tmp-content')
+        # Create the news item with the given content file
+        news = News.objects.create(
+            title='some title',
+            package=self.package,
+            news_file=content_file
+        )
 
-                self.assertEqual(news.content, expected_content)
+        self.assertEqual(news.content, expected_content)
 
     def test_no_content(self):
         """
@@ -1171,23 +1174,23 @@ class NewsTests(TestCase):
         self.assertEqual(news._db_content, expected_content)
         self.assertFalse(news.news_file)
 
+    @temporary_media_dir
     def test_create_file_content(self):
         """
         Tests the :meth:`pts.core.models.NewsManager.create` method when it
         should create an instance whose content is stored in a file.
         """
         expected_content = 'Some content'
-        with make_temp_directory('-pts-media') as temp_media_dir:
-            with self.settings(MEDIA_ROOT=temp_media_dir):
-                news = News.objects.create(
-                    title='some title',
-                    file_content=expected_content,
-                    package=self.package)
+        news = News.objects.create(
+            title='some title',
+            file_content=expected_content,
+            package=self.package)
 
-                self.assertTrue(news.news_file)
-                self.assertIsNone(news._db_content)
-                self.assertEqual(news.content, expected_content)
+        self.assertTrue(news.news_file)
+        self.assertIsNone(news._db_content)
+        self.assertEqual(news.content, expected_content)
 
+    @temporary_media_dir
     def test_create_email_news_signature(self):
         """
         Tests that the signature information is correctly extracted when
@@ -1220,7 +1223,6 @@ class NewsTests(TestCase):
                 # The created by field is also set, but to the sender of the
                 # email
                 self.assertEqual(sender_name, news.created_by)
-
 
 @override_settings(TEMPLATE_DIRS=(os.path.join(
     os.path.dirname(__file__),
