@@ -1529,7 +1529,7 @@ class EmailNewsManager(NewsManager):
     A custom :class:`Manager <django.db.models.Manager>` for the
     :class:`EmailNews` model.
     """
-    def create_email_news(self, message, package, title=None, created_by=None, **kwargs):
+    def create_email_news(self, message, package, **kwargs):
         """
         The method creates a news item from the given email message.
 
@@ -1541,27 +1541,13 @@ class EmailNewsManager(NewsManager):
         :type message: :class:`Message <email.message.Message>`
         :param package: The package to which the news item refers
         :type: :class:`PackageName`
-        :param title: The title of the created news item.
-        :param created_by: The identifier of the creator of the news item.
-            If not provided, it is automatically set to the sender of the email
-        :param created_by: string
         """
-        from_email = decode_header(message.get('From', 'unknown'))
-        if title is None:
-            if 'Subject' in message:
-                title = decode_header(message['Subject'])
-            else:
-                title = 'Email news from {sender}'.format(sender=from_email)
-        if created_by is None:
-            created_by, _ = parseaddr(from_email)
+        create_kwargs = EmailNews.get_email_news_parameters(message)
+        # The parameters given to the method directly by the client have
+        # priority over what is extracted from the email message.
+        create_kwargs.update(kwargs)
 
-        return self.create(
-            title=title,
-            file_content=message.as_string(),
-            package=package,
-            created_by=created_by,
-            content_type='message/rfc822',
-            **kwargs)
+        return self.create(package=package, **create_kwargs)
 
 
 class EmailNews(News):
@@ -1581,6 +1567,23 @@ class EmailNews(News):
             # this situation before bailing out by propagating the exception.
             return get_decoded_message_payload(msg, 'latin-1')
 
+    @classmethod
+    def get_email_news_parameters(self, message):
+        """
+        Returns a dict representing default values for some :class:`EmailNews`
+        fields based on the given email message.
+        """
+        kwargs = {}
+        from_email = decode_header(message.get('From', 'unknown'))
+        kwargs['created_by'], _ = parseaddr(from_email)
+        if 'Subject' in message:
+            kwargs['title'] = decode_header(message['Subject'])
+        else:
+            kwargs['title'] = 'Email news from {sender}'.format(sender=from_email)
+        kwargs['file_content'] = message.as_string()
+        kwargs['content_type'] = 'message/rfc822'
+
+        return kwargs
 
 class NewsRenderer(six.with_metaclass(PluginRegistry)):
     """
