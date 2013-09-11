@@ -1009,15 +1009,26 @@ class TeamTests(SeleniumTestCase):
         for package_name in package_names:
             self.assertIn(package_name, team_package_names)
 
-    def log_in(self):
+    def log_in(self, user=None, password=None):
         """
         Helper method which logs the user in, without taking any shortcuts (it goes
         through the steps to fill in the form and submit it).
         """
+        if user is None:
+            user = self.user
+        if password is None:
+            password = self.password
+
         self.get_page(self.get_login_url())
-        self.input_to_element('id_username', self.user.main_email)
-        self.input_to_element('id_password', self.password)
+        self.input_to_element('id_username', user.main_email)
+        self.input_to_element('id_password', password)
         self.send_enter('id_password')
+
+    def log_out(self):
+        """
+        Logs the currently logged in user out.
+        """
+        self.click_link("Log out")
 
     def test_create_team(self):
         """
@@ -1298,3 +1309,57 @@ class TeamTests(SeleniumTestCase):
         self.assert_not_in_page_body(package_names[0])
         ## The package is really removed from the team
         self.assertEqual(0, team.packages.count())
+
+    def test_team_access(self):
+        """
+        Tests joining and leaving a team.
+        """
+        ## Set up a team and a user who isn't the owner of the team
+        team_name = 'Team name'
+        team = Team.objects.create(owner=self.user, name=team_name)
+        user = User.objects.create_user(
+            main_email='other@domain.com',
+            password=self.password)
+        ## --
+
+        # The user logs in and goes to the team page
+        self.log_in(user)
+        self.get_page(self.get_team_url(team_name))
+        # He can see a button allowing him to join the team.
+        self.assert_element_with_id_in_page('join-team-button')
+        # ...so he clicks it!
+        self.get_element_by_id('join-team-button').click()
+        self.wait_response(1)
+
+        # The user is still found in the team page, but now he is a member of
+        # the team.
+        self.assert_element_with_id_in_page('add-team-package-form')
+        ## The user is really a member?
+        self.assertTrue(team.user_is_member(user))
+        # Which means he can leave the team now.
+        self.assert_element_with_id_in_page('leave-team-button')
+        # So he does that.
+        self.get_element_by_id('leave-team-button').click()
+        self.wait_response(1)
+
+        # The user is now again not a member of the team
+        self.assert_element_with_id_in_page('join-team-button')
+        ## He really isn't a member any more.
+        self.assertFalse(team.user_is_member(user))
+
+        # The user now logs out
+        self.log_out()
+        # And tries clicking the join team button
+        self.get_element_by_id('join-team-button').click()
+        self.wait_response(1)
+        # But he is redirected to the login page
+        self.assert_element_with_id_in_page('form-login')
+
+        ## The privacy of the team is switched to private.
+        team.public = False
+        team.save()
+
+        # When the user opens the page again, the join button is replaced with
+        # a link to contact the owner.
+        self.get_page(self.get_team_url(team_name))
+        self.assert_in_page_body('Contact the owner')

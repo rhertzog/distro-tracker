@@ -189,6 +189,7 @@ class CreateTeamView(LoginRequiredMixin, FormView):
         instance = form.save(commit=False)
         instance.owner = self.request.user
         instance.save()
+        instance.members.add(*self.request.user.emails.all())
 
         return redirect(instance)
 
@@ -308,5 +309,60 @@ class RemovePackageFromTeamView(LoginRequiredMixin, View):
             package = get_or_none(PackageName, name=package_name)
             if package:
                 team.packages.remove(package)
+
+        return redirect(team)
+
+
+class JoinTeamView(LoginRequiredMixin, View):
+    """
+    Lets logged in users join a public team.
+    After a user has been added to the team, he is redirected back to the team
+    page.
+    """
+    template_name = 'core/team-join-choose-email.html'
+
+    def get(self, request, pk):
+        team = get_object_or_404(Team, pk=pk)
+
+        return render(request, self.template_name, {
+            'team': team,
+        })
+
+    def post(self, request, pk):
+        team = get_object_or_404(Team, pk=pk)
+        if not team.public:
+            # Only public teams can be joined directly by users
+            raise PermissionDenied
+
+        if 'email' in request.POST:
+            emails = request.POST.getlist('email')
+            # Make sure the user owns the emails
+            user_emails = [e.email for e in request.user.emails.all()]
+            for email in emails:
+                if email not in user_emails:
+                    raise PermissionDenied
+            # Add the given emails to the team
+            team.members.add(*self.request.user.emails.filter(email__in=emails))
+
+        return redirect(team)
+
+
+class LeaveTeamView(LoginRequiredMixin, View):
+    """
+    Lets logged in users leave teams they are a part of.
+    """
+    def get(self, request, pk):
+        team = get_object_or_404(Team, pk=pk)
+        return redirect(team)
+
+    def post(self, request, pk):
+        team = get_object_or_404(Team, pk=pk)
+        if not team.user_is_member(request.user):
+            # Leaving a team when you're not already a part of it makes no
+            # sense
+            raise PermissionDenied
+
+        # Remove all the user's emails from the team
+        team.members.remove(*request.user.emails.all())
 
         return redirect(team)

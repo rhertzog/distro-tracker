@@ -1,0 +1,15 @@
+{% extends "core/team.html" %}
+{% with team=object %}
+
+{% block content %}
+<div class="text-center">
+<h3>Choose an email with which to join the team <a href="{{ team.get_absolute_url }}">{{ team }}</a></h3>
+<form action="{% url 'pts-team-join' team.pk %}" method="POST" id="team-join-form">{% csrf_token %}
+    {% for email in request.user.emails.all %}
+    <input type="submit" class="btn" name="email" value="{{ email }}">
+    {% endfor %}
+</form>
+</div>
+{% endblock %}
+
+{% endwith %}

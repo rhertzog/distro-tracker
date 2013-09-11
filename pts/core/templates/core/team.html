@@ -20,11 +20,34 @@
 
                 {% if request.user.is_authenticated %}
                   {% if request.user == team.owner %}
+                  {# Owner specific team options #}
                   <form class="unstyled-form" action="{% url 'pts-team-delete' team.pk %}" method="GET">
                   <button class="btn btn-danger" id="delete-team-button">Delete</button>
                   </form>
                   <a href="{% url 'pts-team-update' team.pk %}"><button class="btn" id="update-team-button">Update</button></a>
+                  {% else %}
+                  {% if user_member_of_team %}
+                  {# Team meber options #}
+                      <form class="unstyled-form" action="{% url 'pts-team-leave' team.pk %}" method="POST">{% csrf_token %}
+                      <button id="leave-team-button" class="btn btn-danger">Leave</button>
+                      </form>
                   {% endif %}
+                  {% endif %}
+                {% endif %}
+                {% if not user_member_of_team %}
+                  {# Public team options #}
+                      {% if team.public %}
+                          {% if request.user.emails.all|length == 1 %}
+                          <form class="unstyled-form" action="{% url 'pts-team-join' team.pk %}" method="POST">{% csrf_token %}
+                          <input type="hidden" name="email" value="{{ request.user.emails.all.0 }}">
+                          <button id="join-team-button" class="btn">Join</button>
+                          </form>
+                          {% else %}
+                          <a href="{% url 'pts-team-join' team.pk %}"><button id="join-team-button" class="btn">Join</button></a>
+                          {% endif %}
+                      {% else %}
+                      <span>| </span><a title="Since the team is private, you need to contact the owner and ask to be included" href="mailto:{{ team.owner.main_email }}">Contact the owner</a>
+                      {% endif %}
                 {% endif %}
 
                 </div>
