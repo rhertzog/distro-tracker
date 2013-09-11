@@ -10,7 +10,9 @@
 from __future__ import unicode_literals
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
+from django.core.files.base import ContentFile
 from pts.core.models import EmailNews
+from pts.core.models import News
 from pts.core.models import PackageName
 
 import os
@@ -21,6 +23,8 @@ import email
 class Command(BaseCommand):
     """
     Import old PTS news.
+
+    The imported news' signature information is not automatically extracted.
     """
     args = 'root-dir'
 
@@ -47,6 +51,7 @@ class Command(BaseCommand):
 
         news_directory = os.path.join(package_directory_name, 'news')
 
+        email_news = []
         for news_file in sorted(os.listdir(news_directory)):
             news_file_path = os.path.join(news_directory, news_file)
 
@@ -60,14 +65,21 @@ class Command(BaseCommand):
                 else:
                     date = timezone.now()
 
-                EmailNews.objects.create_email_news(
+                news_kwargs = EmailNews.get_email_news_parameters(msg)
+                content = news_kwargs.pop('file_content')
+                news_kwargs['news_file'] = ContentFile(content, name='news-file')
+
+                email_news.append(News(
                     package=package,
-                    message=msg,
-                    datetime_created=date)
+                    datetime_created=date,
+                    **news_kwargs))
             except:
                 import traceback
                 traceback.print_exc()
                 self.write('Problem importing news {}'.format(news_file_path))
+
+        self.write("All news for the package processed. Bulk creating the instances.")
+        News.objects.bulk_create(email_news)
 
         self.write('Complete.')
 
