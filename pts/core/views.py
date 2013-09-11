@@ -18,6 +18,7 @@ from django.views.generic.edit import FormView
 from django.views.generic.edit import UpdateView
 from django.views.generic.detail import DetailView
 from django.views.generic import DeleteView
+from django.views.generic import ListView
 from django.views.decorators.cache import cache_control
 from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse_lazy
@@ -366,3 +367,10 @@ class LeaveTeamView(LoginRequiredMixin, View):
         team.members.remove(*request.user.emails.all())
 
         return redirect(team)
+
+
+class TeamListView(ListView):
+    queryset = Team.objects.filter(public=True).order_by('name')
+    paginate_by = 20
+    template_name = 'core/team-list.html'
+    context_object_name = 'team_list'

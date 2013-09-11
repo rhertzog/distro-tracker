@@ -24,6 +24,7 @@ from pts.core.views import AddPackageToTeamView
 from pts.core.views import RemovePackageFromTeamView
 from pts.core.views import JoinTeamView
 from pts.core.views import LeaveTeamView
+from pts.core.views import TeamListView
 from pts.core.news_feed import PackageNewsFeed
 from pts.accounts.views import RegisterUser
 from pts.accounts.views import RegistrationConfirmation
@@ -136,6 +137,8 @@ urlpatterns = patterns('',
         name='pts-team-join'),
     url(r'^teams/leave/(?P<pk>\d+)/$', LeaveTeamView.as_view(),
         name='pts-team-leave'),
+    url(r'^teams/$', TeamListView.as_view(),
+        name='pts-team-list'),
 
 
     # Dedicated package page

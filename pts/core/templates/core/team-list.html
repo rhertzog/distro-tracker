@@ -1,0 +1,27 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="row-fluid" style="margin-bottom: 5px;">
+    <div class="text-center"><a href="{% url 'pts-teams-create' %}"<button class="btn">Create a new team</button></a></div>
+</div>
+<ul class="list-group">
+{% for team in team_list %}
+<li class="list-group-item">
+    <span><a href="{{ team.get_absolute_url }}">{{ team }}</a></span>
+    <span>(</span><span title="Number of packages">{{ team.packages.all|length }}</span><span>, </span>
+    <span title="Number of members">{{ team.members.all|length }}</span><span>)</span>
+</li>
+{% endfor %}
+</ul>
+{% if is_paginated %}
+<div class="text-center">
+<div class="pagination">
+<ul>
+    {% for page in page_obj.paginator.page_range %}
+    <li {% if page_obj.number == page %}class="active"{% endif %}><a href="?page={{ page }}">{{ page }}</a></li>
+    {% endfor %}
+</ul>
+</div>
+</div>
+{% endif %}
+{% endblock %}
