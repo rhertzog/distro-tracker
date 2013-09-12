@@ -64,6 +64,39 @@ class RunTaskManagementCommandTest(SimpleTestCase):
         })
 
 
+@mock.patch('pts.core.tasks.import_all_tasks')
+@mock.patch('pts.core.management.commands.pts_run_all_tasks.run_all_tasks')
+class RunAllTasksTests(SimpleTestCase):
+    """
+    Test for the :mod:`pts.core.management.commands.pts_run_task` management
+    command.
+    """
+    def run_command(self, *args, **kwargs):
+        call_command('pts_run_all_tasks', *args, **kwargs)
+
+    def test_runs_all(self, mock_run_all_tasks, *args, **kwargs):
+        """
+        Tests that the management command calls the
+        :func:`run_task <pts.core.tasks.run_task>` function for each given task
+        name.
+        """
+        self.run_command()
+
+        # The run task was called only for the given commands
+        mock_run_all_tasks.assert_called_once_with(None)
+
+    def test_passes_force_flag(self, mock_run_all_tasks, *args, **kwargs):
+        """
+        Tests that the management command passes the force flag to the task
+        invocations when it is given.
+        """
+        self.run_command(force=True)
+
+        mock_run_all_tasks.assert_called_once_with({
+            'force_update': True,
+        })
+
+
 class UpdateNewsSignaturesCommandTest(TestCase):
     """
     Tests for the

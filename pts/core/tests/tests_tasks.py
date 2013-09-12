@@ -21,10 +21,13 @@ from pts.core.tasks import BaseTask
 from pts.core.tasks import Event
 from pts.core.tasks import JobState
 from pts.core.tasks import run_task, continue_task_from_state
+from pts.core.tasks import run_all_tasks
 import logging
 logging.disable(logging.CRITICAL)
 
 
+# Don't let any other module's tests be loaded.
+@mock.patch('pts.core.tasks.import_all_tasks')
 class JobTests(SimpleTestCase):
     def create_task_class(self, produces, depends_on, raises, fail=False):
         """
@@ -62,7 +65,7 @@ class JobTests(SimpleTestCase):
             for plugin in BaseTask.plugins
         ]
         # Now ignore all original plugins.
-        BaseTask.plugins = []
+        BaseTask.plugins = [BaseTask]
 
     def assert_executed_tasks_equal(self, expected_tasks):
         """
@@ -85,7 +88,7 @@ class JobTests(SimpleTestCase):
         # Remove any extra plugins which may have been created during a test run
         BaseTask.plugins = self.original_plugins
 
-    def test_simple_dependency(self):
+    def test_simple_dependency(self, *args, **kwargs):
         """
         Tests creating a DAG of task dependencies when there is only one event
         """
@@ -108,7 +111,7 @@ class JobTests(SimpleTestCase):
         # B depends on A
         self.assertIn(B, g.dependent_nodes(A))
 
-    def test_multiple_dependency(self):
+    def test_multiple_dependency(self, *args, **kwargs):
         """
         Tests creating a DAG of tasks dependencies when there are multiple
         events.
@@ -148,7 +151,7 @@ class JobTests(SimpleTestCase):
 
         self.assertEqual(len(g.dependent_nodes(T8)), 0)
 
-    def test_run_job_simple(self):
+    def test_run_job_simple(self, *args, **kwargs):
         """
         Tests running a job consisting of a simple dependency.
         """
@@ -160,7 +163,7 @@ class JobTests(SimpleTestCase):
         self.assert_executed_tasks_equal([A, B])
         self.assert_task_dependency_preserved(A, [B])
 
-    def test_run_job_by_task_name(self):
+    def test_run_job_by_task_name(self, *args, **kwargs):
         """
         Tests that the :func:`pts.core.tasks.run_task` function correctly
         runs a task when given its name, not a task class object.
@@ -173,7 +176,7 @@ class JobTests(SimpleTestCase):
         self.assert_executed_tasks_equal([A, B])
         self.assert_task_dependency_preserved(A, [B])
 
-    def test_run_job_no_dependency(self):
+    def test_run_job_no_dependency(self, *args, **kwargs):
         """
         Tests running a job consisting of no dependencies.
         """
@@ -184,7 +187,7 @@ class JobTests(SimpleTestCase):
 
         self.assert_executed_tasks_equal([B])
 
-    def test_run_job_no_events_emitted(self):
+    def test_run_job_no_events_emitted(self, *args, **kwargs):
         """
         Tests running a job consisting of a simple dependency, but the event is
         not emitted during execution.
@@ -196,7 +199,7 @@ class JobTests(SimpleTestCase):
 
         self.assert_executed_tasks_equal([A])
 
-    def test_run_job_complex_1(self):
+    def test_run_job_complex_1(self, *args, **kwargs):
         """
         Tests running a job consisting of complex dependencies.
         """
@@ -225,7 +228,7 @@ class JobTests(SimpleTestCase):
         self.assert_task_dependency_preserved(T5, [T8])
         self.assert_task_dependency_preserved(T6, [T8])
 
-    def test_run_job_complex_2(self):
+    def test_run_job_complex_2(self, *args, **kwargs):
         """
         Tests running a job consisting of complex dependencies.
         """
@@ -248,7 +251,7 @@ class JobTests(SimpleTestCase):
         self.assert_task_dependency_preserved(T0, [T3, T4])
         self.assert_task_dependency_preserved(T3, [T8])
 
-    def test_run_job_complex_3(self):
+    def test_run_job_complex_3(self, *args, **kwargs):
         """
         Tests running a job consisting of complex dependencies.
         """
@@ -268,7 +271,7 @@ class JobTests(SimpleTestCase):
         self.assert_task_dependency_preserved(T0, [T3, T4, T7])
         self.assert_task_dependency_preserved(T3, [T8])
 
-    def test_run_job_complex_4(self):
+    def test_run_job_complex_4(self, *args, **kwargs):
         """
         Tests running a job consisting of complex dependencies when the initial
         task is not the task which has 0 dependencies in the full tasks DAG.
@@ -287,7 +290,7 @@ class JobTests(SimpleTestCase):
 
         self.assert_executed_tasks_equal([T1, T5, T8])
 
-    def test_run_job_complex_5(self):
+    def test_run_job_complex_5(self, *args, **kwargs):
         """
         Tests running a job consisting of complex dependencies when the initial
         task is not the task which has 0 dependencies in the full tasks DAG.
@@ -309,7 +312,32 @@ class JobTests(SimpleTestCase):
         self.assert_task_dependency_preserved(T1, [T7, T5])
         self.assert_task_dependency_preserved(T5, [T8])
 
-    def test_run_job_with_fail_task(self):
+    def test_run_all_tasks(self, *args, **kwargs):
+        """
+        Tests that all tasks are ran by calling the
+        :func:`pts.core.tasks.run_all_tasks` function.
+        """
+        dependent_tasks = [
+            self.create_task_class((), ('A',), ()),
+            self.create_task_class((), ('B',), ()),
+        ]
+        independent_tasks = [
+            self.create_task_class(('A',), (), ('A',)),
+            self.create_task_class(('B',), (), ()),
+        ]
+
+        run_all_tasks()
+
+        # All independent tasks were ran, along with the task whose dependency
+        # was satisfied.
+        self.assert_executed_tasks_equal(
+            independent_tasks + [dependent_tasks[0]])
+        # Makes sure the depenent task was executed after the dependency...
+        self.assert_task_dependency_preserved(
+            independent_tasks[0],
+            [dependent_tasks[0]])
+
+    def test_run_job_with_fail_task(self, *args, **kwargs):
         """
         Tests that running a job where one task fails works as expected.
         """
@@ -320,7 +348,7 @@ class JobTests(SimpleTestCase):
         # The job has gracefully exited without raising an exception.
         self.assert_executed_tasks_equal([fail_task])
 
-    def test_run_job_with_fail_task_dependency(self):
+    def test_run_job_with_fail_task_dependency(self, *args, **kwargs):
         """
         Tests that even though a task has failed, any events it raised while
         running affect the rest of the tasks.

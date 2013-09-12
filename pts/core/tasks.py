@@ -535,6 +535,18 @@ def clear_all_events_on_exception(func):
     return wrapper
 
 
+def import_all_tasks():
+    """
+    Imports tasks found in each installed app's ``pts_tasks`` module.
+    """
+    for app in settings.INSTALLED_APPS:
+        try:
+            module_name = app + '.' + 'pts_tasks'
+            importlib.import_module(module_name)
+        except ImportError:
+            # The app does not implement PTS tasks.
+            pass
+
 def run_task(initial_task, parameters=None):
     """
     Receives a class of the task which should be executed and makes sure that
@@ -551,18 +563,28 @@ def run_task(initial_task, parameters=None):
     before it is executed.
     """
     # Import tasks implemented by all installed apps
-    for app in settings.INSTALLED_APPS:
-        try:
-            module_name = app + '.' + 'pts_tasks'
-            importlib.import_module(module_name)
-        except ImportError:
-            # The app does not implement PTS tasks.
-            pass
+    import_all_tasks()
 
     if isinstance(initial_task, six.text_type):
         initial_task = BaseTask.get_task_class_by_name(initial_task)
     job = Job(initial_task)
     return job.run(parameters)
+
+
+def run_all_tasks(parameters=None):
+    """
+    Runs all registered tasks which do not have any dependencies.
+
+    :param parameters: Additional parameters which are given to each task
+    before it is executed.
+    """
+    import_all_tasks()
+
+    for task in BaseTask.plugins:
+        if task is BaseTask:
+            continue
+        if not task.DEPENDS_ON_EVENTS:
+            run_task(task)
 
 
 def continue_task_from_state(job_state):
