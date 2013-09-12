@@ -189,9 +189,10 @@ class CreateTeamView(LoginRequiredMixin, FormView):
 
     def form_valid(self, form):
         instance = form.save(commit=False)
-        instance.owner = self.request.user
+        user = self.request.user
+        instance.owner = user
         instance.save()
-        instance.members.add(*self.request.user.emails.all())
+        instance.members.add(user.emails.get(email=user.main_email))
 
         return redirect(instance)
 
