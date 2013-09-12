@@ -87,6 +87,12 @@ def create_source_package(arguments):
             binaries.append(
                 BinaryPackageName.objects.get_or_create(name=binary)[0])
         src_pkg.binary_packages = binaries
+    if 'uploaders' in arguments:
+        for uploader in arguments['uploaders']:
+            contributor = ContributorName.objects.get_or_create(
+                contributor_email=ContributorEmail.objects.get_or_create(
+                    email=uploader)[0])[0]
+            src_pkg.uploaders.add(contributor)
 
     src_pkg.save()
     return src_pkg

@@ -18,6 +18,9 @@ from django.test import TestCase, TransactionTestCase
 from django.test.utils import override_settings
 from django.utils.six.moves import mock
 from pts.core.tasks import run_task
+from pts.core.tasks import Job
+from pts.core.tasks import JobState
+from pts.core.tasks import Event
 from pts.core.models import Subscription, EmailUser, PackageName, BinaryPackageName
 from pts.core.models import SourcePackageName, SourcePackage
 from pts.core.models import SourcePackageRepositoryEntry
@@ -25,9 +28,12 @@ from pts.core.models import PseudoPackageName
 from pts.core.models import BinaryPackage
 from pts.core.models import Repository
 from pts.core.models import Architecture
+from pts.core.models import Team
 from pts.core.retrieve_data import UpdateRepositoriesTask
+from pts.core.retrieve_data import UpdateTeamPackagesTask
 from pts.core.retrieve_data import retrieve_repository_info
 from pts.core.tests.common import set_mock_response
+from pts.accounts.models import User
 
 from pts.core.tasks import BaseTask
 from .common import create_source_package
@@ -983,3 +989,198 @@ class RetrieveSourcesFailureTest(TransactionTestCase):
         self.assert_events_raised([])
 
 
+class UpdateTeamPackagesTaskTests(TestCase):
+    """
+    Tests for the :class:`pts.core.retrieve_data.UpdateTeamPackagesTask` task.
+    """
+    def setUp(self):
+        self.maintainer_email = 'maintainer@domain.com'
+        self.uploaders = [
+            'uploader1@domain.com',
+            'uploader2@domain.com',
+        ]
+        self.package = create_source_package({
+            'name': 'dummy-package',
+            'version': '1.0.0',
+            'maintainer': {
+                'name': 'Maintainer',
+                'email': self.maintainer_email,
+            },
+            'uploaders': self.uploaders,
+        })
+        self.repository = Repository.objects.create(
+            name='repo', shorthand='repo', default=True)
+        self.non_default_repository = Repository.objects.create(
+            name='nondef', shorthand='nondef')
+
+        self.password = 'asdf'
+        self.user = User.objects.create_user(
+            main_email='user@domain.com', password=self.password,
+            first_name='', last_name='')
+        self.team = Team.objects.create_with_slug(
+            owner=self.user,
+            name="Team",
+            maintainer_email=self.maintainer_email)
+        # Create a team for each of the uploaders and maintainers
+        self.teams = [
+            Team.objects.create_with_slug(owner=self.user, name="Team" + str(i))
+            for i in range(5)
+        ]
+
+        self.job_state = mock.create_autospec(JobState)
+        self.job_state.events_for_task.return_value = []
+        self.job = mock.create_autospec(Job)
+        self.job.job_state = self.job_state
+        self.task = UpdateTeamPackagesTask()
+        self.task.job = self.job
+
+    def add_mock_events(self, name, arguments):
+        """
+        Helper method adding mock events which the news generation task will
+        see when it runs.
+        """
+        self.job_state.events_for_task.return_value.append(
+            Event(name=name, arguments=arguments)
+        )
+
+    def run_task(self):
+        self.task.execute()
+
+    def test_new_package_version_in_default_repo(self):
+        """
+        Tests the scenario where a new package version appears in the default
+        repository.
+        """
+        self.repository.add_source_package(self.package)
+        self.add_mock_events('new-source-package-version-in-repository', {
+            'name': self.package.name,
+            'version': self.package.version,
+            'repository': self.repository.name,
+        })
+        # Sanity check: the team does not have any packages
+        self.assertEqual(0, self.team.packages.count())
+
+        self.run_task()
+
+        # The team is now associated with a new package
+        self.assertEqual(1, self.team.packages.count())
+        self.assertEqual(self.package.name, self.team.packages.all()[0].name)
+
+    def test_new_package_version_team_has_package(self):
+        """
+        Tests that there is no change to a team when a new package version
+        shows up in the default repository when the team is already associated
+        to the package.
+        """
+        self.team.packages.add(self.package.source_package_name)
+        self.repository.add_source_package(self.package)
+        self.add_mock_events('new-source-package-version-in-repository', {
+            'name': self.package.name,
+            'version': self.package.version,
+            'repository': self.repository.name,
+        })
+
+        # Sanity check: the team is definitely already associated to the
+        # package
+        self.assertEqual(1, self.team.packages.count())
+
+        self.run_task()
+
+        # The team is now associated with a new package
+        self.assertEqual(1, self.team.packages.count())
+        self.assertEqual(self.package.name, self.team.packages.all()[0].name)
+
+    def test_new_package_version_in_non_default_repo(self):
+        """
+        Tests that when a new version is added to a non-default repository,
+        the teams' package associations are not changed.
+        """
+        self.repository.add_source_package(self.package)
+        self.add_mock_events('new-source-package-version-in-repository', {
+            'name': self.package.name,
+            'version': self.package.version,
+            'repository': self.non_default_repository.name,
+        })
+        # Sanity check: the team does not have any packages
+        self.assertEqual(0, self.team.packages.count())
+
+        self.run_task()
+
+        # The team still has no packages
+        self.assertEqual(0, self.team.packages.count())
+
+    def test_new_package_version_adds_uploaders(self):
+        """
+        Tests that when a new package version appears in the default repository
+        the package is added to team's associated with its uploaders.
+        """
+        # Create an uploader's team
+        uploader_team = Team.objects.create_with_slug(
+            owner=self.user,
+            name='uploader-team',
+            maintainer_email=self.uploaders[0])
+        self.team.packages.add(self.package.source_package_name)
+        self.repository.add_source_package(self.package)
+        self.add_mock_events('new-source-package-version-in-repository', {
+            'name': self.package.name,
+            'version': self.package.version,
+            'repository': self.repository.name,
+        })
+        # Sanity check the uploader's team does not have any packages
+        self.assertEqual(0, uploader_team.packages.count())
+
+        self.run_task()
+
+        # The team is now associated with a new package
+        self.assertEqual(1, uploader_team.packages.count())
+        self.assertEqual(self.package.name, uploader_team.packages.all()[0].name)
+        # The maintainer's team is updated in the same time?
+        self.assertEqual(1, self.team.packages.count())
+
+    def test_multiple_packages_added(self):
+        """
+        Tests that when multiple packages are added to the default repository,
+        they are all correctly processed.
+        """
+        team_maintainer_packages = [
+            self.package,
+            create_source_package({
+                'name': 'other-package',
+                'version': '1.0.0',
+                'maintainer': {
+                    'name': 'Maintainer',
+                    'email': self.maintainer_email,
+                },
+                'uploaders': self.uploaders,
+            })
+        ]
+        unknown_maintainer = 'unknown@domain.com'
+        unknown_maintainer_packages = [
+            create_source_package({
+                'name': 'last-package',
+                'version': '1.0.0',
+                'maintainer': {
+                    'name': 'Maintainer',
+                    'email': unknown_maintainer,
+                },
+                'uploaders': self.uploaders,
+            })
+        ]
+        # Add them all to the default repository
+        for source_package in team_maintainer_packages + unknown_maintainer_packages:
+            self.repository.add_source_package(source_package)
+            self.add_mock_events('new-source-package-version-in-repository', {
+                'name': source_package.name,
+                'version': source_package.version,
+                'repository': self.repository.name,
+            })
+        # Sanity check: the maintainer's team does not have any packages
+        self.assertEqual(0, self.team.packages.count())
+
+        self.run_task()
+
+        # The team is not related to the packages with an unknown maintainer
+        self.assertEqual(len(team_maintainer_packages), self.team.packages.count())
+        all_packages = [p.name for p in self.team.packages.all()]
+        for source_package in team_maintainer_packages:
+            self.assertIn(source_package.source_package_name.name, all_packages)

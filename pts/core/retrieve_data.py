@@ -18,6 +18,7 @@ from pts.core.models import ContributorEmail
 from pts.core.models import ContributorName
 from pts.core.models import SourcePackage
 from pts.core.models import News
+from pts.core.models import Team
 from pts.core.models import PackageExtractedInfo
 from pts.core.models import BinaryPackageName
 from pts.core.models import BinaryPackage
@@ -930,3 +931,62 @@ class UpdateSourceToBinariesInformation(PackageUpdateTask):
                     package=package)
                 binaries.value = self._get_all_binaries(package)
                 binaries.save()
+
+
+class UpdateTeamPackagesTask(BaseTask):
+    """
+    Based on new source packages detected during a repository update, the task
+    updates teams to include new packages which are associated with its
+    maintainer email.
+    """
+    DEPENDS_ON_EVENTS = (
+        'new-source-package-version-in-repository',
+    )
+
+    def add_package_to_maintainer_teams(self, package, maintainer):
+        """
+        Adds the given package to all the teams where the given maintainer is
+        set as the maintainer email.
+
+        :param package: The package to add to the maintainers teams.
+        :type package: :class:`SourcePackageName <pts.core.models.SourcePackageName>`
+        :param maintainer: The maintainer to whose teams the package should be
+            added.
+        :type maintainer: :class:`ContributorName <pts.core.models.ContributorEmail>`
+        """
+        teams = Team.objects.filter(maintainer_email=maintainer.email)
+        for team in teams:
+            team.packages.add(package)
+
+    def execute(self):
+        # We only need to process the packages which are added to the default
+        # repository.
+        try:
+            default_repository = Repository.objects.get(default=True)
+        except Repository.DoesNotExist:
+            return
+
+        # Retrieve all packages that have been added to the repository
+        package_versions = {
+            event.arguments['name']: event.arguments['version']
+            for event in self.get_all_events()
+            if event.arguments['repository'] == default_repository.name
+        }
+        filters = {
+            'repository_entries__repository': default_repository,
+            'source_package_name__name__in': package_versions.keys(),
+        }
+        source_packages = SourcePackage.objects.filter(**filters)
+        source_packages = source_packages.select_related()
+
+        for source_package in source_packages:
+            package_name = source_package.name
+            if source_package.version == package_versions[package_name]:
+                # Add the package to the maintainer's teams packages
+                package = source_package.source_package_name
+                maintainer = source_package.maintainer
+                self.add_package_to_maintainer_teams(package, maintainer)
+
+                # Add the package to all the uploaders' teams packages
+                for uploader in source_package.uploaders.all():
+                    self.add_package_to_maintainer_teams(package, uploader)
