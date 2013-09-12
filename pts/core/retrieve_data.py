@@ -930,5 +930,3 @@ class UpdateSourceToBinariesInformation(PackageUpdateTask):
                     package=package)
                 binaries.value = self._get_all_binaries(package)
                 binaries.save()
-
-

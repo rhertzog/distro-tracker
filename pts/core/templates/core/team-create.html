@@ -21,9 +21,15 @@
         <label class="control-label" for="{{ field.auto_id }}">{{ field.label }}</label>
         <div class="controls">
             {{ field }}
+        {% if field.errors %}
             {% for error in field.errors %}
             <span class="help-inline">{{ error }}</span>
             {% endfor %}
+            {% else %}
+            {% if field.help_text %}
+            <span class="help-inline">{{ field.help_text }}</span>
+            {% endif %}
+        {% endif %}
         </div>
     </div>
     {% endfor %}

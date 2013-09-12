@@ -179,4 +179,19 @@ $(function() {
         $modal.modal('show');
         return false;
     });
+
+    /**
+     * Automatically provide a team slug in the form after a name has been entered.
+     * This is done only for the team creation form, so as to make sure the user
+     * changes an existing team's slug deliberately.
+     */
+    $('#create-team-form #id_name').blur(function() {
+        var $this = $(this);
+        var name = $this.val();
+        var slug = name.toLowerCase()
+                       .replace(/[^\w ]+/g, '')
+                       .replace(/ +/g, '-');
+        var $form = $this.parents('form');
+        $form.find('#id_slug').val(slug);
+    });
 });

@@ -10,6 +10,7 @@
 """Forms for the :mod:`pts.core` app."""
 from __future__ import unicode_literals
 from django import forms
+from django.template.defaultfilters import slugify
 from pts.core.models import Team
 from pts.core.models import SourcePackageName
 
@@ -19,11 +20,32 @@ class CreateTeamForm(forms.ModelForm):
         model = Team
         fields = (
             'name',
+            'slug',
             'maintainer_email',
             'public',
             'description',
-            'url'
+            'url',
         )
+
+    def __init__(self, *args, **kwargs):
+        super(CreateTeamForm, self).__init__(*args, **kwargs)
+        self.fields['slug'].required = self.is_update()
+
+    def is_update(self):
+        return hasattr(self, 'instance') and self.instance.pk is not None
+
+    def clean(self):
+        """
+        Provides a default value for the slug field based on the given team
+        name, but only if the team is only just being created (not an
+        update of an existing instance).
+        """
+        cleaned_data = super(CreateTeamForm, self).clean()
+        if not self.is_update():
+            if not cleaned_data['slug'] and 'name' in cleaned_data:
+                cleaned_data['slug'] = slugify(cleaned_data['name'])
+
+        return cleaned_data
 
     def save(self, *args, **kwargs):
         # The instance needs to be saved before many-to-many relations can

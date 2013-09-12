@@ -2044,9 +2044,27 @@ class SourcePackageDeps(models.Model):
         return '{} depends on {}'.format(self.source, self.dependency)
 
 
+class TeamManager(models.Manager):
+    """
+    A custom :class:`Manager <django.db.models.Manager>` for the
+    :class:`Team` model.
+    """
+    def create_with_slug(self, **kwargs):
+        """
+        A variant of the create method which automatically populates the
+        instance's slug field by slugifying the name.
+        """
+        if 'slug' not in kwargs:
+            kwargs['slug'] = slugify(kwargs['name'])
+        return self.create(**kwargs)
+
+
 @python_2_unicode_compatible
 class Team(models.Model):
     name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(
+        unique=True,
+        help_text="A team's slug determines its URL")
     maintainer_email = models.EmailField(
         max_length=244,
         null=True,
@@ -2068,18 +2086,15 @@ class Team(models.Model):
         EmailUser,
         related_name='teams')
 
+    objects = TeamManager()
+
     def __str__(self):
         return self.name
 
     def get_absolute_url(self):
         return reverse('pts-team-page', kwargs={
-            'pk': self.pk,
             'slug': self.slug,
         })
-
-    @property
-    def slug(self):
-        return slugify(self.name)
 
     def user_is_member(self, user):
         """

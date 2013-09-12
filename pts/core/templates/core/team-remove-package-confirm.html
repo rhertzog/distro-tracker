@@ -11,11 +11,11 @@
     {% else %}
     <span>{{ package }}</span>
     {% endif %}
-    <span>from <a href="{% url 'pts-team-page' team.pk team.slug %}">{{ team }}</a>?
+    <span>from <a href="{{ team.get_absolute_url }}">{{ team }}</a>?
 </h3>
 <form action="{% url 'pts-team-remove-package' team.pk %}" method="POST" id="confirm-team-delete-form">{% csrf_token %}
     <input type="hidden" name="package" value="{{ package }}">
-    <a href="{% url 'pts-team-page' team.pk team.slug %}"><button type="button" class="btn">Cancel</button></a>
+    <a href="{{ team.get_absolute_url }}"><button type="button" class="btn">Cancel</button></a>
     <button class="btn btn-danger">Remove!</button>
 </form>
 </div>

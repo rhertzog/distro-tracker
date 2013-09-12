@@ -1151,7 +1151,7 @@ class TeamTests(SeleniumTestCase):
         """
         ## Set up a team owned by the user
         team_name = 'Team name'
-        Team.objects.create(owner=self.user, name=team_name)
+        Team.objects.create_with_slug(owner=self.user, name=team_name)
 
         # Before logging in the user opens the team page
         self.get_page(self.get_team_url(team_name))
@@ -1200,7 +1200,7 @@ class TeamTests(SeleniumTestCase):
         """
         ## Set up a team owned by the user
         team_name = 'Team name'
-        Team.objects.create(owner=self.user, name=team_name)
+        Team.objects.create_with_slug(owner=self.user, name=team_name)
 
         # Before logging in the user opens the team page
         self.get_page(self.get_team_url(team_name))
@@ -1236,13 +1236,45 @@ class TeamTests(SeleniumTestCase):
         team = Team.objects.all()[0]
         self.assertEqual(new_description, team.description)
 
+        # The user now wants to update the team's name without affecting the
+        # team's URL.
+        old_url = self.get_team_url(team_name)
+        self.get_element_by_id('update-team-button').click()
+        self.clear_element_text('id_name')
+        new_name = team_name + ' new name'
+        self.input_to_element('id_name', new_name)
+        self.send_enter('id_name')
+        self.wait_response(1)
+
+        # The user is now found back at the team page which contains the
+        # updated name
+        self.assert_in_page_body(new_name)
+        # However, the package's URL is still the same
+        self.assert_current_url_equal(old_url)
+
+        # Now the user wants to modify the team's url without modifying its
+        # name.
+        self.get_element_by_id('update-team-button').click()
+        old_slug = team.slug
+        self.clear_element_text('id_slug')
+        new_slug = old_slug + '-new-slug'
+        self.input_to_element('id_slug', new_slug)
+        self.send_enter('id_slug')
+        self.wait_response(1)
+
+        # The user is once again back on the team page.
+        # The URL has been modified now to contain the new team slug.
+        self.assertIn(new_slug, self.browser.current_url)
+        ## The slug really is updated?
+        self.assertEqual(new_slug, Team.objects.all()[0].slug)
+
     def test_package_management(self):
         """
         Tests that adding/removing packages from the team works as expected.
         """
         ## Set up a team owned by the user
         team_name = 'Team name'
-        team = Team.objects.create(owner=self.user, name=team_name)
+        team = Team.objects.create_with_slug(owner=self.user, name=team_name)
         ## Set up some packages which the user can add to the team
         package_names = [
             'pkg1',
@@ -1316,7 +1348,7 @@ class TeamTests(SeleniumTestCase):
         """
         ## Set up a team and a user who isn't the owner of the team
         team_name = 'Team name'
-        team = Team.objects.create(owner=self.user, name=team_name)
+        team = Team.objects.create_with_slug(owner=self.user, name=team_name)
         user = User.objects.create_user(
             main_email='other@domain.com',
             password=self.password)
@@ -1371,7 +1403,7 @@ class TeamTests(SeleniumTestCase):
         """
         ## --
         team_name = 'Team name'
-        team = Team.objects.create(owner=self.user, name=team_name)
+        team = Team.objects.create_with_slug(owner=self.user, name=team_name)
         ## --
 
         self.log_in()
