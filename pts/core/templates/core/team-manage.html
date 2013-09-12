@@ -4,7 +4,7 @@
 <h1 class="text-center">Member management for team <a href="{{ team.get_absolute_url }}">{{ team }}</a></h1>
 <div>
     <h3>Add user to team</h3>
-<form class="form-search" id="team-add-user-form" action="{% url 'pts-team-add-member' team.pk %}" method="POST">{% csrf_token %}
+<form class="form-search" id="team-add-user-form" action="{% url 'pts-team-add-member' team.slug %}" method="POST">{% csrf_token %}
     {{ form }}
     <button class="btn">Add member</button>
 </form>
@@ -17,7 +17,7 @@
     <div class="row-fluid">
     <div class="span10">{{ member }}</div>
     <div class="span2">
-        <form class="unstyled-form" action="{% url 'pts-team-remove-member' team.pk %}" method="POST">{% csrf_token %}
+        <form class="unstyled-form" action="{% url 'pts-team-remove-member' team.slug %}" method="POST">{% csrf_token %}
         <input type="hidden" name="email" value="{{ member }}">
         <button class="btn btn-mini btn-danger remove-user-button">Remove</button>
         </form>

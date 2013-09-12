@@ -243,7 +243,7 @@ class UpdateTeamView(UpdateView):
 
 
 class AddPackageToTeamView(LoginRequiredMixin, View):
-    def post(self, request, pk):
+    def post(self, request, slug):
         """
         Adds the package given in the POST parameters to the team.
 
@@ -253,7 +253,7 @@ class AddPackageToTeamView(LoginRequiredMixin, View):
         Once the package is added, the user is redirected back to the team's
         page.
         """
-        team = get_object_or_404(Team, pk=pk)
+        team = get_object_or_404(Team, slug=slug)
         if not team.user_is_member(request.user):
             # Only team mebers are allowed to modify the packages followed by 
             # the team.
@@ -271,8 +271,8 @@ class AddPackageToTeamView(LoginRequiredMixin, View):
 class RemovePackageFromTeamView(LoginRequiredMixin, View):
     template_name = 'core/team-remove-package-confirm.html'
 
-    def get_team(self, pk):
-        team = get_object_or_404(Team, pk=pk)
+    def get_team(self, slug):
+        team = get_object_or_404(Team, slug=slug)
         if not team.user_is_member(self.request.user):
             # Only team mebers are allowed to modify the packages followed by
             # the team.
@@ -280,9 +280,9 @@ class RemovePackageFromTeamView(LoginRequiredMixin, View):
 
         return team
 
-    def get(self, request, pk):
+    def get(self, request, slug):
         self.request = request
-        team = self.get_team(pk)
+        team = self.get_team(slug)
 
         if 'package' not in request.GET:
             raise Http404
@@ -294,7 +294,7 @@ class RemovePackageFromTeamView(LoginRequiredMixin, View):
             'team': team,
         })
 
-    def post(self, request, pk):
+    def post(self, request, slug):
         """
         Removes the package given in the POST parameters from the team.
 
@@ -305,7 +305,7 @@ class RemovePackageFromTeamView(LoginRequiredMixin, View):
         page.
         """
         self.request = request
-        team = self.get_team(pk)
+        team = self.get_team(slug)
 
         if 'package' in request.POST:
             package_name = request.POST['package']
@@ -324,15 +324,15 @@ class JoinTeamView(LoginRequiredMixin, View):
     """
     template_name = 'core/team-join-choose-email.html'
 
-    def get(self, request, pk):
-        team = get_object_or_404(Team, pk=pk)
+    def get(self, request, slug):
+        team = get_object_or_404(Team, slug=slug)
 
         return render(request, self.template_name, {
             'team': team,
         })
 
-    def post(self, request, pk):
-        team = get_object_or_404(Team, pk=pk)
+    def post(self, request, slug):
+        team = get_object_or_404(Team, slug=slug)
         if not team.public:
             # Only public teams can be joined directly by users
             raise PermissionDenied
@@ -354,12 +354,12 @@ class LeaveTeamView(LoginRequiredMixin, View):
     """
     Lets logged in users leave teams they are a part of.
     """
-    def get(self, request, pk):
-        team = get_object_or_404(Team, pk=pk)
+    def get(self, request, slug):
+        team = get_object_or_404(Team, slug=slug)
         return redirect(team)
 
-    def post(self, request, pk):
-        team = get_object_or_404(Team, pk=pk)
+    def post(self, request, slug):
+        team = get_object_or_404(Team, slug=slug)
         if not team.user_is_member(request.user):
             # Leaving a team when you're not already a part of it makes no
             # sense
@@ -389,17 +389,17 @@ class ManageTeamMembers(LoginRequiredMixin, ListView):
         context['form'] = AddTeamMemberForm()
         return context
 
-    def get(self, request, pk):
-        self.team = get_object_or_404(Team, pk=pk)
+    def get(self, request, slug):
+        self.team = get_object_or_404(Team, slug=slug)
         # Make sure only the owner can access this page
         if self.team.owner != request.user:
             raise PermissionDenied
-        return super(ManageTeamMembers, self).get(request, pk)
+        return super(ManageTeamMembers, self).get(request, slug)
 
 
 class RemoveTeamMember(LoginRequiredMixin, View):
-    def post(self, request, pk):
-        self.team = get_object_or_404(Team, pk=pk)
+    def post(self, request, slug):
+        self.team = get_object_or_404(Team, slug=slug)
         if self.team.owner != request.user:
             raise PermissionDenied
 
@@ -407,12 +407,12 @@ class RemoveTeamMember(LoginRequiredMixin, View):
             emails = request.POST.getlist('email')
             self.team.members.remove(*EmailUser.objects.filter(email__in=emails))
 
-        return redirect('pts-team-manage', pk=self.team.pk)
+        return redirect('pts-team-manage', slug=self.team.slug)
 
 
 class AddTeamMember(LoginRequiredMixin, View):
-    def post(self, request, pk):
-        self.team = get_object_or_404(Team, pk=pk)
+    def post(self, request, slug):
+        self.team = get_object_or_404(Team, slug=slug)
         if self.team.owner != request.user:
             raise PermissionDenied
 
@@ -423,7 +423,7 @@ class AddTeamMember(LoginRequiredMixin, View):
             user, _ = EmailUser.objects.get_or_create(email=email)
             self.team.members.add(user)
 
-        return redirect('pts-team-manage', pk=self.team.pk)
+        return redirect('pts-team-manage', slug=self.team.slug)
 
 
 class TeamListView(ListView):

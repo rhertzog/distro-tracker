@@ -21,15 +21,15 @@
                 {% if request.user.is_authenticated %}
                   {% if request.user == team.owner %}
                   {# Owner specific team options #}
-                  <form class="unstyled-form" action="{% url 'pts-team-delete' team.pk %}" method="GET">
+                  <form class="unstyled-form" action="{% url 'pts-team-delete' team.slug %}" method="GET">
                   <button class="btn btn-danger" id="delete-team-button">Delete</button>
                   </form>
-                  <a href="{% url 'pts-team-update' team.pk %}"><button class="btn" id="update-team-button">Update</button></a>
-                  <a href="{% url 'pts-team-manage' team.pk %}"><button class="btn" id="manage-team-button">Member management</button></a>
+                  <a href="{% url 'pts-team-update' team.slug %}"><button class="btn" id="update-team-button">Update</button></a>
+                  <a href="{% url 'pts-team-manage' team.slug %}"><button class="btn" id="manage-team-button">Member management</button></a>
                   {% else %}
                   {% if user_member_of_team %}
                   {# Team meber options #}
-                      <form class="unstyled-form" action="{% url 'pts-team-leave' team.pk %}" method="POST">{% csrf_token %}
+                      <form class="unstyled-form" action="{% url 'pts-team-leave' team.slug %}" method="POST">{% csrf_token %}
                       <button id="leave-team-button" class="btn btn-danger">Leave</button>
                       </form>
                   {% endif %}
@@ -39,12 +39,12 @@
                   {# Public team options #}
                       {% if team.public %}
                           {% if request.user.emails.all|length == 1 %}
-                          <form class="unstyled-form" action="{% url 'pts-team-join' team.pk %}" method="POST">{% csrf_token %}
+                          <form class="unstyled-form" action="{% url 'pts-team-join' team.slug %}" method="POST">{% csrf_token %}
                           <input type="hidden" name="email" value="{{ request.user.emails.all.0 }}">
                           <button id="join-team-button" class="btn">Join</button>
                           </form>
                           {% else %}
-                          <a href="{% url 'pts-team-join' team.pk %}"><button id="join-team-button" class="btn">Join</button></a>
+                          <a href="{% url 'pts-team-join' team.slug %}"><button id="join-team-button" class="btn">Join</button></a>
                           {% endif %}
                       {% else %}
                       <span>| </span><a title="Since the team is private, you need to contact the owner and ask to be included" href="mailto:{{ team.owner.main_email }}">Contact the owner</a>
@@ -70,7 +70,7 @@
   </div>
   <div class="modal-footer">
     <button class="btn" id="team-delete-cancel-button" data-dismiss="modal" aria-hidden="true">Cancel</button>
-    <form class="unstyled-form" action="{% url 'pts-team-delete' team.pk %}" method="POST">{% csrf_token %}
+    <form class="unstyled-form" action="{% url 'pts-team-delete' team.slug %}" method="POST">{% csrf_token %}
     <button class="btn btn-danger" id='confirm-team-delete-button' aria-hidden="true">Delete</button>
     </form>
   </div>
@@ -85,7 +85,7 @@
   </div>
   <div class="modal-footer">
     <button class="btn" id="remove-package-cancel-button" data-dismiss="modal" aria-hidden="true">Cancel</button>
-    <form class="unstyled-form" action="{% url 'pts-team-remove-package' team.pk %}" method="POST">{% csrf_token %}
+    <form class="unstyled-form" action="{% url 'pts-team-remove-package' team.slug %}" method="POST">{% csrf_token %}
         <input id="remove-package-name" type="hidden" name="package" value="">
         <button class="btn btn-danger" id='confirm-remove-package-button' aria-hidden="true">Remove</button>
     </form>
@@ -115,7 +115,7 @@
                         </div>
                         {% if user_member_of_team %}
                         <div class="span2">
-                            <a href="{% url 'pts-team-remove-package' team.pk %}?package={{ package }}"><i data-package="{{ package }}" class="remove-package-from-team-button icon-remove"></i></a>
+                            <a href="{% url 'pts-team-remove-package' team.slug %}?package={{ package }}"><i data-package="{{ package }}" class="remove-package-from-team-button icon-remove"></i></a>
                         </div>
                         {% endif %}
                     </div>
@@ -168,7 +168,7 @@
         <div class="panel">
             <div class="panel-heading">add packages</div>
             <div class="panel-body" style="padding-top: 10px;">
-                <form class="form-search unstyled-form" id="add-team-package-form" action="{% url 'pts-team-add-package' team.pk %}" method="POST">{% csrf_token %}
+                <form class="form-search unstyled-form" id="add-team-package-form" action="{% url 'pts-team-add-package' team.slug %}" method="POST">{% csrf_token %}
                     <input type="text" id="id_package_name" name="package" class='package-search-input' placeholder="Choose package...">
                     <button class="btn">Add</button>
                 </form>

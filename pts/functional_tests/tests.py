@@ -991,7 +991,7 @@ class TeamTests(SeleniumTestCase):
     def get_delete_team_url(self, team_name):
         team = Team.objects.get(name=team_name)
         return reverse('pts-team-delete', kwargs={
-            'pk': team.pk,
+            'slug': team.slug,
         })
 
     def get_team_deleted_url(self):
@@ -1000,7 +1000,7 @@ class TeamTests(SeleniumTestCase):
     def get_update_team_url(self, team_name):
         team = Team.objects.get(name=team_name)
         return reverse('pts-team-update', kwargs={
-            'pk': team.pk,
+            'slug': team.slug,
         })
 
     def assert_team_packages_equal(self, team, package_names):
