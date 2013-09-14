@@ -2084,7 +2084,8 @@ class Team(models.Model):
         related_name='teams')
     members = models.ManyToManyField(
         EmailUser,
-        related_name='teams')
+        related_name='teams',
+        through='TeamMembership')
 
     objects = TeamManager()
 
@@ -2096,6 +2097,33 @@ class Team(models.Model):
             'slug': self.slug,
         })
 
+    def add_members(self, users):
+        """
+        Adds the given users to the team.
+
+        It automatically creates the intermediary :class:`TeamMembership`
+        models.
+
+        :param users: The users to be added to the team.
+        :type users: an ``iterable`` of :class:`EmailUser` instances
+
+        :returns: :class:`TeamMembership` instances for each user added to the team
+        :rtype: list
+        """
+        return [
+            self.team_membership_set.create(email_user=user)
+            for user in users
+        ]
+
+    def remove_members(self, users):
+        """
+        Removes the given users from the team.
+
+        :param users: The users to be removed from the team.
+        :type users: an ``iterable`` of :class:`EmailUser` instances
+        """
+        self.team_membership_set.filter(email_user__in=users).delete()
+
     def user_is_member(self, user):
         """
         Checks whether the given user is a member of the team.
@@ -2106,3 +2134,19 @@ class Team(models.Model):
             user == self.owner or
             self.members.filter(pk__in=user.emails.all()).exists()
         )
+
+
+@python_2_unicode_compatible
+class TeamMembership(models.Model):
+    """
+    Represents the intermediary model for the many-to-many association of
+    team members to a :class:`Team`.
+    """
+    email_user = models.ForeignKey(EmailUser)
+    team = models.ForeignKey(Team, related_name='team_membership_set')
+
+    class Meta:
+        unique_together = ('email_user', 'team')
+
+    def __str__(self):
+        return '{} member of {}'.format(self.email_user, self.team)

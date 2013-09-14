@@ -192,7 +192,7 @@ class CreateTeamView(LoginRequiredMixin, FormView):
         user = self.request.user
         instance.owner = user
         instance.save()
-        instance.members.add(user.emails.get(email=user.main_email))
+        instance.add_members(user.emails.filter(email=user.main_email))
 
         return redirect(instance)
 
@@ -345,7 +345,7 @@ class JoinTeamView(LoginRequiredMixin, View):
                 if email not in user_emails:
                     raise PermissionDenied
             # Add the given emails to the team
-            team.members.add(*self.request.user.emails.filter(email__in=emails))
+            team.add_members(self.request.user.emails.filter(email__in=emails))
 
         return redirect(team)
 
@@ -366,7 +366,7 @@ class LeaveTeamView(LoginRequiredMixin, View):
             raise PermissionDenied
 
         # Remove all the user's emails from the team
-        team.members.remove(*request.user.emails.all())
+        team.remove_members(request.user.emails.all())
 
         return redirect(team)
 
@@ -405,7 +405,7 @@ class RemoveTeamMember(LoginRequiredMixin, View):
 
         if 'email' in request.POST:
             emails = request.POST.getlist('email')
-            self.team.members.remove(*EmailUser.objects.filter(email__in=emails))
+            self.team.remove_members(EmailUser.objects.filter(email__in=emails))
 
         return redirect('pts-team-manage', slug=self.team.slug)
 
@@ -421,7 +421,7 @@ class AddTeamMember(LoginRequiredMixin, View):
             email = form.cleaned_data['email']
             # Emails that do not exist should be created
             user, _ = EmailUser.objects.get_or_create(email=email)
-            self.team.members.add(user)
+            self.team.add_members([user])
 
         return redirect('pts-team-manage', slug=self.team.slug)
 
