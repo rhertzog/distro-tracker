@@ -9,6 +9,7 @@
 # distributed except according to the terms contained in the LICENSE file.
 """Views for the :mod:`pts.core` app."""
 from __future__ import unicode_literals
+from django.conf import settings
 from django.shortcuts import render, redirect
 from django.shortcuts import get_object_or_404
 from django.http import Http404
@@ -20,6 +21,7 @@ from django.views.generic.detail import DetailView
 from django.views.generic import DeleteView
 from django.views.generic import ListView
 from django.views.decorators.cache import cache_control
+from django.core.mail import send_mail
 from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse_lazy
 from pts.core.models import get_web_package
@@ -32,9 +34,11 @@ from pts.core.models import EmailUser
 from pts.core.models import News, NewsRenderer
 from pts.core.models import Keyword
 from pts.core.models import Team
+from pts.core.models import MembershipConfirmation
 from pts.core.panels import get_panels_for_package
 from pts.accounts.views import LoginRequiredMixin
 from pts.core.utils import get_or_none
+from pts.core.utils import pts_render_to_string
 
 
 def package_page(request, package_name):
@@ -421,9 +425,39 @@ class AddTeamMember(LoginRequiredMixin, View):
             email = form.cleaned_data['email']
             # Emails that do not exist should be created
             user, _ = EmailUser.objects.get_or_create(email=email)
-            self.team.add_members([user])
+            # The membership is muted by default until the user confirms it
+            membership = self.team.add_members([user], muted=True)[0]
+            confirmation = MembershipConfirmation.objects.create_confirmation(
+                membership=membership)
+            send_mail(
+                'PTS Team Membership Confirmation',
+                pts_render_to_string('core/email-team-membership-confirmation.txt', {
+                    'confirmation': confirmation,
+                    'team': self.team,
+                }),
+                from_email=settings.PTS_CONTACT_EMAIL,
+                recipient_list=[email])
 
         return redirect('pts-team-manage', slug=self.team.slug)
+
+
+class ConfirmMembershipView(View):
+    template_name = 'core/membership-confirmation.html'
+
+    def get(self, request, confirmation_key):
+        confirmation = get_object_or_404(
+            MembershipConfirmation, confirmation_key=confirmation_key)
+        membership = confirmation.membership
+        membership.muted = False
+        membership.save()
+        # The confirmation is no longer necessary
+        confirmation.delete()
+
+        return redirect(membership.team)
+
+        return render(request, self.template_name, {
+            'membership': membership,
+        })
 
 
 class TeamListView(ListView):

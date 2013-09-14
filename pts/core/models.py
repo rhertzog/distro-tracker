@@ -2097,7 +2097,7 @@ class Team(models.Model):
             'slug': self.slug,
         })
 
-    def add_members(self, users):
+    def add_members(self, users, muted=False):
         """
         Adds the given users to the team.
 
@@ -2107,11 +2107,15 @@ class Team(models.Model):
         :param users: The users to be added to the team.
         :type users: an ``iterable`` of :class:`EmailUser` instances
 
+        :param muted: If set to True, the membership will be muted before the
+            user excplicitely unmutes it.
+        :type active: bool
+
         :returns: :class:`TeamMembership` instances for each user added to the team
         :rtype: list
         """
         return [
-            self.team_membership_set.create(email_user=user)
+            self.team_membership_set.create(email_user=user, muted=muted)
             for user in users
         ]
 
@@ -2145,8 +2149,18 @@ class TeamMembership(models.Model):
     email_user = models.ForeignKey(EmailUser)
     team = models.ForeignKey(Team, related_name='team_membership_set')
 
+    muted = models.BooleanField(default=False)
+
     class Meta:
         unique_together = ('email_user', 'team')
 
     def __str__(self):
         return '{} member of {}'.format(self.email_user, self.team)
+
+
+@python_2_unicode_compatible
+class MembershipConfirmation(Confirmation):
+    membership = models.ForeignKey(TeamMembership)
+
+    def __str__(self):
+        return "Confirmation for {}".format(self.membership)

@@ -25,6 +25,7 @@ from pts.core.models import Team
 from pts.core.models import SourcePackage
 from pts.core.models import PackageName
 from pts.core.models import Subscription
+from pts.core.models import TeamMembership
 from pts.core.panels import BasePanel
 
 from selenium import webdriver
@@ -1419,6 +1420,12 @@ class TeamTests(SeleniumTestCase):
         # The user is still in the same page, but can see the new member in the
         # list of all members
         self.assert_in_page_body(new_team_member)
+        ## The membership is marked muted, though
+        membership = TeamMembership.objects.all()[0]
+        self.assertTrue(membership.muted)
+        ## And an email was sent to the new member asking him to confirm it
+        self.assertEqual(1, len(mail.outbox))
+        self.assertIn(new_team_member, mail.outbox[0].to)
 
         # The user now decides to remove the team member
         button = self.browser.find_element_by_css_selector('.remove-user-button')
