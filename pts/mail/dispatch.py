@@ -33,6 +33,7 @@ from django.conf import settings
 PTS_CONTROL_EMAIL = settings.PTS_CONTROL_EMAIL
 PTS_FQDN = settings.PTS_FQDN
 
+from copy import deepcopy
 import re
 import logging
 
@@ -187,6 +188,10 @@ def add_new_headers(received_message, package_name, keyword):
     The function adds new PTS-specific headers to the received message.
     This is used before forwarding the message to subscribers.
 
+    The headers added by this function are used regardless whether the
+    message is forwarded due to direct package subscriptions or a team
+    subscription.
+
     :param received_message: The received package message
     :type received_message: :py:class:`email.message.Message` or an equivalent
         interface object
@@ -204,11 +209,6 @@ def add_new_headers(received_message, package_name, keyword):
             pts_fqdn=PTS_FQDN)),
         ('X-PTS-Package', package_name),
         ('X-PTS-Keyword', keyword),
-        ('Precedence', 'list'),
-        ('List-Unsubscribe',
-            '<mailto:{control_email}?body=unsubscribe%20{package}>'.format(
-                control_email=PTS_CONTROL_EMAIL,
-                package=package_name)),
     ]
 
     extra_vendor_headers, implemented = vendor.call(
@@ -216,12 +216,34 @@ def add_new_headers(received_message, package_name, keyword):
     if implemented:
         new_headers.extend(extra_vendor_headers)
 
+    add_headers(received_message, new_headers)
+
+
+def add_direct_subscription_headers(received_message, package_name, keyword):
+    """
+    The function adds headers to the received message which are specific for
+    messages to be sent to users that are directly subscribed to the package.
+    """
+    new_headers = [
+        ('Precedence', 'list'),
+        ('List-Unsubscribe',
+            '<mailto:{control_email}?body=unsubscribe%20{package}>'.format(
+                control_email=PTS_CONTROL_EMAIL,
+                package=package_name)),
+    ]
+    add_headers(received_message, new_headers)
+
+
+def add_headers(message, new_headers):
+    """
+    Adds the given headers to the given message in a safe way.
+    """
     for header_name, header_value in new_headers:
         # Make sure we are adding bytes to the message
         header_name, header_value = (
             header_name.encode('utf-8'),
             header_value.encode('utf-8'))
-        received_message[header_name] = header_value
+        message[header_name] = header_value
 
 
 def send_to_subscribers(received_message, package_name, keyword):
@@ -241,6 +263,10 @@ def send_to_subscribers(received_message, package_name, keyword):
     :param keyword: The keyword with which the message should be tagged
     :type keyword: string
     """
+    # Make a copy of the message to be sent and add any headers which are
+    # specific for users that are directly subscribed to the package.
+    received_message = deepcopy(received_message)
+    add_direct_subscription_headers(received_message, package_name, keyword)
     package = get_or_none(PackageName, name=package_name)
     if not package:
         return
