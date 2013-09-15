@@ -119,9 +119,23 @@ class SeleniumTestCase(LiveServerTestCase):
         except NoSuchElementException:
             self.fail(custom_message)
 
+    def assert_element_with_class_in_page(self, class_name, custom_message=None):
+        if custom_message is None:
+            custom_message = class_name + " not found in the page."
+        try:
+            self.browser.find_element_by_class_name(class_name)
+        except NoSuchElementException:
+            self.fail(custom_message)
+
     def get_element_by_id(self, element_id):
         try:
             return self.browser.find_element_by_id(element_id)
+        except NoSuchElementException:
+            return None
+
+    def get_element_by_class(self, class_name):
+        try:
+            return self.browser.find_element_by_class_name(class_name)
         except NoSuchElementException:
             return None
 
@@ -1004,6 +1018,9 @@ class TeamTests(SeleniumTestCase):
             'slug': team.slug,
         })
 
+    def get_subscriptions_url(self):
+        return reverse('pts-accounts-subscriptions')
+
     def assert_team_packages_equal(self, team, package_names):
         team_package_names = [p.name for p in team.packages.all()]
         self.assertEqual(len(package_names), len(team_package_names))
@@ -1433,3 +1450,42 @@ class TeamTests(SeleniumTestCase):
         self.wait_response(1)
         # The user is no longer a part of the team
         self.assert_not_in_page_body(new_team_member)
+
+    def test_toggle_team_mute(self):
+        """
+        Tests that a team member is able to mute and unmute a team membership
+        from the subscription details page.
+        """
+        ## --
+        team_name = 'Team name'
+        team = Team.objects.create_with_slug(owner=self.user, name=team_name)
+        membership = team.add_members([self.user.emails.all()[0]])[0]
+        ## --
+        # The user logs in and goes to his subscriptions page
+        self.log_in()
+        self.get_page(self.get_subscriptions_url())
+        # He can see a button offering him to mute the team membership
+        self.assert_in_page_body('Mute')
+        # So he clicks it!
+        btn = self.get_element_by_class('toggle-team-mute')
+        btn.click()
+        self.wait_response(1)
+        # The user is still in he same page, but now he has a warning that his
+        # team membership is muted
+        self.assert_element_with_class_in_page('mute-warning')
+        ## The membership is actually muted?
+        membership = TeamMembership.objects.get(pk=membership.pk)
+        self.assertTrue(membership.muted)
+
+        # The user now wants to revert this.
+        # He can see the unmute button
+        self.assert_in_page_body('Unmute')
+        # He clicks it.
+        btn = self.get_element_by_class('toggle-team-mute')
+        btn.click()
+        self.wait_response(1)
+        # Once again, the user is still in the subscriptions page, but the
+        # button has reverted back to the mute button
+        self.assert_in_page_body('Mute')
+        # And the warning is gone
+        self.assertIsNone(self.get_element_by_class('mute-warning'))

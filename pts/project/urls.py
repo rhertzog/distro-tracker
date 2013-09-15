@@ -29,6 +29,7 @@ from pts.core.views import ManageTeamMembers
 from pts.core.views import RemoveTeamMember
 from pts.core.views import AddTeamMember
 from pts.core.views import ConfirmMembershipView
+from pts.core.views import SetMuteTeamView
 from pts.core.news_feed import PackageNewsFeed
 from pts.accounts.views import RegisterUser
 from pts.accounts.views import RegistrationConfirmation
@@ -147,6 +148,10 @@ urlpatterns = patterns('',
         name='pts-team-list'),
     url(r'^teams/\+confirm/(?P<confirmation_key>.+)/$', ConfirmMembershipView.as_view(),
         name='pts-team-confirm-membership'),
+    url(r'^teams/(?P<slug>.+)/\+mute/$', SetMuteTeamView.as_view(action='mute'),
+        name='pts-team-mute'),
+    url(r'^teams/(?P<slug>.+)/\+unmute/$', SetMuteTeamView.as_view(action='unmute'),
+        name='pts-team-unmute'),
     url(r'^teams/(?P<slug>.+?)/$', TeamDetailsView.as_view(),
         name='pts-team-page'),
 

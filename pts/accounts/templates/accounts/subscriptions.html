@@ -145,9 +145,27 @@
             </span>
             <span class='label label-info'>Team</span>
             {% if membership.muted %}
-            <span><i class='icon-exclamation-sign' title='The team is muted'></i></span>
+            <span><i class='icon-exclamation-sign mute-warning' title='The team is muted'></i></span>
             {% endif %}
-            </div></div>
+            </div>
+
+            <div class="span2">
+                {% if membership.muted %}
+            <form style="margin-bottom: 0px;" action="{% url 'pts-team-unmute' membership.team.slug %}" method="POST">{% csrf_token %}
+                {% else %}
+            <form style="margin-bottom: 0px;" action="{% url 'pts-team-mute' membership.team.slug %}" method="POST">{% csrf_token %}
+                {% endif %}
+            <input type="hidden" name="email" value="{{ email }}">
+            <input type="hidden" name="next" value="{% url 'pts-accounts-subscriptions' %}">
+                {% if membership.muted %}
+            <button class="btn btn-danger toggle-team-mute" data-email="{{ email }}">Unmute</button>
+                {% else %}
+            <button class="btn btn-danger toggle-team-mute" data-email="{{ email }}">Mute</button>
+                {% endif %}
+            </form>
+            <div class="clear"></div>
+            </div>
+            </div>
         </div>
         </div>
 

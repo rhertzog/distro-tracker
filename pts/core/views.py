@@ -34,6 +34,7 @@ from pts.core.models import EmailUser
 from pts.core.models import News, NewsRenderer
 from pts.core.models import Keyword
 from pts.core.models import Team
+from pts.core.models import TeamMembership
 from pts.core.models import MembershipConfirmation
 from pts.core.panels import get_panels_for_package
 from pts.accounts.views import LoginRequiredMixin
@@ -465,3 +466,37 @@ class TeamListView(ListView):
     paginate_by = 20
     template_name = 'core/team-list.html'
     context_object_name = 'team_list'
+
+
+class SetMuteTeamView(LoginRequiredMixin, View):
+    """
+    The view lets users mute or unmute a team membership.
+    """
+    action = 'mute'
+
+    def post(self, request, slug):
+        team = get_object_or_404(Team, slug=slug)
+        if 'email' not in request.POST:
+            raise Http404
+        user = request.user
+        try:
+            email = user.emails.get(email=request.POST['email'])
+        except EmailUser.DoesNotExist:
+            raise PermissionDenied
+
+        try:
+            membership = team.team_membership_set.get(email_user=email)
+        except TeamMembership.DoesNotExist:
+            raise Http404
+
+        if self.action == 'mute':
+            membership.muted = True
+        elif self.action == 'unmute':
+            membership.muted = False
+
+        membership.save()
+
+        if 'next' in request.POST:
+            return redirect(request.POST['next'])
+        else:
+            return redirect(team)

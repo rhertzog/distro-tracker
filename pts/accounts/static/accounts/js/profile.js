@@ -131,4 +131,9 @@ $(function() {
 
         $modal.modal('hide');
     });
+
+    $('.toggle-team-mute').click(function(evt) {
+        $(this).closest('form').submit();
+        return false;
+    });
 });
