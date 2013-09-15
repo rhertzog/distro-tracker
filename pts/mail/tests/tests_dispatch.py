@@ -670,3 +670,17 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
         for message, team in zip(mail.outbox, Team.objects.all()):
             message = message.message()
             self.assertEqual(message['X-PTS-Team'], team.slug)
+
+    def test_package_muted(self):
+        """
+        Tests that when the team membership is not muted, but the package
+        which is a part of the membership is, no message is forwarded.
+        """
+        email = self.user.main_email
+        membership = self.team.team_membership_set.get(email_user__email=email)
+        membership.set_keywords(self.package, ['default'])
+        membership.mute_package(self.package)
+
+        self.run_dispatch()
+
+        self.assertEqual(0, len(mail.outbox))

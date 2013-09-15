@@ -299,7 +299,7 @@ def send_to_teams(received_message, package_name, keyword):
         # Send the message to each member of the team
         for membership in team.team_membership_set.all():
             # Do not send messages to muted memberships
-            if membership.muted:
+            if membership.is_muted(package):
                 continue
             # Do not send the message if the user has disabled the keyword
             if keyword not in membership.get_keywords(package):
