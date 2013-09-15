@@ -39,11 +39,14 @@ $(function() {
         }).done(function(data) {
             // Remove all previously existing subscriptions from the page.
             var $group = $this.closest('.accordion-group');
-            var to_remove = $group.find('.accordion-group');
+            var to_remove = $group.find('.accordion-group.subscription-group');
             $this.fadeOut();
+
             to_remove.fadeOut(500, function() {
-                to_remove.parent().before('<em>No subscriptions!</em>');
-                to_remove.parent().remove();
+                if ($group.find('.team-group').length === 0) {
+                    to_remove.parent().before('<em>No subscriptions!</em>');
+                    to_remove.parent().remove();
+                }
             });
         });
         return false;

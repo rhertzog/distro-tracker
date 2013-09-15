@@ -178,6 +178,8 @@ class AccountProfile(LoginRequiredMixin, View):
 class SubscriptionsView(LoginRequiredMixin, View):
     """
     Displays a user's subscriptions.
+
+    This includes both direct package subscriptions and team memberships.
     """
     template_name = 'accounts/subscriptions.html'
 
@@ -185,9 +187,14 @@ class SubscriptionsView(LoginRequiredMixin, View):
         user = request.user
         # Map users emails to the subscriptions of that email
         subscriptions = {
-            email: sorted([
-                subscription for subscription in email.subscription_set.all()
-            ], key=lambda sub: sub.package.name)
+            email: {
+                'subscriptions': sorted([
+                    subscription for subscription in email.subscription_set.all()
+                ], key=lambda sub: sub.package.name),
+                'team_memberships': sorted([
+                    membership for membership in email.membership_set.all()
+                ], key=lambda m: m.team.name)
+            }
             for email in user.emails.all()
         }
         return render(request, self.template_name, {

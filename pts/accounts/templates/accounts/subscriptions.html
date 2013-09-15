@@ -47,7 +47,7 @@
 <div class="accordion-heading">
 <div class="accordion-toggle" data-toggle="collapse" data-target="#emails-{{ forloop.counter }}">
     <b>{{ email }}</b>
-    {% if email_subscriptions %}
+    {% if email_subscriptions.subscriptions %}
 <form style="display: inline-block; margin-bottom: 0px;" action="{% url 'pts-api-accounts-unsubscribe-all' %}" method="POST">{% csrf_token %}
 <input type="hidden" name="email" value="{{ email }}">
 <input type="hidden" name="next" value="{% url 'pts-accounts-subscriptions' %}">
@@ -71,7 +71,7 @@
 <div class="accordion-inner">
 {% endif %}
 
-{% if not email_subscriptions %}
+{% if not email_subscriptions.subscriptions and not email_subscriptions.team_memberships %}
     {# This email has no subscriptions #}
     <em>No subscriptions!</em>
 {% else %}
@@ -80,11 +80,11 @@
 {% with accordion_id="subscriptions-accordion-"|add:email_number %}
 <div class="accordion" id="{{ accordion_id }}">
 
-{% for subscription in email_subscriptions %}
+{% for subscription in email_subscriptions.subscriptions %}
 {# Display each subscription in a list, with the details being hidden in a toggleable tray #}
     {% with subscription_number=forloop.counter|stringformat:"s" %}
     {% with details_id=accordion_id|add:"-details-"|add:subscription_number %}
-    <div class="accordion-group">
+    <div class="accordion-group subscription-group">
         <div class="accordion-heading">
         <div class="accordion-toggle" data-toggle="collapse" data-parent="#{{ accordion_id }}" data-target="#{{ details_id }}">
             <div class="row-fluid">
@@ -131,6 +131,42 @@
     </div>
     {% endwith %}{% endwith %}
 {% endfor %}
+
+{% for membership in email_subscriptions.team_memberships %}
+{# Display each team that the email is a part of #}
+    {% with subscription_number=forloop.counter|stringformat:"s" %}
+    {% with details_id=accordion_id|add:"-team-details-"|add:subscription_number %}
+    <div class="accordion-group team-group">
+        <div class="accordion-heading">
+        <div class="accordion-toggle" data-toggle="collapse" data-parent="#{{ accordion_id }}" data-target="#{{ details_id }}">
+            <div class="row-fluid"><div class="span10">
+            <span class='team-membership'>
+                <a href="{{ membership.team.get_absolute_url }}">{{ membership.team }}</a>
+            </span>
+            <span class='label label-info'>Team</span>
+            {% if membership.muted %}
+            <span><i class='icon-exclamation-sign' title='The team is muted'></i></span>
+            {% endif %}
+            </div></div>
+        </div>
+        </div>
+
+        <div class="accordion-body collapse" id="{{ details_id }}">
+            <div class="accordion-inner">
+            {% if membership.has_membership_keywords %}
+            <div><b>Team-specific keywords:</b></div>
+            <ul class="inline">
+                {% for keyword in membership.default_keywords.all %}
+                <li class='keyword'>{{ keyword }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endwith %}{% endwith %}
+{% endfor %}
+
 </div>
 
 {% endwith %}{% endwith %}

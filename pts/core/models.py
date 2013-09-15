@@ -2146,7 +2146,7 @@ class TeamMembership(models.Model):
     Represents the intermediary model for the many-to-many association of
     team members to a :class:`Team`.
     """
-    email_user = models.ForeignKey(EmailUser)
+    email_user = models.ForeignKey(EmailUser, related_name='membership_set')
     team = models.ForeignKey(Team, related_name='team_membership_set')
 
     muted = models.BooleanField(default=False)
