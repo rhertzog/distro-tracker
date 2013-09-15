@@ -23,6 +23,9 @@ from email.message import Message
 from datetime import timedelta
 
 from pts.core.models import PackageName, Subscription, Keyword
+from pts.core.models import Team
+from pts.core.models import EmailUser
+from pts.accounts.models import User
 from pts.core.utils import verp
 from pts.core.utils import get_decoded_message_payload
 from pts.core.utils import pts_render_to_string
@@ -567,3 +570,103 @@ class BounceStatsTest(TestCase):
         bounce_stats_dates = [info.date for info in bounce_stats]
         for date in dates[-days:]:
             self.assertIn(date, bounce_stats_dates)
+
+
+class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
+    def setUp(self):
+        super(DispatchToTeamsTests, self).setUp()
+        self.password = 'asdf'
+        self.user = User.objects.create_user(
+            main_email='user@domain.com', password=self.password,
+            first_name='', last_name='')
+        self.team = Team.objects.create_with_slug(
+            owner=self.user, name="Team name")
+        self.team.add_members([self.user.emails.all()[0]])
+        self.package = PackageName.objects.create(name='dummy-package')
+        self.team.packages.add(self.package)
+        self.email_user = EmailUser.objects.create(email='other@domain.com')
+
+        ## Set up a message which will be sent to the package
+        self.clear_message()
+        self.from_email = 'dummy-email@domain.com'
+        self.set_package_name('dummy-package')
+        self.add_header('From', 'Real Name <{from_email}>'.format(
+            from_email=self.from_email))
+        self.add_header('Subject', 'Some subject')
+        self.add_header('X-Loop', 'owner@bugs.debian.org')
+        self.add_header('X-PTS-Approved', '1')
+        self.set_message_content('message content')
+
+    def test_team_muted(self):
+        """
+        Tests that a message is not forwarded to the user when he has muted
+        the team.
+        """
+        email = self.user.main_email
+        membership = self.team.team_membership_set.get(email_user__email=email)
+        membership.set_keywords(self.package, ['default'])
+        membership.muted = True
+        membership.save()
+
+        self.run_dispatch()
+
+        self.assertEqual(0, len(mail.outbox))
+
+    def test_message_forwarded(self):
+        """
+        Tests that the message is forwarded to a team member when he has the
+        correct keyword.
+        """
+        email = self.user.main_email
+        membership = self.team.team_membership_set.get(email_user__email=email)
+        membership.set_keywords(self.package, ['default'])
+
+        self.run_dispatch()
+
+        self.assert_message_forwarded_to(email)
+
+    def test_message_not_forwarded_no_keyword(self):
+        """
+        Tests that a message is not forwarded to a team member that does not
+        have the messages keyword set.
+        """
+        email = self.user.main_email
+        membership = self.team.team_membership_set.get(email_user__email=email)
+        membership.set_keywords(
+            self.package,
+            [k.name for k in Keyword.objects.exclude(name='default')])
+
+        self.run_dispatch()
+
+        self.assertEqual(0, len(mail.outbox))
+
+    def test_dispatched_message_correct_headers(self):
+        """
+        Tests that the headers of the dispatched message are correctly set.
+        """
+        email = self.user.main_email
+        membership = self.team.team_membership_set.get(email_user__email=email)
+        membership.set_keywords(self.package, ['default'])
+
+        self.run_dispatch()
+
+        self.assert_header_equal('X-PTS-Keyword', 'default')
+        self.assert_header_equal('X-PTS-Team', self.team.slug)
+        self.assert_header_equal('X-PTS-Package', self.package.name)
+
+    def test_dispatch_multiple_teams(self):
+        """
+        Tests that a user gets the same message multiple times when he is a
+        member of two teams that both have the same package.
+        """
+        new_team = Team.objects.create_with_slug(
+            owner=self.user, name="Other team")
+        new_team.packages.add(self.package)
+        new_team.add_members([self.user.emails.all()[0]])
+
+        self.run_dispatch()
+
+        self.assertEqual(2, len(mail.outbox))
+        for message, team in zip(mail.outbox, Team.objects.all()):
+            message = message.message()
+            self.assertEqual(message['X-PTS-Team'], team.slug)

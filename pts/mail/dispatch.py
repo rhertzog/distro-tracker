@@ -29,6 +29,8 @@ from pts.core.utils.email_messages import CustomEmailMessage
 from pts.mail.models import EmailUserBounceStats
 
 from pts.core.models import PackageName
+from pts.core.models import Keyword
+from pts.core.models import Team
 from django.conf import settings
 PTS_CONTROL_EMAIL = settings.PTS_CONTROL_EMAIL
 PTS_FQDN = settings.PTS_FQDN
@@ -85,6 +87,7 @@ def process(message, sent_to_address=None):
     # Now send the message to subscribers
     add_new_headers(msg, package_name, keyword)
     send_to_subscribers(msg, package_name, keyword)
+    send_to_teams(msg, package_name, keyword)
 
 
 def get_package_name(local_part):
@@ -234,6 +237,17 @@ def add_direct_subscription_headers(received_message, package_name, keyword):
     add_headers(received_message, new_headers)
 
 
+def add_team_membership_headers(received_message, package_name, keyword, team):
+    """
+    The function adds headers to the received message which are specific for
+    messages to be sent to users that are members of a team.
+    """
+    new_headers = [
+        ('X-PTS-Team', team.slug),
+    ]
+    add_headers(received_message, new_headers)
+
+
 def add_headers(message, new_headers):
     """
     Adds the given headers to the given message in a safe way.
@@ -244,6 +258,57 @@ def add_headers(message, new_headers):
             header_name.encode('utf-8'),
             header_value.encode('utf-8'))
         message[header_name] = header_value
+
+
+def send_to_teams(received_message, package_name, keyword):
+    """
+    Sends the given email message to all members of each team that has the
+    given package.
+
+    The message is only sent to those users who have not muted the team
+    and have the given keyword in teir set of keywords for the team
+    membership.
+
+    :param received_message: The modified received package message to be sent
+        to the subscribers.
+    :type received_message: :py:class:`email.message.Message` or an equivalent
+        interface object
+
+    :param package_name: The name of the package for which this message was
+        intended.
+    :type package_name: string
+
+    :param keyword: The keyword with which the message should be tagged
+    :type keyword: string
+    """
+    keyword = get_or_none(Keyword, name=keyword)
+    package = get_or_none(PackageName, name=package_name)
+    if not keyword or not package:
+        return
+    # Get all teams that have the given package
+    teams = Team.objects.filter(packages=package)
+    teams = teams.prefetch_related('team_membership_set')
+
+    date = timezone.now().date()
+    messages_to_send = []
+    for team in teams:
+        team_message = deepcopy(received_message)
+        add_team_membership_headers(
+            team_message, package_name, keyword.name, team)
+
+        # Send the message to each member of the team
+        for membership in team.team_membership_set.all():
+            # Do not send messages to muted memberships
+            if membership.muted:
+                continue
+            # Do not send the message if the user has disabled the keyword
+            if keyword not in membership.get_keywords(package):
+                continue
+
+            messages_to_send.append(prepare_message(
+                team_message, membership.email_user.email, date))
+
+    send_messages(messages_to_send, date)
 
 
 def send_to_subscribers(received_message, package_name, keyword):
@@ -276,7 +341,13 @@ def send_to_subscribers(received_message, package_name, keyword):
         prepare_message(received_message, subscription.email_user.email, date)
         for subscription in package.subscription_set.all_active(keyword)
     ]
-    # Send all messages over a single SMTP connection
+    send_messages(messages_to_send, date)
+
+
+def send_messages(messages_to_send, date):
+    """
+    Sends all the given email messages over a single SMTP connection.
+    """
     connection = get_connection()
     connection.send_messages(messages_to_send)
 
