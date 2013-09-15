@@ -2159,6 +2159,42 @@ class TeamMembership(models.Model):
     def __str__(self):
         return '{} member of {}'.format(self.email_user, self.team)
 
+    def is_muted(self, package_name):
+        """
+        Checks if the given package is muted in the team membership.
+        A package is muted if the team membership itself is muted as a whole or
+        if :class:`MembershipPackageSpecifics` for the package indicates that
+        the package is muted.
+
+        :param package_name: The name of the package.
+        :type package_name: :class:`PackageName` or :class:`str`
+        """
+        if not isinstance(package_name, PackageName):
+            package_name = PackageName.objects.get(package_name)
+        if self.muted:
+            return True
+        try:
+            package_specifics = self.membership_package_specifics.get(
+                package_name=package_name)
+        except MembershipPackageSpecifics.DoesNotExist:
+            return False
+
+        return package_specifics.muted
+
+    def mute_package(self, package_name):
+        """
+        The method mutes only the given package in the user's team membership.
+
+        :param package_name: The name of the package.
+        :type package_name: :class:`PackageName` or :class:`str`
+        """
+        if not isinstance(package_name, PackageName):
+            package_name = PackageName.objects.get(package_name)
+        package_specifics, _ = self.membership_package_specifics.get_or_create(
+            package_name=package_name)
+        package_specifics.muted = True
+        package_specifics.save()
+
     def set_keywords(self, package_name, keywords):
         """
         Sets the membership-specific keywords for the given package.
@@ -2242,6 +2278,8 @@ class MembershipPackageSpecifics(models.Model):
 
     keywords = models.ManyToManyField(Keyword)
     _has_keywords = models.BooleanField(default=False)
+
+    muted = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('membership', 'package_name')

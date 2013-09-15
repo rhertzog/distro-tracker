@@ -35,6 +35,7 @@ from pts.core.models import SourcePackage
 from pts.core.models import ExtractedSourceFile
 from pts.core.models import MailingList
 from pts.core.models import Team
+from pts.core.models import TeamMembership
 from pts.core.models import MembershipPackageSpecifics
 from pts.core.utils import message_from_bytes
 from pts.core.utils.email_messages import get_decoded_message_payload
@@ -1478,3 +1479,22 @@ class TeamTests(TestCase):
         self.assert_keyword_sets_equal(
             self.email_user.default_keywords.all(),
             membership.get_keywords(package))
+
+    def test_mute_package(self):
+        """
+        Tests that it is possible to mute only one package in the team.
+        """
+        package = self.team.packages.create(name='other-pkg')
+        self.team.packages.add(package)
+        membership = self.team.add_members([self.email_user])[0]
+
+        membership.mute_package(self.package_name)
+
+        # Refresh the instance
+        membership = TeamMembership.objects.get(pk=membership.pk)
+        # The whole membership is not muted
+        self.assertFalse(membership.muted)
+        # The package is though
+        self.assertTrue(membership.is_muted(self.package_name))
+        # The other package isn't
+        self.assertFalse(membership.is_muted(package))
