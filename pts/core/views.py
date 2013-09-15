@@ -500,3 +500,45 @@ class SetMuteTeamView(LoginRequiredMixin, View):
             return redirect(request.POST['next'])
         else:
             return redirect(team)
+
+
+class SetMembershipKeywords(LoginRequiredMixin, View):
+    """
+    The view lets users set either default membership keywords or
+    package-specific keywords.
+    """
+    def render_response(self):
+        if self.request.is_ajax():
+            return render_to_json_response({
+                'status': 'ok',
+            })
+        if 'next' in self.request.POST:
+            return redirect(self.request.POST['next'])
+        else:
+            return redirect(self.team)
+
+    def post(self, request, slug):
+        self.request = request
+        self.team = get_object_or_404(Team, slug=slug)
+        user = request.user
+        mandatory_parameters = ('email', 'keyword[]')
+        if any(param not in request.POST for param in mandatory_parameters):
+            raise Http404
+        try:
+            email = user.emails.get(email=request.POST['email'])
+        except EmailUser.DoesNotExist:
+            raise PermissionDenied
+
+        try:
+            membership = self.team.team_membership_set.get(email_user=email)
+        except TeamMembership.DoesNotExist:
+            raise Http404
+
+        keywords = request.POST.getlist('keyword[]')
+        if 'package' in request.POST:
+            package = get_object_or_404(PackageName, name=request.POST['package'])
+            membership.set_keywords(package, keywords)
+        else:
+            membership.set_membership_keywords(keywords)
+
+        return self.render_response()

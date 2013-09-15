@@ -111,9 +111,25 @@ $(function() {
         return false;
      });
 
-    var update_keywords_url = $('#update-keywords-url').html();
+     $('.modify-membership-keywords').click(function(evt) {
+        var $this = $(this);
+        modify_keywords_popup(
+            $this.closest('.accordion-inner').find('.keyword'), {
+                'href': $this.data('href'),
+                'email': $this.data('email'),
+                'update-id': $this.closest('.accordion-body').attr('id')
+            }
+        );
+        return false;
+     });
+
+    var update_subscription_keywords_url = $('#update-keywords-url').html();
     $('#save-keywords').click(function(evt) {
         var $modal = $('#choose-keywords-modal');
+        var update_keywords_url = (
+            $modal.data('href') !== undefined ?
+            $modal.data('href') :
+            update_subscription_keywords_url)
         var keywords = [];
         var new_list_html = "";
         $('input.keyword-choice:checkbox:checked').each(function(i, el) {
