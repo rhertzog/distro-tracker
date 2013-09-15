@@ -2150,12 +2150,110 @@ class TeamMembership(models.Model):
     team = models.ForeignKey(Team, related_name='team_membership_set')
 
     muted = models.BooleanField(default=False)
+    default_keywords = models.ManyToManyField(Keyword)
+    has_membership_keywords = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('email_user', 'team')
 
     def __str__(self):
         return '{} member of {}'.format(self.email_user, self.team)
+
+    def set_keywords(self, package_name, keywords):
+        """
+        Sets the membership-specific keywords for the given package.
+
+        :param package_name: The name of the package for which the keywords
+            should be set
+        :type package_name: :class:`PackageName` or :class:`str`
+        :param keywords: The keywords to be set for the membership-specific
+            keywords for the given package.
+        :type keywords: an ``iterable`` of keyword names - as strings
+        """
+        if not isinstance(package_name, PackageName):
+            package_name = PackageName.objects.get(package_name)
+        new_keywords = Keyword.objects.filter(name__in=keywords)
+        membership_package_specifics, _ = (
+            self.membership_package_specifics.get_or_create(
+                package_name=package_name))
+        membership_package_specifics.set_keywords(new_keywords)
+
+    def set_membership_keywords(self, keywords):
+        """
+        Sets the membership default keywords.
+
+        :param keywords: The keywords to be set for the membership
+        :type keywords: an ``iterable`` of keyword names - as strings
+        """
+        new_keywords = Keyword.objects.filter(name__in=keywords)
+        self.default_keywords = new_keywords
+        self.has_membership_keywords = True
+        self.save()
+
+    def get_keywords(self, package_name):
+        """
+        Returns the keywords that are associated to a particular package of
+        this team membership.
+
+        The first set of keywords that exists in the order given below is
+        returned:
+
+        - Membership package-specific keywords
+        - Membership default keywords
+        - EmailUser default keywords
+
+        :param package_name: The name of the package for which the keywords
+            should be returned
+        :type package_name: :class:`PackageName` or :class:`str`
+
+        :return: The keywords which should be used when forwarding mail
+            regarding the given package to the given user for the team
+            membership.
+        :rtype: :class:`QuerySet <django.db.models.query.QuerySet>` of
+            :class:`Keyword` instances.
+        """
+        if not isinstance(package_name, PackageName):
+            package_name = PackageName.objects.get(package_name)
+
+        try:
+            membership_package_specifics = self.membership_package_specifics.get(
+                package_name=package_name)
+            if membership_package_specifics._has_keywords:
+                return membership_package_specifics.keywords.all()
+        except MembershipPackageSpecifics.DoesNotExist:
+            pass
+
+        if self.has_membership_keywords:
+            return self.default_keywords.all()
+
+        return self.email_user.default_keywords.all()
+
+
+@python_2_unicode_compatible
+class MembershipPackageSpecifics(models.Model):
+    """
+    Represents a model for keeping information regarding a pair of
+    (membership, package) instances.
+    """
+    membership = models.ForeignKey(
+        TeamMembership,
+        related_name='membership_package_specifics')
+    package_name = models.ForeignKey(PackageName)
+
+    keywords = models.ManyToManyField(Keyword)
+    _has_keywords = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('membership', 'package_name')
+
+    def __str__(self):
+        return "Membership ({}) specific keywords for {} package".format(
+            self.membership, self.package_name)
+
+    def set_keywords(self, keywords):
+        self.keywords = keywords
+        self._has_keywords = True
+        self.save()
 
 
 @python_2_unicode_compatible

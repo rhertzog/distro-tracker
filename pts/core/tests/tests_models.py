@@ -34,8 +34,11 @@ from pts.core.models import EmailNews
 from pts.core.models import SourcePackage
 from pts.core.models import ExtractedSourceFile
 from pts.core.models import MailingList
+from pts.core.models import Team
+from pts.core.models import MembershipPackageSpecifics
 from pts.core.utils import message_from_bytes
 from pts.core.utils.email_messages import get_decoded_message_payload
+from pts.accounts.models import User
 from .common import make_temp_directory
 from .common import create_source_package
 
@@ -1397,3 +1400,81 @@ class ActionItemTests(TestCase):
         action_item.save()
 
         self.assertIn("data1, data2", action_item.full_description)
+
+
+class TeamTests(TestCase):
+    """
+    Tests for the :class:`Team <pts.core.models.Team>` model.
+    """
+    def setUp(self):
+        self.password = 'asdf'
+        self.user = User.objects.create_user(
+            main_email='user@domain.com', password=self.password,
+            first_name='', last_name='')
+        self.team = Team.objects.create_with_slug(
+            owner=self.user, name="Team name")
+        self.package_name = PackageName.objects.create(name='dummy')
+        self.team.packages.add(self.package_name)
+        self.email_user = EmailUser.objects.create(
+            email='other@domain.com')
+
+    def assert_keyword_sets_equal(self, set1, set2):
+        self.assertEqual(
+            [k.name for k in set1],
+            [k.name for k in set2])
+
+    def assert_keyword_sets_not_equal(self, set1, set2):
+        self.assertNotEqual(
+            [k.name for k in set1],
+            [k.name for k in set2])
+
+    def test_no_membership_keywords(self):
+        """
+        Tests that when there are no membership keywords, the user's default
+        keywords are returned.
+        """
+        membership = self.team.add_members([self.email_user])[0]
+        MembershipPackageSpecifics.objects.create(
+            membership=membership,
+            package_name=self.package_name)
+
+        self.assert_keyword_sets_equal(
+            self.email_user.default_keywords.all(),
+            membership.get_keywords(self.package_name))
+
+    def test_set_membership_keywords(self):
+        membership = self.team.add_members([self.email_user])[0]
+        keywords = Keyword.objects.all()[:3]
+
+        membership.set_membership_keywords([k.name for k in keywords])
+
+        # The set of membership keywords is correctly set
+        self.assert_keyword_sets_equal(
+            keywords, membership.default_keywords.all())
+        # A flag is set indicating that the set exists
+        self.assertTrue(membership.has_membership_keywords)
+        # The keywords returned for the package are equal to the membership
+        # keywords.
+        self.assert_keyword_sets_equal(
+            keywords,
+            membership.get_keywords(self.package_name))
+
+    def test_set_membership_package_specifics(self):
+        # Add another package to the team
+        package = self.team.packages.create(name='other-pkg')
+        self.team.packages.add(package)
+        membership = self.team.add_members([self.email_user])[0]
+        keywords = Keyword.objects.all()[:3]
+
+        membership.set_keywords(self.package_name, [k.name for k in keywords])
+
+        # A MembershipPackageSpecifics instance is created
+        self.assertEqual(1, MembershipPackageSpecifics.objects.count())
+        # The keywords returned for the package are correct
+        self.assert_keyword_sets_equal(
+            keywords,
+            membership.get_keywords(self.package_name))
+        # But the other package still returns the user's default keywords
+        self.assert_keyword_sets_equal(
+            self.email_user.default_keywords.all(),
+            membership.get_keywords(package))
