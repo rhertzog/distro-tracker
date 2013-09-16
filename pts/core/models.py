@@ -2181,6 +2181,18 @@ class TeamMembership(models.Model):
 
         return package_specifics.muted
 
+    def set_mute_package(self, package_name, mute):
+        """
+        Sets whether the given package should be considered muted for the team
+        membership.
+        """
+        if not isinstance(package_name, PackageName):
+            package_name = PackageName.objects.get(package_name)
+        package_specifics, _ = self.membership_package_specifics.get_or_create(
+            package_name=package_name)
+        package_specifics.muted = mute
+        package_specifics.save()
+
     def mute_package(self, package_name):
         """
         The method mutes only the given package in the user's team membership.
@@ -2188,12 +2200,16 @@ class TeamMembership(models.Model):
         :param package_name: The name of the package.
         :type package_name: :class:`PackageName` or :class:`str`
         """
-        if not isinstance(package_name, PackageName):
-            package_name = PackageName.objects.get(package_name)
-        package_specifics, _ = self.membership_package_specifics.get_or_create(
-            package_name=package_name)
-        package_specifics.muted = True
-        package_specifics.save()
+        self.set_mute_package(package_name, True)
+
+    def unmute_package(self, package_name):
+        """
+        The method unmutes only the given package in the user's team membership.
+
+        :param package_name: The name of the package.
+        :type package_name: :class:`PackageName` or :class:`str`
+        """
+        self.set_mute_package(package_name, False)
 
     def set_keywords(self, package_name, keywords):
         """

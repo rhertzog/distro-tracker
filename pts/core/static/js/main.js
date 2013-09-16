@@ -194,4 +194,9 @@ $(function() {
         var $form = $this.parents('form');
         $form.find('#id_slug').val(slug);
     });
+
+    $('.toggle-package-mute').click(function(evt) {
+        $(this).closest('form').submit();
+        return false;
+    });
 });

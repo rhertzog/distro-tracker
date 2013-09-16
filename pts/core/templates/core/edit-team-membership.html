@@ -1,0 +1,64 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+{% with team=membership.team %}
+{% with email=membership.email_user.email %}
+{% with accordion_id="accordion-membership-packages" %}
+<h1 class="text-center">Membership management for <a href="{{ team.get_absolute_url }}">{{ team }}</a></h1>
+<div>
+<div class="accordion" id="{{ acordion_id }}">
+    {% for pkg in package_list %}
+    <div class="accordion-group">
+        <div class="accordion-heading">
+        <div class="accordion-toggle" data-toggle="collapse" data-parent="#{{ accordion_id }}" data-target="#{{ accordion_id }}-details-{{ forloop.counter }}">
+            <div class="row-fluid">
+            <div class="span10">
+            {% if pkg.get_absolute_url %}
+            <a href="{{ pkg.get_absolute_url }}">{{ pkg }}</a>
+            {% else %}
+            <span>{{ pkg }}</span>
+            {% endif %}
+            </div>
+            <div class="span2">
+        {% if pkg.is_muted %}
+            <form style="margin-bottom: 0px;" action="{% url 'pts-team-unmute' team.slug %}" method="POST">{% csrf_token %}
+                <input type="hidden" name="package" value="{{ pkg }}">
+                <input type="hidden" name="email" value="{{ email }}">
+                <input type="hidden" name="next" value="{% url 'pts-team-manage-membership' team.slug %}?page={{ page_obj.number }}&email={{ email }}">
+                <button class="btn btn-info toggle-package-mute" data-email="{{ email }}" data-package="{{ subscription.package }}">Unmute</button>
+            </form>
+        {% else %}
+            <form style="margin-bottom: 0px;" action="{% url 'pts-team-mute' team.slug %}" method="POST">{% csrf_token %}
+                <input type="hidden" name="package" value="{{ pkg }}">
+                <input type="hidden" name="email" value="{{ email }}">
+                <input type="hidden" name="next" value="{% url 'pts-team-manage-membership' team.slug %}?page={{ page_obj.number }}&email={{ email }}">
+                <button class="btn btn-danger toggle-package-mute" data-email="{{ email }}" data-package="{{ subscription.package }}">Mute</button>
+            </form>
+        {% endif %}
+            </div>
+            </div>
+        </div>
+        </div>
+        <div class="accordion-body collapse" id="{{ accordion_id }}-details-{{ forloop.counter }}">
+            <div class="accordion-inner">
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+</div>
+{% endwith %}{% endwith %}{% endwith %}
+
+{% if is_paginated %}
+<div class="text-center">
+<div class="pagination">
+<ul>
+    {% for page in page_obj.paginator.page_range %}
+    <li {% if page_obj.number == page %}class="active"{% endif %}><a href="?page={{ page }}&email={{ membership.email_user.email }}">{{ page }}</a></li>
+    {% endfor %}
+</ul>
+</div>
+</div>
+</div>
+{% endif %}
+{% endblock %}

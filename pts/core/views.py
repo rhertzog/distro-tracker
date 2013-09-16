@@ -470,7 +470,8 @@ class TeamListView(ListView):
 
 class SetMuteTeamView(LoginRequiredMixin, View):
     """
-    The view lets users mute or unmute a team membership.
+    The view lets users mute or unmute a team membership or a particular
+    package in the membership.
     """
     action = 'mute'
 
@@ -490,11 +491,18 @@ class SetMuteTeamView(LoginRequiredMixin, View):
             raise Http404
 
         if self.action == 'mute':
-            membership.muted = True
+            mute = True
         elif self.action == 'unmute':
-            membership.muted = False
+            mute = False
+        else:
+            raise Http404
 
-        membership.save()
+        if 'package' in request.POST:
+            package = get_object_or_404(PackageName, name=request.POST['package'])
+            membership.set_mute_package(package, mute)
+        else:
+            membership.muted = mute
+            membership.save()
 
         if 'next' in request.POST:
             return redirect(request.POST['next'])
@@ -542,3 +550,38 @@ class SetMembershipKeywords(LoginRequiredMixin, View):
             membership.set_membership_keywords(keywords)
 
         return self.render_response()
+
+
+class EditMembershipView(LoginRequiredMixin, ListView):
+    template_name = 'core/edit-team-membership.html'
+    paginate_by = 20
+    context_object_name = 'package_list'
+
+    def get(self, request, slug):
+        self.team = get_object_or_404(Team, slug=slug)
+        if 'email' not in request.GET:
+            raise Http404
+        user = request.user
+        try:
+            email = user.emails.get(email=request.GET['email'])
+        except EmailUser.DoesNotExist:
+            raise PermissionDenied
+
+        try:
+            self.membership = self.team.team_membership_set.get(email_user=email)
+        except TeamMembership.DoesNotExist:
+            raise Http404
+
+        return super(EditMembershipView, self).get(request, slug)
+
+    def get_queryset(self):
+        return self.team.packages.all().order_by('name')
+
+    def get_context_data(self, *args, **kwargs):
+        # Annotate the packages with a boolean indicating whether the package
+        # is muted by the user.
+        for pkg in self.object_list:
+            pkg.is_muted = self.membership.is_muted(pkg)
+        context = super(EditMembershipView, self).get_context_data(*args, **kwargs)
+        context['membership'] = self.membership
+        return context

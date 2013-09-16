@@ -31,6 +31,7 @@ from pts.core.views import AddTeamMember
 from pts.core.views import ConfirmMembershipView
 from pts.core.views import SetMuteTeamView
 from pts.core.views import SetMembershipKeywords
+from pts.core.views import EditMembershipView
 from pts.core.news_feed import PackageNewsFeed
 from pts.accounts.views import RegisterUser
 from pts.accounts.views import RegistrationConfirmation
@@ -155,6 +156,8 @@ urlpatterns = patterns('',
         name='pts-team-unmute'),
     url(r'^teams/(?P<slug>.+)/\+set-keywords/$', SetMembershipKeywords.as_view(),
         name='pts-team-set-keywords'),
+    url(r'^teams/(?P<slug>.+)/\+manage-membership/$', EditMembershipView.as_view(),
+        name='pts-team-manage-membership'),
     url(r'^teams/(?P<slug>.+?)/$', TeamDetailsView.as_view(),
         name='pts-team-page'),
 
