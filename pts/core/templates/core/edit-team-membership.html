@@ -1,6 +1,33 @@
 {% extends 'core/base.html' %}
+{% load staticfiles %}
+
+{% block extra-js %}
+<script src="{% static 'accounts/js/profile.js' %}"></script>
+<script type="text/x-pts-url" id="all-keywords-url">{% url 'pts-api-keywords' %}</script>
+<script type="text/x-pts-url" id="update-keywords-url">{% url 'pts-api-accounts-profile-keywords' %}</script>
+{% endblock %}
 
 {% block content %}
+{% spaceless %}
+<div id="choose-keywords-modal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3>Choose keywords</h3>
+  </div>
+  <div class="modal-body">
+        <form id="choose-keywords-form">
+                <div id="choose-keywords-list">
+                </div>
+        </form>
+
+  </div>
+  <div class="modal-footer">
+    <button class="btn" id="cancel-choose-email" data-dismiss="modal" aria-hidden="true">Cancel</button>
+    <button class="btn btn-primary" id="save-keywords">Save changes</a>
+  </div>
+</div>
+{% endspaceless %}
+
 {% with team=membership.team %}
 {% with email=membership.email_user.email %}
 {% with accordion_id="accordion-membership-packages" %}
@@ -41,6 +68,13 @@
         </div>
         <div class="accordion-body collapse" id="{{ accordion_id }}-details-{{ forloop.counter }}">
             <div class="accordion-inner">
+            <div><b>Package specific keywords:</b></div>
+            <ul class="inline">
+                {% for keyword in pkg.keywords %}
+                <li class='keyword'>{{ keyword }}</li>
+                {% endfor %}
+            </ul>
+            <div class="btn btn-small modify-team-package-keywords" data-email="{{ email }}" data-package="{{ pkg }}" data-href="{% url 'pts-team-set-keywords' membership.team.slug %}">Modify</div>
             </div>
         </div>
     </div>

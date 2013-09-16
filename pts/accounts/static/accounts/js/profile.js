@@ -123,6 +123,26 @@ $(function() {
         return false;
      });
 
+     $('.modify-team-package-keywords').click(function(evt) {
+        var $this = $(this);
+        modify_keywords_popup(
+            $this.closest('.accordion-inner').find('.keyword'), {
+                'href': $this.data('href'),
+                'email': $this.data('email'),
+                'update-id': $this.closest('.accordion-body').attr('id')
+            }
+        );
+        modify_keywords_popup(
+            $this.closest('.accordion-inner').find('.keyword'), {
+                'href': $this.data('href'),
+                'email': $this.data('email'),
+                'package': $this.data('package'),
+                'update-id': $this.closest('accordion-body').attr('id')
+            }
+        );
+        return false;
+     });
+
     var update_subscription_keywords_url = $('#update-keywords-url').html();
     $('#save-keywords').click(function(evt) {
         var $modal = $('#choose-keywords-modal');

@@ -579,9 +579,13 @@ class EditMembershipView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, *args, **kwargs):
         # Annotate the packages with a boolean indicating whether the package
-        # is muted by the user.
+        # is muted by the user and a list of keywords specific for the package
+        # membership
         for pkg in self.object_list:
             pkg.is_muted = self.membership.is_muted(pkg)
+            pkg.keywords = sorted(
+                self.membership.get_keywords(pkg),
+                key=lambda x: x.name)
         context = super(EditMembershipView, self).get_context_data(*args, **kwargs)
         context['membership'] = self.membership
         return context
