@@ -20,6 +20,7 @@ from django.test.utils import override_settings
 from django.core import mail
 from django.core.urlresolvers import reverse
 from django.core.management import call_command
+from django.utils import six
 from django.utils.six.moves import mock
 from django.utils.encoding import force_bytes
 from django.utils.functional import curry
@@ -28,6 +29,7 @@ from pts.core.tests.common import make_temp_directory
 from pts.core.utils.email_messages import message_from_bytes
 from pts.core.models import ActionItem, ActionItemType
 from pts.core.models import News
+from pts.core.models import Subscription
 from pts.core.models import PackageExtractedInfo
 from pts.core.models import PackageName
 from pts.core.models import SourcePackage
@@ -59,6 +61,9 @@ from pts.vendor.debian.models import DebianContributor
 from pts.vendor.debian.models import UbuntuPackage
 from pts.vendor.debian.pts_tasks import UpdateLintianStatsTask
 from pts.vendor.debian.models import LintianStats
+from pts.vendor.debian.management.commands.pts_import_old_subscriber_dump import (
+    Command as ImportOldSubscribersCommand
+)
 from pts.mail.mail_news import process
 
 from BeautifulSoup import BeautifulSoup as soup
@@ -4096,3 +4101,99 @@ class ImportOldNewsTests(TestCase):
                 msg = message_from_bytes(news.content)
                 self.assertEqual(subject, msg['Subject'])
                 self.assertEqual(content, msg.get_payload())
+
+
+class ImportOldSubscribersTests(TestCase):
+    """
+    Tests for the
+    :mod:`pts.vendor.debian.management.commands.pts_import_old_subscriber_dump`
+    management command.
+    """
+    def setUp(self):
+        self.packages = {}
+
+    def set_package_subscribers(self, package, subscribers):
+        self.packages[package] = subscribers
+
+    def get_input(self):
+        return '\n'.join(
+            '{} => [ {} ]'.format(
+                package,
+                ' '.join(subscribers))
+            for package, subscribers in self.packages.items()
+        )
+
+    def run_command(self):
+        command = ImportOldSubscribersCommand()
+        command.stdin = six.StringIO(self.get_input())
+        command.handle()
+
+    def assert_subscribed_to_package(self, package, subscribers):
+        for subscriber in subscribers:
+            self.assertTrue(Subscription.objects.filter(
+                package=package,
+                email_user__email=subscriber).exists())
+
+    def test_non_existing_package_imported(self):
+        """
+        Test that when a package that is found in the dump being imported
+        does not exist, a new "subscription-only" package is automatically
+        created.
+        """
+        package_name = 'new-package'
+        subscribers = [
+            'email@domain.com',
+            'other@domain.com',
+        ]
+        self.set_package_subscribers(package_name, subscribers)
+
+        self.run_command()
+
+        self.assertEqual(1, PackageName.objects.count())
+        package = PackageName.objects.all()[0]
+        self.assertEqual(package_name, package.name)
+        self.assert_subscribed_to_package(package, subscribers)
+
+    def test_existing_package_imported(self):
+        """
+        Tests that when a package already exists, only a subscription is
+        created, without modifying the package.
+        """
+        package_name = 'new-package'
+        SourcePackageName.objects.create(name=package_name)
+        subscribers = [
+            'email@domain.com',
+            'other@domain.com',
+        ]
+        self.set_package_subscribers(package_name, subscribers)
+
+        self.run_command()
+
+        # Still only one package
+        self.assertEqual(1, PackageName.objects.count())
+        # Still a source package
+        self.assertEqual(1, SourcePackageName.objects.count())
+        package = PackageName.objects.all()[0]
+        self.assertEqual(package_name, package.name)
+        # Correct subscribers imported
+        self.assert_subscribed_to_package(package, subscribers)
+
+    def test_multiple_subscriptions_imported(self):
+        """
+        Tests that multiple subscriptions for a single user are imported.
+        """
+        packages = [
+            PackageName.objects.create(name='pkg1'),
+            PackageName.objects.create(name='pkg2'),
+        ]
+        email = 'user@domain.com'
+        for package in packages:
+            self.set_package_subscribers(package.name, [email])
+
+        self.run_command()
+
+        self.assertEqual(2, PackageName.objects.count())
+        # All subscriptions created?
+        for package in packages:
+            package = PackageName.objects.get(pk=package.pk)
+            self.assert_subscribed_to_package(package, [email])
