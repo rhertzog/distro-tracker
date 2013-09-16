@@ -193,3 +193,37 @@ class ListTeamPackages(Command):
 
         self.reply("Packages found in team {}:".format(team))
         self.list_reply(package for package in team.packages.all().order_by('name'))
+
+
+class WhichTeams(Command):
+    """
+    Returns a list of teams that the given email is a member of.
+    """
+    META = {
+        'description': """which-teams [<email>]
+  Lists all teams that <email> is a member of. If <email> is not given, the
+  sender's email is used.""",
+        'name': 'which-teams',
+    }
+    REGEX_LIST = (
+        r'(?:\s+(?P<email>\S+))?$',
+    )
+
+    def __init__(self, email):
+        super(WhichTeams, self).__init__()
+        self.user_email = email
+
+    def get_email_user(self):
+        email_user, _ = EmailUser.objects.get_or_create(email=self.user_email)
+        return email_user
+
+    def handle(self):
+        email_user = self.get_email_user()
+
+        if email_user.teams.count() == 0:
+            self.warn("{} is not a member of any team.".format(self.user_email))
+        else:
+            self.reply("Teams that {} is a member of:".format(self.user_email))
+            self.list_reply(
+                team.slug
+                for team in email_user.teams.all().order_by('name'))

@@ -2486,3 +2486,53 @@ class ListTeamPackagesTests(TeamCommandsMixin, EmailControlTest):
         self.assert_list_in_response(
             package.name
             for package in self.team.packages.all().order_by('name'))
+
+
+class WhichTeamsCommandTests(TeamCommandsMixin, EmailControlTest):
+    def setUp(self):
+        super(WhichTeamsCommandTests, self).setUp()
+        # Set up more teams
+        self.teams = [
+            self.team,
+            Team.objects.create_with_slug(name='Other team', owner=self.user),
+            Team.objects.create_with_slug(name='Some team', owner=self.user),
+        ]
+
+        self.email_user = EmailUser.objects.create(email='other@domain.com')
+
+    def get_which_teams_command(self, email=''):
+        return 'which-teams {}'.format(email)
+
+    def get_no_teams_warning(self, email):
+        return '{} is not a member of any team.'.format(email)
+
+    def test_user_member_of_teams(self):
+        """
+        Test that all the user's team memberships are output.
+        """
+        member_of = self.teams[:2]
+        not_member_of = self.teams[2:]
+        for team in member_of:
+            team.add_members([self.email_user])
+        self.set_input_lines([self.get_which_teams_command(self.email_user.email)])
+
+        self.control_process()
+
+        # The teams that the user is subscribed too are output in the response
+        self.assert_list_in_response([
+            team.slug
+            for team in self.email_user.teams.all().order_by('name')
+        ])
+        # The teams the user is not subscribed to are not found in the response
+        for team in not_member_of:
+            self.assert_list_item_not_in_response(team.slug)
+
+    def test_user_not_member_of_any_team(self):
+        """
+        Tests the situation when the user is not a member of any teams.
+        """
+        self.set_input_lines([self.get_which_teams_command(self.email_user.email)])
+
+        self.control_process()
+
+        self.assert_warning_in_response(self.get_no_teams_warning(self.email_user.email))
