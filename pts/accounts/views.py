@@ -70,44 +70,6 @@ class RegisterUser(CreateView):
             recipient_list=[user.main_email])
 
 
-class RegistrationConfirmation(FormView):
-    form_class = ResetPasswordForm
-    template_name = 'accounts/registration-confirmation.html'
-    success_url = reverse_lazy('pts-accounts-profile')
-
-    def post(self, request, confirmation_key):
-        self.confirmation = get_object_or_404(
-            UserRegistrationConfirmation,
-            confirmation_key=confirmation_key)
-        return super(RegistrationConfirmation, self).post(
-            self, request, confirmation_key)
-
-    def form_valid(self, form):
-        user = self.confirmation.user
-        user.is_active = True
-        password = form.cleaned_data['password1']
-        user.set_password(password)
-        user.save()
-
-        # The confirmation key is no longer needed
-        self.confirmation.delete()
-
-        # Log the user in
-        user = authenticate(username=user.main_email, password=password)
-        login(self.request, user)
-
-        messages.success(
-            self.request, 'You have successfully registered to the PTS')
-
-        return super(RegistrationConfirmation, self).form_valid(form)
-
-    def get(self, request, confirmation_key):
-        self.confirmation = get_object_or_404(
-            UserRegistrationConfirmation,
-            confirmation_key=confirmation_key)
-        return super(RegistrationConfirmation, self).get(request,confirmation_key)
-
-
 class LoginRequiredMixin(object):
     """
     A view mixin which makes sure that the user is logged in before accessing
@@ -137,6 +99,46 @@ class MessageMixin(object):
     def get_message(self):
         if self.message:
             return self.message
+
+
+class SetPasswordMixin(object):
+    def form_valid(self, form):
+        user = self.confirmation.user
+        user.is_active = True
+        password = form.cleaned_data['password1']
+        user.set_password(password)
+        user.save()
+
+        # The confirmation key is no longer needed
+        self.confirmation.delete()
+
+        # Log the user in
+        user = authenticate(username=user.main_email, password=password)
+        login(self.request, user)
+
+        return super(SetPasswordMixin, self).form_valid(form)
+
+    def get_confirmation_instance(self, confirmation_key):
+        self.confirmation = get_object_or_404(
+            self.confirmation_class,
+            confirmation_key=confirmation_key)
+        return self.confirmation
+
+    def post(self, request, confirmation_key):
+        self.get_confirmation_instance(confirmation_key)
+        return super(SetPasswordMixin, self).post(request, confirmation_key)
+
+    def get(self, request, confirmation_key):
+        self.get_confirmation_instance(confirmation_key)
+        return super(SetPasswordMixin, self).get(request, confirmation_key)
+
+
+class RegistrationConfirmation(SetPasswordMixin, MessageMixin, FormView):
+    form_class = ResetPasswordForm
+    template_name = 'accounts/registration-confirmation.html'
+    success_url = reverse_lazy('pts-accounts-profile')
+    message = 'You have successfully registered to the PTS'
+    confirmation_class = UserRegistrationConfirmation
 
 
 class ChangePersonalInfoView(LoginRequiredMixin, MessageMixin, UpdateView):
