@@ -21,6 +21,7 @@ import inspect
 from pts.core.utils import pts_render_to_string
 from pts.mail.control.commands.base import *
 from pts.mail.control.commands.keywords import *
+from pts.mail.control.commands.teams import *
 from pts.mail.control.commands.misc import *
 from pts.mail.control.commands.confirmation import *
 

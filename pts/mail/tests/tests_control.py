@@ -24,8 +24,10 @@ from pts.core.utils import extract_email_address_from_header
 from pts.core.utils import get_or_none
 from pts.core.models import PackageName, EmailUser, Subscription
 from pts.core.models import Keyword
+from pts.core.models import Team
 from pts.core.models import BinaryPackageName
 from pts.core.models import SourcePackageName
+from pts.accounts.models import User
 from pts.mail.models import CommandConfirmation
 from pts.mail.control.commands import UNIQUE_COMMANDS
 
@@ -2199,3 +2201,136 @@ class WhoCommandTest(EmailControlTest):
         self.assert_in_response(
             'Package {package} does not have any subscribers'.format(
                 package=self.package.name))
+
+
+class TeamCommandsMixin(object):
+    def setUp(self):
+        super(TeamCommandsMixin, self).setUp()
+        self.password = 'asdf'
+        self.user = User.objects.create_user(
+            main_email='user@domain.com', password=self.password,
+            first_name='', last_name='')
+        self.team = Team.objects.create_with_slug(
+            owner=self.user, name="Team name")
+        self.package = PackageName.objects.create(name='dummy')
+        self.team.packages.add(self.package)
+        self.team.add_members(self.user.emails.all()[:1])
+
+    def get_confirmation_text(self, email):
+        return 'A confirmation mail has been sent to {}'.format(email)
+
+    def assert_confirmation_sent_to(self, email_address):
+        """
+        Asserts that a confirmation mail has been sent to the given email.
+        """
+        self.assertTrue(any(
+            msg.message()['Subject'].startswith('CONFIRM') and
+            email_address in msg.to
+            for msg in mail.outbox
+        ))
+
+
+class JoinTeamCommandsTests(TeamCommandsMixin, EmailControlTest):
+    """
+    Tests for the join-team control command.
+    """
+    def setUp(self):
+        super(JoinTeamCommandsTests, self).setUp()
+        self.email_user = EmailUser.objects.create(email='other@domain.com')
+        self.set_header('From', self.email_user.email)
+
+    def get_join_command(self, team, email=''):
+        return 'join-team {} {}'.format(team, email)
+
+    def get_joined_message(self, team):
+        return 'You have successfully joined the team "{}"'.format(team.name)
+
+    def get_private_error(self, team):
+        return (
+            "The given team is not public. "
+            "Please contact {} if you wish to join".format(
+                team.owner.main_email)
+        )
+
+    def get_no_exist_error(self, team):
+        return 'Team with the slug "{}" does not exist.'.format(team)
+
+    def get_is_member_warning(self):
+        return 'You are already a member of the team.'
+
+    def test_join_public_team(self):
+        """
+        Tests that users can join a public team.
+        """
+        self.set_input_lines([self.get_join_command(self.team.slug)])
+
+        self.control_process()
+
+        # Confirmation mail sent
+        self.assert_confirmation_sent_to(self.email_user.email)
+        # The response to the original control message indicates that
+        self.assert_in_response(self.get_confirmation_text(self.email_user.email))
+        # The user isn't a member of the team yet
+        self.assertNotIn(self.email_user, self.team.members.all())
+        # A confirmation instance is created
+        self.assertEqual(1, CommandConfirmation.objects.count())
+        confirmation = CommandConfirmation.objects.all()[0]
+
+        # Send the confirmation mail now
+        self.reset_outbox()
+        self.set_input_lines(['CONFIRM ' + confirmation.confirmation_key])
+
+        self.control_process()
+
+        # The response indicates that the user has joined the team
+        self.assert_in_response(self.get_joined_message(self.team))
+        # The user now really is in the team
+        self.assertIn(self.email_user, self.team.members.all())
+
+    def test_join_public_team_different_from(self):
+        """
+        Tests that a confirmation mail is sent to the user being added to the
+        team, not the user who sent the control command.
+        """
+        self.set_input_lines([self.get_join_command(self.team.slug, self.email_user)])
+        self.set_header('From', 'different-user@domain.com')
+
+        self.control_process()
+
+        # The confirmation sent to the user being added to the team
+        self.assert_confirmation_sent_to(self.email_user.email)
+
+    def test_join_private_team(self):
+        """
+        Tests that trying to join a private team fails.
+        """
+        self.team.public = False
+        self.team.save()
+        self.set_input_lines([self.get_join_command(self.team.slug)])
+
+        self.control_process()
+
+        self.assert_error_in_response(self.get_private_error(self.team))
+
+    def test_join_non_existing_team(self):
+        """
+        Tests that trying to join a non-existing team fails.
+        """
+        team_slug = 'team-does-not-exist'
+        self.set_input_lines([self.get_join_command(team_slug)])
+
+        self.control_process()
+
+        self.assert_error_in_response(self.get_no_exist_error(team_slug))
+
+    def test_join_team_already_member(self):
+        """
+        Tests that a user gets a warning when trying to join a team he is
+        already a member of.
+        """
+        self.team.add_members([self.email_user])
+        self.set_input_lines([self.get_join_command(self.team.slug, self.email_user)])
+
+        self.control_process()
+
+        self.assert_warning_in_response(self.get_is_member_warning())
