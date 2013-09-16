@@ -44,7 +44,12 @@ class Command(BaseCommand):
     help = ("Get the subscribers for the given packages.\n"
             "Outputs subscribers to all packges if no arguments are given")
 
+    def warn(self, message):
+        if self.verbose:
+            self.stderr.write("Warning: {}".format(message))
+
     def handle(self, *args, **kwargs):
+        self.verbose = int(kwargs.get('verbosity', 1)) > 1
         inactive = kwargs['inactive']
         self.out_packages = {}
         if len(args) == 0:
@@ -56,8 +61,7 @@ class Command(BaseCommand):
                 if package:
                     self.output_package(package, inactive)
                 else:
-                    self.stdout.write(
-                        "Warning: {package} does not exist.".format(
+                    self.warn("{package} does not exist.".format(
                             package=str(package_name)))
 
         return self.render_packages(use_json=kwargs['json'])

@@ -121,7 +121,7 @@ class DumpSubscribersManagementCommandTest(TestCase):
         ]
 
     def assert_warning_in_output(self, text):
-        self.assertIn('Warning: ' + text, self.out)
+        self.assertIn('Warning: ' + text, self.err_out)
 
     def assert_package_in_output(self, package):
         self.assertIn('{package} => ['.format(package=package), self.out)
@@ -135,8 +135,10 @@ class DumpSubscribersManagementCommandTest(TestCase):
         kwargs.setdefault('json', False)
         cmd = DumpCommand()
         cmd.stdout = six.StringIO()
+        cmd.stderr = six.StringIO()
         cmd.handle(*args, **kwargs)
         self.out = cmd.stdout.getvalue()
+        self.err_out = cmd.stderr.getvalue()
 
     def test_dump_one_package(self):
         user = self.users[0]
@@ -210,7 +212,7 @@ class DumpSubscribersManagementCommandTest(TestCase):
                 self.assertIn(str(user), subscribers)
 
     def test_dump_package_does_not_exist(self):
-        self.call_command('does-not-exist')
+        self.call_command('does-not-exist', verbosity=2)
 
         self.assert_warning_in_output('does-not-exist does not exist')
 
