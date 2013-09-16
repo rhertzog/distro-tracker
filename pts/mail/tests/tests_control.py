@@ -2334,3 +2334,93 @@ class JoinTeamCommandsTests(TeamCommandsMixin, EmailControlTest):
         self.control_process()
 
         self.assert_warning_in_response(self.get_is_member_warning())
+
+
+class LeaveTeamCommandTests(TeamCommandsMixin, EmailControlTest):
+    def setUp(self):
+        super(LeaveTeamCommandTests, self).setUp()
+        self.email_user = EmailUser.objects.create(email='other@domain.com')
+        self.team.add_members([self.email_user])
+        self.set_header('From', self.email_user.email)
+
+    def get_leave_command(self, team, email=''):
+        return 'leave-team {} {}'.format(team, email)
+
+    def get_left_team_message(self, team):
+        return 'You have successfully left the team "{}" (slug: {})'.format(
+            team,
+            team.slug)
+
+    def get_is_not_member_warning(self):
+        return 'You are not a member of the team.'
+
+    def get_no_exist_error(self, team):
+            return 'Team with the slug "{}" does not exist.'.format(team)
+
+    def test_leave_team(self):
+        """
+        Tests the normal situation where the user leaves a team he is a
+        member of.
+        """
+        self.set_input_lines([self.get_leave_command(self.team.slug)])
+
+        self.control_process()
+
+        # A confirmation sent to the user
+        self.assert_confirmation_sent_to(self.email_user.email)
+        # Which is displayed in the response to the original message
+        self.assert_in_response(self.get_confirmation_text(self.email_user.email))
+        # The user is still a member of the team
+        self.assertIn(self.email_user, self.team.members.all())
+        # A confirmation is created
+        self.assertEqual(1, CommandConfirmation.objects.count())
+        confirmation = CommandConfirmation.objects.all()[0]
+
+        # Now confirm the email
+        self.reset_outbox()
+        self.set_input_lines(['CONFIRM ' + confirmation.confirmation_key])
+
+        self.control_process()
+
+        # The user notified that he has left the team
+        self.assert_in_response(self.get_left_team_message(self.team))
+        # The user is no longer a member of the team
+        self.assertNotIn(self.email_user, self.team.members.all())
+
+    def test_leave_team_different_from(self):
+        """
+        Tests that a confirmation message is sent to the user being removed
+        from the team, not the one that sent the control message.
+        """
+        self.set_input_lines(
+            [self.get_leave_command(self.team.slug, self.email_user.email)])
+        self.set_header('From', 'some-other-user@domain.com')
+
+        self.control_process()
+
+        # Confirmation sent to the user being removed from the team
+        self.assert_confirmation_sent_to(self.email_user.email)
+
+    def test_leave_team_not_member(self):
+        """
+        Tests that a warning is returned when the user tries to leave a team
+        that he is not a member of.
+        """
+        self.team.remove_members([self.email_user])
+        self.set_input_lines([self.get_leave_command(self.team.slug)])
+
+        self.control_process()
+
+        self.assert_warning_in_response(self.get_is_not_member_warning())
+
+    def test_leave_team_does_not_exist(self):
+        """
+        Tests that an error is returned when the user tries to leave a team
+        that does not even exist.
+        """
+        team_slug = 'this-does-not-exist'
+        self.set_input_lines([self.get_leave_command(team_slug)])
+
+        self.control_process()
+
+        self.assert_error_in_response(self.get_no_exist_error(team_slug))

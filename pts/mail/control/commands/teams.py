@@ -81,3 +81,59 @@ class JoinTeam(Command):
         team, email_user = packed
         team.add_members([email_user])
         self.reply('You have successfully joined the team "{}"'.format(team))
+
+
+@needs_confirmation
+class LeaveTeam(Command):
+    """
+    Command which lets users leave a team they are already a member of.
+    """
+    META = {
+        'description': """leave-team <team-slug> [<email>]
+  Removes <email> from the team with the slug given by <team-slug>. If
+  <email> is not given, it uses the From address email.
+  If the user is not a member of the team, a warning is returned.""",
+        'name': 'leave-team',
+    }
+    REGEX_LIST = (
+        r'\s+(?P<team_slug>\S+)(?:\s+(?P<email>\S+))?$',
+    )
+
+    def __init__(self, team_slug, email):
+        super(LeaveTeam, self).__init__()
+        self.user_email = email
+        self.team_slug = team_slug
+
+    def get_team_and_user(self):
+        team = get_or_none(Team, slug=self.team_slug)
+        if not team:
+            self.error('Team with the slug "{}" does not exist.'.format(
+                self.team_slug))
+            return
+        email_user, _ = EmailUser.objects.get_or_create(email=self.user_email)
+        if email_user not in team.members.all():
+            self.warn("You are not a member of the team.")
+            return
+
+        return team, email_user
+
+    def pre_confirm(self):
+        packed = self.get_team_and_user()
+        if packed is None:
+            return False
+
+        self.reply('A confirmation mail has been sent to ' + self.user_email)
+        return True
+
+    def get_command_text(self):
+        return super(LeaveTeam, self).get_command_text(
+            self.team_slug, self.user_email)
+
+    def handle(self):
+        packed = self.get_team_and_user()
+        if packed is None:
+            return
+        team, email_user = packed
+        team.remove_members([email_user])
+        self.reply('You have successfully left the team "{}" (slug: {})'.format(
+            team, team.slug))
