@@ -34,6 +34,8 @@ from pts.core.views import SetMembershipKeywords
 from pts.core.views import EditMembershipView
 from pts.core.news_feed import PackageNewsFeed
 from pts.accounts.views import RegisterUser
+from pts.accounts.views import ForgotPasswordView
+from pts.accounts.views import ResetPasswordView
 from pts.accounts.views import RegistrationConfirmation
 from pts.accounts.views import AccountProfile
 from pts.accounts.views import SubscriptionsView
@@ -81,6 +83,14 @@ urlpatterns = patterns('',
     # Account related URLs
     url(r'^accounts/register/$', RegisterUser.as_view(),
         name='pts-accounts-register'),
+    url(r'^accounts/\+reset-password/\+success/$',
+        TemplateView.as_view(template_name='accounts/password-reset-success.html'),
+        name='pts-accounts-password-reset-success'),
+    url(r'^accounts/\+reset-password/(?P<confirmation_key>.+)/$',
+        ResetPasswordView.as_view(),
+        name='pts-accounts-reset-password'),
+    url(r'^accounts/\+forgot-password/$', ForgotPasswordView.as_view(),
+        name='pts-accounts-forgot-password'),
     url(r'^accounts/register/success/$',
         TemplateView.as_view(template_name='accounts/success.html'),
         name='pts-accounts-register-success'),

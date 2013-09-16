@@ -3,4 +3,7 @@
 
 {% block content %}
 {% include 'accounts/post-form.html' with form_id='form-login' %}
+<div class="row-fluid">
+    <h4 style="margin-left: 180px;"><a href="{% url 'pts-accounts-forgot-password' %}">Forgot your password?</a></h4>
+</div>
 {% endblock %}

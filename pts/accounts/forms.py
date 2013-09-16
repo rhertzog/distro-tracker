@@ -84,3 +84,14 @@ class ChangePersonalInfoForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ['first_name', 'last_name']
+
+
+class ForgotPasswordForm(forms.Form):
+    email = forms.EmailField()
+
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        if User.objects.filter(emails__email=email).count() == 0:
+            raise forms.ValidationError("No user with the given email is registered")
+
+        return email

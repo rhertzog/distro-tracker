@@ -91,8 +91,17 @@ class User(AbstractBaseUser, PermissionsMixin):
         qs = package.subscriptions.filter(pk__in=self.emails.all())
         return qs.exists()
 
+
 class UserRegistrationConfirmation(Confirmation):
     """
     A model for user registration confirmations.
     """
     user = models.OneToOneField(User, related_name='confirmation')
+
+
+class ResetPasswordConfirmation(Confirmation):
+    """
+    A model for account password reset confirmations.
+    """
+    user = models.ForeignKey(
+        User, related_name='reset_password_confirmations')

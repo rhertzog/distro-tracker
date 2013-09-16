@@ -18,6 +18,7 @@ from django.contrib.auth import get_user_model
 from django.core import mail
 from pts.core.models import SourcePackageName, BinaryPackageName
 from pts.accounts.models import UserRegistrationConfirmation
+from pts.accounts.models import ResetPasswordConfirmation
 from pts.core.models import EmailUser
 from pts.core.models import ContributorName
 from pts.core.models import ContributorEmail
@@ -982,6 +983,58 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         self.password = new_password
         self.log_in()
         # The user is finally logged in using his new account details
+        self.assert_current_url_equal(self.get_profile_url())
+
+    def test_reset_password(self):
+        """
+        Tests that a user is able to reset his password if he forgot it.
+        """
+        # The user goes to the login page
+        self.get_page(self.get_login_url())
+        # There he sees a convenient link letting him get to a page where he
+        # can reset his password.
+        self.assert_in_page_body('Forgot your password?')
+        self.click_link('Forgot your password?')
+        # The user sees a form which lets him reset his password
+        self.assert_element_with_id_in_page('form-reset-password')
+        # First he enters an invalid email: one not associated with any account
+        self.input_to_element('id_email', 'this-does-not-exist@domain.com')
+        self.send_enter('id_email')
+        # The user still stays in the same page with a warning that no user
+        # with the email exists.
+        self.assert_in_page_body('No user with the given email is registered')
+        # The user now correctly enters his own email
+        self.clear_element_text('id_email')
+        self.input_to_element('id_email', self.user.main_email)
+        self.send_enter('id_email')
+        # The user is taken to another page where he is informed that he must
+        # check his email for a confirmation email
+        self.assert_in_page_body('Please check your email inbox for details')
+        ## A confirmation email is actually sent?
+        self.assertEqual(1, len(mail.outbox))
+        confirmation = ResetPasswordConfirmation.objects.all()[0]
+        # The user goes to the confirmation URL!
+        self.get_page(reverse('pts-accounts-reset-password', kwargs={
+            'confirmation_key': confirmation.confirmation_key,
+        }))
+        # There, he is asked to enter a new password...
+        self.assert_in_page_body('please enter a new password for your account')
+        # ...so he does
+        new_password = self.password + '-new'
+        self.input_to_element('id_password1', new_password)
+        self.input_to_element('id_password2', new_password)
+        self.send_enter('id_password2')
+        # He is redirected back to the profile page with a message that his
+        # password has been reset.
+        self.assert_current_url_equal(self.get_profile_url())
+        self.assert_in_page_body('You have successfully reset your password')
+
+        # The user decides to log out and try logging back in with his new
+        # password
+        self.click_link('Log out')
+        self.password = new_password
+        self.log_in()
+        # The user has successfully logged in using his new password
         self.assert_current_url_equal(self.get_profile_url())
 
 

@@ -29,9 +29,11 @@ from django.http import Http404
 from django.conf import settings
 from pts.accounts.forms import UserCreationForm
 from pts.accounts.forms import ResetPasswordForm
+from pts.accounts.forms import ForgotPasswordForm
 from pts.accounts.forms import ChangePersonalInfoForm
 from pts.accounts.models import User
 from pts.accounts.models import UserRegistrationConfirmation
+from pts.accounts.models import ResetPasswordConfirmation
 from pts.core.utils import pts_render_to_string
 from pts.core.utils import render_to_json_response
 from pts.core.models import Subscription
@@ -139,6 +141,37 @@ class RegistrationConfirmation(SetPasswordMixin, MessageMixin, FormView):
     success_url = reverse_lazy('pts-accounts-profile')
     message = 'You have successfully registered to the PTS'
     confirmation_class = UserRegistrationConfirmation
+
+
+class ResetPasswordView(SetPasswordMixin, MessageMixin, FormView):
+    form_class = ResetPasswordForm
+    template_name = 'accounts/registration-reset-password.html'
+    success_url = reverse_lazy('pts-accounts-profile')
+    message = 'You have successfully reset your password'
+    confirmation_class = ResetPasswordConfirmation
+
+
+class ForgotPasswordView(FormView):
+    form_class = ForgotPasswordForm
+    success_url = reverse_lazy('pts-accounts-password-reset-success')
+    template_name = 'accounts/forgot-password.html'
+
+    def form_valid(self, form):
+        # Create a ResetPasswordConfirmation instance
+        email = form.cleaned_data['email']
+        user = User.objects.get(emails__email=email)
+        confirmation = ResetPasswordConfirmation.objects.create_confirmation(user=user)
+
+        # Send a confirmation email
+        send_mail(
+            'PTS Password Reset Confirmation',
+            pts_render_to_string('accounts/password-reset-confirmation-email.txt', {
+                'confirmation': confirmation,
+            }),
+            from_email=settings.PTS_CONTACT_EMAIL,
+            recipient_list=[email])
+
+        return super(ForgotPasswordView, self).form_valid(form)
 
 
 class ChangePersonalInfoView(LoginRequiredMixin, MessageMixin, UpdateView):
