@@ -29,6 +29,8 @@ from pts.core.tests.common import make_temp_directory
 from pts.core.utils.email_messages import message_from_bytes
 from pts.core.models import ActionItem, ActionItemType
 from pts.core.models import News
+from pts.core.models import Keyword
+from pts.core.models import EmailUser
 from pts.core.models import Subscription
 from pts.core.models import PackageExtractedInfo
 from pts.core.models import PackageName
@@ -63,6 +65,9 @@ from pts.vendor.debian.pts_tasks import UpdateLintianStatsTask
 from pts.vendor.debian.models import LintianStats
 from pts.vendor.debian.management.commands.pts_import_old_subscriber_dump import (
     Command as ImportOldSubscribersCommand
+)
+from pts.vendor.debian.management.commands.pts_import_old_tags_dump import (
+    Command as ImportOldTagsCommand
 )
 from pts.mail.mail_news import process
 
@@ -4197,3 +4202,102 @@ class ImportOldSubscribersTests(TestCase):
         for package in packages:
             package = PackageName.objects.get(pk=package.pk)
             self.assert_subscribed_to_package(package, [email])
+
+
+class ImportTagsTests(TestCase):
+    """
+    Tests for the management command for importing the dump of user tags
+    (subscription-specific keywords and user default keywords).
+    """
+    def setUp(self):
+        self.tags = {}
+
+    def add_subscription_specific_tags(self, email, package, tags):
+        self.tags[email + '#' + package] = tags
+
+    def add_default_tags(self, email, tags):
+        self.tags[email] = tags
+
+    def get_input(self):
+        return '\n'.join(
+            '{}: {}'.format(
+                email,
+                ','.join(tags))
+            for email, tags in self.tags.items()
+        )
+
+    def run_command(self):
+        command = ImportOldTagsCommand()
+        command.stdin = six.StringIO(self.get_input())
+        command.handle()
+
+    def assert_keyword_sets_equal(self, set1, set2):
+        self.assertEqual(len(set1), len(set2))
+        for k in set1:
+            self.assertIn(k, set2)
+
+    def test_default_keywords_imported(self):
+        email = 'user@domain.com'
+        keywords = Keyword.objects.all()[:4]
+        tags = [k.name for k in keywords]
+        self.add_default_tags(email, tags)
+
+        self.run_command()
+
+        self.assertEqual(1, EmailUser.objects.count())
+        user = EmailUser.objects.all()[0]
+        self.assert_keyword_sets_equal(
+            keywords,
+            user.default_keywords.all())
+
+    def test_subscription_specific_keywords_imported(self):
+        email = 'user@domain.com'
+        package = 'pkg'
+        sub = Subscription.objects.create_for(package, email)
+        keywords = Keyword.objects.all()[:4]
+        tags = [k.name for k in keywords]
+        self.add_subscription_specific_tags(email, package, tags)
+
+        self.run_command()
+
+        # The subscription is updated to contain a new set of keywords
+        sub = Subscription.objects.get(pk=sub.pk)
+        self.assert_keyword_sets_equal(
+            keywords,
+            sub.keywords.all())
+
+    def test_both_types_imported(self):
+        email = 'user@domain.com'
+        package = 'pkg'
+        sub = Subscription.objects.create_for(package, email)
+        keywords = Keyword.objects.all()[:4]
+        tags = [k.name for k in keywords]
+        self.add_subscription_specific_tags(email, package, tags)
+        default_keywords = Keyword.objects.all()[4:]
+        self.add_default_tags(email, [k.name for k in default_keywords])
+
+        self.run_command()
+
+        # The subscription is updated to contain a new set of keywords
+        sub = Subscription.objects.get(pk=sub.pk)
+        self.assert_keyword_sets_equal(
+            keywords,
+            sub.keywords.all())
+        # The user's default keywords are also updated
+        user = EmailUser.objects.all()[0]
+        self.assert_keyword_sets_equal(
+            default_keywords,
+            user.default_keywords.all())
+
+    def test_legacy_mapping_import(self):
+        keyword = Keyword.objects.get(name='archive')
+        old_tag = 'katie-other'
+        email = 'user@domain.com'
+        self.add_default_tags(email, [old_tag])
+
+        self.run_command()
+
+        user = EmailUser.objects.all()[0]
+        self.assert_keyword_sets_equal(
+            [keyword],
+            user.default_keywords.all())
