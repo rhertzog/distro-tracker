@@ -15,6 +15,7 @@ from django.views.generic.edit import FormView
 from django.views.generic.base import View
 from django.core.urlresolvers import reverse_lazy
 from django.core.mail import send_mail
+from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render
 from django.shortcuts import redirect
@@ -27,12 +28,14 @@ from django.utils.decorators import method_decorator
 from django.http import HttpResponseForbidden
 from django.http import Http404
 from django.conf import settings
+from pts.accounts.forms import AddEmailToAccountForm
 from pts.accounts.forms import UserCreationForm
 from pts.accounts.forms import ResetPasswordForm
 from pts.accounts.forms import ForgotPasswordForm
 from pts.accounts.forms import ChangePersonalInfoForm
 from pts.accounts.models import User
 from pts.accounts.models import UserRegistrationConfirmation
+from pts.accounts.models import AddEmailConfirmation
 from pts.accounts.models import ResetPasswordConfirmation
 from pts.core.utils import pts_render_to_string
 from pts.core.utils import render_to_json_response
@@ -207,6 +210,58 @@ class AccountProfile(LoginRequiredMixin, View):
     def get(self, request):
         return render(request, self.template_name, {
             'user': request.user,
+        })
+
+
+class ManageAccountEmailsView(LoginRequiredMixin, MessageMixin, FormView):
+    """
+    Render a page letting users add or remove emails to their accounts.
+    """
+    form_class = AddEmailToAccountForm
+    template_name = 'accounts/profile-manage-emails.html'
+    success_url = reverse_lazy('pts-accounts-manage-emails')
+
+    def form_valid(self, form):
+        email = form.cleaned_data['email']
+        email_user, _ = EmailUser.objects.get_or_create(email=email)
+        if not email_user.user:
+            confirmation = AddEmailConfirmation.objects.create_confirmation(
+                user=self.request.user,
+                email=email_user)
+            self.message = (
+                'Before the email is associated with this account, '
+                'you must follow the confirmation link sent to the address'
+            )
+            # Send a confirmation email
+            send_mail(
+                'PTS Add Email To Account',
+                pts_render_to_string('accounts/add-email-confirmation-email.txt', {
+                    'confirmation': confirmation,
+                }),
+                from_email=settings.PTS_CONTACT_EMAIL,
+                recipient_list=[email])
+
+        return super(ManageAccountEmailsView, self).form_valid(form)
+
+
+class ConfirmAddAccountEmail(View):
+    template_name = 'accounts/new-email-added.html'
+    def get(self, request, confirmation_key):
+        confirmation = get_object_or_404(
+            AddEmailConfirmation,
+            confirmation_key=confirmation_key)
+        user = confirmation.user
+        email_user = confirmation.email
+        confirmation.delete()
+        # If the email has become associated with a different user in the mean
+        # time, abort the operation.
+        if email_user.user and email_user.user != user:
+            raise PermissionDenied
+        email_user.user = user
+        email_user.save()
+
+        return render(request, self.template_name, {
+            'new_email': email_user,
         })
 
 

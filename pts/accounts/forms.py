@@ -95,3 +95,7 @@ class ForgotPasswordForm(forms.Form):
             raise forms.ValidationError("No user with the given email is registered")
 
         return email
+
+
+class AddEmailToAccountForm(forms.Form):
+    email = forms.EmailField()

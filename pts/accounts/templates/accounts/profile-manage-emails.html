@@ -1,0 +1,24 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ user }} | {{ block.super}}{% endblock %}
+
+{% block content %}
+{% if messages %}
+<div id="profile-messages">
+    {% for message in messages %}
+    <div class="alert alert-block">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+{% include 'accounts/profile-navbar.html' with active_element='manage-emails' %}
+<div>
+    <ul class="list-group">
+        {% for email in request.user.emails.all %}
+        <li class="list-group-item">{{ email }}</li>
+        {% endfor %}
+    </ul>
+</div>
+<div>
+    <h4>Add new email</h4>
+    {% include 'accounts/post-form.html' with form_id='form-add-account-email' form_submit='Add New Email' %}
+</div>
+{% endblock %}

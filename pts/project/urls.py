@@ -33,7 +33,9 @@ from pts.core.views import SetMuteTeamView
 from pts.core.views import SetMembershipKeywords
 from pts.core.views import EditMembershipView
 from pts.core.news_feed import PackageNewsFeed
+from pts.accounts.views import ConfirmAddAccountEmail
 from pts.accounts.views import RegisterUser
+from pts.accounts.views import ManageAccountEmailsView
 from pts.accounts.views import ForgotPasswordView
 from pts.accounts.views import ResetPasswordView
 from pts.accounts.views import RegistrationConfirmation
@@ -94,6 +96,11 @@ urlpatterns = patterns('',
     url(r'^accounts/register/success/$',
         TemplateView.as_view(template_name='accounts/success.html'),
         name='pts-accounts-register-success'),
+    url(r'^accounts/\+manage-emails/$', ManageAccountEmailsView.as_view(),
+        name='pts-accounts-manage-emails'),
+    url(r'^accounts/\+confirm-new-email/(?P<confirmation_key>.+)/$',
+        ConfirmAddAccountEmail.as_view(),
+        name='pts-accounts-confirm-add-email'),
     url(r'^accounts/confirm/(?P<confirmation_key>[^/]+)$',
         RegistrationConfirmation.as_view(),
         name='pts-accounts-confirm-registration'),

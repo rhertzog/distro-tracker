@@ -19,6 +19,7 @@ from django.core import mail
 from pts.core.models import SourcePackageName, BinaryPackageName
 from pts.accounts.models import UserRegistrationConfirmation
 from pts.accounts.models import ResetPasswordConfirmation
+from pts.accounts.models import AddEmailConfirmation
 from pts.core.models import EmailUser
 from pts.core.models import ContributorName
 from pts.core.models import ContributorEmail
@@ -1037,6 +1038,45 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         # The user has successfully logged in using his new password
         self.assert_current_url_equal(self.get_profile_url())
 
+    def test_manage_account_emails(self):
+        """
+        Tests that users are able to manage which emails are associated with
+        their accounts.
+        """
+        # The user logs in and goes to the account email management page
+        self.log_in()
+        self.click_link('Account Emails')
+        # There he sees a form letting him add new emails to his account
+        self.assert_element_with_id_in_page('form-add-account-email')
+        # He decides to add a new email.
+        new_email = 'completely-new-email@domain.com'
+        self.input_to_element('id_email', new_email)
+        self.send_enter('id_email')
+        # The user is notified that in order to activate the email association
+        # he must confirm the ownership of the email address.
+        self.assert_in_page_body('you must follow the confirmation link')
+        self.assert_not_in_page_body(new_email)
+        ## The confirmation email sent?
+        self.assertEqual(1, len(mail.outbox))
+        self.assertIn(new_email, mail.outbox[0].to)
+        ## Confirmation created?
+        self.assertEqual(1, AddEmailConfirmation.objects.count())
+        confirmation = AddEmailConfirmation.objects.all()[0]
+
+        # The user now visits he confirmation URL
+        self.get_page(reverse('pts-accounts-confirm-add-email', kwargs={
+            'confirmation_key': confirmation.confirmation_key,
+        }))
+        # And is notified that the address has becomes associated with a PTS
+        # account.
+        self.assert_in_page_body('now associated with a PTS account')
+
+        # The user goes back to his profile page to check if the email can be
+        # found there
+        self.click_link('Profile')
+        self.click_link('Account Emails')
+        # The new email is now in the list of all emails
+        self.assert_in_page_body(new_email)
 
 class TeamTests(SeleniumTestCase):
     def setUp(self):

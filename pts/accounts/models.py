@@ -105,3 +105,8 @@ class ResetPasswordConfirmation(Confirmation):
     """
     user = models.ForeignKey(
         User, related_name='reset_password_confirmations')
+
+
+class AddEmailConfirmation(Confirmation):
+    user = models.ForeignKey(User)
+    email = models.ForeignKey('core.EmailUser')
