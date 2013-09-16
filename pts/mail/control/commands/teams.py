@@ -137,3 +137,59 @@ class LeaveTeam(Command):
         team.remove_members([email_user])
         self.reply('You have successfully left the team "{}" (slug: {})'.format(
             team, team.slug))
+
+
+class ListTeamPackages(Command):
+    """
+    Lists all the packages of a particular team, provided that the team is
+    public or the email doing the query is a member of the team.
+    """
+    META = {
+        'description': """list-team-packages <team-slug>
+  Lists all packages of the team with the slug given by <team-slug>.
+  If the team is private, the packages are returned only if the From email
+  is a member of the team.""",
+        'name': 'list-team-packages',
+    }
+    REGEX_LIST = (
+        r'\s+(?P<team_slug>\S+)$',
+    )
+
+    def __init__(self, team_slug):
+        super(ListTeamPackages, self).__init__()
+        self.team_slug = team_slug
+
+    @property
+    def user_email(self):
+        return self.context['email']
+
+    def get_team(self):
+        team = get_or_none(Team, slug=self.team_slug)
+        if not team:
+            self.error('Team with the slug "{}" does not exist.'.format(
+                self.team_slug))
+            return
+        return team
+
+    def get_email_user(self):
+        email_user, _ = EmailUser.objects.get_or_create(email=self.user_email)
+        return email_user
+
+    def get_command_text(self):
+        return super(ListTeamPackages, self).get_command_text(
+            self.team_slug)
+
+    def handle(self):
+        team = self.get_team()
+        if not team:
+            return
+        if not team.public:
+            email_user = self.get_email_user()
+            if email_user not in team.members.all():
+                self.error(
+                    "The team is private. "
+                    "Only team members can see its packages.")
+                return
+
+        self.reply("Packages found in team {}:".format(team))
+        self.list_reply(package for package in team.packages.all().order_by('name'))

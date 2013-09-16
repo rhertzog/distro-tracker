@@ -108,7 +108,9 @@ class CommandFactory(object):
                     for key, value in self.context.items()
                     if key in kwargs and not kwargs[key] and value
                 })
-                return cmd(**kwargs)
+                command = cmd(**kwargs)
+                command.context = dict(self.context.items())
+                return command
 
 
 class CommandProcessor(object):

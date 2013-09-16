@@ -2424,3 +2424,65 @@ class LeaveTeamCommandTests(TeamCommandsMixin, EmailControlTest):
         self.control_process()
 
         self.assert_error_in_response(self.get_no_exist_error(team_slug))
+
+
+class ListTeamPackagesTests(TeamCommandsMixin, EmailControlTest):
+    def setUp(self):
+        super(ListTeamPackagesTests, self).setUp()
+        # Add some more packages to the team
+        self.team.packages.create(name='pkg1')
+        self.team.packages.create(name='pkg2')
+
+    def get_list_team_packages_command(self, team):
+        return 'list-team-packages {}'.format(team)
+
+    def get_private_error(self):
+        return (
+            "The team is private. "
+            "Only team members can see its packages.")
+
+    def test_get_public_team_packages(self):
+        """
+        Tests that a public team's packages can be obtained by any user.
+        """
+        self.set_input_lines([self.get_list_team_packages_command(self.team.slug)])
+
+        self.control_process()
+
+        self.assert_list_in_response(
+            package.name
+            for package in self.team.packages.all().order_by('name'))
+
+    def test_get_private_team_packages_non_member(self):
+        """
+        Tests that getting a private team's packages is not possible by a
+        user that is not a member of the team.
+        """
+        self.team.public = False
+        self.team.save()
+        self.set_input_lines([self.get_list_team_packages_command(self.team.slug)])
+
+        self.control_process()
+
+        self.assert_error_in_response(self.get_private_error())
+
+    def test_get_private_team_packages_member(self):
+        """
+        Tests that getting a private team's packages is possible by a
+        member of the team.
+        """
+        self.team.public = False
+        self.team.save()
+        # Add a member to the team
+        email_user = EmailUser.objects.create(email='member@domain.com')
+        self.team.add_members([email_user])
+        # Set the from field so that the member sends the control email
+        self.set_header('From', email_user.email)
+        self.set_input_lines([self.get_list_team_packages_command(self.team.slug)])
+
+        self.control_process()
+
+        # The packages are output in the response
+        self.assert_list_in_response(
+            package.name
+            for package in self.team.packages.all().order_by('name'))
