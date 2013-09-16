@@ -39,6 +39,11 @@ class Command(BaseCommand):
                     dest='json',
                     default=False,
                     help='Output the result encoded as a JSON object'),
+        make_option('--udd-format',
+                    action='store_true',
+                    dest='udd_format',
+                    default=False,
+                    help='Output the result in a UDD compatible format'),
     )
 
     help = ("Get the subscribers for the given packages.\n"
@@ -64,7 +69,13 @@ class Command(BaseCommand):
                     self.warn("{package} does not exist.".format(
                             package=str(package_name)))
 
-        return self.render_packages(use_json=kwargs['json'])
+        format = 'default'
+        if kwargs['json']:
+            format = 'json'
+        elif kwargs.get('udd_format', False):
+            format = 'udd'
+
+        return self.render_packages(format)
 
     def output_package(self, package, inactive=False):
         """
@@ -82,7 +93,7 @@ class Command(BaseCommand):
             for sub in subscriptions
         ]
 
-    def render_packages(self, use_json=False):
+    def render_packages(self, format):
         """
         Prints the packages and their subscribers to the output stream.
 
@@ -90,8 +101,12 @@ class Command(BaseCommand):
             Otherwise, a legacy format is used.
         :type use_json: Boolean
         """
-        if use_json:
+        if format == 'json':
             self.stdout.write(json.dumps(self.out_packages))
+        elif format == 'udd':
+            for package, subscribers in self.out_packages.items():
+                subscriber_out = ', '.join(str(email) for email in subscribers)
+                self.stdout.write("{}\t{}".format(package, subscriber_out))
         else:
             for package, subscribers in self.out_packages.items():
                 subscriber_out = ' '.join(str(email) for email in subscribers)

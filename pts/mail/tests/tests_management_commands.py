@@ -135,6 +135,13 @@ class DumpSubscribersManagementCommandTest(TestCase):
         kwargs.setdefault('json', False)
         cmd = DumpCommand()
         cmd.stdout = six.StringIO()
+        # The management command stdout oject's write method automatically
+        # inserts new lines, so we do the same.
+        real_write = cmd.stdout.write
+        def write_stdout(value):
+            real_write(value + '\n')
+        cmd.stdout.write = write_stdout
+
         cmd.stderr = six.StringIO()
         cmd.handle(*args, **kwargs)
         self.out = cmd.stdout.getvalue()
@@ -208,6 +215,30 @@ class DumpSubscribersManagementCommandTest(TestCase):
             self.assertIn(str(package), output)
         # All users in each output list?
         for subscribers in output.values():
+            for user in self.users:
+                self.assertIn(str(user), subscribers)
+
+    def test_dump_udd_format(self):
+        # Subscribe all the users
+        for user in self.users:
+            for package in self.packages:
+                Subscription.objects.create(email_user=user, package=package)
+
+        self.call_command(udd_format=True)
+
+        out_lines = self.out.splitlines()
+        out_packages = {}
+        for line in out_lines:
+            package_name, subscribers = line.split('\t', 1)
+            out_packages[package_name] = [
+                subscriber.strip()
+                for subscriber in subscribers.split(',')
+            ]
+        # All packages output
+        for package in self.packages:
+            self.assertIn(package.name, out_packages)
+            # All its subscribers output?
+            subscribers = out_packages[package.name]
             for user in self.users:
                 self.assertIn(str(user), subscribers)
 
