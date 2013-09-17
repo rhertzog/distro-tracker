@@ -34,6 +34,7 @@ from pts.core.views import SetMembershipKeywords
 from pts.core.views import EditMembershipView
 from pts.core.news_feed import PackageNewsFeed
 from pts.accounts.views import ConfirmAddAccountEmail
+from pts.accounts.views import AccountMergeFinalize
 from pts.accounts.views import RegisterUser
 from pts.accounts.views import ManageAccountEmailsView
 from pts.accounts.views import ForgotPasswordView
@@ -49,6 +50,8 @@ from pts.accounts.views import ChooseSubscriptionEmailView
 from pts.accounts.views import ChangePersonalInfoView
 from pts.accounts.views import PasswordChangeView
 from pts.accounts.views import ModifyKeywordsView
+from pts.accounts.views import AccountMergeConfirmView
+from pts.accounts.views import AccountMergeConfirmedView
 
 from django.contrib import admin
 admin.autodiscover()
@@ -101,6 +104,15 @@ urlpatterns = patterns('',
     url(r'^accounts/\+confirm-new-email/(?P<confirmation_key>.+)/$',
         ConfirmAddAccountEmail.as_view(),
         name='pts-accounts-confirm-add-email'),
+    url(r'^accounts/\+merge-accounts/confirm/$', AccountMergeConfirmView.as_view(),
+        name='pts-accounts-merge-confirmation'),
+    url(r'^accounts/\+merge-accounts/confirmed/$', AccountMergeConfirmedView.as_view(),
+        name='pts-accounts-merge-confirmed'),
+    url(r'^accounts/\+merge-accounts/finalize/(?P<confirmation_key>.+)/$', AccountMergeFinalize.as_view(),
+        name='pts-accounts-merge-finalize'),
+    url(r'^accounts/\+merge-accounts/finalized/$',
+        TemplateView.as_view(template_name='accounts/accounts-merge-finalized.html'),
+        name='pts-accounts-merge-finalized'),
     url(r'^accounts/confirm/(?P<confirmation_key>[^/]+)$',
         RegistrationConfirmation.as_view(),
         name='pts-accounts-confirm-registration'),

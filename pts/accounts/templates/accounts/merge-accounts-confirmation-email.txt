@@ -1,0 +1,24 @@
+You have requested to merge your account with another
+{{ PTS_VENDOR_NAME }} Package Tracking System account.
+
+In order to complete the operation, you must confirm that you are the
+owner of this email address by logging in to the account currently
+associated with this email address and going to the following URL:
+
+http://{{ PTS_SITE_DOMAIN }}{% url 'pts-accounts-merge-finalize' confirmation.confirmation_key %}
+
+The page will present you the information on consequences of merging the
+accounts and ask for another confirmation before finally committing the
+change.
+
+If you don't understand why you got this mail, please ignore it,
+nothing will be done unless you follow the given link.
+
+If you have any problem with this service, please contact
+{{ PTS_CONTACT_EMAIL }}.
+
+Thanks,
+
+--
+{{ PTS_VENDOR_NAME }} Package Tracking System
+http://{{ PTS_SITE_DOMAIN }}

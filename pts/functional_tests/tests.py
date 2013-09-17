@@ -20,6 +20,7 @@ from pts.core.models import SourcePackageName, BinaryPackageName
 from pts.accounts.models import UserRegistrationConfirmation
 from pts.accounts.models import ResetPasswordConfirmation
 from pts.accounts.models import AddEmailConfirmation
+from pts.accounts.models import MergeAccountConfirmation
 from pts.core.models import EmailUser
 from pts.core.models import ContributorName
 from pts.core.models import ContributorEmail
@@ -461,16 +462,23 @@ class UserAccountsTestMixin(object):
         u = User.objects.create_user(main_email, password=password)
         for associated_email in associated_emails:
             u.emails.create(email=associated_email)
+        return u
 
-    def log_in(self):
+    def log_in(self, user=None, password=None):
         """
         Helper method which logs the user in, without taking any shortcuts (it goes
         through the steps to fill in the form and submit it).
         """
+        if user is None:
+            user = self.user
+        if password is None:
+            password = self.password
+
         self.get_page(self.get_login_url())
-        self.input_to_element('id_username', self.user.main_email)
-        self.input_to_element('id_password', self.password)
+        self.input_to_element('id_username', user.main_email)
+        self.input_to_element('id_password', password)
         self.send_enter('id_password')
+
 
 
 class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
@@ -1077,6 +1085,78 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         self.click_link('Account Emails')
         # The new email is now in the list of all emails
         self.assert_in_page_body(new_email)
+
+        # The user tries adding an email he is already associated with again
+        self.input_to_element('id_email', new_email)
+        self.send_enter('id_email')
+        # He gets a warning telling him his account is already associated with
+        # the given email.
+        self.assert_in_page_body(
+            'This email is already associated with your account')
+
+    def test_merge_accounts(self):
+        ## Set up an additional existing user account
+        password = 'other-password'
+        other_email = 'other@domain.com'
+        other_user = self.create_user(other_email, password)
+        # A user logs in and goes to the form to add an additional account
+        self.log_in()
+        self.click_link('Account Emails')
+        # He inputs the email of a user that is already registered
+        self.input_to_element('id_email', other_email)
+        self.send_enter('id_email')
+        # The user is taken to a confirmation page
+        self.assert_in_page_body('Are you sure you want to merge the accounts')
+        # There is a button letting him confirm the merge
+        self.assert_element_with_id_in_page('confirm-merge-button')
+        self.get_element_by_id('confirm-merge-button').click()
+        # The user is notified that the merge is ineffective until confirmed
+        self.assert_in_page_body('you must follow a confirmation link')
+        # A confirmation mail is sent
+        self.assertEqual(1, len(mail.outbox))
+        # The mail was not sent to the logged in user, rather the one being
+        # merged to the account
+        self.assertIn(other_email, mail.outbox[0].to)
+        ## A confirmation instance is created?
+        self.assertEqual(1, MergeAccountConfirmation.objects.count())
+        confirmation = MergeAccountConfirmation.objects.all()[0]
+
+        # The user tries going to the confirmation URL without logging in to
+        # the other account
+        confirmation_url = reverse('pts-accounts-merge-finalize', kwargs={
+            'confirmation_key': confirmation.confirmation_key,
+        })
+        self.get_page(confirmation_url)
+        # ...which is forbidden and has no effect
+        self.assertEqual(2, User.objects.count())
+
+        # The user now logs in with the other account
+        self.log_in(other_user, password)
+        self.get_page(confirmation_url)
+        # He accesses the page which asks for a final confirmation
+        self.assert_in_page_body(
+            'Are you sure you want to finalize the accounts merge')
+        self.assert_element_with_id_in_page('finalize-merge-button')
+        # The user decides to go on with the merge
+        self.get_element_by_id('finalize-merge-button').click()
+
+        # The user is notified that the merge was successful
+        self.assert_in_page_body('The two accounts have been successfully merged')
+        ## User accounts are really changed?
+        self.assertEqual(1, User.objects.count())
+        # He tries logging in with the merged account's password
+        self.log_in(password=password)
+        # ...which fails
+        self.assert_in_page_body('Please enter a correct email and password')
+        # He logs in with the original account details
+        self.log_in()
+        # ...which works
+        self.assert_current_url_equal(self.get_profile_url())
+
+        # He goes to check that his associated emails contain all the emails
+        self.click_link('Account Emails')
+        self.assert_in_page_body(self.user.main_email)
+        self.assert_in_page_body(other_email)
 
 class TeamTests(SeleniumTestCase):
     def setUp(self):

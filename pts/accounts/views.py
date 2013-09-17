@@ -9,11 +9,13 @@
 # distributed except according to the terms contained in the LICENSE file.
 """Views for the :mod:`pts.accounts` app."""
 from __future__ import unicode_literals
+from django.views.generic import TemplateView
 from django.views.generic.edit import CreateView
 from django.views.generic.edit import UpdateView
 from django.views.generic.edit import FormView
 from django.views.generic.base import View
 from django.core.urlresolvers import reverse_lazy
+from django.core.urlresolvers import reverse
 from django.core.mail import send_mail
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
@@ -22,9 +24,11 @@ from django.shortcuts import redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate
 from django.contrib.auth import login
+from django.contrib.auth import logout
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
+from django.utils.http import urlencode
 from django.http import HttpResponseForbidden
 from django.http import Http404
 from django.conf import settings
@@ -33,6 +37,7 @@ from pts.accounts.forms import UserCreationForm
 from pts.accounts.forms import ResetPasswordForm
 from pts.accounts.forms import ForgotPasswordForm
 from pts.accounts.forms import ChangePersonalInfoForm
+from pts.accounts.models import MergeAccountConfirmation
 from pts.accounts.models import User
 from pts.accounts.models import UserRegistrationConfirmation
 from pts.accounts.models import AddEmailConfirmation
@@ -225,6 +230,8 @@ class ManageAccountEmailsView(LoginRequiredMixin, MessageMixin, FormView):
         email = form.cleaned_data['email']
         email_user, _ = EmailUser.objects.get_or_create(email=email)
         if not email_user.user:
+            # The email is not associated with an account yet.
+            # Ask for confirmation to add it to this account.
             confirmation = AddEmailConfirmation.objects.create_confirmation(
                 user=self.request.user,
                 email=email_user)
@@ -240,12 +247,117 @@ class ManageAccountEmailsView(LoginRequiredMixin, MessageMixin, FormView):
                 }),
                 from_email=settings.PTS_CONTACT_EMAIL,
                 recipient_list=[email])
+        elif email_user.user == self.request.user:
+            self.message = 'This email is already associated with your account.'
+        else:
+            # Offer the user to merge the two accounts
+            return redirect(reverse('pts-accounts-merge-confirmation') + '?' + urlencode({
+                'email': email,
+            }))
 
         return super(ManageAccountEmailsView, self).form_valid(form)
 
 
+class AccountMergeConfirmView(LoginRequiredMixin, View):
+    template_name = 'accounts/account-merge-confirm.html'
+    success_url = reverse_lazy('pts-accounts-merge-confirmed')
+
+    def get_email_user(self, query_dict):
+        if 'email' not in query_dict:
+            raise Http404
+        email = query_dict['email']
+        email_user = get_object_or_404(EmailUser, email=email)
+        return email_user
+
+    def get(self, request):
+        self.request = request
+        email_user = self.get_email_user(self.request.GET)
+
+        return render(request, self.template_name, {
+            'email_user': email_user,
+        })
+
+    def post(self, request):
+        self.request = request
+
+        email_user = self.get_email_user(self.request.POST)
+        if not email_user.user or email_user.user == self.request.user:
+            pass
+
+        # Send a confirmation mail
+        confirmation = MergeAccountConfirmation.objects.create_confirmation(
+            initial_user=self.request.user,
+            merge_with=email_user.user)
+        send_mail(
+            'PTS Merge Accounts',
+            pts_render_to_string('accounts/merge-accounts-confirmation-email.txt', {
+                'confirmation': confirmation,
+            }),
+            from_email=settings.PTS_CONTACT_EMAIL,
+            recipient_list=[email_user.email])
+
+        return redirect(self.success_url + '?' + urlencode({
+            'email': email_user.email,
+        }))
+
+
+class AccountMergeFinalize(LoginRequiredMixin, View):
+    template_name = 'accounts/account-merge-finalize.html'
+    def get(self, request, confirmation_key):
+        confirmation = get_object_or_404(
+            MergeAccountConfirmation,
+            confirmation_key=confirmation_key)
+
+        if confirmation.merge_with != request.user:
+            raise PermissionDenied
+
+        return render(request, self.template_name, {
+            'confirmation': confirmation,
+        })
+
+    def post(self, request, confirmation_key):
+        confirmation = get_object_or_404(
+            MergeAccountConfirmation,
+            confirmation_key=confirmation_key)
+        if confirmation.merge_with != request.user:
+            raise PermissionDenied
+
+        initial_user = confirmation.initial_user
+        merge_with = confirmation.merge_with
+
+        # Move emails
+        for email in merge_with.emails.all():
+            initial_user.emails.add(email)
+        # Move any teams that the user owns
+        merge_with.owned_teams.all().update(owner=initial_user)
+
+        confirmation.delete()
+
+        # The current user is no longer valid
+        logout(request)
+        # The account is now obsolete and should be removed
+        merge_with.delete()
+
+        return redirect('pts-accounts-merge-finalized')
+
+
+class AccountMergeConfirmedView(LoginRequiredMixin, TemplateView):
+    template_name = 'accounts/pts-accounts-merge-confirmed.html'
+
+    def get_context_data(self, **kwargs):
+        if 'email' not in self.request.GET:
+            raise Http404
+        email = self.request.GET['email']
+        email_user = get_object_or_404(EmailUser, email=email)
+        context = super(AccountMergeConfirmedView, self).get_context_data(**kwargs)
+        context['email'] = email_user
+
+        return context
+
+
 class ConfirmAddAccountEmail(View):
     template_name = 'accounts/new-email-added.html'
+
     def get(self, request, confirmation_key):
         confirmation = get_object_or_404(
             AddEmailConfirmation,

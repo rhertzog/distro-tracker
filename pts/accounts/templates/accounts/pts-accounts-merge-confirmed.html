@@ -1,0 +1,9 @@
+{% extends 'core/base.html' %}
+{% block title %}Merge Confirmed | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="text-center">
+    <h4>Account Merge</h4>
+    <p>In order to finalize the account merge, you must follow a confirmation link sent to <b>{{ email }}</b>. Until then, this operation will take no effect.</p>
+</div>
+{% endblock %}

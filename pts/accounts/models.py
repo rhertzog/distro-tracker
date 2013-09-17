@@ -110,3 +110,10 @@ class ResetPasswordConfirmation(Confirmation):
 class AddEmailConfirmation(Confirmation):
     user = models.ForeignKey(User)
     email = models.ForeignKey('core.EmailUser')
+
+
+class MergeAccountConfirmation(Confirmation):
+    initial_user = models.ForeignKey(
+        User, related_name='merge_account_initial_set')
+    merge_with = models.ForeignKey(
+        User, related_name='merge_account_with_set')
