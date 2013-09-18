@@ -25,6 +25,7 @@ from django.utils.six.moves import mock
 from django.utils.encoding import force_bytes
 from django.utils.functional import curry
 from pts.mail.tests.tests_dispatch import DispatchTestHelperMixin, DispatchBaseTest
+from pts.accounts.models import User
 from pts.core.tests.common import make_temp_directory
 from pts.core.utils.email_messages import message_from_bytes
 from pts.core.models import ActionItem, ActionItemType
@@ -4301,3 +4302,112 @@ class ImportTagsTests(TestCase):
         self.assert_keyword_sets_equal(
             [keyword],
             user.default_keywords.all())
+
+
+@mock.patch('pts.vendor.debian.sso_auth.DebianSsoUserBackend.get_user_details')
+class DebianSsoLoginTests(TestCase):
+    """
+    Tests relating to logging in via the sso.debian.org
+    """
+    def get_page(self, remote_user=None):
+        self.client.get(reverse('pts-index'), **{
+            'REMOTE_USER': remote_user,
+        })
+
+    def assert_user_logged_in(self, user):
+        self.assertEqual(self.client.session['_auth_user_id'], user.pk)
+
+    def assert_no_user_logged_in(self):
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_first_log_in(self, get_user_details):
+        """
+        Tests that when a Debian Developer first logs in an account is
+        automatically created.
+        """
+        first_name, last_name = 'First', 'Last'
+        get_user_details.return_value = {
+            'first_name': first_name,
+            'last_name': last_name,
+        }
+
+        response = self.get_page('DEBIANORG::DEBIAN:user')
+
+        self.assertEqual(1, User.objects.count())
+        user = User.objects.all()[0]
+        self.assertEqual(first_name, user.first_name)
+        self.assertEqual(last_name, user.last_name)
+        self.assert_user_logged_in(user)
+
+    def test_no_log_in_invalid_username(self, get_user_details):
+        """
+        Tests that no user is logged in when the federation or jurisdiction are
+        incorrect.
+        """
+        self.get_page('FEDERATION::JURISDICTION:user')
+
+        self.assertEqual(0, User.objects.count())
+        self.assert_no_user_logged_in()
+
+    def test_first_log_in_preexisting(self, get_user_details):
+        """
+        Tests that an already existing user is logged in without modifying the
+        account fields.
+        """
+        old_name = 'Oldname'
+        user = User.objects.create_user(
+            main_email='user@debian.org',
+            first_name=old_name)
+
+        response = self.get_page('DEBIANORG::DEBIAN:user')
+
+        self.assertEqual(1, User.objects.count())
+        user = User.objects.all()[0]
+        self.assertEqual(old_name, user.first_name)
+
+    def test_first_log_in_preexisting_associated(self, get_user_details):
+        """
+        Tests that an already existing user thta has an associated
+        (not main_email) @debian.org address is logged in without modifying the
+        account fields.
+        """
+        old_name = 'Oldname'
+        user = User.objects.create_user(
+            main_email='user@domain.com',
+            first_name=old_name)
+        # The @debian.org address is an associated email
+        user.emails.create(email='user@debian.org')
+
+        response = self.get_page('DEBIANORG::DEBIAN:user')
+
+        self.assertEqual(1, User.objects.count())
+        user = User.objects.all()[0]
+        self.assertEqual(old_name, user.first_name)
+
+    def test_user_logged_out(self, get_user_details):
+        """
+        Tests that PTS logs out the user after the SSO headers are invalid.
+        """
+        user = User.objects.create_user(
+            main_email='user@debian.org')
+        self.client.login(remote_user=user.main_email)
+        # Sanity check: the user is logged in
+        self.assert_user_logged_in(user)
+
+        self.get_page()
+
+        self.assert_no_user_logged_in()
+
+    def test_user_logged_out_no_header(self, get_user_details):
+        """
+        Tests that PTS logs out the user if the SSO headers are gone.
+        """
+        user = User.objects.create_user(
+            main_email='user@debian.org')
+        self.client.login(remote_user=user.main_email)
+        # Sanity check: the user is logged in
+        self.assert_user_logged_in(user)
+
+        self.client.get('/')
+
+        self.assert_no_user_logged_in()
