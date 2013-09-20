@@ -41,7 +41,7 @@ class UserManagerTests(TestCase):
         # The user is associated with a UserEmail
         self.assertEqual(1, u.emails.count())
         email_user = UserEmail.objects.all()[0]
-        self.assertEqual(u, email_user.user)
+        self.assertEqual(u, User.objects.get(pk=email_user.user.pk))
 
     def test_create_user_existing_email(self):
         """
@@ -54,7 +54,9 @@ class UserManagerTests(TestCase):
 
         # The user is associated with the existing email user
         self.assertEqual(1, UserEmail.objects.count())
-        self.assertEqual(u, UserEmail.objects.all()[0].user)
+        self.assertEqual(
+            u,
+            User.objects.get(pk=UserEmail.objects.all()[0].user.pk))
 
     def test_create_superuser(self):
         email = 'user@domain.com'
@@ -81,7 +83,9 @@ class UserManagerTests(TestCase):
         # The user is associated with a UserEmail
         self.assertEqual(1, u.emails.count())
         email_user = UserEmail.objects.all()[0]
-        self.assertEqual(u, email_user.user)
+        self.assertEqual(
+            User.objects.get(pk=u.pk),
+            User.objects.get(pk=email_user.user.pk))
 
 
 class UserTests(TestCase):

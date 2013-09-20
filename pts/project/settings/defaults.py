@@ -135,7 +135,7 @@ MIDDLEWARE_CLASSES = (
 
 AUTHENTICATION_BACKENDS = (
     'pts.vendor.debian.sso_auth.DebianSsoUserBackend',
-    'pts.accounts.auth.PtsUserBackend',
+    'django_email_accounts.auth.EmailUserBackend',
 )
 
 AUTH_USER_MODEL = 'accounts.User'
@@ -172,6 +172,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.admin',
     'django.contrib.markup',
+    'django_email_accounts',
     'pts.core',
     'pts.accounts',
     'pts.mail',
@@ -308,3 +309,5 @@ PTS_EMAIL_NEWS_HEADERS = (
 #: The maximum size that the :class:`pts.core.utils.packages.AptCache` should
 #: consume for all of its cached source files, given in bytes.
 PTS_APT_CACHE_MAX_SIZE = 5 * 1024 ** 3  # 5 GiB
+
+DJANGO_EMAIL_ACCOUNTS_POST_MERGE_HOOK = 'pts.accounts.hooks.post_merge'

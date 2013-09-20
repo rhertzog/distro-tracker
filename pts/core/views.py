@@ -38,6 +38,7 @@ from pts.core.models import TeamMembership
 from pts.core.models import MembershipConfirmation
 from pts.core.panels import get_panels_for_package
 from pts.accounts.views import LoginRequiredMixin
+from pts.accounts.models import User
 from pts.core.utils import get_or_none
 from pts.core.utils import pts_render_to_string
 

@@ -7,11 +7,10 @@
 # this distribution and at http://deb.li/ptslicense. No part of the Package
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
-"""Forms for the :mod:`pts.accounts` app."""
 from __future__ import unicode_literals
 from django import forms
-from pts.accounts.models import User
-from pts.accounts.models import UserEmail
+from django_email_accounts.models import User
+from django_email_accounts.models import UserEmail
 
 
 class UserCreationForm(forms.ModelForm):
