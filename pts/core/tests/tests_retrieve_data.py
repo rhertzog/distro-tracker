@@ -140,7 +140,7 @@ class RetrievePseudoPackagesTest(TestCase):
             sorted(old_packages),
             sorted([
                 pkg.name
-                for pkg in PackageName.subscription_only_packages.all()
+                for pkg in PackageName.objects.filter(pseudo=False, binary=False, source=False).all()
             ])
         )
 
@@ -194,13 +194,13 @@ class RetrievePseudoPackagesTest(TestCase):
         old_packages = self.packages
         self.packages = []
         # Sanity check: there were no subscription-only packages originaly
-        self.assertEqual(PackageName.subscription_only_packages.count(),
+        self.assertEqual(PackageName.objects.filter(source=False, binary=False, pseudo=False).count(),
                          0)
 
         self.update_pseudo_package_list()
 
         self.assertEqual(PseudoPackageName.objects.count(), 0)
-        self.assertEqual(PackageName.subscription_only_packages.count(),
+        self.assertEqual(PackageName.objects.filter(source=False, binary=False, pseudo=False).count(),
                          len(old_packages))
 
     @mock.patch('pts.core.retrieve_data.update_pseudo_package_list')

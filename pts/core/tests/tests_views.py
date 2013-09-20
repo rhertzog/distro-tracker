@@ -34,7 +34,7 @@ class PackageViewTest(TestCase):
     def setUp(self):
         self.package = SourcePackageName.objects.create(name='dummy-package')
         self.binary_package = BinaryPackageName.objects.create(
-            name='binary-package', source_package=self.package)
+            name='binary-package')
         self.pseudo_package = PseudoPackageName.objects.create(name='pseudo-pkg')
         src_pkg = SourcePackage.objects.create(
             source_package_name=self.package, version='1.0.0')
@@ -93,7 +93,7 @@ class PackageViewTest(TestCase):
         """
         package_name = 'sub-only-pkg'
         # Make sure the package actually exists.
-        PackageName.subscription_only_packages.create(name=package_name)
+        PackageName.objects.create(name=package_name)
 
         url = self.get_package_url(package_name)
         self.assertEqual(self.client.get(url).status_code, 404)
@@ -156,8 +156,7 @@ class PackageSearchViewTest(TestCase):
         self.pseudo_package = PseudoPackageName.objects.create(name='pseudo-package')
         self.source_package = SourcePackageName.objects.create(name='dummy-package')
         self.binary_package = BinaryPackageName.objects.create(
-            name='binary-package',
-            source_package=self.source_package)
+            name='binary-package')
         src_pkg = SourcePackage.objects.create(
             source_package_name=self.source_package, version='1.0.0')
         src_pkg.binary_packages = [self.binary_package]
@@ -226,7 +225,7 @@ class PackageAutocompleteViewTest(TestCase):
         SourcePackageName.objects.create(name='package')
         PseudoPackageName.objects.create(name='pseudo-package')
         PseudoPackageName.objects.create(name='zzz')
-        PackageName.subscription_only_packages.create(name='ppp')
+        PackageName.objects.create(name='ppp')
 
     def test_source_package_autocomplete(self):
         """

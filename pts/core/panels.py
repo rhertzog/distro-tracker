@@ -23,7 +23,7 @@ from pts.core.models import ActionItem
 from pts.core.models import PackageExtractedInfo
 from pts.core.models import MailingList
 from pts.core.models import News
-from pts.core.models import BinaryPackageBugStats
+from pts.core.models import PackageBugStats
 from debian.debian_support import AptPkgVersion
 from collections import defaultdict
 

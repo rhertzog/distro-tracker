@@ -35,7 +35,9 @@ class NewsFeedTests(TestCase):
     Tests the generation of the package news feed.
     """
     def setUp(self):
-        self.package = PackageName.objects.create(name='dummy-package')
+        self.package = PackageName.objects.create(
+            source=True,
+            name='dummy-package')
 
     def get_package_news_feed_url(self, package_name):
         return reverse('pts-package-rss-news-feed', kwargs={

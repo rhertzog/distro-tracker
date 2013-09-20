@@ -74,8 +74,8 @@ def update_pseudo_package_list():
     for existing_package in PseudoPackageName.objects.all():
         if existing_package.name not in pseudo_packages:
             # Existing packages which are no longer considered pseudo packages are
-            # demoted to a subscription-only package.
-            existing_package.package_type = PackageName.SUBSCRIPTION_ONLY_PACKAGE_TYPE
+            # demoted -- losing their pseudo package flag.
+            existing_package.pseudo = False
             existing_package.save()
         else:
             # If an existing package remained a pseudo package there will be no
@@ -231,8 +231,13 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                 existing_binaries_names.append(binary.name)
             for binary_name in binary_package_names:
                 if binary_name not in existing_binaries_names:
-                    binaries.append(BinaryPackageName.objects.create(
-                        name=binary_name))
+                    binary_package_name, _ = PackageName.objects.get_or_create(
+                        name=binary_name)
+                    binary_package_name.binary = True
+                    binary_package_name.save()
+                    binary_package_name = BinaryPackageName.objects.get(
+                        name=binary_name)
+                    binaries.append(binary_package_name)
                     self.raise_event('new-binary-package', {
                         'name': binary_name,
                     })

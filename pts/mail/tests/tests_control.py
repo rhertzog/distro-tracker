@@ -27,6 +27,7 @@ from pts.core.models import Keyword
 from pts.core.models import Team
 from pts.core.models import BinaryPackageName
 from pts.core.models import SourcePackageName
+from pts.core.models import SourcePackage
 from pts.accounts.models import User
 from pts.mail.models import CommandConfirmation
 from pts.mail.control.commands import UNIQUE_COMMANDS
@@ -1511,7 +1512,9 @@ class SubscribeToPackageTest(EmailControlTest):
         # Regular expression to extract the confirmation code from the body of
         # the response mail
         self.regexp = re.compile(r'^CONFIRM (.*)$', re.MULTILINE)
-        self.package = PackageName.objects.create(name='dummy-package')
+        self.package = PackageName.objects.create(
+            source=True,
+            name='dummy-package')
 
     def user_subscribed(self, email_address):
         """
@@ -1539,10 +1542,13 @@ class SubscribeToPackageTest(EmailControlTest):
         Helper method which creates a binary package for the given source
         package.
         """
-        src_pkg = SourcePackageName.objects.get(name=source_package.name)
-        BinaryPackageName.objects.create(
-            name=binary_package,
-            source_package=src_pkg)
+        binary_pkg = BinaryPackageName.objects.create(
+            name=binary_package)
+        src_pkg_name = SourcePackageName.objects.get(name=source_package.name)
+        src_pkg, _ = SourcePackage.objects.get_or_create(
+            source_package_name=src_pkg_name, version='1.0.0')
+        src_pkg.binary_packages = [binary_pkg]
+        src_pkg.save()
 
     def add_subscribe_command(self, package, email=None):
         """
@@ -1690,7 +1696,9 @@ class SubscribeToPackageTest(EmailControlTest):
         Subscription.objects.create_for(
             email='user@domain.com', package_name=package_name)
         # Make sure the package actually exists before running the test
-        self.assertIsNotNone(get_or_none(PackageName, name=package_name))
+        pkg = get_or_none(PackageName, name=package_name)
+        self.assertIsNotNone(pkg)
+        self.assertFalse(pkg.binary)
         self.add_subscribe_command(package_name)
 
         self.control_process()
@@ -1762,7 +1770,9 @@ class UnsubscribeFromPackageTest(EmailControlTest):
         self.set_header('From',
                         'Dummy User <{user_email}>'.format(
                             user_email=self.user_email_address))
-        self.package = PackageName.objects.create(name='dummy-package')
+        self.package = PackageName.objects.create(
+            source=True,
+            name='dummy-package')
         self.other_package = PackageName.objects.create(name='other-package')
         # The user is initially subscribed to the package
         Subscription.objects.create_for(
@@ -1809,10 +1819,13 @@ class UnsubscribeFromPackageTest(EmailControlTest):
         Helper method which creates a binary package for the given source
         package.
         """
-        src_pkg = SourcePackageName.objects.get(name=source_package.name)
-        BinaryPackageName.objects.create(
-            name=binary_package,
-            source_package=src_pkg)
+        binary_pkg = BinaryPackageName.objects.create(
+            name=binary_package)
+        src_pkg_name = SourcePackageName.objects.get(name=source_package.name)
+        src_pkg, _ = SourcePackage.objects.get_or_create(
+            source_package_name=src_pkg_name, version='1.0.0')
+        src_pkg.binary_packages = [binary_pkg]
+        src_pkg.save()
 
     def add_unsubscribe_command(self, package, email=None):
         """

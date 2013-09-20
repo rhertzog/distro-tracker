@@ -106,7 +106,9 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
         self.add_header('Subject', 'Some subject')
         self.set_message_content('message content')
 
-        self.package = PackageName.objects.create(name=self.package_name)
+        self.package = PackageName.objects.create(
+            source=True,
+            name=self.package_name)
 
     def test_dispatch_bts_control(self):
         """
@@ -1175,7 +1177,7 @@ class UpdateLintianStatsTaskTest(TestCase):
         Tests that action items are created correctly when there are stats
         for multiple different packages in the response.
         """
-        other_package = PackageName.objects.create(name='other-package')
+        other_package = PackageName.objects.create(name='other-package', source=True)
         errors, warnings = (2, 0), (0, 2)
         response = (
             "dummy-package {err1} {warn1} 0 0 0 0\n"
@@ -1530,7 +1532,7 @@ class DebianBugActionItemsTests(TestCase):
         )
         packages = (
             self.package_name,
-            PackageName.objects.create(name='other-package'),
+            PackageName.objects.create(name='other-package', source=True),
         )
         # Create the stub response
         for package, bug_stats in zip(packages, stats):
@@ -2379,7 +2381,7 @@ class UpdateSecurityIssuesTaskTests(TestCase):
         counts = [5, 10]
         packages = [
             self.package,
-            PackageName.objects.create(name='other-package')
+            PackageName.objects.create(name='other-package', source=True)
         ]
         self.set_issues_content([
             (package, count)
@@ -3483,7 +3485,9 @@ class UbuntuPanelTests(TestCase):
     Tests for the :class:`pts.vendor.debian.pts_panels.UbuntuPanel` panel.
     """
     def setUp(self):
-        self.package = PackageName.objects.create(name='dummy-package')
+        self.package = PackageName.objects.create(
+            source=True,
+            name='dummy-package')
 
     def get_package_page_response(self, package_name):
         package_page_url = reverse('pts-package-page', kwargs={
@@ -3773,7 +3777,7 @@ class UpdateWnppStatsTaskTests(TestCase):
                 'bug_id': 11111,
             }
         ]
-        other_package = PackageName.objects.create(name='other-package')
+        other_package = PackageName.objects.create(name='other-package', source=True)
         packages = [other_package, self.package]
         self.set_wnpp_content([
             (package.name, [wnpp_item])
@@ -3992,7 +3996,9 @@ class NewQueueVersionsPanelTests(TestCase):
     Tests that the NEW queue versions are displayed in the versions panel.
     """
     def setUp(self):
-        self.package = PackageName.objects.create(name='dummy-package')
+        self.package = PackageName.objects.create(
+            source=True,
+            name='dummy-package')
         self.package.packageextractedinfo_set.create(
             key='versions', value={})
 
@@ -4071,7 +4077,7 @@ class ImportOldNewsTests(TestCase):
         with make_temp_directory('old-pts') as old_pts_root:
             # Make the expected directory structure and add some news
             for package in packages:
-                PackageName.objects.create(name=package)
+                PackageName.objects.create(name=package, source=True)
                 news_dir = os.path.join(
                     old_pts_root, package[0], package, 'news')
                 os.makedirs(news_dir)
@@ -4189,8 +4195,8 @@ class ImportOldSubscribersTests(TestCase):
         Tests that multiple subscriptions for a single user are imported.
         """
         packages = [
-            PackageName.objects.create(name='pkg1'),
-            PackageName.objects.create(name='pkg2'),
+            PackageName.objects.create(name='pkg1', source=True),
+            PackageName.objects.create(name='pkg2', source=True),
         ]
         email = 'user@domain.com'
         for package in packages:

@@ -185,7 +185,9 @@ class PackageManager(models.Manager):
         qs = super(PackageManager, self).get_query_set()
         if self.type is None:
             return qs
-        return qs.filter(package_type=self.type)
+        return qs.filter(**{
+            self.type: True,
+        })
 
     def exists_with_name(self, package_name):
         """
@@ -204,8 +206,8 @@ class PackageManager(models.Manager):
         The type is the type given in this manager instance's :attr:`type`
         attribute.
         """
-        if 'package_type' not in kwargs and self.type is not None:
-            kwargs['package_type'] = self.type
+        if self.type not in kwargs and self.type is not None:
+            kwargs[self.type] = True
 
         return super(PackageManager, self).create(*args, **kwargs)
 
@@ -213,15 +215,14 @@ class PackageManager(models.Manager):
         """
         Overrides the default
         :meth:`get_or_create <django.db.models.Manager.get_or_create>`
-        method to inject a :attr:`package_type <PackageName.package_type>` to the
-        instance being created.
+        to set the correct package type.
 
         The type is the type given in this manager instance's :attr:`type`
         attribute.
         """
         defaults = kwargs.get('defaults', {})
         if self.type is not None:
-            defaults.update({'package_type': self.type})
+            defaults.update({self.type: True})
         kwargs['defaults'] = defaults
         return super(PackageManager, self).get_or_create(*args, **kwargs)
 
@@ -236,20 +237,16 @@ class PackageManager(models.Manager):
         qs = self.annotate(subscriber_count=models.Count('subscriptions'))
         return qs.filter(subscriber_count__gt=0)
 
-
-class BasePackageName(models.Model):
-    """
-    An abstract model defining common attributes and operations for package
-    names.
-    """
-    name = models.CharField(max_length=100, unique=True)
-
-    class Meta:
-        abstract = True
+    def get_by_name(self, package_name):
+        """
+        :returns: A package with the given name
+        :rtype: :class:`PackageName`
+        """
+        return self.get(name=package_name)
 
 
 @python_2_unicode_compatible
-class PackageName(BasePackageName):
+class PackageName(models.Model):
     """
     A model describing package names.
 
@@ -262,33 +259,36 @@ class PackageName(BasePackageName):
     Binary packages are a separate model since they are allowed to have the
     same name as an existing source package.
     """
-    SOURCE_PACKAGE_TYPE = 0
-    PSEUDO_PACKAGE_TYPE = 1
-    SUBSCRIPTION_ONLY_PACKAGE_TYPE = 2
-    TYPE_CHOICES = (
-        (SOURCE_PACKAGE_TYPE, 'Source package'),
-        (PSEUDO_PACKAGE_TYPE, 'Pseudo package'),
-        (SUBSCRIPTION_ONLY_PACKAGE_TYPE, 'Subscription-only package'),
-    )
+    name = models.CharField(max_length=100, unique=True)
+    source = models.BooleanField(default=False)
+    binary = models.BooleanField(default=False)
+    pseudo = models.BooleanField(default=False)
 
     subscriptions = models.ManyToManyField(EmailUser, through='Subscription')
-    #: The type of the package
-    package_type = models.IntegerField(choices=TYPE_CHOICES, default=0)
 
     objects = PackageManager()
-    source_packages = PackageManager(SOURCE_PACKAGE_TYPE)
-    pseudo_packages = PackageManager(PSEUDO_PACKAGE_TYPE)
-    subscription_only_packages = PackageManager(SUBSCRIPTION_ONLY_PACKAGE_TYPE)
+    source_packages = PackageManager('source')
+    binary_packages = PackageManager('binary')
+    pseudo_packages = PackageManager('pseudo')
 
     def __str__(self):
         return self.name
 
     def get_absolute_url(self):
-        if self.package_type in (
-                self.SOURCE_PACKAGE_TYPE, self.PSEUDO_PACKAGE_TYPE):
+        if self.source or self.pseudo:
             return reverse('pts-package-page', kwargs={
                 'package_name': self.name,
             })
+
+    def get_package_type_display(self):
+        if self.source:
+            return 'Source package'
+        elif self.binary:
+            return 'Binary package'
+        elif self.pseudo:
+            return 'Pseudo package'
+        else:
+            return 'Subscription-only package'
 
     def get_action_item_for_type(self, action_item_type):
         """
@@ -322,7 +322,7 @@ class PseudoPackageName(PackageName):
     class Meta:
         proxy = True
 
-    objects = PackageManager(PackageName.PSEUDO_PACKAGE_TYPE)
+    objects = PackageManager('pseudo')
 
     def get_absolute_url(self):
         return reverse('pts-package-page', kwargs={
@@ -341,7 +341,7 @@ class SourcePackageName(PackageName):
     class Meta:
         proxy = True
 
-    objects = PackageManager(PackageName.SOURCE_PACKAGE_TYPE)
+    objects = PackageManager('source')
 
     def get_absolute_url(self):
         return reverse('pts-package-page', kwargs={
@@ -466,7 +466,7 @@ class SubscriptionManager(models.Manager):
         if not package:
             # If the package did not previously exist, create a
             # "subscriptions-only" package.
-            package = PackageName.subscription_only_packages.create(
+            package = PackageName.objects.create(
                 name=package_name)
         email_user, created = EmailUser.objects.get_or_create(
             email=email)
@@ -616,41 +616,18 @@ class Subscription(models.Model):
         return str(self.email_user) + ' ' + str(self.package)
 
 
-class BinaryPackageNameManager(models.Manager):
-    """
-    A custom :class:`Manager <django.db.models.Manager>` for the
-    :class:`BinaryPackageName` model.
-    """
-    def exists_with_name(self, package_name):
-        """
-        :param package_name: A name of a package
-        :type package_name: string
-        :returns True: if the package with the given name exists.
-        """
-        return self.filter(name=package_name).exists()
-
-    def get_by_name(self, package_name):
-        """
-        :returns: A binary package with the given name
-        :rtype: :class:`BinaryPackage`
-        """
-        return self.get(name=package_name)
-
-
 @python_2_unicode_compatible
-class BinaryPackageName(BasePackageName):
+class BinaryPackageName(PackageName):
     """
     A model representing a single binary package name.
 
     Binary package versions must all reference an existing instance of this
     type.
     """
-    source_package = models.ForeignKey(
-        SourcePackageName,
-        on_delete=models.SET_NULL,
-        null=True)
+    class Meta:
+        proxy = True
 
-    objects = BinaryPackageNameManager()
+    objects = PackageManager('binary')
 
     def __str__(self):
         return self.name
@@ -1786,7 +1763,7 @@ class BinaryPackageBugStats(models.Model):
     """
     Model for bug statistics of binary packages (:class:`BinaryPackageName`).
     """
-    package = models.OneToOneField(BinaryPackageName, related_name='bug_stats')
+    package = models.OneToOneField(BinaryPackageName, related_name='binary_bug_stats')
     stats = JSONField(blank=True)
 
     def __str__(self):

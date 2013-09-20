@@ -122,7 +122,7 @@ class PackageAutocompleteView(View):
         filtered = MANAGERS.get(
             package_type,
             PackageName.objects.exclude(
-                package_type=PackageName.SUBSCRIPTION_ONLY_PACKAGE_TYPE)
+                source=False, binary=False, pseudo=False)
         )
         filtered = filtered.filter(name__istartswith=query_string)
         # Extract only the name of the package.

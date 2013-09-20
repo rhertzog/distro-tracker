@@ -68,16 +68,16 @@ class SubscribeCommand(Command):
                 package=self.package))
             return False
 
-        if not SourcePackageName.objects.exists_with_name(self.package):
+        if not SourcePackageName.objects.exists_with_name(self.package): 
             if BinaryPackageName.objects.exists_with_name(self.package):
                 binary_package = BinaryPackageName.objects.get_by_name(self.package)
                 self.warn('{package} is not a source package.'.format(
                     package=self.package))
                 self.reply('{package} is the source package '
                            'for the {binary} binary package'.format(
-                               package=binary_package.source_package.name,
+                               package=binary_package.main_source_package_name,
                                binary=binary_package.name))
-                self.package = binary_package.source_package.name
+                self.package = binary_package.main_source_package_name.name
             else:
                 self.warn(
                     '{package} is neither a source package '
@@ -157,16 +157,16 @@ class UnsubscribeCommand(Command):
         Implementation of a hook method which is executed instead of
         :py:meth:`handle` when the command is not confirmed.
         """
-        if not PackageName.objects.exists_with_name(self.package):
+        if not PackageName.objects.exclude(binary=True).filter(name=self.package).exists():
             if BinaryPackageName.objects.exists_with_name(self.package):
                 binary_package = BinaryPackageName.objects.get_by_name(self.package)
                 self.warn('{package} is not a source package.'.format(
                     package=self.package))
                 self.reply('{package} is the source package '
                            'for the {binary} binary package'.format(
-                               package=binary_package.source_package.name,
+                               package=binary_package.main_source_package_name,
                                binary=binary_package.name))
-                self.package = binary_package.source_package.name
+                self.package = binary_package.main_source_package_name.name
             else:
                 self.warn(
                     '{package} is neither a source package '

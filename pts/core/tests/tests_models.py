@@ -329,7 +329,9 @@ class EmailUserManagerTest(TestCase):
 
 class PackageManagerTest(TestCase):
     def setUp(self):
-        self.package = PackageName.objects.create(name='dummy-package')
+        self.package = PackageName.objects.create(
+            source=True,
+            name='dummy-package')
 
     def test_package_exists(self):
         self.assertTrue(PackageName.objects.exists_with_name(self.package.name))
@@ -343,7 +345,9 @@ class PackageManagerTest(TestCase):
         """
         p = PackageName.source_packages.create(name='source-package')
 
-        self.assertEqual(p.package_type, PackageName.SOURCE_PACKAGE_TYPE)
+        self.assertTrue(p.source)
+        self.assertFalse(p.binary)
+        self.assertFalse(p.pseudo)
 
     def test_pseudo_package_create(self):
         """
@@ -351,16 +355,27 @@ class PackageManagerTest(TestCase):
         """
         p = PackageName.pseudo_packages.create(name='pseudo-package')
 
-        self.assertEqual(p.package_type, PackageName.PSEUDO_PACKAGE_TYPE)
+        self.assertFalse(p.source)
+        self.assertFalse(p.binary)
+        self.assertTrue(p.pseudo)
 
     def test_subscription_only_package_create(self):
         """
         Tests that the subscription only packages manager creates
         subscription only packages.
         """
-        p = PackageName.subscription_only_packages.create(name='package')
+        p = PackageName.objects.create(name='package')
 
-        self.assertEqual(p.package_type, PackageName.SUBSCRIPTION_ONLY_PACKAGE_TYPE)
+        self.assertFalse(p.source)
+        self.assertFalse(p.binary)
+        self.assertFalse(p.pseudo)
+
+    def test_binary_package_create(self):
+        p = PackageName.binary_packages.create(name='pkg')
+
+        self.assertFalse(p.source)
+        self.assertTrue(p.binary)
+        self.assertFalse(p.pseudo)
 
     def test_manager_types_correct_objects(self):
         """
@@ -373,7 +388,7 @@ class PackageManagerTest(TestCase):
 
         src_pkg = PackageName.source_packages.create(name='source-package')
         pseudo_pkg = PackageName.pseudo_packages.create(name='pseudo-package')
-        sub_only_pkg = PackageName.subscription_only_packages.create(name='package')
+        sub_only_pkg = PackageName.objects.create(name='package')
 
         # objects manager returns all packages
         self.assertEqual(PackageName.objects.count(), 3)
@@ -382,8 +397,6 @@ class PackageManagerTest(TestCase):
         self.assertIn(src_pkg, PackageName.source_packages.all())
         self.assertEqual(PackageName.pseudo_packages.count(), 1)
         self.assertIn(pseudo_pkg, PackageName.pseudo_packages.all())
-        self.assertEqual(PackageName.subscription_only_packages.count(), 1)
-        self.assertIn(sub_only_pkg, PackageName.subscription_only_packages.all())
 
     def test_all_with_subscriptions(self):
         """
@@ -391,9 +404,9 @@ class PackageManagerTest(TestCase):
         packages that have at least one subscriber.
         """
         pseudo_package = PseudoPackageName.objects.create(name='pseudo-package')
-        sub_only_pkg = PackageName.subscription_only_packages.create(
+        sub_only_pkg = PackageName.objects.create(
             name='sub-only-pkg')
-        PackageName.subscription_only_packages.create(name='sub-only-pkg-1')
+        PackageName.objects.create(name='sub-only-pkg-1')
 
         # When there are no subscriptions, it shouldn't return any results
         self.assertEqual(PackageName.objects.all_with_subscribers().count(), 0)
@@ -402,9 +415,6 @@ class PackageManagerTest(TestCase):
             0)
         self.assertEqual(
             PackageName.source_packages.all_with_subscribers().count(),
-            0)
-        self.assertEqual(
-            PackageName.subscription_only_packages.all_with_subscribers().count(),
             0)
 
         # When subscriptions are added, only the packages with subscriptions
@@ -431,17 +441,13 @@ class PackageManagerTest(TestCase):
         self.assertEqual(
             PackageName.source_packages.all_with_subscribers().count(),
             1)
-        self.assertEqual(
-            PackageName.subscription_only_packages.all_with_subscribers().count(),
-            1)
 
 
 class BinaryPackageManagerTest(TestCase):
     def setUp(self):
         self.package = SourcePackageName.objects.create(name='dummy-package')
         self.binary_package = BinaryPackageName.objects.create(
-            name='binary-package',
-            source_package=self.package)
+            name='binary-package')
 
     def test_package_exists(self):
         self.assertTrue(
@@ -450,16 +456,6 @@ class BinaryPackageManagerTest(TestCase):
     def test_package_exists_false(self):
         self.assertFalse(
             BinaryPackageName.objects.exists_with_name('unexisting'))
-
-    def test_binary_and_source_same_name(self):
-        """
-        Tests that it is possible to create a binary and source package with
-        the same name.
-        """
-        bin_pkg = BinaryPackageName.objects.create(name='package')
-        src_pkg = SourcePackageName.objects.create(name='package')
-        self.assertIn(bin_pkg, BinaryPackageName.objects.all())
-        self.assertIn(src_pkg, SourcePackageName.objects.all())
 
 
 class RepositoryTests(TestCase):
@@ -470,7 +466,10 @@ class RepositoryTests(TestCase):
         self.src_pkg_name = SourcePackageName.objects.create(name='dummy-package')
         self.source_package = SourcePackage.objects.create(
             source_package_name=self.src_pkg_name, version='1.0.0')
-        self.bin_pkg_name = BinaryPackageName.objects.create(name='dummy-package')
+        self.bin_pkg_name = PackageName.objects.get(name='dummy-package')
+        self.bin_pkg_name.binary = True
+        self.bin_pkg_name.save()
+        self.bin_pkg_name = BinaryPackageName.objects.get(name='dummy-package')
         self.binary_package = BinaryPackage.objects.create(
             binary_package_name=self.bin_pkg_name,
             version='1.0.0',
