@@ -4305,6 +4305,13 @@ class ImportTagsTests(TestCase):
 
 
 @mock.patch('pts.vendor.debian.sso_auth.DebianSsoUserBackend.get_user_details')
+@override_settings(MIDDLEWARE_CLASSES=(
+    'django.middleware.common.CommonMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'pts.vendor.debian.sso_auth.DebianSsoUserMiddleware',
+))
 class DebianSsoLoginTests(TestCase):
     """
     Tests relating to logging in via the sso.debian.org
