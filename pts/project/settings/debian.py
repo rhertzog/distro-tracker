@@ -13,3 +13,5 @@ PTS_DEBIAN_PIUPARTS_SUITES = (
     'sid',
 )   
 
+DJANGO_EMAIL_ACCOUNTS_PRE_LOGIN_HOOK = 'pts.vendor.debian.rules.pre_login'
+DJANGO_EMAIL_ACCOUNTS_POST_LOGOUT_REDIRECT = 'pts.vendor.debian.rules.post_logout'

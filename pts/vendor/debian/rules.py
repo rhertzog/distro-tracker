@@ -12,6 +12,9 @@ from __future__ import unicode_literals
 import re
 import urllib
 import requests
+from django import forms
+from django.utils.http import urlencode
+from django.contrib.sites.models import Site
 from django.conf import settings
 from pts.core.models import PackageBugStats
 from pts.core.models import EmailNews
@@ -691,3 +694,34 @@ def get_extra_versions(package):
         }
         for dist, ver in info.value.items()
     ]
+
+
+def pre_login(user):
+    """
+    If the user has a @debian.org email associated, don't let him log in
+    directly through the PTS.
+    """
+    if any(user_email.email.endswith('@debian.org')
+           for user_email in user.emails.all()):
+        raise forms.ValidationError(
+            "Your account has a @debian.org email address associated. "
+            "To log in to the PTS, you must first authenticate on http://sso.debian.org")
+
+
+def post_logout(user, secure=False):
+    """
+    If the user has a @debian.org email associated, sign him out at the SSO
+    level too.
+    """
+    if any(user_email.email.endswith('@debian.org')
+           for user_email in user.emails.all()):
+
+        site_url = Site.objects.get_current()
+        protocol = 'http' if not secure else 'https'
+        return (
+            'https://sso.debian.org/cgi-bin/dacs/dacs_signout?' + urlencode({
+                'SIGNOUT_HANDLER': '{protocol}://{url}'.format(
+                    protocol=protocol,
+                    url=site_url)
+            })
+        )
