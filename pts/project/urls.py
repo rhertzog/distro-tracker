@@ -12,7 +12,6 @@
 from __future__ import unicode_literals
 from django.conf.urls import patterns, include, url
 from django.views.generic import TemplateView
-from django.core.urlresolvers import reverse_lazy
 from pts.core.views import PackageSearchView, PackageAutocompleteView
 from pts.core.views import ActionItemJsonView, ActionItemView
 from pts.core.views import KeywordsView
@@ -34,6 +33,7 @@ from pts.core.views import SetMembershipKeywords
 from pts.core.views import EditMembershipView
 from pts.core.news_feed import PackageNewsFeed
 from pts.accounts.views import ConfirmAddAccountEmail
+from pts.accounts.views import LoginView
 from pts.accounts.views import AccountMergeFinalize
 from pts.accounts.views import RegisterUser
 from pts.accounts.views import ManageAccountEmailsView
@@ -44,6 +44,7 @@ from pts.accounts.views import AccountProfile
 from pts.accounts.views import SubscriptionsView
 from pts.accounts.views import UserEmailsView
 from pts.accounts.views import SubscribeUserToPackageView
+from pts.accounts.views import LogoutView
 from pts.accounts.views import UnsubscribeUserView
 from pts.accounts.views import UnsubscribeAllView
 from pts.accounts.views import ChooseSubscriptionEmailView
@@ -125,13 +126,9 @@ urlpatterns = patterns('',
     url(r'^accounts/profile/subscriptions/choose-subscription-email/$',
         ChooseSubscriptionEmailView.as_view(),
         name='pts-accounts-choose-email'),
-    url(r'^accounts/login/$', 'django.contrib.auth.views.login', {
-            'template_name': 'accounts/login.html',
-        },
+    url(r'^accounts/login/$', LoginView.as_view(),
         name='pts-accounts-login'),
-    url(r'^accounts/logout/$', 'django.contrib.auth.views.logout', {
-            'next_page': reverse_lazy('pts-index'),
-        },
+    url(r'^accounts/logout/$', LogoutView.as_view(),
         name='pts-accounts-logout'),
     url(r'^accounts/profile/modify/$', ChangePersonalInfoView.as_view(),
         name='pts-accounts-profile-modify'),

@@ -9,6 +9,7 @@
 # distributed except according to the terms contained in the LICENSE file.
 from __future__ import unicode_literals
 from django.conf import settings
+from django.utils.http import is_safe_url
 from django.contrib import messages
 from django.contrib.auth import authenticate
 from django.contrib.auth import login
@@ -39,6 +40,7 @@ from django_email_accounts.forms import (
     ResetPasswordForm,
     ForgotPasswordForm,
     ChangePersonalInfoForm,
+    AuthenticationForm,
 )
 from django_email_accounts.models import (
     MergeAccountConfirmation,
@@ -49,6 +51,35 @@ from django_email_accounts.models import (
 from django_email_accounts import run_hook
 
 
+class LoginView(FormView):
+    form_class = AuthenticationForm
+    success_url = reverse_lazy('accounts-profile')
+    template_name = 'accounts/login.html'
+
+    def form_valid(self, form):
+        if not is_safe_url(url=self.success_url, host=self.request.get_host()):
+            self.success_url = '/'
+
+        login(self.request, form.get_user())
+
+        return redirect(self.success_url)
+
+
+class LogoutView(View):
+    success_url = '/'
+    redirect_parameter = 'next'
+
+    def get(self, request):
+        user = request.user
+        logout(request)
+        redirect_url = run_hook('post-logout-redirect', user)
+        if redirect_url:
+            return redirect(redirect_url)
+        else:
+            if self.redirect_parameter in request.GET and request.GET[self.redirect_parameter]:
+                return redirect(request.GET[self.redirect_parameter])
+            else:
+                return redirect(self.success_url)
 
 
 

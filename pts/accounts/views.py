@@ -53,6 +53,15 @@ class ConfirmationRenderMixin(object):
             'confirmation': confirmation,
         })
 
+
+class LoginView(email_accounts_views.LoginView):
+    success_url = reverse_lazy('pts-accounts-profile')
+
+
+class LogoutView(email_accounts_views.LogoutView):
+    success_url = reverse_lazy('pts-index')
+
+
 class RegisterUser(ConfirmationRenderMixin, email_accounts_views.RegisterUser):
     success_url = reverse_lazy('pts-accounts-register-success')
 

@@ -9,8 +9,20 @@
 # distributed except according to the terms contained in the LICENSE file.
 from __future__ import unicode_literals
 from django import forms
-from django_email_accounts.models import User
+from django.contrib.auth import get_user_model
 from django_email_accounts.models import UserEmail
+from django.contrib.auth.forms import AuthenticationForm as ContribAuthenticationForm
+from django_email_accounts import run_hook
+
+User = get_user_model()
+
+
+class AuthenticationForm(ContribAuthenticationForm):
+    def clean(self):
+        cleaned_data = super(AuthenticationForm, self).clean()
+        run_hook('pre-login', self.get_user())
+
+        return cleaned_data
 
 
 class UserCreationForm(forms.ModelForm):
