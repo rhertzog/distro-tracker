@@ -13,15 +13,17 @@ from django import forms
 from django.template.defaultfilters import slugify
 from pts.core.models import Team
 from pts.core.models import SourcePackageName
+from pts.accounts.models import UserEmail
 
 
 class CreateTeamForm(forms.ModelForm):
+    maintainer_email = forms.EmailField(required=False)
+
     class Meta:
         model = Team
         fields = (
             'name',
             'slug',
-            'maintainer_email',
             'public',
             'description',
             'url',
@@ -48,6 +50,13 @@ class CreateTeamForm(forms.ModelForm):
         return cleaned_data
 
     def save(self, *args, **kwargs):
+        # Create a maintainer email instance based on the email given to the
+        # form.
+        if 'maintainer_email' in self.cleaned_data and self.cleaned_data['maintainer_email']:
+            maintainer_email, _ = UserEmail.objects.get_or_create(
+                email=self.cleaned_data['maintainer_email'])
+            self.instance.maintainer_email = maintainer_email
+
         # The instance needs to be saved before many-to-many relations can
         # reference it.
         instance = super(CreateTeamForm, self).save(commit=True)

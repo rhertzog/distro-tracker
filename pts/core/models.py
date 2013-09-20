@@ -29,6 +29,7 @@ from pts.core.utils.plugins import PluginRegistry
 from pts.core.utils.email_messages import decode_header
 from pts.core.utils.email_messages import get_decoded_message_payload
 from pts.core.utils.email_messages import message_from_bytes
+from pts.accounts.models import UserEmail
 
 from debian.debian_support import AptPkgVersion
 from debian import changelog as debian_changelog
@@ -77,25 +78,57 @@ class EmailUserManager(models.Manager):
         else:
             return user.is_subscribed_to(package_name)
 
+    def create(self, email=None, **kwargs):
+        if 'user_email' not in kwargs:
+            user_email, _ = UserEmail.objects.get_or_create(email=email)
+            kwargs['user_email'] = user_email
+
+        return super(EmailUserManager, self).create(**kwargs)
+
+    def get_or_create(self, email=None, **kwargs):
+        if email is not None:
+            user_email, _ = UserEmail.objects.get_or_create(email=email)
+            kwargs['user_email'] = user_email
+
+        return super(EmailUserManager, self).get_or_create(**kwargs)
+
+    def get(self, email=None, **kwargs):
+        if email is not None:
+            kwargs['user_email'] = UserEmail.objects.get_or_create(email=email)[0]
+
+        return super(EmailUserManager, self).get(**kwargs)
+
+    def filter_by_email(self, email):
+        """
+        Filters the QuerySet based on the given email represented as a
+        string.
+
+        :param email: The email based on which the query set should be filtered
+        :type email: string
+        """
+        return self.filter(user_email__email=email)
+
 
 @python_2_unicode_compatible
 class EmailUser(models.Model):
     """
     A model describing users identified by their email address.
     """
-    email = models.EmailField(max_length=254, unique=True)
+    user_email = models.OneToOneField(UserEmail)
     default_keywords = models.ManyToManyField(Keyword)
-
-    #: A PTS user account to which this email is associated to
-    user = models.ForeignKey(
-        'accounts.User',
-        blank=True, null=True,
-        related_name='emails')
 
     objects = EmailUserManager()
 
     def __str__(self):
         return self.email
+
+    @cached_property
+    def email(self):
+        return self.user_email.email
+
+    @cached_property
+    def user(self):
+        return self.user_email.user
 
     def is_subscribed_to(self, package):
         """
@@ -922,29 +955,14 @@ class Repository(models.Model):
 
 
 @python_2_unicode_compatible
-class ContributorEmail(models.Model):
-    """
-    A model representing a package contributor's email.
-
-    The email is separated from the rest of the information about the
-    contributor, e.g. his name, in order to allow for the case where the same
-    contributor has possibly differently spelled names in different packages.
-    """
-    email = models.EmailField(max_length=244, unique=True)
-
-    def __str__(self):
-        return self.email
-
-
-@python_2_unicode_compatible
 class ContributorName(models.Model):
     """
-    Represents a name associated with a :class:`ContributorEmail`.
+    Represents a contributor.
 
     A single contributor, as identified by his email, may have different
     written names in different contexts.
     """
-    contributor_email = models.ForeignKey(ContributorEmail)
+    contributor_email = models.ForeignKey(UserEmail)
     name = models.CharField(max_length=60, blank=True)
 
     class Meta:
@@ -1506,7 +1524,7 @@ class News(models.Model):
 
         signed_by = []
         for name, email in signers:
-            signer_email, _ = ContributorEmail.objects.get_or_create(
+            signer_email, _ = UserEmail.objects.get_or_create(
                 email=email)
             signer_name, _ = ContributorName.objects.get_or_create(
                 name=name,
@@ -2056,6 +2074,11 @@ class TeamManager(models.Manager):
         """
         if 'slug' not in kwargs:
             kwargs['slug'] = slugify(kwargs['name'])
+        if 'maintainer_email' in kwargs:
+            if not isinstance(kwargs['maintainer_email'], UserEmail):
+                kwargs['maintainer_email'] = UserEmail.objects.get_or_create(
+                    email=kwargs['maintainer_email'])[0]
+
         return self.create(**kwargs)
 
 
@@ -2065,10 +2088,11 @@ class Team(models.Model):
     slug = models.SlugField(
         unique=True,
         help_text="A team's slug determines its URL")
-    maintainer_email = models.EmailField(
-        max_length=244,
+    maintainer_email = models.ForeignKey(
+        UserEmail,
         null=True,
-        blank=True)
+        blank=True,
+        on_delete=models.SET_NULL)
     description = models.TextField(blank=True, null=True)
     url = models.URLField(max_length=255, blank=True, null=True)
     public = models.BooleanField(default=True)
@@ -2114,6 +2138,12 @@ class Team(models.Model):
         :returns: :class:`TeamMembership` instances for each user added to the team
         :rtype: list
         """
+        users = [
+            user
+            if isinstance(user, EmailUser) else
+            EmailUser.objects.get_or_create(user_email=user)[0]
+            for user in users
+        ]
         return [
             self.team_membership_set.create(email_user=user, muted=muted)
             for user in users

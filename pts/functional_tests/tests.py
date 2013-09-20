@@ -23,7 +23,7 @@ from pts.accounts.models import AddEmailConfirmation
 from pts.accounts.models import MergeAccountConfirmation
 from pts.core.models import EmailUser
 from pts.core.models import ContributorName
-from pts.core.models import ContributorEmail
+from pts.accounts.models import UserEmail
 from pts.core.models import Team
 from pts.core.models import SourcePackage
 from pts.core.models import PackageName
@@ -1275,7 +1275,7 @@ class TeamTests(SeleniumTestCase):
         ]
         maintainer_email = 'maintainer@domain.com'
         maintainer = ContributorName.objects.create(
-            contributor_email=ContributorEmail.objects.create(
+            contributor_email=UserEmail.objects.create(
                 email=maintainer_email))
         for package_name in package_names:
             SourcePackage.objects.create(
@@ -1311,7 +1311,7 @@ class TeamTests(SeleniumTestCase):
         new_package_name = 'pkg3'
         new_maintainer_email = 'new-maintainer@domain.com'
         new_maintainer = ContributorName.objects.create(
-            contributor_email=ContributorEmail.objects.create(
+            contributor_email=UserEmail.objects.create(
                 email=new_maintainer_email))
         SourcePackage.objects.create(
             source_package_name=SourcePackageName.objects.create(
@@ -1543,6 +1543,7 @@ class TeamTests(SeleniumTestCase):
         user = User.objects.create_user(
             main_email='other@domain.com',
             password=self.password)
+        EmailUser.objects.get_or_create(email=user.main_email)
         ## --
 
         # The user logs in and goes to the team page

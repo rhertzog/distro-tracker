@@ -23,7 +23,7 @@ from django.core.urlresolvers import reverse
 from pts.core.tasks import BaseTask
 from pts.core.models import PackageExtractedInfo
 from pts.core.models import ActionItem, ActionItemType
-from pts.core.models import ContributorEmail
+from pts.accounts.models import UserEmail
 from pts.core.models import PackageBugStats
 from pts.core.models import BinaryPackageBugStats
 from pts.core.models import PackageName
@@ -99,7 +99,7 @@ class RetrieveDebianMaintainersTask(BaseTask):
             qs.update(is_debian_maintainer=False)
 
             for email, packages in maintainers.items():
-                email, _ = ContributorEmail.objects.get_or_create(email=email)
+                email, _ = UserEmail.objects.get_or_create(email=email)
                 contributor, _ = DebianContributor.objects.get_or_create(
                     email=email)
 
@@ -161,7 +161,7 @@ class RetrieveLowThresholdNmuTask(BaseTask):
             qs = DebianContributor.objects.filter(agree_with_low_threshold_nmu=True)
             qs.update(agree_with_low_threshold_nmu=False)
             for email in emails:
-                email, _ = ContributorEmail.objects.get_or_create(email=email)
+                email, _ = UserEmail.objects.get_or_create(email=email)
                 contributor, _ = DebianContributor.objects.get_or_create(
                     email=email)
 

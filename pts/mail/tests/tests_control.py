@@ -1383,7 +1383,7 @@ class KeywordCommandModifyDefault(EmailControlTest, KeywordCommandHelperMixin):
         self.control_process()
 
         # User created
-        self.assertEqual(EmailUser.objects.filter(email=new_user).count(), 1)
+        self.assertEqual(EmailUser.objects.filter_by_email(new_user).count(), 1)
         self.assert_in_response(
             self.get_new_default_list_output_message(new_user))
         self.assert_keywords_in_response(keywords + all_default_keywords)
@@ -1447,8 +1447,8 @@ class KeywordCommandShowDefault(EmailControlTest, KeywordCommandHelperMixin):
         self.control_process()
 
         # User created first...
-        self.assertEqual(EmailUser.objects.filter(email=email).count(), 1)
-        user = EmailUser.objects.get(email=email)
+        self.assertEqual(EmailUser.objects.filter_by_email(email).count(), 1)
+        user = EmailUser.objects.get(user_email__email=email)
         self.assert_in_response(
             self.get_default_keywords_list_message(user.email))
         self.assert_keywords_in_response(

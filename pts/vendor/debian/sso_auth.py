@@ -12,7 +12,7 @@ from __future__ import unicode_literals
 from django.contrib.auth.middleware import RemoteUserMiddleware
 from django.contrib.auth.backends import RemoteUserBackend
 from django.contrib import auth
-from pts.core.models import EmailUser
+from pts.accounts.models import UserEmail
 from pts.core.utils import get_or_none
 from pts.accounts.models import User
 
@@ -86,7 +86,7 @@ class DebianSsoUserBackend(RemoteUserBackend):
 
         email = remote_user
 
-        email_user = get_or_none(EmailUser, email=email)
+        email_user = get_or_none(UserEmail, email=email)
         if not email_user:
             names = self.get_user_details(remote_user)
             kwargs = {}

@@ -14,7 +14,6 @@ from pts.core.models import PseudoPackageName, PackageName
 from pts.core.models import Repository
 from pts.core.models import SourcePackageRepositoryEntry
 from pts.core.models import BinaryPackageRepositoryEntry
-from pts.core.models import ContributorEmail
 from pts.core.models import ContributorName
 from pts.core.models import SourcePackage
 from pts.core.models import News
@@ -32,6 +31,7 @@ from pts.core.utils.packages import AptCache
 from pts.core.tasks import BaseTask
 from pts.core.tasks import clear_all_events_on_exception
 from pts.core.models import SourcePackageName, Architecture
+from pts.accounts.models import UserEmail
 from django.utils.six import reraise
 from django import db
 from django.db import transaction
@@ -239,7 +239,7 @@ class UpdateRepositoriesTask(PackageUpdateTask):
             entry['binary_packages'] = binaries
 
         if 'maintainer' in entry:
-            maintainer_email, _ = ContributorEmail.objects.get_or_create(
+            maintainer_email, _ = UserEmail.objects.get_or_create(
                 email=entry['maintainer']['email'])
             maintainer = ContributorName.objects.get_or_create(
                 contributor_email=maintainer_email,
@@ -255,7 +255,7 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                 uploader.get('name', '')
                 for uploader in entry['uploaders']
             ]
-            existing_contributor_emails_qs = ContributorEmail.objects.filter(
+            existing_contributor_emails_qs = UserEmail.objects.filter(
                 email__in=uploader_emails)
             existing_contributor_emails = {
                 contributor.email: contributor
@@ -264,7 +264,7 @@ class UpdateRepositoriesTask(PackageUpdateTask):
             uploaders = []
             for email, name in zip(uploader_emails, uploader_names):
                 if email not in existing_contributor_emails:
-                    contributor_email = ContributorEmail.objects.create(
+                    contributor_email = UserEmail.objects.create(
                         email=email)
                 else:
                     contributor_email = existing_contributor_emails[email]
@@ -952,9 +952,9 @@ class UpdateTeamPackagesTask(BaseTask):
         :type package: :class:`SourcePackageName <pts.core.models.SourcePackageName>`
         :param maintainer: The maintainer to whose teams the package should be
             added.
-        :type maintainer: :class:`ContributorName <pts.core.models.ContributorEmail>`
+        :type maintainer: :class:`ContributorName <pts.core.models.UserEmail>`
         """
-        teams = Team.objects.filter(maintainer_email=maintainer.email)
+        teams = Team.objects.filter(maintainer_email__email=maintainer.email)
         for team in teams:
             team.packages.add(package)
 

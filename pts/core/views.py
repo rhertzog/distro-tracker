@@ -321,7 +321,7 @@ class RemovePackageFromTeamView(LoginRequiredMixin, View):
         return redirect(team)
 
 
-class JoinTeamView(LoginRequiredMixin, View):
+class JoinTeamView(LoginRequiredMixin,  View):
     """
     Lets logged in users join a public team.
     After a user has been added to the team, he is redirected back to the team
@@ -386,7 +386,7 @@ class ManageTeamMembers(LoginRequiredMixin, ListView):
     context_object_name = 'members_list'
 
     def get_queryset(self):
-        return self.team.members.all().order_by('email')
+        return self.team.members.all().order_by('user_email__email')
 
     def get_context_data(self, *args, **kwargs):
         context = super(ManageTeamMembers, self).get_context_data(*args, **kwargs)
@@ -410,7 +410,7 @@ class RemoveTeamMember(LoginRequiredMixin, View):
 
         if 'email' in request.POST:
             emails = request.POST.getlist('email')
-            self.team.remove_members(EmailUser.objects.filter(email__in=emails))
+            self.team.remove_members(EmailUser.objects.filter(user_email__email__in=emails))
 
         return redirect('pts-team-manage', slug=self.team.slug)
 

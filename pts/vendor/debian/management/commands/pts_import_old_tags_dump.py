@@ -59,7 +59,7 @@ class Command(BaseCommand):
                 try:
                     subscription = Subscription.objects.get(
                         package__name=package,
-                        email_user__email=email)
+                        email_user__user_email__email=email)
                 except Subscription.DoesNotExist:
                     continue
                 subscription.keywords.clear()

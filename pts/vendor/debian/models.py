@@ -32,7 +32,7 @@ class DebianContributor(models.Model):
     """
     Model containing additional Debian-specific information about contributors.
     """
-    email = models.OneToOneField('core.ContributorEmail')
+    email = models.OneToOneField('accounts.UserEmail')
     agree_with_low_threshold_nmu = models.BooleanField(default=False)
     is_debian_maintainer = models.BooleanField(default=False)
     allowed_packages = SpaceDelimitedTextField(blank=True)

@@ -411,7 +411,7 @@ def handle_bounces(sent_to_address):
 
     logger.info('Logged bounce for {email} on {date}'.format(email=user_email,
                                                              date=date))
-    user = EmailUserBounceStats.objects.get(email=user_email)
+    user = EmailUserBounceStats.objects.get(user_email__email=user_email)
     if user.has_too_many_bounces():
         logger.info("{email} has too many bounces".format(email=user_email))
 

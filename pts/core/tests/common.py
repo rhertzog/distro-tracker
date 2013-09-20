@@ -10,7 +10,7 @@
 # Tracking System, including this file, may be copied, modified, propagated, or
 # distributed except according to the terms contained in the LICENSE file.
 from pts.core.models import Architecture
-from pts.core.models import ContributorEmail
+from pts.accounts.models import UserEmail
 from pts.core.models import ContributorName
 from pts.core.models import SourcePackage
 from pts.core.models import SourcePackageName
@@ -58,7 +58,7 @@ def create_source_package(arguments):
     kwargs = {}
     if 'maintainer' in arguments:
         maintainer = arguments['maintainer']
-        maintainer_email = ContributorEmail.objects.get_or_create(
+        maintainer_email = UserEmail.objects.get_or_create(
             email=maintainer['email'])[0]
         kwargs['maintainer'] = ContributorName.objects.get_or_create(
             contributor_email=maintainer_email,
@@ -90,7 +90,7 @@ def create_source_package(arguments):
     if 'uploaders' in arguments:
         for uploader in arguments['uploaders']:
             contributor = ContributorName.objects.get_or_create(
-                contributor_email=ContributorEmail.objects.get_or_create(
+                contributor_email=UserEmail.objects.get_or_create(
                     email=uploader)[0])[0]
             src_pkg.uploaders.add(contributor)
 

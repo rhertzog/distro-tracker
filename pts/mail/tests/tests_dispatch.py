@@ -30,6 +30,7 @@ from pts.core.utils import verp
 from pts.core.utils import get_decoded_message_payload
 from pts.core.utils import pts_render_to_string
 from pts.mail import dispatch
+from pts.accounts.models import UserEmail
 
 from pts.mail.models import EmailUserBounceStats
 
@@ -340,7 +341,7 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         information structure.
         """
         self.subscribe_user_to_package('user@domain.com', self.package_name)
-        user = EmailUserBounceStats.objects.get(email='user@domain.com')
+        user = EmailUserBounceStats.objects.get(user_email__email='user@domain.com')
 
         self.run_dispatch()
 
@@ -394,7 +395,7 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         self.message.add_header('Subject', 'bounce')
         PackageName.objects.create(name='dummy-package')
         self.subscribe_user_to_package('user@domain.com', 'dummy-package')
-        self.user = EmailUserBounceStats.objects.get(email='user@domain.com')
+        self.user = EmailUserBounceStats.objects.get(user_email__email='user@domain.com')
 
     def create_bounce_address(self, to):
         """
@@ -519,7 +520,8 @@ class BounceStatsTest(TestCase):
     Tests for the ``pts.mail.models`` handling users' bounce information.
     """
     def setUp(self):
-        self.user = EmailUserBounceStats.objects.create(email='user@domain.com')
+        self.user = EmailUserBounceStats.objects.create(
+            user_email=UserEmail.objects.create(email='user@domain.com'))
         self.package = PackageName.objects.create(name='dummy-package')
 
     def test_add_sent_message(self):
@@ -603,7 +605,7 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
         the team.
         """
         email = self.user.main_email
-        membership = self.team.team_membership_set.get(email_user__email=email)
+        membership = self.team.team_membership_set.get(email_user__user_email__email=email)
         membership.set_keywords(self.package, ['default'])
         membership.muted = True
         membership.save()
@@ -618,7 +620,7 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
         correct keyword.
         """
         email = self.user.main_email
-        membership = self.team.team_membership_set.get(email_user__email=email)
+        membership = self.team.team_membership_set.get(email_user__user_email__email=email)
         membership.set_keywords(self.package, ['default'])
 
         self.run_dispatch()
@@ -631,7 +633,7 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
         have the messages keyword set.
         """
         email = self.user.main_email
-        membership = self.team.team_membership_set.get(email_user__email=email)
+        membership = self.team.team_membership_set.get(email_user__user_email__email=email)
         membership.set_keywords(
             self.package,
             [k.name for k in Keyword.objects.exclude(name='default')])
@@ -645,7 +647,7 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
         Tests that the headers of the dispatched message are correctly set.
         """
         email = self.user.main_email
-        membership = self.team.team_membership_set.get(email_user__email=email)
+        membership = self.team.team_membership_set.get(email_user__user_email__email=email)
         membership.set_keywords(self.package, ['default'])
 
         self.run_dispatch()
@@ -677,7 +679,7 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
         which is a part of the membership is, no message is forwarded.
         """
         email = self.user.main_email
-        membership = self.team.team_membership_set.get(email_user__email=email)
+        membership = self.team.team_membership_set.get(email_user__user_email__email=email)
         membership.set_keywords(self.package, ['default'])
         membership.mute_package(self.package)
 

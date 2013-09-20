@@ -26,6 +26,7 @@ from django.utils.encoding import force_bytes
 from django.utils.functional import curry
 from pts.mail.tests.tests_dispatch import DispatchTestHelperMixin, DispatchBaseTest
 from pts.accounts.models import User
+from pts.accounts.models import UserEmail
 from pts.core.tests.common import make_temp_directory
 from pts.core.utils.email_messages import message_from_bytes
 from pts.core.models import ActionItem, ActionItemType
@@ -39,7 +40,6 @@ from pts.core.models import SourcePackage
 from pts.core.models import PseudoPackageName
 from pts.core.models import SourcePackageName
 from pts.core.models import Repository
-from pts.core.models import ContributorEmail
 from pts.core.tests.common import set_mock_response
 from pts.core.tests.common import temporary_media_dir
 from pts.core.tasks import run_task
@@ -349,7 +349,7 @@ class RetrieveLowThresholdNmuTest(TestCase):
         Tests updating the list of developers that allow the low threshold
         NMU when the developer was previously registered in the database.
         """
-        email = ContributorEmail.objects.create(email='dummy@debian.org')
+        email = UserEmail.objects.create(email='dummy@debian.org')
         set_mock_response(mock_requests,
             "Text text text\n"
             "text more text...\n"
@@ -371,7 +371,7 @@ class RetrieveLowThresholdNmuTest(TestCase):
         removed from the list.
         """
         # Set up a Debian developer that is already in the NMU list.
-        email = ContributorEmail.objects.create(email='dummy@debian.org')
+        email = UserEmail.objects.create(email='dummy@debian.org')
         DebianContributor.objects.create(email=email,
                                          agree_with_low_threshold_nmu=True)
         set_mock_response(mock_requests,
@@ -418,7 +418,7 @@ class RetrieveDebianMaintainersTest(TestCase):
         Tests updating the DM list when the developer was previously registered
         in the database.
         """
-        ContributorEmail.objects.create(email='dummy@debian.org')
+        UserEmail.objects.create(email='dummy@debian.org')
         set_mock_response(mock_requests,
             "Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
             "Uid: Dummy Developer <dummy@debian.org>\n"
@@ -444,7 +444,7 @@ class RetrieveDebianMaintainersTest(TestCase):
         the allowed packages list.
         """
         # Set up a Debian developer that is already in the NMU list.
-        email = ContributorEmail.objects.create(email='dummy@debian.org')
+        email = UserEmail.objects.create(email='dummy@debian.org')
         DebianContributor.objects.create(email=email,
                                          is_debian_maintainer=True,
                                          allowed_packages=['one'])
@@ -472,7 +472,7 @@ class RetrieveDebianMaintainersTest(TestCase):
         the allowed packages list.
         """
         # Set up a Debian developer that is already in the DM list.
-        email = ContributorEmail.objects.create(email='dummy@debian.org')
+        email = UserEmail.objects.create(email='dummy@debian.org')
         DebianContributor.objects.create(email=email,
                                          is_debian_maintainer=True,
                                          allowed_packages=['one'])
@@ -493,7 +493,7 @@ class RetrieveDebianMaintainersTest(TestCase):
 
 class DebianContributorExtraTest(TestCase):
     def test_maintainer_extra(self):
-        email = ContributorEmail.objects.create(email='dummy@debian.org')
+        email = UserEmail.objects.create(email='dummy@debian.org')
         d = DebianContributor.objects.create(email=email,
                                              agree_with_low_threshold_nmu=True)
 
@@ -532,7 +532,7 @@ class DebianContributorExtraTest(TestCase):
         )
 
     def test_uploader_extra(self):
-        email = ContributorEmail.objects.create(email='dummy@debian.org')
+        email = UserEmail.objects.create(email='dummy@debian.org')
         d = DebianContributor.objects.create(email=email,
                                              agree_with_low_threshold_nmu=True)
 
@@ -4138,7 +4138,7 @@ class ImportOldSubscribersTests(TestCase):
         for subscriber in subscribers:
             self.assertTrue(Subscription.objects.filter(
                 package=package,
-                email_user__email=subscriber).exists())
+                email_user__user_email__email=subscriber).exists())
 
     def test_non_existing_package_imported(self):
         """

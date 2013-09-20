@@ -39,6 +39,7 @@ from pts.accounts.forms import ForgotPasswordForm
 from pts.accounts.forms import ChangePersonalInfoForm
 from pts.accounts.models import MergeAccountConfirmation
 from pts.accounts.models import User
+from pts.accounts.models import UserEmail
 from pts.accounts.models import UserRegistrationConfirmation
 from pts.accounts.models import AddEmailConfirmation
 from pts.accounts.models import ResetPasswordConfirmation
@@ -228,7 +229,7 @@ class ManageAccountEmailsView(LoginRequiredMixin, MessageMixin, FormView):
 
     def form_valid(self, form):
         email = form.cleaned_data['email']
-        email_user, _ = EmailUser.objects.get_or_create(email=email)
+        email_user, _ = UserEmail.objects.get_or_create(email=email)
         if not email_user.user:
             # The email is not associated with an account yet.
             # Ask for confirmation to add it to this account.
@@ -266,7 +267,7 @@ class AccountMergeConfirmView(LoginRequiredMixin, View):
         if 'email' not in query_dict:
             raise Http404
         email = query_dict['email']
-        email_user = get_object_or_404(EmailUser, email=email)
+        email_user = get_object_or_404(UserEmail, email=email)
         return email_user
 
     def get(self, request):
@@ -348,7 +349,7 @@ class AccountMergeConfirmedView(LoginRequiredMixin, TemplateView):
         if 'email' not in self.request.GET:
             raise Http404
         email = self.request.GET['email']
-        email_user = get_object_or_404(EmailUser, email=email)
+        email_user = get_object_or_404(UserEmail, email=email)
         context = super(AccountMergeConfirmedView, self).get_context_data(**kwargs)
         context['email'] = email_user
 
@@ -388,6 +389,10 @@ class SubscriptionsView(LoginRequiredMixin, View):
     def get(self, request):
         user = request.user
         # Map users emails to the subscriptions of that email
+        emails = [
+            EmailUser.objects.get_or_create(user_email=email)[0]
+            for email in user.emails.all()
+        ]
         subscriptions = {
             email: {
                 'subscriptions': sorted([
@@ -397,7 +402,7 @@ class SubscriptionsView(LoginRequiredMixin, View):
                     membership for membership in email.membership_set.all()
                 ], key=lambda m: m.team.name)
             }
-            for email in user.emails.all()
+            for email in emails
         }
         return render(request, self.template_name, {
             'subscriptions': subscriptions,
@@ -472,7 +477,7 @@ class UnsubscribeUserView(LoginRequiredMixin, View):
         else:
             # Unsubscribe only the given email from the package
             qs = Subscription.objects.filter(
-                email_user__email=request.POST['email'],
+                email_user__user_email__email=request.POST['email'],
                 package__name=package)
 
         qs.delete()
@@ -547,7 +552,8 @@ class ModifyKeywordsView(LoginRequiredMixin, View):
     def modify_default_keywords(self, email, keywords):
         try:
             email_user = self.user.emails.get(email=email)
-        except EmailUser.DoesNotExist:
+            email_user = email_user.emailuser
+        except (EmailUser.DoesNotExist, UserEmail.DoesNotExist):
             return HttpResponseForbidden()
 
         email_user.default_keywords = self.get_keywords(keywords)
@@ -557,7 +563,8 @@ class ModifyKeywordsView(LoginRequiredMixin, View):
     def modify_subscription_keywords(self, email, package, keywords):
         try:
             email_user = self.user.emails.get(email=email)
-        except EmailUser.DoesNotExist:
+            email_user = email_user.emailuser
+        except (EmailUser.DoesNotExist, UserEmail.DoesNotExist):
             return HttpResponseForbidden()
 
         subscription = get_object_or_404(

@@ -11,7 +11,7 @@
 from __future__ import unicode_literals
 from django import forms
 from pts.accounts.models import User
-from pts.core.models import EmailUser
+from pts.accounts.models import UserEmail
 
 
 class UserCreationForm(forms.ModelForm):
@@ -34,8 +34,8 @@ class UserCreationForm(forms.ModelForm):
         # Check whether a different user is already associated with this
         # email address.
         try:
-            email_user = EmailUser.objects.get(email=main_email)
-        except EmailUser.DoesNotExist:
+            email_user = UserEmail.objects.get(email=main_email)
+        except UserEmail.DoesNotExist:
             return main_email
 
         if email_user.user is not None:
@@ -45,7 +45,7 @@ class UserCreationForm(forms.ModelForm):
 
     def save(self, *args, **kwargs):
         user = super(UserCreationForm, self).save(commit=True)
-        email, _ = EmailUser.objects.get_or_create(email=user.main_email)
+        email, _ = UserEmail.objects.get_or_create(email=user.main_email)
         user.emails.add(email)
         user.save()
 
