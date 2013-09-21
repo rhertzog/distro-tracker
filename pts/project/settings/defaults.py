@@ -173,6 +173,7 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.markup',
     'django_email_accounts',
+    'south',
     'pts.core',
     'pts.accounts',
     'pts.mail',

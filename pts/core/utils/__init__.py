@@ -20,6 +20,7 @@ import lzma
 import gpgme
 import tarfile
 import contextlib
+from south.modelsinspector import add_introspection_rules
 
 from .email_messages import extract_email_address_from_header
 from .email_messages import get_decoded_message_payload
@@ -160,6 +161,10 @@ class SpaceDelimitedTextField(models.TextField):
     def value_to_string(self, obj):
         value = self._get_val_from_obj(obj)
         return self.get_prep_value(value)
+
+
+# Register the custom field as safe to introspect by South
+add_introspection_rules([], ["^pts\.core\.utils\.SpaceDelimitedTextField"])
 
 
 #: A map of currently available VCS systems' shorthands to their names.

@@ -11,6 +11,7 @@ The Package Tracking System currently depends on the following Debian packages:
 - python-django (>= 1.5)
 - python-requests
 - python-django-jsonfield
+- python-django-south
 - python-debian
 - python-apt
 - python-gpgme
@@ -97,10 +98,12 @@ tests, by doing::
 
 $ ./manage.py test
 
-To create the database::
+To create the database you must run the following commands::
 
 $ ./manage.py syncdb
+$ ./manage.py migrate
 
+This is because some of the apps' models are managed by South.
 
 See also the Debian package's README.Debian for some details about the setup.
  
