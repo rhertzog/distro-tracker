@@ -1,4 +1,0 @@
-debian/gunicorn/package-tracking-system.example etc/gunicorn.d/
-debian/nginx/package-tracking-system etc/nginx/sites-available/
-debian/apache/package-tracking-system etc/apache2/sites-available/
-data/templates/README var/lib/package-tracking-system/

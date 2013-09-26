@@ -1,14 +1,14 @@
 <VirtualHost *:80>
-	ServerName pts
+	ServerName distro-tracker
 
-	CustomLog ${APACHE_LOG_DIR}/pts-access.log combined
-	ErrorLog ${APACHE_LOG_DIR}/pts-error.log
+	CustomLog ${APACHE_LOG_DIR}/distro-tracker-access.log combined
+	ErrorLog ${APACHE_LOG_DIR}/distro-tracker-error.log
 	LogLevel warn
 
-	Alias /static /var/lib/package-tracking-system/static
-	Alias /media /var/lib/package-tracking-system/media
+	Alias /static /var/lib/distro-tracker/static
+	Alias /media /var/lib/distro-tracker/media
 
-	<Directory /var/lib/package-tracking-system>
+	<Directory /var/lib/distro-tracker>
 		Order allow,deny
 		Allow from all
 		SetHandler None
@@ -33,16 +33,16 @@
 		AddOutputFilterByType DEFLATE text/html text/css text/plain
 	</Directory>
 
-	WSGIDaemonProcess pts user=pts group=pts processes=4 maximum-requests=500 threads=1 display-name=%{GROUP}
-	WSGIProcessGroup pts
+	WSGIDaemonProcess distro-tracker user=distro-tracker group=distro-tracker processes=4 maximum-requests=500 threads=1 display-name=%{GROUP}
+	WSGIProcessGroup distro-tracker
 	WSGIScriptAlias / /usr/share/pyshared/pts/project/wsgi.py
 </VirtualHost>
 
 <VirtualHost *:443>
-	ServerName pts
+	ServerName distro-tracker
 
-	CustomLog ${APACHE_LOG_DIR}/pts-access.log combined
-	ErrorLog ${APACHE_LOG_DIR}/pts-error.log
+	CustomLog ${APACHE_LOG_DIR}/distro-tracker-access.log combined
+	ErrorLog ${APACHE_LOG_DIR}/distro-tracker-error.log
 	LogLevel warn
 
         SSLEngine on
@@ -51,10 +51,10 @@
         SSLCertificateFile    /etc/ssl/certs/ssl-cert-snakeoil.pem
         SSLCertificateKeyFile /etc/ssl/private/ssl-cert-snakeoil.key
 
-	Alias /static /var/lib/package-tracking-system/static
-	Alias /media /var/lib/package-tracking-system/media
+	Alias /static /var/lib/distro-tracker/static
+	Alias /media /var/lib/distro-tracker/media
 
-	<Directory /var/lib/package-tracking-system>
+	<Directory /var/lib/distro-tracker>
 		Order allow,deny
 		Allow from all
 		SetHandler None
@@ -79,6 +79,6 @@
 		AddOutputFilterByType DEFLATE text/html text/css text/plain
 	</Directory>
 
-	WSGIProcessGroup pts
+	WSGIProcessGroup distro-tracker
 	WSGIScriptAlias / /usr/share/pyshared/pts/project/wsgi.py
 </VirtualHost>

@@ -5,25 +5,25 @@ server {
         listen   [::]:443 ssl ipv6only=on;
 
 	# Replace localhost by the correct FQDN here
-	server_name pts;
+	server_name distro-tracker;
 
 	# Replace this SSL certificate by your own one
         ssl_certificate         /etc/ssl/certs/ssl-cert-snakeoil.pem;
         ssl_certificate_key     /etc/ssl/private/ssl-cert-snakeoil.key;
 
-        access_log /var/log/nginx/pts-access.log;
-        error_log /var/log/nginx/pts-error.log error;
+        access_log /var/log/nginx/distro-tracker-access.log;
+        error_log /var/log/nginx/distro-tracker-error.log error;
 
 	location / {
 		proxy_set_header Host $http_host;
-		proxy_pass http://unix:/var/lib/package-tracking-system/gunicorn.sock;
+		proxy_pass http://unix:/var/lib/distro-tracker/gunicorn.sock;
 	}
 
 	location /static/ {
-		alias /var/lib/package-tracking-system/static/;
+		alias /var/lib/distro-tracker/static/;
 	}
 
 	location /media/ {
-		alias /var/lib/package-tracking-system/media/;
+		alias /var/lib/distro-tracker/media/;
 	}
 }

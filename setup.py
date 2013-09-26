@@ -40,7 +40,7 @@ setup(name='DistroTracker',
       url='http://wiki.debian.org/qa.debian.org/distro-tracker',
       packages=[
         '.'.join(directory.split(os.sep))
-        for directory, _, files in chain(os.walk('pts'), os.walk('django_email_accounts')):
+        for directory, _, files in chain(os.walk('pts'), os.walk('django_email_accounts'))
         if '__init__.py' in files
       ],
       package_data=find_package_data(),

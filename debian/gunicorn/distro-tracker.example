@@ -3,11 +3,11 @@ CONFIG = {
     #'environment': {
     #    'PYTHONPATH': '/path/to/custom/python/packages',
     #},
-    'working_dir': '/var/lib/package-tracking-system/',
-    'user': 'pts',
-    'group': 'pts',
+    'working_dir': '/var/lib/distro-tracker/',
+    'user': 'distro-tracker',
+    'group': 'distro-tracker',
     'args': (
-        '--bind=unix:/var/lib/package-tracking-system/gunicorn.sock',
+        '--bind=unix:/var/lib/distro-tracker/gunicorn.sock',
         '--workers=4',
         'pts.project.settings',
     ),

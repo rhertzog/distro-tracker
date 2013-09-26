@@ -1,0 +1,73 @@
+Notes concerning the distro-tracker Debian package
+--------------------------------------------------
+
+Initial setup
+-------------
+
+The package does quite some work for you but you still have some things
+to take care of:
+
+1/ by default, the package is configured to use a PostgreSQL database
+   using the default local unix socket and the authentication is done at
+   the user level. The package creates a "distro-tracker" Unix account,
+   you must create a "distro-tracker" database that can be managed by the
+   "distro-tracker" user. You can do this with:
+
+   $ sudo -u postgres createuser -D -R -S distro-tracker
+   $ sudo -u postgres createdb -O distro-tracker distro-tracker
+
+   If the default database configuration doesn't suit you, go
+   edit /etc/distro-tracker/settings/db_postgresql.py.
+
+2/ the Distro Tracker has many configuration options, you should review
+   its documentation and /etc/distro-tracker/settings/* and update
+   /etc/distro-tracker/settings/local.py according to your wishes.
+
+3/ you must initialize the database:
+
+   $ sudo -u distro-tracker distro-tracker syncdb
+   $ sudo -u distro-tracker distro-tracker migrate
+
+4/ you must configure a webserver (see below for details on how to use
+   nginx + gunicorn or apache2 + mod_wsgi).
+
+Configuration with Nginx + Gunicorn
+-----------------------------------
+
+If you wish to use nginx, you should also install gunicorn (they are
+probably already installed by way of dependencies unless you already had a
+webserver installed).
+
+The package provides a sample gunicorn configuration to run the Distro
+Tracker application on /var/lib/distro-tracker/gunicorn.sock and the
+corresponding nginx virtual host.
+
+$ sudo apt-get install nginx gunicorn
+$ sudo cp /etc/gunicorn.d/distro-tracker.example \
+          /etc/gunicorn.d/distro-tracker
+$ sudo service gunicorn restart
+$ sudo vim /etc/nginx/sites-available/distro-tracker
+$ sudo ln -sf /etc/nginx/sites-available/distro-tracker \
+              /etc/nginx/sites-enabled
+$ sudo service nginx restart
+
+Configuration with Apache + mod_wsgi
+------------------------------------
+
+If you wish to use apache2, you should also install libapache2-mod-wsgi.
+The package provides a sample virtual host configuration file that
+you can customize and enable:
+
+$ sudo apt-get install apache2 libapache2-mod-wsgi
+$ sudo vim /etc/apache2/sites-available/distro-tracker
+$ sudo a2enmod ssl
+$ sudo a2ensite distro-tracker
+
+What the package does for you
+-----------------------------
+
+* Create the "distro-tracker" user
+* Collect static files in /var/lib/distro-tracker/static/
+  (to do it yourself: sudo -u distro-tracker distro-tracker collectstatic)
+* Provide ready to customize configuration files for nginx/gunicorn
+  and apache/mod_wsgi

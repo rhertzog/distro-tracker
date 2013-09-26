@@ -1,4 +1,4 @@
-Source: package-tracking-system
+Source: distro-tracker
 Section: web
 Priority: optional
 Maintainer: Raphaël Hertzog <hertzog@debian.org>
@@ -12,35 +12,37 @@ Build-Depends: debhelper (>= 9),
     python-debian,
     python-django (>= 1.5),
     python-django-jsonfield,
+    python-django-south,
     python-gpgme,
+    python-ldap,
     python-lzma,
     python-requests,
     python-soappy,
     python-yaml,
 Standards-Version: 3.9.4
-Homepage: http://wiki.debian.org/qa.debian.org/pts
-Vcs-Git: git://anonscm.debian.org/qa/pts.git
-Vcs-Browser: http://anonscm.debian.org/gitweb/?p=qa/pts.git;a=summary
+Homepage: http://wiki.debian.org/qa.debian.org/distro-tracker
+Vcs-Git: git://anonscm.debian.org/qa/distro-tracker.git
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=qa/distro-tracker.git;a=summary
 
-Package: package-tracking-system
+Package: distro-tracker
 Architecture: all
-Depends: python-pts (= ${source:Version}), adduser, pwgen,
+Depends: python, python-dmt (= ${source:Version}), adduser, pwgen,
     ssl-cert, nginx | apache2 | httpd, gunicorn | libapache2-mod-wsgi,
     ${python:Depends},
     ${misc:Depends}
 Recommends: postgresql, python-psycopg2
 Description: follow the status of packages of a Debian-based distribution
- The Package Tracking System offers a web interface to display an overview of
- each source package provided as well as an email interface to be notified of
- changes concerning packages that the user monitors.
+ Distro Tracker offers a web interface to display an overview of each source
+ package provided as well as an email interface to be notified of changes
+ concerning packages that the user monitors.
  .
- The main deployment of this software is on http://packages.qa.debian.org
+ The main deployment of this software is on http://tracker.debian.org
  but each Debian derivative can have its own instance.
  .
- This package provides all the services to run a Package Tracking System
+ This package provides all the services to run a Distro Tracker
  instance.
 
-Package: python-pts
+Package: python-dmt
 Section: python
 Architecture: all
 Depends: ${python:Depends},
@@ -49,28 +51,30 @@ Depends: ${python:Depends},
     python-debian,
     python-django (>= 1.5),
     python-django-jsonfield,
+    python-django-south,
     python-gpgme,
     python-lzma,
     python-requests,
     python-soappy,
     python-yaml,
     ${misc:Depends}
-Description: Python libraries of the Package Tracking System
- The Package Tracking System offers a web interface to display an overview of
- each source package provided as well as an email interface to be notified of
- changes concerning packages that the user monitors.
+Recommends: python-ldap
+Description: Python libraries of the Distro (Meta) Tracker
+ Distro Tracker offers a web interface to display an overview of each source
+ package provided as well as an email interface to be notified of changes
+ concerning packages that the user monitors.
  .
  This package provides all the libraries developed as part of the
  project. Some of them might be useful outside of this project.
 
-Package: package-tracking-system-doc
+Package: distro-tracker-doc
 Section: doc
 Architecture: all
 Depends: ${misc:Depends}, ${sphinxdoc:Depends}
-Description: documentation of the Package Tracking System
- The Package Tracking System offers a web interface to display an overview of
- each source package provided as well as an email interface to be notified of
- changes concerning packages that the user monitors.
+Description: documentation of the Distro Tracker
+ Distro Tracker offers a web interface to display an overview of each source
+ package provided as well as an email interface to be notified of changes
+ concerning packages that the user monitors.
  .
  This package provides all the documentation, from setup instructions to API
  documentation.

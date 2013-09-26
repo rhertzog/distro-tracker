@@ -42,7 +42,7 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(PTS_BASE_PATH, 'data', 'pts.sqlite'),
+        'NAME': os.path.join(PTS_BASE_PATH, 'data', 'distro-tracker.sqlite'),
         # The following settings are not used with sqlite3:
         'USER': '',
         'PASSWORD': '',
@@ -109,7 +109,7 @@ STATICFILES_FINDERS = (
 
 # Make this unique, and don't share it with anybody.
 try:
-    with open('/var/lib/package-tracking-system/key', 'r') as f:
+    with open('/var/lib/distro-tracker/key', 'r') as f:
         SECRET_KEY = f.read().strip()
 except IOError:
     SECRET_KEY = 'etu2#5lv=!0(g9l31mw=cpwhioy!egg60lb5o3_67d83#(wu-u'

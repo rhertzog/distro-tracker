@@ -1,0 +1,30 @@
+#!/bin/sh
+
+set -e 
+
+case "$1" in
+    configure)
+	adduser --system --group --shell /bin/bash \
+	        --gecos "Distro Tracker System User" \
+		--home /var/lib/distro-tracker \
+		distro-tracker >/dev/null
+	if [ "$2" = "" ]; then
+	    chown -R distro-tracker:distro-tracker \
+	          /var/cache/distro-tracker \
+		  /var/lib/distro-tracker \
+		  /var/log/distro-tracker
+	fi
+	# Create the secret key
+	if [ ! -f /var/lib/distro-tracker/key ]; then
+	    pwgen -s -y 50 > /var/lib/distro-tracker/key
+	    chown distro-tracker:distro-tracker /var/lib/distro-tracker/key
+	    chmod 640 /var/lib/distro-tracker/key
+	fi
+	# Collect the static files
+	su - distro-tracker -c "distro-tracker collectstatic -v 0 --noinput"
+    ;;
+esac
+
+#DEBHELPER#
+
+exit 0

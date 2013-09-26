@@ -1,6 +1,6 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: PackageTrackingSystem
-Source: http://anonscm.debian.org/gitweb/?p=qa/pts.git
+Upstream-Name: DistroTracker
+Source: http://anonscm.debian.org/gitweb/?p=qa/distro-tracker.git
 
 Files: *
 Copyright: 2013 Marko Lalic <marko.lalic@gmail.com>

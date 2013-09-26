@@ -1,0 +1,6 @@
+/var/cache/distro-tracker
+/var/log/distro-tracker
+/var/lib/distro-tracker/static
+/var/lib/distro-tracker/media
+/var/lib/distro-tracker/keyring
+/var/lib/distro-tracker/templates

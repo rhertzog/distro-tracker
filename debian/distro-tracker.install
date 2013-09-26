@@ -1,0 +1,4 @@
+debian/gunicorn/distro-tracker.example etc/gunicorn.d/
+debian/nginx/distro-tracker etc/nginx/sites-available/
+debian/apache/distro-tracker etc/apache2/sites-available/
+data/templates/README var/lib/distro-tracker/
