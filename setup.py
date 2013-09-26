@@ -4,12 +4,13 @@ import os
 import os.path
 
 from distutils.core import setup
+from itertools import chain
 
 def find_package_data():
     pkgdata = {}
     pkgdir= {}
     EXCLUDE_FROM_DATA=('.py', '.pyc', '.pyo')
-    for directory, _, files in os.walk('pts'):
+    for directory, _, files in chain(os.walk('pts'), os.walk('django_email_accounts')):
         package = '.'.join(directory.split(os.sep))
         if '__init__.py' in files:
             # Record real packages and their directories
@@ -31,15 +32,15 @@ def find_package_data():
             )
     return pkgdata
 
-setup(name='PackageTrackingSystem',
+setup(name='DistroTracker',
       version='0.1',
       description='Synoptic view of all packages of a Debian-based distribution',
-      author='Debian Package Tracking System Developers',
+      author='Distro Tracker Developers',
       author_email='debian-qa@lists.debian.org',
-      url='http://wiki.debian.org/qa.debian.org/pts',
+      url='http://wiki.debian.org/qa.debian.org/distro-tracker',
       packages=[
         '.'.join(directory.split(os.sep))
-        for directory, _, files in os.walk('pts')
+        for directory, _, files in chain(os.walk('pts'), os.walk('django_email_accounts')):
         if '__init__.py' in files
       ],
       package_data=find_package_data(),
