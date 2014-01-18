@@ -2135,7 +2135,7 @@ class Team(models.Model):
         """
         return (
             user == self.owner or
-            self.members.filter(pk__in=user.emails.all()).exists()
+            self.members.filter(user_email__pk__in=user.emails.all()).exists()
         )
 
 

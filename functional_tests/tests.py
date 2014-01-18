@@ -1219,7 +1219,7 @@ class TeamTests(SeleniumTestCase):
         """
         Logs the currently logged in user out.
         """
-        self.click_link("Log out")
+        self.browser.find_element_by_id("account-logout").click()
 
     def test_create_team(self):
         """
@@ -1543,7 +1543,7 @@ class TeamTests(SeleniumTestCase):
         user = User.objects.create_user(
             main_email='other@domain.com',
             password=self.password)
-        EmailUser.objects.get_or_create(email=user.main_email)
+        emailuser = EmailUser.objects.get_or_create(email=user.main_email)
         ## --
 
         # The user logs in and goes to the team page

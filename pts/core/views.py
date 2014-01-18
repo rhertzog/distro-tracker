@@ -372,7 +372,7 @@ class LeaveTeamView(LoginRequiredMixin, View):
             raise PermissionDenied
 
         # Remove all the user's emails from the team
-        team.remove_members(request.user.emails.all())
+        team.remove_members(EmailUser.objects.filter(user_email__pk__in=request.user.emails.all()))
 
         return redirect(team)
 
