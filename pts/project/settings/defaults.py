@@ -171,7 +171,6 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
-    'django.contrib.markup',
     'django_email_accounts',
     'south',
     'pts.core',

@@ -1668,14 +1668,6 @@ class HtmlNewsRenderer(NewsRenderer):
         return mark_safe(self.news.content)
 
 
-class RstNewsRenderer(NewsRenderer):
-    """
-    Renders news content as ReStructuredText.
-    """
-    content_type = 'text/x-rst'
-    template_name = 'core/news-rst.html'
-
-
 class EmailNewsRenderer(NewsRenderer):
     """
     Renders news content as an email message.
