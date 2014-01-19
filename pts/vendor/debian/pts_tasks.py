@@ -93,7 +93,7 @@ class RetrieveDebianMaintainersTask(BaseTask):
                     maintainers[email].append(pkg)
 
         # Now update the developer information
-        with transaction.commit_on_success():
+        with transaction.atomic():
             # Reset all old maintainers first.
             qs = DebianContributor.objects.filter(is_debian_maintainer=True)
             qs.update(is_debian_maintainer=False)
@@ -156,7 +156,7 @@ class RetrieveLowThresholdNmuTask(BaseTask):
 
     def execute(self):
         emails = self._retrieve_emails()
-        with transaction.commit_on_success():
+        with transaction.atomic():
             # Reset all threshold flags first.
             qs = DebianContributor.objects.filter(agree_with_low_threshold_nmu=True)
             qs.update(agree_with_low_threshold_nmu=False)
@@ -456,7 +456,7 @@ class UpdatePackageBugStats(BaseTask):
         except:
             logger.exception("Could not get bugs tagged gift")
 
-        with transaction.commit_on_success():
+        with transaction.atomic():
             # Clear previous stats
             PackageBugStats.objects.all().delete()
             self._remove_obsolete_action_items(bug_stats.keys())
@@ -510,7 +510,7 @@ class UpdatePackageBugStats(BaseTask):
                     self.bug_categories, bug_counts)
             ]
 
-        with transaction.commit_on_success():
+        with transaction.atomic():
             # Clear previous stats
             BinaryPackageBugStats.objects.all().delete()
             packages = BinaryPackageName.objects.filter(name__in=bug_stats.keys())

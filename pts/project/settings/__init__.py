@@ -23,3 +23,9 @@ if sys.argv[1:2] == ['test']:
     from .test import *
 else:
     from .local import *
+
+# Useful for Django 1.5 compatibility, can be dropped when 1.6 or later
+# is required
+from django.db import transaction
+if not hasattr(transaction, 'atomic'):
+    transaction.atomic = transaction.commit_on_success

@@ -570,7 +570,7 @@ class UpdateRepositoriesTask(PackageUpdateTask):
         # Group all files by repository to which they belong
         repository_files = self.group_files_by_repository(updated_sources)
 
-        with transaction.commit_on_success():
+        with transaction.atomic():
             for repository, sources_files in repository_files.items():
                 # First update package information based on updated files
                 for sources_file in sources_files:
@@ -820,7 +820,7 @@ class UpdatePackageGeneralInformation(PackageUpdateTask):
             event.arguments['name']
             for event in self.get_all_events()
         )
-        with transaction.commit_on_success():
+        with transaction.atomic():
             qs = SourcePackageName.objects.filter(name__in=package_names)
             for package in qs:
                 entry = package.main_entry
@@ -877,7 +877,7 @@ class UpdateVersionInformation(PackageUpdateTask):
             event.arguments['name']
             for event in self.get_all_events()
         )
-        with transaction.commit_on_success():
+        with transaction.atomic():
             qs = SourcePackageName.objects.filter(name__in=package_names)
             for package in qs:
                 versions, _ = PackageExtractedInfo.objects.get_or_create(
@@ -925,7 +925,7 @@ class UpdateSourceToBinariesInformation(PackageUpdateTask):
             event.arguments['name']
             for event in self.get_all_events()
         )
-        with transaction.commit_on_success():
+        with transaction.atomic():
             if self.is_initial_task():
                 qs = SourcePackageName.objects.all()
             else:

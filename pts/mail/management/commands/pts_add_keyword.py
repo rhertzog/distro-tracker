@@ -100,7 +100,7 @@ class Command(BaseCommand):
                 else:
                     subscription.keywords.add(new_keyword)
 
-    @transaction.commit_on_success
+    @transaction.atomic
     def handle(self, *args, **kwargs):
         self.verbose = int(kwargs.get('verbosity', 1)) > 1
         if len(args) < 1:
