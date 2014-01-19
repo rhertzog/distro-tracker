@@ -228,6 +228,11 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True,
         },
+        'pts.core.panels': {
+            'handlers': ['console-timestamp'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
         'pts.core.tasks': {
             'handlers': ['console-timestamp'],
             'level': 'DEBUG',
