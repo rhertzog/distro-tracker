@@ -13,7 +13,7 @@ override_dh_auto_install:
 	dh_auto_install
 	install -m 755 -D manage.py debian/$(NAME)/usr/bin/distro-tracker
 	# Move settings in /etc/
-	for dir in `find debian/tmp/ -type d -wholename '*/pts/project/settings'`; do \
+	for dir in `find debian/tmp/ -type d -wholename '*/distro_tracker/project/settings'`; do \
 	    if [ ! -e debian/tmp/etc/$(NAME)/settings ]; then \
 		mkdir -p debian/tmp/etc/$(NAME)/; \
 		mv $$dir debian/tmp/etc/$(NAME)/; \

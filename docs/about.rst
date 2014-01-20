@@ -46,7 +46,7 @@ message forwarding by the PTS:
 
 - source package
 - pseudo package - a list of pseudo packages should be provided by a vendor specific
-  function :func:`pts.vendor.skeleton.rules.get_pseudo_package_list`
+  function :func:`distro_tracker.vendor.skeleton.rules.get_pseudo_package_list`
 - subscription-only package - neither a pseudo package nor a source package, but
   still allows the same email functionality as the other package types
 
@@ -98,17 +98,17 @@ The information currently provided for each package is divided into the
 following panels:
 
 - General package information panel
-  (:class:`GeneralInformationPanel <pts.core.panels.GeneralInformationPanel>`)
+  (:class:`GeneralInformationPanel <distro_tracker.core.panels.GeneralInformationPanel>`)
 - Versions panel
-  (:class:`VersionsInformationPanel <pts.core.panels.VersionsInformationPanel>`)
+  (:class:`VersionsInformationPanel <distro_tracker.core.panels.VersionsInformationPanel>`)
 - Binaries panel
-  (:class:`BinariesInformationPanel <pts.core.panels.BinariesInformationPanel>`)
+  (:class:`BinariesInformationPanel <distro_tracker.core.panels.BinariesInformationPanel>`)
 - News panel
-  (:class:`NewsPanel <pts.core.panels.NewsPanel>`)
+  (:class:`NewsPanel <distro_tracker.core.panels.NewsPanel>`)
 - Bugs panel
-  (:class:`BugsPanel <pts.core.panels.BugsPanel>`)
+  (:class:`BugsPanel <distro_tracker.core.panels.BugsPanel>`)
 - Action needed panel
-  (:class:`ActionNeededPanel <pts.core.panels.ActionNeededPanel>`)
+  (:class:`ActionNeededPanel <distro_tracker.core.panels.ActionNeededPanel>`)
 
 Vendors can easily customize and add new panels to the page. For more
 information refer to the

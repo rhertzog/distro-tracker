@@ -34,9 +34,9 @@ Management commands
 In order to have the received email messages properly processed they need to
 be passed to the management commands implemented in the PTS.
 
-* :mod:`pts_control <pts.mail.management.commands.pts_control>` - handles control messages
-* :mod:`pts_dispatch <pts.mail.management.commands.pts_dispatch>` - handles package messages
-* :mod:`pts_receive_news <pts.mail.management.commands.pts_receive_news>` -
+* :mod:`pts_control <distro_tracker.mail.management.commands.pts_control>` - handles control messages
+* :mod:`pts_dispatch <distro_tracker.mail.management.commands.pts_dispatch>` - handles package messages
+* :mod:`pts_receive_news <distro_tracker.mail.management.commands.pts_receive_news>` -
   handles messages which should be turned into news items
 
 These commands expect the received email message on standard input, which
@@ -53,7 +53,7 @@ to the user who owns the PTS application. That user should have a ``.forward``
 file in his home directory which includes the directive to pipe incoming email
 to the command.
 
-For example, if the ``PTS_CONTROL_EMAIL`` is set to ``control@pts.debian.net``
+For example, if the ``PTS_CONTROL_EMAIL`` is set to ``control@distro_tracker.debian.net``
 and the system user which owns the application is called ``pts`` the contents of
 ``/etc/aliases`` should include the following line::
 
@@ -66,7 +66,7 @@ And the ``.forward`` file should be::
 Mails received at ``PTS_CONTACT_EMAIL`` should be saved or forwarded to the PTS
 administrators. This can be done by adding an additional alias to
 ``/etc/aliases/``. For example, if ``PTS_CONTACT_EMAIL`` is set to
-``owner@pts.debian.net``, the line in the aliases file would be::
+``owner@distro_tracker.debian.net``, the line in the aliases file would be::
    
    owner: some-admin-user
 
@@ -103,19 +103,19 @@ to first create a file with virtual aliases for the relevant email addresses.
 
 Assuming the following configuration::
 
-   PTS_CONTACT_EMAIL = owner@pts.debian.net
-   PTS_CONTROL_EMAIL = control@pts.debian.net
-   PTS_FQDN = pts.debian.net
+   PTS_CONTACT_EMAIL = owner@distro_tracker.debian.net
+   PTS_CONTROL_EMAIL = control@distro_tracker.debian.net
+   PTS_FQDN = distro_tracker.debian.net
 
 The file ``/etc/postfix/virtual`` would be::
 
-  pts.debian.net not-important-ignored
-  postmaster@pts.debian.net postmaster@localhost
-  owner@pts.debian.net pts-owner@localhost
-  control@pts.debian.net pts-control@localhost
-  _news@pts.debian.net pts-news@localhost
+  distro_tracker.debian.net not-important-ignored
+  postmaster@distro_tracker.debian.net postmaster@localhost
+  owner@distro_tracker.debian.net pts-owner@localhost
+  control@distro_tracker.debian.net pts-control@localhost
+  _news@distro_tracker.debian.net pts-news@localhost
   # Catchall for package emails
-  @pts.debian.net pts-dispatch@localhost
+  @distro_tracker.debian.net pts-dispatch@localhost
 
 The ``/etc/aliases`` file should then include the following lines::
   

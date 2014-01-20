@@ -14,7 +14,7 @@ import os
 import sys
 
 if __name__ == "__main__":
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "pts.project.settings")
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "distro_tracker.project.settings")
     os.environ.setdefault("DJANGO_LIVE_TEST_SERVER_ADDRESS",
                           "localhost:8081-8085")
 

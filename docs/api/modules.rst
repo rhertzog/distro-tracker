@@ -1,7 +1,7 @@
-pts
-===
+distro_tracker
+==============
 
 .. toctree::
    :maxdepth: 4
 
-   pts
+   distro_tracker

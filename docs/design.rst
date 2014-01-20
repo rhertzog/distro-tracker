@@ -30,12 +30,12 @@ There are three aspects to the email interface in the PTS: the control message
 processing, dispatching received package messages to the correct
 subscribers and creating news items based on received emails.
 
-This is implemented in the :mod:`pts.mail` app. The three mentioned
+This is implemented in the :mod:`distro_tracker.mail` app. The three mentioned
 functionalities are found in the following subpackages and modules of this app:
 
-- :mod:`pts.mail.control.control`
-- :mod:`pts.mail.dispatch`
-- :mod:`pts.mail.mail_news`
+- :mod:`distro_tracker.mail.control.control`
+- :mod:`distro_tracker.mail.dispatch`
+- :mod:`distro_tracker.mail.mail_news`
 
 .. _control_email_design:
 
@@ -43,36 +43,36 @@ Email Control Messages
 ++++++++++++++++++++++
 
 The PTS expects the system's MTA to pipe any received control emails to the
-:mod:`pts.mail.management.commands.pts_control` Django management
+:mod:`distro_tracker.mail.management.commands.pts_control` Django management
 command. For information how to set this up, refer to the
 :ref:`mailbot setup <mailbot>`.
 
 The actual processing of the received command email message is implemented in
-:func:`pts.mail.control.process.process`. It does this by retrieving the message's
+:func:`distro_tracker.mail.control.process.process`. It does this by retrieving the message's
 payload and feeding it into an instance of
-:class:`pts.mail.control.commands.CommandProcessor`.
+:class:`distro_tracker.mail.control.commands.CommandProcessor`.
 
-The :class:`CommandProcessor <pts.mail.control.commands.CommandProcessor>` takes
+The :class:`CommandProcessor <distro_tracker.mail.control.commands.CommandProcessor>` takes
 care of parsing and executing all given commands.
 
-All available commands are implemented in the :mod:`pts.mail.control.commands`
+All available commands are implemented in the :mod:`distro_tracker.mail.control.commands`
 module. Each command must be a subclass of the
-:mod:`pts.mail.control.commands.base.Command` class. There are three attributes of the
+:mod:`distro_tracker.mail.control.commands.base.Command` class. There are three attributes of the
 class that subclasses must override:
 
-- :attr:`META <pts.mail.control.commands.base.Command.META>` - most importantly
+- :attr:`META <distro_tracker.mail.control.commands.base.Command.META>` - most importantly
   provides the command name
-- :attr:`REGEX_LIST <pts.mail.control.commands.base.Command.REGEX_LIST>` - allows
+- :attr:`REGEX_LIST <distro_tracker.mail.control.commands.base.Command.REGEX_LIST>` - allows
   matching a string to the command
-- :meth:`handle() <pts.mail.control.commands.base.Command.handle>` - implements the command
+- :meth:`handle() <distro_tracker.mail.control.commands.base.Command.handle>` - implements the command
   processing
 
-The class :class:`pts.mail.control.commands.CommandFactory` produces instances of
-the correct :class:`Command <pts.mail.control.commands.base.Command>` subclasses
+The class :class:`distro_tracker.mail.control.commands.CommandFactory` produces instances of
+the correct :class:`Command <distro_tracker.mail.control.commands.base.Command>` subclasses
 based on a given line.
 
 Commands which require confirmation are easily implemented by decorating the
-class with the :func:`pts.mail.control.commands.confirmation.needs_confirmation`
+class with the :func:`distro_tracker.mail.control.commands.confirmation.needs_confirmation`
 class decorator. In addition to that, two more methods can be implemented, but
 are not mandatory:
 
@@ -95,13 +95,13 @@ Email Dispatch
 
 As is the case for control message processing, the PTS expects the system's MTA
 to pipe any received package emails to a management command -
-:mod:`pts.mail.management.commands.pts_dispatch`. For information how to set
+:mod:`distro_tracker.mail.management.commands.pts_dispatch`. For information how to set
 this up, refer to the :ref:`mailbot setup <mailbot>`.
 
 The function that performs the processing of a received package message is
-:func:`pts.mail.dispatch.process`. In order to tag the received message
+:func:`distro_tracker.mail.dispatch.process`. In order to tag the received message
 with a keyword, it uses a vendor-provided function
-:func:`get_keyword <pts.vendor.skeleton.rules.get_keyword>`. In case a vendor
+:func:`get_keyword <distro_tracker.vendor.skeleton.rules.get_keyword>`. In case a vendor
 has not implemented this function, the message is tagged as ``default``.
 
 News from Email Messages
@@ -110,18 +110,18 @@ News from Email Messages
 The PTS allows for automatic news creation based on received emails. It is necessary
 to set up the MTA so it pipes received emails which should potentially be turned into
 news items, to the management command
-:mod:`pts.mail.management.commands.pts_receive_news`.
+:mod:`distro_tracker.mail.management.commands.pts_receive_news`.
 
-News are created as :class:`pts.core.models.News` objects and each of the
+News are created as :class:`distro_tracker.core.models.News` objects and each of the
 model's instances associated with a particular package is displayed in the
-:class:`NewsPanel <pts.core.panels.NewsPanel>`.
+:class:`NewsPanel <distro_tracker.core.panels.NewsPanel>`.
 
 By default, any messages given to the management command which contains the
 ``X-PTS-Package`` header are turned into news items with the content type of
 the news item being ``message/rfc822`` and the content the entire message.
 
 However, it is also possible to implement a vendor-specific function
-:func:`pts.vendor.skeleton.rules.create_news_from_email_message` which will be
+:func:`distro_tracker.vendor.skeleton.rules.create_news_from_email_message` which will be
 given the received email message object and can create custom news items based
 on vendor-specific rules.
 
@@ -135,7 +135,7 @@ a way to perform incremental updates is necessary. This means that if an update
 from one source causes such changes which could have an effect on some other
 information, this information needs to be updated, as well. In order to avoid
 recalculating everything after each update, a framework for executing such
-tasks is implemented in :mod:`pts.core.tasks`.
+tasks is implemented in :mod:`distro_tracker.core.tasks`.
 
 Each task defines a list of "events" which it produces and a list of "events"
 it depends on. An event is any change of shared information or anything else
@@ -147,12 +147,12 @@ are automatically run afterwards, in the correct order and ensuring a task runs
 only once all the tasks it depends on are completed. It also makes sure not to
 initiate any task for which no events were raised.
 
-In order to implement a task, the :class:`pts.core.tasks.BaseTask` class should
+In order to implement a task, the :class:`distro_tracker.core.tasks.BaseTask` class should
 be subclassed. Its attributes
-:attr:`PRODUCES_EVENTS <pts.core.tasks.BaseTask.PRODUCES_EVENTS>` and
-:attr:`DEPENDS_ON_EVENTS <pts.core.tasks.BaseTask.DEPENDS_ON_EVENTS>` are lists
+:attr:`PRODUCES_EVENTS <distro_tracker.core.tasks.BaseTask.PRODUCES_EVENTS>` and
+:attr:`DEPENDS_ON_EVENTS <distro_tracker.core.tasks.BaseTask.DEPENDS_ON_EVENTS>` are lists
 of strings giving names of events which the task produces and depends on,
-respectively. The :meth:`execute() <pts.core.tasks.BaseTask.execute>` method
+respectively. The :meth:`execute() <distro_tracker.core.tasks.BaseTask.execute>` method
 implements the task's functionality.
 
 .. note::
@@ -160,9 +160,9 @@ implements the task's functionality.
    the top level of an installed Django app. Tasks in apps which are not
    installed will never be run.
 
-When running a task, a :class:`pts.core.tasks.Job` instance is created which
+When running a task, a :class:`distro_tracker.core.tasks.Job` instance is created which
 keeps track of raised events, completed tasks and the order in which the tasks
-should run. It stores its state using the :class:`pts.core.tasks.JobState`
+should run. It stores its state using the :class:`distro_tracker.core.tasks.JobState`
 class which is in charge of making sure the job state is persistent, so that
 even if a job were to fail, it is still possible to reconstruct it and continue
 its execution.
@@ -172,13 +172,13 @@ its execution.
    before being able to save the state of the job, rerunning the task will not
    cause any inconsistencies.
 
-A task has access to the :class:`Job <pts.core.tasks.Job>` instance it is a
+A task has access to the :class:`Job <distro_tracker.core.tasks.Job>` instance it is a
 part of and can access all events raised during its processing. A convenience
-method :meth:`get_all_events <pts.core.tasks.BaseTask.get_all_events>` is
+method :meth:`get_all_events <distro_tracker.core.tasks.BaseTask.get_all_events>` is
 provided which returns only the events the class has indicated in the
-:attr:`DEPENDS_ON_EVENTS <pts.core.tasks.BaseTask.DEPENDS_ON_EVENTS>` list.
+:attr:`DEPENDS_ON_EVENTS <distro_tracker.core.tasks.BaseTask.DEPENDS_ON_EVENTS>` list.
 
-For more information see the documentation on the :mod:`pts.core.tasks` module.
+For more information see the documentation on the :mod:`distro_tracker.core.tasks` module.
 
 .. _vendor_design:
 
@@ -188,9 +188,9 @@ Vendor-specific Rules
 Since the PTS aims to be extensible, it allows a simple way for vendors to
 implement functions which are plugged in by core code when necessary.
 
-Vendor-provided functions can be called using the :func:`pts.vendor.common.call`
+Vendor-provided functions can be called using the :func:`distro_tracker.vendor.common.call`
 function. The function object itself can be retrieved by using the
-lower-level :func:`pts.vendor.common.get_callable` function, but this should
+lower-level :func:`distro_tracker.vendor.common.get_callable` function, but this should
 be avoided.
 
 All vendor-provided functions must be found in the module given by the
@@ -202,21 +202,21 @@ Package Information
 -------------------
 
 The PTS retrieves package information from a set of user-defined repositories.
-Admin users can add new :class:`pts.core.models.Repository` instances through
+Admin users can add new :class:`distro_tracker.core.models.Repository` instances through
 the admin panel. Information from repositories is updated by the task
-:class:`pts.core.retrieve_data.UpdateRepositoriesTask` and it emits events
+:class:`distro_tracker.core.retrieve_data.UpdateRepositoriesTask` and it emits events
 based on changes found in the repositories.
 
-Additional tasks are implemented in :class:`pts.core.retrieve_data` which
+Additional tasks are implemented in :class:`distro_tracker.core.retrieve_data` which
 use those events to store pre-calculated (extracted) information ready
 to be rendered in a variety of contexts (webpage, REST, RDF, etc.).
 
 The PTS also updates the list of existing pseudo packages by using the
 vendor-provided function
-:func:`get_pseudo_package_list <pts.vendor.skeleton.rules.get_pseudo_package_list>`.
+:func:`get_pseudo_package_list <distro_tracker.vendor.skeleton.rules.get_pseudo_package_list>`.
 
 All retrieved data can be accessed by using the models found in
-:mod:`pts.core.models`. Refer to that module's documentation for convenient
+:mod:`distro_tracker.core.models`. Refer to that module's documentation for convenient
 APIs for interacting with the extracted information.
 
 Data model
@@ -224,7 +224,7 @@ Data model
 
 You may wish to check the data model. This can be done for instance
 with the following command after having installed 'django_extensions'
-in INSTALLED_APPS (see pts.project.setup.locals.py)::
+in INSTALLED_APPS (see distro_tracker.project.setup.locals.py)::
 
  $ ./manage.py graph_models core | dot -Tpng >graph.png
 
@@ -239,7 +239,7 @@ Panels Framework
 ++++++++++++++++
 
 The PTS allows an easy way to embed new information on a package Web page.
-It consists of implementing a subclass of the :class:`pts.core.panels.BasePanel`
+It consists of implementing a subclass of the :class:`distro_tracker.core.panels.BasePanel`
 class. Panels can provide the HTML directly or, alternatively, the name of the
 template which should be included. This template then has to render the panel's
 information to the page.
@@ -254,7 +254,7 @@ that the page remains visually consistent. This is not mandatory, however.
    installed will never appear on a package page.
 
 The PTS implements some general panels which could be used by any vendor.
-Refer to the documentation of each panel in :mod:`pts.core.panels` to see
+Refer to the documentation of each panel in :mod:`distro_tracker.core.panels` to see
 any possible ways of augmenting their information by implementing
 vendor-specific functions.
 
@@ -263,7 +263,7 @@ vendor-specific functions.
 Views and Templates
 +++++++++++++++++++
 
-The core views are found in :mod:`pts.core.views` and are extremely thin.
+The core views are found in :mod:`distro_tracker.core.views` and are extremely thin.
 
 The package page view only finds the correct package model instance and
 passes it on to available panels. It renders a template which includes each

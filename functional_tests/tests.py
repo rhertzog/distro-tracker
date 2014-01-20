@@ -16,20 +16,20 @@ from django.test import LiveServerTestCase
 from django.core.urlresolvers import reverse
 from django.contrib.auth import get_user_model
 from django.core import mail
-from pts.core.models import SourcePackageName, BinaryPackageName
-from pts.accounts.models import UserRegistrationConfirmation
-from pts.accounts.models import ResetPasswordConfirmation
-from pts.accounts.models import AddEmailConfirmation
-from pts.accounts.models import MergeAccountConfirmation
-from pts.core.models import EmailUser
-from pts.core.models import ContributorName
-from pts.accounts.models import UserEmail
-from pts.core.models import Team
-from pts.core.models import SourcePackage
-from pts.core.models import PackageName
-from pts.core.models import Subscription
-from pts.core.models import TeamMembership
-from pts.core.panels import BasePanel
+from distro_tracker.core.models import SourcePackageName, BinaryPackageName
+from distro_tracker.accounts.models import UserRegistrationConfirmation
+from distro_tracker.accounts.models import ResetPasswordConfirmation
+from distro_tracker.accounts.models import AddEmailConfirmation
+from distro_tracker.accounts.models import MergeAccountConfirmation
+from distro_tracker.core.models import EmailUser
+from distro_tracker.core.models import ContributorName
+from distro_tracker.accounts.models import UserEmail
+from distro_tracker.core.models import Team
+from distro_tracker.core.models import SourcePackage
+from distro_tracker.core.models import PackageName
+from distro_tracker.core.models import Subscription
+from distro_tracker.core.models import TeamMembership
+from distro_tracker.core.panels import BasePanel
 
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
@@ -338,7 +338,7 @@ class RepositoryAdminTest(SeleniumTestCase):
         self.input_to_element('id_password', password)
         self.send_enter('id_password')
 
-    @mock.patch('pts.core.retrieve_data.requests')
+    @mock.patch('distro_tracker.core.retrieve_data.requests')
     def test_repository_add(self, mock_requests):
         """
         Tests that an admin user is able to add a new repository.

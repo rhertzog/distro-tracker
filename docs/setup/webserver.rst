@@ -16,8 +16,8 @@ After installing mod_wsgi, a minimal configuration would be to include a new
 file in sites-available with the following settings::
 
     <VirtualHost *:80>
-            ServerAdmin owner@pts.some.domain
-            ServerName pts.some.domain
+            ServerAdmin owner@distro_tracker.some.domain
+            ServerName distro_tracker.some.domain
 
             DocumentRoot /path/to/assets/
             # To make sure all static file assets with no extension
@@ -62,6 +62,6 @@ nginx and Gunicorn
 ------------------
 
 The PTS does not include gunicorn in its
-:data:`INSTALLED_APPS <pts.project.settings.INSTALLED_APPS>`, but there is
+:data:`INSTALLED_APPS <distro_tracker.project.settings.INSTALLED_APPS>`, but there is
 nothing to prevent users to include it and deploy the PTS with gunicorn
 running as the WSGI server and a reverse proxy in front of it.

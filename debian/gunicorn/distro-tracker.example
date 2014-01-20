@@ -9,7 +9,7 @@ CONFIG = {
     'args': (
         '--bind=unix:/var/lib/distro-tracker/gunicorn.sock',
         '--workers=4',
-        'pts.project.settings',
+        'distro_tracker.project.settings',
     ),
 }
 

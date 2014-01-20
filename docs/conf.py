@@ -257,7 +257,5 @@ intersphinx_mapping = {
         'http://docs.djangoproject.com/en/dev/_objects/'
     ),
 }
-from pts.project import settings
-from django.core.management import setup_environ
 
-setup_environ(settings)
+os.environ["DJANGO_SETTINGS_MODULE"] = "distro_tracker.project.settings"
