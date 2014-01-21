@@ -4,10 +4,10 @@
 
 {% block extra-js %}
         <script src="{% static 'accounts/js/profile.js' %}"></script>
-        <script type="text/x-pts-url" id="unsubscribe-url">{% url 'pts-api-accounts-unsubscribe' %}</script>
-        <script type="text/x-pts-url" id="unsubscribe-all-url">{% url 'pts-api-accounts-unsubscribe-all' %}</script>
-        <script type="text/x-pts-url" id="all-keywords-url">{% url 'pts-api-keywords' %}</script>
-        <script type="text/x-pts-url" id="update-keywords-url">{% url 'pts-api-accounts-profile-keywords' %}</script>
+        <script type="text/x-dtracker-url" id="unsubscribe-url">{% url 'dtracker-api-accounts-unsubscribe' %}</script>
+        <script type="text/x-dtracker-url" id="unsubscribe-all-url">{% url 'dtracker-api-accounts-unsubscribe-all' %}</script>
+        <script type="text/x-dtracker-url" id="all-keywords-url">{% url 'dtracker-api-keywords' %}</script>
+        <script type="text/x-dtracker-url" id="update-keywords-url">{% url 'dtracker-api-accounts-profile-keywords' %}</script>
 {% endblock %}
 
 {% block content %}
@@ -48,13 +48,13 @@
 <div class="accordion-toggle" data-toggle="collapse" data-target="#emails-{{ forloop.counter }}">
     <b>{{ email }}</b>
     {% if email_subscriptions.subscriptions %}
-<form style="display: inline-block; margin-bottom: 0px;" action="{% url 'pts-api-accounts-unsubscribe-all' %}" method="POST">{% csrf_token %}
+<form style="display: inline-block; margin-bottom: 0px;" action="{% url 'dtracker-api-accounts-unsubscribe-all' %}" method="POST">{% csrf_token %}
 <input type="hidden" name="email" value="{{ email }}">
-<input type="hidden" name="next" value="{% url 'pts-accounts-subscriptions' %}">
+<input type="hidden" name="next" value="{% url 'dtracker-accounts-subscriptions' %}">
 <button class='btn btn-mini btn-danger unsubscribe-all' class="btn btn-mini btn-danger" data-email="{{ email }}">Unsubscribe all</button>
 </form>
     {% endif %}
-    <a href="{% url 'pts-accounts-profile-keywords' %}?email={{ email }}">
+    <a href="{% url 'dtracker-accounts-profile-keywords' %}?email={{ email }}">
         <button class="btn btn-mini modify-default-keywords" data-email="{{ email }}">Modify keywords</button>
     </a>
     <div class="default-keywords" style="display: none;" id="default-keywords-{{ forloop.counter }}">
@@ -103,10 +103,10 @@
             </div>
 
             <div class="span2">
-            <form style="margin-bottom: 0px;" action="{% url 'pts-api-accounts-unsubscribe' %}" method="POST">{% csrf_token %}
+            <form style="margin-bottom: 0px;" action="{% url 'dtracker-api-accounts-unsubscribe' %}" method="POST">{% csrf_token %}
             <input type="hidden" name="package" value="{{ subscription.package }}">
             <input type="hidden" name="email" value="{{ email }}">
-            <input type="hidden" name="next" value="{% url 'pts-accounts-subscriptions' %}">
+            <input type="hidden" name="next" value="{% url 'dtracker-accounts-subscriptions' %}">
             <button class="btn btn-danger unsubscribe-package" data-email="{{ email }}" data-package="{{ subscription.package }}">Unsubscribe</button>
             </form>
             <div class="clear"></div>
@@ -123,7 +123,7 @@
                 <li class='keyword'>{{ keyword }}</li>
                 {% endfor %}
             </ul>
-            <a href="{% url 'pts-accounts-profile-keywords' %}?package={{ subscription.package }}&email={{ email }}">
+            <a href="{% url 'dtracker-accounts-profile-keywords' %}?package={{ subscription.package }}&email={{ email }}">
                 <div class="btn btn-small modify-subscription-keywords" data-email="{{ email }}" data-package="{{ subscription.package }}">Modify</div>
             </a>
             </div>
@@ -151,12 +151,12 @@
 
             <div class="span2">
                 {% if membership.muted %}
-            <form style="margin-bottom: 0px;" action="{% url 'pts-team-unmute' membership.team.slug %}" method="POST">{% csrf_token %}
+            <form style="margin-bottom: 0px;" action="{% url 'dtracker-team-unmute' membership.team.slug %}" method="POST">{% csrf_token %}
                 {% else %}
-            <form style="margin-bottom: 0px;" action="{% url 'pts-team-mute' membership.team.slug %}" method="POST">{% csrf_token %}
+            <form style="margin-bottom: 0px;" action="{% url 'dtracker-team-mute' membership.team.slug %}" method="POST">{% csrf_token %}
                 {% endif %}
             <input type="hidden" name="email" value="{{ email }}">
-            <input type="hidden" name="next" value="{% url 'pts-accounts-subscriptions' %}">
+            <input type="hidden" name="next" value="{% url 'dtracker-accounts-subscriptions' %}">
                 {% if membership.muted %}
             <button class="btn btn-danger toggle-team-mute" data-email="{{ email }}">Unmute</button>
                 {% else %}
@@ -177,8 +177,8 @@
                 <li class='keyword'>{{ keyword }}</li>
                 {% endfor %}
             </ul>
-                <div class="btn btn-small modify-membership-keywords" data-email="{{ email }}" data-href="{% url 'pts-team-set-keywords' membership.team.slug %}">Modify</div>
-                <div><a href="{% url 'pts-team-manage-membership' membership.team.slug %}?email={{ email }}">Manage team package subscriptions</a></div>
+                <div class="btn btn-small modify-membership-keywords" data-email="{{ email }}" data-href="{% url 'dtracker-team-set-keywords' membership.team.slug %}">Modify</div>
+                <div><a href="{% url 'dtracker-team-manage-membership' membership.team.slug %}?email={{ email }}">Manage team package subscriptions</a></div>
             </div>
         </div>
     </div>
@@ -203,7 +203,7 @@
 {% endif %}
 
 <h3>Subscribe</h3>
-        <form class="form-search" id="package-subscribe-form" action="{% url 'pts-api-accounts-subscribe' %}" method="POST">{% csrf_token %}
+        <form class="form-search" id="package-subscribe-form" action="{% url 'dtracker-api-accounts-subscribe' %}" method="POST">{% csrf_token %}
             <div class="row-fluid span4" style="margin-bottom: 10px;">
                 <div>Emails which should be subscribed: </div>
             {% for email in request.user.emails.all %}
@@ -216,7 +216,7 @@
             <div class="span4 col col-lg-4">
             <label>Enter a {{ DISTRO_TRACKER_VENDOR_NAME }} package name</label>
             </div>
-            <input type="hidden" value="{% url 'pts-accounts-subscriptions' %}" name="next">
+            <input type="hidden" value="{% url 'dtracker-accounts-subscriptions' %}" name="next">
             <input type="text" name="package" id='package-search-input' placeholder="Choose package...">
             <button type="submit" class="btn">Subscribe</button>
 

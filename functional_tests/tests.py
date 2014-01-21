@@ -196,7 +196,7 @@ class PackagePageTest(SeleniumTestCase):
         """
         Helper method returning the URL of the package with the given name.
         """
-        return reverse('pts-package-page', kwargs={
+        return reverse('dtracker-package-page', kwargs={
             'package_name': package_name,
         })
 
@@ -289,8 +289,8 @@ class PackagePageTest(SeleniumTestCase):
         """
         self.get_page(self.get_package_url(self.package.name))
 
-        self.assert_element_with_id_in_page('pts-package-left')
-        column = self.browser.find_element_by_id('pts-package-left')
+        self.assert_element_with_id_in_page('dtracker-package-left')
+        column = self.browser.find_element_by_id('dtracker-package-left')
         self.assertIn("Hello, world", column.text)
 
     @create_test_panel('center')
@@ -300,8 +300,8 @@ class PackagePageTest(SeleniumTestCase):
         """
         self.get_page(self.get_package_url(self.package.name))
 
-        self.assert_element_with_id_in_page('pts-package-center')
-        column = self.browser.find_element_by_id('pts-package-center')
+        self.assert_element_with_id_in_page('dtracker-package-center')
+        column = self.browser.find_element_by_id('dtracker-package-center')
         self.assertIn("Hello, world", column.text)
 
     @create_test_panel('right')
@@ -311,8 +311,8 @@ class PackagePageTest(SeleniumTestCase):
         """
         self.get_page(self.get_package_url(self.package.name))
 
-        self.assert_element_with_id_in_page('pts-package-right')
-        column = self.browser.find_element_by_id('pts-package-right')
+        self.assert_element_with_id_in_page('dtracker-package-right')
+        column = self.browser.find_element_by_id('dtracker-package-right')
         self.assertIn("Hello, world", column.text)
 
 
@@ -448,13 +448,13 @@ class UserAccountsTestMixin(object):
         self.user = User.objects.get(main_email=self.user.main_email)
 
     def get_login_url(self):
-        return reverse('pts-accounts-login')
+        return reverse('dtracker-accounts-login')
 
     def get_profile_url(self):
-        return reverse('pts-accounts-profile')
+        return reverse('dtracker-accounts-profile')
 
     def get_package_url(self, package_name):
-        return reverse('pts-package-page', kwargs={
+        return reverse('dtracker-package-page', kwargs={
             'package_name': package_name,
         })
 
@@ -502,7 +502,7 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
         return match.group(1)
 
     def get_registration_url(self):
-        return reverse('pts-accounts-register')
+        return reverse('dtracker-accounts-register')
 
     def test_user_register(self):
         profile_url = self.get_profile_url()
@@ -534,7 +534,7 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
         self.send_enter('id_main_email')
 
         # The user is notified of a successful registration
-        self.assert_current_url_equal(reverse('pts-accounts-register-success'))
+        self.assert_current_url_equal(reverse('dtracker-accounts-register-success'))
 
         # The user receives an email with the confirmation URL
         self.assertEqual(1, len(mail.outbox))
@@ -545,7 +545,7 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
 
         # The user goes to the confirmation URL
         confirmation_url = reverse(
-            'pts-accounts-confirm-registration', kwargs={
+            'dtracker-accounts-confirm-registration', kwargs={
                 'confirmation_key': confirmation.confirmation_key
             })
         self.get_page(confirmation_url)
@@ -1023,7 +1023,7 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         self.assertEqual(1, len(mail.outbox))
         confirmation = ResetPasswordConfirmation.objects.all()[0]
         # The user goes to the confirmation URL!
-        self.get_page(reverse('pts-accounts-reset-password', kwargs={
+        self.get_page(reverse('dtracker-accounts-reset-password', kwargs={
             'confirmation_key': confirmation.confirmation_key,
         }))
         # There, he is asked to enter a new password...
@@ -1072,7 +1072,7 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         confirmation = AddEmailConfirmation.objects.all()[0]
 
         # The user now visits he confirmation URL
-        self.get_page(reverse('pts-accounts-confirm-add-email', kwargs={
+        self.get_page(reverse('dtracker-accounts-confirm-add-email', kwargs={
             'confirmation_key': confirmation.confirmation_key,
         }))
         # And is notified that the address is associated with an account
@@ -1122,7 +1122,7 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
 
         # The user tries going to the confirmation URL without logging in to
         # the other account
-        confirmation_url = reverse('pts-accounts-merge-finalize', kwargs={
+        confirmation_url = reverse('dtracker-accounts-merge-finalize', kwargs={
             'confirmation_key': confirmation.confirmation_key,
         })
         self.get_page(confirmation_url)
@@ -1166,10 +1166,10 @@ class TeamTests(SeleniumTestCase):
             first_name='', last_name='')
 
     def get_login_url(self):
-        return reverse('pts-accounts-login')
+        return reverse('dtracker-accounts-login')
 
     def get_create_team_url(self):
-        return reverse('pts-teams-create')
+        return reverse('dtracker-teams-create')
 
     def get_team_url(self, team_name):
         team = Team.objects.get(name=team_name)
@@ -1177,21 +1177,21 @@ class TeamTests(SeleniumTestCase):
 
     def get_delete_team_url(self, team_name):
         team = Team.objects.get(name=team_name)
-        return reverse('pts-team-delete', kwargs={
+        return reverse('dtracker-team-delete', kwargs={
             'slug': team.slug,
         })
 
     def get_team_deleted_url(self):
-        return reverse('pts-team-deleted')
+        return reverse('dtracker-team-deleted')
 
     def get_update_team_url(self, team_name):
         team = Team.objects.get(name=team_name)
-        return reverse('pts-team-update', kwargs={
+        return reverse('dtracker-team-update', kwargs={
             'slug': team.slug,
         })
 
     def get_subscriptions_url(self):
-        return reverse('pts-accounts-subscriptions')
+        return reverse('dtracker-accounts-subscriptions')
 
     def assert_team_packages_equal(self, team, package_names):
         team_package_names = [p.name for p in team.packages.all()]

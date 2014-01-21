@@ -55,15 +55,15 @@ class ConfirmationRenderMixin(object):
 
 
 class LoginView(email_accounts_views.LoginView):
-    success_url = reverse_lazy('pts-accounts-profile')
+    success_url = reverse_lazy('dtracker-accounts-profile')
 
 
 class LogoutView(email_accounts_views.LogoutView):
-    success_url = reverse_lazy('pts-index')
+    success_url = reverse_lazy('dtracker-index')
 
 
 class RegisterUser(ConfirmationRenderMixin, email_accounts_views.RegisterUser):
-    success_url = reverse_lazy('pts-accounts-register-success')
+    success_url = reverse_lazy('dtracker-accounts-register-success')
 
     confirmation_email_subject = '{name} Registration Confirmation'.format(
         name=settings.GET_INSTANCE_NAME())
@@ -71,28 +71,28 @@ class RegisterUser(ConfirmationRenderMixin, email_accounts_views.RegisterUser):
 
 
 class RegistrationConfirmation(email_accounts_views.RegistrationConfirmation):
-    success_url = reverse_lazy('pts-accounts-profile')
+    success_url = reverse_lazy('dtracker-accounts-profile')
     message = 'You have successfully registered to the {name}'.format(
         name=settings.GET_INSTANCE_NAME())
 
 
 class ResetPasswordView(ConfirmationRenderMixin, email_accounts_views.ResetPasswordView):
-    success_url = reverse_lazy('pts-accounts-profile')
+    success_url = reverse_lazy('dtracker-accounts-profile')
 
 
 class ForgotPasswordView(ConfirmationRenderMixin, email_accounts_views.ForgotPasswordView):
-    success_url = reverse_lazy('pts-accounts-password-reset-success')
+    success_url = reverse_lazy('dtracker-accounts-password-reset-success')
     email_subject = '{name} Password Reset Confirmation'.format(
         name=settings.GET_INSTANCE_NAME())
     email_from_address = settings.DISTRO_TRACKER_CONTACT_EMAIL
 
 
 class ChangePersonalInfoView(email_accounts_views.ChangePersonalInfoView):
-    success_url = reverse_lazy('pts-accounts-profile-modify')
+    success_url = reverse_lazy('dtracker-accounts-profile-modify')
 
 
 class PasswordChangeView(email_accounts_views.PasswordChangeView):
-    success_url = reverse_lazy('pts-accounts-profile-password-change')
+    success_url = reverse_lazy('dtracker-accounts-profile-password-change')
 
 
 class AccountProfile(email_accounts_views.AccountProfile):
@@ -100,8 +100,8 @@ class AccountProfile(email_accounts_views.AccountProfile):
 
 
 class ManageAccountEmailsView(ConfirmationRenderMixin, email_accounts_views.ManageAccountEmailsView):
-    success_url = reverse_lazy('pts-accounts-manage-emails')
-    merge_accounts_url = reverse_lazy('pts-accounts-merge-confirmation')
+    success_url = reverse_lazy('dtracker-accounts-manage-emails')
+    merge_accounts_url = reverse_lazy('dtracker-accounts-merge-confirmation')
 
     confirmation_email_subject = 'Add Email To {name} Account'.format(
         name=settings.GET_INSTANCE_NAME())
@@ -109,18 +109,18 @@ class ManageAccountEmailsView(ConfirmationRenderMixin, email_accounts_views.Mana
 
 
 class AccountMergeConfirmView(ConfirmationRenderMixin, email_accounts_views.AccountMergeConfirmView):
-    success_url = reverse_lazy('pts-accounts-merge-confirmed')
+    success_url = reverse_lazy('dtracker-accounts-merge-confirmed')
     confirmation_email_subject = 'Merge {name} Accounts'.format( 
         name=settings.GET_INSTANCE_NAME())
     confirmation_email_from_address = settings.DISTRO_TRACKER_CONTACT_EMAIL
 
 
 class AccountMergeFinalize(email_accounts_views.AccountMergeFinalize):
-    success_url = reverse_lazy('pts-accounts-merge-finalized')
+    success_url = reverse_lazy('dtracker-accounts-merge-finalized')
 
 
 class AccountMergeConfirmedView(email_accounts_views.AccountMergeConfirmedView):
-    template_name = 'accounts/pts-accounts-merge-confirmed.html'
+    template_name = 'accounts/tracker-accounts-merge-confirmed.html'
 
 
 class ConfirmAddAccountEmail(email_accounts_views.ConfirmAddAccountEmail):
@@ -201,7 +201,7 @@ class SubscribeUserToPackageView(LoginRequiredMixin, View):
         else:
             next = request.POST.get('next', None)
             if not next:
-                return redirect('pts-package-page', package_name=package)
+                return redirect('dtracker-package-page', package_name=package)
             return redirect(next)
 
 
@@ -239,7 +239,7 @@ class UnsubscribeUserView(LoginRequiredMixin, View):
             if 'next' in request.POST:
                 return redirect(request.POST['next'])
             else:
-                return redirect('pts-package-page', package_name=package)
+                return redirect('dtracker-package-page', package_name=package)
 
 
 class UnsubscribeAllView(LoginRequiredMixin, View):
@@ -266,7 +266,7 @@ class UnsubscribeAllView(LoginRequiredMixin, View):
             if 'next' in request.POST:
                 return redirect(request.POST['next'])
             else:
-                return redirect('pts-index')
+                return redirect('dtracker-index')
 
 
 class ChooseSubscriptionEmailView(LoginRequiredMixin, View):
@@ -334,7 +334,7 @@ class ModifyKeywordsView(LoginRequiredMixin, View):
             if 'next' in request.POST:
                 return redirect(request.POST['next'])
             else:
-                return redirect('pts-index')
+                return redirect('dtracker-index')
 
     def post(self, request):
         if 'email' not in request.POST or 'keyword[]' not in request.POST:

@@ -2412,7 +2412,7 @@ class CodeSearchLinksTest(TestCase):
             name='unstable', shorthand='unstable')
 
     def get_package_page_response(self, package_name):
-        package_page_url = reverse('pts-package-page', kwargs={
+        package_page_url = reverse('dtracker-package-page', kwargs={
             'package_name': package_name,
         })
         return self.client.get(package_page_url)
@@ -2487,7 +2487,7 @@ class PopconLinkTest(TestCase):
     Tests that the popcon link is added to source package pages.
     """
     def get_package_page_response(self, package_name):
-        package_page_url = reverse('pts-package-page', kwargs={
+        package_page_url = reverse('dtracker-package-page', kwargs={
             'package_name': package_name,
         })
         return self.client.get(package_page_url)
@@ -3490,7 +3490,7 @@ class UbuntuPanelTests(TestCase):
             name='dummy-package')
 
     def get_package_page_response(self, package_name):
-        package_page_url = reverse('pts-package-page', kwargs={
+        package_page_url = reverse('dtracker-package-page', kwargs={
             'package_name': package_name,
         })
         return self.client.get(package_page_url)
@@ -4003,7 +4003,7 @@ class NewQueueVersionsPanelTests(TestCase):
             key='versions', value={})
 
     def get_package_page_response(self, package_name):
-        package_page_url = reverse('pts-package-page', kwargs={
+        package_page_url = reverse('dtracker-package-page', kwargs={
             'package_name': package_name,
         })
         return self.client.get(package_page_url)
@@ -4323,7 +4323,7 @@ class DebianSsoLoginTests(TestCase):
     Tests relating to logging in via the sso.debian.org
     """
     def get_page(self, remote_user=None):
-        self.client.get(reverse('pts-index'), **{
+        self.client.get(reverse('dtracker-index'), **{
             'REMOTE_USER': remote_user,
         })
 

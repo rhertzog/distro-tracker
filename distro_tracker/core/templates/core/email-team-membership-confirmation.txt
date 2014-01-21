@@ -5,12 +5,12 @@ Package Tracker.
 
 In order to confirm your membership, you must go to the following URL:
 
-http://{{ DISTRO_TRACKER_SITE_DOMAIN }}{% url 'pts-team-confirm-membership' confirmation.confirmation_key %}
+http://{{ DISTRO_TRACKER_SITE_DOMAIN }}{% url 'dtracker-team-confirm-membership' confirmation.confirmation_key %}
 
 Additionally, if you do not already own an account on the {{ DISTRO_TRACKER_VENDOR_NAME }}
 Package Tracker with this email address, please register at:
 
-http://{{ DISTRO_TRACKER_SITE_DOMAIN }}{% url 'pts-accounts-register' %}
+http://{{ DISTRO_TRACKER_SITE_DOMAIN }}{% url 'dtracker-accounts-register' %}
 
 If you don't understand why you got this mail, please ignore it,
 nothing will be done unless you send the confirmation.

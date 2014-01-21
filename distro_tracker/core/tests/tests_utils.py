@@ -1230,7 +1230,7 @@ class AptCacheTests(TestCase):
         Tests that the cache correctly increases its size after acquiring new
         files.
         """
-        with make_temp_directory('-pts-cache') as cache_directory:
+        with make_temp_directory('-dtracker-cache') as cache_directory:
             with self.settings(
                     DISTRO_TRACKER_CACHE_DIRECTORY=cache_directory,
                     DISTRO_TRACKER_APT_CACHE_MAX_SIZE=10):
@@ -1250,7 +1250,7 @@ class AptCacheTests(TestCase):
         Tests that the cache does not remove packages unless the size limit is
         exceeded.
         """
-        with make_temp_directory('-pts-cache') as cache_directory:
+        with make_temp_directory('-dtracker-cache') as cache_directory:
             with self.settings(
                     DISTRO_TRACKER_CACHE_DIRECTORY=cache_directory,
                     DISTRO_TRACKER_APT_CACHE_MAX_SIZE=10):
@@ -1276,7 +1276,7 @@ class AptCacheTests(TestCase):
         Tests that the cache removes packages when it exceeds its allocated
         size.
         """
-        with make_temp_directory('-pts-cache') as cache_directory:
+        with make_temp_directory('-dtracker-cache') as cache_directory:
             with self.settings(
                     DISTRO_TRACKER_CACHE_DIRECTORY=cache_directory,
                     DISTRO_TRACKER_APT_CACHE_MAX_SIZE=10):
@@ -1302,7 +1302,7 @@ class AptCacheTests(TestCase):
         Tests that the cache correctly returns a list of cached Sources files
         for a given repository.
         """
-        with make_temp_directory('-pts-cache') as cache_directory:
+        with make_temp_directory('-dtracker-cache') as cache_directory:
             with self.settings(DISTRO_TRACKER_CACHE_DIRECTORY=cache_directory):
                 self.create_cache()
                 repository = Repository.objects.create(
@@ -1332,7 +1332,7 @@ class AptCacheTests(TestCase):
         Tests that the cache correctly returns a list of cached Packages files
         for a given repository.
         """
-        with make_temp_directory('-pts-cache') as cache_directory:
+        with make_temp_directory('-dtracker-cache') as cache_directory:
             with self.settings(DISTRO_TRACKER_CACHE_DIRECTORY=cache_directory):
                 self.create_cache()
                 repository = Repository.objects.create(

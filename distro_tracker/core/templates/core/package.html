@@ -4,7 +4,7 @@
 {% block title %}{{ block.super }} - {{ package }}{% endblock %}
 
 {% block extra-head %}
-<link rel="alternate" type="application/rss+xml" title="RSS" href="{% url 'pts-package-rss-news-feed' package.name %}">
+<link rel="alternate" type="application/rss+xml" title="RSS" href="{% url 'dtracker-package-rss-news-feed' package.name %}">
 {% endblock %}
 
 {% block page-header %}
@@ -24,14 +24,14 @@
                 {% if request.user.is_authenticated %}
                     <div class="btn-group" style="margin-left: 10px;{% if is_subscribed %}display: none;{% endif %}">
                         {% if request.user.emails.all|length == 1 %}
-                        <form class="unstyled-form" action="{% url 'pts-api-accounts-subscribe' %}" method="POST">{% csrf_token %}
+                        <form class="unstyled-form" action="{% url 'dtracker-api-accounts-subscribe' %}" method="POST">{% csrf_token %}
                             <input type="hidden" name="package" value="{{ package }}">
                             <input type="hidden" name="email" value="{{ request.user.emails.all.0 }}">
                         {% else %}
-                        <a href="{% url 'pts-accounts-choose-email' %}?package={{ package }}">
+                        <a href="{% url 'dtracker-accounts-choose-email' %}?package={{ package }}">
                         {% endif %}
 
-                      <button class="btn" id='subscribe-button' data-package="{{ package }}" data-get-emails="{% url 'pts-api-accounts-emails' %}" data-url="{% url 'pts-api-accounts-subscribe' %}">Subscribe</button>
+                      <button class="btn" id='subscribe-button' data-package="{{ package }}" data-get-emails="{% url 'dtracker-api-accounts-emails' %}" data-url="{% url 'dtracker-api-accounts-subscribe' %}">Subscribe</button>
 
                         {% if request.user.emails.all|length == 1 %}
                         </form>
@@ -41,21 +41,21 @@
                     </div>
 
                     <div class="btn-group" style="margin-left: 10px;{% if not is_subscribed %}display: none;{% endif %}">
-                      <form class="unstyled-form" action="{% url 'pts-api-accounts-unsubscribe' %}" method="POST">{% csrf_token %}
+                      <form class="unstyled-form" action="{% url 'dtracker-api-accounts-unsubscribe' %}" method="POST">{% csrf_token %}
                           <input type="hidden" name="package" value="{{ package }}">
-                          <button class="btn btn-danger btn-not-rounded" id='unsubscribe-button' data-url="{% url 'pts-api-accounts-unsubscribe' %}" data-package="{{ package }}">Unsubscribe</button>
+                          <button class="btn btn-danger btn-not-rounded" id='unsubscribe-button' data-url="{% url 'dtracker-api-accounts-unsubscribe' %}" data-package="{{ package }}">Unsubscribe</button>
                       </form>
                       <button class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
                         <span class="caret"></span>
                       </button>
                       <ul class="dropdown-menu">
-                        <li><a href="{% url 'pts-accounts-subscriptions' %}">Subscription details</a></li>
+                        <li><a href="{% url 'dtracker-accounts-subscriptions' %}">Subscription details</a></li>
                       </ul>
                     </div>
                 {% else %}
                     {# When the user is not authenticated, the subscribe button leads to the log in page instead #}
                     <div class="btn-group" style="margin-left: 10px;{% if is_subscribed %}display: none;{% endif %}">
-                      <a href="{% url 'pts-accounts-login' %}"><button id='subscribe-not-logged-in-button' class="btn">Subscribe</button></a>
+                      <a href="{% url 'dtracker-accounts-login' %}"><button id='subscribe-not-logged-in-button' class="btn">Subscribe</button></a>
                     </div>
                 {% endif %}
 
@@ -83,7 +83,7 @@
 {% endspaceless %}
 
     <div class="row-fluid">
-        <div class="span3 col col-lg-3" id="pts-package-left">
+        <div class="span3 col col-lg-3" id="dtracker-package-left">
             {% for panel in panels.left %}
             {% if panel.template_name %}
                 {% include panel.template_name %}
@@ -92,7 +92,7 @@
             {% endif %}
             {% endfor %}
         </div>
-        <div class="span6 col col-lg-6" id="pts-package-center">
+        <div class="span6 col col-lg-6" id="dtracker-package-center">
             {% for panel in panels.center %}
             {% if panel.template_name %}
                 {% include panel.template_name %}
@@ -101,7 +101,7 @@
             {% endif %}
             {% endfor %}
         </div>
-        <div class="span3 col col-lg-3" id="pts-package-right">
+        <div class="span3 col col-lg-3" id="dtracker-package-right">
             {% for panel in panels.right %}
             {% if panel.template_name %}
                 {% include panel.template_name %}

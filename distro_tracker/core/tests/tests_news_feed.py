@@ -40,7 +40,7 @@ class NewsFeedTests(TestCase):
             name='dummy-package')
 
     def get_package_news_feed_url(self, package_name):
-        return reverse('pts-package-rss-news-feed', kwargs={
+        return reverse('dtracker-package-rss-news-feed', kwargs={
             'package_name': package_name,
         })
 

@@ -789,7 +789,7 @@ class UpdateExcusesTask(BaseTask):
             if not match:
                 continue
             package = match.group(1)
-            a_tag['href'] = reverse('pts-package-page', kwargs={
+            a_tag['href'] = reverse('dtracker-package-page', kwargs={
                 'package_name': package
             })
 
@@ -1463,7 +1463,7 @@ class UpdateReleaseGoalsTask(BaseTask):
         """
         cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         release_goals_url = 'http://release.debian.org/testing/goals.yaml'
-        bugs_list_url = 'http://udd.debian.org/pts-release-goals.cgi'
+        bugs_list_url = 'http://udd.debian.org/dtracker-release-goals.cgi'
         if not self.force_update and (not cache.is_expired(release_goals_url) and
                 not cache.is_expired(bugs_list_url)):
             return

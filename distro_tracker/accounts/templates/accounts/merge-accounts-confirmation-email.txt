@@ -5,7 +5,7 @@ In order to complete the operation, you must confirm that you are the
 owner of this email address by logging in to the account currently
 associated with this email address and going to the following URL:
 
-http://{{ DISTRO_TRACKER_SITE_DOMAIN }}{% url 'pts-accounts-merge-finalize' confirmation.confirmation_key %}
+http://{{ DISTRO_TRACKER_SITE_DOMAIN }}{% url 'dtracker-accounts-merge-finalize' confirmation.confirmation_key %}
 
 The page will present you the information on consequences of merging the
 accounts and ask for another confirmation before finally committing the

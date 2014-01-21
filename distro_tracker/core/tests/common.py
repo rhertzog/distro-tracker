@@ -40,7 +40,7 @@ def temporary_media_dir(meth):
     automatically cleaned up once the method exits.
     """
     def wrap(self, *args, **kwargs):
-        with make_temp_directory('-pts-media') as temp_media_dir:
+        with make_temp_directory('-dtracker-media') as temp_media_dir:
             with self.settings(MEDIA_ROOT=temp_media_dir):
                 meth(self, *args, **kwargs)
 

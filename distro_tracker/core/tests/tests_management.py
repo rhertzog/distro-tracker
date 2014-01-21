@@ -144,7 +144,7 @@ class UpdateNewsSignaturesCommandTest(TestCase):
         # Set up news based on a signed message.
         signed_news = []
         unsigned_news = []
-        with make_temp_directory('-pts-keyring') as TEST_KEYRING_DIRECTORY:
+        with make_temp_directory('-dtracker-keyring') as TEST_KEYRING_DIRECTORY:
             self.TEST_KEYRING_DIRECTORY = TEST_KEYRING_DIRECTORY
             with self.settings(
                     DISTRO_TRACKER_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):

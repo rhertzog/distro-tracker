@@ -3,19 +3,19 @@
   <div class="navbar-inner">
     <ul class="nav">
       <li class="{% if active_element == 'profile' %}active{% endif %}">
-        <a href="{% url 'pts-accounts-profile' %}">Profile</a>
+        <a href="{% url 'dtracker-accounts-profile' %}">Profile</a>
       </li>
       <li class="{% if active_element == 'subscriptions' %}active{% endif %}">
-        <a href="{% url 'pts-accounts-subscriptions' %}">Subscriptions</a>
+        <a href="{% url 'dtracker-accounts-subscriptions' %}">Subscriptions</a>
       </li>
       <li class="{% if active_element == 'change-profile' %}active{% endif %}">
-        <a href="{% url 'pts-accounts-profile-modify' %}">Personal Information</a>
+        <a href="{% url 'dtracker-accounts-profile-modify' %}">Personal Information</a>
       </li>
       <li class="{% if active_element == 'change-password' %}active{% endif %}">
-        <a href="{% url 'pts-accounts-profile-password-change' %}">Change Password</a>
+        <a href="{% url 'dtracker-accounts-profile-password-change' %}">Change Password</a>
       </li>
       <li class="{% if active_element == 'manage-emails' %}active{% endif %}">
-        <a href="{% url 'pts-accounts-manage-emails' %}">Account Emails</a>
+        <a href="{% url 'dtracker-accounts-manage-emails' %}">Account Emails</a>
       </li>
     </ul>
   </div>

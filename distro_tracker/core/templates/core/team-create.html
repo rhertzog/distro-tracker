@@ -1,7 +1,7 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
-<form id="create-team-form" class="form-horizontal" action="{% url 'pts-teams-create' %}" method="POST">{% csrf_token %}
+<form id="create-team-form" class="form-horizontal" action="{% url 'dtracker-teams-create' %}" method="POST">{% csrf_token %}
 {% if form.errors %}
     {% for error in form.non_field_errors %}
     <div class="alert alert-error">

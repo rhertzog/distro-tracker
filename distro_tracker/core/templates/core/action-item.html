@@ -5,7 +5,7 @@
 <div>
 <dl class="dl-horizontal">
     <dt>package:</dt>
-    <dd><a href="{% url 'pts-package-page' item.package %}">{{ item.package.name }}</a></dd>
+    <dd><a href="{% url 'dtracker-package-page' item.package %}">{{ item.package.name }}</a></dd>
     <dt>severity:</dt>
     <dd>{{ item.get_severity_display }}</dd>
     <dt>created:</dt>

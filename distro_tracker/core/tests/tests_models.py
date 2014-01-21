@@ -1204,7 +1204,7 @@ class NewsTests(TestCase):
         creating a news item from an email message which was transfer encoded
         as quoted-printable.
         """
-        with make_temp_directory('-pts-keyring') as TEST_KEYRING_DIRECTORY:
+        with make_temp_directory('-dtracker-keyring') as TEST_KEYRING_DIRECTORY:
             self.TEST_KEYRING_DIRECTORY = TEST_KEYRING_DIRECTORY
             with self.settings(
                     DISTRO_TRACKER_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
@@ -1309,14 +1309,14 @@ class NewsTests(TestCase):
             package=self.package)
 
         # Check that the latin-1 encoded news is correctly displayed
-        response = self.client.get(reverse('pts-news-page', kwargs={
+        response = self.client.get(reverse('dtracker-news-page', kwargs={
             'news_id': news_latin.id,
         }))
         # The response contains the correctly decoded content
         self.assertIn(content, response.content.decode('utf-8'))
 
         # Check that the utf-8 encoded news is correctly displayed
-        response = self.client.get(reverse('pts-news-page', kwargs={
+        response = self.client.get(reverse('dtracker-news-page', kwargs={
             'news_id': news_utf.id,
         }))
         # The response contains the correctly decoded content

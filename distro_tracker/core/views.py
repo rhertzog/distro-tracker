@@ -69,7 +69,7 @@ def package_page_redirect(request, package_name):
     """
     Catch-all view which tries to redirect the user to a package page
     """
-    return redirect('pts-package-page', package_name=package_name)
+    return redirect('dtracker-package-page', package_name=package_name)
 
 
 def legacy_package_url_redirect(request, package_hash, package_name):
@@ -80,7 +80,7 @@ def legacy_package_url_redirect(request, package_hash, package_name):
     .. note::
        The "old" package URL is: /<hash>/<package_name>.html
     """
-    return redirect('pts-package-page', package_name=package_name, permanent=True)
+    return redirect('dtracker-package-page', package_name=package_name, permanent=True)
 
 
 class PackageSearchView(View):
@@ -176,7 +176,7 @@ def legacy_rss_redirect(request, package_hash, package_name):
     Redirects old package RSS news feed URLs to the new ones.
     """
     return redirect(
-        'pts-package-rss-news-feed',
+        'dtracker-package-rss-news-feed',
         package_name=package_name,
         permanent=True)
 
@@ -218,7 +218,7 @@ class TeamDetailsView(DetailView):
 
 class DeleteTeamView(DeleteView):
     model = Team
-    success_url = reverse_lazy('pts-team-deleted')
+    success_url = reverse_lazy('dtracker-team-deleted')
     template_name = 'core/team-confirm-delete.html'
 
     def get_object(self, *args, **kwargs):
@@ -413,7 +413,7 @@ class RemoveTeamMember(LoginRequiredMixin, View):
             emails = request.POST.getlist('email')
             self.team.remove_members(EmailUser.objects.filter(user_email__email__in=emails))
 
-        return redirect('pts-team-manage', slug=self.team.slug)
+        return redirect('dtracker-team-manage', slug=self.team.slug)
 
 
 class AddTeamMember(LoginRequiredMixin, View):
@@ -440,7 +440,7 @@ class AddTeamMember(LoginRequiredMixin, View):
                 from_email=settings.DISTRO_TRACKER_CONTACT_EMAIL,
                 recipient_list=[email])
 
-        return redirect('pts-team-manage', slug=self.team.slug)
+        return redirect('dtracker-team-manage', slug=self.team.slug)
 
 
 class ConfirmMembershipView(View):

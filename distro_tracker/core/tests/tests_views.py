@@ -45,7 +45,7 @@ class PackageViewTest(TestCase):
         """
         Helper method which returns the URL for the package with the given name
         """
-        return reverse('pts-package-page', kwargs={
+        return reverse('dtracker-package-page', kwargs={
             'package_name': package_name
         })
 
@@ -167,7 +167,7 @@ class PackageSearchViewTest(TestCase):
         Tests the package search when the given package is an existing source
         package.
         """
-        response = self.client.get(reverse('pts-package-search'), {
+        response = self.client.get(reverse('dtracker-package-search'), {
             'package_name': self.source_package.name
         })
 
@@ -178,7 +178,7 @@ class PackageSearchViewTest(TestCase):
         Tests the package search when the given package is an existing pseudo
         package.
         """
-        response = self.client.get(reverse('pts-package-search'), {
+        response = self.client.get(reverse('dtracker-package-search'), {
             'package_name': self.pseudo_package.name
         })
 
@@ -189,7 +189,7 @@ class PackageSearchViewTest(TestCase):
         Tests the package search when the given package is an existing binary
         package.
         """
-        response = self.client.get(reverse('pts-package-search'), {
+        response = self.client.get(reverse('dtracker-package-search'), {
             'package_name': self.binary_package.name
         })
 
@@ -199,7 +199,7 @@ class PackageSearchViewTest(TestCase):
         """
         Tests the package search when the given package does not exist.
         """
-        response = self.client.get(reverse('pts-package-search'), {
+        response = self.client.get(reverse('dtracker-package-search'), {
             'package_name': 'no-exist'
         })
 
@@ -232,7 +232,7 @@ class PackageAutocompleteViewTest(TestCase):
         Tests the autocomplete functionality when the client asks for source
         packages.
         """
-        response = self.client.get(reverse('pts-api-package-autocomplete'), {
+        response = self.client.get(reverse('dtracker-api-package-autocomplete'), {
             'package_type': 'source',
             'q': 'd',
         })
@@ -243,7 +243,7 @@ class PackageAutocompleteViewTest(TestCase):
         self.assertIn('d-package', response)
 
         # No packages given when there are no matching source packages
-        response = self.client.get(reverse('pts-api-package-autocomplete'), {
+        response = self.client.get(reverse('dtracker-api-package-autocomplete'), {
             'package_type': 'source',
             'q': 'z',
         })
@@ -255,7 +255,7 @@ class PackageAutocompleteViewTest(TestCase):
         Tests the autocomplete functionality when the client asks for pseudo
         packages.
         """
-        response = self.client.get(reverse('pts-api-package-autocomplete'), {
+        response = self.client.get(reverse('dtracker-api-package-autocomplete'), {
             'package_type': 'pseudo',
             'q': 'p',
         })
@@ -265,7 +265,7 @@ class PackageAutocompleteViewTest(TestCase):
         self.assertIn('pseudo-package', response)
 
         # No packages given when there are no matching pseudo packages
-        response = self.client.get(reverse('pts-api-package-autocomplete'), {
+        response = self.client.get(reverse('dtracker-api-package-autocomplete'), {
             'package_type': 'source',
             'q': '-',
         })
@@ -277,7 +277,7 @@ class PackageAutocompleteViewTest(TestCase):
         Tests the autocomplete functionality when the client does not specify
         the type of package.
         """
-        response = self.client.get(reverse('pts-api-package-autocomplete'), {
+        response = self.client.get(reverse('dtracker-api-package-autocomplete'), {
             'q': 'p',
         })
 
@@ -287,7 +287,7 @@ class PackageAutocompleteViewTest(TestCase):
         self.assertIn('pseudo-package', response)
 
         # No packages given when there are no matching packages
-        response = self.client.get(reverse('pts-api-package-autocomplete'), {
+        response = self.client.get(reverse('dtracker-api-package-autocomplete'), {
             'q': '-',
         })
         response = json.loads(response.content.decode('utf-8'))
@@ -297,7 +297,7 @@ class PackageAutocompleteViewTest(TestCase):
         """
         Tests the autocomplete when there is no query parameter given.
         """
-        response = self.client.get(reverse('pts-api-package-autocomplete'), {
+        response = self.client.get(reverse('dtracker-api-package-autocomplete'), {
             'package_type': 'source',
         })
 
@@ -326,7 +326,7 @@ class ActionItemJsonViewTest(TestCase):
             package=self.package,
             item_type=self.action_type,
             short_description=expected_short_description)
-        response = self.client.get(reverse('pts-api-action-item', kwargs={
+        response = self.client.get(reverse('dtracker-api-action-item', kwargs={
             'item_pk': action_item.pk,
         }))
 
@@ -352,7 +352,7 @@ class ActionItemJsonViewTest(TestCase):
         does_not_exist = 100
         # Sanity check - the PK actually does not exist
         self.assertEqual(0, ActionItem.objects.filter(pk=does_not_exist).count())
-        response = self.client.get(reverse('pts-api-action-item', kwargs={
+        response = self.client.get(reverse('dtracker-api-action-item', kwargs={
             'item_pk': does_not_exist,
         }))
 

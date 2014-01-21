@@ -158,7 +158,7 @@ class SubscriptionsViewTests(TestCase):
 
     def get_subscriptions_view(self):
         self.client.login(username=self.user.main_email, password=self.password)
-        return self.client.get(reverse('pts-accounts-subscriptions'))
+        return self.client.get(reverse('dtracker-accounts-subscriptions'))
 
     def subscribe_email_to_package(self, email, package_name):
         Subscription.objects.create_for(
@@ -225,7 +225,7 @@ class UserEmailsViewTests(TestCase):
         self.client.login(username=self.user.main_email, password=self.password)
 
     def get_emails_view(self):
-        return self.client.get(reverse('pts-api-accounts-emails'))
+        return self.client.get(reverse('dtracker-api-accounts-emails'))
 
     def test_get_list_of_emails_only_main_email(self):
         self.log_in_user()
@@ -284,7 +284,7 @@ class SubscribeUserToPackageViewTests(TestCase):
                 'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest',
             }
         return self.client.post(
-            reverse('pts-api-accounts-subscribe'), post_params, **kwargs)
+            reverse('dtracker-api-accounts-subscribe'), post_params, **kwargs)
 
     def test_subscribe_user(self):
         self.log_in_user()
@@ -390,7 +390,7 @@ class UnsubscribeUserViewTests(TestCase):
                 'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest',
             }
         return self.client.post(
-            reverse('pts-api-accounts-unsubscribe'), post_params, **kwargs)
+            reverse('dtracker-api-accounts-unsubscribe'), post_params, **kwargs)
 
     def test_unsubscribe_all_emails(self):
         """
@@ -452,7 +452,7 @@ class UnsubscribeUserViewTests(TestCase):
         """
         self.log_in()
 
-        response = self.client.post(reverse('pts-api-accounts-unsubscribe'))
+        response = self.client.post(reverse('dtracker-api-accounts-unsubscribe'))
 
         self.assertEqual(404, response.status_code)
 
@@ -489,7 +489,7 @@ class UnsubscribeAllViewTests(TestCase):
                 'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest',
             }
         return self.client.post(
-            reverse('pts-api-accounts-unsubscribe-all'), post_params, **kwargs)
+            reverse('dtracker-api-accounts-unsubscribe-all'), post_params, **kwargs)
 
     def test_subscriptions_removed(self):
         """
@@ -570,7 +570,7 @@ class ModifyKeywordsViewTests(TestCase):
                 'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest',
             }
         return self.client.post(
-            reverse('pts-api-accounts-profile-keywords'), post_params, **kwargs)
+            reverse('dtracker-api-accounts-profile-keywords'), post_params, **kwargs)
 
     def get_email_keywords(self, email):
         email_user = EmailUser.objects.get(user_email__email=email)

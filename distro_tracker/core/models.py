@@ -276,7 +276,7 @@ class PackageName(models.Model):
 
     def get_absolute_url(self):
         if self.source or self.pseudo:
-            return reverse('pts-package-page', kwargs={
+            return reverse('dtracker-package-page', kwargs={
                 'package_name': self.name,
             })
 
@@ -325,7 +325,7 @@ class PseudoPackageName(PackageName):
     objects = PackageManager('pseudo')
 
     def get_absolute_url(self):
-        return reverse('pts-package-page', kwargs={
+        return reverse('dtracker-package-page', kwargs={
             'package_name': self.name
         })
 
@@ -344,7 +344,7 @@ class SourcePackageName(PackageName):
     objects = PackageManager('source')
 
     def get_absolute_url(self):
-        return reverse('pts-package-page', kwargs={
+        return reverse('dtracker-package-page', kwargs={
             'package_name': self.name
         })
 
@@ -1514,7 +1514,7 @@ class News(models.Model):
         return self.content
 
     def get_absolute_url(self):
-        return reverse('pts-news-page', kwargs={
+        return reverse('dtracker-news-page', kwargs={
             'news_id': self.pk,
         })
 
@@ -1870,7 +1870,7 @@ class ActionItem(models.Model):
             severity=self.get_severity_display())
 
     def get_absolute_url(self):
-        return reverse('pts-action-item', kwargs={
+        return reverse('dtracker-action-item', kwargs={
             'item_pk': self.pk,
         })
 
@@ -2086,7 +2086,7 @@ class Team(models.Model):
         return self.name
 
     def get_absolute_url(self):
-        return reverse('pts-team-page', kwargs={
+        return reverse('dtracker-team-page', kwargs={
             'slug': self.slug,
         })
 

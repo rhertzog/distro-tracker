@@ -14,11 +14,11 @@
 {% else %}
 <h3>Modify default keywords for {{ email }}</h3>
 {% endif %}
-        <form id="choose-keywords-form" action="{% url 'pts-accounts-profile-keywords' %}" method="POST">{% csrf_token %}
+        <form id="choose-keywords-form" action="{% url 'dtracker-accounts-profile-keywords' %}" method="POST">{% csrf_token %}
             {% for name, value in post.items %}
             <input type="hidden" name="{{ name }}" value="{{ value }}">
             {% endfor %}
-            <input type="hidden" name="next" value="{% url 'pts-accounts-subscriptions' %}">
+            <input type="hidden" name="next" value="{% url 'dtracker-accounts-subscriptions' %}">
                 <div id="choose-keywords-list">
                     {% for keyword in keywords %}
                     <label class="checkbox">

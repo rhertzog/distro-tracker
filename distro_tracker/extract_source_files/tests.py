@@ -81,7 +81,7 @@ class ExtractSourcePackageFilesTest(TestCase):
             'pk': package.pk,
         })
 
-        with make_temp_directory('pts-pkg-dir') as pkg_directory:
+        with make_temp_directory('dtracker-pkg-dir') as pkg_directory:
             debian_dir = os.path.join(pkg_directory, 'debian')
             os.makedirs(debian_dir)
             changelog_path = os.path.join(debian_dir, 'changelog')
@@ -116,7 +116,7 @@ class ExtractSourcePackageFilesTest(TestCase):
             'pk': package.pk,
         })
 
-        with make_temp_directory('pts-pkg-dir') as pkg_directory:
+        with make_temp_directory('dtracker-pkg-dir') as pkg_directory:
             debian_dir = os.path.join(pkg_directory, 'debian')
             os.makedirs(debian_dir)
             wanted_files = [
@@ -158,7 +158,7 @@ class ExtractSourcePackageFilesTest(TestCase):
         package = SourcePackage.objects.create(
             source_package_name=name, version='1.0.0')
 
-        with make_temp_directory('pts-pkg-dir') as pkg_directory:
+        with make_temp_directory('dtracker-pkg-dir') as pkg_directory:
             debian_dir = os.path.join(pkg_directory, 'debian')
             os.makedirs(debian_dir)
             wanted_files = [
@@ -201,7 +201,7 @@ class ExtractSourcePackageFilesTest(TestCase):
         package = SourcePackage.objects.create(
             source_package_name=name, version='1.0.0')
 
-        with make_temp_directory('pts-pkg-dir') as pkg_directory:
+        with make_temp_directory('dtracker-pkg-dir') as pkg_directory:
             debian_dir = os.path.join(pkg_directory, 'debian')
             os.makedirs(debian_dir)
             wanted_files = [
@@ -252,7 +252,7 @@ class ExtractSourcePackageFilesTest(TestCase):
         package = SourcePackage.objects.create(
             source_package_name=name, version='1.0.0')
 
-        with make_temp_directory('pts-pkg-dir') as pkg_directory:
+        with make_temp_directory('dtracker-pkg-dir') as pkg_directory:
             debian_dir = os.path.join(pkg_directory, 'debian')
             os.makedirs(debian_dir)
             wanted_files = [

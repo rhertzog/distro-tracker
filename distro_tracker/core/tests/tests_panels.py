@@ -37,7 +37,7 @@ class VersionedLinksPanelTests(TestCase):
         type(str('TestProvider'), (VersionedLinks.LinkProvider,), {'icons': icons})
 
     def get_package_page_response(self):
-        url = reverse('pts-package-page', kwargs={
+        url = reverse('dtracker-package-page', kwargs={
             'package_name': self.package.name,
         })
         return self.client.get(url)

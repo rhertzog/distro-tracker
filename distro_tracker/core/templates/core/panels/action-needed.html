@@ -9,7 +9,7 @@
         <span>{{ item.short_description|safe }}</span>
         {% if item.full_description_template %}
         <span title="details">
-        <a href="{% url 'pts-action-item' item.pk %}" class="has-popover action-needed-details" data-href="{% url 'pts-api-action-item' item.pk %}">
+        <a href="{% url 'dtracker-action-item' item.pk %}" class="has-popover action-needed-details" data-href="{% url 'dtracker-api-action-item' item.pk %}">
             <i class="icon-question-sign"></i>
         </a>
         </span>

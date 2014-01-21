@@ -3,7 +3,7 @@ You have registered to the {{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracking Sys
 In order to complete your registration, you must confirm that you are the
 owner of this email address by going to the following URL:
 
-http://{{ DISTRO_TRACKER_SITE_DOMAIN }}{% url 'pts-accounts-confirm-registration' confirmation.confirmation_key %}
+http://{{ DISTRO_TRACKER_SITE_DOMAIN }}{% url 'dtracker-accounts-confirm-registration' confirmation.confirmation_key %}
 
 If you don't understand why you got this mail, please ignore it,
 nothing will be done unless you follow the given link.
