@@ -176,7 +176,7 @@ def approved_default(msg):
     :type msg: :py:class:`email.message.Message` or an equivalent interface
         object
     """
-    if 'X-PTS-Approved' in msg:
+    if 'X-Distro-Tracker-Approved' in msg:
         return True
 
     approved, implemented = vendor.call('approve_default_message', msg)
@@ -188,8 +188,8 @@ def approved_default(msg):
 
 def add_new_headers(received_message, package_name, keyword):
     """
-    The function adds new PTS-specific headers to the received message.
-    This is used before forwarding the message to subscribers.
+    The function adds new distro-tracker specific headers to the received
+    message. This is used before forwarding the message to subscribers.
 
     The headers added by this function are used regardless whether the
     message is forwarded due to direct package subscriptions or a team
@@ -210,8 +210,8 @@ def add_new_headers(received_message, package_name, keyword):
         ('X-Loop', '{package}@{distro_tracker_fqdn}'.format(
             package=package_name,
             distro_tracker_fqdn=DISTRO_TRACKER_FQDN)),
-        ('X-PTS-Package', package_name),
-        ('X-PTS-Keyword', keyword),
+        ('X-Distro-Tracker-Package', package_name),
+        ('X-Distro-Tracker-Keyword', keyword),
     ]
 
     extra_vendor_headers, implemented = vendor.call(
@@ -243,7 +243,7 @@ def add_team_membership_headers(received_message, package_name, keyword, team):
     messages to be sent to users that are members of a team.
     """
     new_headers = [
-        ('X-PTS-Team', team.slug),
+        ('X-Distro-Tracker-Team', team.slug),
     ]
     add_headers(received_message, new_headers)
 

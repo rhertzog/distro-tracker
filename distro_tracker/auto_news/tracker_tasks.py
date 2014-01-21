@@ -8,7 +8,7 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """
-The PTS-specific tasks for :mod:`distro_tracker.auto_news` app.
+The Distro-Tracker-specific tasks for :mod:`distro_tracker.auto_news` app.
 """
 from __future__ import unicode_literals
 from distro_tracker.core.tasks import BaseTask

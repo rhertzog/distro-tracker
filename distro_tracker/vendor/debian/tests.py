@@ -121,7 +121,7 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
         self.run_dispatch()
 
         self.assert_message_forwarded_to('user@domain.com')
-        self.assert_header_equal('X-PTS-Keyword', 'bts-control')
+        self.assert_header_equal('X-Distro-Tracker-Keyword', 'bts-control')
 
     def test_dispatch_bts(self):
         """
@@ -134,7 +134,7 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
         self.run_dispatch()
 
         self.assert_message_forwarded_to('user@domain.com')
-        self.assert_header_equal('X-PTS-Keyword', 'bts')
+        self.assert_header_equal('X-Distro-Tracker-Keyword', 'bts')
 
     def test_dispatch_upload_source(self):
         self.set_header('Subject', 'Accepted 0.1 in unstable')
@@ -147,7 +147,7 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
         self.run_dispatch()
 
         self.assert_message_forwarded_to('user@domain.com')
-        self.assert_header_equal('X-PTS-Keyword', 'upload-source')
+        self.assert_header_equal('X-Distro-Tracker-Keyword', 'upload-source')
 
     def test_dispatch_upload_binary(self):
         self.set_header('Subject', 'Accepted 0.1 in unstable')
@@ -160,7 +160,7 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
         self.run_dispatch()
 
         self.assert_message_forwarded_to('user@domain.com')
-        self.assert_header_equal('X-PTS-Keyword', 'upload-binary')
+        self.assert_header_equal('X-Distro-Tracker-Keyword', 'upload-binary')
 
     def test_dispatch_archive(self):
         self.set_header('Subject', 'Comments regarding some changes')
@@ -173,7 +173,7 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
         self.run_dispatch()
 
         self.assert_message_forwarded_to('user@domain.com')
-        self.assert_header_equal('X-PTS-Keyword', 'archive')
+        self.assert_header_equal('X-Distro-Tracker-Keyword', 'archive')
 
     def test_default_not_trusted(self):
         """
@@ -223,7 +223,7 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
 
         self.run_dispatch(address)
 
-        self.assert_header_equal('X-PTS-Keyword', 'vcs')
+        self.assert_header_equal('X-Distro-Tracker-Keyword', 'vcs')
 
     def test_legacy_keyword_override_ddtp(self):
         """
@@ -237,7 +237,7 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
 
         self.run_dispatch(address)
 
-        self.assert_header_equal('X-PTS-Keyword', 'translation')
+        self.assert_header_equal('X-Distro-Tracker-Keyword', 'translation')
 
 
 class GetPseudoPackageListTest(TestCase):

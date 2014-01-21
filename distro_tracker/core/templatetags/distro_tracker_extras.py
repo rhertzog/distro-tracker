@@ -7,7 +7,7 @@
 # distribution and at http://deb.li/DTLicense. No part of Distro Tracker,
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
-"""Additional PTS-specific template tags."""
+"""Additional distro-tracker specific template tags."""
 from __future__ import unicode_literals
 from django import template
 

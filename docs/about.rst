@@ -39,7 +39,7 @@ mechanism and no keyword in the local part of the email address, the message is
 tagged with the "default" keyword.
 
 The keyword of the forwarded message is included in a mail header
-``X-PTS-Keyword``.
+``X-Distro-Tracker-Keyword``.
 
 There are three types of packages which are considered valid packages for email
 message forwarding by the PTS:

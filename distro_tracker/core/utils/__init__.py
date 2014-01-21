@@ -7,7 +7,7 @@
 # distribution and at http://deb.li/DTLicense. No part of Distro Tracker,
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
-"""Various utilities for the PTS project."""
+"""Various utilities for the distro-tracker project."""
 from __future__ import unicode_literals
 from django.template.loader import render_to_string
 from django.http import HttpResponse
@@ -41,7 +41,8 @@ def get_or_none(model, **kwargs):
 def distro_tracker_render_to_string(template_name, context=None):
     """
     A custom function to render a template to a string which injects extra
-    PTS-specific information to the context, such as the name of the derivative.
+    distro-tracker specific information to the context, such as the name
+    of the derivative.
 
     This function is necessary since Django's
     :data:`TEMPLATE_CONTEXT_PROCESSORS <distro_tracker.project.settings.TEMPLATE_CONTEXT_PROCESSORS>

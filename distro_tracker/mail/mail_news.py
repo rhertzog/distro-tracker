@@ -50,10 +50,10 @@ def process(message):
     :func:`create_news_from_email_message <distro_tracker.vendor.skeleton.rules.create_news_from_email_message>`.
 
     If this function does not exist a news item is created only if there is a
-    ``X-PTS-Package`` header set giving the name of an existing source or
+    ``X-Distro-Tracker-Package`` header set giving the name of an existing source or
     pseudo package.
 
-    If the ``X-PTS-Url`` is also set then the content of the message will not
+    If the ``X-Distro-Tracker-Url`` is also set then the content of the message will not
     be the email content, rather the URL given in this header.
 
     :param message: The received message
@@ -68,17 +68,17 @@ def process(message):
     if implemented and created:
         return
 
-    # If the message has an X-PTS-Package header, it is automatically made into
+    # If the message has an X-Distro-Tracker-Package header, it is automatically made into
     # a news item.
-    if 'X-PTS-Package' in msg:
-        package_name = msg['X-PTS-Package']
+    if 'X-Distro-Tracker-Package' in msg:
+        package_name = msg['X-Distro-Tracker-Package']
         package = get_or_none(PackageName, name=package_name)
         if not package:
             return
-        if 'X-PTS-Url' not in msg:
+        if 'X-Distro-Tracker-Url' not in msg:
             create_news(msg, package)
         else:
-            distro_tracker_url = msg['X-PTS-Url']
+            distro_tracker_url = msg['X-Distro-Tracker-Url']
             News.objects.create(
                 title=distro_tracker_url,
                 content="<a href={url}>{url}</a>".format(url=escape(distro_tracker_url)),

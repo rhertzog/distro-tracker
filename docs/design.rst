@@ -117,7 +117,7 @@ model's instances associated with a particular package is displayed in the
 :class:`NewsPanel <distro_tracker.core.panels.NewsPanel>`.
 
 By default, any messages given to the management command which contains the
-``X-PTS-Package`` header are turned into news items with the content type of
+``X-Distro-Tracker-Package`` header are turned into news items with the content type of
 the news item being ``message/rfc822`` and the content the entire message.
 
 However, it is also possible to implement a vendor-specific function

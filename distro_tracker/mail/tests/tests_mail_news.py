@@ -59,7 +59,7 @@ class BasicNewsGeneration(TestCase):
         subject = 'Some message'
         content = 'Some message content'
         self.set_subject(subject)
-        self.add_header('X-PTS-Package', self.package.name)
+        self.add_header('X-Distro-Tracker-Package', self.package.name)
         self.set_message_content(content)
 
         self.process_mail()
@@ -76,15 +76,15 @@ class BasicNewsGeneration(TestCase):
     @temporary_media_dir
     def test_create_news_url_from_email(self):
         """
-        Tests that when an X-PTS-Url header is given the news content is the
+        Tests that when an X-Distro-Tracker-Url header is given the news content is the
         URL, not the email message.
         """
         subject = 'Some message'
         content = 'Some message content'
         self.set_subject(subject)
-        self.add_header('X-PTS-Package', self.package.name)
+        self.add_header('X-Distro-Tracker-Package', self.package.name)
         url = 'http://some-url.com'
-        self.add_header('X-PTS-Url', url)
+        self.add_header('X-Distro-Tracker-Url', url)
         self.set_message_content(content)
 
         self.process_mail()
@@ -99,13 +99,13 @@ class BasicNewsGeneration(TestCase):
     @temporary_media_dir
     def test_create_news_package_does_not_exist(self):
         """
-        Tests that when the package given in X-PTS-Package does not exist, no
+        Tests that when the package given in X-Distro-Tracker-Package does not exist, no
         news items are created.
         """
         subject = 'Some message'
         content = 'Some message content'
         self.set_subject(subject)
-        self.add_header('X-PTS-Package', 'no-exist')
+        self.add_header('X-Distro-Tracker-Package', 'no-exist')
         self.set_message_content(content)
         # Sanity check - there are no news at the beginning
         self.assertEqual(0, News.objects.count())

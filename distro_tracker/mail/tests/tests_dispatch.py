@@ -179,7 +179,7 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
             from_email=self.from_email))
         self.add_header('Subject', 'Some subject')
         self.add_header('X-Loop', 'owner@bugs.debian.org')
-        self.add_header('X-PTS-Approved', '1')
+        self.add_header('X-Distro-Tracker-Approved', '1')
         self.set_message_content('message content')
 
         self.package = PackageName.objects.create(name=self.package_name)
@@ -261,8 +261,8 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
             ('X-Loop', '{package}@{distro_tracker_fqdn}'.format(
                 package=self.package_name,
                 distro_tracker_fqdn=DISTRO_TRACKER_FQDN)),
-            ('X-PTS-Package', self.package_name),
-            ('X-PTS-Keyword', 'default'),
+            ('X-Distro-Tracker-Package', self.package_name),
+            ('X-Distro-Tracker-Keyword', 'default'),
             ('Precedence', 'list'),
             ('List-Unsubscribe',
                 '<mailto:{control_email}?body=unsubscribe%20{package}>'.format(
@@ -374,7 +374,7 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         self.run_dispatch(address)
 
         self.assert_message_forwarded_to('user@domain.com')
-        self.assert_header_equal('X-PTS-Keyword', 'vcs')
+        self.assert_header_equal('X-Distro-Tracker-Keyword', 'vcs')
 
     def test_unknown_keyword(self):
         self.subscribe_user_to_package('user@domain.com', self.package_name)
@@ -596,7 +596,7 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
             from_email=self.from_email))
         self.add_header('Subject', 'Some subject')
         self.add_header('X-Loop', 'owner@bugs.debian.org')
-        self.add_header('X-PTS-Approved', '1')
+        self.add_header('X-Distro-Tracker-Approved', '1')
         self.set_message_content('message content')
 
     def test_team_muted(self):
@@ -652,9 +652,9 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
 
         self.run_dispatch()
 
-        self.assert_header_equal('X-PTS-Keyword', 'default')
-        self.assert_header_equal('X-PTS-Team', self.team.slug)
-        self.assert_header_equal('X-PTS-Package', self.package.name)
+        self.assert_header_equal('X-Distro-Tracker-Keyword', 'default')
+        self.assert_header_equal('X-Distro-Tracker-Team', self.team.slug)
+        self.assert_header_equal('X-Distro-Tracker-Package', self.package.name)
 
     def test_dispatch_multiple_teams(self):
         """
@@ -671,7 +671,7 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
         self.assertEqual(2, len(mail.outbox))
         for message, team in zip(mail.outbox, Team.objects.all()):
             message = message.message()
-            self.assertEqual(message['X-PTS-Team'], team.slug)
+            self.assertEqual(message['X-Distro-Tracker-Team'], team.slug)
 
     def test_package_muted(self):
         """

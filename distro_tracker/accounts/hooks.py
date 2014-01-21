@@ -17,8 +17,7 @@ def post_merge(initial_user, merge_with):
     move the teams owned by the account to be deleted to the new merged
     account.
     """
-    # Convert the instances to PTS User instance (with PTS-specific
-    # methods)
+    # Convert to our custom user object to be able to use our own methods
     initial_user = User.objects.get(pk=initial_user.pk)
     merge_with = User.objects.get(pk=merge_with.pk)
 
