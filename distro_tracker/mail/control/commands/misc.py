@@ -20,7 +20,7 @@ from distro_tracker.mail.control.commands.confirmation import needs_confirmation
 from distro_tracker.mail.control.commands.base import Command
 
 from django.conf import settings
-PTS_FQDN = settings.PTS_FQDN
+DISTRO_TRACKER_FQDN = settings.DISTRO_TRACKER_FQDN
 
 
 @needs_confirmation
@@ -384,7 +384,7 @@ class UnsubscribeallCommand(Command):
             '{email} has been unsubscribed from {package}@{fqdn}'.format(
                 email=self.user_email,
                 package=package,
-                fqdn=PTS_FQDN)
+                fqdn=DISTRO_TRACKER_FQDN)
             for package in sorted(packages))
 
     def get_confirmation_message(self):

@@ -32,8 +32,8 @@ from distro_tracker.core.models import PackageName
 from distro_tracker.core.models import Keyword
 from distro_tracker.core.models import Team
 from django.conf import settings
-PTS_CONTROL_EMAIL = settings.PTS_CONTROL_EMAIL
-PTS_FQDN = settings.PTS_FQDN
+DISTRO_TRACKER_CONTROL_EMAIL = settings.DISTRO_TRACKER_CONTROL_EMAIL
+DISTRO_TRACKER_FQDN = settings.DISTRO_TRACKER_FQDN
 
 from copy import deepcopy
 import re
@@ -71,7 +71,7 @@ def process(message, sent_to_address=None):
     package_name = get_package_name(local_part)
     # Check loop
     package_email = '{package}@{pts_fqdn}'.format(package=package_name,
-                                                  pts_fqdn=PTS_FQDN)
+                                                  pts_fqdn=DISTRO_TRACKER_FQDN)
     if package_email in msg.get_all('X-Loop', ()):
         # Bad X-Loop, discard the message
         logger.info('Bad X-Loop, message discarded')
@@ -209,7 +209,7 @@ def add_new_headers(received_message, package_name, keyword):
     new_headers = [
         ('X-Loop', '{package}@{pts_fqdn}'.format(
             package=package_name,
-            pts_fqdn=PTS_FQDN)),
+            pts_fqdn=DISTRO_TRACKER_FQDN)),
         ('X-PTS-Package', package_name),
         ('X-PTS-Keyword', keyword),
     ]
@@ -231,7 +231,7 @@ def add_direct_subscription_headers(received_message, package_name, keyword):
         ('Precedence', 'list'),
         ('List-Unsubscribe',
             '<mailto:{control_email}?body=unsubscribe%20{package}>'.format(
-                control_email=PTS_CONTROL_EMAIL,
+                control_email=DISTRO_TRACKER_CONTROL_EMAIL,
                 package=package_name)),
     ]
     add_headers(received_message, new_headers)
@@ -378,7 +378,7 @@ def prepare_message(received_message, to_email, date):
     """
     bounce_address = 'bounces+{date}@{pts_fqdn}'.format(
         date=date.strftime('%Y%m%d'),
-        pts_fqdn=PTS_FQDN)
+        pts_fqdn=DISTRO_TRACKER_FQDN)
     message = CustomEmailMessage(
         msg=received_message,
         from_email=verp.encode(bounce_address, to_email),
@@ -395,7 +395,7 @@ def handle_bounces(sent_to_address):
     :type sent_to_address: string
     """
     bounce_email, user_email = verp.decode(sent_to_address)
-    match = re.match(r'^bounces\+(\d{8})@' + PTS_FQDN, bounce_email)
+    match = re.match(r'^bounces\+(\d{8})@' + DISTRO_TRACKER_FQDN, bounce_email)
     if not match:
         # Invalid bounce address
         logger.error('Invalid bounce address ' + bounce_email)
@@ -422,12 +422,12 @@ def handle_bounces(sent_to_address):
             })
         EmailMessage(
             subject='All your subscriptions from the PTS have been cancelled',
-            from_email=settings.PTS_BOUNCES_LIKELY_SPAM_EMAIL,
+            from_email=settings.DISTRO_TRACKER_BOUNCES_LIKELY_SPAM_EMAIL,
             to=[user_email],
-            cc=[settings.PTS_CONTACT_EMAIL],
+            cc=[settings.DISTRO_TRACKER_CONTACT_EMAIL],
             body=email_body,
             headers={
-                'From': settings.PTS_CONTACT_EMAIL,
+                'From': settings.DISTRO_TRACKER_CONTACT_EMAIL,
             },
         ).send()
 

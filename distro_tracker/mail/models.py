@@ -116,10 +116,10 @@ class EmailUserBounceStatsManager(models.Manager):
     def limit_bounce_information(self, email):
         """
         Makes sure not to keep more records than the number of days set by
-        :py:attr:`PTS_MAX_DAYS_TOLERATE_BOUNCE <distro_tracker.project.settings.PTS_MAX_DAYS_TOLERATE_BOUNCE>`
+        :py:attr:`DISTRO_TRACKER_MAX_DAYS_TOLERATE_BOUNCE <distro_tracker.project.settings.DISTRO_TRACKER_MAX_DAYS_TOLERATE_BOUNCE>`
         """
         user = self.get(user_email__email=email)
-        days = settings.PTS_MAX_DAYS_TOLERATE_BOUNCE
+        days = settings.DISTRO_TRACKER_MAX_DAYS_TOLERATE_BOUNCE
         for info in user.bouncestats_set.all()[days:]:
             info.delete()
 
@@ -142,7 +142,7 @@ class EmailUserBounceStats(EmailUser):
         """
         Checks if the user has too many bounces.
         """
-        days = settings.PTS_MAX_DAYS_TOLERATE_BOUNCE
+        days = settings.DISTRO_TRACKER_MAX_DAYS_TOLERATE_BOUNCE
         count = 0
         for stats in self.bouncestats_set.all()[:days]:
             # If no mails were sent on a particular day nothing could bounce

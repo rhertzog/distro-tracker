@@ -27,5 +27,5 @@ def create_site(app, created_models, verbosity, **kwargs):
     if Site in created_models:
         site, _ = Site.objects.get_or_create(pk=settings.SITE_ID)
         site.name = 'Package Tracking System'
-        site.domain = settings.PTS_FQDN
+        site.domain = settings.DISTRO_TRACKER_FQDN
         site.save()

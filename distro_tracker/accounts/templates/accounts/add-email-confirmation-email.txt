@@ -1,19 +1,19 @@
 You have requested to add this email to an existing account in
-the {{ PTS_VENDOR_NAME }} Package Tracking System.
+the {{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracking System.
 
 In order to complete the action, you must confirm that you are the
 owner of this email address by going to the following URL:
 
-http://{{ PTS_SITE_DOMAIN }}{% url 'pts-accounts-confirm-add-email' confirmation.confirmation_key %}
+http://{{ DISTRO_TRACKER_SITE_DOMAIN }}{% url 'pts-accounts-confirm-add-email' confirmation.confirmation_key %}
 
 If you don't understand why you got this mail, please ignore it,
 nothing will be done unless you follow the given link.
 
 If you have any problem with this service, please contact
-{{ PTS_CONTACT_EMAIL }}.
+{{ DISTRO_TRACKER_CONTACT_EMAIL }}.
 
 Thanks,
 
 --
-{{ PTS_VENDOR_NAME }} Package Tracking System
-http://{{ PTS_SITE_DOMAIN }}
+{{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracking System
+http://{{ DISTRO_TRACKER_SITE_DOMAIN }}

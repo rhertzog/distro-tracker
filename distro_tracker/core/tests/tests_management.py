@@ -147,7 +147,7 @@ class UpdateNewsSignaturesCommandTest(TestCase):
         with make_temp_directory('-pts-keyring') as TEST_KEYRING_DIRECTORY:
             self.TEST_KEYRING_DIRECTORY = TEST_KEYRING_DIRECTORY
             with self.settings(
-                    PTS_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
+                    DISTRO_TRACKER_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
                 self.import_key_from_test_file('key1.pub')
                 # The content of the test news item is found in a file
                 file_path = self.get_test_file_path(

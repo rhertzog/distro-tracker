@@ -183,7 +183,7 @@ def get_resource_content(url, cache=None):
     :param cache: A cache object which should be used to look up and store
         the cached resource. If it is not provided, an instance of
         :class:`HttpCache` with a
-        :data:`distro_tracker.project.local_settings.PTS_CACHE_DIRECTORY` cache directory
+        :data:`distro_tracker.project.local_settings.DISTRO_TRACKER_CACHE_DIRECTORY` cache directory
         is used.
     :type cache: :class:`HttpCache` or an object with an equivalent interface
 
@@ -191,7 +191,7 @@ def get_resource_content(url, cache=None):
     :rtype: bytes
     """
     if cache is None:
-        cache_directory_path = settings.PTS_CACHE_DIRECTORY
+        cache_directory_path = settings.DISTRO_TRACKER_CACHE_DIRECTORY
         cache = HttpCache(cache_directory_path)
 
     try:

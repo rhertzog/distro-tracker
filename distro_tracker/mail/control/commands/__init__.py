@@ -25,7 +25,7 @@ from distro_tracker.mail.control.commands.teams import *
 from distro_tracker.mail.control.commands.misc import *
 from distro_tracker.mail.control.commands.confirmation import *
 
-MAX_ALLOWED_ERRORS = settings.PTS_MAX_ALLOWED_ERRORS_CONTROL_COMMANDS
+MAX_ALLOWED_ERRORS = settings.DISTRO_TRACKER_MAX_ALLOWED_ERRORS_CONTROL_COMMANDS
 
 
 class HelpCommand(Command):

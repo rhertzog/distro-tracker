@@ -82,17 +82,17 @@ import yaml
 __all__ = ('DispatchDebianSpecificTest', 'DispatchBaseDebianSettingsTest')
 
 
-@override_settings(PTS_VENDOR_RULES='distro_tracker.vendor.debian.rules')
+@override_settings(DISTRO_TRACKER_VENDOR_RULES='distro_tracker.vendor.debian.rules')
 class DispatchBaseDebianSettingsTest(DispatchBaseTest):
     """
     This test class makes sure that base tests pass when
-    :py:data:`PTS_VENDOR_RULES <distro_tracker.project.settings.PTS_VENDOR_RULES>` is set
+    :py:data:`DISTRO_TRACKER_VENDOR_RULES <distro_tracker.project.settings.DISTRO_TRACKER_VENDOR_RULES>` is set
     to use debian.
     """
     pass
 
 
-@override_settings(PTS_VENDOR_RULES='distro_tracker.vendor.debian.rules')
+@override_settings(DISTRO_TRACKER_VENDOR_RULES='distro_tracker.vendor.debian.rules')
 class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
     """
     Tests Debian-specific keyword classification.
@@ -555,7 +555,7 @@ class DebianContributorExtraTest(TestCase):
         )
 
 
-@override_settings(PTS_VENDOR_RULES='distro_tracker.vendor.debian.rules')
+@override_settings(DISTRO_TRACKER_VENDOR_RULES='distro_tracker.vendor.debian.rules')
 class RetrieveSourcesInformationDebian(TestCase):
     """
     Tests the Debian-specific aspects of retrieving package information from a
@@ -608,7 +608,7 @@ Files:
             self.assertEqual('dummy-package', SourcePackageName.objects.all()[0].name)
 
 
-@override_settings(PTS_VENDOR_RULES='distro_tracker.vendor.debian.rules')
+@override_settings(DISTRO_TRACKER_VENDOR_RULES='distro_tracker.vendor.debian.rules')
 class DebianNewsFromEmailTest(TestCase):
     """
     Tests creating Debian-specific news from received emails.
@@ -2568,12 +2568,12 @@ class UpdatePiupartsTaskTests(TestCase):
         for suite, mock_call in zip(suites, self.task._get_piuparts_content.call_args_list):
             self.assertEqual(mock.call(suite), mock_call)
 
-    @override_settings(PTS_DEBIAN_PIUPARTS_SUITES=suites)
+    @override_settings(DISTRO_TRACKER_DEBIAN_PIUPARTS_SUITES=suites)
     def test_retrieves_all_suites(self):
         """
         Tests that the task tries to retrieve the data for each of the suites
         given in the
-        :data:`distro_tracker.project.local_settings.PTS_DEBIAN_PIUPARTS_SUITES`
+        :data:`distro_tracker.project.local_settings.DISTRO_TRACKER_DEBIAN_PIUPARTS_SUITES`
         setting.
         """
         suites = ['sid', 'jessie']
@@ -2583,7 +2583,7 @@ class UpdatePiupartsTaskTests(TestCase):
 
         self.assert_get_piuparts_called_with(suites)
 
-    @override_settings(PTS_DEBIAN_PIUPARTS_SUITES=suites)
+    @override_settings(DISTRO_TRACKER_DEBIAN_PIUPARTS_SUITES=suites)
     def test_action_item_created(self):
         """
         Tests that an action item is created when a source package is found to
@@ -2610,7 +2610,7 @@ class UpdatePiupartsTaskTests(TestCase):
         # Correct list of failing suites?
         self.assertEqual([suite], item.extra_data['suites'])
 
-    @override_settings(PTS_DEBIAN_PIUPARTS_SUITES=suites)
+    @override_settings(DISTRO_TRACKER_DEBIAN_PIUPARTS_SUITES=suites)
     def test_action_item_not_created(self):
         """
         Tests that an action item is not created when a source package is found
@@ -2626,7 +2626,7 @@ class UpdatePiupartsTaskTests(TestCase):
         # No action item created
         self.assertEqual(0, ActionItem.objects.count())
 
-    @override_settings(PTS_DEBIAN_PIUPARTS_SUITES=suites)
+    @override_settings(DISTRO_TRACKER_DEBIAN_PIUPARTS_SUITES=suites)
     def test_action_item_updated(self):
         """
         Tests that an existing action item is updated when there are updated
@@ -2653,7 +2653,7 @@ class UpdatePiupartsTaskTests(TestCase):
         item = ActionItem.objects.all()[0]
         self.assertEqual([suite], item.extra_data['suites'])
 
-    @override_settings(PTS_DEBIAN_PIUPARTS_SUITES=suites)
+    @override_settings(DISTRO_TRACKER_DEBIAN_PIUPARTS_SUITES=suites)
     def test_action_item_multiple_suites(self):
         """
         Tests that an action item contains all suites in which a failure was
@@ -2679,7 +2679,7 @@ class UpdatePiupartsTaskTests(TestCase):
         for suite in suites:
             self.assertIn(suite, item.extra_data['suites'])
 
-    @override_settings(PTS_DEBIAN_PIUPARTS_SUITES=suites)
+    @override_settings(DISTRO_TRACKER_DEBIAN_PIUPARTS_SUITES=suites)
     def test_action_item_not_updated_when_unchanged(self):
         """
         Tests that an existing action item is not updated when the update
@@ -2712,7 +2712,7 @@ class UpdatePiupartsTaskTests(TestCase):
         # Time stamp unchanged
         self.assertEqual(old_timestamp, item.last_updated_timestamp)
 
-    @override_settings(PTS_DEBIAN_PIUPARTS_SUITES=suites)
+    @override_settings(DISTRO_TRACKER_DEBIAN_PIUPARTS_SUITES=suites)
     def test_action_item_removed(self):
         """
         Tests that an existing action item is removed if the update indicates
@@ -2739,7 +2739,7 @@ class UpdatePiupartsTaskTests(TestCase):
         # Action item removed?
         self.assertEqual(0, ActionItem.objects.count())
 
-    @override_settings(PTS_DEBIAN_PIUPARTS_SUITES=suites)
+    @override_settings(DISTRO_TRACKER_DEBIAN_PIUPARTS_SUITES=suites)
     def test_action_item_removed_no_stats(self):
         """
         Tests that an existing action item is removed if the update indicates
@@ -3794,7 +3794,7 @@ class UpdateWnppStatsTaskTests(TestCase):
             self.assertEqual(wnpp_info, item.extra_data['wnpp_info'])
 
 
-@override_settings(PTS_VENDOR_RULES='distro_tracker.vendor.debian.rules')
+@override_settings(DISTRO_TRACKER_VENDOR_RULES='distro_tracker.vendor.debian.rules')
 class UpdateNewQueuePackagesTests(TestCase):
     """
     Tests for the :class:`distro_tracker.vendor.debian.pts_tasks.UpdateNewQueuePackages`
@@ -3990,7 +3990,7 @@ class UpdateNewQueuePackagesTests(TestCase):
         self.assertEqual(version, new_info.value[distribution]['version'])
 
 
-@override_settings(PTS_VENDOR_RULES='distro_tracker.vendor.debian.rules')
+@override_settings(DISTRO_TRACKER_VENDOR_RULES='distro_tracker.vendor.debian.rules')
 class NewQueueVersionsPanelTests(TestCase):
     """
     Tests that the NEW queue versions are displayed in the versions panel.

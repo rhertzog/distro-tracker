@@ -146,9 +146,9 @@ class AptCache(object):
             return True
 
     def __init__(self):
-        # The root cache directory is a subdirectory in the PTS_CACHE_DIRECTORY
+        # The root cache directory is a subdirectory in the DISTRO_TRACKER_CACHE_DIRECTORY
         self.cache_root_dir = os.path.join(
-            settings.PTS_CACHE_DIRECTORY,
+            settings.DISTRO_TRACKER_CACHE_DIRECTORY,
             'apt-cache'
         )
         # Create the cache directory if it didn't already exist
@@ -162,7 +162,7 @@ class AptCache(object):
         self.sources = []
         self.packages = []
         self.cache_max_size = getattr(
-            settings, 'PTS_APT_CACHE_MAX_SIZE', self.DEFAULT_MAX_SIZE)
+            settings, 'DISTRO_TRACKER_APT_CACHE_MAX_SIZE', self.DEFAULT_MAX_SIZE)
         #: The directory where source package files are cached
         self.source_cache_directory = os.path.join(self.cache_root_dir, 'packages')
         self._cache_size = None  # Evaluate the cache size lazily

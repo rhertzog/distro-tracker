@@ -32,7 +32,7 @@ class PackageNewsFeed(Feed):
 
     def title(self, obj):
         return "{vendor} PTS news for {pkg}".format(
-            vendor=settings.PTS_VENDOR_NAME,
+            vendor=settings.DISTRO_TRACKER_VENDOR_NAME,
             pkg=obj.name)
 
     def link(self, obj):
@@ -40,11 +40,11 @@ class PackageNewsFeed(Feed):
 
     def description(self, obj):
         return "Latest developer's news for {vendor} source package {pkg}".format(
-            vendor=settings.PTS_VENDOR_NAME,
+            vendor=settings.DISTRO_TRACKER_VENDOR_NAME,
             pkg=obj.name)
 
     def items(self, obj):
-        item_limit = getattr(settings, 'PTS_RSS_ITEM_LIMIT', self._DEFAULT_LIMIT)
+        item_limit = getattr(settings, 'DISTRO_TRACKER_RSS_ITEM_LIMIT', self._DEFAULT_LIMIT)
 
         news = obj.news_set.all()
         action_items = obj.action_items.all()

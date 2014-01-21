@@ -18,18 +18,18 @@ from .selected import *
 # )
 # MANAGERS = ADMINS
 
-# PTS_VENDOR_NAME = "Debian"
-# PTS_VENDOR_URL = "http://www.debian.org"
-# PTS_VENDOR_RULES = "distro_tracker.vendor.debian.rules"
+# DISTRO_TRACKER_VENDOR_NAME = "Debian"
+# DISTRO_TRACKER_VENDOR_URL = "http://www.debian.org"
+# DISTRO_TRACKER_VENDOR_RULES = "distro_tracker.vendor.debian.rules"
 
 # If you override the FQDN, you also have to override other settings
 # whose values are based on it.
-# PTS_FQDN = "packages.qa.debian.org"
-# PTS_CONTROL_EMAIL = 'control@' + PTS_FQDN
-# PTS_CONTACT_EMAIL = 'owner@' + PTS_FQDN
-# PTS_BOUNCES_EMAIL = 'bounces@' + PTS_FQDN
-# PTS_BOUNCES_LIKELY_SPAM_EMAIL = PTS_BOUNCES_EMAIL
-# ALLOWED_HOSTS = [ PTS_FQDN ]
+# DISTRO_TRACKER_FQDN = "packages.qa.debian.org"
+# DISTRO_TRACKER_CONTROL_EMAIL = 'control@' + DISTRO_TRACKER_FQDN
+# DISTRO_TRACKER_CONTACT_EMAIL = 'owner@' + DISTRO_TRACKER_FQDN
+# DISTRO_TRACKER_BOUNCES_EMAIL = 'bounces@' + DISTRO_TRACKER_FQDN
+# DISTRO_TRACKER_BOUNCES_LIKELY_SPAM_EMAIL = DISTRO_TRACKER_BOUNCES_EMAIL
+# ALLOWED_HOSTS = [ DISTRO_TRACKER_FQDN ]
 
 # If you don't use the packaged version of the PTS, put a random secret
 # key here. DO NOT USE THE EXAMPLE KEY GIVEN BELOW.

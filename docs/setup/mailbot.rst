@@ -10,19 +10,19 @@ The first step is to configure the project to use email addresses of your
 choosing. You should modify the following values in
 ``pts/project/settings/local.py``:
 
-* PTS_CONTROL_EMAIL
+* DISTRO_TRACKER_CONTROL_EMAIL
 
    This is the email address which is to be used for receiving control
    messages.
 
-* PTS_CONTACT_EMAIL
+* DISTRO_TRACKER_CONTACT_EMAIL
 
    This is the email address from which the mailbot responds.
 
-* PTS_FQDN
+* DISTRO_TRACKER_FQDN
 
    The fully qualified domain name which will receive package related messages.
-   Package messages will be sent to ``<package_name>@<PTS_FQDN>``.
+   Package messages will be sent to ``<package_name>@<DISTRO_TRACKER_FQDN>``.
 
 .. note::
 
@@ -46,14 +46,14 @@ the appropriate command.
 Exim4
 -----
 
-Mails received to ``PTS_CONTROL_EMAIL`` address should be piped to the
+Mails received to ``DISTRO_TRACKER_CONTROL_EMAIL`` address should be piped to the
 ``control_process`` command. A way to set this up in Exim would be to create a
 new alias for the local part of the control email address and set it to point
 to the user who owns the PTS application. That user should have a ``.forward``
 file in his home directory which includes the directive to pipe incoming email
 to the command.
 
-For example, if the ``PTS_CONTROL_EMAIL`` is set to ``control@distro_tracker.debian.net``
+For example, if the ``DISTRO_TRACKER_CONTROL_EMAIL`` is set to ``control@distro_tracker.debian.net``
 and the system user which owns the application is called ``pts`` the contents of
 ``/etc/aliases`` should include the following line::
 
@@ -63,15 +63,15 @@ And the ``.forward`` file should be::
    
    | python path/to/manage.py pts_control
 
-Mails received at ``PTS_CONTACT_EMAIL`` should be saved or forwarded to the PTS
+Mails received at ``DISTRO_TRACKER_CONTACT_EMAIL`` should be saved or forwarded to the PTS
 administrators. This can be done by adding an additional alias to
-``/etc/aliases/``. For example, if ``PTS_CONTACT_EMAIL`` is set to
+``/etc/aliases/``. For example, if ``DISTRO_TRACKER_CONTACT_EMAIL`` is set to
 ``owner@distro_tracker.debian.net``, the line in the aliases file would be::
    
    owner: some-admin-user
 
-All mail addresses at the ``PTS_FQDN`` domain (apart from ``PTS_CONTROL_EMAIL``
-and ``PTS_CONTACT_EMAIL`` addresses if they are on that domain), are considered
+All mail addresses at the ``DISTRO_TRACKER_FQDN`` domain (apart from ``DISTRO_TRACKER_CONTROL_EMAIL``
+and ``DISTRO_TRACKER_CONTACT_EMAIL`` addresses if they are on that domain), are considered
 package names. As such, all of them should be piped to the ``dispatch``
 management command so that they can be processed by the PTS.
 
@@ -103,9 +103,9 @@ to first create a file with virtual aliases for the relevant email addresses.
 
 Assuming the following configuration::
 
-   PTS_CONTACT_EMAIL = owner@distro_tracker.debian.net
-   PTS_CONTROL_EMAIL = control@distro_tracker.debian.net
-   PTS_FQDN = distro_tracker.debian.net
+   DISTRO_TRACKER_CONTACT_EMAIL = owner@distro_tracker.debian.net
+   DISTRO_TRACKER_CONTROL_EMAIL = control@distro_tracker.debian.net
+   DISTRO_TRACKER_FQDN = distro_tracker.debian.net
 
 The file ``/etc/postfix/virtual`` would be::
 

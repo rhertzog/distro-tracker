@@ -51,7 +51,7 @@ def pts_render_to_string(template_name, context=None):
     from distro_tracker.core import context_processors
     if context is None:
         context = {}
-    extra_context = context_processors.PTS_EXTRAS
+    extra_context = context_processors.DISTRO_TRACKER_EXTRAS
     context.update(extra_context)
 
     return render_to_string(template_name, context)
@@ -197,7 +197,7 @@ def verify_signature(content):
     The function extracts any possible signature information found in the given
     content.
 
-    Uses the :data:`distro_tracker.project.local_settings.PTS_KEYRING_DIRECTORY` setting
+    Uses the :data:`distro_tracker.project.local_settings.DISTRO_TRACKER_KEYRING_DIRECTORY` setting
     to access the keyring. If this setting does not exist, no signatures can
     be validated.
 
@@ -208,7 +208,7 @@ def verify_signature(content):
     :rtype: list of ``(name, email)`` pairs or ``None``
     :type content: :class:`bytes`
     """
-    keyring_directory = getattr(settings, 'PTS_KEYRING_DIRECTORY', None)
+    keyring_directory = getattr(settings, 'DISTRO_TRACKER_KEYRING_DIRECTORY', None)
     if not keyring_directory:
         # The vendor has not provided a keyring
         return None

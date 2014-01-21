@@ -15,19 +15,19 @@ from django.contrib.sites.models import Site
 
 #: Defines a dictionary of all PTS extra context key/value pairs that are to be
 #: included in the :class:`RequestContext <django.template.RequestContext>`.
-PTS_EXTRAS = {
-    'PTS_VENDOR_NAME': settings.PTS_VENDOR_NAME,
-    'PTS_VENDOR_URL': getattr(settings, 'PTS_VENDOR_URL', ''),
-    'PTS_CONTACT_EMAIL': settings.PTS_CONTACT_EMAIL,
-    'PTS_CONTROL_EMAIL': settings.PTS_CONTROL_EMAIL,
-    'PTS_SITE_DOMAIN': Site.objects.get_current(),
+DISTRO_TRACKER_EXTRAS = {
+    'DISTRO_TRACKER_VENDOR_NAME': settings.DISTRO_TRACKER_VENDOR_NAME,
+    'DISTRO_TRACKER_VENDOR_URL': getattr(settings, 'DISTRO_TRACKER_VENDOR_URL', ''),
+    'DISTRO_TRACKER_CONTACT_EMAIL': settings.DISTRO_TRACKER_CONTACT_EMAIL,
+    'DISTRO_TRACKER_CONTROL_EMAIL': settings.DISTRO_TRACKER_CONTROL_EMAIL,
+    'DISTRO_TRACKER_SITE_DOMAIN': Site.objects.get_current(),
 }
 
 
 def pts_extras(request):
     """
     The context processor which includes the
-    :py:data:`PTS_EXTRAS <distro_tracker.core.context_processors.PTS_EXTRAS>` in the
+    :py:data:`DISTRO_TRACKER_EXTRAS <distro_tracker.core.context_processors.DISTRO_TRACKER_EXTRAS>` in the
     :class:`RequestContext <django.template.RequestContext>`.
     """
-    return PTS_EXTRAS
+    return DISTRO_TRACKER_EXTRAS

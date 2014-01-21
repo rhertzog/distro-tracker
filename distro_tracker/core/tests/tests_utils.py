@@ -1089,7 +1089,7 @@ class VerifySignatureTest(SimpleTestCase):
         Tests extracting the signature from a correctly signed message when the
         signer is found in the keyring.
         """
-        with self.settings(PTS_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
+        with self.settings(DISTRO_TRACKER_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
             self.import_key_from_test_file('key1.pub')
             file_path = self.get_test_file_path('signed-message')
             expected = [
@@ -1104,7 +1104,7 @@ class VerifySignatureTest(SimpleTestCase):
         Tests extracting the signature from a correctly signed message when the
         signer is not found in the keyring.
         """
-        with self.settings(PTS_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
+        with self.settings(DISTRO_TRACKER_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
             file_path = self.get_test_file_path('signed-message')
 
             with open(file_path, 'rb') as f:
@@ -1115,7 +1115,7 @@ class VerifySignatureTest(SimpleTestCase):
         Tests extracting signature information when the signature itself is
         wrong.
         """
-        with self.settings(PTS_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
+        with self.settings(DISTRO_TRACKER_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
             self.assertIsNone(verify_signature(b"This is not a signature"))
 
     def test_utf8_content(self):
@@ -1123,7 +1123,7 @@ class VerifySignatureTest(SimpleTestCase):
         Tests extracting the signature from a message passed as unicode text
         instead of bytes.
         """
-        with self.settings(PTS_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
+        with self.settings(DISTRO_TRACKER_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
             self.import_key_from_test_file('key1.pub')
             file_path = self.get_test_file_path('signed-message')
             expected = [
@@ -1232,8 +1232,8 @@ class AptCacheTests(TestCase):
         """
         with make_temp_directory('-pts-cache') as cache_directory:
             with self.settings(
-                    PTS_CACHE_DIRECTORY=cache_directory,
-                    PTS_APT_CACHE_MAX_SIZE=10):
+                    DISTRO_TRACKER_CACHE_DIRECTORY=cache_directory,
+                    DISTRO_TRACKER_APT_CACHE_MAX_SIZE=10):
                 self.create_cache()
                 # Sanity check: old size is 0 as nothing was ever cached in the
                 # brand new directory
@@ -1252,8 +1252,8 @@ class AptCacheTests(TestCase):
         """
         with make_temp_directory('-pts-cache') as cache_directory:
             with self.settings(
-                    PTS_CACHE_DIRECTORY=cache_directory,
-                    PTS_APT_CACHE_MAX_SIZE=10):
+                    DISTRO_TRACKER_CACHE_DIRECTORY=cache_directory,
+                    DISTRO_TRACKER_APT_CACHE_MAX_SIZE=10):
                 self.create_cache()
                 # Sanity check: old size is 0 as nothing was ever cached in the
                 # brand new directory
@@ -1278,8 +1278,8 @@ class AptCacheTests(TestCase):
         """
         with make_temp_directory('-pts-cache') as cache_directory:
             with self.settings(
-                    PTS_CACHE_DIRECTORY=cache_directory,
-                    PTS_APT_CACHE_MAX_SIZE=10):
+                    DISTRO_TRACKER_CACHE_DIRECTORY=cache_directory,
+                    DISTRO_TRACKER_APT_CACHE_MAX_SIZE=10):
                 self.create_cache()
                 # Sanity check: old size is 0 as nothing was ever cached in the
                 # brand new directory
@@ -1303,7 +1303,7 @@ class AptCacheTests(TestCase):
         for a given repository.
         """
         with make_temp_directory('-pts-cache') as cache_directory:
-            with self.settings(PTS_CACHE_DIRECTORY=cache_directory):
+            with self.settings(DISTRO_TRACKER_CACHE_DIRECTORY=cache_directory):
                 self.create_cache()
                 repository = Repository.objects.create(
                     name='stable',
@@ -1333,7 +1333,7 @@ class AptCacheTests(TestCase):
         for a given repository.
         """
         with make_temp_directory('-pts-cache') as cache_directory:
-            with self.settings(PTS_CACHE_DIRECTORY=cache_directory):
+            with self.settings(DISTRO_TRACKER_CACHE_DIRECTORY=cache_directory):
                 self.create_cache()
                 repository = Repository.objects.create(
                     name='stable',

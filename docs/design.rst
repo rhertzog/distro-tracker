@@ -194,7 +194,7 @@ lower-level :func:`distro_tracker.vendor.common.get_callable` function, but this
 be avoided.
 
 All vendor-provided functions must be found in the module given by the
-``PTS_VENDOR_RULES`` settings value.
+``DISTRO_TRACKER_VENDOR_RULES`` settings value.
 
 .. _packageinfo_design:
 

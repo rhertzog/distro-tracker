@@ -2,7 +2,7 @@
         <form class="form-search" id="package-search-form" action="{% url 'pts-package-search' %}" method="GET">
             {% if search_form_use_label %}
             <div class="span4 col col-lg-4">
-            <label>Enter a {{ PTS_VENDOR_NAME }} source or pseudo package name</label>
+            <label>Enter a {{ DISTRO_TRACKER_VENDOR_NAME }} source or pseudo package name</label>
             </div>
             {% endif %}
             <input type="text" name="package_name" id='package-search-input' placeholder="Jump to package...">

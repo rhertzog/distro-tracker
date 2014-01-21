@@ -30,7 +30,7 @@ six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
 DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
-PTS_BASE_PATH = dirname(dirname(dirname(dirname(__file__))))
+DISTRO_TRACKER_BASE_PATH = dirname(dirname(dirname(dirname(__file__))))
 
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
@@ -42,7 +42,7 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(PTS_BASE_PATH, 'data', 'distro-tracker.sqlite'),
+        'NAME': os.path.join(DISTRO_TRACKER_BASE_PATH, 'data', 'distro-tracker.sqlite'),
         # The following settings are not used with sqlite3:
         'USER': '',
         'PASSWORD': '',
@@ -77,11 +77,11 @@ USE_TZ = True
 #: Absolute path to the directory static files should be collected to.
 #: Don't put anything in this directory yourself; store your static files
 #: in apps' "static/" subdirectories and in STATICFILES_DIRS.
-STATIC_ROOT = os.path.join(PTS_BASE_PATH, 'data', 'static')
+STATIC_ROOT = os.path.join(DISTRO_TRACKER_BASE_PATH, 'data', 'static')
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/var/www/example.com/media/"
-MEDIA_ROOT = os.path.join(PTS_BASE_PATH, 'data', 'media')
+MEDIA_ROOT = os.path.join(DISTRO_TRACKER_BASE_PATH, 'data', 'media')
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash.
@@ -149,7 +149,7 @@ TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    os.path.join(PTS_BASE_PATH, 'data', 'templates'),
+    os.path.join(DISTRO_TRACKER_BASE_PATH, 'data', 'templates'),
 )
 TEMPLATE_CONTEXT_PROCESSORS = (
     'django.contrib.auth.context_processors.auth',
@@ -258,61 +258,61 @@ ALLOWED_HOSTS = [ socket.getfqdn() ]
 ## PTS specific settings
 
 #: The fully qualified domain name for the PTS deployment
-PTS_FQDN = socket.getfqdn()
+DISTRO_TRACKER_FQDN = socket.getfqdn()
 
 #: The name of the vendor. Equivalent to the Vendor field of an
 #: /etc/dpkg/origins file.
-PTS_VENDOR_NAME = ".".join(PTS_FQDN.split(".")[1:2]).capitalize()
+DISTRO_TRACKER_VENDOR_NAME = ".".join(DISTRO_TRACKER_FQDN.split(".")[1:2]).capitalize()
 #: The URL of the vendor. Equivalent to the Vendor-URL field of an
 #: /etc/dpkg/origins file."""
-PTS_VENDOR_URL = "http://www." + ".".join(PTS_FQDN.split(".", 1)[1:2])
+DISTRO_TRACKER_VENDOR_URL = "http://www." + ".".join(DISTRO_TRACKER_FQDN.split(".", 1)[1:2])
 
 #: This directory is used to store the locally cached resources.
 #: Any PTS app should be able to use this directory to store its caches.
 #: For example, it is used to store the APT cache of repository information and
 #: the cache of retrieved Web resources.
-PTS_CACHE_DIRECTORY = os.path.join(PTS_BASE_PATH, 'data', 'cache')
+DISTRO_TRACKER_CACHE_DIRECTORY = os.path.join(DISTRO_TRACKER_BASE_PATH, 'data', 'cache')
 
 #: This directory should contain a GPG keyring of known public keys
-PTS_KEYRING_DIRECTORY = os.path.join(PTS_BASE_PATH, 'data', 'keyring')
+DISTRO_TRACKER_KEYRING_DIRECTORY = os.path.join(DISTRO_TRACKER_BASE_PATH, 'data', 'keyring')
 
 #: The number of days to tolerate bounced messages for subscribers.
-PTS_MAX_DAYS_TOLERATE_BOUNCE = 4
+DISTRO_TRACKER_MAX_DAYS_TOLERATE_BOUNCE = 4
 #: The number of errors after which the processing of a command email stops.
-PTS_MAX_ALLOWED_ERRORS_CONTROL_COMMANDS = 5
+DISTRO_TRACKER_MAX_ALLOWED_ERRORS_CONTROL_COMMANDS = 5
 #: The number of days a command confirmation key should be valid.
-PTS_CONFIRMATION_EXPIRATION_DAYS = 3
+DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS = 3
 
 #: The email address which is to receive control emails.
 #: It does not necessarily have to be in the same domain as specified in
-#: :py:data:`distro_tracker.project.settings.PTS_FQDN`.
-PTS_CONTROL_EMAIL = 'control@' + PTS_FQDN
+#: :py:data:`distro_tracker.project.settings.DISTRO_TRACKER_FQDN`.
+DISTRO_TRACKER_CONTROL_EMAIL = 'control@' + DISTRO_TRACKER_FQDN
 #: The email address which is to receive contact emails.
 #: It does not necessarily have to be in the same domain as specified in
-#: :py:data:`distro_tracker.project.settings.PTS_FQDN`.
-PTS_CONTACT_EMAIL = 'owner@' + PTS_FQDN
+#: :py:data:`distro_tracker.project.settings.DISTRO_TRACKER_FQDN`.
+DISTRO_TRACKER_CONTACT_EMAIL = 'owner@' + DISTRO_TRACKER_FQDN
 #: The email address which is to be used as the sender address when no bounce
 #: processing should happen.
 #: It does not necessarily have to be in the same domain as specified in
-#: :py:data:`distro_tracker.project.settings.PTS_FQDN`.
-PTS_BOUNCES_EMAIL = 'bounces@' + PTS_FQDN
+#: :py:data:`distro_tracker.project.settings.DISTRO_TRACKER_FQDN`.
+DISTRO_TRACKER_BOUNCES_EMAIL = 'bounces@' + DISTRO_TRACKER_FQDN
 #: The email address which should receive bounces that are a result of spam.
-PTS_BOUNCES_LIKELY_SPAM_EMAIL = PTS_BOUNCES_EMAIL
+DISTRO_TRACKER_BOUNCES_LIKELY_SPAM_EMAIL = DISTRO_TRACKER_BOUNCES_EMAIL
 
 #: The maximum number of news to include in the news panel of a package page
-PTS_NEWS_PANEL_LIMIT = 30
+DISTRO_TRACKER_NEWS_PANEL_LIMIT = 30
 
 #: The maximum number of RSS news items to include in the news feed
-PTS_RSS_ITEM_LIMIT = 30
+DISTRO_TRACKER_RSS_ITEM_LIMIT = 30
 
 #: A list of extra headers to include when rendering an email news item.
 #: See: :class:`distro_tracker.core.models.EmailNewsRenderer`
-PTS_EMAIL_NEWS_HEADERS = (
+DISTRO_TRACKER_EMAIL_NEWS_HEADERS = (
     'Date',
 )
 
 #: The maximum size that the :class:`distro_tracker.core.utils.packages.AptCache` should
 #: consume for all of its cached source files, given in bytes.
-PTS_APT_CACHE_MAX_SIZE = 5 * 1024 ** 3  # 5 GiB
+DISTRO_TRACKER_APT_CACHE_MAX_SIZE = 5 * 1024 ** 3  # 5 GiB
 
 DJANGO_EMAIL_ACCOUNTS_POST_MERGE_HOOK = 'distro_tracker.accounts.hooks.post_merge'

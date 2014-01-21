@@ -42,7 +42,7 @@ import hashlib
 import string
 import random
 
-PTS_CONFIRMATION_EXPIRATION_DAYS = settings.PTS_CONFIRMATION_EXPIRATION_DAYS
+DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS = settings.DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS
 
 
 @python_2_unicode_compatible
@@ -1694,7 +1694,7 @@ class EmailNewsRenderer(NewsRenderer):
             'resent-cc',
             'resent-bcc',
         )
-        USER_DEFINED_HEADERS = getattr(settings, 'PTS_EMAIL_NEWS_HEADERS', ())
+        USER_DEFINED_HEADERS = getattr(settings, 'DISTRO_TRACKER_EMAIL_NEWS_HEADERS', ())
         ALL_HEADERS = [
             header.lower()
             for header in DEFAULT_HEADERS + USER_DEFINED_HEADERS
@@ -2012,7 +2012,7 @@ class Confirmation(models.Model):
         :returns False: if the confirmation key is still valid
         """
         delta = timezone.now() - self.date_created
-        return delta.days >= PTS_CONFIRMATION_EXPIRATION_DAYS
+        return delta.days >= DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS
 
 
 @python_2_unicode_compatible

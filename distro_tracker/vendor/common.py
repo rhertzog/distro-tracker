@@ -34,16 +34,16 @@ def get_callable(name):
     :type name: string
     """
     import importlib
-    if (not hasattr(settings, 'PTS_VENDOR_RULES') or
-            not settings.PTS_VENDOR_RULES):
+    if (not hasattr(settings, 'DISTRO_TRACKER_VENDOR_RULES') or
+            not settings.DISTRO_TRACKER_VENDOR_RULES):
         raise InvalidPluginException("No vendor specific module set.")
 
-    vendor_module = importlib.import_module(settings.PTS_VENDOR_RULES)
+    vendor_module = importlib.import_module(settings.DISTRO_TRACKER_VENDOR_RULES)
 
     function = getattr(vendor_module, name, None)
     if not function:
         raise InvalidPluginException("{name} not found in {module}".format(
-            name=name, module=settings.PTS_VENDOR_RULES))
+            name=name, module=settings.DISTRO_TRACKER_VENDOR_RULES))
     if not callable(function):
         raise InvalidPluginException("{name} is not callable.".format(
             name=name))

@@ -253,7 +253,7 @@ def get_bug_panel_stats(package_name):
       tooltip when mousing over the display name.
 
     Another use case is when the vendor provides a custom
-    :data:`PTS_BUGS_PANEL_TEMPLATE <distro_tracker.project.local_settings.PTS_BUGS_PANEL_TEMPLATE>`
+    :data:`DISTRO_TRACKER_BUGS_PANEL_TEMPLATE <distro_tracker.project.local_settings.DISTRO_TRACKER_BUGS_PANEL_TEMPLATE>`
     in which case the return value is passed to the template in the
     ``panel.context`` context variable and does not need to follow any special
     format.

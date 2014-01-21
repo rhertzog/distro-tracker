@@ -281,7 +281,7 @@ class NewsFeedTests(TestCase):
 
     def test_action_item_news_limited(self):
         item_limit = 1
-        with self.settings(PTS_RSS_ITEM_LIMIT=item_limit):
+        with self.settings(DISTRO_TRACKER_RSS_ITEM_LIMIT=item_limit):
             # Create two news feed items
             # Create a News item
             expected_content = 'Some content'

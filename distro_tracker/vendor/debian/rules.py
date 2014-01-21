@@ -146,7 +146,7 @@ def get_pseudo_package_list():
     PSEUDO_PACKAGE_LIST_URL = (
         'http://bugs.debian.org/pseudo-packages.maintainers'
     )
-    cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
+    cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
     if not cache.is_expired(PSEUDO_PACKAGE_LIST_URL):
         return
     response, updated = cache.update(PSEUDO_PACKAGE_LIST_URL)

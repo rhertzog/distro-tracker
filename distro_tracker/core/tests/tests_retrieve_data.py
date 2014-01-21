@@ -42,7 +42,7 @@ import os
 import sys
 
 
-@override_settings(PTS_VENDOR_RULES='distro_tracker.core.tests.tests_retrieve_data')
+@override_settings(DISTRO_TRACKER_VENDOR_RULES='distro_tracker.core.tests.tests_retrieve_data')
 class RetrievePseudoPackagesTest(TestCase):
     """
     Tests the update_pseudo_package_list data retrieval function.

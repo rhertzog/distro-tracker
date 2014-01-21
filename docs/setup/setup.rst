@@ -74,7 +74,7 @@ $ ./manage.py collectstatic
 Keyrings
 --------
 
-The ``PTS_KEYRING_DIRECTORY`` lets you define a
+The ``DISTRO_TRACKER_KEYRING_DIRECTORY`` lets you define a
 path to a directory containing known public PGP keys. These keys are used when
 verifying various signed content, such as news.
 

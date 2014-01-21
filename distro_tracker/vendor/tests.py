@@ -96,7 +96,7 @@ def suite():
     return suite
 
 
-@override_settings(PTS_VENDOR_RULES=None)
+@override_settings(DISTRO_TRACKER_VENDOR_RULES=None)
 class DispatchBaseNoVendorModuleTest(DispatchBaseTest):
     """
     Tests that the base dispatch tests pass even when there is no vendor

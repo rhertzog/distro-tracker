@@ -1,6 +1,6 @@
 {% load pts_extras %}
-{{ PTS_VENDOR_NAME }} Package Tracking System
-{% with length=PTS_VENDOR_NAME|length %}{% repeat length %}-{% endrepeat %}{% repeat 24 %}-{% endrepeat %}{% endwith %}
+{{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracking System
+{% with length=DISTRO_TRACKER_VENDOR_NAME|length %}{% repeat length %}-{% endrepeat %}{% repeat 24 %}-{% endrepeat %}{% endwith %}
 The Package Tracking System (PTS) has the following commands:
 {% autoescape off %}{% for description in descriptions %}
 {{ description }}

@@ -66,7 +66,7 @@ class RegisterUser(ConfirmationRenderMixin, email_accounts_views.RegisterUser):
     success_url = reverse_lazy('pts-accounts-register-success')
 
     confirmation_email_subject = 'PTS Registration Confirmation'
-    confirmation_email_from_address = settings.PTS_CONTACT_EMAIL
+    confirmation_email_from_address = settings.DISTRO_TRACKER_CONTACT_EMAIL
 
 
 class RegistrationConfirmation(email_accounts_views.RegistrationConfirmation):
@@ -81,7 +81,7 @@ class ResetPasswordView(ConfirmationRenderMixin, email_accounts_views.ResetPassw
 class ForgotPasswordView(ConfirmationRenderMixin, email_accounts_views.ForgotPasswordView):
     success_url = reverse_lazy('pts-accounts-password-reset-success')
     email_subject = 'PTS Password Reset Confirmation'
-    email_from_address = settings.PTS_CONTACT_EMAIL
+    email_from_address = settings.DISTRO_TRACKER_CONTACT_EMAIL
 
 
 class ChangePersonalInfoView(email_accounts_views.ChangePersonalInfoView):
@@ -101,13 +101,13 @@ class ManageAccountEmailsView(ConfirmationRenderMixin, email_accounts_views.Mana
     merge_accounts_url = reverse_lazy('pts-accounts-merge-confirmation')
 
     confirmation_email_subject = 'PTS Add Email To Account'
-    confirmation_email_from_address = settings.PTS_CONTACT_EMAIL
+    confirmation_email_from_address = settings.DISTRO_TRACKER_CONTACT_EMAIL
 
 
 class AccountMergeConfirmView(ConfirmationRenderMixin, email_accounts_views.AccountMergeConfirmView):
     success_url = reverse_lazy('pts-accounts-merge-confirmed')
     confirmation_email_subject = 'Merge PTS Accounts'
-    confirmation_email_from_address = settings.PTS_CONTACT_EMAIL
+    confirmation_email_from_address = settings.DISTRO_TRACKER_CONTACT_EMAIL
 
 
 class AccountMergeFinalize(email_accounts_views.AccountMergeFinalize):

@@ -43,8 +43,8 @@ from datetime import timedelta
 import re
 
 
-PTS_CONTACT_EMAIL = settings.PTS_CONTACT_EMAIL
-PTS_CONTROL_EMAIL = settings.PTS_CONTROL_EMAIL
+DISTRO_TRACKER_CONTACT_EMAIL = settings.DISTRO_TRACKER_CONTACT_EMAIL
+DISTRO_TRACKER_CONTROL_EMAIL = settings.DISTRO_TRACKER_CONTROL_EMAIL
 
 
 class EmailControlTest(TestCase):
@@ -63,7 +63,7 @@ class EmailControlTest(TestCase):
         Helper method which adds the default headers for each test message.
         """
         self.message.add_header('From', 'John Doe <john.doe@unknown.com>')
-        self.message.add_header('To', PTS_CONTROL_EMAIL)
+        self.message.add_header('To', DISTRO_TRACKER_CONTROL_EMAIL)
         self.message.add_header('Subject', 'Commands')
         self.message.add_header('Message-ID', make_msgid())
 
@@ -340,9 +340,9 @@ class ControlBotBasic(EmailControlTest):
 
         self.assert_response_sent()
         self.assert_header_equal('Subject', 'Re: Commands')
-        self.assert_header_equal('X-Loop', PTS_CONTROL_EMAIL)
+        self.assert_header_equal('X-Loop', DISTRO_TRACKER_CONTROL_EMAIL)
         self.assert_header_equal('To', self.message['From'])
-        self.assert_header_equal('From', PTS_CONTACT_EMAIL)
+        self.assert_header_equal('From', DISTRO_TRACKER_CONTACT_EMAIL)
         self.assert_header_equal('In-Reply-To', self.message['Message-ID'])
         self.assert_header_equal(
             'References',
@@ -421,10 +421,10 @@ class ControlBotBasic(EmailControlTest):
     def test_loop_no_response(self):
         """
         Tests that there is no response if the message's X-Loop is set to
-        PTS_CONTROL_EMAIL
+        DISTRO_TRACKER_CONTROL_EMAIL
         """
         self.set_header('X-Loop', 'something-else')
-        self.set_header('X-Loop', PTS_CONTROL_EMAIL)
+        self.set_header('X-Loop', DISTRO_TRACKER_CONTROL_EMAIL)
         self.set_input_lines(['thanks'])
 
         self.control_process()
@@ -446,7 +446,7 @@ class ControlBotBasic(EmailControlTest):
         """
         Tests that processing stops after encountering five garbage lines.
         """
-        MAX_ALLOWED_ERRORS = settings.PTS_MAX_ALLOWED_ERRORS_CONTROL_COMMANDS
+        MAX_ALLOWED_ERRORS = settings.DISTRO_TRACKER_MAX_ALLOWED_ERRORS_CONTROL_COMMANDS
         self.set_input_lines(
             ['help'] + ['garbage'] * MAX_ALLOWED_ERRORS + ['#command'])
 
@@ -486,7 +486,7 @@ class ControlBotBasic(EmailControlTest):
         Tests that processing skips commented lines and that they are not
         considered garbage.
         """
-        MAX_ALLOWED_ERRORS = settings.PTS_MAX_ALLOWED_ERRORS_CONTROL_COMMANDS
+        MAX_ALLOWED_ERRORS = settings.DISTRO_TRACKER_MAX_ALLOWED_ERRORS_CONTROL_COMMANDS
         self.set_input_lines(
             [self.make_comment(command)
              for command in ['comment'] * MAX_ALLOWED_ERRORS] + ['help']
@@ -1750,7 +1750,7 @@ class SubscribeToPackageTest(EmailControlTest):
         c = CommandConfirmation.objects.create_for_commands(
             ['subscribe {package} {user}'.format(user=self.user_email_address,
                                                  package=self.package.name)])
-        delta = timedelta(days=settings.PTS_CONFIRMATION_EXPIRATION_DAYS + 1)
+        delta = timedelta(days=settings.DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS + 1)
         c.date_created = c.date_created - delta
         c.save()
         self.set_input_lines(['confirm ' + c.confirmation_key])
@@ -2034,7 +2034,7 @@ class UnsubscribeallCommandTest(EmailControlTest):
             '{email} has been unsubscribed from {pkg}@{fqdn}'.format(
                 email=self.user.email,
                 pkg=package,
-                fqdn=settings.PTS_FQDN)
+                fqdn=settings.DISTRO_TRACKER_FQDN)
             for package in sorted(old_subscriptions)
         )
 

@@ -28,9 +28,9 @@ from distro_tracker.mail.models import CommandConfirmation
 import re
 
 from django.conf import settings
-PTS_CONTACT_EMAIL = settings.PTS_CONTACT_EMAIL
-PTS_BOUNCES_EMAIL = settings.PTS_BOUNCES_EMAIL
-PTS_CONTROL_EMAIL = settings.PTS_CONTROL_EMAIL
+DISTRO_TRACKER_CONTACT_EMAIL = settings.DISTRO_TRACKER_CONTACT_EMAIL
+DISTRO_TRACKER_BOUNCES_EMAIL = settings.DISTRO_TRACKER_BOUNCES_EMAIL
+DISTRO_TRACKER_CONTROL_EMAIL = settings.DISTRO_TRACKER_CONTROL_EMAIL
 
 
 def send_response(original_message, message_text, cc=None):
@@ -52,10 +52,10 @@ def send_response(original_message, message_text, cc=None):
         subject='Re: ' + subject,
         to=[original_message['From']],
         cc=cc,
-        from_email=PTS_BOUNCES_EMAIL,
+        from_email=DISTRO_TRACKER_BOUNCES_EMAIL,
         headers={
-            'From': PTS_CONTACT_EMAIL,
-            'X-Loop': PTS_CONTROL_EMAIL,
+            'From': DISTRO_TRACKER_CONTACT_EMAIL,
+            'X-Loop': DISTRO_TRACKER_CONTROL_EMAIL,
             'References': ' '.join((original_message.get('References', ''),
                                     original_message.get('Message-ID', ''))),
             'In-Reply-To': original_message.get('Message-ID', ''),
@@ -124,9 +124,9 @@ class ConfirmationSet(object):
         EmailMessage(
             subject=subject,
             to=[email],
-            from_email=PTS_BOUNCES_EMAIL,
+            from_email=DISTRO_TRACKER_BOUNCES_EMAIL,
             headers={
-                'From': PTS_CONTROL_EMAIL,
+                'From': DISTRO_TRACKER_CONTROL_EMAIL,
             },
             body=message,
         ).send()
@@ -159,7 +159,7 @@ def process(message):
     assert isinstance(message, six.binary_type), 'Message must be given as bytes'
     msg = message_from_bytes(message)
     # msg = message_from_string(message)
-    if 'X-Loop' in msg and PTS_CONTROL_EMAIL in msg.get_all('X-Loop'):
+    if 'X-Loop' in msg and DISTRO_TRACKER_CONTROL_EMAIL in msg.get_all('X-Loop'):
         return
     # Get the first plain-text part of the message
     plain_text_part = next(typed_subpart_iterator(msg, 'text', 'plain'), None)

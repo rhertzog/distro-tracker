@@ -437,7 +437,7 @@ class AddTeamMember(LoginRequiredMixin, View):
                     'confirmation': confirmation,
                     'team': self.team,
                 }),
-                from_email=settings.PTS_CONTACT_EMAIL,
+                from_email=settings.DISTRO_TRACKER_CONTACT_EMAIL,
                 recipient_list=[email])
 
         return redirect('pts-team-manage', slug=self.team.slug)

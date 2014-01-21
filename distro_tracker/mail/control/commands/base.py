@@ -17,7 +17,7 @@ from django.utils import six
 
 import re
 from django.conf import settings
-PTS_CONTROL_EMAIL = settings.PTS_CONTROL_EMAIL
+DISTRO_TRACKER_CONTROL_EMAIL = settings.DISTRO_TRACKER_CONTROL_EMAIL
 
 
 class MetaCommand(type):

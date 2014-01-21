@@ -36,8 +36,8 @@ from distro_tracker.mail.models import EmailUserBounceStats
 
 
 from django.conf import settings
-PTS_CONTROL_EMAIL = settings.PTS_CONTROL_EMAIL
-PTS_FQDN = settings.PTS_FQDN
+DISTRO_TRACKER_CONTROL_EMAIL = settings.DISTRO_TRACKER_CONTROL_EMAIL
+DISTRO_TRACKER_FQDN = settings.DISTRO_TRACKER_FQDN
 
 import logging
 logging.disable(logging.CRITICAL)
@@ -63,7 +63,7 @@ class DispatchTestHelperMixin(object):
         self.package_name = package_name
         self.add_header('To', '{package}@{pts_fqdn}'.format(
             package=self.package_name,
-            pts_fqdn=PTS_FQDN))
+            pts_fqdn=DISTRO_TRACKER_FQDN))
 
     def set_message_content(self, content):
         """
@@ -129,7 +129,7 @@ class DispatchTestHelperMixin(object):
         keyword.
         """
         return '{package}_{keyword}@{pts_fqdn}'.format(
-            package=package, keyword=keyword, pts_fqdn=PTS_FQDN)
+            package=package, keyword=keyword, pts_fqdn=DISTRO_TRACKER_FQDN)
 
     def assert_message_forwarded_to(self, email):
         """
@@ -260,13 +260,13 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         headers = [
             ('X-Loop', '{package}@{pts_fqdn}'.format(
                 package=self.package_name,
-                pts_fqdn=PTS_FQDN)),
+                pts_fqdn=DISTRO_TRACKER_FQDN)),
             ('X-PTS-Package', self.package_name),
             ('X-PTS-Keyword', 'default'),
             ('Precedence', 'list'),
             ('List-Unsubscribe',
                 '<mailto:{control_email}?body=unsubscribe%20{package}>'.format(
-                    control_email=PTS_CONTROL_EMAIL,
+                    control_email=DISTRO_TRACKER_CONTROL_EMAIL,
                     package=self.package_name)),
         ]
         self.subscribe_user_to_package('user@domain.com', self.package_name)
@@ -314,7 +314,7 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         """
         self.set_header('To', 'Someone <someone@domain.com>')
         address = '{package}@{pts_fqdn}'.format(package=self.package_name,
-                                                pts_fqdn=PTS_FQDN)
+                                                pts_fqdn=DISTRO_TRACKER_FQDN)
         self.add_header('Cc', address)
         # Make sure there is a user to forward the message to
         self.subscribe_user_to_package('user@domain.com', self.package_name)
@@ -356,7 +356,7 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         set.
         """
         self.set_header('X-Loop', 'somevalue')
-        self.set_header('X-Loop', self.package_name + '@' + PTS_FQDN)
+        self.set_header('X-Loop', self.package_name + '@' + DISTRO_TRACKER_FQDN)
         self.subscribe_user_to_package('user@domain.com', self.package_name)
 
         self.run_dispatch()
@@ -403,7 +403,7 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         """
         bounce_address = 'bounces+{date}@{pts_fqdn}'.format(
             date=timezone.now().date().strftime('%Y%m%d'),
-            pts_fqdn=PTS_FQDN)
+            pts_fqdn=DISTRO_TRACKER_FQDN)
         return verp.encode(bounce_address, to)
 
     def add_sent(self, user, date):
@@ -442,7 +442,7 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         """
         # Set up some prior bounces - one each day.
         date = timezone.now().date()
-        for days in range(1, settings.PTS_MAX_DAYS_TOLERATE_BOUNCE):
+        for days in range(1, settings.DISTRO_TRACKER_MAX_DAYS_TOLERATE_BOUNCE):
             self.add_sent(self.user, date - timedelta(days=days))
             self.add_bounce(self.user, date - timedelta(days=days))
         # Set up a sent mail today.
@@ -477,7 +477,7 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         """
         # Set up some prior bounces - one each day.
         date = timezone.now().date()
-        for days in range(1, settings.PTS_MAX_DAYS_TOLERATE_BOUNCE - 1):
+        for days in range(1, settings.DISTRO_TRACKER_MAX_DAYS_TOLERATE_BOUNCE - 1):
             self.add_sent(self.user, date - timedelta(days=days))
             self.add_bounce(self.user, date - timedelta(days=days))
         # Set up a sent mail today.
@@ -498,7 +498,7 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         which had more sent messages.
         """
         date = timezone.now().date()
-        for days in range(1, settings.PTS_MAX_DAYS_TOLERATE_BOUNCE):
+        for days in range(1, settings.DISTRO_TRACKER_MAX_DAYS_TOLERATE_BOUNCE):
             self.add_sent(self.user, date - timedelta(days=days))
             if days % 2 == 0:
                 self.add_bounce(self.user, date - timedelta(days=days))
@@ -553,7 +553,7 @@ class BounceStatsTest(TestCase):
         Tests that only as many records as the number of tolerated bounce days
         are kept.
         """
-        days = settings.PTS_MAX_DAYS_TOLERATE_BOUNCE
+        days = settings.DISTRO_TRACKER_MAX_DAYS_TOLERATE_BOUNCE
         current_date = timezone.now().date()
         dates = [
             current_date + timedelta(days=delta)
@@ -567,7 +567,7 @@ class BounceStatsTest(TestCase):
         bounce_stats = self.user.bouncestats_set.all()
         # Limited number
         self.assertEqual(bounce_stats.count(),
-                         settings.PTS_MAX_DAYS_TOLERATE_BOUNCE)
+                         settings.DISTRO_TRACKER_MAX_DAYS_TOLERATE_BOUNCE)
         # Only the most recent dates are kept.
         bounce_stats_dates = [info.date for info in bounce_stats]
         for date in dates[-days:]:

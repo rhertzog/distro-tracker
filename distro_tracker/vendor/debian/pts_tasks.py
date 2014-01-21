@@ -66,7 +66,7 @@ class RetrieveDebianMaintainersTask(BaseTask):
             self.force_update = parameters['force_update']
 
     def execute(self):
-        cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
+        cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         url = "http://ftp-master.debian.org/dm.txt"
         if not self.force_update and not cache.is_expired(url):
             # No need to do anything when the previously cached value is fresh
@@ -127,7 +127,7 @@ class RetrieveLowThresholdNmuTask(BaseTask):
         agree with the lowthreshold NMU.
         """
         url = 'http://wiki.debian.org/LowThresholdNmu?action=raw'
-        cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
+        cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         if not self.force_update and not cache.is_expired(url):
             return
         response, updated = cache.update(url, force=self.force_update)
@@ -198,7 +198,7 @@ class UpdatePackageBugStats(BaseTask):
     def __init__(self, force_update=False, *args, **kwargs):
         super(UpdatePackageBugStats, self).__init__(*args, **kwargs)
         self.force_update = force_update
-        self.cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
+        self.cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         # The :class:`distro_tracker.core.models.ActionItemType` instances which this task
         # can create.
         self.patch_item_type = ActionItemType.objects.create_or_update(
@@ -549,7 +549,7 @@ class UpdateLintianStatsTask(BaseTask):
 
     def get_lintian_stats(self):
         url = 'http://lintian.debian.org/qa-list.txt'
-        cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
+        cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         response, updated = cache.update(url, force=self.force_update)
         response.raise_for_status()
         if not updated:
@@ -680,7 +680,7 @@ class UpdateTransitionsTask(BaseTask):
     def __init__(self, force_update=False, *args, **kwargs):
         super(UpdateTransitionsTask, self).__init__(*args, **kwargs)
         self.force_update = force_update
-        self.cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
+        self.cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
 
     def set_parameters(self, parameters):
         if 'force_update' in parameters:
@@ -767,7 +767,7 @@ class UpdateExcusesTask(BaseTask):
     def __init__(self, force_update=False, *args, **kwargs):
         super(UpdateExcusesTask, self).__init__(*args, **kwargs)
         self.force_update = force_update
-        self.cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
+        self.cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         self.action_item_type = ActionItemType.objects.create_or_update(
             type_name=self.ACTION_ITEM_TYPE_NAME,
             full_description_template=self.ITEM_FULL_DESCRIPTION_TEMPLATE)
@@ -1352,7 +1352,7 @@ class UpdateSecurityIssuesTask(BaseTask):
 class UpdatePiuPartsTask(BaseTask):
     """
     Retrieves the piuparts stats for all the suites defined in the
-    :data:`distro_tracker.project.local_settings.PTS_DEBIAN_PIUPARTS_SUITES`
+    :data:`distro_tracker.project.local_settings.DISTRO_TRACKER_DEBIAN_PIUPARTS_SUITES`
     """
     ACTION_ITEM_TYPE_NAME = 'debian-piuparts-test-fail'
     ACTION_ITEM_TEMPLATE = 'debian/piuparts-action-item.html'
@@ -1378,7 +1378,7 @@ class UpdatePiuPartsTask(BaseTask):
         return get_resource_content(url.format(suite=suite))
 
     def get_piuparts_stats(self):
-        suites = getattr(settings, 'PTS_DEBIAN_PIUPARTS_SUITES', [])
+        suites = getattr(settings, 'DISTRO_TRACKER_DEBIAN_PIUPARTS_SUITES', [])
         failing_packages = {}
         for suite in suites:
             content = self._get_piuparts_content(suite)
@@ -1461,7 +1461,7 @@ class UpdateReleaseGoalsTask(BaseTask):
             the release bug list. ``None`` if neither of the packages have
             been when compared to the cached resource.
         """
-        cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
+        cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         release_goals_url = 'http://release.debian.org/testing/goals.yaml'
         bugs_list_url = 'http://udd.debian.org/pts-release-goals.cgi'
         if not self.force_update and (not cache.is_expired(release_goals_url) and
@@ -1565,7 +1565,7 @@ class UpdateUbuntuStatsTask(BaseTask):
     def __init__(self, force_update=False, *args, **kwargs):
         super(UpdateUbuntuStatsTask, self).__init__(*args, **kwargs)
         self.force_update = force_update
-        self.cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
+        self.cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
 
     def set_parameters(self, parameters):
         if 'force_update' in parameters:
@@ -1701,7 +1701,7 @@ class UpdateWnppStatsTask(BaseTask):
 
     def _get_wnpp_content(self):
         url = 'http://qa.debian.org/data/bts/wnpp_rm'
-        cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
+        cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         if not cache.is_expired(url):
             return
         response, updated = cache.update(url, force=self.force_update)
@@ -1861,7 +1861,7 @@ class UpdateNewQueuePackages(BaseTask):
             ``None`` if the cached resource is up to date.
         """
         url = 'http://ftp-master.debian.org/new.822'
-        cache = HttpCache(settings.PTS_CACHE_DIRECTORY)
+        cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         if not cache.is_expired(url):
             return
         response, updated = cache.update(url, force=self.force_update)

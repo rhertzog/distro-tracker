@@ -1,27 +1,27 @@
 Hello,
 
-Someone has added you to the {{ PTS_VENDOR_NAME }} Package Tracking
+Someone has added you to the {{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracking
 System team "{{ team }}" [1].
 
 In order to confirm your membership, you must go to the following URL:
 
-http://{{ PTS_SITE_DOMAIN }}{% url 'pts-team-confirm-membership' confirmation.confirmation_key %}
+http://{{ DISTRO_TRACKER_SITE_DOMAIN }}{% url 'pts-team-confirm-membership' confirmation.confirmation_key %}
 
-Additionally, if you do not already own a {{ PTS_VENDOR_NAME }} PTS
+Additionally, if you do not already own a {{ DISTRO_TRACKER_VENDOR_NAME }} PTS
 account with this email address, please register at:
 
-http://{{ PTS_SITE_DOMAIN }}{% url 'pts-accounts-register' %}
+http://{{ DISTRO_TRACKER_SITE_DOMAIN }}{% url 'pts-accounts-register' %}
 
 If you don't understand why you got this mail, please ignore it,
 nothing will be done unless you send the confirmation.
 
 If you have any problem with this service, please contact
-{{ PTS_CONTACT_EMAIL }}.
+{{ DISTRO_TRACKER_CONTACT_EMAIL }}.
 
 Thanks,
 
-[1] http://{{ PTS_SITE_DOMAIN }}{{ team.get_absolute_url }}
+[1] http://{{ DISTRO_TRACKER_SITE_DOMAIN }}{{ team.get_absolute_url }}
 
 --
-{{ PTS_VENDOR_NAME }} Package Tracking System
-http://{{ PTS_SITE_DOMAIN }}
+{{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracking System
+http://{{ DISTRO_TRACKER_SITE_DOMAIN }}

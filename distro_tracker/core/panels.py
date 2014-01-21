@@ -759,7 +759,7 @@ class GeneralInfoLinkPanelItems(LinksPanel.ItemProvider):
 class NewsPanel(BasePanel):
     _DEFAULT_NEWS_LIMIT = 30
     panel_importance = 1
-    NEWS_LIMIT = getattr(settings, 'PTS_NEWS_PANEL_LIMIT', _DEFAULT_NEWS_LIMIT)
+    NEWS_LIMIT = getattr(settings, 'DISTRO_TRACKER_NEWS_PANEL_LIMIT', _DEFAULT_NEWS_LIMIT)
 
     template_name = 'core/panels/news.html'
     title = 'news'
@@ -800,7 +800,7 @@ class BugsPanel(BasePanel):
 
     Finally, for vendors which require an even higher degree of customization,
     it is possible to provide a
-    :data:`PTS_BUGS_PANEL_TEMPLATE <distro_tracker.project.local_settings.PTS_BUGS_PANEL_TEMPLATE>`
+    :data:`DISTRO_TRACKER_BUGS_PANEL_TEMPLATE <distro_tracker.project.local_settings.DISTRO_TRACKER_BUGS_PANEL_TEMPLATE>`
     settings value which gives the path to a template which should be used to
     render the panel. It is recommended that this template extends
     ``core/panels/bugs.html``, but not mandatory. If a custom
@@ -822,7 +822,7 @@ class BugsPanel(BasePanel):
     @property
     def template_name(self):
         return getattr(
-            settings, 'PTS_BUGS_PANEL_TEMPLATE', self._default_template_name)
+            settings, 'DISTRO_TRACKER_BUGS_PANEL_TEMPLATE', self._default_template_name)
 
     @cached_property
     def context(self):

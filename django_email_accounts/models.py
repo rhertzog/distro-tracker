@@ -21,7 +21,7 @@ import string
 import random
 import hashlib
 
-PTS_CONFIRMATION_EXPIRATION_DAYS = settings.PTS_CONFIRMATION_EXPIRATION_DAYS
+DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS = settings.DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS
 
 
 class ConfirmationException(Exception):
@@ -114,7 +114,7 @@ class Confirmation(models.Model):
         :returns False: if the confirmation key is still valid
         """
         delta = timezone.now() - self.date_created
-        return delta.days >= PTS_CONFIRMATION_EXPIRATION_DAYS
+        return delta.days >= DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS
 
 
 class UserManager(BaseUserManager):
