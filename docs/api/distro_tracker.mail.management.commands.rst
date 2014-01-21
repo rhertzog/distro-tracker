@@ -9,58 +9,58 @@ commands Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`pts_add_keyword` Module
+:mod:`distro_tracker_add_keyword` Module
 -----------------------------
 
-.. automodule:: distro_tracker.mail.management.commands.pts_add_keyword
+.. automodule:: distro_tracker.mail.management.commands.tracker_add_keyword
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`pts_control` Module
+:mod:`distro_tracker_control` Module
 -------------------------
 
-.. automodule:: distro_tracker.mail.management.commands.pts_control
+.. automodule:: distro_tracker.mail.management.commands.tracker_control
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`pts_dispatch` Module
+:mod:`distro_tracker_dispatch` Module
 --------------------------
 
-.. automodule:: distro_tracker.mail.management.commands.pts_dispatch
+.. automodule:: distro_tracker.mail.management.commands.tracker_dispatch
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`pts_dump_subscribers` Module
+:mod:`distro_tracker_dump_subscribers` Module
 ----------------------------------
 
-.. automodule:: distro_tracker.mail.management.commands.pts_dump_subscribers
+.. automodule:: distro_tracker.mail.management.commands.tracker_dump_subscribers
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`pts_receive_news` Module
+:mod:`distro_tracker_receive_news` Module
 ------------------------------
 
-.. automodule:: distro_tracker.mail.management.commands.pts_receive_news
+.. automodule:: distro_tracker.mail.management.commands.tracker_receive_news
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`pts_stats` Module
+:mod:`distro_tracker_stats` Module
 -----------------------
 
-.. automodule:: distro_tracker.mail.management.commands.pts_stats
+.. automodule:: distro_tracker.mail.management.commands.tracker_stats
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`pts_unsubscribe_all` Module
+:mod:`distro_tracker_unsubscribe_all` Module
 ---------------------------------
 
-.. automodule:: distro_tracker.mail.management.commands.pts_unsubscribe_all
+.. automodule:: distro_tracker.mail.management.commands.tracker_unsubscribe_all
     :members:
     :undoc-members:
     :show-inheritance:

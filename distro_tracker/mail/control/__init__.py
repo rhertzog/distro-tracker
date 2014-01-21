@@ -16,7 +16,7 @@ from email.iterators import typed_subpart_iterator
 from django.core.mail import EmailMessage
 from django.utils import six
 from django.template.loader import render_to_string
-from distro_tracker.core.utils import pts_render_to_string
+from distro_tracker.core.utils import distro_tracker_render_to_string
 from distro_tracker.core.utils import message_from_bytes
 from distro_tracker.core.utils import extract_email_address_from_header
 from distro_tracker.core.utils import get_decoded_message_payload
@@ -113,7 +113,7 @@ class ConfirmationSet(object):
         """
         command_confirmation = CommandConfirmation.objects.create_for_commands(
             commands=commands)
-        message = pts_render_to_string(
+        message = distro_tracker_render_to_string(
             'control/email-confirmation-required.txt', {
                 'command_confirmation': command_confirmation,
                 'confirmation_messages': self.confirmation_messages[email],

@@ -22,7 +22,7 @@ from datetime import datetime
 
 from distro_tracker.core.utils import extract_email_address_from_header
 from distro_tracker.core.utils import get_or_none
-from distro_tracker.core.utils import pts_render_to_string
+from distro_tracker.core.utils import distro_tracker_render_to_string
 from distro_tracker.core.utils import verp
 
 from distro_tracker.core.utils.email_messages import CustomEmailMessage
@@ -70,8 +70,8 @@ def process(message, sent_to_address=None):
     # Extract package name
     package_name = get_package_name(local_part)
     # Check loop
-    package_email = '{package}@{pts_fqdn}'.format(package=package_name,
-                                                  pts_fqdn=DISTRO_TRACKER_FQDN)
+    package_email = '{package}@{distro_tracker_fqdn}'.format(package=package_name,
+                                                  distro_tracker_fqdn=DISTRO_TRACKER_FQDN)
     if package_email in msg.get_all('X-Loop', ()):
         # Bad X-Loop, discard the message
         logger.info('Bad X-Loop, message discarded')
@@ -207,9 +207,9 @@ def add_new_headers(received_message, package_name, keyword):
     :type keyword: string
     """
     new_headers = [
-        ('X-Loop', '{package}@{pts_fqdn}'.format(
+        ('X-Loop', '{package}@{distro_tracker_fqdn}'.format(
             package=package_name,
-            pts_fqdn=DISTRO_TRACKER_FQDN)),
+            distro_tracker_fqdn=DISTRO_TRACKER_FQDN)),
         ('X-PTS-Package', package_name),
         ('X-PTS-Keyword', keyword),
     ]
@@ -376,9 +376,9 @@ def prepare_message(received_message, to_email, date):
     :param date: The date which should be used as the message's sent date.
     :type date: :py:class:`datetime.datetime`
     """
-    bounce_address = 'bounces+{date}@{pts_fqdn}'.format(
+    bounce_address = 'bounces+{date}@{distro_tracker_fqdn}'.format(
         date=date.strftime('%Y%m%d'),
-        pts_fqdn=DISTRO_TRACKER_FQDN)
+        distro_tracker_fqdn=DISTRO_TRACKER_FQDN)
     message = CustomEmailMessage(
         msg=received_message,
         from_email=verp.encode(bounce_address, to_email),
@@ -415,7 +415,7 @@ def handle_bounces(sent_to_address):
     if user.has_too_many_bounces():
         logger.info("{email} has too many bounces".format(email=user_email))
 
-        email_body = pts_render_to_string(
+        email_body = distro_tracker_render_to_string(
             'dispatch/unsubscribed-due-to-bounces-email.txt', {
                 'email': user_email,
                 'packages': user.packagename_set.all()

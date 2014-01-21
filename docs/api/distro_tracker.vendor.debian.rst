@@ -17,18 +17,18 @@ debian Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`pts_panels` Module
+:mod:`tracker_panels` Module
 ------------------------
 
-.. automodule:: distro_tracker.vendor.debian.pts_panels
+.. automodule:: distro_tracker.vendor.debian.tracker_panels
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`pts_tasks` Module
+:mod:`tracker_tasks` Module
 -----------------------
 
-.. automodule:: distro_tracker.vendor.debian.pts_tasks
+.. automodule:: distro_tracker.vendor.debian.tracker_tasks
     :members:
     :undoc-members:
     :show-inheritance:

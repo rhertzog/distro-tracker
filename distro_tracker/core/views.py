@@ -40,7 +40,7 @@ from distro_tracker.core.panels import get_panels_for_package
 from distro_tracker.accounts.views import LoginRequiredMixin
 from distro_tracker.accounts.models import User
 from distro_tracker.core.utils import get_or_none
-from distro_tracker.core.utils import pts_render_to_string
+from distro_tracker.core.utils import distro_tracker_render_to_string
 
 
 def package_page(request, package_name):
@@ -433,7 +433,7 @@ class AddTeamMember(LoginRequiredMixin, View):
                 membership=membership)
             send_mail(
                 'PTS Team Membership Confirmation',
-                pts_render_to_string('core/email-team-membership-confirmation.txt', {
+                distro_tracker_render_to_string('core/email-team-membership-confirmation.txt', {
                     'confirmation': confirmation,
                     'team': self.team,
                 }),

@@ -27,7 +27,7 @@ from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.utils.http import HttpCache
 from .models import DebianContributor
 from distro_tracker.vendor.common import PluginProcessingError
-from distro_tracker.vendor.debian.pts_tasks import UpdateNewQueuePackages
+from distro_tracker.vendor.debian.tracker_tasks import UpdateNewQueuePackages
 
 
 def get_keyword(local_part, msg):

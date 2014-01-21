@@ -24,7 +24,7 @@ from django.template.defaultfilters import slugify
 from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.utils import SpaceDelimitedTextField
 from distro_tracker.core.utils import verify_signature
-from distro_tracker.core.utils import pts_render_to_string
+from distro_tracker.core.utils import distro_tracker_render_to_string
 from distro_tracker.core.utils.plugins import PluginRegistry
 from distro_tracker.core.utils.email_messages import decode_header
 from distro_tracker.core.utils.email_messages import get_decoded_message_payload
@@ -1637,7 +1637,7 @@ class NewsRenderer(six.with_metaclass(PluginRegistry)):
         :returns: A safe string representing the rendered HTML output.
         """
         if self.template_name:
-            return mark_safe(pts_render_to_string(self.template_name, {
+            return mark_safe(distro_tracker_render_to_string(self.template_name, {
                 'context': self.context,
             }))
         elif self.html_output:
@@ -1899,7 +1899,7 @@ class ActionItem(models.Model):
             return ''
         try:
             return mark_safe(
-                pts_render_to_string(self.full_description_template, {
+                distro_tracker_render_to_string(self.full_description_template, {
                     'item': self,
                 }))
         except:

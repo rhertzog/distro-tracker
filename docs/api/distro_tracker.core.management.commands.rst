@@ -9,26 +9,26 @@ commands Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`pts_run_task` Module
+:mod:`distro_tracker_run_task` Module
 --------------------------
 
-.. automodule:: distro_tracker.core.management.commands.pts_run_task
+.. automodule:: distro_tracker.core.management.commands.tracker_run_task
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`pts_update_pseudo_packages` Module
+:mod:`distro_tracker_update_pseudo_packages` Module
 ----------------------------------------
 
-.. automodule:: distro_tracker.core.management.commands.pts_update_pseudo_packages
+.. automodule:: distro_tracker.core.management.commands.tracker_update_pseudo_packages
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`pts_update_repositories` Module
+:mod:`distro_tracker_update_repositories` Module
 -------------------------------------
 
-.. automodule:: distro_tracker.core.management.commands.pts_update_repositories
+.. automodule:: distro_tracker.core.management.commands.tracker_update_repositories
     :members:
     :undoc-members:
     :show-inheritance:

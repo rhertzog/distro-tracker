@@ -1,4 +1,4 @@
-{% load pts_extras%}Hello,
+{% load distro_tracker_extras%}Hello,
 {% if command_confirmation.command_list|length == 1 %}
 an operation that you tried to execute on the {{ DISTRO_TRACKER_VENDOR_NAME }} Package
 Tracking System requires an e-mail confirmation. For reference, the

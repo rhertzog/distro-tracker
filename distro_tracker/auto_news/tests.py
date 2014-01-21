@@ -22,7 +22,7 @@ from distro_tracker.core.models import Repository
 from distro_tracker.core.tasks import Job
 from distro_tracker.core.tasks import JobState
 from distro_tracker.core.tasks import Event
-from distro_tracker.auto_news.pts_tasks import GenerateNewsFromRepositoryUpdates
+from distro_tracker.auto_news.tracker_tasks import GenerateNewsFromRepositoryUpdates
 from distro_tracker.core.tests.common import temporary_media_dir
 
 
@@ -523,7 +523,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
             # The news is linked with the correct package
             self.assertEqual(news.package.name, name)
 
-    @mock.patch('distro_tracker.auto_news.pts_tasks.get_resource_content')
+    @mock.patch('distro_tracker.auto_news.tracker_tasks.get_resource_content')
     def test_dsc_file_in_news_content(self, mock_get_resource_content):
         """
         Tests that the dsc file is found in the content of a news item created

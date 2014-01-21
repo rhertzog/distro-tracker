@@ -28,7 +28,7 @@ from distro_tracker.core.models import EmailUser
 from distro_tracker.accounts.models import User
 from distro_tracker.core.utils import verp
 from distro_tracker.core.utils import get_decoded_message_payload
-from distro_tracker.core.utils import pts_render_to_string
+from distro_tracker.core.utils import distro_tracker_render_to_string
 from distro_tracker.mail import dispatch
 from distro_tracker.accounts.models import UserEmail
 
@@ -61,9 +61,9 @@ class DispatchTestHelperMixin(object):
         :param package_name: The new name of the test package
         """
         self.package_name = package_name
-        self.add_header('To', '{package}@{pts_fqdn}'.format(
+        self.add_header('To', '{package}@{distro_tracker_fqdn}'.format(
             package=self.package_name,
-            pts_fqdn=DISTRO_TRACKER_FQDN))
+            distro_tracker_fqdn=DISTRO_TRACKER_FQDN))
 
     def set_message_content(self, content):
         """
@@ -128,8 +128,8 @@ class DispatchTestHelperMixin(object):
         Returns the address for the package which corresponds to the given
         keyword.
         """
-        return '{package}_{keyword}@{pts_fqdn}'.format(
-            package=package, keyword=keyword, pts_fqdn=DISTRO_TRACKER_FQDN)
+        return '{package}_{keyword}@{distro_tracker_fqdn}'.format(
+            package=package, keyword=keyword, distro_tracker_fqdn=DISTRO_TRACKER_FQDN)
 
     def assert_message_forwarded_to(self, email):
         """
@@ -258,9 +258,9 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         are found in the forwarded message.
         """
         headers = [
-            ('X-Loop', '{package}@{pts_fqdn}'.format(
+            ('X-Loop', '{package}@{distro_tracker_fqdn}'.format(
                 package=self.package_name,
-                pts_fqdn=DISTRO_TRACKER_FQDN)),
+                distro_tracker_fqdn=DISTRO_TRACKER_FQDN)),
             ('X-PTS-Package', self.package_name),
             ('X-PTS-Keyword', 'default'),
             ('Precedence', 'list'),
@@ -313,8 +313,8 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         from the message to header address.
         """
         self.set_header('To', 'Someone <someone@domain.com>')
-        address = '{package}@{pts_fqdn}'.format(package=self.package_name,
-                                                pts_fqdn=DISTRO_TRACKER_FQDN)
+        address = '{package}@{distro_tracker_fqdn}'.format(package=self.package_name,
+                                                distro_tracker_fqdn=DISTRO_TRACKER_FQDN)
         self.add_header('Cc', address)
         # Make sure there is a user to forward the message to
         self.subscribe_user_to_package('user@domain.com', self.package_name)
@@ -401,9 +401,9 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         """
         Helper method creating a bounce address for the given destination email
         """
-        bounce_address = 'bounces+{date}@{pts_fqdn}'.format(
+        bounce_address = 'bounces+{date}@{distro_tracker_fqdn}'.format(
             date=timezone.now().date().strftime('%Y%m%d'),
-            pts_fqdn=DISTRO_TRACKER_FQDN)
+            distro_tracker_fqdn=DISTRO_TRACKER_FQDN)
         return verp.encode(bounce_address, to)
 
     def add_sent(self, user, date):
@@ -463,7 +463,7 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn(self.user.email, mail.outbox[0].to)
         # Check that the content of the email is correct.
-        self.assertEqual(mail.outbox[0].body, pts_render_to_string(
+        self.assertEqual(mail.outbox[0].body, distro_tracker_render_to_string(
             'dispatch/unsubscribed-due-to-bounces-email.txt', {
                 'email': self.user.email,
                 'packages': packages_subscribed_to

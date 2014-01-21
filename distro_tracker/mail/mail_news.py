@@ -78,10 +78,10 @@ def process(message):
         if 'X-PTS-Url' not in msg:
             create_news(msg, package)
         else:
-            pts_url = msg['X-PTS-Url']
+            distro_tracker_url = msg['X-PTS-Url']
             News.objects.create(
-                title=pts_url,
-                content="<a href={url}>{url}</a>".format(url=escape(pts_url)),
+                title=distro_tracker_url,
+                content="<a href={url}>{url}</a>".format(url=escape(distro_tracker_url)),
                 package=package,
                 content_type='text/html')
 

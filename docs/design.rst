@@ -43,7 +43,7 @@ Email Control Messages
 ++++++++++++++++++++++
 
 The PTS expects the system's MTA to pipe any received control emails to the
-:mod:`distro_tracker.mail.management.commands.pts_control` Django management
+:mod:`distro_tracker.mail.management.commands.tracker_control` Django management
 command. For information how to set this up, refer to the
 :ref:`mailbot setup <mailbot>`.
 
@@ -95,7 +95,7 @@ Email Dispatch
 
 As is the case for control message processing, the PTS expects the system's MTA
 to pipe any received package emails to a management command -
-:mod:`distro_tracker.mail.management.commands.pts_dispatch`. For information how to set
+:mod:`distro_tracker.mail.management.commands.tracker_dispatch`. For information how to set
 this up, refer to the :ref:`mailbot setup <mailbot>`.
 
 The function that performs the processing of a received package message is
@@ -110,7 +110,7 @@ News from Email Messages
 The PTS allows for automatic news creation based on received emails. It is necessary
 to set up the MTA so it pipes received emails which should potentially be turned into
 news items, to the management command
-:mod:`distro_tracker.mail.management.commands.pts_receive_news`.
+:mod:`distro_tracker.mail.management.commands.tracker_receive_news`.
 
 News are created as :class:`distro_tracker.core.models.News` objects and each of the
 model's instances associated with a particular package is displayed in the
@@ -156,7 +156,7 @@ respectively. The :meth:`execute() <distro_tracker.core.tasks.BaseTask.execute>`
 implements the task's functionality.
 
 .. note::
-   All task classes should be placed in a module called ``pts_tasks`` found at
+   All task classes should be placed in a module called ``tracker_tasks`` found at
    the top level of an installed Django app. Tasks in apps which are not
    installed will never be run.
 
@@ -249,7 +249,7 @@ template and fills in its contents to the blocks defined in the template, so
 that the page remains visually consistent. This is not mandatory, however.
 
 .. note::
-   All panel classes should be placed in a module called ``pts_panels`` found at
+   All panel classes should be placed in a module called ``tracker_panels`` found at
    the top level of an installed Django app. Panels from apps which are not
    installed will never appear on a package page.
 

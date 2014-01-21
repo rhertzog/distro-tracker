@@ -31,13 +31,13 @@ import gpgme
 
 class RunTaskManagementCommandTest(SimpleTestCase):
     """
-    Test for the :mod:`distro_tracker.core.management.commands.pts_run_task` management
+    Test for the :mod:`distro_tracker.core.management.commands.tracker_run_task` management
     command.
     """
     def run_command(self, tasks, **kwargs):
-        call_command('pts_run_task', *tasks, **kwargs)
+        call_command('tracker_run_task', *tasks, **kwargs)
 
-    @mock.patch('distro_tracker.core.management.commands.pts_run_task.run_task')
+    @mock.patch('distro_tracker.core.management.commands.tracker_run_task.run_task')
     def test_runs_all(self, mock_run_task):
         """
         Tests that the management command calls the
@@ -51,7 +51,7 @@ class RunTaskManagementCommandTest(SimpleTestCase):
         mock_run_task.assert_any_call('TaskName1', None)
         mock_run_task.assert_any_call('TaskName2', None)
 
-    @mock.patch('distro_tracker.core.management.commands.pts_run_task.run_task')
+    @mock.patch('distro_tracker.core.management.commands.tracker_run_task.run_task')
     def test_passes_force_flag(self, mock_run_task):
         """
         Tests that the management command passes the force flag to the task
@@ -65,14 +65,14 @@ class RunTaskManagementCommandTest(SimpleTestCase):
 
 
 @mock.patch('distro_tracker.core.tasks.import_all_tasks')
-@mock.patch('distro_tracker.core.management.commands.pts_run_all_tasks.run_all_tasks')
+@mock.patch('distro_tracker.core.management.commands.tracker_run_all_tasks.run_all_tasks')
 class RunAllTasksTests(SimpleTestCase):
     """
-    Test for the :mod:`distro_tracker.core.management.commands.pts_run_task` management
+    Test for the :mod:`distro_tracker.core.management.commands.tracker_run_task` management
     command.
     """
     def run_command(self, *args, **kwargs):
-        call_command('pts_run_all_tasks', *args, **kwargs)
+        call_command('tracker_run_all_tasks', *args, **kwargs)
 
     def test_runs_all(self, mock_run_all_tasks, *args, **kwargs):
         """
@@ -100,7 +100,7 @@ class RunAllTasksTests(SimpleTestCase):
 class UpdateNewsSignaturesCommandTest(TestCase):
     """
     Tests for the
-    :mod:`distro_tracker.core.management.commands.pts_update_news_signatures`
+    :mod:`distro_tracker.core.management.commands.tracker_update_news_signatures`
     management command.
     """
     def setUp(self):
@@ -182,7 +182,7 @@ class UpdateNewsSignaturesCommandTest(TestCase):
                     signed.signed_by.clear()
 
                 # Run the command
-                call_command("pts_update_news_signatures")
+                call_command("tracker_update_news_signatures")
 
                 # The signed news items have associated signature information
                 for signed in signed_news:

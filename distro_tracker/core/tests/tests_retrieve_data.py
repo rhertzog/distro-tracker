@@ -210,7 +210,7 @@ class RetrievePseudoPackagesTest(TestCase):
         the correct function.
         """
         from django.core.management import call_command
-        call_command('pts_update_pseudo_packages')
+        call_command('tracker_update_pseudo_packages')
 
         mock_update_pseudo_package_list.assert_called_with()
 

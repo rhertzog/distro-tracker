@@ -22,7 +22,7 @@ from distro_tracker.core.models import SourcePackageName, SourcePackage
 from distro_tracker.core.models import News
 from distro_tracker.core.tests.common import temporary_media_dir
 from distro_tracker.mail.mail_news import process
-from distro_tracker.mail.management.commands.pts_receive_news import (
+from distro_tracker.mail.management.commands.tracker_receive_news import (
     Command as MailNewsCommand)
 
 from email.message import Message
@@ -140,10 +140,10 @@ class BasicNewsGeneration(TestCase):
 
 class MailNewsManagementCommandTest(SimpleTestCase):
     """
-    Tests that the :mod:`distro_tracker.mail.management.commands.pts_receive_news`
+    Tests that the :mod:`distro_tracker.mail.management.commands.tracker_receive_news`
     management command calls the correct function.
     """
-    @mock.patch('distro_tracker.mail.management.commands.pts_receive_news.process')
+    @mock.patch('distro_tracker.mail.management.commands.tracker_receive_news.process')
     def test_calls_process(self, mock_process):
         cmd = MailNewsCommand()
         cmd.input_file = mock.create_autospec(six.BytesIO)

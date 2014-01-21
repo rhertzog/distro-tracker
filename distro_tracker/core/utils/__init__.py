@@ -38,7 +38,7 @@ def get_or_none(model, **kwargs):
         return None
 
 
-def pts_render_to_string(template_name, context=None):
+def distro_tracker_render_to_string(template_name, context=None):
     """
     A custom function to render a template to a string which injects extra
     PTS-specific information to the context, such as the name of the derivative.

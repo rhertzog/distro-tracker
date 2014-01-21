@@ -24,7 +24,7 @@ DISTRO_TRACKER_EXTRAS = {
 }
 
 
-def pts_extras(request):
+def extras(request):
     """
     The context processor which includes the
     :py:data:`DISTRO_TRACKER_EXTRAS <distro_tracker.core.context_processors.DISTRO_TRACKER_EXTRAS>` in the

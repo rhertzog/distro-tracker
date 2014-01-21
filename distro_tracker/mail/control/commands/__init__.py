@@ -18,7 +18,7 @@ from django.conf import settings
 import sys
 import inspect
 
-from distro_tracker.core.utils import pts_render_to_string
+from distro_tracker.core.utils import distro_tracker_render_to_string
 from distro_tracker.mail.control.commands.base import *
 from distro_tracker.mail.control.commands.keywords import *
 from distro_tracker.mail.control.commands.teams import *
@@ -44,7 +44,7 @@ class HelpCommand(Command):
     )
 
     def handle(self):
-        self.reply(pts_render_to_string('control/help.txt', {
+        self.reply(distro_tracker_render_to_string('control/help.txt', {
             'descriptions': [
                 command.META.get('description', '')
                 for command in UNIQUE_COMMANDS

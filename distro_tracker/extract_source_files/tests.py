@@ -21,7 +21,7 @@ from distro_tracker.core.models import ExtractedSourceFile
 from distro_tracker.core.tasks import JobState, Event, Job
 from distro_tracker.core.tests.common import make_temp_directory
 from distro_tracker.core.tests.common import temporary_media_dir
-from distro_tracker.extract_source_files.pts_tasks import ExtractSourcePackageFiles
+from distro_tracker.extract_source_files.tracker_tasks import ExtractSourcePackageFiles
 from django.utils.six.moves import mock
 
 import os
@@ -67,7 +67,7 @@ class ExtractSourcePackageFilesTest(TestCase):
 
         self.task.execute()
 
-    @mock.patch('distro_tracker.extract_source_files.pts_tasks.AptCache.retrieve_source')
+    @mock.patch('distro_tracker.extract_source_files.tracker_tasks.AptCache.retrieve_source')
     @temporary_media_dir
     def test_create_extracted_files(self, mock_cache):
         """
@@ -102,7 +102,7 @@ class ExtractSourcePackageFilesTest(TestCase):
             extracted_file = ExtractedSourceFile.objects.all()[0]
             self.assertEqual('changelog', extracted_file.name)
 
-    @mock.patch('distro_tracker.extract_source_files.pts_tasks.AptCache.retrieve_source')
+    @mock.patch('distro_tracker.extract_source_files.tracker_tasks.AptCache.retrieve_source')
     @temporary_media_dir
     def test_create_extracted_files_only_wanted_files(self, mock_cache):
         """
@@ -147,7 +147,7 @@ class ExtractSourcePackageFilesTest(TestCase):
             for wanted_file in wanted_files:
                 self.assertIn(wanted_file, extracted_names)
 
-    @mock.patch('distro_tracker.extract_source_files.pts_tasks.AptCache.retrieve_source')
+    @mock.patch('distro_tracker.extract_source_files.tracker_tasks.AptCache.retrieve_source')
     @temporary_media_dir
     def test_task_is_initial_no_existing_files(self, mock_cache):
         """
@@ -190,7 +190,7 @@ class ExtractSourcePackageFilesTest(TestCase):
                 self.assertIn(wanted_file, extracted_names)
 
 
-    @mock.patch('distro_tracker.extract_source_files.pts_tasks.AptCache.retrieve_source')
+    @mock.patch('distro_tracker.extract_source_files.tracker_tasks.AptCache.retrieve_source')
     @temporary_media_dir
     def test_task_is_initial_existing_files(self, mock_cache):
         """
@@ -241,7 +241,7 @@ class ExtractSourcePackageFilesTest(TestCase):
             extracted_file.extracted_file.close()
             self.assertEqual(original_content, content)
 
-    @mock.patch('distro_tracker.extract_source_files.pts_tasks.AptCache.retrieve_source')
+    @mock.patch('distro_tracker.extract_source_files.tracker_tasks.AptCache.retrieve_source')
     @temporary_media_dir
     def test_task_is_initial_existing_file_remove(self, mock_cache):
         """

@@ -41,7 +41,7 @@ class BasePanel(six.with_metaclass(PluginRegistry)):
 
     .. note::
        To make sure the subclass is loaded, make sure to put it in a
-       ``pts_panels`` module at the top level of a Django app.
+       ``tracker_panels`` module at the top level of a Django app.
     """
     #: A list of available positions
     # NOTE: This is a good candidate for Python3.4's Enum.
@@ -126,7 +126,7 @@ def get_panels_for_package(package):
     # First import panels from installed apps.
     for app in settings.INSTALLED_APPS:
         try:
-            module_name = app + '.' + 'pts_panels'
+            module_name = app + '.' + 'tracker_panels'
             importlib.import_module(module_name)
         except ImportError:
             # The app does not implement PTS package panels.
@@ -792,7 +792,7 @@ class BugsPanel(BasePanel):
     all categories is also displayed as the first row of the panel.
 
     A vendor can choose to implement the
-    :func:`get_bug_panel_stats <distro_tracker.vendor.skeleton.rules.pts_bug_panel_stats>`
+    :func:`get_bug_panel_stats <distro_tracker.vendor.skeleton.rules.get_bug_panel_stats>`
     function in order to provide a custom list of bug categories to be
     displayed in the panel. This is useful if, for example, the vendor does
     not want to display the count of all bug categories.
@@ -804,7 +804,7 @@ class BugsPanel(BasePanel):
     settings value which gives the path to a template which should be used to
     render the panel. It is recommended that this template extends
     ``core/panels/bugs.html``, but not mandatory. If a custom
-    :func:`get_bug_panel_stats <distro_tracker.vendor.skeleton.rules.pts_bug_panel_stats>`
+    :func:`get_bug_panel_stats <distro_tracker.vendor.skeleton.rules.get_bug_panel_stats>`
     function is also defined then its return value is simply passed to the
     and does not require any special format; the vendor's template can access
     this value in the ``panel.context`` context variable and can use it any way

@@ -17,18 +17,18 @@ extract_source_files Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`pts_panels` Module
+:mod:`tracker_panels` Module
 ------------------------
 
-.. automodule:: distro_tracker.extract_source_files.pts_panels
+.. automodule:: distro_tracker.extract_source_files.tracker_panels
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`pts_tasks` Module
+:mod:`tracker_tasks` Module
 -----------------------
 
-.. automodule:: distro_tracker.extract_source_files.pts_tasks
+.. automodule:: distro_tracker.extract_source_files.tracker_tasks
     :members:
     :undoc-members:
     :show-inheritance:

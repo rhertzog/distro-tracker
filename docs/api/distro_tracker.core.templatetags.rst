@@ -9,10 +9,10 @@ templatetags Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`pts_extras` Module
+:mod:`distro_tracker_extras` Module
 ------------------------
 
-.. automodule:: distro_tracker.core.templatetags.pts_extras
+.. automodule:: distro_tracker.core.templatetags.tracker_extras
     :members:
     :undoc-members:
     :show-inheritance:

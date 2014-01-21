@@ -12,11 +12,12 @@ Tests the management command of the :mod:`distro_tracker.mail` app.
 """
 from __future__ import unicode_literals
 from django.test import TestCase, TransactionTestCase
-from distro_tracker.mail.management.commands.pts_unsubscribe_all import (
+from distro_tracker.mail.management.commands.tracker_unsubscribe_all import (
     Command as UnsubscribeCommand)
-from distro_tracker.mail.management.commands.pts_dump_subscribers import (
+from distro_tracker.mail.management.commands.tracker_dump_subscribers import (
     Command as DumpCommand)
-from distro_tracker.mail.management.commands.pts_stats import Command as StatsCommand
+from distro_tracker.mail.management.commands.tracker_stats import (
+    Command as StatsCommand)
 from django.core.management import call_command
 from django.core.management.base import CommandError
 
@@ -69,7 +70,7 @@ class UnsubscribeAllManagementCommand(TestCase):
 
     def test_unsubscribe_user(self):
         """
-        Tests the management command ``pts_unsubscribe_all`` when a user with
+        Tests the management command ``distro_tracker_unsubscribe_all`` when a user with
         subscriptions is given.
         """
         self.call_command(self.user.email)
@@ -79,7 +80,7 @@ class UnsubscribeAllManagementCommand(TestCase):
 
     def test_unsubscribe_doesnt_exist(self):
         """
-        Tests the management command ``pts_unsubscribe_all`` when the given
+        Tests the management command ``distro_tracker_unsubscribe_all`` when the given
         user does not exist.
         """
         self.call_command('no-exist')
@@ -88,7 +89,7 @@ class UnsubscribeAllManagementCommand(TestCase):
 
     def test_unsubscribe_no_subscriptions(self):
         """
-        Tests the management command ``pts_unsubscribe_all`` when the given
+        Tests the management command ``distro_tracker_unsubscribe_all`` when the given
         user is not subscribed to any packages.
         """
         self.call_command(self.nosub_user)
@@ -97,7 +98,7 @@ class UnsubscribeAllManagementCommand(TestCase):
 
     def test_unsubscribe_multiple_user(self):
         """
-        Tests the management command ``pts_unsubscribe_all`` when multiple
+        Tests the management command ``distro_tracker_unsubscribe_all`` when multiple
         users are passed to it.
         """
         args = ['no-exist', self.nosub_user.email, self.user.email]
@@ -305,7 +306,7 @@ class AddKeywordManagementCommandTest(TransactionTestCase):
         # Sanity check - the keyword we are about to add does not already exist
         self.assertEqual(Keyword.objects.filter(name='new-keyword').count(), 0)
 
-        call_command('pts_add_keyword', 'new-keyword')
+        call_command('tracker_add_keyword', 'new-keyword')
 
         qs = Keyword.objects.filter(name='new-keyword', default=False)
         self.assertEqual(qs.count(), 1)
@@ -318,7 +319,7 @@ class AddKeywordManagementCommandTest(TransactionTestCase):
         # Sanity check - the keyword we are about to add does not already exist
         self.assertEqual(Keyword.objects.filter(name='new-keyword').count(), 0)
 
-        call_command('pts_add_keyword', 'new-keyword', **{
+        call_command('tracker_add_keyword', 'new-keyword', **{
             'is_default_keyword': True
         })
 
@@ -350,7 +351,7 @@ class AddKeywordManagementCommandTest(TransactionTestCase):
         # Sanity check -- only one subscription exists
         self.assertEqual(Subscription.objects.count(), 1)
 
-        call_command('pts_add_keyword', 'new-keyword', 'existing-keyword')
+        call_command('tracker_add_keyword', 'new-keyword', 'existing-keyword')
 
         # New keyword created?
         keyword = Keyword.objects.filter(name='new-keyword')
@@ -381,7 +382,7 @@ class AddKeywordManagementCommandTest(TransactionTestCase):
         p = PackageName.objects.create(name='dummy-package')
         sub = Subscription.objects.create(email_user=u, package=p)
 
-        call_command('pts_add_keyword', 'new-keyword', 'existing-keyword')
+        call_command('tracker_add_keyword', 'new-keyword', 'existing-keyword')
 
         sub = Subscription.objects.get(email_user=u, package=p)
         self.assertTrue(sub._use_user_default_keywords)
@@ -395,7 +396,7 @@ class AddKeywordManagementCommandTest(TransactionTestCase):
 
         # Error raised
         with self.assertRaises(CommandError):
-            call_command('pts_add_keyword', 'new-keyword', 'existing-keyword')
+            call_command('tracker_add_keyword', 'new-keyword', 'existing-keyword')
 
         # ...and nothing changed.
         self.assertEqual(Keyword.objects.count(), old_count)
@@ -417,7 +418,7 @@ class AddKeywordManagementCommandTest(TransactionTestCase):
         # Sanity check - the keyword we want to add does not already exist
         self.assertEqual(Keyword.objects.filter(name='new-keyword').count(), 0)
 
-        call_command('pts_add_keyword', 'new-keyword', **{
+        call_command('tracker_add_keyword', 'new-keyword', **{
             'is_default_keyword': True
         })
 
@@ -452,7 +453,7 @@ class AddKeywordManagementCommandTest(TransactionTestCase):
         # Sanity check - the keyword we want to add does not already exist
         self.assertEqual(Keyword.objects.filter(name='new-keyword').count(), 0)
 
-        call_command('pts_add_keyword', 'new-keyword', 'existing-keyword', **{
+        call_command('tracker_add_keyword', 'new-keyword', 'existing-keyword', **{
             'is_default_keyword': True,
         })
 

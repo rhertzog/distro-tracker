@@ -48,26 +48,26 @@ from distro_tracker.vendor.debian.rules import get_package_information_site_url
 from distro_tracker.vendor.debian.rules import get_maintainer_extra
 from distro_tracker.vendor.debian.rules import get_uploader_extra
 from distro_tracker.vendor.debian.rules import get_developer_information_url
-from distro_tracker.vendor.debian.pts_tasks import UpdateNewQueuePackages
-from distro_tracker.vendor.debian.pts_tasks import UpdateWnppStatsTask
-from distro_tracker.vendor.debian.pts_tasks import UpdateUbuntuStatsTask
-from distro_tracker.vendor.debian.pts_tasks import UpdateReleaseGoalsTask
-from distro_tracker.vendor.debian.pts_tasks import UpdateSecurityIssuesTask
-from distro_tracker.vendor.debian.pts_tasks import UpdatePiuPartsTask
-from distro_tracker.vendor.debian.pts_tasks import UpdateBuildLogCheckStats
-from distro_tracker.vendor.debian.pts_tasks import UpdatePackageBugStats
-from distro_tracker.vendor.debian.pts_tasks import RetrieveDebianMaintainersTask
-from distro_tracker.vendor.debian.pts_tasks import RetrieveLowThresholdNmuTask
-from distro_tracker.vendor.debian.pts_tasks import DebianWatchFileScannerUpdate
-from distro_tracker.vendor.debian.pts_tasks import UpdateExcusesTask
+from distro_tracker.vendor.debian.tracker_tasks import UpdateNewQueuePackages
+from distro_tracker.vendor.debian.tracker_tasks import UpdateWnppStatsTask
+from distro_tracker.vendor.debian.tracker_tasks import UpdateUbuntuStatsTask
+from distro_tracker.vendor.debian.tracker_tasks import UpdateReleaseGoalsTask
+from distro_tracker.vendor.debian.tracker_tasks import UpdateSecurityIssuesTask
+from distro_tracker.vendor.debian.tracker_tasks import UpdatePiuPartsTask
+from distro_tracker.vendor.debian.tracker_tasks import UpdateBuildLogCheckStats
+from distro_tracker.vendor.debian.tracker_tasks import UpdatePackageBugStats
+from distro_tracker.vendor.debian.tracker_tasks import RetrieveDebianMaintainersTask
+from distro_tracker.vendor.debian.tracker_tasks import RetrieveLowThresholdNmuTask
+from distro_tracker.vendor.debian.tracker_tasks import DebianWatchFileScannerUpdate
+from distro_tracker.vendor.debian.tracker_tasks import UpdateExcusesTask
 from distro_tracker.vendor.debian.models import DebianContributor
 from distro_tracker.vendor.debian.models import UbuntuPackage
-from distro_tracker.vendor.debian.pts_tasks import UpdateLintianStatsTask
+from distro_tracker.vendor.debian.tracker_tasks import UpdateLintianStatsTask
 from distro_tracker.vendor.debian.models import LintianStats
-from distro_tracker.vendor.debian.management.commands.pts_import_old_subscriber_dump import (
+from distro_tracker.vendor.debian.management.commands.tracker_import_old_subscriber_dump import (
     Command as ImportOldSubscribersCommand
 )
-from distro_tracker.vendor.debian.management.commands.pts_import_old_tags_dump import (
+from distro_tracker.vendor.debian.management.commands.tracker_import_old_tags_dump import (
     Command as ImportOldTagsCommand
 )
 from distro_tracker.mail.mail_news import process
@@ -832,7 +832,7 @@ class DebianNewsFromEmailTest(TestCase):
 
 class UpdateLintianStatsTaskTest(TestCase):
     """
-    Tests for the :class:`distro_tracker.vendor.debian.pts_tasks.UpdateLintianStatsTask` task.
+    Tests for the :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateLintianStatsTask` task.
     """
     def setUp(self):
         self.package_name = SourcePackageName.objects.create(name='dummy-package')
@@ -1557,7 +1557,7 @@ class DebianBugActionItemsTests(TestCase):
 class UpdateExcusesTaskActionItemTest(TestCase):
     """
     Tests for the creating of action items by the
-    :class:`distro_tracker.vendor.debian.pts_tasks.UpdateExcusesTask`.
+    :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateExcusesTask`.
     """
     def setUp(self):
         self.package_name = SourcePackageName.objects.create(name='dummy-package')
@@ -1683,7 +1683,7 @@ class UpdateBuildLogCheckStatsActionItemTests(TestCase):
     """
     Tests that :class:`distro_tracker.core.models.ActionItem` instances are correctly
     created when running the
-    :class:`distro_tracker.vendor.debian.pts_tasks.UpdateBuildLogCheckStats` task.
+    :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateBuildLogCheckStats` task.
     """
     def setUp(self):
         self.package_name = SourcePackageName.objects.create(name='dummy-package')
@@ -1884,7 +1884,7 @@ class DebianWatchFileScannerUpdateTests(TestCase):
     """
     Tests that :class:`distro_tracker.core.models.ActionItem` instances are correctly
     created when running the
-    :class:`distro_tracker.vendor.debian.pts_tasks.UpdateBuildLogCheckStats` task.
+    :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateBuildLogCheckStats` task.
     """
     def setUp(self):
         self.package = SourcePackageName.objects.create(name='dummy-package')
@@ -2445,7 +2445,7 @@ class CodeSearchLinksTest(TestCase):
         """
         Tests that no links are added when the package is not found in one of
         the allowed repositories
-        (:attr:`distro_tracker.vendor.debian.pts_panels.SourceCodeSearchLinks.ALLOWED_REPOSITORIES`)
+        (:attr:`distro_tracker.vendor.debian.tracker_panels.SourceCodeSearchLinks.ALLOWED_REPOSITORIES`)
         """
         other_repository = Repository.objects.create(name='some-other-repo')
         other_repository.add_source_package(self.package)
@@ -2760,7 +2760,7 @@ class UpdatePiupartsTaskTests(TestCase):
 
 class UpdateReleaseGoalsTaskTests(TestCase):
     """
-    Tests for the :class:`distro_tracker.vendor.debian.pts_tasks.UpdateReleaseGoalsTask`
+    Tests for the :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateReleaseGoalsTask`
     task.
     """
     def setUp(self):
@@ -3162,7 +3162,7 @@ class UpdateReleaseGoalsTaskTests(TestCase):
 
 class UpdateUbuntuStatsTaskTests(TestCase):
     """
-    Tests for the :class:`distro_tracker.vendor.debian.pts_taks.UpdateUbuntuStatsTask`
+    Tests for the :class:`distro_tracker.vendor.debian.tracker_taks.UpdateUbuntuStatsTask`
     task.
     """
     def setUp(self):
@@ -3482,7 +3482,7 @@ class UpdateUbuntuStatsTaskTests(TestCase):
 
 class UbuntuPanelTests(TestCase):
     """
-    Tests for the :class:`distro_tracker.vendor.debian.pts_panels.UbuntuPanel` panel.
+    Tests for the :class:`distro_tracker.vendor.debian.tracker_panels.UbuntuPanel` panel.
     """
     def setUp(self):
         self.package = PackageName.objects.create(
@@ -3582,7 +3582,7 @@ class UbuntuPanelTests(TestCase):
 
 class UpdateWnppStatsTaskTests(TestCase):
     """
-    Tests for the :class:`distro_tracker.vendor.debian.pts_tasks.UpdateWnppStatsTask`
+    Tests for the :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateWnppStatsTask`
     task.
     """
     def setUp(self):
@@ -3797,7 +3797,7 @@ class UpdateWnppStatsTaskTests(TestCase):
 @override_settings(DISTRO_TRACKER_VENDOR_RULES='distro_tracker.vendor.debian.rules')
 class UpdateNewQueuePackagesTests(TestCase):
     """
-    Tests for the :class:`distro_tracker.vendor.debian.pts_tasks.UpdateNewQueuePackages`
+    Tests for the :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateNewQueuePackages`
     task.
     """
     def setUp(self):
@@ -4074,12 +4074,12 @@ class ImportOldNewsTests(TestCase):
         content_template = "Hello Öäüßčćž한글{}"
         date = 'Mon, 28 Nov 2005 15:47:11 -0800'
 
-        with make_temp_directory('old-pts') as old_pts_root:
+        with make_temp_directory('old-pts') as old_distro_tracker_root:
             # Make the expected directory structure and add some news
             for package in packages:
                 PackageName.objects.create(name=package, source=True)
                 news_dir = os.path.join(
-                    old_pts_root, package[0], package, 'news')
+                    old_distro_tracker_root, package[0], package, 'news')
                 os.makedirs(news_dir)
 
                 # Add a news for this package
@@ -4092,7 +4092,7 @@ class ImportOldNewsTests(TestCase):
                     content = msg.as_string()
                     f.write(content)
 
-            call_command('pts_import_old_news', old_pts_root)
+            call_command('tracker_import_old_news', old_distro_tracker_root)
 
             # All news items created
             self.assertEqual(len(packages), News.objects.count())
@@ -4118,7 +4118,7 @@ class ImportOldNewsTests(TestCase):
 class ImportOldSubscribersTests(TestCase):
     """
     Tests for the
-    :mod:`distro_tracker.vendor.debian.management.commands.pts_import_old_subscriber_dump`
+    :mod:`distro_tracker.vendor.debian.management.commands.tracker_import_old_subscriber_dump`
     management command.
     """
     def setUp(self):

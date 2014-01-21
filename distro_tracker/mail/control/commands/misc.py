@@ -13,7 +13,7 @@ Implementation of miscellaneous commands.
 from __future__ import unicode_literals
 
 from distro_tracker.core.utils import get_or_none
-from distro_tracker.core.utils import pts_render_to_string
+from distro_tracker.core.utils import distro_tracker_render_to_string
 from distro_tracker.core.models import Subscription, EmailUser, PackageName, BinaryPackageName
 from distro_tracker.core.models import SourcePackageName, PseudoPackageName
 from distro_tracker.mail.control.commands.confirmation import needs_confirmation
@@ -115,7 +115,7 @@ class SubscribeCommand(Command):
             a package.
         :rtype: string
         """
-        return pts_render_to_string(
+        return distro_tracker_render_to_string(
             'control/email-subscription-confirmation.txt', {
                 'package': self.package,
             }
@@ -201,7 +201,7 @@ class UnsubscribeCommand(Command):
             from a package.
         :rtype: string
         """
-        return pts_render_to_string(
+        return distro_tracker_render_to_string(
             'control/email-unsubscribe-confirmation.txt', {
                 'package': self.package,
             }
@@ -393,6 +393,6 @@ class UnsubscribeallCommand(Command):
             from all packages.
         :rtype: string
         """
-        return pts_render_to_string(
+        return distro_tracker_render_to_string(
             'control/email-unsubscribeall-confirmation.txt'
         )

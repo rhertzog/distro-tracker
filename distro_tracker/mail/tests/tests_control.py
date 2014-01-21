@@ -10,7 +10,7 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """
-Tests for :mod:`distro_tracker.mail.pts_control`.
+Tests for :mod:`distro_tracker.mail.tracker_control`.
 """
 from __future__ import unicode_literals
 from django.conf import settings
@@ -19,7 +19,7 @@ from django.core import mail
 from django.utils.encoding import force_bytes
 
 from distro_tracker.mail import control
-from distro_tracker.core.utils import pts_render_to_string
+from distro_tracker.core.utils import distro_tracker_render_to_string
 from distro_tracker.core.utils import extract_email_address_from_header
 from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.models import PackageName, EmailUser, Subscription
@@ -388,7 +388,7 @@ class ControlBotBasic(EmailControlTest):
         self.control_process()
 
         self.assert_response_sent()
-        self.assert_response_equal(pts_render_to_string(
+        self.assert_response_equal(distro_tracker_render_to_string(
             'control/email-plaintext-warning.txt'))
 
     def test_multipart_with_plaintext(self):
@@ -617,15 +617,15 @@ class ConfirmationTests(EmailControlTest):
         self.control_process()
 
         expected_messages = [
-            pts_render_to_string(
+            distro_tracker_render_to_string(
                 'control/email-unsubscribeall-confirmation.txt'
             ),
-            pts_render_to_string(
+            distro_tracker_render_to_string(
                 'control/email-unsubscribe-confirmation.txt', {
                     'package': self.packages[1].name,
                 }
             ),
-            pts_render_to_string(
+            distro_tracker_render_to_string(
                 'control/email-subscription-confirmation.txt', {
                     'package': self.packages[0].name,
                 }
@@ -633,7 +633,7 @@ class ConfirmationTests(EmailControlTest):
         ]
         c = CommandConfirmation.objects.all()[0]
         self.assert_response_equal(
-            pts_render_to_string(
+            distro_tracker_render_to_string(
                 'control/email-confirmation-required.txt', {
                     'command_confirmation': c,
                     'confirmation_messages': expected_messages,
@@ -773,7 +773,7 @@ class HelpCommandTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_in_response(pts_render_to_string('control/help.txt', {
+        self.assert_in_response(distro_tracker_render_to_string('control/help.txt', {
             'descriptions': self.get_all_help_command_descriptions()
         }))
 

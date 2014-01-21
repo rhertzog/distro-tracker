@@ -17,10 +17,10 @@ stdver_warnings Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`pts_tasks` Module
+:mod:`tracker_tasks` Module
 -----------------------
 
-.. automodule:: distro_tracker.stdver_warnings.pts_tasks
+.. automodule:: distro_tracker.stdver_warnings.tracker_tasks
     :members:
     :undoc-members:
     :show-inheritance:

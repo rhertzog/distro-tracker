@@ -34,9 +34,9 @@ Management commands
 In order to have the received email messages properly processed they need to
 be passed to the management commands implemented in the PTS.
 
-* :mod:`pts_control <distro_tracker.mail.management.commands.pts_control>` - handles control messages
-* :mod:`pts_dispatch <distro_tracker.mail.management.commands.pts_dispatch>` - handles package messages
-* :mod:`pts_receive_news <distro_tracker.mail.management.commands.pts_receive_news>` -
+* :mod:`distro_tracker_control <distro_tracker.mail.management.commands.tracker_control>` - handles control messages
+* :mod:`distro_tracker_dispatch <distro_tracker.mail.management.commands.tracker_dispatch>` - handles package messages
+* :mod:`distro_tracker_receive_news <distro_tracker.mail.management.commands.tracker_receive_news>` -
   handles messages which should be turned into news items
 
 These commands expect the received email message on standard input, which
@@ -61,7 +61,7 @@ and the system user which owns the application is called ``pts`` the contents of
 
 And the ``.forward`` file should be::
    
-   | python path/to/manage.py pts_control
+   | python path/to/manage.py distro_tracker_control
 
 Mails received at ``DISTRO_TRACKER_CONTACT_EMAIL`` should be saved or forwarded to the PTS
 administrators. This can be done by adding an additional alias to
@@ -79,14 +79,14 @@ To set this up, a custom router and transport can be added to exim
 configuration which acts as a catchall mechanism for any email addresses which
 are not recognized. Such router and transport could be::
 
-  pts_package_router:
+  distro_tracker_package_router:
     debug_print = "R: PTS catchall package router for $local_part@$domain"
     driver = accept
-    transport = pts_dispatch_pipe
+    transport = distro_tracker_dispatch_pipe
 
-  pts_dispatch_pipe:
+  distro_tracker_dispatch_pipe:
     driver = pipe
-    command = python /path/to/manage.py pts_dispatch
+    command = python /path/to/manage.py distro_tracker_dispatch
     user = pts
     group = mail
     log_output
@@ -120,9 +120,9 @@ The file ``/etc/postfix/virtual`` would be::
 The ``/etc/aliases`` file should then include the following lines::
   
   pts-owner: some-admin-user
-  pts-control: "| python /path/to/manage.py pts_control"
-  pts-dispatch: "| python /path/to/manage.py pts_dispatch"
-  pts-news: "| python /path/to/manage.py pts_receive_news"
+  pts-control: "| python /path/to/manage.py distro_tracker_control"
+  pts-dispatch: "| python /path/to/manage.py distro_tracker_dispatch"
+  pts-news: "| python /path/to/manage.py distro_tracker_receive_news"
 
 Then, the ``main.cf`` file should be edited to include::
 
@@ -135,7 +135,7 @@ Then, the ``main.cf`` file should be edited to include::
 
 This way, all messages which are sent to the owner are delivered to the local
 user ``some-admin-user``, messages sent to the control address are piped to
-the ``pts_control`` management command, mesages which should be turned into
-news items to the ``pts_receive_news`` command and messages sent to any other
-address on the given domain are passed to the ``pts_dispatch`` management
+the ``distro_tracker_control`` management command, mesages which should be turned into
+news items to the ``distro_tracker_receive_news`` command and messages sent to any other
+address on the given domain are passed to the ``distro_tracker_dispatch`` management
 command.

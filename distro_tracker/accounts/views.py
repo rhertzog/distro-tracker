@@ -37,7 +37,7 @@ from distro_tracker.accounts.models import UserEmail
 from distro_tracker.accounts.models import UserRegistrationConfirmation
 from distro_tracker.accounts.models import AddEmailConfirmation
 from distro_tracker.accounts.models import ResetPasswordConfirmation
-from distro_tracker.core.utils import pts_render_to_string
+from distro_tracker.core.utils import distro_tracker_render_to_string
 from distro_tracker.core.utils import render_to_json_response
 from distro_tracker.core.models import Subscription
 from distro_tracker.core.models import EmailUser
@@ -49,7 +49,7 @@ from django_email_accounts.views import LoginRequiredMixin
 
 class ConfirmationRenderMixin(object):
     def get_confirmation_email_content(self, confirmation):
-        return pts_render_to_string(self.confirmation_email_template, {
+        return distro_tracker_render_to_string(self.confirmation_email_template, {
             'confirmation': confirmation,
         })
 

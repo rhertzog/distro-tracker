@@ -49,7 +49,7 @@ class BaseTask(six.with_metaclass(PluginRegistry)):
       Subclasses of this class are automatically registered when created which
       allows the :class:`BaseTask` to have the full picture of all tasks and
       their mutual dependencies. However, to make sure the subclass is always
-      loaded, make sure to place it in a ``pts_tasks`` module at the top level
+      loaded, make sure to place it in a ``tracker_tasks`` module at the top level
       of a Django app.
     """
     DEPENDS_ON_EVENTS = ()
@@ -537,11 +537,11 @@ def clear_all_events_on_exception(func):
 
 def import_all_tasks():
     """
-    Imports tasks found in each installed app's ``pts_tasks`` module.
+    Imports tasks found in each installed app's ``tracker_tasks`` module.
     """
     for app in settings.INSTALLED_APPS:
         try:
-            module_name = app + '.' + 'pts_tasks'
+            module_name = app + '.' + 'tracker_tasks'
             importlib.import_module(module_name)
         except ImportError:
             # The app does not implement PTS tasks.
