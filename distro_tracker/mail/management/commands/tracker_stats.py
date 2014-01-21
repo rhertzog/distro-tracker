@@ -8,7 +8,7 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """
-Implements the command which outputs statistics on the PTS.
+Implements the command which outputs statistics.
 """
 from __future__ import unicode_literals
 from __future__ import print_function
@@ -23,7 +23,7 @@ from distro_tracker.core.models import SourcePackageName, Subscription, EmailUse
 
 class Command(BaseCommand):
     """
-    A Django management command which outputs some statistics about the PTS.
+    A Django management command which outputs some statistics.
     """
     option_list = BaseCommand.option_list + (
         make_option('--json',
@@ -34,7 +34,7 @@ class Command(BaseCommand):
     )
 
     help = (
-        "Get some statistics about the Package Tracking System\n"
+        "Get some statistics about the package tracker:\n"
         "- Total number of source packages with at least one subscription\n"
         "- Total number of subscriptions\n"
         "- Total number of unique emails\n"

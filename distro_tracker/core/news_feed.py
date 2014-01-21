@@ -31,7 +31,7 @@ class PackageNewsFeed(Feed):
         return package
 
     def title(self, obj):
-        return "{vendor} PTS news for {pkg}".format(
+        return "{vendor} package news for {pkg}".format(
             vendor=settings.DISTRO_TRACKER_VENDOR_NAME,
             pkg=obj.name)
 

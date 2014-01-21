@@ -8,7 +8,7 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """
-Implements a command to start a number of available PTS tasks.
+Implements a command to start a number of available Distro Tracker tasks.
 A task is a subclass of :class:`distro_tracker.core.tasks.BaseTask`.
 """
 from __future__ import unicode_literals
@@ -20,10 +20,10 @@ import traceback
 
 class Command(BaseCommand):
     """
-    A management command which starts a number of PTS tasks.
+    A management command which starts a number of Distro Tracker tasks.
     A task is a subclass of :class:`distro_tracker.core.tasks.BaseTask`.
     """
-    help = "Start all the PTS tasks given by name."
+    help = "Start all the Distro Tracker tasks given by name."
     args = "task [task ...]"
     option_list = BaseCommand.option_list + (
         make_option('--force',

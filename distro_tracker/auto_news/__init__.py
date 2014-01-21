@@ -8,6 +8,6 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """
-The app implements the PTS tasks necessary to generate news items based on
+The app implements the Distro Tracker tasks necessary to generate news items based on
 changes detected in the repositories.
 """

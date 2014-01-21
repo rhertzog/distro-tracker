@@ -23,7 +23,7 @@ from django_email_accounts.models import (
 class User(EmailAccountsUser):
     """
     Proxy model for :class:`django_email_accounts.models.User` extending it
-    with some PTS specific methods.
+    with some Distro Tracker specific methods.
     """
     class Meta:
         proxy = True

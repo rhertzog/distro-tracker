@@ -22,7 +22,7 @@ DISTRO_TRACKER_CONTROL_EMAIL = settings.DISTRO_TRACKER_CONTROL_EMAIL
 
 class MetaCommand(type):
     """
-    Meta class for PTS Commands.
+    Meta class for Distro Tracker Commands.
 
     Transforms the :py:attr:`Command.REGEX_LIST` given in a Command sublclass
     to include all aliases of the command. When implementing a

@@ -1,7 +1,7 @@
 .. _setup:
 
-Package Tracking System Setup
-=============================
+Distro Tracker Setup
+====================
 
 Contents:
 

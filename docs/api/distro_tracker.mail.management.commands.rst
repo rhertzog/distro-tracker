@@ -9,7 +9,7 @@ commands Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`distro_tracker_add_keyword` Module
+:mod:`tracker_add_keyword` Module
 -----------------------------
 
 .. automodule:: distro_tracker.mail.management.commands.tracker_add_keyword
@@ -17,7 +17,7 @@ commands Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`distro_tracker_control` Module
+:mod:`tracker_control` Module
 -------------------------
 
 .. automodule:: distro_tracker.mail.management.commands.tracker_control
@@ -25,7 +25,7 @@ commands Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`distro_tracker_dispatch` Module
+:mod:`tracker_dispatch` Module
 --------------------------
 
 .. automodule:: distro_tracker.mail.management.commands.tracker_dispatch
@@ -33,7 +33,7 @@ commands Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`distro_tracker_dump_subscribers` Module
+:mod:`tracker_dump_subscribers` Module
 ----------------------------------
 
 .. automodule:: distro_tracker.mail.management.commands.tracker_dump_subscribers
@@ -41,7 +41,7 @@ commands Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`distro_tracker_receive_news` Module
+:mod:`tracker_receive_news` Module
 ------------------------------
 
 .. automodule:: distro_tracker.mail.management.commands.tracker_receive_news
@@ -49,7 +49,7 @@ commands Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`distro_tracker_stats` Module
+:mod:`tracker_stats` Module
 -----------------------
 
 .. automodule:: distro_tracker.mail.management.commands.tracker_stats
@@ -57,7 +57,7 @@ commands Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`distro_tracker_unsubscribe_all` Module
+:mod:`tracker_unsubscribe_all` Module
 ---------------------------------
 
 .. automodule:: distro_tracker.mail.management.commands.tracker_unsubscribe_all

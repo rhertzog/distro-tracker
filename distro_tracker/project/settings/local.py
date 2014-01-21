@@ -1,7 +1,7 @@
 """Site-specific settings
 
 This is the file that you should edit to customize the setting of your
-PTS installation. By default it imports settings from the ``selected.py``
+Distro Tracker installation. By default it imports settings from the ``selected.py``
 file which is a symlink to the type of installation to you have
 (typically, ``production.py`` or ``development.py``) and lets you add
 overrides on top of those type-of-installation-specific settings.
@@ -31,7 +31,7 @@ from .selected import *
 # DISTRO_TRACKER_BOUNCES_LIKELY_SPAM_EMAIL = DISTRO_TRACKER_BOUNCES_EMAIL
 # ALLOWED_HOSTS = [ DISTRO_TRACKER_FQDN ]
 
-# If you don't use the packaged version of the PTS, put a random secret
+# If you don't use the packaged version of Distro Tracker, put a random secret
 # key here. DO NOT USE THE EXAMPLE KEY GIVEN BELOW.
 # SECRET_KEY = 'etu2#5lv=!0(g9l31mw=cpwhioy!egg60lb5o3_67d83#(wu-u'
 

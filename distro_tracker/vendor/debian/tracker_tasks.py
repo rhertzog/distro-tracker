@@ -778,8 +778,8 @@ class UpdateExcusesTask(BaseTask):
 
     def _adapt_excuse_links(self, excuse):
         """
-        If the excuse contains any anchor links, convert them to links to PTS
-        package pages. Return the original text unmodified, otherwise.
+        If the excuse contains any anchor links, convert them to links to
+        Distro Tracker package pages. Return the original text unmodified, otherwise.
         """
         re_anchor_href = re.compile(r'^#(.*)$')
         html = soup(excuse)

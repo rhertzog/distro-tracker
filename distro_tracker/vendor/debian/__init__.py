@@ -8,4 +8,4 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 
-"""A package containing Debian-specific functionality of the PTS."""
+"""A package containing Debian-specific functionality of Distro Tracker."""

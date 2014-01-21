@@ -11,7 +11,7 @@
 # except according to the terms contained in the LICENSE file.
 """
 This module contains the tests for the dispatch functionality
-(:py:mod:`distro_tracker.mail.dispatch` module) of PTS.
+(:py:mod:`distro_tracker.mail.dispatch` module) of distro-tracker.
 """
 from __future__ import unicode_literals
 from django.test import TestCase

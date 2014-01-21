@@ -8,7 +8,7 @@ Email Address Settings
 
 The first step is to configure the project to use email addresses of your
 choosing. You should modify the following values in
-``pts/project/settings/local.py``:
+``distro_tracker/project/settings/local.py``:
 
 * DISTRO_TRACKER_CONTROL_EMAIL
 
@@ -32,7 +32,7 @@ Management commands
 -------------------
 
 In order to have the received email messages properly processed they need to
-be passed to the management commands implemented in the PTS.
+be passed to the following management commands:
 
 * :mod:`distro_tracker_control <distro_tracker.mail.management.commands.tracker_control>` - handles control messages
 * :mod:`distro_tracker_dispatch <distro_tracker.mail.management.commands.tracker_dispatch>` - handles package messages
@@ -49,22 +49,22 @@ Exim4
 Mails received to ``DISTRO_TRACKER_CONTROL_EMAIL`` address should be piped to the
 ``control_process`` command. A way to set this up in Exim would be to create a
 new alias for the local part of the control email address and set it to point
-to the user who owns the PTS application. That user should have a ``.forward``
+to the user who owns the Distro Tracker application. That user should have a ``.forward``
 file in his home directory which includes the directive to pipe incoming email
 to the command.
 
 For example, if the ``DISTRO_TRACKER_CONTROL_EMAIL`` is set to ``control@distro_tracker.debian.net``
-and the system user which owns the application is called ``pts`` the contents of
+and the system user which owns the application is called ``dtracker`` the contents of
 ``/etc/aliases`` should include the following line::
 
-   control: pts
+   control: dtracker
 
 And the ``.forward`` file should be::
    
    | python path/to/manage.py distro_tracker_control
 
-Mails received at ``DISTRO_TRACKER_CONTACT_EMAIL`` should be saved or forwarded to the PTS
-administrators. This can be done by adding an additional alias to
+Mails received at ``DISTRO_TRACKER_CONTACT_EMAIL`` should be saved or forwarded to the
+Distro Tracker administrators. This can be done by adding an additional alias to
 ``/etc/aliases/``. For example, if ``DISTRO_TRACKER_CONTACT_EMAIL`` is set to
 ``owner@distro_tracker.debian.net``, the line in the aliases file would be::
    
@@ -73,21 +73,21 @@ administrators. This can be done by adding an additional alias to
 All mail addresses at the ``DISTRO_TRACKER_FQDN`` domain (apart from ``DISTRO_TRACKER_CONTROL_EMAIL``
 and ``DISTRO_TRACKER_CONTACT_EMAIL`` addresses if they are on that domain), are considered
 package names. As such, all of them should be piped to the ``dispatch``
-management command so that they can be processed by the PTS.
+management command so that they can be processed by Distro Tracker.
 
 To set this up, a custom router and transport can be added to exim
 configuration which acts as a catchall mechanism for any email addresses which
 are not recognized. Such router and transport could be::
 
   distro_tracker_package_router:
-    debug_print = "R: PTS catchall package router for $local_part@$domain"
+    debug_print = "R: Distro Tracker catchall package router for $local_part@$domain"
     driver = accept
     transport = distro_tracker_dispatch_pipe
 
   distro_tracker_dispatch_pipe:
     driver = pipe
     command = python /path/to/manage.py distro_tracker_dispatch
-    user = pts
+    user = dtracker
     group = mail
     log_output
 
@@ -111,18 +111,18 @@ The file ``/etc/postfix/virtual`` would be::
 
   distro_tracker.debian.net not-important-ignored
   postmaster@distro_tracker.debian.net postmaster@localhost
-  owner@distro_tracker.debian.net pts-owner@localhost
-  control@distro_tracker.debian.net pts-control@localhost
-  _news@distro_tracker.debian.net pts-news@localhost
+  owner@distro_tracker.debian.net dtracker-owner@localhost
+  control@distro_tracker.debian.net dtracker-control@localhost
+  _news@distro_tracker.debian.net dtracker-news@localhost
   # Catchall for package emails
-  @distro_tracker.debian.net pts-dispatch@localhost
+  @distro_tracker.debian.net dtracker-dispatch@localhost
 
 The ``/etc/aliases`` file should then include the following lines::
   
-  pts-owner: some-admin-user
-  pts-control: "| python /path/to/manage.py distro_tracker_control"
-  pts-dispatch: "| python /path/to/manage.py distro_tracker_dispatch"
-  pts-news: "| python /path/to/manage.py distro_tracker_receive_news"
+  dtracker-owner: some-admin-user
+  dtracker-control: "| python /path/to/manage.py distro_tracker_control"
+  dtracker-dispatch: "| python /path/to/manage.py distro_tracker_dispatch"
+  dtracker-news: "| python /path/to/manage.py distro_tracker_receive_news"
 
 Then, the ``main.cf`` file should be edited to include::
 

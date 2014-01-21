@@ -8,10 +8,10 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 
-"""An app which enables the PTS to access vendor-specific functionality.
+"""An app which enables Distro Tracker to access vendor-specific functionality.
 
 Vendors can define their own specific set of rules for mail dispatch and the
-Web interface or provide additional data which the PTS can plug in to
+Web interface or provide additional data which Distro Tracker can plug in to
 appropriate functions.
 
 Each rule should be implemented as a callable which takes a defined set of

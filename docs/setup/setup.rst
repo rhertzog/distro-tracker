@@ -1,14 +1,14 @@
-Setting up the Package Tracking System
-======================================
+Setting up Distro Tracker
+=========================
 
 .. _requirements:
 
 Requirements
 ------------
 
-The Package Tracking System currently depends on the following Debian packages:
+Distro Tracker currently depends on the following Debian packages:
 
-- python-django (>= 1.5)
+- python-django (>= 1.6)
 - python-requests
 - python-django-jsonfield
 - python-django-south
@@ -30,7 +30,7 @@ For Python2.7, the following additional packages are required:
 Database
 --------
 
-The PTS does not rely on any database specific features and as such should be
+Distro Tracker does not rely on any database specific features and as such should be
 able to run on top of any database server. The only possible known issue is when
 using sqlite3 which has a limit on the number of query parameters of 999 on
 some systems.
@@ -43,12 +43,12 @@ i.e. psycopg2 for PostgreSQL and MySQL-Python for MySQL, etc.
 Local Settings
 --------------
 
-While the PTS tries to guess as much as needed, you generally will want
+While Distro Tracker tries to guess as much as needed, you generally will want
 to customize some of its parameters. You will do so in
-``pts/project/settings/local.py``. Have a look at the ``defaults.py``
+``distro_tracker/project/settings/local.py``. Have a look at the ``defaults.py``
 to learn about all the variables that you can override and extend.
 
-To make things easier, the PTS provides default configuration suitable
+To make things easier, Distro Tracker provides default configuration suitable
 for production use (installed from the Debian package) or for development
 use (running out of a git checkout). Depending on the case, the
 ``selected.py`` symlink points either to ``production.py`` or to
@@ -89,9 +89,9 @@ Tests
 
 Once everything is set up, be sure to run the test suite to make sure
 everything is actually working as expected. You can do this by issuing the
-following command from the PTS root directory::
+following command from the Distro Tracker root directory::
 
-$ ./manage.py test core mail vendor
+$ ./manage.py test distro_tracker
 
 Alternatively, you may run the full test suite, including Django's internal
 tests, by doing::

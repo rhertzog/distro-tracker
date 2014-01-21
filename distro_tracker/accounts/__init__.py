@@ -7,4 +7,4 @@
 # distribution and at http://deb.li/DTLicense. No part of Distro Tracker,
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
-"""The app implements PTS accounts and their management."""
+"""The app implements Distro Tracker accounts and their management."""

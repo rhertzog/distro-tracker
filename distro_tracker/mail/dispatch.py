@@ -421,7 +421,7 @@ def handle_bounces(sent_to_address):
                 'packages': user.packagename_set.all()
             })
         EmailMessage(
-            subject='All your subscriptions from the PTS have been cancelled',
+            subject='All your package subscriptions have been cancelled',
             from_email=settings.DISTRO_TRACKER_BOUNCES_LIKELY_SPAM_EMAIL,
             to=[user_email],
             cc=[settings.DISTRO_TRACKER_CONTACT_EMAIL],

@@ -1,32 +1,37 @@
 .. _about:
 
-What is the Package Tracking System?
-====================================
+What is Distro Tracker?
+=======================
 
-The Package Tracking System allows users to follow package information through
-email messages and a Web presentation. This information may be interesting to
-package maintainers, contributors, advanced users, QA members, etc...
+Distro Tracker lets you follow the evolution of a Debian-based
+distribution both with email updates and with a comprehensive web
+interface. This information may be interesting to package maintainers,
+contributors, advanced users, QA members, etc...
 
-The PTS aims to be as extensible and as customizable as possible in order to
-allow Debian derivatives to deploy their own Package Tracking System if they
-so choose.
+Most of the information tracked is about packages but it can be
+displayed used in multiple contexts (per package, per maintenance team,
+per maintainer, etc.).
+
+Distro Tracker aims to be as extensible and as customizable as possible in
+order to allow Debian derivatives to deploy their own instance of Distro
+Tracker if they so choose.
 
 .. _email_about:
 
 Email Interface
 ---------------
 
-The Package Tracking System forwards email messages regarding a package, to users
+The email interface forwards email messages regarding a package, to users
 who are subscribed to that package.
 
-The PTS receives email messages for each package on a special address in the
-form of ``<package-name>@<pts-domain>``. If the local part of the email is a
+Distro Tracker receives email messages for each package on a special address in the
+form of ``<package-name>@<distro-tracker-domain>``. If the local part of the email is a
 valid package name, the message is a valid package message. Messages to the
 package's address can be sent by either automated tools or users themselves.
 
 Each package email is first tagged with one of the existing keywords and then
 forwarded only to the subscribers interested in that keyword. Users sending
-package messages to the PTS can tag their own messages with a keyword by using a
+package messages to the tracker can tag their own messages with a keyword by using a
 local part of the address in the form of ``<package-name>_<keyword>``.
 
 A user can choose which mails they are interested in, by selecting to either
@@ -41,8 +46,8 @@ tagged with the "default" keyword.
 The keyword of the forwarded message is included in a mail header
 ``X-Distro-Tracker-Keyword``.
 
-There are three types of packages which are considered valid packages for email
-message forwarding by the PTS:
+There are three types of packages which are considered valid packages for the
+email interface:
 
 - source package
 - pseudo package - a list of pseudo packages should be provided by a vendor specific
@@ -57,7 +62,7 @@ Email Control Interface
 
 Users can control their subscriptions (packages subscribed to, keywords to
 accept) by sending control commands enclosed in an email message to a robot. The
-designated email address for its control interface is ``control@<pts-domain>``,
+designated email address for its control interface is ``control@<distro-tracker-domain>``,
 by default. This is customizable by vendors.
 
 Control emails contain a list of commands, each in a separate line. Available

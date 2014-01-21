@@ -1,7 +1,6 @@
 """Debian.org specific settings"""
 
-#: A module implementing vendor-specific functionality which the PTS can hook
-#: into.
+#: A module implementing vendor-specific hooks for use by Distro Tracker.
 #: For more information see :py:mod:`distro_tracker.vendor`.
 DISTRO_TRACKER_VENDOR_RULES = 'distro_tracker.vendor.debian.rules'
 

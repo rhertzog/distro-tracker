@@ -11,7 +11,7 @@
 # except according to the terms contained in the LICENSE file.
 
 """
-Tests for the PTS core utils.
+Tests for the Distro Tracker core utils.
 """
 from __future__ import unicode_literals
 from django.test import TestCase, SimpleTestCase

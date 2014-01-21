@@ -11,7 +11,7 @@
 # except according to the terms contained in the LICENSE file.
 
 """
-Tests for the PTS core package.
+Tests for the Distro Tracker core package.
 """
 from __future__ import unicode_literals
 

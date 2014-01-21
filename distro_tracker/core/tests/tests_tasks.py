@@ -11,7 +11,7 @@
 # except according to the terms contained in the LICENSE file.
 
 """
-Tests for the PTS core's tasks framework.
+Tests for the Distro Tracker core's tasks framework.
 """
 from __future__ import unicode_literals
 from django.test import SimpleTestCase, TestCase

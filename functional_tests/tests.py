@@ -9,7 +9,7 @@
 # except according to the terms contained in the LICENSE file.
 
 """
-Functional tests for the Package Tracking System.
+Functional tests for Distro Tracker.
 """
 from __future__ import unicode_literals
 from django.test import LiveServerTestCase
@@ -226,7 +226,7 @@ class PackagePageTest(SeleniumTestCase):
         package_name_element = self.browser.find_element_by_tag_name('h1')
         self.assertEqual(package_name_element.text, self.package.name)
 
-        # The user sees a footer with general information about PTS
+        # The user sees a footer with general information
         self.assert_element_with_id_in_page('footer')
 
         # There is a header with a form with a text box where the user can
@@ -259,11 +259,11 @@ class PackagePageTest(SeleniumTestCase):
         Tests that the user can access a package page starting from the index
         and using the provided form.
         """
-        # The user opens the start page of the PTS
+        # The user opens the start page
         self.get_page('/')
 
-        # He sees it is the index page of the PTS
-        self.assertIn('Package Tracking System', self.browser.title)
+        # He sees it is the index page
+        self.assertIn('Package Tracker', self.browser.title)
 
         # There is a form which he can use for access to pacakges.
         self.assert_element_with_id_in_page('package-search-form')
@@ -567,7 +567,7 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
         self.assert_current_url_equal(profile_url)
 
         # A message is provided telling the user that he has been registered
-        self.assert_in_page_body('successfully registered')
+        self.assert_in_page_body('Congratulations, the registration is almost over.')
 
         # When the user tries opening the confirmation page for the same key
         # again, it is no longer valid
@@ -580,7 +580,7 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
         # The user goes back to the profile page and this time there is no
         # message saying he has been registered.
         self.get_page(profile_url)
-        self.assert_not_in_page_body('successfully registered')
+        self.assert_not_in_page_body('Congratulations, the registration is almost over.')
 
         # The user now wishes to log out
         self.assert_in_page_body('Log out')
@@ -622,7 +622,7 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
             [email.email],
             [e.email for e in user.emails.all()])
         # ...a notification is displayed informing him of that
-        self.assert_in_page_body('successfully registered')
+        self.assert_in_page_body('Congratulations, the registration is almost over.')
 
         # The existing subscriptions are not removed
         self.assertTrue(user.is_subscribed_to(package_name))
@@ -761,7 +761,7 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
         Tests that a user that has only one email address can subscribe to a
         package directly from the package page.
         """
-        # The user first logs in to the PTS
+        # The user first logs in
         self.log_in()
         # The user opens a package page
         self.get_page('/' + self.package.name)
@@ -808,7 +808,7 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
         other_email = 'other-email@domain.com'
         self.user.emails.create(email=other_email)
 
-        # The user logs in to the PTS
+        # The user logs in
         self.log_in()
         # The user opens a package page and clicks to subscribe button
         self.get_page('/' + self.package.name)
@@ -1075,9 +1075,8 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         self.get_page(reverse('pts-accounts-confirm-add-email', kwargs={
             'confirmation_key': confirmation.confirmation_key,
         }))
-        # And is notified that the address has becomes associated with a PTS
-        # account.
-        self.assert_in_page_body('now associated with a PTS account')
+        # And is notified that the address is associated with an account
+        self.assert_in_page_body('now associated with your account')
 
         # The user goes back to his profile page to check if the email can be
         # found there

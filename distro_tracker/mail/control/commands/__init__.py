@@ -9,7 +9,7 @@
 # except according to the terms contained in the LICENSE file.
 
 """
-Defines and implements all Package Tracking System control commands.
+Defines and implements all Distro Tracker control commands.
 """
 from __future__ import unicode_literals
 

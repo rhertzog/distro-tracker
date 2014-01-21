@@ -565,7 +565,7 @@ class UpdateRepositoriesTask(PackageUpdateTask):
 
         :param updated_sources: A list of ``(repository, sources_file_name)``
             pairs giving the Sources files which were updated and should be
-            used to update the PTS tracked information too.
+            used to update the Distro Tracker tracked information too.
         """
         # Group all files by repository to which they belong
         repository_files = self.group_files_by_repository(updated_sources)
@@ -609,7 +609,7 @@ class UpdateRepositoriesTask(PackageUpdateTask):
 
         :param updated_sources: A list of ``(repository, packages_file_name)``
             pairs giving the Packages files which were updated and should be
-            used to update the PTS tracked information too.
+            used to update the Distro Tracker tracked information too.
         """
         # Group all files by repository to which they belong
         repository_files = self.group_files_by_repository(updated_packages)

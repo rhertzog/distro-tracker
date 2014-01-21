@@ -8,6 +8,5 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """
-The app implements all the functionality of the PTS exposed over the email
-interface.
+Email interface of Distro Tracker.
 """

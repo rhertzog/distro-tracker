@@ -8,7 +8,7 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """
-Implements a command which starts all independent PTS tasks.
+Implements a command which starts all independent Distro Tracker tasks.
 A task is a subclass of :class:`distro_tracker.core.tasks.BaseTask`.
 """
 from __future__ import unicode_literals
@@ -19,9 +19,9 @@ from distro_tracker.core.tasks import run_all_tasks
 
 class Command(BaseCommand):
     """
-    A management command which starts all independent PTS tasks.
+    A management command which starts all independent Distro Tracker tasks.
     """
-    help = "Start all independent PTS tasks."
+    help = "Start all independent Distro Tracker tasks."
     option_list = BaseCommand.option_list + (
         make_option('--force',
                     action='store_true',

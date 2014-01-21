@@ -8,7 +8,7 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """
-Implements all commands which deal with PTS teams.
+Implements all commands which deal with teams.
 """
 from __future__ import unicode_literals
 

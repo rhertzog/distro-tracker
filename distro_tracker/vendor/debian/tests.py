@@ -11,7 +11,7 @@
 # except according to the terms contained in the LICENSE file.
 
 """
-Tests for Debian-specific modules/functionality of the PTS.
+Tests for Debian-specific modules/functionality of Distro Tracker.
 """
 
 from __future__ import unicode_literals
@@ -670,7 +670,7 @@ class DebianNewsFromEmailTest(TestCase):
     def test_source_upload_package_does_not_exist(self):
         """
         Tests that no news are created when the notification of a new source
-        upload for a package not tracked by the PTS is received.
+        upload for a package not tracked by Distro Tracker is received.
         """
         subject = self.get_accepted_subject('no-exist', '1.0.0')
         self.set_subject(subject)
@@ -711,8 +711,8 @@ class DebianNewsFromEmailTest(TestCase):
     @temporary_media_dir
     def test_dak_rm_no_package(self):
         """
-        Tests that a dak rm message referencing a package which the PTS does
-        not track, does not create any news.
+        Tests that a dak rm message referencing a package which Distro
+        Tracker does not track, does not create any news.
         """
         subject = 'Removed package(s) from unstable'
         self.set_subject(subject)
@@ -811,7 +811,7 @@ class DebianNewsFromEmailTest(TestCase):
     def test_testing_watch_package_no_exist(self):
         """
         Tests that an email received from the Testing Watch which references
-        a package not tracked by the PTS does not create any news items.
+        a package not tracked by Distro Tracker does not create any news items.
         """
         subject = self.get_removed_from_testing_subject('no-exist')
         self.set_subject(subject)
@@ -4399,7 +4399,7 @@ class DebianSsoLoginTests(TestCase):
 
     def test_user_logged_out(self, get_user_details):
         """
-        Tests that PTS logs out the user after the SSO headers are invalid.
+        Tests that Distro Tracker logs out the user after the SSO headers are invalid.
         """
         user = User.objects.create_user(
             main_email='user@debian.org')
@@ -4413,7 +4413,7 @@ class DebianSsoLoginTests(TestCase):
 
     def test_user_logged_out_no_header(self, get_user_details):
         """
-        Tests that PTS logs out the user if the SSO headers are gone.
+        Tests that Distro Tracker logs out the user if the SSO headers are gone.
         """
         user = User.objects.create_user(
             main_email='user@debian.org')

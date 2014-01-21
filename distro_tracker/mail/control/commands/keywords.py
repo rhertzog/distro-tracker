@@ -169,7 +169,7 @@ class ViewDefaultKeywordsCommand(Command, KeywordCommandMixin):
   Tells you the keywords you are accepting by default for packages
   with no specific keywords set.
 
-  Each mail sent through the Package Tracking System is associated
+  Each mail sent through the Distro Tracker is associated
   to a keyword and you receive only the mails associated to keywords
   you are accepting.
   You may select a different set of keywords for each package.'''
@@ -207,7 +207,7 @@ class ViewPackageKeywordsCommand(Command, KeywordCommandMixin):
         'description': '''keyword <srcpackage> [<email>]
   Tells you the keywords you are accepting for the given package.
 
-  Each mail sent through the Package Tracking System is associated
+  Each mail sent through Distro Tracker is associated
   to a keyword and you receive only the mails associated to keywords
   you are accepting.
   You may select a different set of keywords for each package.'''

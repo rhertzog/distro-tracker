@@ -8,7 +8,7 @@ Integration with a Web Server
 Apache2
 -------
 
-PTS can be deployed as any other Django project on Apache. For more information
+Distro Tracker can be deployed as any other Django project on Apache. For more information
 you can see the following
 `link <https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/modwsgi/>`_.
 
@@ -25,16 +25,16 @@ file in sites-available with the following settings::
             DefaultType text/plain
             AddDefaultCharset utf-8
 
-            ErrorLog ${APACHE_LOG_DIR}/pts/error.log
+            ErrorLog ${APACHE_LOG_DIR}/distro-tracker/error.log
             LogLevel warn
 
-            CustomLog ${APACHE_LOG_DIR}/pts/access.log combined
+            CustomLog ${APACHE_LOG_DIR}/distro-tracker/access.log combined
 
-            WSGIScriptAlias / /path/to/pts/project/wsgi.py
+            WSGIScriptAlias / /path/to/distro_tracker/project/wsgi.py
 
             Alias /static/ /path/to/assets/static/
 
-            <Directory /path/to/pts/project>
+            <Directory /path/to/distro_tracker/project>
                     <Files wsgi.py>
                             Order allow,deny
                             Allow from all
@@ -61,7 +61,7 @@ Other mod_wsgi apache configurations are, of course, possible, for using
 nginx and Gunicorn
 ------------------
 
-The PTS does not include gunicorn in its
+Distro Tracker does not include gunicorn in its
 :data:`INSTALLED_APPS <distro_tracker.project.settings.INSTALLED_APPS>`, but there is
-nothing to prevent users to include it and deploy the PTS with gunicorn
+nothing to prevent users to include it and deploy it with gunicorn
 running as the WSGI server and a reverse proxy in front of it.

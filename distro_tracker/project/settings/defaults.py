@@ -8,7 +8,7 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 
-"""Default Django settings for the PTS project.
+"""Default Django settings for the Distro Tracker project.
 
 Most settings are documented in this file and they are initialized to some
 reasonable default values when possible.  They will be extended (and
@@ -255,9 +255,9 @@ LOGGING = {
 #: See https://docs.djangoproject.com/en/1.5/ref/settings/#allowed-hosts
 ALLOWED_HOSTS = [ socket.getfqdn() ]
 
-## PTS specific settings
+## Distro Tracker specific settings
 
-#: The fully qualified domain name for the PTS deployment
+#: The fully qualified domain name for the Distro Tracker deployment
 DISTRO_TRACKER_FQDN = socket.getfqdn()
 
 #: The name of the vendor. Equivalent to the Vendor field of an
@@ -268,7 +268,7 @@ DISTRO_TRACKER_VENDOR_NAME = ".".join(DISTRO_TRACKER_FQDN.split(".")[1:2]).capit
 DISTRO_TRACKER_VENDOR_URL = "http://www." + ".".join(DISTRO_TRACKER_FQDN.split(".", 1)[1:2])
 
 #: This directory is used to store the locally cached resources.
-#: Any PTS app should be able to use this directory to store its caches.
+#: Any Distro Tracker app should be able to use this directory to store its caches.
 #: For example, it is used to store the APT cache of repository information and
 #: the cache of retrieved Web resources.
 DISTRO_TRACKER_CACHE_DIRECTORY = os.path.join(DISTRO_TRACKER_BASE_PATH, 'data', 'cache')
@@ -316,3 +316,9 @@ DISTRO_TRACKER_EMAIL_NEWS_HEADERS = (
 DISTRO_TRACKER_APT_CACHE_MAX_SIZE = 5 * 1024 ** 3  # 5 GiB
 
 DJANGO_EMAIL_ACCOUNTS_POST_MERGE_HOOK = 'distro_tracker.accounts.hooks.post_merge'
+
+# Small helpers
+def GET_INSTANCE_NAME():
+    from django.conf import settings
+    return "{vendor} Package Tracker".format(
+        vendor=settings.DISTRO_TRACKER_VENDOR_NAME)

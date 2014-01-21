@@ -7,7 +7,7 @@
 # distribution and at http://deb.li/DTLicense. No part of Distro Tracker,
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
-"""Implements the PTS tasks necessary for interesting package source files."""
+"""Implements the Distro Tracker tasks necessary for interesting package source files."""
 from __future__ import unicode_literals
 from distro_tracker.core.tasks import BaseTask
 from distro_tracker.core.utils.packages import AptCache

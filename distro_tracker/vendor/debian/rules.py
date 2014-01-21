@@ -645,7 +645,7 @@ def create_news_from_email_message(message):
             package_name, version = removal
             package = get_or_none(SourcePackageName, name=package_name)
             if not package:
-                # This package is not tracked by the PTS
+                # This package is not tracked
                 continue
             title = "Removed {ver} from {suite}".format(ver=version, suite=suite)
             created_news.append(EmailNews.objects.create_email_news(
@@ -659,7 +659,7 @@ def create_news_from_email_message(message):
         package_name = message['X-Testing-Watch-Package']
         package = get_or_none(SourcePackageName, name=package_name)
         if not package:
-            # This package is not tracked by the PTS
+            # This package is not tracked
             return
         title = message.get('Subject', '')
         if not title:
@@ -699,13 +699,13 @@ def get_extra_versions(package):
 def pre_login(user):
     """
     If the user has a @debian.org email associated, don't let him log in
-    directly through the PTS.
+    directly through local authentication.
     """
     if any(user_email.email.endswith('@debian.org')
            for user_email in user.emails.all()):
         raise forms.ValidationError(
             "Your account has a @debian.org email address associated. "
-            "To log in to the PTS, you must first authenticate on http://sso.debian.org")
+            "To log in to the package tracker, you must first authenticate on http://sso.debian.org")
 
 
 def post_logout(user, secure=False):

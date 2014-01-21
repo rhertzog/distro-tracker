@@ -1340,7 +1340,7 @@ class MailingList(models.Model):
     """
     Describes a known mailing list.
 
-    This provides PTS users to define the known mailing lists through the admin
+    This provides Distro Tracker users to define the known mailing lists through the admin
     panel in order to support displaying their archives in the package pages
     without modifying any code.
 

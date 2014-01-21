@@ -9,7 +9,7 @@
 # except according to the terms contained in the LICENSE file.
 
 """
-A module which defines functions to allow other parts of the PTS to hook
+A module which defines functions to allow other parts of Distro Tracker to hook
 into the vendor-specific functionality.
 """
 from django.conf import settings

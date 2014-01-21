@@ -51,7 +51,7 @@ class DebianSsoUserMiddleware(RemoteUserMiddleware):
 
     def process_request(self, request):
         if self.header not in request.META:
-            # If a user is logged in to the PTS by Debian SSO, sign him out
+            # If a user is logged in via Debian SSO, sign him out
             self.log_out_user(request)
             return
 
@@ -76,7 +76,7 @@ class DebianSsoUserMiddleware(RemoteUserMiddleware):
 class DebianSsoUserBackend(RemoteUserBackend):
     """
     The authentication backend which authenticates the provided remote user
-    (identified by his @debian.org email) in the PTS. If a matching User
+    (identified by his @debian.org email) in Distro Tracker. If a matching User
     model instance does not exist, one is automatically created. In that case
     the DDs first and last name are pulled from Debian's LDAP.
     """

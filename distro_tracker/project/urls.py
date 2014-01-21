@@ -7,7 +7,7 @@
 # distribution and at http://deb.li/DTLicense. No part of Distro Tracker,
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
-"""The URL routes for the PTS project."""
+"""The URL routes for the Distro Tracker project."""
 
 from __future__ import unicode_literals
 from django.conf.urls import patterns, include, url

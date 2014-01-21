@@ -7,13 +7,13 @@
 # distribution and at http://deb.li/DTLicense. No part of Distro Tracker,
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
-"""Implements Django context processors specific for the PTS."""
+"""Implements Django context processors specific to Distro Tracker."""
 from __future__ import unicode_literals
 from django.conf import settings
 from django.contrib.sites.models import Site
 
 
-#: Defines a dictionary of all PTS extra context key/value pairs that are to be
+#: Defines a dictionary of all Distro Tracker extra context key/value pairs that are to be
 #: included in the :class:`RequestContext <django.template.RequestContext>`.
 DISTRO_TRACKER_EXTRAS = {
     'DISTRO_TRACKER_VENDOR_NAME': settings.DISTRO_TRACKER_VENDOR_NAME,

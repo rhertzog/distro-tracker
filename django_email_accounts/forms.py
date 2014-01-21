@@ -27,7 +27,9 @@ class AuthenticationForm(ContribAuthenticationForm):
 
 class UserCreationForm(forms.ModelForm):
     """
-    A form for creating a PTS user (:class:`User <pts.accounts.models.User>`).
+    A form for creating a user. It uses the user model returned by
+    django.contrib.auth.get_user_model(). That model must have
+    the main_email, first_name and last_name fields.
 
     The created user has no privileges and its account is inactive until
     a confirmation link is followed.

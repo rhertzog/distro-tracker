@@ -129,7 +129,7 @@ def get_panels_for_package(package):
             module_name = app + '.' + 'tracker_panels'
             importlib.import_module(module_name)
         except ImportError:
-            # The app does not implement PTS package panels.
+            # The app does not implement package panels.
             pass
 
     panels = defaultdict(lambda: [])
@@ -782,7 +782,7 @@ class BugsPanel(BasePanel):
     """
     The panel displays bug statistics for the package.
 
-    This panel is highly customizable to make sure that the PTS can be
+    This panel is highly customizable to make sure that Distro Tracker can be
     integrated with any bug tracker.
 
     The default for the package is to display the bug count for all bug

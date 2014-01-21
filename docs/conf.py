@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Package Tracking System documentation build configuration file, created by
+# Distro Tracker documentation build configuration file, created by
 # sphinx-quickstart on Fri Jun 14 17:14:16 2013.
 #
 # This file is execfile()d with the current directory set to its containing dir.

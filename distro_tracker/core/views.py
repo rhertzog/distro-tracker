@@ -432,7 +432,7 @@ class AddTeamMember(LoginRequiredMixin, View):
             confirmation = MembershipConfirmation.objects.create_confirmation(
                 membership=membership)
             send_mail(
-                'PTS Team Membership Confirmation',
+                'Team Membership Confirmation',
                 distro_tracker_render_to_string('core/email-team-membership-confirmation.txt', {
                     'confirmation': confirmation,
                     'team': self.team,

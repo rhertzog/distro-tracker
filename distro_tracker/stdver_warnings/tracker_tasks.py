@@ -10,7 +10,7 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """
-PTS tasks for the :mod:`distro_tracker.stdver_warnings` app.
+Distro Tracker tasks for the :mod:`distro_tracker.stdver_warnings` app.
 """
 
 from __future__ import unicode_literals

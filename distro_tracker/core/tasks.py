@@ -30,8 +30,8 @@ logger = logging.getLogger(__name__)
 
 class BaseTask(six.with_metaclass(PluginRegistry)):
     """
-    A class representing the base class for all data processing tasks of the
-    PTS.
+    A class representing the base class for all data processing tasks of
+    Distro Tracker.
 
     Each task can produce or depend on certain events.
 
@@ -544,7 +544,7 @@ def import_all_tasks():
             module_name = app + '.' + 'tracker_tasks'
             importlib.import_module(module_name)
         except ImportError:
-            # The app does not implement PTS tasks.
+            # The app does not implement Distro Tracker tasks.
             pass
 
 def run_task(initial_task, parameters=None):

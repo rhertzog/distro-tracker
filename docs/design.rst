@@ -1,12 +1,12 @@
 .. _design:
 
-Package Tracking Design Overview
-================================
+Distro Tracker Design Overview
+==============================
 
 Introduction
 ------------
 
-The Package Tracking System is implemented as a Python application using the
+Distro Tracker is implemented as a Python application using the
 `Django framework <https://www.djangoproject.com>`_. It aims to support both
 Python2.7 and Python3.
 
@@ -16,9 +16,10 @@ customizable so it could serve Debian derivatives too (vendors).
 This document will present an overview of the high-level design choices which
 were made.
 
-Note that a previous version of the PTS pre-existed, but which operated over 
-completely different technology (statically generated documents, etc.). 
-Some features have been kept identical over the rewrite.
+Note that a previous version of the service pre-existed (it was known
+as the Package Tracking System), but which operated over completely
+different technology (statically generated documents, etc.).  Some
+features have been kept identical over the rewrite.
 
 
 .. _email_design:
@@ -26,7 +27,7 @@ Some features have been kept identical over the rewrite.
 Email Interface
 ---------------
 
-There are three aspects to the email interface in the PTS: the control message
+There are three aspects to the email interface: the control message
 processing, dispatching received package messages to the correct
 subscribers and creating news items based on received emails.
 
@@ -42,7 +43,7 @@ functionalities are found in the following subpackages and modules of this app:
 Email Control Messages
 ++++++++++++++++++++++
 
-The PTS expects the system's MTA to pipe any received control emails to the
+Distro Tracker expects the system's MTA to pipe any received control emails to the
 :mod:`distro_tracker.mail.management.commands.tracker_control` Django management
 command. For information how to set this up, refer to the
 :ref:`mailbot setup <mailbot>`.
@@ -93,7 +94,7 @@ are not mandatory:
 Email Dispatch
 ++++++++++++++
 
-As is the case for control message processing, the PTS expects the system's MTA
+As is the case for control message processing, Distro Tracker expects the system's MTA
 to pipe any received package emails to a management command -
 :mod:`distro_tracker.mail.management.commands.tracker_dispatch`. For information how to set
 this up, refer to the :ref:`mailbot setup <mailbot>`.
@@ -107,7 +108,7 @@ has not implemented this function, the message is tagged as ``default``.
 News from Email Messages
 ++++++++++++++++++++++++
 
-The PTS allows for automatic news creation based on received emails. It is necessary
+Distro Tracker allows for automatic news creation based on received emails. It is necessary
 to set up the MTA so it pipes received emails which should potentially be turned into
 news items, to the management command
 :mod:`distro_tracker.mail.management.commands.tracker_receive_news`.
@@ -130,7 +131,7 @@ on vendor-specific rules.
 Tasks Framework
 ---------------
 
-Since the PTS expects to aggregate information based on many different sources,
+Since Distro Tracker aggregates information based on many different sources,
 a way to perform incremental updates is necessary. This means that if an update
 from one source causes such changes which could have an effect on some other
 information, this information needs to be updated, as well. In order to avoid
@@ -185,7 +186,7 @@ For more information see the documentation on the :mod:`distro_tracker.core.task
 Vendor-specific Rules
 ---------------------
 
-Since the PTS aims to be extensible, it allows a simple way for vendors to
+Since Distro Tracker aims to be extensible, it allows a simple way for vendors to
 implement functions which are plugged in by core code when necessary.
 
 Vendor-provided functions can be called using the :func:`distro_tracker.vendor.common.call`
@@ -201,7 +202,7 @@ All vendor-provided functions must be found in the module given by the
 Package Information
 -------------------
 
-The PTS retrieves package information from a set of user-defined repositories.
+Distro Tracker retrieves package information from a set of user-defined repositories.
 Admin users can add new :class:`distro_tracker.core.models.Repository` instances through
 the admin panel. Information from repositories is updated by the task
 :class:`distro_tracker.core.retrieve_data.UpdateRepositoriesTask` and it emits events
@@ -211,7 +212,7 @@ Additional tasks are implemented in :class:`distro_tracker.core.retrieve_data` w
 use those events to store pre-calculated (extracted) information ready
 to be rendered in a variety of contexts (webpage, REST, RDF, etc.).
 
-The PTS also updates the list of existing pseudo packages by using the
+Distro Tracker also updates the list of existing pseudo packages by using the
 vendor-provided function
 :func:`get_pseudo_package_list <distro_tracker.vendor.skeleton.rules.get_pseudo_package_list>`.
 
@@ -238,7 +239,7 @@ Web Interface
 Panels Framework
 ++++++++++++++++
 
-The PTS allows an easy way to embed new information on a package Web page.
+Distro Tracker allows an easy way to embed new information on a package Web page.
 It consists of implementing a subclass of the :class:`distro_tracker.core.panels.BasePanel`
 class. Panels can provide the HTML directly or, alternatively, the name of the
 template which should be included. This template then has to render the panel's
@@ -253,7 +254,7 @@ that the page remains visually consistent. This is not mandatory, however.
    the top level of an installed Django app. Panels from apps which are not
    installed will never appear on a package page.
 
-The PTS implements some general panels which could be used by any vendor.
+Distro Tracker implements some general panels which could be used by any vendor.
 Refer to the documentation of each panel in :mod:`distro_tracker.core.panels` to see
 any possible ways of augmenting their information by implementing
 vendor-specific functions.

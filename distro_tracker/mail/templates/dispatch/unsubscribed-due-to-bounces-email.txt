@@ -1,9 +1,9 @@
 The email {{ email }} bounces too much, it has been unsubscribed from the
-{{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracking System.
+{{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracker.
 Here's the list of subscriptions which have been removed:
 {% for package in packages %} 
 * {{ package }}
 {% endfor %}
 
 --
-{{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracking System
+{{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracker

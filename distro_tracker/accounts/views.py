@@ -65,13 +65,15 @@ class LogoutView(email_accounts_views.LogoutView):
 class RegisterUser(ConfirmationRenderMixin, email_accounts_views.RegisterUser):
     success_url = reverse_lazy('pts-accounts-register-success')
 
-    confirmation_email_subject = 'PTS Registration Confirmation'
+    confirmation_email_subject = '{name} Registration Confirmation'.format(
+        name=settings.GET_INSTANCE_NAME())
     confirmation_email_from_address = settings.DISTRO_TRACKER_CONTACT_EMAIL
 
 
 class RegistrationConfirmation(email_accounts_views.RegistrationConfirmation):
     success_url = reverse_lazy('pts-accounts-profile')
-    message = 'You have successfully registered to the PTS'
+    message = 'You have successfully registered to the {name}'.format(
+        name=settings.GET_INSTANCE_NAME())
 
 
 class ResetPasswordView(ConfirmationRenderMixin, email_accounts_views.ResetPasswordView):
@@ -80,7 +82,8 @@ class ResetPasswordView(ConfirmationRenderMixin, email_accounts_views.ResetPassw
 
 class ForgotPasswordView(ConfirmationRenderMixin, email_accounts_views.ForgotPasswordView):
     success_url = reverse_lazy('pts-accounts-password-reset-success')
-    email_subject = 'PTS Password Reset Confirmation'
+    email_subject = '{name} Password Reset Confirmation'.format(
+        name=settings.GET_INSTANCE_NAME())
     email_from_address = settings.DISTRO_TRACKER_CONTACT_EMAIL
 
 
@@ -100,13 +103,15 @@ class ManageAccountEmailsView(ConfirmationRenderMixin, email_accounts_views.Mana
     success_url = reverse_lazy('pts-accounts-manage-emails')
     merge_accounts_url = reverse_lazy('pts-accounts-merge-confirmation')
 
-    confirmation_email_subject = 'PTS Add Email To Account'
+    confirmation_email_subject = 'Add Email To {name} Account'.format(
+        name=settings.GET_INSTANCE_NAME())
     confirmation_email_from_address = settings.DISTRO_TRACKER_CONTACT_EMAIL
 
 
 class AccountMergeConfirmView(ConfirmationRenderMixin, email_accounts_views.AccountMergeConfirmView):
     success_url = reverse_lazy('pts-accounts-merge-confirmed')
-    confirmation_email_subject = 'Merge PTS Accounts'
+    confirmation_email_subject = 'Merge {name} Accounts'.format( 
+        name=settings.GET_INSTANCE_NAME())
     confirmation_email_from_address = settings.DISTRO_TRACKER_CONTACT_EMAIL
 
 
