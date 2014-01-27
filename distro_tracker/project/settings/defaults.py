@@ -135,7 +135,7 @@ MIDDLEWARE_CLASSES = (
 
 AUTHENTICATION_BACKENDS = (
     'distro_tracker.vendor.debian.sso_auth.DebianSsoUserBackend',
-    'django_email_accounts.auth.EmailUserBackend',
+    'django_email_accounts.auth.UserEmailBackend',
 )
 
 AUTH_USER_MODEL = 'accounts.User'

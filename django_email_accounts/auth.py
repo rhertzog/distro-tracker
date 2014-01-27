@@ -13,7 +13,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
-class EmailUserBackend(object):
+class UserEmailBackend(object):
     def authenticate(self, username=None, password=None):
         """
         Implements the custom authentication method.
