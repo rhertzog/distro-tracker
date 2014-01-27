@@ -1,2 +1,8 @@
 * Implement backwards compatibility with X-PTS- fields in the debian
   vendor.
+* Add missing indexes.
+* Make the code base a bit more "pylint" compliant.
+* Write some "contributing to distro-tracker" guide.
+
+More ideas from the initial Google Summer of Code:
+https://trello.com/b/faDgzjwO/pts-rewrite
