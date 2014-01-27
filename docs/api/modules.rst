@@ -5,3 +5,4 @@ distro_tracker
    :maxdepth: 4
 
    distro_tracker
+   functional_tests

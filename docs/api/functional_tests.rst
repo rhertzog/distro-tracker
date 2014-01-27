@@ -4,7 +4,7 @@ functional_tests Package
 :mod:`functional_tests` Package
 -------------------------------
 
-.. automodule:: distro_tracker.functional_tests
+.. automodule:: functional_tests
     :members:
     :undoc-members:
     :show-inheritance:
@@ -12,7 +12,7 @@ functional_tests Package
 :mod:`models` Module
 --------------------
 
-.. automodule:: distro_tracker.functional_tests.models
+.. automodule:: functional_tests.models
     :members:
     :undoc-members:
     :show-inheritance:
@@ -20,7 +20,7 @@ functional_tests Package
 :mod:`tests` Module
 -------------------
 
-.. automodule:: distro_tracker.functional_tests.tests
+.. automodule:: functional_tests.tests
     :members:
     :undoc-members:
     :show-inheritance:

@@ -16,7 +16,6 @@ Subpackages
 
     distro_tracker.core
     distro_tracker.extract_source_files
-    distro_tracker.functional_tests
     distro_tracker.mail
     distro_tracker.project
     distro_tracker.stdver_warnings
