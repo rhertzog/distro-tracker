@@ -196,9 +196,16 @@ class RepositoryAdmin(admin.ModelAdmin):
         }),
         ('Repository information', {
             'fields': [
-                field
-                for field in RepositoryAdminForm().fields.keyOrder
-                if field not in ('sources_list_entry', 'name', 'shorthand')
+                'uri',
+                'public_uri',
+                'codename',
+                'suite',
+                'components',
+                'architectures',
+                'default',
+                'optional',
+                'binary',
+                'source',
             ]
         })
     ]
