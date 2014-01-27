@@ -93,8 +93,9 @@ class UserTests(TestCase):
     Tests for the :class:`distro_tracker.accounts.User` class.
     """
     def setUp(self):
+        self.main_email = 'user@domain.com'
         self.user = User.objects.create_user(
-            main_email='user@domain.com', password='asdf')
+            main_email=self.main_email, password='asdf')
         self.package = PackageName.objects.create(name='dummy-package')
 
     def test_is_subscribed_to_main_email(self):
@@ -143,6 +144,32 @@ class UserTests(TestCase):
         self.assertTrue(self.user.is_subscribed_to(self.package))
         self.assertTrue(self.user.is_subscribed_to('dummy-package'))
 
+    def test_unsubscribe_all(self):
+        """
+        Test the :meth:`unsubscribe_all
+        <distro_tracker.accounts.models.User.unsubscribe_all>` method.
+        """
+        other_email = 'other-email@domain.com'
+        self.user.emails.create(email=other_email)
+        for email in self.user.emails.all():
+            Subscription.objects.create_for(
+                email=email.email,
+                package_name=self.package.name)
+
+        self.user.unsubscribe_all()
+
+        self.assertEqual(
+            len(Subscription.objects.get_for_email(self.main_email)),
+            0, 'unsubscribe_all() should remove all subscriptions to main_email')
+        self.assertEqual(
+            len(Subscription.objects.get_for_email(other_email)),
+            1, 'unsubscribe_all() should not remove other subscriptions')
+
+        self.user.unsubscribe_all('other-email@domain.com')
+
+        self.assertEqual(
+            len(Subscription.objects.get_for_email(other_email)), 0,
+            'unsubscribe_all(email) should remove all subscriptions of that email')
 
 class SubscriptionsViewTests(TestCase):
     """

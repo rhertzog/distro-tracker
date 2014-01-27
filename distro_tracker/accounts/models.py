@@ -9,8 +9,9 @@
 # except according to the terms contained in the LICENSE file.
 """Models for the :mod:`distro_tracker.accounts` app."""
 from __future__ import unicode_literals
-from django.db import models
 from django_email_accounts.models import User as EmailAccountsUser
+
+# Re-export some objects of django_email_accounts
 from django_email_accounts.models import UserEmail
 from django_email_accounts.models import (
     UserRegistrationConfirmation,
@@ -18,7 +19,6 @@ from django_email_accounts.models import (
     AddEmailConfirmation,
     MergeAccountConfirmation,
 )
-
 
 class User(EmailAccountsUser):
     """
@@ -43,4 +43,13 @@ class User(EmailAccountsUser):
         qs = package.subscriptions.filter(pk__in=self.emails.all())
         return qs.exists()
 
-
+    def unsubscribe_all(self, email=None):
+        """
+        Terminate the user's subscription associated to the given
+        email. Uses the main email if not specified.
+        """
+        if not email:
+            email = self.main_email
+        user_email = UserEmail.objects.get(email=email)
+        if self.emails.filter(pk=user_email.id).exists():
+            user_email.emailuser.subscription_set.all().delete()
