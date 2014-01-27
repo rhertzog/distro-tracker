@@ -734,7 +734,7 @@ class Repository(models.Model):
         through='SourcePackageRepositoryEntry'
     )
 
-    position = models.IntegerField(default=lambda: Repository.objects.count())
+    position = models.IntegerField(default=0)
 
     objects = RepositoryManager()
 

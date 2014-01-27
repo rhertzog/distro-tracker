@@ -235,6 +235,11 @@ class RepositoryAdmin(admin.ModelAdmin):
         'position',
     )
 
+    def save_model(self, request, obj, form, change):
+        if not change and obj.position == 0:
+            obj.position = Repository.objects.count() + 1
+        obj.save()
+
     def components_string(self, obj):
         """
         Helper method for displaying Repository objects.

@@ -57,7 +57,7 @@ $(document).ready(function() {
                 input = $(pos_td).children('input').first();
                 label = $(pos_td).children('strong').first();
 
-                input.attr('value', index);
+                input.attr('value', index + 1);
                 label.text(index);
             });
 
