@@ -692,7 +692,7 @@ class UpdateTransitionsTask(BaseTask):
         object.
         """
         content = self.cache.get_content(url)
-        return yaml.load(six.BytesIO(content))
+        return yaml.safe_load(six.BytesIO(content))
 
     def _add_reject_transitions(self, packages):
         """
@@ -1152,7 +1152,7 @@ class DebianWatchFileScannerUpdate(BaseTask):
             packages which have watch failures.
         """
         content = self._get_udd_dehs_content()
-        dehs_data = yaml.load(six.BytesIO(content))
+        dehs_data = yaml.safe_load(six.BytesIO(content))
         if not dehs_data:
             return [], []
 
@@ -1483,7 +1483,7 @@ class UpdateReleaseGoalsTask(BaseTask):
 
         release_goals_content, bug_list_content = content
 
-        release_goals = yaml.load(release_goals_content)
+        release_goals = yaml.safe_load(release_goals_content)
         release_goals_list = release_goals['release-goals']
         # Map (user, tag) tuples to the release goals.
         # This is used to match the bugs with the correct release goal.
@@ -1498,7 +1498,7 @@ class UpdateReleaseGoalsTask(BaseTask):
         release_goal_stats = {}
         # Build a dict mapping package names to a list of bugs matched to a
         # release goal.
-        bug_list = yaml.load(bug_list_content)
+        bug_list = yaml.safe_load(bug_list_content)
         for bug in bug_list:
             user, tag = bug['email'], bug['tag']
             if (user, tag) not in release_goals:
