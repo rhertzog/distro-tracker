@@ -313,13 +313,13 @@ class GetDeveloperInformationSiteUrlTest(SimpleTestCase):
         """
         developer_email = 'debian-dpkg@lists.debian.org'
         self.assertEqual(
-            'http://qa.debian.org/developer.php?email=debian-dpkg@lists.debian.org',
+            'http://qa.debian.org/developer.php?email=debian-dpkg%40lists.debian.org',
             get_developer_information_url(developer_email)
         )
 
         developer_email = 'email@domain.com'
         self.assertEqual(
-            'http://qa.debian.org/developer.php?email=email@domain.com',
+            'http://qa.debian.org/developer.php?email=email%40domain.com',
             get_developer_information_url(developer_email)
         )
 
@@ -1317,7 +1317,7 @@ class DebianBugActionItemsTests(TestCase):
         # The item is of the correct type
         item = ActionItem.objects.all()[0]
         self.assertEqual(
-            item.item_type.type_name, 
+            item.item_type.type_name,
             UpdatePackageBugStats.PATCH_BUG_ACTION_ITEM_TYPE_NAME)
         # The item references the correct package.
         self.assertEqual(item.package.name, self.package_name.name)

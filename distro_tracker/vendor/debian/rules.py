@@ -199,7 +199,7 @@ def get_developer_information_url(developer_email):
     developer, given his email.
     """
     URL_TEMPLATE = 'http://qa.debian.org/developer.php?email={email}'
-    return URL_TEMPLATE.format(email=developer_email)
+    return URL_TEMPLATE.format(email=urllib.quote(developer_email))
 
 
 def get_external_version_information_urls(package_name):
@@ -225,7 +225,7 @@ def get_maintainer_extra(developer_email, package_name=None):
     """
     The function returns a list of additional items that are to be
     included in the general panel next to the maintainer. This includes:
-     
+
      - Whether the maintainer agrees with lowthreshold NMU
      - Whether the maintainer is a Debian Maintainer
     """
@@ -252,7 +252,7 @@ def get_uploader_extra(developer_email, package_name=None):
     """
     The function returns a list of additional items that are to be
     included in the general panel next to an uploader. This includes:
-     
+
      - Whether the uploader is a DebianMaintainer
     """
     if package_name is None:
