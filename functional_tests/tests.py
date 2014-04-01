@@ -567,7 +567,7 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
         self.assert_current_url_equal(profile_url)
 
         # A message is provided telling the user that he has been registered
-        self.assert_in_page_body('Congratulations, the registration is almost over.')
+        self.assert_in_page_body('You have successfully registered to the')
 
         # When the user tries opening the confirmation page for the same key
         # again, it is no longer valid
@@ -580,7 +580,7 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
         # The user goes back to the profile page and this time there is no
         # message saying he has been registered.
         self.get_page(profile_url)
-        self.assert_not_in_page_body('Congratulations, the registration is almost over.')
+        self.assert_not_in_page_body('You have successfully registered to the')
 
         # The user now wishes to log out
         self.assert_in_page_body('Log out')
