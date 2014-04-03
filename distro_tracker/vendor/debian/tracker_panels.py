@@ -141,6 +141,21 @@ class SourceCodeSearchLinks(LinksPanel.ItemProvider):
         return links
 
 
+class DebtagsLink(LinksPanel.ItemProvider):
+    """
+    Add a link to debtags editor.
+    """
+    SOURCES_URL_TEMPLATE = 'http://debtags.debian.net/edit/{package}'
+    def get_panel_items(self):
+        if not isinstance(self.package, SourcePackageName):
+            return
+        return [
+            LinksPanel.SimpleLinkItem(
+                'edit tags',
+                 self.SOURCES_URL_TEMPLATE.format(package=self.package.name))
+        ]
+
+
 class TransitionsPanel(BasePanel):
     template_name = 'debian/transitions-panel.html'
     panel_importance = 2

@@ -2512,6 +2512,36 @@ class PopconLinkTest(TestCase):
         self.assertNotIn('popcon', response_content)
 
 
+class DebtagsLinkTest(TestCase):
+    """
+    Tests that the debtags link is added to source package pages.
+    """
+    def get_package_page_response(self, package_name):
+        package_page_url = reverse('dtracker-package-page', kwargs={
+            'package_name': package_name,
+        })
+        return self.client.get(package_page_url)
+
+    def test_source_package(self):
+        package_name = SourcePackageName.objects.create(name='dummy')
+        package = SourcePackage.objects.create(
+            source_package_name=package_name,
+            version='1.0.0')
+
+        response = self.get_package_page_response(package.name)
+
+        response_content = response.content.decode('utf8')
+        self.assertIn('edit tags', response_content)
+
+    def test_pseudo_package(self):
+        package = PseudoPackageName.objects.create(name='somepackage')
+
+        response = self.get_package_page_response(package.name)
+
+        response_content = response.content.decode('utf-8')
+        self.assertNotIn('edit tags', response_content)
+
+
 class UpdatePiupartsTaskTests(TestCase):
     suites = []
 
