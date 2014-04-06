@@ -73,3 +73,52 @@ class VersionedLinksPanelTests(TestCase):
         response = self.get_package_page_response()
 
         self.assertTrue(self.panel_is_in_response(response))
+
+
+class GeneralInfoLinkPanelItemsTests(TestCase):
+    def setUp(self):
+        self.package_name = SourcePackageName.objects.create(
+            name='dummy-package')
+        self.homepage = 'http://www.dummyhomepage.net'
+        self.package = SourcePackage.objects.create(
+            source_package_name=self.package_name,
+            version='1.0.0',
+            homepage=self.homepage)
+
+    def get_package_page_response(self):
+        url = reverse('dtracker-package-page', kwargs={
+            'package_name': self.package.name,
+        })
+        return self.client.get(url)
+
+    def get_general_info_link_panel(self, response):
+        """
+        Checks whether the links panel is found in the rendered HTML
+        response.
+        """
+        html = soup(response.content)
+        panels = html.findAll("div", {'class': 'panel-heading'})
+        for panel in panels:
+            if 'links' in str(panel) and not 'versioned links' in str(panel):
+                return panel
+        return False
+
+    def homepage_is_in_linkspanel(self, response):
+        """
+        Checks whether the homepage link is displayed
+        """
+        html = soup(response.content)
+        links = html.findAll("a")
+        for l in links:
+            if self.homepage in l['href']:
+                return True
+        return False
+
+    def test_panel_displayed(self):
+        """
+        Tests that the panel is displayed when package has a homepage
+        and that the homepage is displayed in that panel
+        """
+        response = self.get_package_page_response()
+        self.assertTrue(self.get_general_info_link_panel(response))
+        self.assertTrue(self.homepage_is_in_linkspanel(response))
