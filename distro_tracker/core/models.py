@@ -224,7 +224,16 @@ class PackageManager(models.Manager):
         if self.type is not None:
             defaults.update({self.type: True})
         kwargs['defaults'] = defaults
-        return super(PackageManager, self).get_or_create(*args, **kwargs)
+        entry, created = PackageName.default_manager.get_or_create(*args,
+                **kwargs)
+        if self.type and getattr(entry, self.type) is False:
+            created = True
+            setattr(entry, self.type, True)
+            entry.save()
+        if isinstance(entry, self.model):
+            return entry, created
+        else:
+            return self.get(pk=entry.pk), created
 
     def all_with_subscribers(self):
         """
@@ -270,6 +279,7 @@ class PackageName(models.Model):
     source_packages = PackageManager('source')
     binary_packages = PackageManager('binary')
     pseudo_packages = PackageManager('pseudo')
+    default_manager = models.Manager()
 
     def __str__(self):
         return self.name

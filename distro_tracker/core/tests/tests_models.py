@@ -349,6 +349,42 @@ class PackageManagerTest(TestCase):
         self.assertFalse(p.binary)
         self.assertFalse(p.pseudo)
 
+    def test_create_same_name_different_types_packages(self):
+        """
+        When several packages with different types and the same name are
+        created, the 1st should create a package and the 2nd one should
+        just update the needed field and so on
+        """
+
+        # Package created without any type
+        p, c = PackageName.objects.get_or_create(name='3-times-pkg')
+        self.assertTrue(c)
+        self.assertFalse(p.source or p.binary or p.pseudo)
+        assert isinstance(p, PackageName)
+
+        # Package does not exist as a source so believed to be created
+        p, c = SourcePackageName.objects.get_or_create(name='3-times-pkg')
+        self.assertTrue(c and p.source)
+        self.assertFalse(p.binary or p.pseudo)
+        assert isinstance(p, SourcePackageName)
+
+        # Package exists as a source so should be seen as not created
+        p, c = SourcePackageName.objects.get_or_create(name='3-times-pkg')
+        self.assertTrue(p.source)
+        self.assertFalse(c or p.binary or p.pseudo)
+        assert isinstance(p, SourcePackageName)
+
+        # Package does not exist as a binary so believed to be created
+        p, c = BinaryPackageName.objects.get_or_create(name='3-times-pkg')
+        self.assertTrue(c and p.source and p.binary)
+        self.assertFalse(p.pseudo)
+        assert isinstance(p, BinaryPackageName)
+
+        # Package does not exist as a pseud package so believed to be created
+        p, c = PseudoPackageName.objects.get_or_create(name='3-times-pkg')
+        self.assertTrue(c and p.source and p.binary and p.pseudo)
+        assert isinstance(p, PseudoPackageName)
+
     def test_pseudo_package_create(self):
         """
         Tests that the pseudo packages manager creates pseudo pacakges.
