@@ -624,7 +624,8 @@ class UpdateRepositoriesTask(PackageUpdateTask):
             for packages_file in all_sources:
                 if packages_file not in packages_files:
                     self._mark_file_not_processed(
-                        repository, packages_file)
+                        repository, packages_file,
+                        BinaryPackageRepositoryEntry.objects)
 
             # When all the files for the repository are handled, update
             # which packages are still found in it.
