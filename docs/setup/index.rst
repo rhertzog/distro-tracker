@@ -1,7 +1,7 @@
 .. _setup:
 
-Distro Tracker Setup
-====================
+Setup
+=====
 
 Contents:
 

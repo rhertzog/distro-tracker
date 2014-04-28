@@ -1,7 +1,7 @@
 .. _design:
 
-Distro Tracker Design Overview
-==============================
+Design Overview
+===============
 
 Introduction
 ------------
