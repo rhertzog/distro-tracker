@@ -38,6 +38,15 @@ some systems.
 When you choose your database flavor, you must install the Python bindings,
 i.e. psycopg2 for PostgreSQL and MySQL-Python for MySQL, etc.
 
+To create the database you must run the following commands::
+
+$ ./manage.py syncdb
+$ ./manage.py migrate
+
+This is because some of the apps' models are managed by South.
+
+See also the Debian package's README.Debian for some details about the setup.
+
 .. _localsettings_setup:
 
 Local Settings
@@ -75,13 +84,3 @@ everything is actually working as expected. You can do this by issuing the
 following command from the Distro Tracker root directory::
 
 $ ./manage.py test
-
-To create the database you must run the following commands::
-
-$ ./manage.py syncdb
-$ ./manage.py migrate
-
-This is because some of the apps' models are managed by South.
-
-See also the Debian package's README.Debian for some details about the setup.
- 
