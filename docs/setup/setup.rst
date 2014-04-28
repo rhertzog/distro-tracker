@@ -74,11 +74,6 @@ Once everything is set up, be sure to run the test suite to make sure
 everything is actually working as expected. You can do this by issuing the
 following command from the Distro Tracker root directory::
 
-$ ./manage.py test distro_tracker
-
-Alternatively, you may run the full test suite, including Django's internal
-tests, by doing::
-
 $ ./manage.py test
 
 To create the database you must run the following commands::
