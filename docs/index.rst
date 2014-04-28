@@ -14,5 +14,5 @@ Contents:
    about
    design
    API Documentation <api/modules>
-   contributing
    setup/index
+   contributing
