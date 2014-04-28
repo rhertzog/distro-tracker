@@ -54,23 +54,6 @@ use (running out of a git checkout). Depending on the case, the
 ``selected.py`` symlink points either to ``production.py`` or to
 ``development.py``.
 
-Static Assets
--------------
-
-Once the local settings are filled in, the static assets like images,
-Javascript and CSS files should be moved to the directory given in the
-``STATIC_ROOT`` setting. This is
-necessary since Django does not serve static resources, but requires a Web
-server for that.
-
-Running the following management command will move all static resources that
-Django uses to the correct directory::
-
-$ ./manage.py collectstatic
-
-.. note::
-   Make sure the directory given in ``STATIC_ROOT`` exists.
-
 Keyrings
 --------
 

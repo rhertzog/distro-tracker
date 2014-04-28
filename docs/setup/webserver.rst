@@ -65,3 +65,13 @@ Distro Tracker does not include gunicorn in its
 :data:`INSTALLED_APPS <distro_tracker.project.settings.INSTALLED_APPS>`, but there is
 nothing to prevent users to include it and deploy it with gunicorn
 running as the WSGI server and a reverse proxy in front of it.
+
+Static Assets
+-------------
+
+When serving `distro-tracker` with a web server, the static assets like images,
+Javascript and CSS files should be moved to the directory given in the
+``STATIC_ROOT`` setting. Running the following management command will move all
+static resources that Django uses to the correct directory::
+
+$ ./manage.py collectstatic
