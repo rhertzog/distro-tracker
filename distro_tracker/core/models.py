@@ -371,11 +371,6 @@ class PseudoPackageName(PackageName):
 
     objects = PackageManager('pseudo')
 
-    def get_absolute_url(self):
-        return reverse('dtracker-package-page', kwargs={
-            'package_name': self.name
-        })
-
 
 class SourcePackageName(PackageName):
     """
@@ -389,11 +384,6 @@ class SourcePackageName(PackageName):
         proxy = True
 
     objects = PackageManager('source')
-
-    def get_absolute_url(self):
-        return reverse('dtracker-package-page', kwargs={
-            'package_name': self.name
-        })
 
     @cached_property
     def main_version(self):
