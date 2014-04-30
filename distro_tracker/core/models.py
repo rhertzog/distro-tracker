@@ -284,11 +284,11 @@ class PackageName(models.Model):
     Three different types of packages are supported:
 
     - Source packages
+    - Binary packages
     - Pseudo packages
-    - Subscription-only packages
 
-    Binary packages are a separate model since they are allowed to have the
-    same name as an existing source package.
+    PackageName associated to no source/binary/pseudo packages are
+    referred to as "Subscription-only packages".
     """
     name = models.CharField(max_length=100, unique=True)
     source = models.BooleanField(default=False)
@@ -363,8 +363,7 @@ class PseudoPackageName(PackageName):
     A convenience proxy model of the :class:`PackageName` model.
 
     It returns only those :class:`PackageName` instances whose
-    :attr:`package_type <PackageName.package_type>` is
-    :attr:`PSEUDO_PACKAGE_TYPE <PackageName.PSEUDO_PACKAGE_TYPE>`.
+    :attr:`pseudo <PackageName.pseudo>` attribute is True.
     """
     class Meta:
         proxy = True
@@ -372,13 +371,65 @@ class PseudoPackageName(PackageName):
     objects = PackageManager('pseudo')
 
 
+class BinaryPackageName(PackageName):
+    """
+    A convenience proxy model of the :class:`PackageName` model.
+
+    It returns only those :class:`PackageName` instances whose
+    :attr:`binary <PackageName.binary>` attribute is True.
+    """
+    class Meta:
+        proxy = True
+
+    objects = PackageManager('binary')
+
+    def get_absolute_url(self):
+        # Take the URL of its source package
+        main_source_package = self.main_source_package_name
+        if main_source_package:
+            return main_source_package.get_absolute_url()
+        else:
+            return None
+
+    @property
+    def main_source_package_name(self):
+        """
+        Returns the main source package name to which this binary package
+        name is mapped.
+
+        The "main source package" is defined as follows:
+
+        - If the binary package is found in the default repository, the returned
+          source package name is the one which has the highest version.
+        - If the binary package is not found in the default repository, the
+          returned source package name is the one of the source package with
+          the highest version.
+
+        :rtype: string
+
+        This is used for redirecting users who try to access a Web page for
+        by giving this binary's name.
+        """
+        default_repo_sources_qs = self.sourcepackage_set.filter(
+            repository_entries__repository__default=True)
+        if default_repo_sources_qs.exists():
+            qs = default_repo_sources_qs
+        else:
+            qs = self.sourcepackage_set.all()
+
+        if qs.exists():
+            source_package = max(qs, key=lambda x: AptPkgVersion(x.version))
+            return source_package.source_package_name
+        else:
+            return None
+
+
 class SourcePackageName(PackageName):
     """
     A convenience proxy model of the :class:`PackageName` model.
 
     It returns only those :class:`PackageName` instances whose
-    :attr:`package_type <PackageName.package_type>` is
-    :attr:`SOURCE_PACKAGE_TYPE <PackageName.SOURCE_PACKAGE_TYPE>`.
+    :attr:`source <PackageName.source>` attribute is True.
     """
     class Meta:
         proxy = True
@@ -651,63 +702,6 @@ class Subscription(models.Model):
 
     def __str__(self):
         return str(self.email_user) + ' ' + str(self.package)
-
-
-@python_2_unicode_compatible
-class BinaryPackageName(PackageName):
-    """
-    A model representing a single binary package name.
-
-    Binary package versions must all reference an existing instance of this
-    type.
-    """
-    class Meta:
-        proxy = True
-
-    objects = PackageManager('binary')
-
-    def __str__(self):
-        return self.name
-
-    def get_absolute_url(self):
-        # Take the URL of its source package
-        main_source_package = self.main_source_package_name
-        if main_source_package:
-            return main_source_package.get_absolute_url()
-        else:
-            return None
-
-    @property
-    def main_source_package_name(self):
-        """
-        Returns the main source package name to which this binary package
-        name is mapped.
-
-        The "main source package" is defined as follows:
-
-        - If the binary package is found in the default repository, the returned
-          source package name is the one which has the highest version.
-        - If the binary package is not found in the default repository, the
-          returned source package name is the one of the source package with
-          the highest version.
-
-        :rtype: string
-
-        This is used for redirecting users who try to access a Web page for
-        by giving this binary's name.
-        """
-        default_repo_sources_qs = self.sourcepackage_set.filter(
-            repository_entries__repository__default=True)
-        if default_repo_sources_qs.exists():
-            qs = default_repo_sources_qs
-        else:
-            qs = self.sourcepackage_set.all()
-
-        if qs.exists():
-            source_package = max(qs, key=lambda x: AptPkgVersion(x.version))
-            return source_package.source_package_name
-        else:
-            return None
 
 
 from jsonfield import JSONField
