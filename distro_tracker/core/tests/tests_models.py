@@ -17,7 +17,7 @@ from __future__ import unicode_literals
 from django.test import TestCase
 from django.test.utils import override_settings
 from django.core.files.base import ContentFile
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from distro_tracker.core.tests.common import temporary_media_dir
 from django.core.urlresolvers import reverse
 from distro_tracker.core.models import Subscription, EmailUser, PackageName, BinaryPackageName
@@ -48,6 +48,7 @@ from email import message_from_string
 import os
 import email
 import gpgme
+import itertools
 
 
 class SubscriptionManagerTest(TestCase):
@@ -353,7 +354,8 @@ class PackageManagerTest(TestCase):
         """
         When several packages with different types and the same name are
         created, the 1st should create a package and the 2nd one should
-        just update the needed field and so on
+        just update the corresponding “type” field (source, binary,
+        pseudo).
         """
 
         # Package created without any type
@@ -380,10 +382,80 @@ class PackageManagerTest(TestCase):
         self.assertFalse(p.pseudo)
         assert isinstance(p, BinaryPackageName)
 
-        # Package does not exist as a pseud package so believed to be created
+        # Package does not exist as a pseudo package so believed to be created
         p, c = PseudoPackageName.objects.get_or_create(name='3-times-pkg')
         self.assertTrue(c and p.source and p.binary and p.pseudo)
         assert isinstance(p, PseudoPackageName)
+
+    def _test_package_name_proxy_delete_generic(self, proxy_class, pkg_type,
+                                                multiple):
+        """
+        Generic function to test the deletion via a proxy class
+        of PackageName. 
+        """
+        p, c = proxy_class.objects.get_or_create(name='to-delete')
+        self.assertTrue(getattr(p, pkg_type))
+        if multiple:
+            p.source = p.binary = p.pseudo = True
+            p.save()
+        p.delete()
+
+        with self.assertRaises(ObjectDoesNotExist):
+            proxy_class.objects.get(name='to-delete')
+
+        p = PackageName.objects.get(name='to-delete')
+        # The type field associated to the proxy class has been reset to False
+        self.assertFalse(getattr(p, pkg_type))
+        # The other type fields are left unchanged (False by default, True
+        # if multiple)
+        other_attributes = set(['source', 'binary', 'pseudo']) - set([ pkg_type ])
+        for attribute in other_attributes:
+            self.assertEqual(getattr(p, attribute), multiple)
+
+    def _test_package_name_proxy_delete(self, proxy_class, pkg_type):
+        self._test_package_name_proxy_delete_generic(proxy_class,
+                                                     pkg_type, False)
+        self._test_package_name_proxy_delete_generic(proxy_class,
+                                                     pkg_type, True)
+
+    def test_source_package_name_delete(self):
+        """
+        Ensure SourcePackageName doesn't really delete the underlying
+        PackageName but resets the 'source' field instead.
+        """
+        self._test_package_name_proxy_delete(SourcePackageName, 'source')
+
+    def _test_package_name_proxy_bulk_delete(self, proxy_class):
+        """
+        Ensure bulk delete via proxy class of PackageName doesn't really
+        delete but resets the associated type field.
+        """
+        i = 0
+        for source, binary, pseudo in \
+                itertools.product([True, False], [True, False], [True, False]):
+            PackageName.objects.create(name='to-delete-{0}'.format(i),
+                                       source=source, binary=binary,
+                                       pseudo=pseudo)
+            i = i + 1
+
+        p = proxy_class.objects.filter(name__startswith="to-delete-")
+        p.delete()
+
+        for i in range(0,8):
+            with self.assertRaises(ObjectDoesNotExist):
+                proxy_class.objects.get(name="to-delete-{0}".format(i))
+
+        # Counting packages left, should be 8 (packages are not really deleted
+        # via proxy classes. Real delete is only made using PackageName class)
+        p = PackageName.objects.filter(name__startswith="to-delete-").count()
+        self.assertEqual(p, 8)
+
+    def test_source_package_name_bulk_delete(self):
+        """
+        Ensure SourcePackageName's bulk delete doesn't really delete the
+        underlying PackageName but resets the 'source' field instead.
+        """
+        self._test_package_name_proxy_bulk_delete(SourcePackageName)
 
     def test_pseudo_package_create(self):
         """
@@ -394,6 +466,20 @@ class PackageManagerTest(TestCase):
         self.assertFalse(p.source)
         self.assertFalse(p.binary)
         self.assertTrue(p.pseudo)
+
+    def test_pseudo_package_name_delete(self):
+        """
+        Ensure PseudoPackageName doesn't really delete the underlying
+        PackageName but resets the 'pseudo' field instead.
+        """
+        self._test_package_name_proxy_delete(PseudoPackageName, 'pseudo')
+
+    def test_pseudo_package_bulk_delete(self):
+        """
+        Ensure PseudoPackageName's bulk delete doesn't really delete the
+        underlying PackageName but resets the 'pseudo' field instead.
+        """
+        self._test_package_name_proxy_bulk_delete(PseudoPackageName)
 
     def test_subscription_only_package_create(self):
         """
@@ -412,6 +498,20 @@ class PackageManagerTest(TestCase):
         self.assertFalse(p.source)
         self.assertTrue(p.binary)
         self.assertFalse(p.pseudo)
+
+    def test_binary_package_name_delete(self):
+        """
+        Ensure BinaryPackageName doesn't really delete the underlying
+        PackageName but resets the 'binary' field instead.
+        """
+        self._test_package_name_proxy_delete(BinaryPackageName, 'binary')
+
+    def test_binary_package_name_bulk_delete(self):
+        """
+        Ensure BinaryPackageName's bulk delete doesn't really delete the
+        underlying PackageName but resets the 'binary' field instead.
+        """
+        self._test_package_name_proxy_bulk_delete(BinaryPackageName)
 
     def test_manager_types_correct_objects(self):
         """

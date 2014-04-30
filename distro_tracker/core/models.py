@@ -164,6 +164,28 @@ class EmailUser(models.Model):
             self.default_keywords = Keyword.objects.filter(default=True)
 
 
+class PackageManagerQuerySet(models.query.QuerySet):
+    """
+    A custom :class:`PackageManagerQuerySet <django.db.models.query.QuerySet>`
+    for the :class:`PackageManager` manager. It is needed in order to change
+    the bulk delete behavior.
+    """
+    def delete(self):
+        """
+        In the bulk delete, the only cases when an item should be deleted is:
+         - when the bulk delete is made directly from the PackageName class
+
+        Else, the field corresponding to the package type you want to delete
+        should be set to False.
+        """
+        if self.model.objects.type is None:
+            # Means the bulk delete is done from the PackageName class
+            super(PackageManagerQuerySet, self).delete()
+        else:
+            # Called from a proxy class: here, this is only a soft delete
+            self.update(**{self.model.objects.type : False})
+
+
 class PackageManager(models.Manager):
     """
     A custom :class:`Manager <django.db.models.Manager>` for the
@@ -182,7 +204,7 @@ class PackageManager(models.Manager):
         If the instance does not have a :attr:`type`, then all
         :class:`PackageName` instances are returned.
         """
-        qs = super(PackageManager, self).get_query_set()
+        qs = PackageManagerQuerySet(self.model, using=self._db)
         if self.type is None:
             return qs
         return qs.filter(**{
@@ -319,6 +341,21 @@ class PackageName(models.Model):
             for item in self.action_items.all()
             if item.item_type.type_name == action_item_type),
             None)
+
+    def delete(self, *args, **kwargs):
+        """
+        Custom delete method so that PackageName proxy classes
+        do not remove the underlying PackageName. Instead they update
+        their corresponding "type" field to False so that they
+        no longer find the package name.
+
+        The delete method on PackageName keeps its default behaviour.
+        """
+        if self.__class__.objects.type:
+            setattr(self, self.__class__.objects.type, False)
+            self.save()
+        else:
+            super(self, PackageName).delete(*args, **kwargs)
 
 
 class PseudoPackageName(PackageName):
