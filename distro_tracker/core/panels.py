@@ -24,6 +24,7 @@ from distro_tracker.core.models import PackageExtractedInfo
 from distro_tracker.core.models import MailingList
 from distro_tracker.core.models import News
 from distro_tracker.core.models import PackageBugStats
+from distro_tracker.core.models import BinaryPackageBugStats
 from debian.debian_support import AptPkgVersion
 from collections import defaultdict
 
