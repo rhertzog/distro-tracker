@@ -6,7 +6,7 @@
     <span>{{ panel.title }}</span>
     {% if panel.context.external_resources %}
     {% for external in panel.context.external_resources %}
-    <a href="{{ external.url }}" class="has-tooltip" data-toggle="tooltip" title="{{ external.description }}">
+    <a href="{{ external.url }}" title="{{ external.description }}">
         <i class="icon-share"></i>
     </a>
     {% endfor %}
@@ -15,7 +15,7 @@
 {% with versions=panel.context.version_info %}
 <div class="pull-right">
     {% if versions.default_pool_url %}
-    <a href="{{ versions.default_pool_url }}" class="has-tooltip" data-toggle="tooltip" title="pool directory"><i class="icon-folder-open"></i></a>
+    <a href="{{ versions.default_pool_url }}" title="pool directory"><i class="icon-folder-open"></i></a>
     {% endif %}
 </div>
 {% endwith %}
@@ -27,7 +27,7 @@
     {% for item in versions.version_list %}
     <div class="row-fluid">
     <li class="list-group-item">
-        <div class="list-item-key versions-repository"><b><span class="has-tooltip" data-title="{{ item.repository_name }}" data-toggle="tooltip">{{ item.repository_shorthand }}:</span></b></div>
+        <div class="list-item-key versions-repository"><b><span title="{{ item.repository_name }}">{{ item.repository_shorthand }}:</span></b></div>
         <div class="list-item-value">
             {% with url=item.url|default:"#" %}
             <a href="{{ url }}">{{ item.version }}</a>

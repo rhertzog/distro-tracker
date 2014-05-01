@@ -7,7 +7,7 @@
     <div class="row-fluid">
     <li class="list-group-item">
         {% with name=category.display_name|default:category.category_name %}
-        <div class="list-item-key"><b><span class="has-tooltip" data-title="{{ category.description }}" data-toggle="tooltip">{{ category.category_name }}:</span></b></div>
+        <div class="list-item-key"><b><span title="{{ category.description }}">{{ category.category_name }}:</span></b></div>
         {% endwith %}
         <div class="list-item-value">
             <span>{{ category.bug_count }}</span>

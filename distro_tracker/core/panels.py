@@ -718,21 +718,14 @@ class LinksPanel(ListPanel):
         given in the constructor.
         """
         TEMPLATE = '<a href="{url}">{text}</a>'
-        TEMPLATE_TOOLTIP = (
-            '<a href="{url}"'
-            ' class="has-tooltip"'
-            ' data-toggle="tooltip"'
-            ' title="{tooltip}">'
-            '{text}'
-            '</a>'
-        )
+        TEMPLATE_TOOLTIP = '<a href="{url}" title="{title}">{text}</a>'
 
-        def __init__(self, text, url, tooltip=None):
-            if tooltip:
+        def __init__(self, text, url, title=None):
+            if title:
                 template = self.TEMPLATE_TOOLTIP
             else:
                 template = self.TEMPLATE
-            html = template.format(text=text, url=url, tooltip=tooltip)
+            html = template.format(text=text, url=url, title=title)
             super(LinksPanel.SimpleLinkItem, self).__init__(html)
 
 

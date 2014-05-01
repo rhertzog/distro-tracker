@@ -11,7 +11,7 @@
             <a href="{{ url }}">{{ context.name }}</a>
             {% endwith %}
             {% if context.priority %}
-            <span>(<a href="#" data-toggle="tooltip" title="priority" class="has-tooltip">{{ context.priority }}</a>, <a href="#" data-toggle="tooltip" title="section" class="has-tooltip">{{ context.section }}</a>)</span>
+            <span>(<a href="#" title="priority">{{ context.priority }}</a>, <a href="#" title="section">{{ context.section }}</a>)</span>
             {% endif %}
         </div>
         <div class="clear"></div>
@@ -37,12 +37,12 @@
             {% with developer=context.maintainer %}
                 {% if developer.archive_url %}
                     <small>
-                        (<a href="{{ developer.archive_url }}" class="has-tooltip" data-toggle="tooltip" title="Archives for the {{ developer.name }} list">archive</a>)
+                        (<a href="{{ developer.archive_url }}" title="Archives for the {{ developer.name }} list">archive</a>)
                     </small>
                 {% endif %}
                 {% for extra in developer.extra %}
                     <small>
-                    [<a href="{{ extra.link }}" class="has-tooltip" data-toggle="tooltip" title="{{ extra.description }}">{{ extra.display }}</a>]
+                    [<a href="{{ extra.link }}" title="{{ extra.description }}">{{ extra.display }}</a>]
                     </small>
                 {% endfor %}
             {% endwith %}
@@ -65,12 +65,12 @@
                 {% with developer=uploader %}
                 {% if developer.archive_url %}
                     <small>
-                        (<a href="{{ developer.archive_url }}" class="has-tooltip" data-toggle="tooltip" title="Archives for the {{ developer.name }} list">archive</a>)
+                        (<a href="{{ developer.archive_url }}" title="Archives for the {{ developer.name }} list">archive</a>)
                     </small>
                 {% endif %}
                 {% for extra in developer.extra %}
                     <small>
-                    [<a href="{{ extra.link }}" class="has-tooltip" data-toggle="tooltip" title="{{ extra.description }}">{{ extra.display }}</a>]
+                    [<a href="{{ extra.link }}" title="{{ extra.description }}">{{ extra.display }}</a>]
                     </small>
                 {% endfor %}
                 {% endwith %}
