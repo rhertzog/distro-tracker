@@ -18,6 +18,7 @@ from email.mime.base import MIMEBase
 import re
 import copy
 import email
+import types
 
 
 def extract_email_address_from_header(header):
@@ -89,42 +90,27 @@ def get_decoded_message_payload(message, default_charset='utf-8'):
     return payload.decode(charset)
 
 
-class BytesEmailMessage(object):
+def message_from_bytes(message_bytes):
     """
-    A wrapper around an :class:`email.message.Message` object which changes its
-    :meth:`as_string <email.message.Message.as_string>` method to always return
-    :class:`bytes`.
+    Returns a live-patched :class:`email.Message` object from the given
+    bytes.
 
-    This means that in Python3 the message will not end up with modified
-    ``Content-Transfer-Encoding`` header and content when the given content is
-    parsed from bytes. Rather, it returns the original bytes, as expected.
+    The changes ensure that parsing the message's bytes with this method
+    and then returning them by using the returned object's as_string
+    method is an idempotent operation.
 
-    To obtain an instance of this object, clients should generally use the
-    helper function :func:`message_from_bytes` given in this module, but passing
-    an already existing :class:`email.message.Message` object to the constructor
-    if the desired behavior of :meth:`as_string` is desired is possible too.
+    An as_bytes method is also created since Django's SMTP backend relies
+    on this method (which is usually brought by its own
+    :class:`django.core.mail.SafeMIMEText` object but that we don't use
+    in our :class:`CustomEmailMessage`).
     """
-    def __init__(self, message):
-        self.message = message
+    if six.PY3:
+        from email import message_from_bytes as email_message_from_bytes
+    else:
+        from email import message_from_string as email_message_from_bytes
+    message = email_message_from_bytes(message_bytes)
 
-    def __getattr__(self, name):
-        return getattr(self.message, name)
-
-    def __getitem__(self, name):
-        return self.message.__getitem__(name)
-
-    def __setitem__(self, name, val):
-        return self.message.__setitem__(name, val)
-
-    def __contains__(self, name):
-        return self.message.__contains__(name)
-
-    def __delitem__(self, name):
-        return self.message.__delitem__(name)
-
-    def __len__(self):
-        return self.message.__len__()
-
+    # Django expects patched versions of as_string/as_bytes
     def as_string(self, unixfrom=False, maxheaderlen=0):
         """
         Returns the payload of the message encoded as bytes.
@@ -134,31 +120,15 @@ class BytesEmailMessage(object):
         else:
             from email.generator import Generator
 
-        bytes_buffer = six.BytesIO()
-        generator = Generator(
-            bytes_buffer, mangle_from_=False, maxheaderlen=maxheaderlen)
-        generator.flatten(self.message, unixfrom=unixfrom)
-        return bytes_buffer.getvalue()
+        fp = six.BytesIO()
+        g = Generator(fp, mangle_from_=False, maxheaderlen=maxheaderlen)
+        g.flatten(self, unixfrom=unixfrom)
+        return fp.getvalue()
 
+    message.as_string = types.MethodType(as_string, message)
+    message.as_bytes = message.as_string
 
-def message_from_bytes(message_bytes):
-    """
-    Returns a :class:`BytesEmailMessage` object from the given bytes.
-
-    The function is used to achieve Python2/3 compatibility by returning an
-    object whose as_string method has the same behavior in both versions.
-
-    Namely, it makes sure that parsing the message's bytes with this method and
-    then returning them by using the returned object's as_string method is an
-    idempotent operation.
-    """
-    if six.PY3:
-        from email import message_from_bytes as email_message_from_bytes
-    else:
-        from email import message_from_string as email_message_from_bytes
-    message = email_message_from_bytes(message_bytes)
-
-    return BytesEmailMessage(message)
+    return message
 
 
 class CustomEmailMessage(EmailMessage):
