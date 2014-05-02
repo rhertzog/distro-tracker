@@ -264,6 +264,7 @@ class GetPseudoPackageListTest(TestCase):
         mock_requests.get.assert_called_with(
             'http://bugs.debian.org/pseudo-packages.maintainers',
             headers={},
+            allow_redirects=True,
             verify=False)
         # Correct packages extracted?
         self.assertSequenceEqual(

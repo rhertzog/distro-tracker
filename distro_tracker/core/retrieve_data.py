@@ -102,7 +102,8 @@ def retrieve_repository_info(sources_list_entry):
 
     # Access the Release file
     try:
-        response = requests.get(Repository.release_file_url(url, distribution))
+        response = requests.get(Repository.release_file_url(url, distribution),
+                allow_redirects=True)
     except requests.exceptions.RequestException as original:
         reraise(
             InvalidRepositoryException,

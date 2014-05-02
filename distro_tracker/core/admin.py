@@ -54,7 +54,8 @@ def validate_sources_list_entry(value):
     if url.endswith('/'):
         url = url.rstrip('/')
     try:
-        response = requests.head(Repository.release_file_url(url, name))
+        response = requests.head(Repository.release_file_url(url, name),
+                allow_redirects=True)
     except requests.exceptions.Timeout as e:
         raise ValidationError(
             "Invalid repository: Could not connect to {url}."
