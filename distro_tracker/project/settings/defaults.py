@@ -276,6 +276,11 @@ DISTRO_TRACKER_CACHE_DIRECTORY = os.path.join(DISTRO_TRACKER_BASE_PATH, 'data', 
 #: This directory should contain a GPG keyring of known public keys
 DISTRO_TRACKER_KEYRING_DIRECTORY = os.path.join(DISTRO_TRACKER_BASE_PATH, 'data', 'keyring')
 
+# This file is the trusted.gpg main file
+DISTRO_TRACKER_TRUSTED_GPG_MAIN_FILE = '/etc/apt/trusted.gpg'
+# This directory is where to put trusted.gpg parts
+DISTRO_TRACKER_TRUSTED_GPG_PARTS_DIR = '/etc/apt/trusted.gpg.d/'
+
 #: The number of days to tolerate bounced messages for subscribers.
 DISTRO_TRACKER_MAX_DAYS_TOLERATE_BOUNCE = 4
 #: The number of errors after which the processing of a command email stops.

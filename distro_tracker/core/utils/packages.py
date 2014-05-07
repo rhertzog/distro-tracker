@@ -158,6 +158,7 @@ class AptCache(object):
             self.cache_root_dir,
             'sources.list')
         self.conf_file_path = os.path.join(self.cache_root_dir, 'apt.conf')
+        os.environ['APT_CONFIG'] = self.conf_file_path
 
         self.sources = []
         self.packages = []
@@ -233,15 +234,17 @@ class AptCache(object):
             for architecture in Architecture.objects.all():
                 conf_file.write('"{arch}"; '.format(arch=architecture))
             conf_file.write('};\n')
-
-    def _configure_apt(self):
-        """
-        Initializes the :mod:`apt_pkg` module global settings.
-        """
-        apt_pkg.init_config()
-        apt_pkg.init_system()
-        apt_pkg.read_config_file(apt_pkg.config, self.conf_file_path)
-        apt_pkg.config.set('Dir::Etc', self.cache_root_dir)
+            conf_file.write('Dir "apt";\n')
+            conf_file.write('Dir::State::status "{status}";\n'.format(status= \
+                    os.path.join(self.cache_root_dir, 'var/lib/dpkg/status')))
+            conf_file.write('Dir::Etc "{etc}";\n'.format(
+                etc=self.cache_root_dir))
+            conf_file.write('Dir::Etc::sourcelist "{src}";\n'.format(
+                src=self.sources_list_path))
+            conf_file.write('Dir::Etc::Trusted "{src}";\n'.format(
+                src=settings.DISTRO_TRACKER_TRUSTED_GPG_MAIN_FILE))
+            conf_file.write('Dir::Etc::TrustedParts "{src}";\n'.format(
+                src=settings.DISTRO_TRACKER_TRUSTED_GPG_PARTS_DIR))
 
     def configure_cache(self):
         """
@@ -249,7 +252,7 @@ class AptCache(object):
         """
         self.update_sources_list()
         self.update_apt_conf()
-        self._configure_apt()
+        apt_pkg.init()
 
     def _index_file_full_path(self, file_name):
         """
