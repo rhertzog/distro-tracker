@@ -32,7 +32,7 @@ from distro_tracker.core.utils.email_messages import message_from_bytes
 from distro_tracker.core.models import ActionItem, ActionItemType
 from distro_tracker.core.models import News
 from distro_tracker.core.models import Keyword
-from distro_tracker.core.models import EmailUser
+from distro_tracker.core.models import EmailSettings
 from distro_tracker.core.models import Subscription
 from distro_tracker.core.models import PackageExtractedInfo
 from distro_tracker.core.models import PackageName
@@ -4175,7 +4175,7 @@ class ImportOldSubscribersTests(TestCase):
         for subscriber in subscribers:
             self.assertTrue(Subscription.objects.filter(
                 package=package,
-                email_user__user_email__email=subscriber).exists())
+                email_settings__user_email__email=subscriber).exists())
 
     def test_non_existing_package_imported(self):
         """
@@ -4282,11 +4282,11 @@ class ImportTagsTests(TestCase):
 
         self.run_command()
 
-        self.assertEqual(1, EmailUser.objects.count())
-        user = EmailUser.objects.all()[0]
+        self.assertEqual(1, EmailSettings.objects.count())
+        settings = EmailSettings.objects.all()[0]
         self.assert_keyword_sets_equal(
             keywords,
-            user.default_keywords.all())
+            settings.default_keywords.all())
 
     def test_subscription_specific_keywords_imported(self):
         email = 'user@domain.com'
@@ -4322,10 +4322,10 @@ class ImportTagsTests(TestCase):
             keywords,
             sub.keywords.all())
         # The user's default keywords are also updated
-        user = EmailUser.objects.all()[0]
+        settings = EmailSettings.objects.all()[0]
         self.assert_keyword_sets_equal(
             default_keywords,
-            user.default_keywords.all())
+            settings.default_keywords.all())
 
     def test_legacy_mapping_import(self):
         keyword = Keyword.objects.get(name='archive')
@@ -4335,10 +4335,10 @@ class ImportTagsTests(TestCase):
 
         self.run_command()
 
-        user = EmailUser.objects.all()[0]
+        settings = EmailSettings.objects.all()[0]
         self.assert_keyword_sets_equal(
             [keyword],
-            user.default_keywords.all())
+            settings.default_keywords.all())
 
 
 @mock.patch('distro_tracker.vendor.debian.sso_auth.DebianSsoUserBackend.get_user_details')

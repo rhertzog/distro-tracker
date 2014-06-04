@@ -14,7 +14,7 @@ from __future__ import unicode_literals
 from django.test import TestCase
 from distro_tracker.accounts.models import User
 from distro_tracker.accounts.models import UserEmail
-from distro_tracker.core.models import EmailUser
+from distro_tracker.core.models import EmailSettings
 from distro_tracker.core.models import PackageName
 from distro_tracker.core.models import Subscription
 from distro_tracker.core.models import Keyword
@@ -40,8 +40,8 @@ class UserManagerTests(TestCase):
         self.assertTrue(u.is_active)
         # The user is associated with a UserEmail
         self.assertEqual(1, u.emails.count())
-        email_user = UserEmail.objects.all()[0]
-        self.assertEqual(u, User.objects.get(pk=email_user.user.pk))
+        user_email = UserEmail.objects.all()[0]
+        self.assertEqual(u, User.objects.get(pk=user_email.user.pk))
 
     def test_create_user_existing_email(self):
         """
@@ -82,10 +82,10 @@ class UserManagerTests(TestCase):
         self.assertFalse(u.is_active)
         # The user is associated with a UserEmail
         self.assertEqual(1, u.emails.count())
-        email_user = UserEmail.objects.all()[0]
+        user_email = UserEmail.objects.all()[0]
         self.assertEqual(
             User.objects.get(pk=u.pk),
-            User.objects.get(pk=email_user.user.pk))
+            User.objects.get(pk=user_email.user.pk))
 
 
 class UserTests(TestCase):
@@ -206,7 +206,6 @@ class SubscriptionsViewTests(TestCase):
         self.assertIn('subscriptions', response.context)
         context_subscriptions = response.context['subscriptions']
         email = self.user.emails.all()[0]
-        email = email.emailuser
         # The correct email is in the context
         self.assertIn(email, context_subscriptions)
         # The packages in the context are correct
@@ -231,7 +230,6 @@ class SubscriptionsViewTests(TestCase):
         # All the emails are in the context?
         context_subscriptions = response.context['subscriptions']
         for email, package in zip(self.user.emails.all(), packages):
-            email = email.emailuser
             self.assertIn(email, context_subscriptions)
             # Each email has the correct package?
             self.assertEqual(
@@ -362,8 +360,7 @@ class SubscribeUserToPackageViewTests(TestCase):
             email=[e.email for e in self.user.emails.all()], package=self.package.name)
 
         for email in self.user.emails.all():
-            email = email.emailuser
-            self.assertTrue(email.is_subscribed_to(self.package))
+            self.assertTrue(email.emailsettings.is_subscribed_to(self.package))
 
     def test_subscribe_multiple_emails_does_not_own_one(self):
         """
@@ -371,7 +368,7 @@ class SubscribeUserToPackageViewTests(TestCase):
         that the user does not own in the list of emails.
         """
         other_email = 'other@domain.com'
-        EmailUser.objects.create(email=other_email)
+        UserEmail.objects.create(email=other_email)
         emails = [
             other_email,
             self.user.main_email,
@@ -467,11 +464,10 @@ class UnsubscribeUserViewTests(TestCase):
         self.assertTrue(self.user.is_subscribed_to(self.package))
         # However, the main email is no longer subscribed
         for email in self.user.emails.all():
-            email = email.emailuser
             if email.email == self.user.main_email:
-                self.assertFalse(email.is_subscribed_to(self.package))
+                self.assertFalse(email.emailsettings.is_subscribed_to(self.package))
             else:
-                self.assertTrue(email.is_subscribed_to(self.package))
+                self.assertTrue(email.emailsettings.is_subscribed_to(self.package))
 
     def test_package_name_not_provided(self):
         """
@@ -542,12 +538,12 @@ class UnsubscribeAllViewTests(TestCase):
                 # These emails no longer have any subscriptions
                 self.assertEqual(
                     0,
-                    Subscription.objects.filter(email_user__user_email__email=email).count())
+                    Subscription.objects.filter(email_settings__user_email__email=email).count())
             else:
                 # Otherwise, they have all the subscriptions!
                 self.assertEqual(
                     2,
-                    Subscription.objects.filter(email_user__user_email__email=email).count())
+                    Subscription.objects.filter(email_settings__user_email__email=email).count())
 
     def test_user_not_logged_in(self):
         """
@@ -571,10 +567,9 @@ class ModifyKeywordsViewTests(TestCase):
         self.password = 'asdf'
         self.user = User.objects.create_user(
             main_email='user@domain.com', password=self.password)
-        for email in self.user.emails.all():
-            EmailUser.objects.create(email=email.email)
-        self.other_email = EmailUser.objects.create(
-            user_email=UserEmail.objects.create(user=self.user, email='other@domain.com'))
+        for user_email in self.user.emails.all():
+            EmailSettings.objects.create(user_email=user_email)
+        self.other_email = UserEmail.objects.create(user=self.user, email='other@domain.com')
 
     def subscribe_email_to_package(self, email, package_name):
         """
@@ -600,8 +595,9 @@ class ModifyKeywordsViewTests(TestCase):
             reverse('dtracker-api-accounts-profile-keywords'), post_params, **kwargs)
 
     def get_email_keywords(self, email):
-        email_user = EmailUser.objects.get(user_email__email=email)
-        return [keyword.name for keyword in email_user.default_keywords.all()]
+        user_email = UserEmail.objects.get(email=email)
+        email_settings, _ = EmailSettings.objects.get_or_create(user_email=user_email)
+        return [keyword.name for keyword in email_settings.default_keywords.all()]
 
     def default_keywords_equal(self, new_keywords):
         default_keywords = self.get_email_keywords(self.user.main_email)
@@ -613,7 +609,7 @@ class ModifyKeywordsViewTests(TestCase):
 
     def get_subscription_keywords(self, email, package):
         subscription = Subscription.objects.get(
-            email_user__user_email__email=email, package__name=package)
+            email_settings__user_email__email=email, package__name=package)
         return [keyword.name for keyword in subscription.keywords.all()]
 
     def subscription_keywords_equal(self, email, package, new_keywords):
@@ -656,7 +652,7 @@ class ModifyKeywordsViewTests(TestCase):
         Tests that when a user does not own the email found in the parameters,
         no changes are made.
         """
-        new_email = EmailUser.objects.create(email='new@domain.com')
+        new_email = UserEmail.objects.create(email='new@domain.com')
         new_keywords = [keyword.name for keyword in Keyword.objects.all()[:2]]
         old_keywords = self.get_email_keywords(new_email.email)
         self.log_in()
@@ -687,7 +683,7 @@ class ModifyKeywordsViewTests(TestCase):
         Tests that the user cannot set keywords for a subscription that it does
         not own.
         """
-        new_email = EmailUser.objects.create(email='new@domain.com')
+        new_email = UserEmail.objects.create(email='new@domain.com')
         new_keywords = [keyword.name for keyword in Keyword.objects.all()[:2]]
         self.subscribe_email_to_package(
             new_email.email, self.package.name)

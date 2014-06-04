@@ -24,7 +24,8 @@ from datetime import timedelta
 
 from distro_tracker.core.models import PackageName, Subscription, Keyword
 from distro_tracker.core.models import Team
-from distro_tracker.core.models import EmailUser
+from distro_tracker.core.models import UserEmail
+from distro_tracker.core.models import EmailSettings
 from distro_tracker.accounts.models import User
 from distro_tracker.core.utils import verp
 from distro_tracker.core.utils import get_decoded_message_payload
@@ -32,7 +33,7 @@ from distro_tracker.core.utils import distro_tracker_render_to_string
 from distro_tracker.mail import dispatch
 from distro_tracker.accounts.models import UserEmail
 
-from distro_tracker.mail.models import EmailUserBounceStats
+from distro_tracker.mail.models import UserEmailBounceStats
 
 
 from django.conf import settings
@@ -341,7 +342,7 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         information structure.
         """
         self.subscribe_user_to_package('user@domain.com', self.package_name)
-        user = EmailUserBounceStats.objects.get(user_email__email='user@domain.com')
+        user = UserEmailBounceStats.objects.get(email='user@domain.com')
 
         self.run_dispatch()
 
@@ -395,7 +396,7 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         self.message.add_header('Subject', 'bounce')
         PackageName.objects.create(name='dummy-package')
         self.subscribe_user_to_package('user@domain.com', 'dummy-package')
-        self.user = EmailUserBounceStats.objects.get(user_email__email='user@domain.com')
+        self.user = UserEmailBounceStats.objects.get(email='user@domain.com')
 
     def create_bounce_address(self, to):
         """
@@ -410,14 +411,14 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         """
         Adds a sent mail record for the given user.
         """
-        EmailUserBounceStats.objects.add_sent_for_user(email=user.email,
+        UserEmailBounceStats.objects.add_sent_for_user(email=user.email,
                                                        date=date)
 
     def add_bounce(self, user, date):
         """
         Adds a bounced mail record for the given user.
         """
-        EmailUserBounceStats.objects.add_bounce_for_user(email=user.email,
+        UserEmailBounceStats.objects.add_bounce_for_user(email=user.email,
                                                          date=date)
 
     def test_bounce_recorded(self):
@@ -433,7 +434,7 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         self.assertEqual(bounce_stats.count(), 1)
         self.assertEqual(bounce_stats[0].date, timezone.now().date())
         self.assertEqual(bounce_stats[0].mails_bounced, 1)
-        self.assertEqual(self.user.subscription_set.count(), 1)
+        self.assertEqual(self.user.emailsettings.subscription_set.count(), 1)
 
     def test_bounce_over_limit(self):
         """
@@ -450,7 +451,7 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         # Make sure there were at least some subscriptions
         packages_subscribed_to = [
             subscription.package.name
-            for subscription in self.user.subscription_set.all()
+            for subscription in self.user.emailsettings.subscription_set.all()
         ]
         self.assertTrue(len(packages_subscribed_to) > 0)
 
@@ -458,7 +459,7 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         self.run_dispatch(self.create_bounce_address(self.user.email))
 
         # Assert that the user's subscriptions have been dropped.
-        self.assertEqual(self.user.subscription_set.count(), 0)
+        self.assertEqual(self.user.emailsettings.subscription_set.count(), 0)
         # A notification was sent to the user.
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn(self.user.email, mail.outbox[0].to)
@@ -483,14 +484,14 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         # Set up a sent mail today.
         self.add_sent(self.user, date)
         # Make sure there were at least some subscriptions
-        subscription_count = self.user.subscription_set.count()
+        subscription_count = self.user.emailsettings.subscription_set.count()
         self.assertTrue(subscription_count > 0)
 
         # Receive a bounce message.
         self.run_dispatch(self.create_bounce_address(self.user.email))
 
         # Assert that the user's subscriptions have not been dropped.
-        self.assertEqual(self.user.subscription_set.count(), subscription_count)
+        self.assertEqual(self.user.emailsettings.subscription_set.count(), subscription_count)
 
     def test_bounces_not_every_day(self):
         """
@@ -505,14 +506,14 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         # Set up a sent mail today.
         self.add_sent(self.user, date)
         # Make sure there were at least some subscriptions
-        subscription_count = self.user.subscription_set.count()
+        subscription_count = self.user.emailsettings.subscription_set.count()
         self.assertTrue(subscription_count > 0)
 
         # Receive a bounce message.
         self.run_dispatch(self.create_bounce_address(self.user.email))
 
         # Assert that the user's subscriptions have not been dropped.
-        self.assertEqual(self.user.subscription_set.count(), subscription_count)
+        self.assertEqual(self.user.emailsettings.subscription_set.count(), subscription_count)
 
 
 class BounceStatsTest(TestCase):
@@ -520,8 +521,8 @@ class BounceStatsTest(TestCase):
     Tests for the ``distro_tracker.mail.models`` handling users' bounce information.
     """
     def setUp(self):
-        self.user = EmailUserBounceStats.objects.create(
-            user_email=UserEmail.objects.create(email='user@domain.com'))
+        self.user = UserEmailBounceStats.objects.get(
+            email=UserEmail.objects.create(email='user@domain.com'))
         self.package = PackageName.objects.create(name='dummy-package')
 
     def test_add_sent_message(self):
@@ -529,7 +530,7 @@ class BounceStatsTest(TestCase):
         Tests that a new sent message record is correctly added.
         """
         date = timezone.now().date()
-        EmailUserBounceStats.objects.add_sent_for_user(self.user.email, date)
+        UserEmailBounceStats.objects.add_sent_for_user(self.user.email, date)
 
         bounce_stats = self.user.bouncestats_set.all()
         self.assertEqual(bounce_stats.count(), 1)
@@ -541,7 +542,7 @@ class BounceStatsTest(TestCase):
         Tests that a new bounced message record is correctly added.
         """
         date = timezone.now().date()
-        EmailUserBounceStats.objects.add_bounce_for_user(self.user.email, date)
+        UserEmailBounceStats.objects.add_bounce_for_user(self.user.email, date)
 
         bounce_stats = self.user.bouncestats_set.all()
         self.assertEqual(bounce_stats.count(), 1)
@@ -561,7 +562,7 @@ class BounceStatsTest(TestCase):
         ]
 
         for date in dates:
-            EmailUserBounceStats.objects.add_bounce_for_user(
+            UserEmailBounceStats.objects.add_bounce_for_user(
                 self.user.email, date)
 
         bounce_stats = self.user.bouncestats_set.all()
@@ -586,7 +587,7 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
         self.team.add_members([self.user.emails.all()[0]])
         self.package = PackageName.objects.create(name='dummy-package')
         self.team.packages.add(self.package)
-        self.email_user = EmailUser.objects.create(email='other@domain.com')
+        self.user_email = UserEmail.objects.create(email='other@domain.com')
 
         ## Set up a message which will be sent to the package
         self.clear_message()
@@ -605,7 +606,7 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
         the team.
         """
         email = self.user.main_email
-        membership = self.team.team_membership_set.get(email_user__user_email__email=email)
+        membership = self.team.team_membership_set.get(user_email__email=email)
         membership.set_keywords(self.package, ['default'])
         membership.muted = True
         membership.save()
@@ -620,7 +621,7 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
         correct keyword.
         """
         email = self.user.main_email
-        membership = self.team.team_membership_set.get(email_user__user_email__email=email)
+        membership = self.team.team_membership_set.get(user_email__email=email)
         membership.set_keywords(self.package, ['default'])
 
         self.run_dispatch()
@@ -633,7 +634,7 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
         have the messages keyword set.
         """
         email = self.user.main_email
-        membership = self.team.team_membership_set.get(email_user__user_email__email=email)
+        membership = self.team.team_membership_set.get(user_email__email=email)
         membership.set_keywords(
             self.package,
             [k.name for k in Keyword.objects.exclude(name='default')])
@@ -647,7 +648,7 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
         Tests that the headers of the dispatched message are correctly set.
         """
         email = self.user.main_email
-        membership = self.team.team_membership_set.get(email_user__user_email__email=email)
+        membership = self.team.team_membership_set.get(user_email__email=email)
         membership.set_keywords(self.package, ['default'])
 
         self.run_dispatch()
@@ -679,7 +680,7 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
         which is a part of the membership is, no message is forwarded.
         """
         email = self.user.main_email
-        membership = self.team.team_membership_set.get(email_user__user_email__email=email)
+        membership = self.team.team_membership_set.get(user_email__email=email)
         membership.set_keywords(self.package, ['default'])
         membership.mute_package(self.package)
 

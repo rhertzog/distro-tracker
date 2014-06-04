@@ -21,7 +21,7 @@ from distro_tracker.core.tasks import run_task
 from distro_tracker.core.tasks import Job
 from distro_tracker.core.tasks import JobState
 from distro_tracker.core.tasks import Event
-from distro_tracker.core.models import Subscription, EmailUser, PackageName, BinaryPackageName
+from distro_tracker.core.models import Subscription, EmailSettings, PackageName, BinaryPackageName
 from distro_tracker.core.models import SourcePackageName, SourcePackage
 from distro_tracker.core.models import SourcePackageRepositoryEntry
 from distro_tracker.core.models import PseudoPackageName
@@ -33,7 +33,7 @@ from distro_tracker.core.retrieve_data import UpdateRepositoriesTask
 from distro_tracker.core.retrieve_data import UpdateTeamPackagesTask
 from distro_tracker.core.retrieve_data import retrieve_repository_info
 from distro_tracker.core.tests.common import set_mock_response
-from distro_tracker.accounts.models import User
+from distro_tracker.accounts.models import User, UserEmail
 
 from distro_tracker.core.tasks import BaseTask
 from .common import create_source_package
@@ -178,11 +178,11 @@ class RetrievePseudoPackagesTest(TestCase):
 
         self.update_pseudo_package_list()
 
-        user = EmailUser.objects.get(email=user_email)
+        user_email = UserEmail.objects.get(email=user_email)
         # Still subscribed to the demoted package
-        self.assertTrue(user.is_subscribed_to(removed_package))
+        self.assertTrue(user_email.emailsettings.is_subscribed_to(removed_package))
         # Still subscribed to the pseudo package
-        self.assertTrue(user.is_subscribed_to(self.packages[0]))
+        self.assertTrue(user_email.emailsettings.is_subscribed_to(self.packages[0]))
 
     def test_all_pseudo_packages_demoted(self):
         """

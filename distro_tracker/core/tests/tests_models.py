@@ -20,7 +20,7 @@ from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from distro_tracker.core.tests.common import temporary_media_dir
 from django.core.urlresolvers import reverse
-from distro_tracker.core.models import Subscription, EmailUser, PackageName, BinaryPackageName
+from distro_tracker.core.models import Subscription, EmailSettings, PackageName, BinaryPackageName
 from distro_tracker.core.models import BinaryPackage
 from distro_tracker.core.models import Architecture
 from distro_tracker.core.models import BinaryPackageRepositoryEntry
@@ -39,7 +39,7 @@ from distro_tracker.core.models import TeamMembership
 from distro_tracker.core.models import MembershipPackageSpecifics
 from distro_tracker.core.utils import message_from_bytes
 from distro_tracker.core.utils.email_messages import get_decoded_message_payload
-from distro_tracker.accounts.models import User
+from distro_tracker.accounts.models import User, UserEmail
 from .common import make_temp_directory
 from .common import create_source_package
 
@@ -54,7 +54,8 @@ import itertools
 class SubscriptionManagerTest(TestCase):
     def setUp(self):
         self.package = PackageName.objects.create(name='dummy-package')
-        self.email_user = EmailUser.objects.create(email='email@domain.com')
+        self.user_email = UserEmail.objects.create(email='email@domain.com')
+        self.email_settings = EmailSettings.objects.create(user_email=self.user_email)
 
     def create_subscription(self, package, email, active=True):
         """
@@ -68,11 +69,11 @@ class SubscriptionManagerTest(TestCase):
 
     def test_create_for_existing_email(self):
         subscription = self.create_subscription(
-            self.package.name, self.email_user.email)
+            self.package.name, self.user_email.email)
 
-        self.assertEqual(subscription.email_user, self.email_user)
+        self.assertEqual(subscription.email_settings.user_email, self.user_email)
         self.assertEqual(subscription.package, self.package)
-        self.assertIn(self.email_user, self.package.subscriptions.all())
+        self.assertIn(self.email_settings, self.package.subscriptions.all())
         self.assertTrue(subscription.active)
 
     def test_create_for_existing_email_inactive(self):
@@ -80,20 +81,20 @@ class SubscriptionManagerTest(TestCase):
         Tests the create_for method when creating an inactive subscription.
         """
         subscription = self.create_subscription(
-            self.package.name, self.email_user.email, active=False)
+            self.package.name, self.user_email.email, active=False)
 
-        self.assertEqual(subscription.email_user, self.email_user)
+        self.assertEqual(subscription.email_settings, self.email_settings)
         self.assertEqual(subscription.package, self.package)
-        self.assertIn(self.email_user, self.package.subscriptions.all())
+        self.assertIn(self.email_settings, self.package.subscriptions.all())
         self.assertFalse(subscription.active)
 
     def test_create_for_unexisting_email(self):
-        previous_count = EmailUser.objects.count()
+        previous_count = UserEmail.objects.count()
         subscription = Subscription.objects.create_for(
             package_name=self.package.name,
             email='non-existing@email.com')
 
-        self.assertEqual(EmailUser.objects.count(), previous_count + 1)
+        self.assertEqual(UserEmail.objects.count(), previous_count + 1)
         self.assertEqual(subscription.package, self.package)
         self.assertTrue(subscription.active)
 
@@ -103,8 +104,8 @@ class SubscriptionManagerTest(TestCase):
         user, package pair.
         """
         prev_cnt_subs = Subscription.objects.count()
-        self.create_subscription(self.package.name, self.email_user.email)
-        self.create_subscription(self.package.name, self.email_user.email)
+        self.create_subscription(self.package.name, self.user_email.email)
+        self.create_subscription(self.package.name, self.user_email.email)
 
         self.assertEqual(Subscription.objects.count(), prev_cnt_subs + 1)
 
@@ -113,15 +114,15 @@ class SubscriptionManagerTest(TestCase):
         Tests the get_for_email method when the user is subscribed to multiple
         packages.
         """
-        self.create_subscription(self.package.name, self.email_user.email)
+        self.create_subscription(self.package.name, self.user_email.email)
         p = PackageName.objects.create(name='temp')
-        self.create_subscription(p.name, self.email_user.email)
+        self.create_subscription(p.name, self.user_email.email)
         package_not_subscribed_to = PackageName.objects.create(name='qwer')
         self.create_subscription(package_not_subscribed_to.name,
-                                 self.email_user.email,
+                                 self.user_email.email,
                                  active=False)
 
-        l = Subscription.objects.get_for_email(self.email_user.email)
+        l = Subscription.objects.get_for_email(self.user_email.email)
         l = [sub.package for sub in l]
 
         self.assertIn(self.package, l)
@@ -133,13 +134,13 @@ class SubscriptionManagerTest(TestCase):
         Tests the get_for_email method when the user is not subscribed to any
         packages.
         """
-        l = Subscription.objects.get_for_email(self.email_user.email)
+        l = Subscription.objects.get_for_email(self.user_email.email)
 
         self.assertEqual(len(l), 0)
 
     def test_all_active(self):
         active_subs = [
-            self.create_subscription(self.package.name, self.email_user.email),
+            self.create_subscription(self.package.name, self.user_email.email),
             self.create_subscription(self.package.name, 'email@d.com')
         ]
         inactive_subs = [
@@ -157,7 +158,7 @@ class SubscriptionManagerTest(TestCase):
         Tests the all_active method when it should filter based on a keyword
         """
         active_subs = [
-            self.create_subscription(self.package.name, self.email_user.email),
+            self.create_subscription(self.package.name, self.user_email.email),
             self.create_subscription(self.package.name, 'email1@a.com')
         ]
         sub_no_kw = self.create_subscription(self.package.name, 'email2@a.com')
@@ -179,15 +180,16 @@ class SubscriptionManagerTest(TestCase):
 class KeywordsTest(TestCase):
     def setUp(self):
         self.package = PackageName.objects.create(name='dummy-package')
-        self.email_user = EmailUser.objects.create(email='email@domain.com')
+        self.user_email = UserEmail.objects.create(email='email@domain.com')
+        self.email_settings = EmailSettings.objects.create(user_email=self.user_email)
         Keyword.objects.all().delete()
-        self.email_user.default_keywords.add(
+        self.email_settings.default_keywords.add(
             Keyword.objects.get_or_create(name='cvs')[0])
-        self.email_user.default_keywords.add(
+        self.email_settings.default_keywords.add(
             Keyword.objects.get_or_create(name='bts')[0])
         self.subscription = Subscription.objects.create(
             package=self.package,
-            email_user=self.email_user)
+            email_settings=self.email_settings)
         self.new_keyword = Keyword.objects.create(name='new')
 
     def test_keywords_add_to_subscription(self):
@@ -198,38 +200,39 @@ class KeywordsTest(TestCase):
 
         self.assertIn(self.new_keyword, self.subscription.keywords.all())
         self.assertNotIn(
-            self.new_keyword, self.email_user.default_keywords.all())
-        for keyword in self.email_user.default_keywords.all():
+            self.new_keyword, self.email_settings.default_keywords.all())
+        for keyword in self.email_settings.default_keywords.all():
             self.assertIn(keyword, self.subscription.keywords.all())
 
     def test_keywords_remove_from_subscription(self):
         """
         Tests removing a keyword from the subscription.
         """
-        keyword = self.email_user.default_keywords.all()[0]
+        keyword = self.email_settings.default_keywords.all()[0]
         self.subscription.keywords.remove(keyword)
 
         self.assertNotIn(keyword, self.subscription.keywords.all())
-        self.assertIn(keyword, self.email_user.default_keywords.all())
+        self.assertIn(keyword, self.email_settings.default_keywords.all())
 
     def test_get_keywords_when_default(self):
         """
         Tests that the subscription uses the user's default keywords if none
         have explicitly been set for the subscription.
         """
-        self.assertEqual(len(self.email_user.default_keywords.all()),
+        self.assertEqual(len(self.email_settings.default_keywords.all()),
                          len(self.subscription.keywords.all()))
-        self.assertEqual(self.email_user.default_keywords.count(),
+        self.assertEqual(self.email_settings.default_keywords.count(),
                          self.subscription.keywords.count())
-        for kw1, kw2 in zip(self.email_user.default_keywords.all(),
+        for kw1, kw2 in zip(self.email_settings.default_keywords.all(),
                             self.subscription.keywords.all()):
             self.assertEqual(kw1, kw2)
 
 
-class EmailUserTest(TestCase):
+class UserEmailTest(TestCase):
     def setUp(self):
         self.package = PackageName.objects.create(name='dummy-package')
-        self.email_user = EmailUser.objects.create(email='email@domain.com')
+        self.user_email = UserEmail.objects.create(email='email@domain.com')
+        self.email_settings = EmailSettings.objects.create(user_email=self.user_email)
 
     def test_is_subscribed_to(self):
         """
@@ -238,17 +241,17 @@ class EmailUserTest(TestCase):
         """
         Subscription.objects.create_for(
             package_name=self.package.name,
-            email=self.email_user.email)
-        self.assertTrue(self.email_user.is_subscribed_to(self.package))
-        self.assertTrue(self.email_user.is_subscribed_to(self.package.name))
+            email=self.user_email.email)
+        self.assertTrue(self.user_email.emailsettings.is_subscribed_to(self.package))
+        self.assertTrue(self.user_email.emailsettings.is_subscribed_to(self.package.name))
 
     def test_is_subscribed_to_false(self):
         """
         Tests that the ``is_subscribed_to`` method returns False when the user
         is not subscribed to the package.
         """
-        self.assertFalse(self.email_user.is_subscribed_to(self.package))
-        self.assertFalse(self.email_user.is_subscribed_to(self.package.name))
+        self.assertFalse(self.user_email.emailsettings.is_subscribed_to(self.package))
+        self.assertFalse(self.user_email.emailsettings.is_subscribed_to(self.package.name))
 
     def test_is_subscribed_to_false_inactive(self):
         """
@@ -257,75 +260,72 @@ class EmailUserTest(TestCase):
         """
         Subscription.objects.create_for(
             package_name=self.package.name,
-            email=self.email_user.email,
+            email=self.user_email.email,
             active=False)
-        self.assertFalse(self.email_user.is_subscribed_to(self.package))
+        self.assertFalse(self.user_email.emailsettings.is_subscribed_to(self.package))
 
     def test_new_user_has_default_keywords(self):
         """
         Tests that newly created users always have all the default keywords.
         """
         all_default_keywords = Keyword.objects.filter(default=True)
-        self.assertEqual(self.email_user.default_keywords.count(),
+        self.assertEqual(self.email_settings.default_keywords.count(),
                          all_default_keywords.count())
-        for keyword in self.email_user.default_keywords.all():
+        for keyword in self.email_settings.default_keywords.all():
             self.assertIn(keyword, all_default_keywords)
 
     def test_unsubscribe_all(self):
         """
         Tests the unsubscribe all method.
         """
-        Subscription.objects.create(email_user=self.email_user,
+        Subscription.objects.create(email_settings=self.email_settings,
                                     package=self.package)
 
-        self.email_user.unsubscribe_all()
+        self.user_email.emailsettings.unsubscribe_all()
 
-        self.assertEqual(self.email_user.subscription_set.count(), 0)
+        self.assertEqual(self.email_settings.subscription_set.count(), 0)
 
 
-class EmailUserManagerTest(TestCase):
+class UserEmailManagerTest(TestCase):
     def setUp(self):
         self.package = PackageName.objects.create(name='dummy-package')
-        self.email_user = EmailUser.objects.create(email='email@domain.com')
+        self.user_email = UserEmail.objects.create(email='email@domain.com')
+        self.email_settings = EmailSettings.objects.create(user_email=self.user_email)
 
     def test_is_subscribed_to(self):
         """
-        Tests that the is_user_subscribed_to method returns True when the
+        Tests that the is_subscribed_to method returns True when the
         user is subscribed to the given package.
         """
         Subscription.objects.create_for(
             package_name=self.package.name,
-            email=self.email_user.email)
+            email=self.user_email.email)
         self.assertTrue(
-            EmailUser.objects.is_user_subscribed_to(self.email_user.email,
-                                                    self.package.name))
+            self.user_email.emailsettings.is_subscribed_to(self.package.name))
 
     def test_is_subscribed_to_false(self):
         """
-        Tests that the is_user_subscribed_to method returns False when the
+        Tests that the is_subscribed_to method returns False when the
         user is not subscribed to the given package.
         """
         self.assertFalse(
-            EmailUser.objects.is_user_subscribed_to(self.email_user.email,
-                                                    self.package.name))
+            self.user_email.emailsettings.is_subscribed_to(self.package.name))
 
     def test_is_subscribed_to_user_doesnt_exist(self):
         """
-        Tests that the is_user_subscribed_to method returns False when the
+        Tests that the is_subscribed_to method returns False when the
         given user does not exist.
         """
         self.assertFalse(
-            EmailUser.objects.is_user_subscribed_to('unknown-user@foo.com',
-                                                    self.package.name))
+            self.user_email.emailsettings.is_subscribed_to('unknown-package'))
 
     def test_is_subscribed_to_package_doesnt_exist(self):
         """
-        Tests that the is_user_subscribed_to method returns False when the
+        Tests that the is_subscribed_to method returns False when the
         given package does not exist.
         """
         self.assertFalse(
-            EmailUser.objects.is_user_subscribed_to(self.email_user.email,
-                                                    'unknown-package'))
+            self.user_email.emailsettings.is_subscribed_to('unknown-package'))
 
 
 class PackageManagerTest(TestCase):
@@ -391,7 +391,7 @@ class PackageManagerTest(TestCase):
                                                 multiple):
         """
         Generic function to test the deletion via a proxy class
-        of PackageName. 
+        of PackageName.
         """
         p, c = proxy_class.objects.get_or_create(name='to-delete')
         self.assertTrue(getattr(p, pkg_type))
@@ -1551,8 +1551,9 @@ class TeamTests(TestCase):
             owner=self.user, name="Team name")
         self.package_name = PackageName.objects.create(name='dummy')
         self.team.packages.add(self.package_name)
-        self.email_user = EmailUser.objects.create(
+        self.user_email = UserEmail.objects.create(
             email='other@domain.com')
+        self.email_settings = EmailSettings.objects.create(user_email=self.user_email)
 
     def assert_keyword_sets_equal(self, set1, set2):
         self.assertEqual(
@@ -1569,17 +1570,17 @@ class TeamTests(TestCase):
         Tests that when there are no membership keywords, the user's default
         keywords are returned.
         """
-        membership = self.team.add_members([self.email_user])[0]
+        membership = self.team.add_members([self.user_email])[0]
         MembershipPackageSpecifics.objects.create(
             membership=membership,
             package_name=self.package_name)
 
         self.assert_keyword_sets_equal(
-            self.email_user.default_keywords.all(),
+            self.email_settings.default_keywords.all(),
             membership.get_keywords(self.package_name))
 
     def test_set_membership_keywords(self):
-        membership = self.team.add_members([self.email_user])[0]
+        membership = self.team.add_members([self.user_email])[0]
         keywords = Keyword.objects.all()[:3]
 
         membership.set_membership_keywords([k.name for k in keywords])
@@ -1599,7 +1600,7 @@ class TeamTests(TestCase):
         # Add another package to the team
         package = self.team.packages.create(name='other-pkg')
         self.team.packages.add(package)
-        membership = self.team.add_members([self.email_user])[0]
+        membership = self.team.add_members([self.user_email])[0]
         keywords = Keyword.objects.all()[:3]
 
         membership.set_keywords(self.package_name, [k.name for k in keywords])
@@ -1612,7 +1613,7 @@ class TeamTests(TestCase):
             membership.get_keywords(self.package_name))
         # But the other package still returns the user's default keywords
         self.assert_keyword_sets_equal(
-            self.email_user.default_keywords.all(),
+            self.email_settings.default_keywords.all(),
             membership.get_keywords(package))
 
     def test_mute_package(self):
@@ -1621,7 +1622,7 @@ class TeamTests(TestCase):
         """
         package = self.team.packages.create(name='other-pkg')
         self.team.packages.add(package)
-        membership = self.team.add_members([self.email_user])[0]
+        membership = self.team.add_members([self.user_email])[0]
 
         membership.mute_package(self.package_name)
 

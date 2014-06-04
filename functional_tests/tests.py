@@ -16,14 +16,13 @@ from django.test import LiveServerTestCase
 from django.core.urlresolvers import reverse
 from django.contrib.auth import get_user_model
 from django.core import mail
+from django_email_accounts.models import UserEmail
 from distro_tracker.core.models import SourcePackageName, BinaryPackageName
 from distro_tracker.accounts.models import UserRegistrationConfirmation
 from distro_tracker.accounts.models import ResetPasswordConfirmation
 from distro_tracker.accounts.models import AddEmailConfirmation
 from distro_tracker.accounts.models import MergeAccountConfirmation
-from distro_tracker.core.models import EmailUser
 from distro_tracker.core.models import ContributorName
-from distro_tracker.accounts.models import UserEmail
 from distro_tracker.core.models import Team
 from distro_tracker.core.models import SourcePackage
 from distro_tracker.core.models import PackageName
@@ -488,7 +487,7 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
     def setUp(self):
         super(UserRegistrationTest, self).setUp()
         # User registration tests do not want any already registered users
-        EmailUser.objects.all().delete()
+        UserEmail.objects.all().delete()
         User.objects.all().delete()
 
     def get_confirmation_url(self, message):
@@ -603,7 +602,7 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
         subscriptions to some packages.
         """
         ## Set up such an email
-        email = EmailUser.objects.create(email='user@domain.com')
+        email = UserEmail.objects.create(email='user@domain.com')
         package_name = 'dummy-package'
         Subscription.objects.create_for(
             email=email,
@@ -835,7 +834,7 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
         ## The user is now subscribed to the package with only the clicked email
         self.assertEqual(1, Subscription.objects.count())
         sub = Subscription.objects.all()[0]
-        self.assertEqual(other_email, sub.email_user.email)
+        self.assertEqual(other_email, sub.email_settings.user_email.email)
 
         # The UI that the user sees reflects this
         self.assert_element_with_id_in_page('unsubscribe-button')
@@ -1542,7 +1541,7 @@ class TeamTests(SeleniumTestCase):
         user = User.objects.create_user(
             main_email='other@domain.com',
             password=self.password)
-        emailuser = EmailUser.objects.get_or_create(email=user.main_email)
+        useremail = UserEmail.objects.get_or_create(email=user.main_email)
         ## --
 
         # The user logs in and goes to the team page
