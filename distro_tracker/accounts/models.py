@@ -20,6 +20,7 @@ from django_email_accounts.models import (
     MergeAccountConfirmation,
 )
 
+
 class User(EmailAccountsUser):
     """
     Proxy model for :class:`django_email_accounts.models.User` extending it
@@ -52,4 +53,4 @@ class User(EmailAccountsUser):
             email = self.main_email
         user_email = UserEmail.objects.get(email=email)
         if self.emails.filter(pk=user_email.id).exists():
-            user_email.emailuser.subscription_set.all().delete()
+            user_email.emailsettings.subscription_set.all().delete()

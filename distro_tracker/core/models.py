@@ -21,6 +21,7 @@ from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.template.defaultfilters import slugify
+from django_email_accounts.models import UserEmail
 from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.utils import SpaceDelimitedTextField
 from distro_tracker.core.utils import verify_signature
@@ -29,7 +30,6 @@ from distro_tracker.core.utils.plugins import PluginRegistry
 from distro_tracker.core.utils.email_messages import decode_header
 from distro_tracker.core.utils.email_messages import get_decoded_message_payload
 from distro_tracker.core.utils.email_messages import message_from_bytes
-from distro_tracker.accounts.models import UserEmail
 
 from debian.debian_support import AptPkgVersion
 from debian import changelog as debian_changelog
@@ -57,67 +57,13 @@ class Keyword(models.Model):
         return self.name
 
 
-class EmailUserManager(models.Manager):
-    """
-    A custom :class:`Manager <django.db.models.Manager>` for the
-    :class:`EmailUser` model.
-    """
-    def is_user_subscribed_to(self, user_email, package_name):
-        """
-        Checks if the given user is subscribed to the given package.
-
-        :param user_email: The email of the user
-        :type user_email: string
-
-        :param package_name: The name of the package
-        :type package_name: string
-        """
-        user = get_or_none(EmailUser, email=user_email)
-        if not user:
-            return False
-        else:
-            return user.is_subscribed_to(package_name)
-
-    def create(self, email=None, **kwargs):
-        if 'user_email' not in kwargs:
-            user_email, _ = UserEmail.objects.get_or_create(email=email)
-            kwargs['user_email'] = user_email
-
-        return super(EmailUserManager, self).create(**kwargs)
-
-    def get_or_create(self, email=None, **kwargs):
-        if email is not None:
-            user_email, _ = UserEmail.objects.get_or_create(email=email)
-            kwargs['user_email'] = user_email
-
-        return super(EmailUserManager, self).get_or_create(**kwargs)
-
-    def get(self, email=None, **kwargs):
-        if email is not None:
-            kwargs['user_email'] = UserEmail.objects.get_or_create(email=email)[0]
-
-        return super(EmailUserManager, self).get(**kwargs)
-
-    def filter_by_email(self, email):
-        """
-        Filters the QuerySet based on the given email represented as a
-        string.
-
-        :param email: The email based on which the query set should be filtered
-        :type email: string
-        """
-        return self.filter(user_email__email=email)
-
-
 @python_2_unicode_compatible
-class EmailUser(models.Model):
+class EmailSettings(models.Model):
     """
-    A model describing users identified by their email address.
+    Settings for an email
     """
     user_email = models.OneToOneField(UserEmail)
     default_keywords = models.ManyToManyField(Keyword)
-
-    objects = EmailUserManager()
 
     def __str__(self):
         return self.email
@@ -129,6 +75,16 @@ class EmailUser(models.Model):
     @cached_property
     def user(self):
         return self.user_email.user
+
+    def save(self, *args, **kwargs):
+        """
+        Overrides the default save method to add the set of default keywords to
+        the user's own default keywords after creating an instance.
+        """
+        new_object = not self.id
+        models.Model.save(self, *args, **kwargs)
+        if new_object:
+            self.default_keywords = Keyword.objects.filter(default=True)
 
     def is_subscribed_to(self, package):
         """
@@ -152,16 +108,6 @@ class EmailUser(models.Model):
         Terminates all of the user's subscriptions.
         """
         self.subscription_set.all().delete()
-
-    def save(self, *args, **kwargs):
-        """
-        Overrides the default save method to add the set of default keywords to
-        the user's own default keywords after creating an instance.
-        """
-        new_object = not self.id
-        models.Model.save(self, *args, **kwargs)
-        if new_object:
-            self.default_keywords = Keyword.objects.filter(default=True)
 
 
 class PackageManagerQuerySet(models.query.QuerySet):
@@ -295,7 +241,7 @@ class PackageName(models.Model):
     binary = models.BooleanField(default=False)
     pseudo = models.BooleanField(default=False)
 
-    subscriptions = models.ManyToManyField(EmailUser, through='Subscription')
+    subscriptions = models.ManyToManyField(EmailSettings, through='Subscription')
 
     objects = PackageManager()
     source_packages = PackageManager('source')
@@ -556,10 +502,11 @@ class SubscriptionManager(models.Manager):
             # "subscriptions-only" package.
             package = PackageName.objects.create(
                 name=package_name)
-        email_user, created = EmailUser.objects.get_or_create(
-            email=email)
+        user_email, _ = UserEmail.objects.get_or_create(email=email)
+        email_settings, _ = EmailSettings.objects.get_or_create(
+            user_email=user_email)
 
-        subscription, _ = self.get_or_create(email_user=email_user,
+        subscription, _ = self.get_or_create(email_settings=email_settings,
                                              package=package)
         subscription.active = active
         subscription.save()
@@ -579,11 +526,12 @@ class SubscriptionManager(models.Manager):
             did not even exist.
         """
         package = get_or_none(PackageName, name=package_name)
-        email_user = get_or_none(EmailUser, email=email)
-        if not package or not email_user:
+        user_email = get_or_none(UserEmail, email=email)
+        email_settings = get_or_none(EmailSettings, user_email=user_email)
+        if not package or not user_email or not email_settings:
             return False
         subscription = get_or_none(
-            Subscription, email_user=email_user, package=package)
+            Subscription, email_settings=email_settings, package=package)
         if subscription:
             subscription.delete()
         return True
@@ -602,10 +550,11 @@ class SubscriptionManager(models.Manager):
            :py:class:`QuerySet <django.db.models.query.QuerySet>` object,
            clients should not count on chaining additional filters to the result.
         """
-        email_user = get_or_none(EmailUser, email=email)
-        if not email_user:
+        user_email = get_or_none(UserEmail, email=email)
+        email_settings = get_or_none(EmailSettings, user_email=user_email)
+        if not user_email or not email_settings:
             return []
-        return email_user.subscription_set.all_active()
+        return email_settings.subscription_set.all_active()
 
     def all_active(self, keyword=None):
         """
@@ -635,10 +584,10 @@ class SubscriptionManager(models.Manager):
 @python_2_unicode_compatible
 class Subscription(models.Model):
     """
-    A model describing a subscription of a single :class:`EmailUser` to a
+    A model describing a subscription of a single :class:`EmailSettings` to a
     single :class:`PackageName`.
     """
-    email_user = models.ForeignKey(EmailUser)
+    email_settings = models.ForeignKey(EmailSettings)
     package = models.ForeignKey(PackageName)
     active = models.BooleanField(default=True)
     _keywords = models.ManyToManyField(Keyword)
@@ -677,7 +626,7 @@ class Subscription(models.Model):
             whether the subscription is still using the user's keywords or not.
             """
             if self._subscription._use_user_default_keywords:
-                manager = self._subscription.email_user.default_keywords
+                manager = self._subscription.email_settings.default_keywords
             else:
                 manager = self._subscription._keywords
             return manager
@@ -691,8 +640,8 @@ class Subscription(models.Model):
                 # Do not use the user's keywords anymore
                 self._subscription._use_user_default_keywords = False
                 # Copy the user's keywords
-                user = self._subscription.email_user
-                for keyword in user.default_keywords.all():
+                email_settings = self._subscription.email_settings
+                for keyword in email_settings.default_keywords.all():
                     self._subscription._keywords.add(keyword)
                 self._subscription.save()
 
@@ -701,7 +650,7 @@ class Subscription(models.Model):
         self.keywords = Subscription.KeywordsAdapter(self)
 
     def __str__(self):
-        return str(self.email_user) + ' ' + str(self.package)
+        return str(self.user_email) + ' ' + str(self.package)
 
 
 from jsonfield import JSONField
@@ -881,7 +830,7 @@ class Repository(models.Model):
         :returns True: If it contains at least one version of the source package
             with the given name.
         :returns False: If it does not contain any version of the source package
-            with the given name. 
+            with the given name.
         """
         qs = self.source_packages.filter(
             source_package_name__name=source_package_name)
@@ -2107,7 +2056,7 @@ class Team(models.Model):
         PackageName,
         related_name='teams')
     members = models.ManyToManyField(
-        EmailUser,
+        UserEmail,
         related_name='teams',
         through='TeamMembership')
 
@@ -2129,7 +2078,7 @@ class Team(models.Model):
         models.
 
         :param users: The users to be added to the team.
-        :type users: an ``iterable`` of :class:`EmailUser` instances
+        :type users: an ``iterable`` of :class:`UserEmail` instances
 
         :param muted: If set to True, the membership will be muted before the
             user excplicitely unmutes it.
@@ -2140,12 +2089,12 @@ class Team(models.Model):
         """
         users = [
             user
-            if isinstance(user, EmailUser) else
-            EmailUser.objects.get_or_create(user_email=user)[0]
+            if isinstance(user, UserEmail) else
+            UserEmail.objects.get_or_create(email=user)[0]
             for user in users
         ]
         return [
-            self.team_membership_set.create(email_user=user, muted=muted)
+            self.team_membership_set.create(user_email=user, muted=muted)
             for user in users
         ]
 
@@ -2154,9 +2103,9 @@ class Team(models.Model):
         Removes the given users from the team.
 
         :param users: The users to be removed from the team.
-        :type users: an ``iterable`` of :class:`EmailUser` instances
+        :type users: an ``iterable`` of :class:`UserEmail` instances
         """
-        self.team_membership_set.filter(email_user__in=users).delete()
+        self.team_membership_set.filter(user_email__in=users).delete()
 
     def user_is_member(self, user):
         """
@@ -2166,7 +2115,7 @@ class Team(models.Model):
         """
         return (
             user == self.owner or
-            self.members.filter(user_email__pk__in=user.emails.all()).exists()
+            self.members.filter(pk__in=user.emails.all()).exists()
         )
 
 
@@ -2176,7 +2125,7 @@ class TeamMembership(models.Model):
     Represents the intermediary model for the many-to-many association of
     team members to a :class:`Team`.
     """
-    email_user = models.ForeignKey(EmailUser, related_name='membership_set')
+    user_email = models.ForeignKey(UserEmail, related_name='membership_set')
     team = models.ForeignKey(Team, related_name='team_membership_set')
 
     muted = models.BooleanField(default=False)
@@ -2184,10 +2133,10 @@ class TeamMembership(models.Model):
     has_membership_keywords = models.BooleanField(default=False)
 
     class Meta:
-        unique_together = ('email_user', 'team')
+        unique_together = ('user_email', 'team')
 
     def __str__(self):
-        return '{} member of {}'.format(self.email_user, self.team)
+        return '{} member of {}'.format(self.user_email, self.team)
 
     def is_muted(self, package_name):
         """
@@ -2282,7 +2231,7 @@ class TeamMembership(models.Model):
 
         - Membership package-specific keywords
         - Membership default keywords
-        - EmailUser default keywords
+        - UserEmail default keywords
 
         :param package_name: The name of the package for which the keywords
             should be returned
@@ -2308,7 +2257,8 @@ class TeamMembership(models.Model):
         if self.has_membership_keywords:
             return self.default_keywords.all()
 
-        return self.email_user.default_keywords.all()
+        email_settings, _ = EmailSettings.objects.get_or_create(user_email=self.user_email)
+        return email_settings.default_keywords.all()
 
 
 @python_2_unicode_compatible
