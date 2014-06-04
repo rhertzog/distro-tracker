@@ -89,7 +89,7 @@ class Command(BaseCommand):
         """
         subscriptions = package.subscription_set.filter(active=not inactive)
         self.out_packages[package.name] = [
-            str(sub.email_user)
+            str(sub.email_settings.user_email)
             for sub in subscriptions
         ]
 

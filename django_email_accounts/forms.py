@@ -47,11 +47,11 @@ class UserCreationForm(forms.ModelForm):
         # Check whether a different user is already associated with this
         # email address.
         try:
-            email_user = UserEmail.objects.get(email=main_email)
+            user_email = UserEmail.objects.get(email=main_email)
         except UserEmail.DoesNotExist:
             return main_email
 
-        if email_user.user is not None:
+        if user_email.user is not None:
             raise forms.ValidationError('The email address is already in use')
 
         return main_email

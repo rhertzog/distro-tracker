@@ -40,7 +40,7 @@ from distro_tracker.accounts.models import ResetPasswordConfirmation
 from distro_tracker.core.utils import distro_tracker_render_to_string
 from distro_tracker.core.utils import render_to_json_response
 from distro_tracker.core.models import Subscription
-from distro_tracker.core.models import EmailUser
+from distro_tracker.core.models import EmailSettings
 from distro_tracker.core.models import Keyword
 
 from django_email_accounts import views as email_accounts_views
@@ -110,7 +110,7 @@ class ManageAccountEmailsView(ConfirmationRenderMixin, email_accounts_views.Mana
 
 class AccountMergeConfirmView(ConfirmationRenderMixin, email_accounts_views.AccountMergeConfirmView):
     success_url = reverse_lazy('dtracker-accounts-merge-confirmed')
-    confirmation_email_subject = 'Merge {name} Accounts'.format( 
+    confirmation_email_subject = 'Merge {name} Accounts'.format(
         name=settings.GET_INSTANCE_NAME())
     confirmation_email_from_address = settings.DISTRO_TRACKER_CONTACT_EMAIL
 
@@ -137,21 +137,22 @@ class SubscriptionsView(LoginRequiredMixin, View):
 
     def get(self, request):
         user = request.user
+        user_emails = UserEmail.objects.filter(user=user)
         # Map users emails to the subscriptions of that email
-        emails = [
-            EmailUser.objects.get_or_create(user_email=email)[0]
-            for email in user.emails.all()
+        email_settings = [
+            EmailSettings.objects.get_or_create(user_email=user_email)[0]
+            for user_email in user_emails
         ]
         subscriptions = {
-            email: {
+            user_email: {
                 'subscriptions': sorted([
-                    subscription for subscription in email.subscription_set.all()
+                    subscription for subscription in user_email.emailsettings.subscription_set.all()
                 ], key=lambda sub: sub.package.name),
                 'team_memberships': sorted([
-                    membership for membership in email.membership_set.all()
+                    membership for membership in user_email.membership_set.all()
                 ], key=lambda m: m.team.name)
             }
-            for email in emails
+            for user_email in user_emails
         }
         return render(request, self.template_name, {
             'subscriptions': subscriptions,
@@ -221,12 +222,12 @@ class UnsubscribeUserView(LoginRequiredMixin, View):
         if 'email' not in request.POST:
             # Unsubscribe all the user's emails from the package
             qs = Subscription.objects.filter(
-                email_user__in=user.emails.all(),
+                email_settings__user_email__in=UserEmail.objects.filter(user=user),
                 package__name=package)
         else:
             # Unsubscribe only the given email from the package
             qs = Subscription.objects.filter(
-                email_user__user_email__email=request.POST['email'],
+                email_settings__user_email__email=request.POST['email'],
                 package__name=package)
 
         qs.delete()
@@ -256,7 +257,7 @@ class UnsubscribeAllView(LoginRequiredMixin, View):
             emails = user.emails.filter(email__in=request.POST.getlist('email'))
 
         # Remove all the subscriptions
-        Subscription.objects.filter(email_user__in=emails).delete()
+        Subscription.objects.filter(email_settings__user_email__in=emails).delete()
 
         if request.is_ajax():
             return render_to_json_response({
@@ -300,24 +301,24 @@ class ModifyKeywordsView(LoginRequiredMixin, View):
 
     def modify_default_keywords(self, email, keywords):
         try:
-            email_user = self.user.emails.get(email=email)
-            email_user = email_user.emailuser
-        except (EmailUser.DoesNotExist, UserEmail.DoesNotExist):
+            user_email = UserEmail.objects.get(user=self.user, email=email)
+        except (UserEmail.DoesNotExist):
             return HttpResponseForbidden()
 
-        email_user.default_keywords = self.get_keywords(keywords)
+        email_settings, _ = EmailSettings.objects.get_or_create(user_email=user_email)
+        email_settings.default_keywords = self.get_keywords(keywords)
 
         return self.render_response()
 
     def modify_subscription_keywords(self, email, package, keywords):
         try:
-            email_user = self.user.emails.get(email=email)
-            email_user = email_user.emailuser
-        except (EmailUser.DoesNotExist, UserEmail.DoesNotExist):
+            user_email = UserEmail.objects.get(user=self.user, email=email)
+        except (UserEmail.DoesNotExist):
             return HttpResponseForbidden()
 
+        email_settings, _ = EmailSettings.objects.get_or_create(user_email=user_email)
         subscription = get_object_or_404(
-            Subscription, email_user=email_user, package__name=package)
+            Subscription, email_settings__user_email=user_email, package__name=package)
 
         subscription.keywords.clear()
         for keyword in self.get_keywords(keywords):
@@ -357,14 +358,14 @@ class ModifyKeywordsView(LoginRequiredMixin, View):
         email = request.GET['email']
 
         try:
-            email_user = request.user.emails.get(email=email)
-        except EmailUser.DoesNotExist:
+            user_email = request.user.useremail.get(email=email)
+        except UserEmail.DoesNotExist:
             return HttpResponseForbidden()
 
         if 'package' in request.GET:
             package = request.GET['package']
             subscription = get_object_or_404(
-                Subscription, email_user=email_user, package__name=package)
+                Subscription, email_settings__user_emailr=user_email, package__name=package)
             context = {
                 'post': {
                     'email': email,
@@ -378,7 +379,7 @@ class ModifyKeywordsView(LoginRequiredMixin, View):
                 'post': {
                     'email': email,
                 },
-                'user_keywords': email_user.default_keywords.all(),
+                'user_keywords': user_email.emailsettings.default_keywords.all(),
             }
 
         context.update({

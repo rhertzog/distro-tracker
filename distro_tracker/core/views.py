@@ -30,7 +30,7 @@ from distro_tracker.core.forms import AddTeamMemberForm
 from distro_tracker.core.utils import render_to_json_response
 from distro_tracker.core.models import SourcePackageName, PackageName, PseudoPackageName
 from distro_tracker.core.models import ActionItem
-from distro_tracker.core.models import EmailUser
+from distro_tracker.core.models import EmailSettings
 from distro_tracker.core.models import News, NewsRenderer
 from distro_tracker.core.models import Keyword
 from distro_tracker.core.models import Team
@@ -39,6 +39,7 @@ from distro_tracker.core.models import MembershipConfirmation
 from distro_tracker.core.panels import get_panels_for_package
 from distro_tracker.accounts.views import LoginRequiredMixin
 from distro_tracker.accounts.models import User
+from distro_tracker.accounts.models import UserEmail
 from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.utils import distro_tracker_render_to_string
 
@@ -261,7 +262,7 @@ class AddPackageToTeamView(LoginRequiredMixin, View):
         """
         team = get_object_or_404(Team, slug=slug)
         if not team.user_is_member(request.user):
-            # Only team mebers are allowed to modify the packages followed by 
+            # Only team mebers are allowed to modify the packages followed by
             # the team.
             raise PermissionDenied
 
@@ -372,7 +373,7 @@ class LeaveTeamView(LoginRequiredMixin, View):
             raise PermissionDenied
 
         # Remove all the user's emails from the team
-        team.remove_members(EmailUser.objects.filter(user_email__pk__in=request.user.emails.all()))
+        team.remove_members(UserEmail.objects.filter(pk__in=request.user.emails.all()))
 
         return redirect(team)
 
@@ -387,7 +388,7 @@ class ManageTeamMembers(LoginRequiredMixin, ListView):
     context_object_name = 'members_list'
 
     def get_queryset(self):
-        return self.team.members.all().order_by('user_email__email')
+        return self.team.members.all().order_by('email')
 
     def get_context_data(self, *args, **kwargs):
         context = super(ManageTeamMembers, self).get_context_data(*args, **kwargs)
@@ -411,7 +412,7 @@ class RemoveTeamMember(LoginRequiredMixin, View):
 
         if 'email' in request.POST:
             emails = request.POST.getlist('email')
-            self.team.remove_members(EmailUser.objects.filter(user_email__email__in=emails))
+            self.team.remove_members(UserEmail.objects.filter(email__in=emails))
 
         return redirect('dtracker-team-manage', slug=self.team.slug)
 
@@ -426,7 +427,7 @@ class AddTeamMember(LoginRequiredMixin, View):
         if form.is_valid():
             email = form.cleaned_data['email']
             # Emails that do not exist should be created
-            user, _ = EmailUser.objects.get_or_create(email=email)
+            user, _ = UserEmail.objects.get_or_create(email=email)
             # The membership is muted by default until the user confirms it
             membership = self.team.add_members([user], muted=True)[0]
             confirmation = MembershipConfirmation.objects.create_confirmation(
@@ -483,11 +484,11 @@ class SetMuteTeamView(LoginRequiredMixin, View):
         user = request.user
         try:
             email = user.emails.get(email=request.POST['email'])
-        except EmailUser.DoesNotExist:
+        except UserEmail.DoesNotExist:
             raise PermissionDenied
 
         try:
-            membership = team.team_membership_set.get(email_user=email)
+            membership = team.team_membership_set.get(user_email=email)
         except TeamMembership.DoesNotExist:
             raise Http404
 
@@ -535,11 +536,11 @@ class SetMembershipKeywords(LoginRequiredMixin, View):
             raise Http404
         try:
             email = user.emails.get(email=request.POST['email'])
-        except EmailUser.DoesNotExist:
+        except UserEmail.DoesNotExist:
             raise PermissionDenied
 
         try:
-            membership = self.team.team_membership_set.get(email_user=email)
+            membership = self.team.team_membership_set.get(user_email=email)
         except TeamMembership.DoesNotExist:
             raise Http404
 
@@ -565,11 +566,11 @@ class EditMembershipView(LoginRequiredMixin, ListView):
         user = request.user
         try:
             email = user.emails.get(email=request.GET['email'])
-        except EmailUser.DoesNotExist:
+        except UserEmail.DoesNotExist:
             raise PermissionDenied
 
         try:
-            self.membership = self.team.team_membership_set.get(email_user=email)
+            self.membership = self.team.team_membership_set.get(user_email=email)
         except TeamMembership.DoesNotExist:
             raise Http404
 

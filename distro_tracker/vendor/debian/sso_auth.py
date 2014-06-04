@@ -86,15 +86,15 @@ class DebianSsoUserBackend(RemoteUserBackend):
 
         email = remote_user
 
-        email_user = get_or_none(UserEmail, email=email)
-        if not email_user:
+        user_email = get_or_none(UserEmail, email=email)
+        if not user_email:
             names = self.get_user_details(remote_user)
             kwargs = {}
             if names:
                 kwargs.update(names)
             user = User.objects.create_user(main_email=email, **kwargs)
         else:
-            user = email_user.user
+            user = user_email.user
 
         return user
 

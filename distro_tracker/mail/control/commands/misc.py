@@ -14,7 +14,7 @@ from __future__ import unicode_literals
 
 from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.utils import distro_tracker_render_to_string
-from distro_tracker.core.models import Subscription, EmailUser, PackageName, BinaryPackageName
+from distro_tracker.core.models import Subscription, UserEmail, EmailSettings, PackageName, BinaryPackageName
 from distro_tracker.core.models import SourcePackageName, PseudoPackageName
 from distro_tracker.mail.control.commands.confirmation import needs_confirmation
 from distro_tracker.mail.control.commands.base import Command
@@ -61,14 +61,15 @@ class SubscribeCommand(Command):
         Implementation of a hook method which is executed instead of
         :py:meth:`handle` when the command is not confirmed.
         """
-        if EmailUser.objects.is_user_subscribed_to(self.user_email,
-                                                   self.package):
+        user = get_or_none(UserEmail, email=self.user_email)
+        emailsettings = get_or_none(EmailSettings, user_email=user)
+        if user and emailsettings.is_subscribed_to(self.package):
             self.warn('{email} is already subscribed to {package}'.format(
                 email=self.user_email,
                 package=self.package))
             return False
 
-        if not SourcePackageName.objects.exists_with_name(self.package): 
+        if not SourcePackageName.objects.exists_with_name(self.package):
             if BinaryPackageName.objects.exists_with_name(self.package):
                 binary_package = BinaryPackageName.objects.get_by_name(self.package)
                 self.warn('{package} is not a source package.'.format(
@@ -172,8 +173,9 @@ class UnsubscribeCommand(Command):
                     '{package} is neither a source package '
                     'nor a binary package.'.format(package=self.package))
                 return False
-        if not EmailUser.objects.is_user_subscribed_to(self.user_email,
-                                                       self.package):
+        user = get_or_none(UserEmail, email=self.user_email)
+        emailsettings = get_or_none(EmailSettings, user_email=user)
+        if not user or not emailsettings.is_subscribed_to(self.package):
             self.error(
                 "{email} is not subscribed, you can't unsubscribe.".format(
                     email=self.user_email)
@@ -285,17 +287,17 @@ class WhoCommand(Command):
             for subscriber in package.subscriptions.all()
         )
 
-    def obfuscate(self, email_user):
+    def obfuscate(self, user_email):
         """
         Helper method which obfuscates the given email.
 
-        :param email_user: The user whose email should be obfuscated.
-        :type email_user: :py:class:`EmailUser <distro_tracker.core.models.EmailUser>`
+        :param user_email: The user whose email should be obfuscated.
+        :type user_email: :py:class:`UserEmail <distro_tracker.core.models.UserEmail>`
 
         :returns: An obfuscated email address of the given user.
         :rtype: string
         """
-        email = email_user.email
+        email = user_email.email
         local_part, domain = email.rsplit('@', 1)
         domain_parts = domain.split('.')
         obfuscated_domain = '.'.join(
@@ -360,8 +362,9 @@ class UnsubscribeallCommand(Command):
         Implementation of a hook method which is executed instead of
         :py:meth:`handle` when the command is not confirmed.
         """
-        user = get_or_none(EmailUser, email=self.user_email)
-        if not user or user.subscription_set.count() == 0:
+        user = get_or_none(UserEmail, email=self.user_email)
+        email_settings = get_or_none(EmailSettings, user_email=user)
+        if not user or not email_settings or email_settings.subscription_set.count() == 0:
             self.warn('User {email} is not subscribed to any packages'.format(
                 email=self.user_email))
             return False
@@ -371,14 +374,15 @@ class UnsubscribeallCommand(Command):
         return True
 
     def handle(self):
-        user = get_or_none(EmailUser, email=self.user_email)
-        if user is None:
+        user = get_or_none(UserEmail, email=self.user_email)
+        email_settings = get_or_none(EmailSettings, user_email=user)
+        if user is None or email_settings is None:
             return
         packages = [
             subscription.package.name
-            for subscription in user.subscription_set.all()
+            for subscription in email_settings.subscription_set.all()
         ]
-        user.unsubscribe_all()
+        email_settings.unsubscribe_all()
         self.reply('All your subscriptions have been terminated:')
         self.list_reply(
             '{email} has been unsubscribed from {package}@{fqdn}'.format(

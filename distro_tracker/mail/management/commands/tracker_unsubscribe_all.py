@@ -13,7 +13,7 @@ Implements the command which removes all subscriptions for a given email.
 from __future__ import unicode_literals
 from django.core.management.base import BaseCommand, CommandError
 
-from distro_tracker.core.models import EmailUser
+from distro_tracker.core.models import UserEmail, EmailSettings
 from distro_tracker.core.utils import get_or_none
 
 
@@ -45,17 +45,18 @@ class Command(BaseCommand):
         :returns: A message explaining the result of the operation.
         :rtype: string
         """
-        user = get_or_none(EmailUser, email=email)
+        user = get_or_none(UserEmail, email=email)
         if not user:
             return ('Email {email} is not subscribed to any packages. '
                     'Bad email?'.format(email=email))
-        if user.packagename_set.count() == 0:
+        email_settings, _ = EmailSettings.objects.get_or_create(user_email=user)
+        if email_settings.packagename_set.count() == 0:
             return 'Email {email} is not subscribed to any packages.'.format(
                 email=email)
         out = [
             'Unsubscribing {email} from {package}'.format(
                 email=email, package=package)
-            for package in user.packagename_set.all()
+            for package in email_settings.packagename_set.all()
         ]
-        user.unsubscribe_all()
+        email_settings.unsubscribe_all()
         return '\n'.join(out)

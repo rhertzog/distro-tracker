@@ -16,7 +16,7 @@ from distro_tracker.mail.control.commands.base import Command
 from distro_tracker.mail.control.commands.confirmation import needs_confirmation
 
 from distro_tracker.core.models import Team
-from distro_tracker.core.models import EmailUser
+from distro_tracker.core.models import UserEmail
 from distro_tracker.core.utils import get_or_none
 
 
@@ -55,12 +55,12 @@ class JoinTeam(Command):
                     team.owner.main_email))
             return
 
-        email_user, _ = EmailUser.objects.get_or_create(email=self.user_email)
-        if email_user in team.members.all():
+        user_email, _ = UserEmail.objects.get_or_create(email=self.user_email)
+        if user_email in team.members.all():
             self.warn("You are already a member of the team.")
             return
 
-        return team, email_user
+        return team, user_email
 
     def pre_confirm(self):
         packed = self.get_team_and_user()
@@ -78,8 +78,8 @@ class JoinTeam(Command):
         packed = self.get_team_and_user()
         if packed is None:
             return
-        team, email_user = packed
-        team.add_members([email_user])
+        team, user_email = packed
+        team.add_members([user_email])
         self.reply('You have successfully joined the team "{}"'.format(team))
 
 
@@ -110,12 +110,12 @@ class LeaveTeam(Command):
             self.error('Team with the slug "{}" does not exist.'.format(
                 self.team_slug))
             return
-        email_user, _ = EmailUser.objects.get_or_create(email=self.user_email)
-        if email_user not in team.members.all():
+        user_email, _ = UserEmail.objects.get_or_create(email=self.user_email)
+        if user_email not in team.members.all():
             self.warn("You are not a member of the team.")
             return
 
-        return team, email_user
+        return team, user_email
 
     def pre_confirm(self):
         packed = self.get_team_and_user()
@@ -133,8 +133,8 @@ class LeaveTeam(Command):
         packed = self.get_team_and_user()
         if packed is None:
             return
-        team, email_user = packed
-        team.remove_members([email_user])
+        team, user_email = packed
+        team.remove_members([user_email])
         self.reply('You have successfully left the team "{}" (slug: {})'.format(
             team, team.slug))
 
@@ -171,9 +171,9 @@ class ListTeamPackages(Command):
             return
         return team
 
-    def get_email_user(self):
-        email_user, _ = EmailUser.objects.get_or_create(email=self.user_email)
-        return email_user
+    def get_user_email(self):
+        user_email, _ = UserEmail.objects.get_or_create(email=self.user_email)
+        return user_email
 
     def get_command_text(self):
         return super(ListTeamPackages, self).get_command_text(
@@ -184,8 +184,8 @@ class ListTeamPackages(Command):
         if not team:
             return
         if not team.public:
-            email_user = self.get_email_user()
-            if email_user not in team.members.all():
+            user_email = self.get_user_email()
+            if user_email not in team.members.all():
                 self.error(
                     "The team is private. "
                     "Only team members can see its packages.")
@@ -213,17 +213,17 @@ class WhichTeams(Command):
         super(WhichTeams, self).__init__()
         self.user_email = email
 
-    def get_email_user(self):
-        email_user, _ = EmailUser.objects.get_or_create(email=self.user_email)
-        return email_user
+    def get_user_email(self):
+        user_email, _ = UserEmail.objects.get_or_create(email=self.user_email)
+        return user_email
 
     def handle(self):
-        email_user = self.get_email_user()
+        user_email = self.get_user_email()
 
-        if email_user.teams.count() == 0:
+        if user_email.teams.count() == 0:
             self.warn("{} is not a member of any team.".format(self.user_email))
         else:
             self.reply("Teams that {} is a member of:".format(self.user_email))
             self.list_reply(
                 team.slug
-                for team in email_user.teams.all().order_by('name'))
+                for team in user_email.teams.all().order_by('name'))

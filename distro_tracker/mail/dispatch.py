@@ -26,8 +26,9 @@ from distro_tracker.core.utils import distro_tracker_render_to_string
 from distro_tracker.core.utils import verp
 
 from distro_tracker.core.utils.email_messages import CustomEmailMessage
-from distro_tracker.mail.models import EmailUserBounceStats
+from distro_tracker.mail.models import UserEmailBounceStats
 
+from distro_tracker.core.models import EmailSettings
 from distro_tracker.core.models import PackageName
 from distro_tracker.core.models import Keyword
 from distro_tracker.core.models import Team
@@ -306,7 +307,7 @@ def send_to_teams(received_message, package_name, keyword):
                 continue
 
             messages_to_send.append(prepare_message(
-                team_message, membership.email_user.email, date))
+                team_message, membership.user_email.email, date))
 
     send_messages(messages_to_send, date)
 
@@ -338,7 +339,7 @@ def send_to_subscribers(received_message, package_name, keyword):
     # Build a list of all messages to be sent
     date = timezone.now().date()
     messages_to_send = [
-        prepare_message(received_message, subscription.email_user.email, date)
+        prepare_message(received_message, subscription.email_settings.user_email.email, date)
         for subscription in package.subscription_set.all_active(keyword)
     ]
     send_messages(messages_to_send, date)
@@ -352,7 +353,7 @@ def send_messages(messages_to_send, date):
     connection.send_messages(messages_to_send)
 
     for message in messages_to_send:
-        EmailUserBounceStats.objects.add_sent_for_user(email=message.to[0],
+        UserEmailBounceStats.objects.add_sent_for_user(email=message.to[0],
                                                        date=date)
 
 
@@ -406,19 +407,19 @@ def handle_bounces(sent_to_address):
         # Invalid bounce address
         logger.error('Invalid bounce address ' + bounce_email)
         return
-    EmailUserBounceStats.objects.add_bounce_for_user(email=user_email,
+    UserEmailBounceStats.objects.add_bounce_for_user(email=user_email,
                                                      date=date)
 
     logger.info('Logged bounce for {email} on {date}'.format(email=user_email,
                                                              date=date))
-    user = EmailUserBounceStats.objects.get(user_email__email=user_email)
+    user = UserEmailBounceStats.objects.get(email=user_email)
     if user.has_too_many_bounces():
         logger.info("{email} has too many bounces".format(email=user_email))
 
         email_body = distro_tracker_render_to_string(
             'dispatch/unsubscribed-due-to-bounces-email.txt', {
                 'email': user_email,
-                'packages': user.packagename_set.all()
+                'packages': user.emailsettings.packagename_set.all()
             })
         EmailMessage(
             subject='All your package subscriptions have been cancelled',
@@ -431,4 +432,5 @@ def handle_bounces(sent_to_address):
             },
         ).send()
 
-        user.unsubscribe_all()
+        email_settings, _ = EmailSettings.objects.get_or_create(user_email=user)
+        email_settings.unsubscribe_all()

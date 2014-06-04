@@ -14,7 +14,7 @@ from __future__ import unicode_literals
 
 from distro_tracker.mail.control.commands.base import Command
 from distro_tracker.core.models import (
-    Subscription, EmailUser, PackageName, Keyword)
+    Subscription, UserEmail, EmailSettings, PackageName, Keyword)
 
 from distro_tracker.core.utils import get_or_none
 
@@ -59,8 +59,9 @@ class KeywordCommandMixin(object):
         :param email: The email of the user.
         :param package_name: The name of the package.
         """
-        email_user = get_or_none(EmailUser, email=email)
-        if not email_user:
+        user_email = get_or_none(UserEmail, email=email)
+        email_settings = get_or_none(EmailSettings, user_email=user_email)
+        if not user_email or not email_settings:
             self.error_not_subscribed(email, package_name)
             return
 
@@ -72,7 +73,7 @@ class KeywordCommandMixin(object):
 
         subscription = get_or_none(Subscription,
                                    package=package,
-                                   email_user=email_user)
+                                   email_settings=email_settings)
         if not subscription:
             self.error_not_subscribed(email, package_name)
 
@@ -187,12 +188,13 @@ class ViewDefaultKeywordsCommand(Command, KeywordCommandMixin):
             self.email)
 
     def handle(self):
-        email_user, _ = EmailUser.objects.get_or_create(email=self.email)
+        user_email, _ = UserEmail.objects.get_or_create(email=self.email)
+        email_settings, _ = EmailSettings.objects.get_or_create(user_email=user_email)
         self.reply(
             "Here's the default list of accepted keywords for {email}:".format(
                 email=self.email))
         self.list_reply(sorted(
-            keyword.name for keyword in email_user.default_keywords.all()))
+            keyword.name for keyword in email_settings.default_keywords.all()))
 
 
 class ViewPackageKeywordsCommand(Command, KeywordCommandMixin):
@@ -273,16 +275,17 @@ class SetDefaultKeywordsCommand(Command, KeywordCommandMixin):
 
     def handle(self):
         keywords = re.split('[,\s]+', self.keywords)
-        email_user, _ = EmailUser.objects.get_or_create(email=self.email)
+        user_email, _ = UserEmail.objects.get_or_create(email=self.email)
+        email_settings, _ = EmailSettings.objects.get_or_create(user_email=user_email)
 
         operation_method = self.OPERATIONS[self.operation]
-        operation_method(self, keywords, email_user.default_keywords)
+        operation_method(self, keywords, email_settings.default_keywords)
 
         self.reply(
             "Here's the new default list of accepted keywords for "
             "{user} :".format(user=self.email))
         self.list_reply(sorted(
-            keyword.name for keyword in email_user.default_keywords.all()
+            keyword.name for keyword in email_settings.default_keywords.all()
         ))
 
 

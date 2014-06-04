@@ -12,7 +12,8 @@ from django.core.management.base import BaseCommand
 
 from distro_tracker.core.models import Subscription
 from distro_tracker.core.models import Keyword
-from distro_tracker.core.models import EmailUser
+from distro_tracker.core.models import UserEmail
+from distro_tracker.core.models import EmailSettings
 
 import sys
 
@@ -59,7 +60,7 @@ class Command(BaseCommand):
                 try:
                     subscription = Subscription.objects.get(
                         package__name=package,
-                        email_user__user_email__email=email)
+                        email_settings__user_email__email=email)
                 except Subscription.DoesNotExist:
                     continue
                 subscription.keywords.clear()
@@ -67,5 +68,6 @@ class Command(BaseCommand):
                     subscription.keywords.add(keyword)
             else:
                 # User default keywords
-                email_user, _ = EmailUser.objects.get_or_create(email=email)
-                email_user.default_keywords = keywords
+                user_email, _ = UserEmail.objects.get_or_create(email=email)
+                email_settings, _ = EmailSettings.objects.get_or_create(user_email=user_email)
+                email_settings.default_keywords = keywords

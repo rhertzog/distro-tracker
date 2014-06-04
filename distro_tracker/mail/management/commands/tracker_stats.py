@@ -18,7 +18,7 @@ from optparse import make_option
 
 import json
 
-from distro_tracker.core.models import SourcePackageName, Subscription, EmailUser
+from distro_tracker.core.models import SourcePackageName, Subscription, UserEmail
 
 
 class Command(BaseCommand):
@@ -49,7 +49,7 @@ class Command(BaseCommand):
              SourcePackageName.objects.all_with_subscribers().count()),
             ('subscription_number', Subscription.objects.count()),
             ('date', timezone.now().strftime('%Y-%m-%d')),
-            ('unique_emails_number', EmailUser.objects.count()),
+            ('unique_emails_number', UserEmail.objects.count()),
         ))
 
         if kwargs['json']:

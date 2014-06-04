@@ -309,13 +309,13 @@ class ManageAccountEmailsView(LoginRequiredMixin, MessageMixin, FormView):
 
     def form_valid(self, form):
         email = form.cleaned_data['email']
-        email_user, _ = UserEmail.objects.get_or_create(email=email)
-        if not email_user.user:
+        user_email, _ = UserEmail.objects.get_or_create(email=email)
+        if not user_email.user:
             # The email is not associated with an account yet.
             # Ask for confirmation to add it to this account.
             confirmation = AddEmailConfirmation.objects.create_confirmation(
                 user=self.request.user,
-                email=email_user)
+                email=user_email)
             self.message = (
                 'Before the email is associated with this account, '
                 'you must follow the confirmation link sent to the address'
@@ -326,7 +326,7 @@ class ManageAccountEmailsView(LoginRequiredMixin, MessageMixin, FormView):
                 self.get_confirmation_email_content(confirmation),
                 from_email=self.confirmation_email_from_address,
                 recipient_list=[email])
-        elif email_user.user == self.request.user:
+        elif user_email.user == self.request.user:
             self.message = 'This email is already associated with your account.'
         else:
             # Offer the user to merge the two accounts
@@ -350,40 +350,40 @@ class AccountMergeConfirmView(LoginRequiredMixin, View):
             'confirmation': confirmation,
         })
 
-    def get_email_user(self, query_dict):
+    def get_user_email(self, query_dict):
         if 'email' not in query_dict:
             raise Http404
         email = query_dict['email']
-        email_user = get_object_or_404(UserEmail, email=email)
-        return email_user
+        user_email = get_object_or_404(UserEmail, email=email)
+        return user_email
 
     def get(self, request):
         self.request = request
-        email_user = self.get_email_user(self.request.GET)
+        user_email = self.get_user_email(self.request.GET)
 
         return render(request, self.template_name, {
-            'email_user': email_user,
+            'user_email': user_email,
         })
 
     def post(self, request):
         self.request = request
 
-        email_user = self.get_email_user(self.request.POST)
-        if not email_user.user or email_user.user == self.request.user:
+        user_email = self.get_user_email(self.request.POST)
+        if not user_email.user or user_email.user == self.request.user:
             pass
 
         # Send a confirmation mail
         confirmation = MergeAccountConfirmation.objects.create_confirmation(
             initial_user=self.request.user,
-            merge_with=email_user.user)
+            merge_with=user_email.user)
         send_mail(
             self.confirmation_email_subject,
             self.get_confirmation_email_content(confirmation),
             from_email=self.confirmation_email_from_address,
-            recipient_list=[email_user.email])
+            recipient_list=[user_email.email])
 
         return redirect(self.success_url + '?' + urlencode({
-            'email': email_user.email,
+            'email': user_email.email,
         }))
 
 
@@ -437,9 +437,9 @@ class AccountMergeConfirmedView(LoginRequiredMixin, TemplateView):
         if 'email' not in self.request.GET:
             raise Http404
         email = self.request.GET['email']
-        email_user = get_object_or_404(UserEmail, email=email)
+        user_email = get_object_or_404(UserEmail, email=email)
         context = super(AccountMergeConfirmedView, self).get_context_data(**kwargs)
-        context['email'] = email_user
+        context['email'] = user_email
 
         return context
 
@@ -452,15 +452,15 @@ class ConfirmAddAccountEmail(View):
             AddEmailConfirmation,
             confirmation_key=confirmation_key)
         user = confirmation.user
-        email_user = confirmation.email
+        user_email = confirmation.email
         confirmation.delete()
         # If the email has become associated with a different user in the mean
         # time, abort the operation.
-        if email_user.user and email_user.user != user:
+        if user_email.user and user_email.user != user:
             raise PermissionDenied
-        email_user.user = user
-        email_user.save()
+        user_email.user = user
+        user_email.save()
 
         return render(request, self.template_name, {
-            'new_email': email_user,
+            'new_email': user_email,
         })
