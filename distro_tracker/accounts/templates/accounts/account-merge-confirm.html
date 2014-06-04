@@ -3,14 +3,14 @@
 
 {% block content %}
 <div class="text-center">
-    <p>The email address <b>{{ email_user }}</b> that you tried adding to your account is already associated with a different account.</p>
+    <p>The email address <b>{{ user_email }}</b> that you tried adding to your account is already associated with a different account.</p>
     <p>You may merge the two accounts, provided that you also follow a confirmation URL sent in an email message to the given email address.</p>
-    <p>After the merge, your current account will become associated with all emails currently associated with the account to which the email address {{ email_user }} belongs to. No package subscriptions or team memberships will be lost for any of the affected emails.</p>
+    <p>After the merge, your current account will become associated with all emails currently associated with the account to which the email address {{ user_email }} belongs to. No package subscriptions or team memberships will be lost for any of the affected emails.</p>
 </div>
 <div class="text-center">
     <h4>Are you sure you want to merge the accounts?</h4>
     <form action="" method="POST" id="confirm-account-merge-form">{% csrf_token %}
-        <input type="hidden" name="email" value="{{ email_user }}">
+        <input type="hidden" name="email" value="{{ user_email }}">
         <button class="btn btn-danger" id="confirm-merge-button">MERGE ACCOUNTS</button>
     </form>
 </div>

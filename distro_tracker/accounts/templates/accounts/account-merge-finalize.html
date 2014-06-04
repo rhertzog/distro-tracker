@@ -9,7 +9,7 @@
 <div class="text-center">
     <h4>Are you sure you want to finalize the accounts merge?</h4>
     <form action="" method="POST" id="confirm-account-merge-finalize-form">{% csrf_token %}
-        <input type="hidden" name="email" value="{{ email_user }}">
+        <input type="hidden" name="email" value="{{ user_email }}">
         <button class="btn btn-danger" id='finalize-merge-button'>MERGE ACCOUNTS</button>
     </form>
 </div>

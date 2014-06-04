@@ -29,7 +29,7 @@
 {% endspaceless %}
 
 {% with team=membership.team %}
-{% with email=membership.email_user.email %}
+{% with email=membership.user_email.email %}
 {% with accordion_id="accordion-membership-packages" %}
 <h1 class="text-center">Membership management for <a href="{{ team.get_absolute_url }}">{{ team }}</a></h1>
 <div>
@@ -88,7 +88,7 @@
 <div class="pagination">
 <ul>
     {% for page in page_obj.paginator.page_range %}
-    <li {% if page_obj.number == page %}class="active"{% endif %}><a href="?page={{ page }}&email={{ membership.email_user.email }}">{{ page }}</a></li>
+    <li {% if page_obj.number == page %}class="active"{% endif %}><a href="?page={{ page }}&email={{ membership.user_email.email }}">{{ page }}</a></li>
     {% endfor %}
 </ul>
 </div>
