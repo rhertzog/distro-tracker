@@ -15,6 +15,8 @@ you can see the following
 After installing mod_wsgi, a minimal configuration would be to include a new
 file in sites-available with the following settings::
 
+    WSGIDaemonProcess distro_tracker.some.domain python-path=/path/to/distro_tracker user=distro-tracker group=distro-tracker home=/ processes=4 threads=5 maximum-requests=5000 inactivity-timeout=1800 umask=0007 display-name=wsgi-distro_tracker.some.domain
+
     <VirtualHost *:80>
             ServerAdmin owner@distro_tracker.some.domain
             ServerName distro_tracker.some.domain
@@ -25,14 +27,16 @@ file in sites-available with the following settings::
             DefaultType text/plain
             AddDefaultCharset utf-8
 
-            ErrorLog ${APACHE_LOG_DIR}/distro-tracker/error.log
+            ErrorLog ${APACHE_LOG_DIR}/distro_tracker.some.domain-error.log
             LogLevel warn
 
-            CustomLog ${APACHE_LOG_DIR}/distro-tracker/access.log combined
+            CustomLog ${APACHE_LOG_DIR}/distro_tracker.some.domain-access.log combined
 
             WSGIScriptAlias / /path/to/distro_tracker/project/wsgi.py
+            WSGIProcessGroup distro_tracker.some.domain
 
             Alias /static/ /path/to/assets/static/
+            Alias /media/ /path/to/assets/media/
 
             <Directory /path/to/distro_tracker/project>
                     <Files wsgi.py>
@@ -54,9 +58,6 @@ file in sites-available with the following settings::
 .. note::
    In this case, the same Web server serves both the static files and runs the
    Django app.
-
-Other mod_wsgi apache configurations are, of course, possible, for using
-`mod_wsgi daemon mode <https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/modwsgi/#daemon-mode>`_.
 
 nginx and Gunicorn
 ------------------

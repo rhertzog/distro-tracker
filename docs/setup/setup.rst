@@ -84,3 +84,11 @@ everything is actually working as expected. You can do this by issuing the
 following command from the Distro Tracker root directory::
 
 $ ./manage.py test
+
+Cron tasks
+----------
+
+The data used by distro-tracker needs to be regularly updated/refreshed.
+For this you must put “./manage.py tracker_run_all_tasks” in cron.
+
+
