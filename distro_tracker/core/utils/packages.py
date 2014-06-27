@@ -107,7 +107,7 @@ def extract_information_from_packages_entry(stanza):
     """
     entry = {
         'version': stanza['version'],
-        'short_description': stanza.get('description', ''),
+        'short_description': stanza.get('description', '')[:300],
     }
 
     return entry
