@@ -16,15 +16,11 @@ from distro_tracker.core.models import SourcePackageRepositoryEntry
 from distro_tracker.core.models import BinaryPackageRepositoryEntry
 from distro_tracker.core.models import ContributorName
 from distro_tracker.core.models import SourcePackage
-from distro_tracker.core.models import News
 from distro_tracker.core.models import Team
 from distro_tracker.core.models import PackageExtractedInfo
 from distro_tracker.core.models import BinaryPackageName
 from distro_tracker.core.models import BinaryPackage
-from distro_tracker.core.models import ExtractedSourceFile
 from distro_tracker.core.models import SourcePackageDeps
-from distro_tracker.core.utils import get_or_none
-from distro_tracker.core.utils.http import get_resource_content
 from distro_tracker.core.utils.packages import extract_information_from_sources_entry
 from distro_tracker.core.utils.packages import extract_information_from_packages_entry
 from distro_tracker.core.utils.packages import AptCache
@@ -33,15 +29,11 @@ from distro_tracker.core.tasks import clear_all_events_on_exception
 from distro_tracker.core.models import SourcePackageName, Architecture
 from distro_tracker.accounts.models import UserEmail
 from django.utils.six import reraise
-from django import db
 from django.db import transaction
 from django.db import models
-from django.conf import settings
-from django.core.files import File
 
 from debian import deb822
 import re
-import os
 import sys
 import requests
 import itertools
@@ -103,7 +95,7 @@ def retrieve_repository_info(sources_list_entry):
     # Access the Release file
     try:
         response = requests.get(Repository.release_file_url(url, distribution),
-                allow_redirects=True)
+                                allow_redirects=True)
     except requests.exceptions.RequestException as original:
         reraise(
             InvalidRepositoryException,
