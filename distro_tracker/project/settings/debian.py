@@ -1,18 +1,20 @@
 """Debian.org specific settings"""
 
-ADMINS = (
-    ('Tracker Admins', 'owner@tracker.debian.org'),
-)
-MANAGERS = ADMINS
-
 # If you override the FQDN, you also have to override other settings
 # whose values are based on it.
 DISTRO_TRACKER_FQDN = "tracker.debian.org"
 DISTRO_TRACKER_CONTROL_EMAIL = 'control@' + DISTRO_TRACKER_FQDN
 DISTRO_TRACKER_CONTACT_EMAIL = 'owner@' + DISTRO_TRACKER_FQDN
 DISTRO_TRACKER_BOUNCES_EMAIL = 'bounces@' + DISTRO_TRACKER_FQDN
-DISTRO_TRACKER_BOUNCES_LIKELY_SPAM_EMAIL = DISTRO_TRACKER_BOUNCES_EMAIL
+DISTRO_TRACKER_BOUNCES_LIKELY_SPAM_EMAIL = 'bounces-likely-spam@' + \
+    DISTRO_TRACKER_FQDN
 ALLOWED_HOSTS = [ DISTRO_TRACKER_FQDN ]
+
+ADMINS = (
+    ('Tracker Admins', DISTRO_TRACKER_CONTACT_EMAIL),
+)
+MANAGERS = ADMINS
+SERVER_EMAIL = DISTRO_TRACKER_CONTACT_EMAIL
 
 DISTRO_TRACKER_VENDOR_NAME = "Debian"
 DISTRO_TRACKER_VENDOR_URL = "http://www.debian.org"
