@@ -104,7 +104,7 @@ STATICFILES_DIRS = (
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-#    'django.contrib.staticfiles.finders.DefaultStorageFinder',
+    # 'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
 # Make this unique, and don't share it with anybody.
@@ -182,80 +182,112 @@ INSTALLED_APPS = (
 # more details on how to customize your logging configuration.
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': False,
+    'disable_existing_loggers': True,
     'formatters': {
         'verbose': {
-            'format': '%(levelname)s %(asctime)s %(module)s '
-                      '%(process)d %(thread)d %(message)s'
+            'format': '%(asctime)s [%(module)s/%(process)d/%(thread)d] ' +
+                      '%(levelname)s: %(message)s'
         },
         'simple': {
-            'format': '%(levelname)s %(message)s'
-        },
-        'simple-timestamp': {
-            'format': '%(levelname)s %(asctime)s %(message)s'
+            'format': '%(asctime)s %(levelname)s: %(message)s'
         },
     },
     'filters': {
         'require_debug_false': {
             '()': 'django.utils.log.RequireDebugFalse'
-        }
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
     },
     'handlers': {
         'console': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.StreamHandler',
             'formatter': 'simple',
-        },
-        'console-timestamp': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'simple-timestamp',
+            'filters': ['require_debug_true'],
         },
         'mail_admins': {
             'level': 'ERROR',
             'filters': ['require_debug_false'],
-            'class': 'django.utils.log.AdminEmailHandler'
-        }
+            'class': 'django.utils.log.AdminEmailHandler',
+        },
+        'null': {
+            'level': 'DEBUG',
+            'class': 'logging.NullHandler',
+        },
+        'mail.log': {
+            'level': 'INFO',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'filename': os.path.join(DISTRO_TRACKER_BASE_PATH, 'data', 'logs',
+                                     'mail.log'),
+            'formatter': 'simple',
+            'when': 'W0',
+            'delay': True,
+            'backupCount': 52,
+        },
+        'tasks.log': {
+            'level': 'INFO',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'filename': os.path.join(DISTRO_TRACKER_BASE_PATH, 'data', 'logs',
+                                     'tasks.log'),
+            'formatter': 'simple',
+            'when': 'W0',
+            'delay': True,
+            'backupCount': 52,
+        },
+        'errors.log': {
+            'level': 'ERROR',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'filename': os.path.join(DISTRO_TRACKER_BASE_PATH, 'data', 'logs',
+                                     'errors.log'),
+            'formatter': 'verbose',
+            'when': 'W0',
+            'delay': True,
+            'backupCount': 52,
+        },
     },
     'loggers': {
         'django.request': {
-            'handlers': ['mail_admins'],
+            'handlers': ['errors.log', 'mail_admins'],
             'level': 'ERROR',
-            'propagate': True,
+            'propagate': False,
+        },
+        'django.security': {
+            'handlers': ['errors.log', 'mail_admins'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'django.security.DisallowedHost': {
+            'handlers': ['null'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'py.warnings': {
+            'handlers': ['console'],
+        },
+        'distro_tracker': {
+            'handlers': ['errors.log', 'console'],
+            'level': 'DEBUG',
         },
         'distro_tracker.mail': {
-            'handlers': ['console'],
+            'handlers': ['mail.log'],
             'level': 'DEBUG',
             'propagate': True,
         },
-        'distro_tracker.core.panels': {
-            'handlers': ['console-timestamp'],
+        'distro_tracker.tasks': {
+            'handlers': ['tasks.log'],
             'level': 'DEBUG',
             'propagate': True,
         },
-        'distro_tracker.core.tasks': {
-            'handlers': ['console-timestamp'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-        'distro_tracker.core.retrieve_data': {
-            'handlers': ['console-timestamp'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-        'distro_tracker.vendor.debian': {
-            'handlers': ['console-timestamp'],
-            'level': 'DEBUG',
-            'propagate': True,
-        }
     }
 }
 
 #: Hosts/domain names that are valid for this site; required if DEBUG is False
 #: See https://docs.djangoproject.com/en/1.5/ref/settings/#allowed-hosts
-ALLOWED_HOSTS = [ socket.getfqdn() ]
+ALLOWED_HOSTS = [socket.getfqdn()]
 
-## Distro Tracker specific settings
+# === Distro Tracker specific settings ===
 
 #: The fully qualified domain name for the Distro Tracker deployment
 DISTRO_TRACKER_FQDN = socket.getfqdn()
@@ -321,6 +353,10 @@ DISTRO_TRACKER_EMAIL_NEWS_HEADERS = (
 DISTRO_TRACKER_APT_CACHE_MAX_SIZE = 5 * 1024 ** 3  # 5 GiB
 
 DJANGO_EMAIL_ACCOUNTS_POST_MERGE_HOOK = 'distro_tracker.accounts.hooks.post_merge'
+
+# Generated error emails sent with contact email as From
+SERVER_EMAIL = DISTRO_TRACKER_CONTACT_EMAIL
+
 
 # Small helpers
 def GET_INSTANCE_NAME():

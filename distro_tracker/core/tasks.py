@@ -25,7 +25,7 @@ import importlib
 import logging
 import sys
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('distro_tracker.tasks')
 
 
 class BaseTask(six.with_metaclass(PluginRegistry)):
