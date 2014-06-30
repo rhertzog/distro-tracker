@@ -28,7 +28,6 @@ from distro_tracker.core.utils import verp
 from distro_tracker.core.utils.email_messages import CustomEmailMessage
 from distro_tracker.mail.models import UserEmailBounceStats
 
-from distro_tracker.core.models import EmailSettings
 from distro_tracker.core.models import PackageName
 from distro_tracker.core.models import Keyword
 from distro_tracker.core.models import Team
@@ -58,6 +57,12 @@ def process(message, sent_to_address=None):
     assert isinstance(message, six.binary_type), 'Message must be given as bytes'
     msg = message_from_bytes(message)
 
+    logdata = {
+        'from': extract_email_address_from_header(msg.get('From', '')),
+        'msgid': msg.get('Message-ID', 'no-msgid-present@localhost'),
+        'to': sent_to_address or '',
+    }
+    logger.info("dispatch <= %(from)s for %(to)s <%(msgid)s>", logdata)
     if sent_to_address is None:
         # No MTA was recognized, the last resort is to try and use the message
         # To header.
@@ -71,18 +76,20 @@ def process(message, sent_to_address=None):
     # Extract package name
     package_name = get_package_name(local_part)
     # Check loop
-    package_email = '{package}@{distro_tracker_fqdn}'.format(package=package_name,
-                                                  distro_tracker_fqdn=DISTRO_TRACKER_FQDN)
+    package_email = '{package}@{distro_tracker_fqdn}'.format(
+        package=package_name, distro_tracker_fqdn=DISTRO_TRACKER_FQDN)
     if package_email in msg.get_all('X-Loop', ()):
         # Bad X-Loop, discard the message
-        logger.info('Bad X-Loop, message discarded')
+        logger.info('dispatch :: discarded <%(msgid)s> due to X-Loop', logdata)
         return
 
     # Extract keyword
     keyword = get_keyword(local_part, msg)
+    logger.info('dispatch :: %s %s', package_name, keyword)
     # Default keywords require special approvement
     if keyword == 'default' and not approved_default(msg):
-        logger.info('Discarding default keyword message')
+        logger.info('dispatch :: discarded non-approved message <%(msgid)s>',
+                    logdata)
         return
 
     # Now send the message to subscribers
@@ -293,6 +300,7 @@ def send_to_teams(received_message, package_name, keyword):
     date = timezone.now().date()
     messages_to_send = []
     for team in teams:
+        logger.info('dispatch :: sending to team %s', team.slug)
         team_message = deepcopy(received_message)
         add_team_membership_headers(
             team_message, package_name, keyword.name, team)
@@ -353,6 +361,7 @@ def send_messages(messages_to_send, date):
     connection.send_messages(messages_to_send)
 
     for message in messages_to_send:
+        logger.info("dispatch => %s", message.to[0])
         UserEmailBounceStats.objects.add_sent_for_user(email=message.to[0],
                                                        date=date)
 
@@ -398,28 +407,26 @@ def handle_bounces(sent_to_address):
     bounce_email, user_email = verp.decode(sent_to_address)
     match = re.match(r'^bounces\+(\d{8})@' + DISTRO_TRACKER_FQDN, bounce_email)
     if not match:
-        # Invalid bounce address
-        logger.error('Invalid bounce address ' + bounce_email)
+        logger.warning('bounces :: invalid address %s', bounce_email)
         return
     try:
         date = datetime.strptime(match.group(1), '%Y%m%d')
     except ValueError:
-        # Invalid bounce address
-        logger.error('Invalid bounce address ' + bounce_email)
+        logger.warning('bounces :: invalid date in address %s', bounce_email)
         return
     UserEmailBounceStats.objects.add_bounce_for_user(email=user_email,
                                                      date=date)
 
-    logger.info('Logged bounce for {email} on {date}'.format(email=user_email,
-                                                             date=date))
+    logger.info('bounces :: received one for %s/%s', user_email, date)
     user = UserEmailBounceStats.objects.get(email=user_email)
     if user.has_too_many_bounces():
-        logger.info("{email} has too many bounces".format(email=user_email))
+        logger.info('bounces => %s has too many bounces', user_email)
 
+        packages = [p.name for p in user.emailsettings.packagename_set.all()]
         email_body = distro_tracker_render_to_string(
             'dispatch/unsubscribed-due-to-bounces-email.txt', {
                 'email': user_email,
-                'packages': user.emailsettings.packagename_set.all()
+                'packages': packages,
             })
         EmailMessage(
             subject='All your package subscriptions have been cancelled',
@@ -432,5 +439,6 @@ def handle_bounces(sent_to_address):
             },
         ).send()
 
-        email_settings, _ = EmailSettings.objects.get_or_create(user_email=user)
-        email_settings.unsubscribe_all()
+        user.emailsettings.unsubscribe_all()
+        for package in packages:
+            logger.info('bounces :: removed %s from %s', user_email, package)

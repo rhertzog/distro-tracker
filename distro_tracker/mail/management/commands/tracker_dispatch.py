@@ -17,9 +17,6 @@ from distro_tracker.mail import dispatch
 
 import os
 import sys
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -31,16 +28,12 @@ class Command(BaseCommand):
     input_file = sys.stdin
 
     def handle(self, *args, **kwargs):
-        logger.info('Processing a received package message')
-
         if six.PY3:
             self.input_file = self.input_file.detach()
         input_data = self.input_file.read()
         sent_to = self._get_to_address()
 
         dispatch.process(input_data, sent_to)
-
-        logger.info('Completed processing a received package message')
 
     def _get_to_address(self):
         """

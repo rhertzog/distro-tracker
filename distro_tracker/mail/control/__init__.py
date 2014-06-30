@@ -26,14 +26,18 @@ from distro_tracker.mail.control.commands import CommandProcessor
 from distro_tracker.mail.models import CommandConfirmation
 
 import re
+import logging
 
 from django.conf import settings
+
 DISTRO_TRACKER_CONTACT_EMAIL = settings.DISTRO_TRACKER_CONTACT_EMAIL
 DISTRO_TRACKER_BOUNCES_EMAIL = settings.DISTRO_TRACKER_BOUNCES_EMAIL
 DISTRO_TRACKER_CONTROL_EMAIL = settings.DISTRO_TRACKER_CONTROL_EMAIL
 
+logger = logging.getLogger(__name__)
 
-def send_response(original_message, message_text, cc=None):
+
+def send_response(original_message, message_text, recipient_email, cc=None):
     """
     Helper function which sends an email message in response to a control
     message.
@@ -63,10 +67,12 @@ def send_response(original_message, message_text, cc=None):
         body=message_text,
     )
 
+    logger.info("control => %(to)s %(cc)s", recipient_email,
+                cc=" ".join(cc) if cc else "")
     message.send()
 
 
-def send_plain_text_warning(original_message):
+def send_plain_text_warning(original_message, logdata):
     """
     Sends an email warning the user that his control message could not be
     decoded due to not being a text/plain message.
@@ -76,7 +82,9 @@ def send_plain_text_warning(original_message):
         an equivalent interface
     """
     WARNING_MESSAGE = render_to_string('control/email-plaintext-warning.txt')
-    send_response(original_message, WARNING_MESSAGE)
+    send_response(original_message, WARNING_MESSAGE,
+                  recipient_email=logdata['from'])
+    logger.info("control :: no plain text found in <%(msgid)s>", logdata)
 
 
 class ConfirmationSet(object):
@@ -130,6 +138,7 @@ class ConfirmationSet(object):
             },
             body=message,
         ).send()
+        logger.info("control => confirmation token sent to %s", email)
 
     def ask_confirmation_all(self):
         """
@@ -158,28 +167,32 @@ def process(message):
     """
     assert isinstance(message, six.binary_type), 'Message must be given as bytes'
     msg = message_from_bytes(message)
-    # msg = message_from_string(message)
+    email = extract_email_address_from_header(msg.get('From', ''))
+    logdata = {
+        'from': email,
+        'msgid': msg.get('Message-ID', 'no-msgid-present@localhost'),
+    }
+    logger.info("control <= %(from)s <%(msgid)s>", logdata)
     if 'X-Loop' in msg and DISTRO_TRACKER_CONTROL_EMAIL in msg.get_all('X-Loop'):
+        logger.info("control :: discarded <%(msgid)s> due to X-Loop", logdata)
         return
     # Get the first plain-text part of the message
     plain_text_part = next(typed_subpart_iterator(msg, 'text', 'plain'), None)
     if not plain_text_part:
         # There is no plain text in the email
-        send_plain_text_warning(msg)
+        send_plain_text_warning(msg, logdata)
         return
 
     # Decode the plain text into a unicode string
     try:
         text = get_decoded_message_payload(plain_text_part)
     except UnicodeDecodeError:
-        send_plain_text_warning(msg)
+        send_plain_text_warning(msg, logdata)
         return
 
     lines = extract_command_from_subject(msg) + text.splitlines()
     # Process the commands
-    factory = CommandFactory({
-        'email': extract_email_address_from_header(msg['From']),
-    })
+    factory = CommandFactory({'email': email})
     confirmation_set = ConfirmationSet()
     processor = CommandProcessor(factory)
     processor.confirmation_set = confirmation_set
@@ -188,8 +201,10 @@ def process(message):
     confirmation_set.ask_confirmation_all()
     # Send a response only if there were some commands processed
     if processor.is_success():
-        send_response(
-            msg, processor.get_output(), set(confirmation_set.get_emails()))
+        send_response(msg, processor.get_output(), recipient_email=email,
+                      cc=set(confirmation_set.get_emails()))
+    else:
+        logger.info("control :: no command processed in <%(msgid)s>", logdata)
 
 
 def extract_command_from_subject(message):

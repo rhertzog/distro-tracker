@@ -188,6 +188,9 @@ LOGGING = {
             'format': '%(asctime)s [%(module)s/%(process)d/%(thread)d] ' +
                       '%(levelname)s: %(message)s'
         },
+        'standard': {
+            'format': '%(asctime)s %(process)d %(levelname)s: %(message)s'
+        },
         'simple': {
             'format': '%(asctime)s %(levelname)s: %(message)s'
         },
@@ -221,7 +224,7 @@ LOGGING = {
             'class': 'logging.handlers.TimedRotatingFileHandler',
             'filename': os.path.join(DISTRO_TRACKER_BASE_PATH, 'data', 'logs',
                                      'mail.log'),
-            'formatter': 'simple',
+            'formatter': 'standard',
             'when': 'W0',
             'delay': True,
             'backupCount': 52,
@@ -231,7 +234,7 @@ LOGGING = {
             'class': 'logging.handlers.TimedRotatingFileHandler',
             'filename': os.path.join(DISTRO_TRACKER_BASE_PATH, 'data', 'logs',
                                      'tasks.log'),
-            'formatter': 'simple',
+            'formatter': 'standard',
             'when': 'W0',
             'delay': True,
             'backupCount': 52,
