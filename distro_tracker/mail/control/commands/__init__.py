@@ -196,7 +196,7 @@ class CommandProcessor(object):
                 if self.errors == MAX_ALLOWED_ERRORS:
                     self.output(
                         '{MAX_ALLOWED_ERRORS} lines '
-                        'contain errors: stopping.'.format(
+                        'without commands: stopping.'.format(
                             MAX_ALLOWED_ERRORS=MAX_ALLOWED_ERRORS))
                     return
             else:

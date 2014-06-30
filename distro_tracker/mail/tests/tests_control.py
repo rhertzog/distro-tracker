@@ -533,6 +533,8 @@ class ControlBotBasic(EmailControlTest):
         self.control_process()
 
         self.assert_command_echo_not_in_response('# command')
+
+
 class ConfirmationTests(EmailControlTest):
     """
     Tests the command confirmation mechanism.
@@ -752,8 +754,7 @@ class ConfirmationTests(EmailControlTest):
         self.control_process()
 
         self.assert_response_sent()
-        self.assert_error_in_response('Confirmation failed: Unknown key')
-
+        self.assert_error_in_response('Confirmation failed: unknown key')
 
 
 class HelpCommandTest(EmailControlTest):

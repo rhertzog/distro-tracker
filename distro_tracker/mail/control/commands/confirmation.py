@@ -118,17 +118,17 @@ class ConfirmCommand(Command):
             CommandConfirmation,
             confirmation_key=self.confirmation_key)
         if not command_confirmation:
-            self.error('Confirmation failed: Unknown key')
+            self.error('Confirmation failed: unknown key.')
             return
         lines = command_confirmation.commands.splitlines()
         processor = CommandProcessor(CommandFactory({}), confirmed=True)
 
         processor.process(lines)
         if processor.is_success():
-            self.reply('Successfully confirmed commands.')
+            self.reply('Successfully confirmed commands:')
             self.reply(processor.get_output())
         else:
-            self.error('No commands confirmed')
+            self.error('No commands confirmed.')
             self.reply(processor.get_output())
 
         command_confirmation.delete()
