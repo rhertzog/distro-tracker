@@ -67,8 +67,10 @@ def send_response(original_message, message_text, recipient_email, cc=None):
         body=message_text,
     )
 
-    logger.info("control => %(to)s %(cc)s", recipient_email,
-                cc=" ".join(cc) if cc else "")
+    logger.info("control => %(to)s %(cc)s", {
+        'to': recipient_email,
+        'cc': " ".join(cc) if cc else "",
+    })
     message.send()
 
 
@@ -84,7 +86,7 @@ def send_plain_text_warning(original_message, logdata):
     WARNING_MESSAGE = render_to_string('control/email-plaintext-warning.txt')
     send_response(original_message, WARNING_MESSAGE,
                   recipient_email=logdata['from'])
-    logger.info("control :: no plain text found in <%(msgid)s>", logdata)
+    logger.info("control :: no plain text found in %(msgid)s", logdata)
 
 
 class ConfirmationSet(object):
@@ -172,9 +174,9 @@ def process(message):
         'from': email,
         'msgid': msg.get('Message-ID', 'no-msgid-present@localhost'),
     }
-    logger.info("control <= %(from)s <%(msgid)s>", logdata)
+    logger.info("control <= %(from)s %(msgid)s", logdata)
     if 'X-Loop' in msg and DISTRO_TRACKER_CONTROL_EMAIL in msg.get_all('X-Loop'):
-        logger.info("control :: discarded <%(msgid)s> due to X-Loop", logdata)
+        logger.info("control :: discarded %(msgid)s due to X-Loop", logdata)
         return
     # Get the first plain-text part of the message
     plain_text_part = next(typed_subpart_iterator(msg, 'text', 'plain'), None)
@@ -204,7 +206,7 @@ def process(message):
         send_response(msg, processor.get_output(), recipient_email=email,
                       cc=set(confirmation_set.get_emails()))
     else:
-        logger.info("control :: no command processed in <%(msgid)s>", logdata)
+        logger.info("control :: no command processed in %(msgid)s", logdata)
 
 
 def extract_command_from_subject(message):

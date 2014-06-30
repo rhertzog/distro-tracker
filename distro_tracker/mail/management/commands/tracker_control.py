@@ -17,9 +17,6 @@ from django.utils import six
 from distro_tracker.mail import control
 
 import sys
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -32,11 +29,7 @@ class Command(BaseCommand):
     input_file = sys.stdin
 
     def handle(self, *args, **kwargs):
-        logger.info('Processing a control message')
-
         if six.PY3:
             self.input_file = self.input_file.detach()
         input_data = self.input_file.read()
         control.process(input_data)
-
-        logger.info('Completed processing a control message')

@@ -62,7 +62,7 @@ def process(message, sent_to_address=None):
         'msgid': msg.get('Message-ID', 'no-msgid-present@localhost'),
         'to': sent_to_address or '',
     }
-    logger.info("dispatch <= %(from)s for %(to)s <%(msgid)s>", logdata)
+    logger.info("dispatch <= %(from)s for %(to)s %(msgid)s", logdata)
     if sent_to_address is None:
         # No MTA was recognized, the last resort is to try and use the message
         # To header.
@@ -80,7 +80,7 @@ def process(message, sent_to_address=None):
         package=package_name, distro_tracker_fqdn=DISTRO_TRACKER_FQDN)
     if package_email in msg.get_all('X-Loop', ()):
         # Bad X-Loop, discard the message
-        logger.info('dispatch :: discarded <%(msgid)s> due to X-Loop', logdata)
+        logger.info('dispatch :: discarded %(msgid)s due to X-Loop', logdata)
         return
 
     # Extract keyword
@@ -88,7 +88,7 @@ def process(message, sent_to_address=None):
     logger.info('dispatch :: %s %s', package_name, keyword)
     # Default keywords require special approvement
     if keyword == 'default' and not approved_default(msg):
-        logger.info('dispatch :: discarded non-approved message <%(msgid)s>',
+        logger.info('dispatch :: discarded non-approved message %(msgid)s',
                     logdata)
         return
 
