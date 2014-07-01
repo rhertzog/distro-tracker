@@ -213,6 +213,16 @@ class BaseTask(six.with_metaclass(PluginRegistry)):
 
         return events
 
+    def log(self, message, *args, **kwargs):
+        """Log a message about the progress of the task"""
+        if 'level' in kwargs:
+            level = kwargs['level']
+            del kwargs['level']
+        else:
+            level = logging.INFO
+        message = "{} {}".format(self.task_name(), message)
+        logger.log(level, message, *args, **kwargs)
+
 
 class Event(object):
     """
@@ -504,7 +514,7 @@ class Job(object):
                     task.execute()
                     logger.info("Successfully executed task {task}".format(
                         task=task.task_name()))
-                except Exception as e:
+                except Exception:
                     logger.exception("Problem processing a task.")
                 # Update dependent tasks based on events raised.
                 # The update is performed regardless of a possible failure in
@@ -529,7 +539,7 @@ def clear_all_events_on_exception(func):
     def wrapper(self):
         try:
             func(self)
-        except Exception as e:
+        except Exception:
             self.clear_events()
             six.reraise(*sys.exc_info())
     return wrapper
@@ -546,6 +556,7 @@ def import_all_tasks():
         except ImportError:
             # The app does not implement Distro Tracker tasks.
             pass
+
 
 def run_task(initial_task, parameters=None):
     """

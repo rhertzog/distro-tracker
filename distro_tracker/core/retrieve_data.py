@@ -37,6 +37,9 @@ import re
 import sys
 import requests
 import itertools
+import logging
+
+logger = logging.getLogger('distro_tracker.tasks')
 
 
 class InvalidRepositoryException(Exception):
@@ -434,6 +437,7 @@ class UpdateRepositoriesTask(PackageUpdateTask):
         qs.delete()
 
     def _remove_obsolete_packages(self):
+        self.log("Removing obsolete source packages")
         # Clean up package versions which no longer exist in any repository.
         self._remove_query_set_if_count_zero(
             SourcePackage.objects.all(),
@@ -566,6 +570,8 @@ class UpdateRepositoriesTask(PackageUpdateTask):
 
         with transaction.atomic():
             for repository, sources_files in repository_files.items():
+                self.log("Processing Sources files of %s repository",
+                         repository.shorthand)
                 # First update package information based on updated files
                 for sources_file in sources_files:
                     self._update_sources_file(repository, sources_file)
@@ -609,6 +615,8 @@ class UpdateRepositoriesTask(PackageUpdateTask):
         repository_files = self.group_files_by_repository(updated_packages)
 
         for repository, packages_files in repository_files.items():
+            self.log("Processing Packages files of %s repository",
+                     repository.shorthand)
             # First update package information based on updated files
             for packages_file in packages_files:
                 self._update_packages_file(repository, packages_file)
@@ -666,8 +674,11 @@ class UpdateRepositoriesTask(PackageUpdateTask):
         try:
             default_repository = Repository.objects.get(default=True)
         except Repository.DoesNotExist:
+            self.log("No default repository, no dependencies created.",
+                     level=logging.WARNING)
             return
 
+        self.log("Parsing files to discover dependencies")
         sources_files = self.apt_cache.get_sources_files_for_repository(
             default_repository)
         packages_files = self.apt_cache.get_packages_files_for_repository(
@@ -720,6 +731,8 @@ class UpdateRepositoriesTask(PackageUpdateTask):
             source.name: source
             for source in SourcePackageName.objects.all()
         }
+
+        self.log("Creating in-memory SourcePackageDeps")
         # Keeps a list of SourcePackageDeps instances which are to be bulk
         # created in the end.
         dependency_instances = []
@@ -760,18 +773,23 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                             details=details))
 
         # Create all the model instances in one transaction
+        self.log("Commiting SourcePackagesDeps to database")
         SourcePackageDeps.objects.all().delete()
         SourcePackageDeps.objects.bulk_create(dependency_instances)
 
     @clear_all_events_on_exception
     def execute(self):
+        self.log("Updating apt's cache")
         self.apt_cache = AptCache()
         updated_sources, updated_packages = (
             self.apt_cache.update_repositories(self.force_update)
         )
 
+        self.log("Updating data from Sources files")
         self.update_sources_files(updated_sources)
+        self.log("Updating data from Packages files")
         self.update_packages_files(updated_packages)
+        self.log("Updating dependencies")
         self.update_dependencies()
 
 
