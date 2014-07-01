@@ -568,8 +568,8 @@ class UpdateRepositoriesTask(PackageUpdateTask):
         # Group all files by repository to which they belong
         repository_files = self.group_files_by_repository(updated_sources)
 
-        with transaction.atomic():
-            for repository, sources_files in repository_files.items():
+        for repository, sources_files in repository_files.items():
+            with transaction.atomic():
                 self.log("Processing Sources files of %s repository",
                          repository.shorthand)
                 # First update package information based on updated files
@@ -598,6 +598,7 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                         })
                 )
 
+        with transaction.atomic():
             # When all repositories are handled, update which packages are
             # still found in at least one repository.
             self._remove_obsolete_packages()
