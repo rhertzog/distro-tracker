@@ -1,23 +1,17 @@
 """Debian.org specific settings"""
 
-# If you override the FQDN, you also have to override other settings
-# whose values are based on it.
-DISTRO_TRACKER_FQDN = "tracker.debian.org"
-DISTRO_TRACKER_CONTROL_EMAIL = 'control@' + DISTRO_TRACKER_FQDN
-DISTRO_TRACKER_CONTACT_EMAIL = 'owner@' + DISTRO_TRACKER_FQDN
-DISTRO_TRACKER_BOUNCES_EMAIL = 'bounces@' + DISTRO_TRACKER_FQDN
-DISTRO_TRACKER_BOUNCES_LIKELY_SPAM_EMAIL = 'bounces-likely-spam@' + \
-    DISTRO_TRACKER_FQDN
-ALLOWED_HOSTS = [ DISTRO_TRACKER_FQDN ]
+from .defaults import INSTALLED_APPS, MIDDLEWARE_CLASSES, AUTHENTICATION_BACKENDS
+from .db_postgresql import *
 
-ADMINS = (
-    ('Tracker Admins', DISTRO_TRACKER_CONTACT_EMAIL),
+INSTALLED_APPS += (
+    # Many debian.org customizations
+    'distro_tracker.vendor.debian',
+    # Extract common files from the source package
+    'distro_tracker.extract_source_files',
 )
-MANAGERS = ADMINS
-SERVER_EMAIL = DISTRO_TRACKER_CONTACT_EMAIL
 
-DISTRO_TRACKER_VENDOR_NAME = "Debian"
-DISTRO_TRACKER_VENDOR_URL = "http://www.debian.org"
+# Official service name
+DISTRO_TRACKER_FQDN = "tracker.debian.org"
 
 #: A module implementing vendor-specific hooks for use by Distro Tracker.
 #: For more information see :py:mod:`distro_tracker.vendor`.
@@ -31,6 +25,15 @@ DISTRO_TRACKER_DEBIAN_PIUPARTS_SUITES = (
     'sid',
 )
 
+# Various settings for sso.debian.org support
+_index_auth = MIDDLEWARE_CLASSES.index(
+    'django.contrib.auth.middleware.AuthenticationMiddleware') + 1
+MIDDLEWARE_CLASSES = MIDDLEWARE_CLASSES[:_index_auth] + \
+    ('distro_tracker.vendor.debian.sso_auth.DebianSsoUserMiddleware',) + \
+    MIDDLEWARE_CLASSES[_index_auth:]
+AUTHENTICATION_BACKENDS = \
+    ('distro_tracker.vendor.debian.sso_auth.DebianSsoUserBackend',) + \
+    AUTHENTICATION_BACKENDS
 DJANGO_EMAIL_ACCOUNTS_PRE_LOGIN_HOOK = \
     'distro_tracker.vendor.debian.rules.pre_login'
 DJANGO_EMAIL_ACCOUNTS_POST_LOGOUT_REDIRECT = \

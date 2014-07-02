@@ -38,8 +38,6 @@ project Package
 
 .. automodule:: distro_tracker.project.settings.defaults
     :members:
-    :undoc-members:
-    :show-inheritance:
 
 :mod:`settings.local` Module
 ----------------------------

@@ -23,3 +23,5 @@ if sys.argv[1:2] == ['test']:
     from .test import *
 else:
     from .local import *
+
+compute_default_settings(globals())

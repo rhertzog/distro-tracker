@@ -13,23 +13,11 @@ from .selected import *
 
 ## Add your custom settings here
 
-# ADMINS = (
-#     ('Your Name', 'your_email@example.com'),
-# )
-# MANAGERS = ADMINS
-
+# DISTRO_TRACKER_FQDN = "tracker.debian.org"
 # DISTRO_TRACKER_VENDOR_NAME = "Debian"
 # DISTRO_TRACKER_VENDOR_URL = "http://www.debian.org"
 # DISTRO_TRACKER_VENDOR_RULES = "distro_tracker.vendor.debian.rules"
-
-# If you override the FQDN, you also have to override other settings
-# whose values are based on it.
-# DISTRO_TRACKER_FQDN = "packages.qa.debian.org"
-# DISTRO_TRACKER_CONTROL_EMAIL = 'control@' + DISTRO_TRACKER_FQDN
 # DISTRO_TRACKER_CONTACT_EMAIL = 'owner@' + DISTRO_TRACKER_FQDN
-# DISTRO_TRACKER_BOUNCES_EMAIL = 'bounces@' + DISTRO_TRACKER_FQDN
-# DISTRO_TRACKER_BOUNCES_LIKELY_SPAM_EMAIL = DISTRO_TRACKER_BOUNCES_EMAIL
-# ALLOWED_HOSTS = [ DISTRO_TRACKER_FQDN ]
 
 # If you don't use the packaged version of Distro Tracker, put a random secret
 # key here. DO NOT USE THE EXAMPLE KEY GIVEN BELOW.
