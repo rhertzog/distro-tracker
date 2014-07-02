@@ -556,6 +556,8 @@ def import_all_tasks():
         except ImportError:
             # The app does not implement Distro Tracker tasks.
             pass
+    # This one is an exception, many core tasks are there
+    import distro_tracker.core.retrieve_data
 
 
 def run_task(initial_task, parameters=None):
