@@ -835,7 +835,13 @@ class UpdatePackageGeneralInformation(PackageUpdateTask):
             for event in self.get_all_events()
         )
         with transaction.atomic():
-            qs = SourcePackageName.objects.filter(name__in=package_names)
+            if self.is_initial_task():
+                self.log("Updating general infos of all packages")
+                qs = SourcePackageName.objects.all()
+            else:
+                self.log("Updating general infos of %d packages",
+                         len(package_names))
+                qs = SourcePackageName.objects.filter(name__in=package_names)
             for package in qs:
                 entry = package.main_entry
                 if entry is None:
@@ -892,7 +898,13 @@ class UpdateVersionInformation(PackageUpdateTask):
             for event in self.get_all_events()
         )
         with transaction.atomic():
-            qs = SourcePackageName.objects.filter(name__in=package_names)
+            if self.is_initial_task():
+                self.log("Updating versions tables of all packages")
+                qs = SourcePackageName.objects.all()
+            else:
+                self.log("Updating versions tables of %d packages",
+                         len(package_names))
+                qs = SourcePackageName.objects.filter(name__in=package_names)
             for package in qs:
                 versions, _ = PackageExtractedInfo.objects.get_or_create(
                     key='versions',
