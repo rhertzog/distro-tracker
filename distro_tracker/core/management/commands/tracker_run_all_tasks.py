@@ -1,4 +1,4 @@
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2014 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -15,6 +15,9 @@ from __future__ import unicode_literals
 from django.core.management.base import BaseCommand
 from optparse import make_option
 from distro_tracker.core.tasks import run_all_tasks
+import logging
+
+logger = logging.getLogger('distro_tracker.tasks')
 
 
 class Command(BaseCommand):
@@ -40,4 +43,5 @@ class Command(BaseCommand):
                 'force_update': True
             }
 
+        logger.info('Starting all tasks (from ./manage.py tracker_run_all_tasks')
         run_all_tasks(additional_arguments)

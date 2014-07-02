@@ -1,4 +1,4 @@
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2014 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -16,6 +16,9 @@ from django.core.management.base import BaseCommand
 from optparse import make_option
 from distro_tracker.core.tasks import run_task
 import traceback
+import logging
+
+logger = logging.getLogger('distro_tracker.tasks')
 
 
 class Command(BaseCommand):
@@ -37,7 +40,8 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **kwargs):
-        verbose = int(kwargs.get('verbosity', 1)) > 1
+        verbose = int(kwargs.get('verbosity', 1)) > 0
+        print "verbosity: %s" % kwargs.get('verbosity', 2)
         additional_arguments = None
         if kwargs['force']:
             additional_arguments = {
@@ -45,9 +49,12 @@ class Command(BaseCommand):
             }
         for task_name in args:
             task_name = task_name.decode('utf-8')
+            logger.info("Starting task %s (from ./manage.py tracker_run_task)",
+                        task_name)
             try:
                 run_task(task_name, additional_arguments)
             except:
+                logger.exception("Task %s failed:", task_name)
                 if verbose:
-                    self.stdout.write(task_name + ' failed!')
+                    self.stdout.write('Task {} failed:\n'.format(task_name))
                     traceback.print_exc(file=self.stdout)

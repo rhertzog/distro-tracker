@@ -1,4 +1,4 @@
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2014 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -577,7 +577,10 @@ def run_task(initial_task, parameters=None):
     import_all_tasks()
 
     if isinstance(initial_task, six.text_type):
+        task_name = initial_task
         initial_task = BaseTask.get_task_class_by_name(initial_task)
+        if not initial_task:
+            raise ValueError("Task '%s' doesn't exist." % task_name)
     job = Job(initial_task)
     return job.run(parameters)
 
@@ -595,6 +598,7 @@ def run_all_tasks(parameters=None):
         if task is BaseTask:
             continue
         if not task.DEPENDS_ON_EVENTS:
+            logger.info("Starting task %s", task.task_name())
             run_task(task)
 
 
