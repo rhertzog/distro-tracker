@@ -41,7 +41,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         verbose = int(kwargs.get('verbosity', 1)) > 0
-        print "verbosity: %s" % kwargs.get('verbosity', 2)
         additional_arguments = None
         if kwargs['force']:
             additional_arguments = {
