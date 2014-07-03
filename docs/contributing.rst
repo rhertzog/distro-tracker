@@ -128,7 +128,8 @@ Conventions
   1. In regard to coding style, we observe `PEP8\
      <http://legacy.python.org/dev/peps/pep-0008/>`_ with a few exceptions.
 
-  2. Functions are documented using doctrings with `Sphinx markup <>`.
+  2. Functions are documented using doctrings with `Sphinx markup
+     <http://sphinx-doc.org/contents.html>`_.
 
 Write access to the git repository
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
