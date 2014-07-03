@@ -836,7 +836,7 @@ class UpdateExcusesTask(BaseTask):
                 # Entering the list of excuses
                 top_level_list = False
                 continue
-            
+
             if top_level_list:
                 # The entry in the top level list outside of an inner list is
                 # a <li> item giving the name of the package for which the
@@ -1462,8 +1462,8 @@ class UpdateReleaseGoalsTask(BaseTask):
             been when compared to the cached resource.
         """
         cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
-        release_goals_url = 'http://release.debian.org/testing/goals.yaml'
-        bugs_list_url = 'http://udd.debian.org/dtracker-release-goals.cgi'
+        release_goals_url = 'https://release.debian.org/testing/goals.yaml'
+        bugs_list_url = 'https://udd.debian.org/pts-release-goals.cgi'
         if not self.force_update and (not cache.is_expired(release_goals_url) and
                 not cache.is_expired(bugs_list_url)):
             return
@@ -1484,7 +1484,10 @@ class UpdateReleaseGoalsTask(BaseTask):
         release_goals_content, bug_list_content = content
 
         release_goals = yaml.safe_load(release_goals_content)
-        release_goals_list = release_goals['release-goals']
+        if release_goals:
+            release_goals_list = release_goals['release-goals']
+        else:
+            release_goals_list = []
         # Map (user, tag) tuples to the release goals.
         # This is used to match the bugs with the correct release goal.
         release_goals = {}
@@ -1499,6 +1502,8 @@ class UpdateReleaseGoalsTask(BaseTask):
         # Build a dict mapping package names to a list of bugs matched to a
         # release goal.
         bug_list = yaml.safe_load(bug_list_content)
+        if not bug_list:
+            bug_list = []
         for bug in bug_list:
             user, tag = bug['email'], bug['tag']
             if (user, tag) not in release_goals:
