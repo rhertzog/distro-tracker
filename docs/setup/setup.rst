@@ -1,3 +1,5 @@
+.. _setting-up:
+
 Setting up Distro Tracker
 =========================
 
