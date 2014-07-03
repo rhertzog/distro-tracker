@@ -50,6 +50,9 @@ class Command(BaseCommand):
             return
 
         news_directory = os.path.join(package_directory_name, 'news')
+        if not os.path.exists(news_directory):
+            self.write("Package has no news directory.")
+            return
 
         email_news = []
         for news_file in sorted(os.listdir(news_directory)):
