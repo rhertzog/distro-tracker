@@ -17,6 +17,7 @@ from django.utils.http import urlencode
 from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.models import Repository
 from distro_tracker.core.models import SourcePackageName
+from distro_tracker.core.models import PackageExtractedInfo
 from distro_tracker.core.panels import BasePanel
 from distro_tracker.core.panels import LinksPanel
 from distro_tracker.core.panels import HtmlPanelItem
@@ -88,6 +89,7 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
 
 class PopconLink(LinksPanel.ItemProvider):
     POPCON_URL = 'http://qa.debian.org/popcon.php?package={package}'
+
     def get_panel_items(self):
         if not isinstance(self.package, SourcePackageName):
             return
@@ -97,6 +99,7 @@ class PopconLink(LinksPanel.ItemProvider):
                 'popcon',
                 self.POPCON_URL.format(package=self.package.name))
         ]
+
 
 class SourceCodeSearchLinks(LinksPanel.ItemProvider):
     """
@@ -119,6 +122,7 @@ class SourceCodeSearchLinks(LinksPanel.ItemProvider):
         '<input type="hidden" name="package" value="{package}">'
         '<input type="text" name="q" placeholder="search source code">'
         '</form>')
+
     def get_panel_items(self):
         if not isinstance(self.package, SourcePackageName):
             # Only source packages can have these links
@@ -145,14 +149,23 @@ class DebtagsLink(LinksPanel.ItemProvider):
     """
     Add a link to debtags editor.
     """
-    SOURCES_URL_TEMPLATE = 'http://debtags.debian.net/edit/{package}'
+    SOURCES_URL_TEMPLATE = \
+        'http://debtags.debian.net/rep/todo/maint/{maint}#{package}'
+
     def get_panel_items(self):
         if not isinstance(self.package, SourcePackageName):
             return
+        try:
+            infos = self.package.packageextractedinfo_set.get(key='general')
+        except PackageExtractedInfo.DoesNotExist:
+            return
+        maintainer = infos.value['maintainer']['email']
         return [
             LinksPanel.SimpleLinkItem(
                 'edit tags',
-                 self.SOURCES_URL_TEMPLATE.format(package=self.package.name))
+                self.SOURCES_URL_TEMPLATE.format(
+                    package=self.package.name, maint=maintainer)
+            )
         ]
 
 

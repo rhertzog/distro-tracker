@@ -2528,6 +2528,16 @@ class DebtagsLinkTest(TestCase):
         package = SourcePackage.objects.create(
             source_package_name=package_name,
             version='1.0.0')
+        PackageExtractedInfo.objects.create(
+            package=package.source_package_name,
+            key='general',
+            value={
+                'name': 'dummy',
+                'maintainer': {
+                    'email': 'hertzog@debian.org',
+                }
+            }
+        )
 
         response = self.get_package_page_response(package.name)
 
