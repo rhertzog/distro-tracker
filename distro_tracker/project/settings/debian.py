@@ -6,6 +6,8 @@ from .db_postgresql import *
 INSTALLED_APPS += (
     # Many debian.org customizations
     'distro_tracker.vendor.debian',
+    # Generate warnings for outdated values of the Standards-Version field
+    'distro_tracker.stdver_warnings',
     # Extract common files from the source package
     'distro_tracker.extract_source_files',
 )
