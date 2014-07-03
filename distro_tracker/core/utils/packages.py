@@ -562,7 +562,7 @@ class AptCache(object):
             if item.status != item.STAT_DONE:
                 raise SourcePackageRetrieveError(
                     'Could not retrieve file {file}: {error}'.format(
-                        file=item.destfile, error=item.error_text))
+                        file=item.destfile, error=item.error_text.decode('utf-8')))
             retrieved_paths.append(item.destfile)
 
         return retrieved_paths
