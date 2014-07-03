@@ -352,7 +352,7 @@ class RetrieveLowThresholdNmuTest(TestCase):
         Tests updating the list of developers that allow the low threshold
         NMU when the developer was previously registered in the database.
         """
-        email = UserEmail.objects.create(email='dummy@debian.org')
+        UserEmail.objects.create(email='dummy@debian.org')
         set_mock_response(mock_requests,
             "Text text text\n"
             "text more text...\n"
@@ -3511,6 +3511,7 @@ class UpdateUbuntuStatsTaskTests(TestCase):
         ubuntu_pkg = UbuntuPackage.objects.all()[0]
         self.assertIsNone(ubuntu_pkg.patch_diff)
 
+
 class UbuntuPanelTests(TestCase):
     """
     Tests for the :class:`distro_tracker.vendor.debian.tracker_panels.UbuntuPanel` panel.
@@ -3593,7 +3594,6 @@ class UbuntuPanelTests(TestCase):
         """
         ubuntu_version = '1.0.0-ubuntu1'
         diff_url = 'd/dummy-package/dummy-package_1.0.0-ubuntu1'
-        bug_count, patch_count = 10, 5
         UbuntuPackage.objects.create(
             package=self.package,
             version=ubuntu_version,
@@ -4348,6 +4348,9 @@ class ImportTagsTests(TestCase):
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'distro_tracker.vendor.debian.sso_auth.DebianSsoUserMiddleware',
+),AUTHENTICATION_BACKENDS=(
+    'distro_tracker.vendor.debian.sso_auth.DebianSsoUserBackend',
+    'django_email_accounts.auth.UserEmailBackend',
 ))
 class DebianSsoLoginTests(TestCase):
     """
@@ -4375,7 +4378,7 @@ class DebianSsoLoginTests(TestCase):
             'last_name': last_name,
         }
 
-        response = self.get_page('DEBIANORG::DEBIAN:user')
+        self.get_page('DEBIANORG::DEBIAN:user')
 
         self.assertEqual(1, User.objects.count())
         user = User.objects.all()[0]
@@ -4403,7 +4406,7 @@ class DebianSsoLoginTests(TestCase):
             main_email='user@debian.org',
             first_name=old_name)
 
-        response = self.get_page('DEBIANORG::DEBIAN:user')
+        self.get_page('DEBIANORG::DEBIAN:user')
 
         self.assertEqual(1, User.objects.count())
         user = User.objects.all()[0]
@@ -4422,7 +4425,7 @@ class DebianSsoLoginTests(TestCase):
         # The @debian.org address is an associated email
         user.emails.create(email='user@debian.org')
 
-        response = self.get_page('DEBIANORG::DEBIAN:user')
+        self.get_page('DEBIANORG::DEBIAN:user')
 
         self.assertEqual(1, User.objects.count())
         user = User.objects.all()[0]
