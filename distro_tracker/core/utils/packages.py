@@ -507,7 +507,8 @@ class AptCache(object):
             file_path
             for file_path in retrieved_files
             if file_path.endswith('.dsc'))
-        subprocess.check_call(["dpkg-source", "-x", dsc_file_path, outdir])
+        subprocess.check_output(["dpkg-source", "-x", dsc_file_path, outdir],
+                                stderr=subprocess.STDOUT)
 
     def _apt_acquire_package(self,
                              source_records,
