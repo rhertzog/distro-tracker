@@ -27,7 +27,7 @@
     {% for item in versions.version_list %}
     <div class="row-fluid">
     <li class="list-group-item">
-        <div class="list-item-key versions-repository"><b><span title="{{ item.repository_name }}">{{ item.repository_shorthand }}:</span></b></div>
+        <div class="list-item-key versions-repository"><b><span title="{{ item.repository.name }}">{{ item.repository.shorthand }}:</span></b></div>
         <div class="list-item-value">
             {% with url=item.url|default:"#" %}
             <a href="{{ url }}">{{ item.version }}</a>

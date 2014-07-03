@@ -153,7 +153,7 @@ def get_pseudo_package_list():
 
     try:
         response.raise_for_status()
-    except requests.exceptions.HTTPError as e:
+    except requests.exceptions.HTTPError:
         raise PluginProcessingError()
 
     if not updated:
@@ -165,23 +165,36 @@ def get_pseudo_package_list():
     ]
 
 
-def get_package_information_site_url(package_name,
-                                     source_package=False,
-                                     repository_name=None):
+def get_package_information_site_url(package_name, source_package=False,
+                                     repository=None, version=None):
+    """
+    Return a link pointing to more information about a package in a
+    given repository.
+    """
     BASE_URL = 'http://packages.debian.org/'
+    PU_URL = 'https://release.debian.org/proposed-updates/'
     SOURCE_PACKAGE_URL_TEMPLATES = {
         'repository': BASE_URL + 'source/{repo}/{package}',
         'no-repository': BASE_URL + 'src:{package}',
+        'pu': PU_URL + '{targetsuite}.html#{package}_{version}',
     }
     BINARY_PACKAGE_URL_TEMPLATES = {
         'repository': BASE_URL + '{repo}/{package}',
         'no-repository': BASE_URL + '{package}',
+        'pu': '',
     }
 
     params = {'package': package_name}
-    if repository_name:
-        url_type = 'repository'
-        params['repo'] = repository_name
+    if repository:
+        suite = repository['suite'] or repository['codename']
+        if suite.endswith('proposed-updates'):
+            url_type = 'pu'
+            params['version'] = version
+            params['targetsuite'] = suite.replace('-proposed-updates', '')\
+                .replace('proposed-updates', 'stable')
+        else:
+            url_type = 'repository'
+        params['repo'] = suite
     else:
         url_type = 'no-repository'
 

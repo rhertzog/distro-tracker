@@ -23,7 +23,6 @@ from distro_tracker.core.models import ActionItem
 from distro_tracker.core.models import PackageExtractedInfo
 from distro_tracker.core.models import MailingList
 from distro_tracker.core.models import News
-from distro_tracker.core.models import PackageBugStats
 from distro_tracker.core.models import BinaryPackageBugStats
 from debian.debian_support import AptPkgVersion
 from collections import defaultdict
@@ -284,8 +283,9 @@ class VersionsInformationPanel(BasePanel):
             for item in version_info.get('version_list', ()):
                 url, implemented = vendor.call('get_package_information_site_url', **{
                     'package_name': package_name,
-                    'repository_name': item['repository_name'],
+                    'repository': item.get('repository'),
                     'source_package': True,
+                    'version': item.get('version'),
                 })
                 if implemented and url:
                     item['url'] = url
@@ -538,11 +538,11 @@ class BinariesInformationPanel(BasePanel):
 
             # For each binary try to include a link to an external package-info
             # site.
-            if 'repository_name' in binary:
+            if 'repository' in binary:
                 url, implemented = vendor.call(
                     'get_package_information_site_url', **{
                         'package_name': binary['name'],
-                        'repository_name': binary['repository_name'],
+                        'repository': binary['repository'],
                         'source_package': False,
                     }
                 )

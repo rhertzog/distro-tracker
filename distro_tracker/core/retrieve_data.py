@@ -880,8 +880,13 @@ class UpdateVersionInformation(PackageUpdateTask):
         for repository in package_name.repositories:
             entry = repository.get_source_package_entry(package_name)
             version_list.append({
-                'repository_name': entry.repository.name,
-                'repository_shorthand': entry.repository.shorthand,
+                'repository': {
+                    'name': entry.repository.name,
+                    'shorthand': entry.repository.shorthand,
+                    'codename': entry.repository.codename,
+                    'suite': entry.repository.suite,
+                    'id': entry.repository.id,
+                },
                 'version': entry.source_package.version,
             })
         versions = {
@@ -936,11 +941,17 @@ class UpdateSourceToBinariesInformation(PackageUpdateTask):
         Returns a list representing binary packages linked to the given
         source package.
         """
-        repository_name = package.main_entry.repository.name
+        repository = package.main_entry.repository
         return [
             {
                 'name': pkg.name,
-                'repository_name': repository_name,
+                'repository': {
+                    'name': repository.name,
+                    'shorthand': repository.shorthand,
+                    'suite': repository.suite,
+                    'codename': repository.codename,
+                    'id': repository.id,
+                },
             }
             for pkg in package.main_version.binary_packages.all()
         ]

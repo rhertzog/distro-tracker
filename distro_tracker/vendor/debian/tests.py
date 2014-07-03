@@ -274,6 +274,14 @@ class GetPseudoPackageListTest(TestCase):
 
 
 class GetPackageInformationSiteUrlTest(SimpleTestCase):
+    def setUp(self):
+        self.repository = {
+            'name': 'Debian Stable',
+            'suite': 'stable',
+            'codename': 'wheezy',
+            'shorthand': 'stable',
+        }
+
     def test_get_source_package_url(self):
         """
         Tests retrieving a URL to the package information site for a source
@@ -287,8 +295,19 @@ class GetPackageInformationSiteUrlTest(SimpleTestCase):
         # Source package in a repository
         self.assertEqual(
             'http://packages.debian.org/source/stable/dpkg',
-            get_package_information_site_url('dpkg', True, 'stable')
+            get_package_information_site_url('dpkg', source_package=True,
+                                             repository=self.repository)
         )
+        # Source package in a proposed-updates repository
+        url = 'https://release.debian.org/proposed-updates/{}.html#dpkg_1.6.15'
+        for suite in ('stable', 'oldstable'):
+            self.repository['suite'] = '{}-proposed-updates'.format(suite)
+            self.assertEqual(
+                url.format(suite),
+                get_package_information_site_url('dpkg', source_package=True,
+                                                 repository=self.repository,
+                                                 version='1.6.15')
+            )
 
     def test_get_binary_package_url(self):
         """
@@ -302,9 +321,18 @@ class GetPackageInformationSiteUrlTest(SimpleTestCase):
         )
         # Binary package in a repository
         self.assertEqual(
-            'http://packages.debian.org/unstable/dpkg',
-            get_package_information_site_url('dpkg', repository_name='unstable')
+            'http://packages.debian.org/stable/dpkg',
+            get_package_information_site_url('dpkg', repository=self.repository)
         )
+        # Binary package in a proposed-updates repository
+        for suite in ('stable', 'oldstable'):
+            self.repository['suite'] = '{}-proposed-updates'.format(suite)
+            self.assertEqual(
+                '',
+                get_package_information_site_url('dpkg', source_package=False,
+                                                 repository=self.repository,
+                                                 version='1.6.15')
+            )
 
 
 class GetDeveloperInformationSiteUrlTest(SimpleTestCase):
