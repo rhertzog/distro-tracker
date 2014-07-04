@@ -10,7 +10,7 @@
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">True</field>
-        <field type="BooleanField" name="binary">True</field>
+	<field type="BooleanField" name="binary">False</field>
         <field type="BooleanField" name="source">True</field>
         <field type="IntegerField" name="position">1</field>
         <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="2"></object><object pk="5"></object><object pk="6"></object><object pk="7"></object><object pk="8"></object><object pk="9"></object><object pk="10"></object><object pk="11"></object><object pk="12"></object><object pk="14"></object></field>
@@ -25,7 +25,7 @@
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">False</field>
-        <field type="BooleanField" name="binary">True</field>
+        <field type="BooleanField" name="binary">False</field>
         <field type="BooleanField" name="source">True</field>
         <field type="IntegerField" name="position">8</field>
         <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="2"></object><object pk="3"></object><object pk="5"></object><object pk="6"></object><object pk="7"></object><object pk="8"></object><object pk="9"></object><object pk="10"></object><object pk="11"></object><object pk="12"></object><object pk="13"></object><object pk="14"></object></field>
@@ -55,7 +55,7 @@
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">False</field>
-        <field type="BooleanField" name="binary">True</field>
+        <field type="BooleanField" name="binary">False</field>
         <field type="BooleanField" name="source">True</field>
         <field type="IntegerField" name="position">17</field>
         <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="2"></object><object pk="3"></object><object pk="4"></object><object pk="5"></object><object pk="7"></object><object pk="8"></object><object pk="9"></object><object pk="10"></object><object pk="11"></object><object pk="13"></object><object pk="14"></object></field>
@@ -70,7 +70,7 @@
         <field type="TextField" name="components">updates/main updates/contrib updates/non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">True</field>
-        <field type="BooleanField" name="binary">True</field>
+        <field type="BooleanField" name="binary">False</field>
         <field type="BooleanField" name="source">True</field>
         <field type="IntegerField" name="position">2</field>
         <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="2"></object><object pk="5"></object><object pk="6"></object><object pk="7"></object><object pk="8"></object><object pk="9"></object><object pk="10"></object><object pk="11"></object><object pk="12"></object><object pk="14"></object></field>
@@ -85,7 +85,7 @@
         <field type="TextField" name="components">updates/main updates/contrib updates/non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">False</field>
-        <field type="BooleanField" name="binary">True</field>
+        <field type="BooleanField" name="binary">False</field>
         <field type="BooleanField" name="source">True</field>
         <field type="IntegerField" name="position">9</field>
         <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="2"></object><object pk="3"></object><object pk="5"></object><object pk="6"></object><object pk="7"></object><object pk="8"></object><object pk="9"></object><object pk="10"></object><object pk="11"></object><object pk="12"></object><object pk="13"></object><object pk="14"></object></field>
@@ -100,7 +100,7 @@
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">False</field>
-        <field type="BooleanField" name="binary">True</field>
+        <field type="BooleanField" name="binary">False</field>
         <field type="BooleanField" name="source">True</field>
         <field type="IntegerField" name="position">13</field>
         <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="2"></object><object pk="3"></object><object pk="5"></object><object pk="7"></object><object pk="8"></object><object pk="9"></object><object pk="10"></object><object pk="11"></object><object pk="13"></object></field>
@@ -115,7 +115,7 @@
         <field type="TextField" name="components">updates/main updates/contrib updates/non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">False</field>
-        <field type="BooleanField" name="binary">True</field>
+        <field type="BooleanField" name="binary">False</field>
         <field type="BooleanField" name="source">True</field>
         <field type="IntegerField" name="position">14</field>
         <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="2"></object><object pk="3"></object><object pk="5"></object><object pk="6"></object><object pk="7"></object><object pk="8"></object><object pk="9"></object><object pk="10"></object><object pk="11"></object><object pk="13"></object><object pk="14"></object></field>
@@ -130,7 +130,7 @@
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">True</field>
-        <field type="BooleanField" name="binary">True</field>
+        <field type="BooleanField" name="binary">False</field>
         <field type="BooleanField" name="source">True</field>
         <field type="IntegerField" name="position">4</field>
         <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="2"></object><object pk="5"></object><object pk="6"></object><object pk="7"></object><object pk="8"></object><object pk="9"></object><object pk="10"></object><object pk="11"></object><object pk="12"></object><object pk="14"></object></field>
@@ -145,7 +145,7 @@
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">False</field>
-        <field type="BooleanField" name="binary">True</field>
+        <field type="BooleanField" name="binary">False</field>
         <field type="BooleanField" name="source">True</field>
         <field type="IntegerField" name="position">10</field>
         <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="2"></object><object pk="3"></object><object pk="5"></object><object pk="6"></object><object pk="7"></object><object pk="8"></object><object pk="9"></object><object pk="10"></object><object pk="11"></object><object pk="12"></object><object pk="13"></object><object pk="14"></object></field>
@@ -160,7 +160,7 @@
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">True</field>
-        <field type="BooleanField" name="binary">True</field>
+        <field type="BooleanField" name="binary">False</field>
         <field type="BooleanField" name="source">True</field>
         <field type="IntegerField" name="position">7</field>
         <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="2"></object><object pk="5"></object><object pk="6"></object><object pk="7"></object><object pk="8"></object><object pk="9"></object><object pk="10"></object><object pk="11"></object><object pk="12"></object><object pk="14"></object></field>
@@ -175,7 +175,7 @@
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">False</field>
-        <field type="BooleanField" name="binary">True</field>
+        <field type="BooleanField" name="binary">False</field>
         <field type="BooleanField" name="source">True</field>
         <field type="IntegerField" name="position">12</field>
         <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="2"></object><object pk="3"></object><object pk="5"></object><object pk="6"></object><object pk="7"></object><object pk="8"></object><object pk="9"></object><object pk="10"></object><object pk="11"></object><object pk="12"></object><object pk="13"></object><object pk="14"></object></field>
@@ -190,7 +190,7 @@
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">False</field>
-        <field type="BooleanField" name="binary">True</field>
+        <field type="BooleanField" name="binary">False</field>
         <field type="BooleanField" name="source">True</field>
         <field type="IntegerField" name="position">15</field>
         <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="2"></object><object pk="3"></object><object pk="5"></object><object pk="7"></object><object pk="8"></object><object pk="9"></object><object pk="10"></object><object pk="11"></object><object pk="13"></object></field>
@@ -205,7 +205,7 @@
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">True</field>
-        <field type="BooleanField" name="binary">True</field>
+        <field type="BooleanField" name="binary">False</field>
         <field type="BooleanField" name="source">True</field>
         <field type="IntegerField" name="position">3</field>
         <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="5"></object></field>
@@ -220,7 +220,7 @@
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">True</field>
-        <field type="BooleanField" name="binary">True</field>
+        <field type="BooleanField" name="binary">False</field>
         <field type="BooleanField" name="source">True</field>
         <field type="IntegerField" name="position">6</field>
         <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="2"></object><object pk="5"></object><object pk="6"></object><object pk="7"></object><object pk="8"></object><object pk="9"></object><object pk="10"></object><object pk="11"></object><object pk="12"></object><object pk="14"></object></field>
@@ -235,7 +235,7 @@
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">False</field>
-        <field type="BooleanField" name="binary">True</field>
+        <field type="BooleanField" name="binary">False</field>
         <field type="BooleanField" name="source">True</field>
         <field type="IntegerField" name="position">11</field>
         <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="2"></object><object pk="3"></object><object pk="5"></object><object pk="6"></object><object pk="7"></object><object pk="8"></object><object pk="9"></object><object pk="10"></object><object pk="11"></object><object pk="12"></object><object pk="13"></object><object pk="14"></object></field>
@@ -250,7 +250,7 @@
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">True</field>
-        <field type="BooleanField" name="binary">True</field>
+        <field type="BooleanField" name="binary">False</field>
         <field type="BooleanField" name="source">True</field>
         <field type="IntegerField" name="position">5</field>
         <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="2"></object><object pk="5"></object><object pk="6"></object><object pk="7"></object><object pk="8"></object><object pk="9"></object><object pk="10"></object><object pk="11"></object><object pk="12"></object><object pk="14"></object></field>
