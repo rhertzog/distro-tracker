@@ -1204,7 +1204,8 @@ class SourcePackageRepositoryEntry(models.Model):
         :rtype: string
         """
         if self.source_package.directory and self.source_package.dsc_file_name:
-            base_url = self.repository.uri.rstrip('/')
+            base_url = self.repository.public_uri.rstrip('/') or \
+                self.repository.uri.rstrip('/')
             return '/'.join((
                 base_url,
                 self.source_package.directory,
@@ -1221,7 +1222,8 @@ class SourcePackageRepositoryEntry(models.Model):
         :rtype: string
         """
         if self.source_package.directory:
-            base_url = self.repository.uri.rstrip('/')
+            base_url = self.repository.public_uri.rstrip('/') or \
+                self.repository.uri.rstrip('/')
             return base_url + '/' + self.source_package.directory
         else:
             return None
