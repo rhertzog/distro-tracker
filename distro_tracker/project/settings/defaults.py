@@ -288,8 +288,7 @@ LOGGING = {
         'mail.log': {
             'level': 'INFO',
             'class': 'logging.handlers.TimedRotatingFileHandler',
-            'filename': os.path.join(DISTRO_TRACKER_BASE_PATH, 'data', 'logs',
-                                     'mail.log'),
+            'filename': 'mail.log',
             'formatter': 'standard',
             'when': 'W0',
             'delay': True,
@@ -298,8 +297,7 @@ LOGGING = {
         'tasks.log': {
             'level': 'INFO',
             'class': 'logging.handlers.TimedRotatingFileHandler',
-            'filename': os.path.join(DISTRO_TRACKER_BASE_PATH, 'data', 'logs',
-                                     'tasks.log'),
+            'filename': 'tasks.log',
             'formatter': 'standard',
             'when': 'W0',
             'delay': True,
@@ -308,8 +306,7 @@ LOGGING = {
         'errors.log': {
             'level': 'ERROR',
             'class': 'logging.handlers.TimedRotatingFileHandler',
-            'filename': os.path.join(DISTRO_TRACKER_BASE_PATH, 'data', 'logs',
-                                     'errors.log'),
+            'filename': 'errors.log',
             'formatter': 'verbose',
             'when': 'W0',
             'delay': True,
