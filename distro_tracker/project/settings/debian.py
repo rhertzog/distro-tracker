@@ -1,7 +1,8 @@
 """Debian.org specific settings"""
 
+import os.path
 from .defaults import INSTALLED_APPS, MIDDLEWARE_CLASSES, AUTHENTICATION_BACKENDS
-from .db_postgresql import *
+from .db_postgresql import DATABASES
 
 INSTALLED_APPS += (
     # Many debian.org customizations
@@ -14,6 +15,11 @@ INSTALLED_APPS += (
 
 # Official service name
 DISTRO_TRACKER_FQDN = "tracker.debian.org"
+
+# Custom data path (used only if it exists, so that we can reuse
+# those settings in a development environment too).
+if os.path.isdir('/srv/tracker.debian.org/data'):
+    DISTRO_TRACKER_DATA_PATH = '/srv/tracker.debian.org/data'
 
 #: A module implementing vendor-specific hooks for use by Distro Tracker.
 #: For more information see :py:mod:`distro_tracker.vendor`.
