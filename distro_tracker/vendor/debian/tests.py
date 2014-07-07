@@ -4469,6 +4469,14 @@ class DebianSsoLoginTests(TestCase):
         user = User.objects.all()[0]
         self.assertEqual(old_name, user.first_name)
 
+    def test_first_log_in_preexisting_useremail(self, get_user_details):
+        UserEmail.objects.create(email='user@debian.org')
+
+        self.get_page('DEBIANORG::DEBIAN:user')
+
+        self.assertEqual(1, User.objects.count())
+        self.assertTrue(get_user_details.called)
+
     def test_user_logged_out(self, get_user_details):
         """
         Tests that Distro Tracker logs out the user after the SSO headers are invalid.

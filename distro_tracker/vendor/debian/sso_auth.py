@@ -13,7 +13,6 @@ from django.contrib.auth.middleware import RemoteUserMiddleware
 from django.contrib.auth.backends import RemoteUserBackend
 from django.contrib import auth
 from distro_tracker.accounts.models import UserEmail
-from distro_tracker.core.utils import get_or_none
 from distro_tracker.accounts.models import User
 
 import ldap
@@ -86,10 +85,10 @@ class DebianSsoUserBackend(RemoteUserBackend):
 
         email = remote_user
 
-        user_email = get_or_none(UserEmail, email=email)
-        if not user_email:
-            names = self.get_user_details(remote_user)
+        user_email, _ = UserEmail.objects.get_or_create(email=email)
+        if not user_email.user:
             kwargs = {}
+            names = self.get_user_details(remote_user)
             if names:
                 kwargs.update(names)
             user = User.objects.create_user(main_email=email, **kwargs)
