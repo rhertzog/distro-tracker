@@ -60,6 +60,7 @@ from distro_tracker.vendor.debian.tracker_tasks import RetrieveDebianMaintainers
 from distro_tracker.vendor.debian.tracker_tasks import RetrieveLowThresholdNmuTask
 from distro_tracker.vendor.debian.tracker_tasks import DebianWatchFileScannerUpdate
 from distro_tracker.vendor.debian.tracker_tasks import UpdateExcusesTask
+from distro_tracker.vendor.debian.tracker_tasks import UpdateDebciStatusTask
 from distro_tracker.vendor.debian.models import DebianContributor
 from distro_tracker.vendor.debian.models import UbuntuPackage
 from distro_tracker.vendor.debian.tracker_tasks import UpdateLintianStatsTask
@@ -4504,3 +4505,154 @@ class DebianSsoLoginTests(TestCase):
         self.client.get('/')
 
         self.assert_no_user_logged_in()
+
+
+@mock.patch('distro_tracker.core.utils.http.requests')
+class UpdateDebciStatusTaskTest(TestCase):
+    """
+    Tests for the :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateDebciStatusTask` task.
+    """
+    def setUp(self):
+        self.dummy_package = SourcePackageName.objects.create(name='dummy-package')
+        self.other_package = SourcePackageName.objects.create(name='other-package')
+        self.json_data = """[
+            {
+                "run_id": "20140705_145427",
+                "package": "dummy-package",
+                "version": "1.0-1",
+                "date": "2014-07-05 14:55:57",
+                "status": "pass",
+                "blame": [ ],
+                "previous_status": "pass",
+                "duration_seconds": "91",
+                "duration_human": "0h 1m 31s",
+                "message": "All tests passed"
+            },
+            {
+                "run_id": "20140705_212616",
+                "package": "other-package",
+                "version": "2.0-2",
+                "date": "2014-07-05 21:34:22",
+                "status": "fail",
+                "blame": [ ],
+                "previous_status": "fail",
+                "duration_seconds": "488",
+                "duration_human": "0h 8m 8s",
+                "message": "Tests failed"
+            },
+            {
+                "run_id": "20140705_143518",
+                "package": "another-package",
+                "version": "3.0-3",
+                "date": "2014-07-05 17:33:08",
+                "status": "fail",
+                "blame": [ ],
+                "previous_status": "fail",
+                "duration_seconds": "222",
+                "duration_human": "0h 3m 42s",
+                "message": "Tests failed"
+            }]
+        """
+
+    def run_task(self):
+        """
+        Runs the debci status update task.
+        """
+        task = UpdateDebciStatusTask()
+        task.execute()
+
+    def test_no_action_item_for_passing_test(self, mock_requests):
+        """
+        Tests that an ActionItem isn't created for a passing debci status.
+        """
+        set_mock_response(mock_requests, text=self.json_data)
+
+        self.run_task()
+
+        self.assertEqual(0, self.dummy_package.action_items.count())
+
+    def test_no_action_item_for_unknown_package(self, mock_requests):
+        """
+        Tests that an ActionItem isn't created for an unknown package.
+        """
+        json_data = """
+            [{
+                "run_id": "20140705_143518",
+                "package": "another-package",
+                "version": "3.0-3",
+                "date": "2014-07-05 17:33:08",
+                "status": "fail",
+                "blame": [ ],
+                "previous_status": "fail",
+                "duration_seconds": "222",
+                "duration_human": "0h 3m 42s",
+                "message": "Tests failed"
+            }]
+        """
+        set_mock_response(mock_requests, text=json_data)
+
+        self.run_task()
+
+        self.assertEqual(0, ActionItem.objects.count())
+
+    def test_action_item_for_failing_test(self, mock_requests):
+        """
+        Tests that a proper ActionItem is created for a failing test
+        on a known package.
+        """
+        set_mock_response(mock_requests, text=self.json_data)
+
+        self.run_task()
+
+        # Check that the ActionItem contains the correct contents.
+        self.assertEqual(self.other_package.action_items.count(), 1)
+        action_item = self.other_package.action_items.all()[0]
+        url = "http://ci.debian.net/#package/other-package"
+        log = "http://ci.debian.net/data/packages/unstable/amd64/o/" + \
+            "other-package/latest-autopkgtest/log"
+        self.assertIn(url, action_item.short_description)
+        self.assertIn(log, action_item.short_description)
+        self.assertEqual(action_item.extra_data['duration'], "0h 8m 8s")
+        self.assertEqual(action_item.extra_data['previous_status'], "fail")
+        self.assertEqual(action_item.extra_data['date'], "2014-07-05 21:34:22")
+        self.assertEqual(action_item.extra_data['url'], url)
+        self.assertEqual(action_item.extra_data['log'], log)
+
+    def test_action_item_is_dropped_when_test_passes_again(self, mock_requests):
+        """
+        Tests that ActionItems are dropped when the test passes again.
+        """
+        set_mock_response(mock_requests, text=self.json_data)
+        self.run_task()
+        json_data = """
+            [{
+                "run_id": "20140705_143519",
+                "package": "other-package",
+                "version": "3.0-4",
+                "date": "2014-07-07 17:33:08",
+                "status": "pass",
+                "blame": [ ],
+                "previous_status": "fail",
+                "duration_seconds": "222",
+                "duration_human": "0h 3m 42s",
+                "message": "Tests passed"
+            }]
+        """
+        set_mock_response(mock_requests, text=json_data)
+
+        self.run_task()
+
+        self.assertEqual(self.other_package.action_items.count(), 0)
+
+    def test_action_item_is_dropped_when_info_vanishes(self, mock_requests):
+        """
+        Tests that ActionItems are dropped when the debci report doesn't
+        mention the package.
+        """
+        set_mock_response(mock_requests, text=self.json_data)
+        self.run_task()
+        set_mock_response(mock_requests, text="[]")
+
+        self.run_task()
+
+        self.assertEqual(ActionItem.objects.count(), 0)

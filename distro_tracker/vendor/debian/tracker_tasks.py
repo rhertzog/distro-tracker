@@ -43,6 +43,7 @@ from distro_tracker import vendor
 import re
 import SOAPpy
 import yaml
+import json
 from debian import deb822
 from debian.debian_support import AptPkgVersion
 from debian import debian_support
@@ -1938,3 +1939,90 @@ class UpdateNewQueuePackages(BaseTask):
                 })
 
             new_queue_info.save()
+
+
+class UpdateDebciStatusTask(BaseTask):
+    """
+    Updates packages' debci status.
+    """
+    ACTION_ITEM_TYPE_NAME = 'debci-failed-tests'
+    ITEM_DESCRIPTION = (
+        'Debci reports <a href="{debci_url}">failed tests</a> (<a href="{log_url}">log</a>)')
+    ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/debci-action-item.html'
+
+    def __init__(self, force_update=False, *args, **kwargs):
+        super(UpdateDebciStatusTask, self).__init__(*args, **kwargs)
+        self.force_update = force_update
+        self.debci_action_item_type = ActionItemType.objects.create_or_update(
+            type_name=self.ACTION_ITEM_TYPE_NAME,
+            full_description_template=self.ITEM_FULL_DESCRIPTION_TEMPLATE)
+
+    def set_parameters(self, parameters):
+        if 'force_update' in parameters:
+            self.force_update = parameters['force_update']
+
+    def get_debci_status(self):
+        url = 'http://ci.debian.net/data/status/unstable/amd64/packages.json'
+        cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
+        response, updated = cache.update(url, force=self.force_update)
+        response.raise_for_status()
+        if not updated:
+            return
+        debci_status = json.loads(response.text)
+        return debci_status
+
+    def update_action_item(self, package, debci_status):
+        """
+        Updates the :class:`ActionItem` for the given package based on the
+        :class:`DebciStatus <distro_tracker.vendor.debian.models.DebciStatus`
+        If the package has test failures an :class:`ActionItem` is created.
+        """
+        debci_action_item = package.get_action_item_for_type(
+            self.debci_action_item_type.type_name)
+        if debci_status.get('status') == 'pass':
+            debci_action_item.delete()
+            return
+
+        if debci_action_item is None:
+            debci_action_item = ActionItem(
+                package=package,
+                item_type=self.debci_action_item_type,
+                severity=ActionItem.SEVERITY_LEVELS['high'])
+
+        package_name = debci_status.get('package')
+        url = 'http://ci.debian.net/#package/' + package_name
+        log = 'http://ci.debian.net/data/packages/unstable/amd64/' + \
+            package_name[:1] + "/" + package_name + '/latest-autopkgtest/log'
+        debci_action_item.short_description = self.ITEM_DESCRIPTION.format(
+            debci_url=url,
+            log_url=log)
+
+        debci_action_item.extra_data = {
+            'duration': debci_status.get('duration_human'),
+            'previous_status': debci_status.get('previous_status'),
+            'date': debci_status.get('date'),
+            'url': url,
+            'log': log,
+        }
+
+        debci_action_item.save()
+
+    def execute(self):
+        all_debci_status = self.get_debci_status()
+        if all_debci_status is None:
+            return
+
+        with transaction.atomic():
+            packages = []
+            for result in all_debci_status:
+                if result['status'] == 'fail':
+                    try:
+                        package = SourcePackageName.objects.get(name=result['package'])
+                        packages.append(package)
+                        self.update_action_item(package, result)
+                    except SourcePackageName.DoesNotExist:
+                        pass
+
+            # Remove action items for packages without failing tests.
+            ActionItem.objects.delete_obsolete_items(
+                [self.debci_action_item_type], packages)
