@@ -10,16 +10,18 @@
             <span class="news-title">{{ news_item.title }}</span>
         </a>
         {% if news_item.created_by %}(<span class="news-creator">{{ news_item.created_by }}</span>){% endif %}
-        {% if news_item.signed_by.all %}
+        {% with signers=news_item.signed_by.all %}
+        {% if signers and signers.0.name != news_item.created_by %}
         {% spaceless %}
             <span>(signed by: </span>
-            {% for signer in news_item.signed_by.all %}
+            {% for signer in signers %}
             <span class="news-signer">{{ signer.name }}</span>
             {% if not forloop.last %}<span>, </span>{% endif %}
             {% endfor %}
             <span>)</span>
         {% endspaceless %}
         {% endif %}
+        {% endwith %}
     </li>
     {% endfor %}
     </div>
