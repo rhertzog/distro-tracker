@@ -1706,8 +1706,14 @@ class EmailNewsRenderer(NewsRenderer):
                         for name, email in getaddresses([header_value])
                     ]
                 }
+                if header_name.lower() == 'from':
+                    from_name = headers[header_name]['emails'][0]['name']
             else:
                 headers[header_name] = {'value': header_value}
+
+        signers = list(self.news.signed_by.select_related())
+        if signers and signers[0].name == from_name:
+            signers = []
 
         plain_text_payloads = []
         for part in typed_subpart_iterator(msg, 'text', 'plain'):
@@ -1724,6 +1730,7 @@ class EmailNewsRenderer(NewsRenderer):
         return {
             'headers': headers,
             'parts': plain_text_payloads,
+            'signed_by': signers,
         }
 
 

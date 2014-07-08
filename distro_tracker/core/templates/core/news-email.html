@@ -11,6 +11,9 @@
     {% endif %}
 </li>
 {% endfor %}
+{% for signer in context.signed_by %}
+<li><b>Signed by</b>: <a href="mailto:{{ signer.email }}" target="_blank">{{ signer.name }} &lt;{{ signer.email }}&gt;</a></li>
+{% endfor %}
 </ul>
 
 <div class="email-news-body">
