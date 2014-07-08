@@ -5,7 +5,7 @@
             <label>Enter a {{ DISTRO_TRACKER_VENDOR_NAME }} source or pseudo package name</label>
             </div>
             {% endif %}
-            <input type="text" name="package_name" id='package-search-input' placeholder="Jump to package...">
+            <input type="text" name="package_name" id='package-search-input' placeholder="Jump to package..."{% if autofocus %} autofocus='autofocus'{% endif %}>
             {% if search_form_use_label %}
             {% endif %}
             <button type="submit" class="btn">Go</button>
