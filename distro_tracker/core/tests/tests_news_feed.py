@@ -321,3 +321,19 @@ class NewsFeedTests(TestCase):
             response,
             self.get_package_news_feed_url(self.package.name),
             status_code=301)
+
+    def test_package_page_contains_news_feed_url(self):
+        pkg_url = reverse('dtracker-package-page', kwargs={
+            'package_name': self.package.name
+        })
+        rss_url = self.get_package_news_feed_url(self.package.name)
+        News.objects.create(
+            title="Hello world",
+            content="Hello world",
+            package=self.package
+        )
+
+        response = self.client.get(pkg_url)
+
+        self.assertIn('<a title="rss feed" href="{}">'.format(rss_url),
+                      response.content.decode('utf8'))

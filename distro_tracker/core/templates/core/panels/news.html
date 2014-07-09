@@ -1,5 +1,18 @@
 {% extends 'core/panels/panel.html' %}
 
+{% block panel-header %}
+<div class="row-fluid">
+<div class="pull-left">
+    <span>{{ panel.title }}</span>
+</div>
+<div class="pull-right">
+    <a title="rss feed" href="{% url 'dtracker-package-rss-news-feed' package.name %}">
+        <i class="icon-bullhorn"></i>
+    </a>
+</div>
+</div>
+{% endblock %}
+
 {% block panel-body %}
 <ul class="list-group list-group-flush">
     <div class="scrollable">
