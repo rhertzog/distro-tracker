@@ -1,5 +1,5 @@
-distro-tracker (0.1) UNRELEASED; urgency=low
+distro-tracker (0.20140710) UNRELEASED; urgency=low
 
   * Initial release.
 
- -- Raphaël Hertzog <hertzog@debian.org>  Tue, 20 Aug 2013 16:44:45 +0200
+ -- Raphaël Hertzog <hertzog@debian.org>  Thu, 10 Jul 2014 21:07:29 +0200

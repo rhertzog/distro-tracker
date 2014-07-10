@@ -4,7 +4,7 @@ server {
         listen   443 ssl;
         listen   [::]:443 ssl ipv6only=on;
 
-	# Replace localhost by the correct FQDN here
+	# Replace distro-tracker by the correct FQDN here
 	server_name distro-tracker;
 
 	# Replace this SSL certificate by your own one

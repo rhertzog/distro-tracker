@@ -1,9 +1,9 @@
 #!/usr/bin/make -f
 
-NAME = distro-tracker
+NAME=distro-tracker
 
 %:
-	dh $@ --with python2,sphinxdoc
+	dh $@ --with python2,sphinxdoc --buildsystem=pybuild
 
 override_dh_auto_build:
 	dh_auto_build
@@ -24,3 +24,8 @@ override_dh_auto_install:
 	done
 	# Replace selected.py with a symlink to production setttings
 	ln -sf production.py debian/tmp/etc/$(NAME)/settings/selected.py
+	# Clean up .pyc files
+	rm -f debian/tmp/etc/$(NAME)/settings/*.pyc
+
+override_dh_auto_test:
+	./manage.py test django_email_accounts/ distro_tracker/

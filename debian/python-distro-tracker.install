@@ -1,0 +1,3 @@
+etc/distro-tracker/settings
+usr/lib/python2*/dist-packages/DistroTracker*
+usr/lib/python2*/dist-packages/distro_tracker

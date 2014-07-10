@@ -3,34 +3,41 @@ Section: web
 Priority: optional
 Maintainer: Raphaël Hertzog <hertzog@debian.org>
 Build-Depends: debhelper (>= 9),
-    python (>= 2.6.6-3~),
+    dh-python,
+    python-all (>= 2.6.6-3~),
     python-sphinx,
     python-mock,
 # Usual runtime dependencies
     python-apt,
     python-beautifulsoup,
     python-debian,
-    python-django (>= 1.5),
+    python-django (>= 1.6),
     python-django-jsonfield,
     python-django-south,
     python-gpgme,
     python-ldap,
     python-lzma,
-    python-requests,
+    python-requests (>= 2),
     python-soappy,
     python-yaml,
-Standards-Version: 3.9.4
+Standards-Version: 3.9.5
 Homepage: http://wiki.debian.org/qa.debian.org/distro-tracker
 Vcs-Git: git://anonscm.debian.org/qa/distro-tracker.git
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=qa/distro-tracker.git;a=summary
 
 Package: distro-tracker
 Architecture: all
-Depends: python, python-dmt (= ${source:Version}), adduser, pwgen,
-    ssl-cert, nginx | apache2 | httpd, gunicorn | libapache2-mod-wsgi,
+Depends: python,
+    python-distro-tracker (= ${source:Version}),
+    python-psycopg2,
+    adduser,
+    pwgen,
+    ssl-cert,
+    nginx | apache2 | httpd,
+    gunicorn | libapache2-mod-wsgi,
     ${python:Depends},
     ${misc:Depends}
-Recommends: postgresql, python-psycopg2
+Recommends: postgresql
 Description: follow the status of packages of a Debian-based distribution
  Distro Tracker offers a web interface to display an overview of each source
  package provided as well as an email interface to be notified of changes
@@ -42,30 +49,48 @@ Description: follow the status of packages of a Debian-based distribution
  This package provides all the services to run a Distro Tracker
  instance.
 
-Package: python-dmt
+Package: python-distro-tracker
 Section: python
 Architecture: all
 Depends: ${python:Depends},
+    python-django-email-accounts (= ${source:Version}),
     python-apt,
     python-beautifulsoup,
     python-debian,
-    python-django (>= 1.5),
+    python-django (>= 1.6),
     python-django-jsonfield,
     python-django-south,
     python-gpgme,
     python-lzma,
-    python-requests,
+    python-requests (>= 2),
     python-soappy,
     python-yaml,
     ${misc:Depends}
 Recommends: python-ldap
-Description: Python libraries of the Distro (Meta) Tracker
+Description: Python libraries of Distro Tracker
  Distro Tracker offers a web interface to display an overview of each source
  package provided as well as an email interface to be notified of changes
  concerning packages that the user monitors.
  .
  This package provides all the libraries developed as part of the
  project. Some of them might be useful outside of this project.
+
+Package: python-django-email-accounts
+Section: python
+Architecture: all
+Depends: ${python:Depends},
+    python-django (>= 1.6),
+    ${misc:Depends}
+Description: User management Django application relying on email to identify users
+ The django-email-accounts module can be used in Django web applications to
+ manage user accounts where the user identify themselves with their email and a
+ password.
+ .
+ It provides a custom implementation of the User to be registered with Django's
+ AUTH_USER_MODEL setting. It also provides all the views and forms required to
+ handle all the traditional operations associated to accounts (login, logout,
+ register, change password, reset lost password) as well as some more advanced
+ operations (add supplementary email to profile, edit profile, merge accounts).
 
 Package: distro-tracker-doc
 Section: doc
