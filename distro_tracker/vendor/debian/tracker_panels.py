@@ -128,16 +128,17 @@ class SourceCodeSearchLinks(LinksPanel.ItemProvider):
             # Only source packages can have these links
             return
 
-        repository_names = [repo.name for repo in self.package.repositories]
+        repositories = [repo.suite for repo in self.package.repositories] + \
+            [repo.codename for repo in self.package.repositories]
         links = []
-        for repository_name in self.ALLOWED_REPOSITORIES:
-            if repository_name in repository_names:
+        for allowed_repo in self.ALLOWED_REPOSITORIES:
+            if allowed_repo in repositories:
                 links.append(LinksPanel.SimpleLinkItem(
                     'browse source code',
                     self.SOURCES_URL_TEMPLATE.format(package=self.package.name)))
                 break
 
-        if 'unstable' in repository_names:
+        if 'unstable' in repositories:
             # Add a search form
             links.append(HtmlPanelItem(self.SEARCH_FORM_TEMPLATE.format(
                 package=self.package.name)))

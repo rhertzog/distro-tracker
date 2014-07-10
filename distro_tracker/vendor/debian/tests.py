@@ -2437,9 +2437,11 @@ class CodeSearchLinksTest(TestCase):
             source_package_name=self.package_name,
             version='1.0.0')
         self.stable = Repository.objects.create(
-            name='stable', shorthand='stable')
+            name='Debian Stable', codename='wheezy', suite='stable',
+            shorthand='stable')
         self.unstable = Repository.objects.create(
-            name='unstable', shorthand='unstable')
+            name='Debian Unstable', codename='sid', suite='unstable',
+            shorthand='unstable')
 
     def get_package_page_response(self, package_name):
         package_page_url = reverse('dtracker-package-page', kwargs={
