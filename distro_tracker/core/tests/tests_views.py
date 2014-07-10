@@ -140,7 +140,7 @@ class PackageViewTest(TestCase):
         self.assertRedirects(response, self.get_package_url(self.package.name))
 
         # Admin URLs have precedence to the catch all package redirect
-        url = '/admin/'
+        url = reverse('admin:index')
         response = self.client.get(url, follow=True)
         # No redirects - went directly to the admin
         self.assertEqual(0, len(response.redirect_chain))
