@@ -2,15 +2,15 @@
 
 import os
 import os.path
+import re
 
 from distutils.core import setup
-from itertools import chain
 
-def find_package_data():
+def find_package_data(basedir):
     pkgdata = {}
-    pkgdir= {}
+    pkgdir = {}
     EXCLUDE_FROM_DATA=('.py', '.pyc', '.pyo')
-    for directory, _, files in chain(os.walk('pts'), os.walk('django_email_accounts')):
+    for directory, _, files in os.walk(basedir):
         package = '.'.join(directory.split(os.sep))
         if '__init__.py' in files:
             # Record real packages and their directories
@@ -32,16 +32,34 @@ def find_package_data():
             )
     return pkgdata
 
+
+with open('debian/changelog') as f:
+    res = re.search('\((\d.*)\)', f.readline())
+    version = res.group(1)
+
 setup(name='DistroTracker',
-      version='0.1',
+      version=version,
       description='Synoptic view of all packages of a Debian-based distribution',
       author='Distro Tracker Developers',
       author_email='debian-qa@lists.debian.org',
       url='http://wiki.debian.org/qa.debian.org/distro-tracker',
       packages=[
         '.'.join(directory.split(os.sep))
-        for directory, _, files in chain(os.walk('pts'), os.walk('django_email_accounts'))
+        for directory, _, files in os.walk('distro_tracker')
         if '__init__.py' in files
       ],
-      package_data=find_package_data(),
+      package_data=find_package_data('distro_tracker'),
+     )
+setup(name='DjangoEmailAccounts',
+      version=version,
+      description='User registration app for Django',
+      author='Distro Tracker Developers',
+      author_email='debian-qa@lists.debian.org',
+      url='http://wiki.debian.org/qa.debian.org/distro-tracker',
+      packages=[
+        '.'.join(directory.split(os.sep))
+        for directory, _, files in os.walk('django_email_accounts')
+        if '__init__.py' in files
+      ],
+      package_data=find_package_data('django_email_accounts'),
      )
