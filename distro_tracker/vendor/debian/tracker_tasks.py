@@ -1764,7 +1764,8 @@ class UpdateWnppStatsTask(BaseTask):
 
         # Update the data since something has changed
         try:
-            release = package.main_entry.repository.name
+            release = package.main_entry.repository.suite or \
+                package.main_entry.repository.codename
         except:
             release = None
         action_item.short_description = self.ITEM_DESCRIPTION.format(

@@ -4,7 +4,7 @@
 <div>
 {% if wnpp_item.wnpp_type == 'O' %}
 
-{% if release != 'unstable' and release != 'experimental' %}
+{% if release != 'unstable' and release != 'sid' and release != 'experimental' %}
 <span>The WNPP database contains an O (Orphaned) entry for this
         package. This is probably an error, as it is neither part of
         unstable nor experimental.</span>
@@ -17,7 +17,7 @@
 
 {% elif wnpp_item.wnpp_type == 'ITA' %}
 
-{% if release != 'unstable' and release != 'experimental' %}
+{% if release != 'unstable' and release != 'sid' and release != 'experimental' %}
 <span>  The WNPP database contains an ITA (Intent To Adopt) entry for
         this package. This is probably an error, as it is neither part
         of unstable nor experimental.</span>
@@ -27,7 +27,7 @@
 
 {% elif wnpp_item.wnpp_type == 'RFA' %}
 
-{% if release != 'unstable' and release != 'experimental' %}
+{% if release != 'unstable' and release != 'sid' and release != 'experimental' %}
 <span>The WNPP database contains an RFA (Request For Adoption) entry
     for this package. This is probably an error, as it is neither
     part of unstable nor experimental.</span>
@@ -41,7 +41,7 @@
 
 {% elif wnpp_item.wnpp_type == 'RFH' %}
 
-{% if release != 'unstable' and release != 'experimental' %}
+{% if release != 'unstable' and release != 'sid' and release != 'experimental' %}
 <span>The WNPP database contains an RFH (Request For Help) entry for
     this package. This is probably an error, as it is neither part
     of unstable nor experimental.</span>
@@ -54,7 +54,7 @@
 
 {% elif wnpp_item.wnpp_type == 'ITP' %}
 
-{% if release != 'unstable' and release != 'experimental' %}
+{% if release != 'unstable' and release != 'sid' and release != 'experimental' %}
     <span>The WNPP database contains an ITP (Intent To Package). This
     probably means that somebody is going to reintroduce this
     package into unstable.</span>
@@ -66,7 +66,7 @@
 
 {% elif wnpp_item.wnpp_type == 'RFP' %}
 
-{% if release != 'unstable' and release != 'experimental' %}
+{% if release != 'unstable' and release != 'sid' and release != 'experimental' %}
     <span>The WNPP database contains an RFP (Request For Package). This
     probably means that somebody would like to see this package
     reintroduced into unstable by a volunteer.</span>
