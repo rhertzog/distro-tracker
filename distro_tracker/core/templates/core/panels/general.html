@@ -11,7 +11,7 @@
             <a href="{{ url }}">{{ context.name }}</a>
             {% endwith %}
             {% if context.priority %}
-            <span>(<a href="#" title="priority">{{ context.priority }}</a>, <a href="#" title="section">{{ context.section }}</a>)</span>
+            (<span title="priority">{{ context.priority }}</span>, <span title="section">{{ context.section }}</span>)
             {% endif %}
         </div>
         <div class="clear"></div>
