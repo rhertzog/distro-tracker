@@ -1,0 +1,16 @@
+{% extends 'core/panels/panel.html' %}
+
+{% block panel-body %}
+<p>This package tracker is better than the old one on many aspects
+(easy to extend, more dynamic, responsive, packed with new features
+such as subscription management on the web, team subscriptions, etc.)
+but should you find some features that are lacking or some other problems,
+then please file bug reports against the
+<a href="http://bugs.debian.org/tracker.debian.org">tracker.debian.org</a>
+pseudo-package. Also don't hesitate to help us by trying to
+<a href="https://tracker.debian.org/docs/contributing.html">contribute
+patches</a> for those issues.</p>
+Not convinced? Go back to the old <a
+href="https://packages.qa.debian.org/{{ package }}">package tracking
+system</a>.
+{% endblock %}

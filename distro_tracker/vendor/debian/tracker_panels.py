@@ -214,3 +214,26 @@ class UbuntuPanel(BasePanel):
     @property
     def has_content(self):
         return bool(self.context)
+
+
+class BackToOldPTS(BasePanel):
+    """
+    Display a message to users of the old PTS to encourage them to file bugs
+    about issues that they discover and also to offer them a link back to the
+    old PTS in case they need it.
+    """
+    template_name = 'debian/back-to-old-pts.html'
+    position = 'center'
+    title = 'About the new package tracker'
+    panel_importance = 100
+
+    @cached_property
+    def context(self):
+        return {
+            'package': self.package.name
+        }
+
+    @property
+    def has_content(self):
+        return "packages.qa.debian.org" in \
+            self.request.META.get('HTTP_REFERER', '')
