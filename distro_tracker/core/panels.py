@@ -51,8 +51,9 @@ class BasePanel(six.with_metaclass(PluginRegistry)):
         'right',
     )
 
-    def __init__(self, package):
+    def __init__(self, package, request):
         self.package = package
+        self.request = request
 
     @property
     def context(self):
@@ -114,7 +115,7 @@ class BasePanel(six.with_metaclass(PluginRegistry)):
         return True
 
 
-def get_panels_for_package(package):
+def get_panels_for_package(package, request):
     """
     A convenience method which accesses the :class:`BasePanel`'s list of
     children and instantiates them for the given package.
@@ -135,7 +136,7 @@ def get_panels_for_package(package):
     panels = defaultdict(lambda: [])
     for panel_class in BasePanel.plugins:
         if panel_class is not BasePanel:
-            panel = panel_class(package)
+            panel = panel_class(package, request)
             if panel.has_content:
                 panels[panel.position].append(panel)
 

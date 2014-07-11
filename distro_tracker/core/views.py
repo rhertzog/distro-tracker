@@ -61,7 +61,7 @@ def package_page(request, package_name):
 
     return render(request, 'core/package.html', {
         'package': package,
-        'panels': get_panels_for_package(package),
+        'panels': get_panels_for_package(package, request),
         'is_subscribed': is_subscribed,
     })
 
