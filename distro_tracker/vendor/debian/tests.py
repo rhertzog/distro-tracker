@@ -15,7 +15,7 @@ Tests for Debian-specific modules/functionality of Distro Tracker.
 """
 
 from __future__ import unicode_literals
-from django.test import TestCase, SimpleTestCase
+from distro_tracker.test import TestCase, SimpleTestCase
 from django.test.utils import override_settings
 from django.core import mail
 from django.core.urlresolvers import reverse

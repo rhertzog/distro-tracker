@@ -14,7 +14,7 @@
 Tests for the Distro Tracker core panels.
 """
 from __future__ import unicode_literals
-from django.test import TestCase
+from distro_tracker.test import TestCase
 from django.core.urlresolvers import reverse
 from BeautifulSoup import BeautifulSoup as soup
 from distro_tracker.core.models import SourcePackageName

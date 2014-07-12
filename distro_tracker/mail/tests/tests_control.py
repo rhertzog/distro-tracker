@@ -14,7 +14,7 @@ Tests for :mod:`distro_tracker.mail.tracker_control`.
 """
 from __future__ import unicode_literals
 from django.conf import settings
-from django.test import TestCase
+from distro_tracker.test import TestCase
 from django.core import mail
 from django.utils.encoding import force_bytes
 

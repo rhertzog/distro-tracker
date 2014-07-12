@@ -11,7 +11,7 @@
 Tests the management command of the :mod:`distro_tracker.mail` app.
 """
 from __future__ import unicode_literals
-from django.test import TestCase, TransactionTestCase
+from distro_tracker.test import TestCase, TransactionTestCase
 from distro_tracker.mail.management.commands.tracker_unsubscribe_all import (
     Command as UnsubscribeCommand)
 from distro_tracker.mail.management.commands.tracker_dump_subscribers import (

@@ -14,7 +14,7 @@
 Tests for the Distro Tracker core data retrieval.
 """
 from __future__ import unicode_literals
-from django.test import TestCase, TransactionTestCase
+from distro_tracker.test import TestCase, TransactionTestCase
 from django.test.utils import override_settings
 from django.utils.six.moves import mock
 from distro_tracker.core.tasks import run_task

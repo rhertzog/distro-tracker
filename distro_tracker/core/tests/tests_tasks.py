@@ -14,7 +14,7 @@
 Tests for the Distro Tracker core's tasks framework.
 """
 from __future__ import unicode_literals
-from django.test import SimpleTestCase, TestCase
+from distro_tracker.test import SimpleTestCase, TestCase
 from django.utils.six.moves import mock
 from distro_tracker.core.models import RunningJob
 from distro_tracker.core.tasks import BaseTask

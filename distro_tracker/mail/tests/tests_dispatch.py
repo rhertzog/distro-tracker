@@ -14,7 +14,7 @@ This module contains the tests for the dispatch functionality
 (:py:mod:`distro_tracker.mail.dispatch` module) of distro-tracker.
 """
 from __future__ import unicode_literals
-from django.test import TestCase
+from distro_tracker.test import TestCase
 from django.core import mail
 from django.utils import timezone
 from django.utils.encoding import force_bytes

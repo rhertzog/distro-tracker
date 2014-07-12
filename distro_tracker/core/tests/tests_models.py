@@ -14,7 +14,7 @@
 Tests for the Distro Tracker core module's models.
 """
 from __future__ import unicode_literals
-from django.test import TestCase
+from distro_tracker.test import TestCase
 from django.test.utils import override_settings
 from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError, ObjectDoesNotExist

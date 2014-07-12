@@ -14,7 +14,7 @@ Tests for the :mod:`distro_tracker.stdver_warnings` app.
 """
 
 from __future__ import unicode_literals
-from django.test import TestCase
+from distro_tracker.test import TestCase
 from django.utils.six.moves import mock
 from distro_tracker.stdver_warnings.tracker_tasks import UpdateStandardsVersionWarnings
 from distro_tracker.core.tasks import Event, Job, JobState

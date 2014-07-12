@@ -14,7 +14,7 @@
 Tests for the Distro Tracker core views.
 """
 from __future__ import unicode_literals
-from django.test import TestCase
+from distro_tracker.test import TestCase
 from django.test.utils import override_settings
 from distro_tracker.core.models import PackageName, BinaryPackageName
 from distro_tracker.core.models import SourcePackageName, SourcePackage

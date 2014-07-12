@@ -14,8 +14,8 @@
 Tests for the Distro Tracker core management commands.
 """
 from __future__ import unicode_literals
-from django.test import SimpleTestCase
-from django.test import TestCase
+from distro_tracker.test import SimpleTestCase
+from distro_tracker.test import TestCase
 from django.utils.six.moves import mock
 from django.core.management import call_command
 from distro_tracker.core.models import SourcePackageName

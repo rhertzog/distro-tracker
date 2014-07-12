@@ -16,7 +16,7 @@ module of all subpackages.
 """
 
 from __future__ import unicode_literals
-from django.test import SimpleTestCase
+from distro_tracker.test import SimpleTestCase
 from django.test.utils import override_settings
 
 from distro_tracker.mail.tests.tests_dispatch import DispatchBaseTest

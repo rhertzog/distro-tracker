@@ -14,7 +14,7 @@
 Tests for the :mod:`distro_tracker.core.news_feed` module.
 """
 from __future__ import unicode_literals
-from django.test import TestCase
+from distro_tracker.test import TestCase
 from django.test.utils import override_settings
 from django.core.urlresolvers import reverse
 from distro_tracker.core.models import PackageName

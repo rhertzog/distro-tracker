@@ -14,7 +14,7 @@ Tests for the :mod:`distro_tracker.extract_source_files` app.
 """
 
 from __future__ import unicode_literals
-from django.test import TestCase
+from distro_tracker.test import TestCase
 from django.core.files.base import ContentFile
 from distro_tracker.core.models import SourcePackage, SourcePackageName
 from distro_tracker.core.models import ExtractedSourceFile

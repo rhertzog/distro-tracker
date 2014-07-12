@@ -11,7 +11,7 @@
 Tests for the :mod:`distro_tracker.auto_news` app.
 """
 from __future__ import unicode_literals
-from django.test import TestCase
+from distro_tracker.test import TestCase
 from django.core.files.base import ContentFile
 from django.utils.six.moves import mock
 from distro_tracker.core.models import ExtractedSourceFile
