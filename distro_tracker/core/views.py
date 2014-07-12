@@ -24,6 +24,7 @@ from django.views.decorators.cache import cache_control
 from django.core.mail import send_mail
 from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse_lazy
+from django.utils.http import urlquote
 from distro_tracker.core.models import get_web_package
 from distro_tracker.core.forms import CreateTeamForm
 from distro_tracker.core.forms import AddTeamMemberForm
@@ -51,7 +52,7 @@ def package_page(request, package_name):
     package = get_web_package(package_name)
     if not package:
         raise Http404
-    if package.get_absolute_url() != request.path:
+    if package.get_absolute_url() != urlquote(request.path):
         return redirect(package)
 
     is_subscribed = False

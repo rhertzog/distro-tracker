@@ -59,6 +59,18 @@ class PackageViewTest(TestCase):
 
         self.assertTemplateUsed(response, 'core/package.html')
 
+    def test_source_package_page_with_plus_it_its_name(self):
+        """
+        Tests that we can visit the page for a package which contains
+        a plus its name (non-regression test for bug #754497).
+        """
+        pkg = SourcePackageName.objects.create(name='libti++')
+        url = self.get_package_url(pkg.name)
+
+        response = self.client.get(url)
+
+        self.assertTemplateUsed(response, 'core/package.html')
+
     def test_binary_package_redirects_to_source(self):
         """
         Tests that when visited a binary package URL, the user is redirected
