@@ -11,7 +11,7 @@
 Tests for the :mod:`distro_tracker.accounts` app.
 """
 from __future__ import unicode_literals
-from django.test import TestCase
+from distro_tracker.test import TestCase
 from distro_tracker.accounts.models import User
 from distro_tracker.accounts.models import UserEmail
 from distro_tracker.core.models import EmailSettings
