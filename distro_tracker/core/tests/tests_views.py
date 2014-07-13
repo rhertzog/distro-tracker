@@ -23,6 +23,7 @@ from distro_tracker.core.models import ActionItem, ActionItemType
 import json
 
 from django.core.urlresolvers import reverse
+from django.conf import settings
 
 import os
 
@@ -218,6 +219,33 @@ class PackageSearchViewTest(TestCase):
         self.assertTemplateUsed('core/package_search.html')
         self.assertIn('package_name', response.context)
         self.assertEqual(response.context['package_name'], 'no-exist')
+
+
+class OpenSearchDescriptionTest(TestCase):
+    """
+    Tests for the :class:`distro_tracker.core.views.OpenSearchDescription`.
+    """
+
+    def test_html_head_contains_opensearch_link_entry(self):
+        osd_uri = reverse('dtracker-opensearch-description')
+        header = '<link type="application/opensearchdescription+xml" title="'
+        header += "%s Package Tracker Search" % \
+            settings.DISTRO_TRACKER_VENDOR_NAME
+        header += '" rel="search" href="' + osd_uri + '"/>'
+
+        response = self.client.get(reverse('dtracker-index'))
+
+        self.assertContains(response, header, html=True)
+
+    def test_opensearch_description_url(self):
+        response = self.client.get(reverse('dtracker-opensearch-description'))
+        self.assertTemplateUsed(response, 'core/opensearch-description.xml')
+
+    def test_opensearch_description_contains_relevant_urls(self):
+        response = self.client.get(reverse('dtracker-opensearch-description'))
+        self.assertContains(response, reverse('dtracker-favicon'))
+        self.assertContains(response, reverse('dtracker-package-search') +
+                            '?package_name={searchTerms}')
 
 
 class IndexViewTest(TestCase):

@@ -8,6 +8,7 @@
         <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet" media="screen">
         <link href="{% static 'css/style.css' %}" rel="stylesheet" media="screen">
         <link href="{% static 'css/perfect-scrollbar.css' %}" rel="stylesheet" media="screen">
+        <link type="application/opensearchdescription+xml" title="{{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracker Search" rel="search" href="{% url 'dtracker-opensearch-description' %}"/>
         {% block extra-head %}{% endblock %}
         {% block extra-css %}{% endblock %}
     </head>

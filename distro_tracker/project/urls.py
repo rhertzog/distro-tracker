@@ -11,8 +11,11 @@
 
 from __future__ import unicode_literals
 from django.conf.urls import patterns, include, url
+from django.conf import settings
+from django.shortcuts import redirect
 from django.views.generic import TemplateView
 from distro_tracker.core.views import PackageSearchView, PackageAutocompleteView
+from distro_tracker.core.views import OpenSearchDescription
 from distro_tracker.core.views import ActionItemJsonView, ActionItemView
 from distro_tracker.core.views import KeywordsView
 from distro_tracker.core.views import CreateTeamView
@@ -68,6 +71,11 @@ urlpatterns = patterns('',
 
     url(r'^search$', PackageSearchView.as_view(),
         name='dtracker-package-search'),
+    url(r'^search.xml$', OpenSearchDescription.as_view(),
+        name='dtracker-opensearch-description'),
+    url(r'^favicon.ico$',
+        lambda r: redirect(settings.STATIC_URL + 'favicon.ico'),
+        name='dtracker-favicon'),
 
     url(r'^api/package/search/autocomplete$', PackageAutocompleteView.as_view(),
         name='dtracker-api-package-autocomplete'),
@@ -205,7 +213,6 @@ urlpatterns = patterns('',
 )
 
 
-from django.conf import settings
 if settings.DEBUG:
     urlpatterns = patterns('',
         (r'^media/(?P<path>.*)$',

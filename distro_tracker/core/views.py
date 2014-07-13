@@ -23,7 +23,7 @@ from django.views.generic import ListView
 from django.views.decorators.cache import cache_control
 from django.core.mail import send_mail
 from django.core.exceptions import PermissionDenied
-from django.core.urlresolvers import reverse_lazy
+from django.core.urlresolvers import reverse, reverse_lazy
 from django.utils.http import urlquote
 from distro_tracker.core.models import get_web_package
 from distro_tracker.core.forms import CreateTeamForm
@@ -101,6 +101,21 @@ class PackageSearchView(View):
             return render(request, 'core/package_search.html', {
                 'package_name': package_name
             })
+
+
+class OpenSearchDescription(View):
+    """
+    Return the open search description XML document allowing
+    browsers to launch searches on the website.
+    """
+
+    def get(self, request):
+        return render(request, 'core/opensearch-description.xml', {
+            'search_uri': request.build_absolute_uri(
+                reverse('dtracker-package-search')),
+            'favicon_uri': request.build_absolute_uri(
+                reverse('dtracker-favicon')),
+        }, content_type='application/opensearchdescription+xml')
 
 
 class PackageAutocompleteView(View):
