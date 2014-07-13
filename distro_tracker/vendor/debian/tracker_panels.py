@@ -74,7 +74,7 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
             has_checks = True
         except:
             has_checks = False
-        logcheck_url = "http://qa.debian.org/bls/packages/{hash}/{pkg}.html".format(
+        logcheck_url = "https://qa.debian.org/bls/packages/{hash}/{pkg}.html".format(
             hash=self.package.name[0], pkg=self.package.name)
 
         return [
@@ -88,7 +88,7 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
 
 
 class PopconLink(LinksPanel.ItemProvider):
-    POPCON_URL = 'http://qa.debian.org/popcon.php?package={package}'
+    POPCON_URL = 'https://qa.debian.org/popcon.php?package={package}'
 
     def get_panel_items(self):
         if not isinstance(self.package, SourcePackageName):

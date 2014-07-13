@@ -1,5 +1,5 @@
-<span><a href="http://qa.debian.org/bls/index.html">Build log checks</a> report</span>
-<a href="http://qa.debian.org/bls/packages/{{ item.package.name|slice:":1" }}/{{ item.package.name }}.html">
+<span><a href="https://qa.debian.org/bls/index.html">Build log checks</a> report</span>
+<a href="https://qa.debian.org/bls/packages/{{ item.package.name|slice:":1" }}/{{ item.package.name }}.html">
 {% if item.extra_data.errors %}
 <span>{{ item.extra_data.errors }} error{% if item.extra_data.errors > 1 %}s{% endif %}</span>
 {% endif %}

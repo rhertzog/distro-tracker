@@ -211,7 +211,7 @@ def get_developer_information_url(developer_email):
     The function returns a URL which displays extra information about a
     developer, given his email.
     """
-    URL_TEMPLATE = 'http://qa.debian.org/developer.php?email={email}'
+    URL_TEMPLATE = 'https://qa.debian.org/developer.php?email={email}'
     return URL_TEMPLATE.format(email=urllib.quote(developer_email))
 
 
@@ -222,7 +222,7 @@ def get_external_version_information_urls(package_name):
     """
     return [
         {
-            'url': 'http://qa.debian.org/madison.php?package={package}'.format(
+            'url': 'https://qa.debian.org/madison.php?package={package}'.format(
                 package=package_name),
             'description': 'more versions can be listed by madison',
         },
@@ -555,7 +555,7 @@ def get_bug_panel_stats(package_name):
 
     # Debian also includes a custom graph of bug history
     graph_url = (
-        'http://qa.debian.org/data/bts/graphs/{package_hash}/{package_name}.png'
+        'https://qa.debian.org/data/bts/graphs/{package_hash}/{package_name}.png'
     )
     if package_name.startswith('lib'):
         package_hash = package_name[:4]

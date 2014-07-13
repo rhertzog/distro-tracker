@@ -343,13 +343,13 @@ class GetDeveloperInformationSiteUrlTest(SimpleTestCase):
         """
         developer_email = 'debian-dpkg@lists.debian.org'
         self.assertEqual(
-            'http://qa.debian.org/developer.php?email=debian-dpkg%40lists.debian.org',
+            'https://qa.debian.org/developer.php?email=debian-dpkg%40lists.debian.org',
             get_developer_information_url(developer_email)
         )
 
         developer_email = 'email@domain.com'
         self.assertEqual(
-            'http://qa.debian.org/developer.php?email=email%40domain.com',
+            'https://qa.debian.org/developer.php?email=email%40domain.com',
             get_developer_information_url(developer_email)
         )
 
@@ -365,7 +365,7 @@ class RetrieveLowThresholdNmuTest(TestCase):
             "Text text text\n"
             "text more text...\n"
             " 1. [[DeveloperName|Name]] - "
-            "([[http://qa.debian.org/developer.php?"
+            "([[https://qa.debian.org/developer.php?"
             "login=dummy|all packages]])\n")
 
         run_task(RetrieveLowThresholdNmuTask)
@@ -386,7 +386,7 @@ class RetrieveLowThresholdNmuTest(TestCase):
             "Text text text\n"
             "text more text...\n"
             " 1. [[DeveloperName|Name]] - "
-            "([[http://qa.debian.org/developer.php?"
+            "([[https://qa.debian.org/developer.php?"
             "login=dummy|all packages]])\n")
 
         run_task(RetrieveLowThresholdNmuTask)
@@ -410,7 +410,7 @@ class RetrieveLowThresholdNmuTest(TestCase):
             "Text text text\n"
             "text more text...\n"
             " 1. [[DeveloperName|Name]] - "
-            "([[http://qa.debian.org/developer.php?"
+            "([[https://qa.debian.org/developer.php?"
             "login=other|all packages]])\n")
 
         run_task(RetrieveLowThresholdNmuTask)

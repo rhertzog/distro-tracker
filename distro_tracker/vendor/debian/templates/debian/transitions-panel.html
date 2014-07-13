@@ -41,7 +41,7 @@
 
     {% if panel.context.excuses %}
     <li class='list-group-item'>
-    <span><a href="http://qa.debian.org/excuses.php?package={{ panel.context.package_name }}">excuses</a>:</span>
+    <span><a href="https://qa.debian.org/excuses.php?package={{ panel.context.package_name }}">excuses</a>:</span>
     <ul>
       {% for excuse in panel.context.excuses %}
       <li>{{ excuse }}</li>

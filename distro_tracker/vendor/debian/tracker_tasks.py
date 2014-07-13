@@ -138,7 +138,7 @@ class RetrieveLowThresholdNmuTask(BaseTask):
 
         emails = []
         devel_php_RE = re.compile(
-            r'http://qa\.debian\.org/developer\.php\?login=([^\s&|]+)')
+            r'https?://qa\.debian\.org/developer\.php\?login=([^\s&|]+)')
         word_RE = re.compile(r'^\w+$')
         for line in response.iter_lines():
             match = devel_php_RE.search(line)
@@ -972,7 +972,7 @@ class UpdateBuildLogCheckStats(BaseTask):
             self.force_update = parameters['force_update']
 
     def _get_buildd_content(self):
-        url = 'http://qa.debian.org/bls/logcheck.txt'
+        url = 'https://qa.debian.org/bls/logcheck.txt'
         return get_resource_content(url)
 
     def get_buildd_stats(self):
@@ -1017,7 +1017,7 @@ class UpdateBuildLogCheckStats(BaseTask):
                 # Nothing has changed -- do not update the item
                 return
 
-        logcheck_url = "http://qa.debian.org/bls/packages/{hash}/{pkg}.html".format(
+        logcheck_url = "https://qa.debian.org/bls/packages/{hash}/{pkg}.html".format(
             hash=package.name[0], pkg=package.name)
         if errors and warnings:
             report = '{} error{} and {} warning{}'.format(
@@ -1093,7 +1093,7 @@ class DebianWatchFileScannerUpdate(BaseTask):
             'Problem with the debian/watch file included in the package'),
         'watch-file-available': lambda item: (
             'An updated debian/watch file is '
-            '<a href="http://qa.debian.org/cgi-bin/watchfile.cgi?package={package}">'
+            '<a href="https://qa.debian.org/cgi-bin/watchfile.cgi?package={package}">'
             'available</a>.'.format(
                 package=item.package.name)),
     }
@@ -1120,15 +1120,15 @@ class DebianWatchFileScannerUpdate(BaseTask):
             self.force_update = parameters['force_update']
 
     def _get_udd_dehs_content(self):
-        url = 'http://qa.debian.org/cgi-bin/udd-dehs'
+        url = 'https://qa.debian.org/cgi-bin/udd-dehs'
         return get_resource_content(url)
 
     def _get_watch_broken_content(self):
-        url = 'http://qa.debian.org/watch/watch-broken.txt'
+        url = 'https://qa.debian.org/watch/watch-broken.txt'
         return get_resource_content(url)
 
     def _get_watch_available_content(self):
-        url = 'http://qa.debian.org/watch/watch-avail.txt'
+        url = 'https://qa.debian.org/watch/watch-avail.txt'
         return get_resource_content(url)
 
     def _remove_obsolete_action_items(self, item_type_name, non_obsolete_packages):
@@ -1179,7 +1179,7 @@ class DebianWatchFileScannerUpdate(BaseTask):
     def get_watch_broken_stats(self, stats):
         """
         Gets the stats of files which have broken watch files, as per
-        `<http://qa.debian.org/watch/watch-broken.txt>`_.
+        `<https://qa.debian.org/watch/watch-broken.txt>`_.
         It updates the given dictionary ``stats`` to contain these stats
         as an additional key ``watch-file-broken`` for each package that has
         the stats.
@@ -1200,7 +1200,7 @@ class DebianWatchFileScannerUpdate(BaseTask):
     def get_watch_available_stats(self, stats):
         """
         Gets the stats of files which have available watch files, as per
-        `<http://qa.debian.org/watch/watch-avail.txt>`_.
+        `<https://qa.debian.org/watch/watch-avail.txt>`_.
         It updates the given dictionary ``stats`` to contain these stats
         as an additional key ``watch-file-available`` for each package that has
         the stats.
@@ -1706,7 +1706,7 @@ class UpdateWnppStatsTask(BaseTask):
             self.force_update = parameters['force_update']
 
     def _get_wnpp_content(self):
-        url = 'http://qa.debian.org/data/bts/wnpp_rm'
+        url = 'https://qa.debian.org/data/bts/wnpp_rm'
         cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         if not cache.is_expired(url):
             return
