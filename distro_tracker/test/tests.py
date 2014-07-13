@@ -19,6 +19,7 @@ from distro_tracker.test import SimpleTestCase, TestCase, TransactionTestCase
 from distro_tracker.test import TempDirsMixin
 from django.conf import settings
 import copy
+import os.path
 
 settings_copy = copy.deepcopy(settings)
 
@@ -65,13 +66,23 @@ class TempDirsTests(object):
                                 getattr(settings_copy, name))
 
 
-class TempDirsOnSimpleTestCase(TempDirsTests, SimpleTestCase):
+class TestCaseHelpersTests(object):
+    def test_get_test_data_path(self):
+        self.assertEqual(self.get_test_data_path('myfile'),
+                         os.path.join(os.path.dirname(__file__),
+                                      'tests-data', 'myfile'))
+
+
+class TempDirsOnSimpleTestCase(TempDirsTests, TestCaseHelpersTests,
+                               SimpleTestCase):
     pass
 
 
-class TempDirsOnTestCase(TempDirsTests, TestCase):
+class TempDirsOnTestCase(TempDirsTests, TestCaseHelpersTests,
+                         TestCase):
     pass
 
 
-class TempDirsOnTransactionTestCase(TempDirsTests, TransactionTestCase):
+class TempDirsOnTransactionTestCase(TempDirsTests, TestCaseHelpersTests,
+                                    TransactionTestCase):
     pass

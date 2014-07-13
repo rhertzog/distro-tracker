@@ -39,14 +39,12 @@ from distro_tracker.core.models import MembershipPackageSpecifics
 from distro_tracker.core.utils import message_from_bytes
 from distro_tracker.core.utils.email_messages import get_decoded_message_payload
 from distro_tracker.accounts.models import User, UserEmail
-from distro_tracker.test.utils import make_temp_directory
 from distro_tracker.test.utils import create_source_package
 
 from email import message_from_string
 
 import os
 import email
-import gpgme
 import itertools
 
 
@@ -407,7 +405,7 @@ class PackageManagerTest(TestCase):
         self.assertFalse(getattr(p, pkg_type))
         # The other type fields are left unchanged (False by default, True
         # if multiple)
-        other_attributes = set(['source', 'binary', 'pseudo']) - set([ pkg_type ])
+        other_attributes = set(['source', 'binary', 'pseudo']) - set([pkg_type])
         for attribute in other_attributes:
             self.assertEqual(getattr(p, attribute), multiple)
 
@@ -440,7 +438,7 @@ class PackageManagerTest(TestCase):
         p = proxy_class.objects.filter(name__startswith="to-delete-")
         p.delete()
 
-        for i in range(0,8):
+        for i in range(0, 8):
             with self.assertRaises(ObjectDoesNotExist):
                 proxy_class.objects.get(name="to-delete-{0}".format(i))
 
@@ -523,7 +521,7 @@ class PackageManagerTest(TestCase):
 
         src_pkg = PackageName.source_packages.create(name='source-package')
         pseudo_pkg = PackageName.pseudo_packages.create(name='pseudo-package')
-        sub_only_pkg = PackageName.objects.create(name='package')
+        PackageName.objects.create(name='package')
 
         # objects manager returns all packages
         self.assertEqual(PackageName.objects.count(), 3)
@@ -1228,35 +1226,6 @@ class NewsTests(TestCase):
     def setUp(self):
         self.package = SourcePackageName.objects.create(name='dummy-package')
 
-    def import_key_from_test_file(self, file_name):
-        """
-        Helper function which imports the given test key file into the test
-        keyring.
-        """
-        old = os.environ.get('GNUPGHOME', None)
-        os.environ['GNUPGHOME'] = self.TEST_KEYRING_DIRECTORY
-        ctx = gpgme.Context()
-        file_path = os.path.join(
-            os.path.dirname(__file__),
-            'tests-data/keys',
-            file_name
-        )
-        with open(file_path, 'rb') as key_file:
-            ctx.import_(key_file)
-
-        if old:
-            os.environ['GNUPGHOME'] = old
-
-    def get_test_file_path(self, file_name):
-        """
-        Helper method returning the full path to the test file with the given
-        name.
-        """
-        return os.path.join(
-            os.path.dirname(__file__),
-            'tests-data',
-            file_name)
-
     def test_content_from_db(self):
         """
         Tests that the :meth:`distro_tracker.core.models.News.content` property returns
@@ -1332,33 +1301,29 @@ class NewsTests(TestCase):
         creating a news item from an email message which was transfer encoded
         as quoted-printable.
         """
-        with make_temp_directory('-dtracker-keyring') as TEST_KEYRING_DIRECTORY:
-            self.TEST_KEYRING_DIRECTORY = TEST_KEYRING_DIRECTORY
-            with self.settings(
-                    DISTRO_TRACKER_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
-                self.import_key_from_test_file('key1.pub')
-                # The content of the test news item is found in a file
-                file_path = self.get_test_file_path(
-                    'signed-message-quoted-printable')
-                with open(file_path, 'r') as f:
-                    content = f.read()
-                expected_name = 'PTS Tests'
-                expected_email = 'fake-address@domain.com'
-                sender_name = 'Some User'
+        self.import_key_into_keyring('key1.pub')
+        # The content of the test news item is found in a file
+        file_path = self.get_test_data_path(
+            'signed-message-quoted-printable')
+        with open(file_path, 'r') as f:
+            content = f.read()
+        expected_name = 'PTS Tests'
+        expected_email = 'fake-address@domain.com'
+        sender_name = 'Some User'
 
-                news = EmailNews.objects.create_email_news(
-                    message=message_from_string(content),
-                    package=self.package)
+        news = EmailNews.objects.create_email_news(
+            message=message_from_string(content),
+            package=self.package)
 
-                # The news contains a signature
-                self.assertEqual(1, news.signed_by.count())
-                # The signature information is correct?
-                signer = news.signed_by.all()[0]
-                self.assertEqual(expected_name, signer.name)
-                self.assertEqual(expected_email, signer.email)
-                # The created by field is also set, but to the sender of the
-                # email
-                self.assertEqual(sender_name, news.created_by)
+        # The news contains a signature
+        self.assertEqual(1, news.signed_by.count())
+        # The signature information is correct?
+        signer = news.signed_by.all()[0]
+        self.assertEqual(expected_name, signer.name)
+        self.assertEqual(expected_email, signer.email)
+        # The created by field is also set, but to the sender of the
+        # email
+        self.assertEqual(sender_name, news.created_by)
 
     def test_create_email_news_unknown_encoding_utf8(self):
         """

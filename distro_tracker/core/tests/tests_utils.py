@@ -1051,34 +1051,6 @@ class VerifySignatureTest(SimpleTestCase):
     """
     Tests the :func:`distro_tracker.core.utils.verify_signature` function.
     """
-    def import_key_from_test_file(self, file_name):
-        """
-        Helper function which imports the given test key file into the test
-        keyring.
-        """
-        old = os.environ.get('GNUPGHOME', None)
-        os.environ['GNUPGHOME'] = self.TEST_KEYRING_DIRECTORY
-        ctx = gpgme.Context()
-        file_path = os.path.join(
-            os.path.dirname(__file__),
-            'tests-data/keys',
-            file_name
-        )
-        with open(file_path, 'rb') as key_file:
-            ctx.import_(key_file)
-
-        if old:
-            os.environ['GNUPGHOME'] = old
-
-    def get_test_file_path(self, file_name):
-        """
-        Helper method returning the full path to the test file with the given
-        name.
-        """
-        return os.path.join(
-            os.path.dirname(__file__),
-            'tests-data',
-            file_name)
 
     def setUp(self):
         self.TEST_KEYRING_DIRECTORY = tempfile.mkdtemp(suffix='-test-keyring')
@@ -1092,26 +1064,24 @@ class VerifySignatureTest(SimpleTestCase):
         Tests extracting the signature from a correctly signed message when the
         signer is found in the keyring.
         """
-        with self.settings(DISTRO_TRACKER_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
-            self.import_key_from_test_file('key1.pub')
-            file_path = self.get_test_file_path('signed-message')
-            expected = [
-                ('PTS Tests', 'fake-address@domain.com')
-            ]
+        self.import_key_into_keyring('key1.pub')
+        file_path = self.get_test_data_path('signed-message')
+        expected = [
+            ('PTS Tests', 'fake-address@domain.com')
+        ]
 
-            with open(file_path, 'rb') as f:
-                self.assertEqual(expected, verify_signature(f.read()))
+        with open(file_path, 'rb') as f:
+            self.assertEqual(expected, verify_signature(f.read()))
 
     def test_signed_message_unknown_key(self):
         """
         Tests extracting the signature from a correctly signed message when the
         signer is not found in the keyring.
         """
-        with self.settings(DISTRO_TRACKER_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
-            file_path = self.get_test_file_path('signed-message')
+        file_path = self.get_test_data_path('signed-message')
 
-            with open(file_path, 'rb') as f:
-                self.assertSequenceEqual([], verify_signature(f.read()))
+        with open(file_path, 'rb') as f:
+            self.assertSequenceEqual([], verify_signature(f.read()))
 
     def test_incorrect_signature(self):
         """
@@ -1126,16 +1096,15 @@ class VerifySignatureTest(SimpleTestCase):
         Tests extracting the signature from a message passed as unicode text
         instead of bytes.
         """
-        with self.settings(DISTRO_TRACKER_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
-            self.import_key_from_test_file('key1.pub')
-            file_path = self.get_test_file_path('signed-message')
-            expected = [
-                ('PTS Tests', 'fake-address@domain.com')
-            ]
+        self.import_key_into_keyring('key1.pub')
+        file_path = self.get_test_data_path('signed-message')
+        expected = [
+            ('PTS Tests', 'fake-address@domain.com')
+        ]
 
-            with open(file_path, 'rb') as f:
-                content = f.read().decode('utf-8')
-                self.assertEqual(expected, verify_signature(content))
+        with open(file_path, 'rb') as f:
+            content = f.read().decode('utf-8')
+            self.assertEqual(expected, verify_signature(content))
 
 
 class DecodeHeaderTest(SimpleTestCase):

@@ -22,10 +22,6 @@ from distro_tracker.core.models import SourcePackageName
 from distro_tracker.core.models import EmailNews
 from distro_tracker.core.models import News
 from distro_tracker.core.utils import message_from_bytes
-from distro_tracker.test.utils import make_temp_directory
-
-import os
-import gpgme
 
 
 class RunTaskManagementCommandTest(SimpleTestCase):
@@ -105,35 +101,6 @@ class UpdateNewsSignaturesCommandTest(TestCase):
     def setUp(self):
         self.package = SourcePackageName.objects.create(name='dummy-package')
 
-    def import_key_from_test_file(self, file_name):
-        """
-        Helper function which imports the given test key file into the test
-        keyring.
-        """
-        old = os.environ.get('GNUPGHOME', None)
-        os.environ['GNUPGHOME'] = self.TEST_KEYRING_DIRECTORY
-        ctx = gpgme.Context()
-        file_path = os.path.join(
-            os.path.dirname(__file__),
-            'tests-data/keys',
-            file_name
-        )
-        with open(file_path, 'rb') as key_file:
-            ctx.import_(key_file)
-
-        if old:
-            os.environ['GNUPGHOME'] = old
-
-    def get_test_file_path(self, file_name):
-        """
-        Helper method returning the full path to the test file with the given
-        name.
-        """
-        return os.path.join(
-            os.path.dirname(__file__),
-            'tests-data',
-            file_name)
-
     def test_signatures_added(self):
         """
         Tests that signatures are correctly added to the news which previously
@@ -142,53 +109,48 @@ class UpdateNewsSignaturesCommandTest(TestCase):
         # Set up news based on a signed message.
         signed_news = []
         unsigned_news = []
-        with make_temp_directory('-dtracker-keyring') as TEST_KEYRING_DIRECTORY:
-            self.TEST_KEYRING_DIRECTORY = TEST_KEYRING_DIRECTORY
-            with self.settings(
-                    DISTRO_TRACKER_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
-                self.import_key_from_test_file('key1.pub')
-                # The content of the test news item is found in a file
-                file_path = self.get_test_file_path(
-                    'signed-message-quoted-printable')
-                with open(file_path, 'rb') as f:
-                    content = f.read()
-                expected_name = 'PTS Tests'
-                expected_email = 'fake-address@domain.com'
-                sender_name = 'Some User'
-                # The first signed news has the same content as what is found
-                # the signed test file.
-                signed_news.append(EmailNews.objects.create_email_news(
-                    message=message_from_bytes(content),
-                    package=self.package))
-                # For the second one, add some text after the signature: this
-                # should still mean that the correct signature can be extracted!
-                signed_news.append(EmailNews.objects.create_email_news(
-                    message=message_from_bytes(content + b'\nMore content'),
-                    package=self.package))
-                # Set up some unsigned news.
-                unsigned_news.append(EmailNews.objects.create_email_news(
-                    message=message_from_bytes(b'Subject: Hi\n\nPayload.'),
-                    package=self.package))
-                # A non-email based news item
-                unsigned_news.append(News.objects.create(
-                    package=self.package,
-                    content="Some content.."
-                ))
-                # Make sure that the signed news do not have associated
-                # signature information
-                for signed in signed_news:
-                    signed.signed_by.clear()
+        self.import_key_into_keyring('key1.pub')
+        # The content of the test news item is found in a file
+        file_path = self.get_test_data_path(
+            'signed-message-quoted-printable')
+        with open(file_path, 'rb') as f:
+            content = f.read()
+        expected_name = 'PTS Tests'
+        expected_email = 'fake-address@domain.com'
+        # The first signed news has the same content as what is found
+        # the signed test file.
+        signed_news.append(EmailNews.objects.create_email_news(
+            message=message_from_bytes(content),
+            package=self.package))
+        # For the second one, add some text after the signature: this
+        # should still mean that the correct signature can be extracted!
+        signed_news.append(EmailNews.objects.create_email_news(
+            message=message_from_bytes(content + b'\nMore content'),
+            package=self.package))
+        # Set up some unsigned news.
+        unsigned_news.append(EmailNews.objects.create_email_news(
+            message=message_from_bytes(b'Subject: Hi\n\nPayload.'),
+            package=self.package))
+        # A non-email based news item
+        unsigned_news.append(News.objects.create(
+            package=self.package,
+            content="Some content.."
+        ))
+        # Make sure that the signed news do not have associated
+        # signature information
+        for signed in signed_news:
+            signed.signed_by.clear()
 
-                # Run the command
-                call_command("tracker_update_news_signatures")
+        # Run the command
+        call_command("tracker_update_news_signatures")
 
-                # The signed news items have associated signature information
-                for signed in signed_news:
-                    self.assertEqual(1, signed.signed_by.count())
-                    signer = signed.signed_by.all()[0]
-                    # The signature is actually correct too?
-                    self.assertEqual(expected_name, signer.name)
-                    self.assertEqual(expected_email, signer.email)
-                # The unsigned messages still do not have any signature info
-                for unsigned in unsigned_news:
-                    self.assertEqual(0, unsigned.signed_by.count())
+        # The signed news items have associated signature information
+        for signed in signed_news:
+            self.assertEqual(1, signed.signed_by.count())
+            signer = signed.signed_by.all()[0]
+            # The signature is actually correct too?
+            self.assertEqual(expected_name, signer.name)
+            self.assertEqual(expected_email, signer.email)
+        # The unsigned messages still do not have any signature info
+        for unsigned in unsigned_news:
+            self.assertEqual(0, unsigned.signed_by.count())

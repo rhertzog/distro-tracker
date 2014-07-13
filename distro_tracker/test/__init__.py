@@ -20,6 +20,7 @@ import shutil
 import tempfile
 import os
 import os.path
+import inspect
 
 
 class TempDirsMixin(object):
@@ -64,17 +65,53 @@ class TempDirsMixin(object):
         return super(TempDirsMixin, self).__call__(result)
 
 
-class SimpleTestCase(TempDirsMixin, django.test.SimpleTestCase):
+class TestCaseHelpersMixin(object):
+    """
+    Helpers method injected into distro_tracker's *TestCase objects.
+    """
+
+    def get_test_data_path(self, name):
+        """
+        Returns an absolute path name of file within the tests-data
+        subdirectory in the calling TestCase.
+        """
+        return os.path.join(os.path.dirname(inspect.getabsfile(self.__class__)),
+                            'tests-data', name)
+
+    def import_key_into_keyring(self, filename):
+        """
+        Imports a key from an ascii armored file located in tests-data/keys/
+        into Distro Tracker's keyrings/.
+        """
+        import gpgme
+
+        old = os.environ.get('GNUPGHOME', None)
+        os.environ['GNUPGHOME'] = settings.DISTRO_TRACKER_KEYRING_DIRECTORY
+        ctx = gpgme.Context()
+
+        file_path = self.get_test_data_path('keys/' + filename)
+        with open(file_path, 'rb') as key_file:
+            ctx.import_(key_file)
+
+        if old:
+            os.environ['GNUPGHOME'] = old
+
+
+class SimpleTestCase(TempDirsMixin, TestCaseHelpersMixin,
+                     django.test.SimpleTestCase):
     pass
 
 
-class TestCase(TempDirsMixin, django.test.TestCase):
+class TestCase(TempDirsMixin, TestCaseHelpersMixin,
+               django.test.TestCase):
     pass
 
 
-class TransactionTestCase(TempDirsMixin, django.test.TransactionTestCase):
+class TransactionTestCase(TempDirsMixin, TestCaseHelpersMixin,
+                          django.test.TransactionTestCase):
     pass
 
 
-class LiveServerTestCase(TempDirsMixin, django.test.LiveServerTestCase):
+class LiveServerTestCase(TempDirsMixin, TestCaseHelpersMixin,
+                         django.test.LiveServerTestCase):
     pass
