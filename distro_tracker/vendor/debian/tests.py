@@ -27,7 +27,8 @@ from django.utils.functional import curry
 from distro_tracker.mail.tests.tests_dispatch import DispatchTestHelperMixin, DispatchBaseTest
 from distro_tracker.accounts.models import User
 from distro_tracker.accounts.models import UserEmail
-from distro_tracker.core.tests.common import make_temp_directory
+from distro_tracker.test.utils import make_temp_directory
+from distro_tracker.test.utils import set_mock_response
 from distro_tracker.core.utils.email_messages import message_from_bytes
 from distro_tracker.core.models import ActionItem, ActionItemType
 from distro_tracker.core.models import News
@@ -40,8 +41,6 @@ from distro_tracker.core.models import SourcePackage
 from distro_tracker.core.models import PseudoPackageName
 from distro_tracker.core.models import SourcePackageName
 from distro_tracker.core.models import Repository
-from distro_tracker.core.tests.common import set_mock_response
-from distro_tracker.core.tests.common import temporary_media_dir
 from distro_tracker.core.tasks import run_task
 from distro_tracker.core.retrieve_data import UpdateRepositoriesTask
 from distro_tracker.vendor.debian.rules import get_package_information_site_url
@@ -676,7 +675,6 @@ class DebianNewsFromEmailTest(TestCase):
         """
         return '{pkg} REMOVED from testing'.format(pkg=pkg)
 
-    @temporary_media_dir
     def test_source_upload_news(self):
         """
         Tests the news created when a notification of a new source upload is
@@ -696,7 +694,6 @@ class DebianNewsFromEmailTest(TestCase):
         self.assertEqual(subject, news.title)
         self.assertIn(content, news.content)
 
-    @temporary_media_dir
     def test_source_upload_package_does_not_exist(self):
         """
         Tests that no news are created when the notification of a new source
@@ -711,7 +708,6 @@ class DebianNewsFromEmailTest(TestCase):
 
         self.assertEqual(0, News.objects.count())
 
-    @temporary_media_dir
     def test_dak_rm_news(self):
         """
         Tests that a dak rm message creates a news.
@@ -738,7 +734,6 @@ class DebianNewsFromEmailTest(TestCase):
             ver=self.package.version))
         self.assertEqual(news.created_by, sender)
 
-    @temporary_media_dir
     def test_dak_rm_no_package(self):
         """
         Tests that a dak rm message referencing a package which Distro
@@ -761,7 +756,6 @@ class DebianNewsFromEmailTest(TestCase):
 
         self.assertEqual(0, News.objects.count())
 
-    @temporary_media_dir
     def test_dak_not_rm(self):
         """
         Tests that a message with an X-DAK header different from ``dak rm``
@@ -784,7 +778,6 @@ class DebianNewsFromEmailTest(TestCase):
 
         self.assertEqual(0, News.objects.count())
 
-    @temporary_media_dir
     def test_multiple_removes(self):
         """
         Tests that multiple news items are created when the dak rm message
@@ -812,7 +805,6 @@ class DebianNewsFromEmailTest(TestCase):
 
         self.assertEqual(2, News.objects.count())
 
-    @temporary_media_dir
     def test_testing_watch_news(self):
         """
         Tests that an email received from the Testing Watch is turned into a
@@ -837,7 +829,6 @@ class DebianNewsFromEmailTest(TestCase):
         self.assertEqual(subject, news.title)
         self.assertIn(content, news.content)
 
-    @temporary_media_dir
     def test_testing_watch_package_no_exist(self):
         """
         Tests that an email received from the Testing Watch which references
@@ -4138,7 +4129,6 @@ class ImportOldNewsTests(TestCase):
 
         return msg
 
-    @temporary_media_dir
     def test_news_created(self):
         packages = ['dpkg', 'dummy', 'asdf', '000']
         email = 'user@domain.com'

@@ -23,7 +23,6 @@ from distro_tracker.core.tasks import Job
 from distro_tracker.core.tasks import JobState
 from distro_tracker.core.tasks import Event
 from distro_tracker.auto_news.tracker_tasks import GenerateNewsFromRepositoryUpdates
-from distro_tracker.core.tests.common import temporary_media_dir
 
 
 class GenerateNewsFromRepositoryUpdatesTest(TestCase):
@@ -543,7 +542,6 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         news = News.objects.all()[0]
         self.assertEqual(news.content, expected_content)
 
-    @temporary_media_dir
     def test_changelog_entry_in_news_content(self):
         """
         Tests that the news item created for new source package versions

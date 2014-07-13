@@ -22,8 +22,7 @@ from distro_tracker.core.models import SourcePackageName
 from distro_tracker.core.models import EmailNews
 from distro_tracker.core.models import News
 from distro_tracker.core.utils import message_from_bytes
-from distro_tracker.core.tests.common import make_temp_directory
-from distro_tracker.core.tests.common import temporary_media_dir
+from distro_tracker.test.utils import make_temp_directory
 
 import os
 import gpgme
@@ -135,7 +134,6 @@ class UpdateNewsSignaturesCommandTest(TestCase):
             'tests-data',
             file_name)
 
-    @temporary_media_dir
     def test_signatures_added(self):
         """
         Tests that signatures are correctly added to the news which previously

@@ -12,7 +12,7 @@
 Functional tests for Distro Tracker.
 """
 from __future__ import unicode_literals
-from django.test import LiveServerTestCase
+from distro_tracker.test import LiveServerTestCase
 from django.core.urlresolvers import reverse
 from django.contrib.auth import get_user_model
 from django.core import mail

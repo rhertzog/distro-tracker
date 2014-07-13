@@ -20,7 +20,6 @@ from django.utils.six.moves import mock
 from django.utils.encoding import force_bytes
 from distro_tracker.core.models import SourcePackageName, SourcePackage
 from distro_tracker.core.models import News
-from distro_tracker.core.tests.common import temporary_media_dir
 from distro_tracker.mail.mail_news import process
 from distro_tracker.mail.management.commands.tracker_receive_news import (
     Command as MailNewsCommand)
@@ -50,7 +49,6 @@ class BasicNewsGeneration(TestCase):
     def process_mail(self):
         process(force_bytes(self.message.as_string(), 'utf-8'))
 
-    @temporary_media_dir
     def test_creates_news_from_email(self):
         """
         Tets that a news is created from an email with the correct header
@@ -73,7 +71,6 @@ class BasicNewsGeneration(TestCase):
         # The content type is set to render email messages
         self.assertEqual(news.content_type, 'message/rfc822')
 
-    @temporary_media_dir
     def test_create_news_url_from_email(self):
         """
         Tests that when an X-Distro-Tracker-Url header is given the news content is the
@@ -96,7 +93,6 @@ class BasicNewsGeneration(TestCase):
         self.assertEqual(url, news.title)
         self.assertIn(url, news.content.strip())
 
-    @temporary_media_dir
     def test_create_news_package_does_not_exist(self):
         """
         Tests that when the package given in X-Distro-Tracker-Package does not exist, no
@@ -116,7 +112,6 @@ class BasicNewsGeneration(TestCase):
         self.assertEqual(0, News.objects.count())
 
     @mock.patch('distro_tracker.mail.mail_news.vendor.call')
-    @temporary_media_dir
     def test_create_news_calls_vendor_function(self, mock_vendor_call):
         """
         Tests that the vendor-provided function is called during the processing

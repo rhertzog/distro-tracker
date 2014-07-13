@@ -32,11 +32,11 @@ from distro_tracker.core.models import Team
 from distro_tracker.core.retrieve_data import UpdateRepositoriesTask
 from distro_tracker.core.retrieve_data import UpdateTeamPackagesTask
 from distro_tracker.core.retrieve_data import retrieve_repository_info
-from distro_tracker.core.tests.common import set_mock_response
+from distro_tracker.test.utils import create_source_package
+from distro_tracker.test.utils import set_mock_response
 from distro_tracker.accounts.models import User, UserEmail
 
 from distro_tracker.core.tasks import BaseTask
-from .common import create_source_package
 
 import os
 import sys

@@ -18,7 +18,6 @@ from distro_tracker.test import TestCase
 from django.test.utils import override_settings
 from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from distro_tracker.core.tests.common import temporary_media_dir
 from django.core.urlresolvers import reverse
 from distro_tracker.core.models import Subscription, EmailSettings, PackageName, BinaryPackageName
 from distro_tracker.core.models import BinaryPackage
@@ -40,8 +39,8 @@ from distro_tracker.core.models import MembershipPackageSpecifics
 from distro_tracker.core.utils import message_from_bytes
 from distro_tracker.core.utils.email_messages import get_decoded_message_payload
 from distro_tracker.accounts.models import User, UserEmail
-from .common import make_temp_directory
-from .common import create_source_package
+from distro_tracker.test.utils import make_temp_directory
+from distro_tracker.test.utils import create_source_package
 
 from email import message_from_string
 
@@ -972,7 +971,6 @@ class SourcePackageTests(TestCase):
         """
         self.assertIsNone(self.source_package.main_entry)
 
-    @temporary_media_dir
     def test_changelog_entry_only(self):
         """
         Tests that the
@@ -998,7 +996,6 @@ class SourcePackageTests(TestCase):
             self.source_package.get_changelog_entry(),
             changelog_entry)
 
-    @temporary_media_dir
     def test_changelog_entry_beginning(self):
         """
         Tests that the
@@ -1030,7 +1027,6 @@ class SourcePackageTests(TestCase):
             self.source_package.get_changelog_entry(),
             changelog_entry)
 
-    @temporary_media_dir
     def test_changelog_entry_not_first(self):
         """
         Tests that the
@@ -1061,7 +1057,6 @@ class SourcePackageTests(TestCase):
             self.source_package.get_changelog_entry(),
             changelog_entry)
 
-    @temporary_media_dir
     def test_changelog_entry_regex_meta_chars(self):
         """
         Tests that the
@@ -1276,7 +1271,6 @@ class NewsTests(TestCase):
 
         self.assertEqual(news.content, expected_content)
 
-    @temporary_media_dir
     def test_content_from_file(self):
         """
         Tests that the :meth:`distro_tracker.core.models.News.content` property returns
@@ -1317,7 +1311,6 @@ class NewsTests(TestCase):
         self.assertEqual(news._db_content, expected_content)
         self.assertFalse(news.news_file)
 
-    @temporary_media_dir
     def test_create_file_content(self):
         """
         Tests the :meth:`distro_tracker.core.models.NewsManager.create` method when it
@@ -1333,7 +1326,6 @@ class NewsTests(TestCase):
         self.assertIsNone(news._db_content)
         self.assertEqual(news.content, expected_content)
 
-    @temporary_media_dir
     def test_create_email_news_signature(self):
         """
         Tests that the signature information is correctly extracted when
@@ -1368,7 +1360,6 @@ class NewsTests(TestCase):
                 # email
                 self.assertEqual(sender_name, news.created_by)
 
-    @temporary_media_dir
     def test_create_email_news_unknown_encoding_utf8(self):
         """
         Tests that creating an email news item from a message which does not
@@ -1396,7 +1387,6 @@ class NewsTests(TestCase):
             content,
             get_decoded_message_payload(msg_from_news))
 
-    @temporary_media_dir
     def test_create_email_news_unknown_encoding_latin1(self):
         """
         Tests that creating an email news item from a message which does not
@@ -1425,7 +1415,6 @@ class NewsTests(TestCase):
             content,
             get_decoded_message_payload(msg_from_news, 'latin-1'))
 
-    @temporary_media_dir
     def test_email_news_render(self):
         """
         Tests that an email news is correctly rendered when the encoding of the

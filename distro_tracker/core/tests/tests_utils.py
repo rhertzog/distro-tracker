@@ -21,8 +21,8 @@ from django.utils import six
 from django.utils.http import http_date
 from django.utils.functional import curry
 from django.utils.six.moves import mock
-from distro_tracker.core.tests.common import set_mock_response
-from distro_tracker.core.tests.common import make_temp_directory
+from distro_tracker.test.utils import set_mock_response
+from distro_tracker.test.utils import make_temp_directory
 from distro_tracker.core.models import Repository
 from distro_tracker.core.utils import verp
 from distro_tracker.core.utils import message_from_bytes
