@@ -14,6 +14,7 @@ Distro Tracker currently depends on the following Debian packages:
 - python-requests
 - python-django-jsonfield
 - python-django-south
+- python-django-debug-toolbar (in development mode only)
 - python-debian
 - python-apt
 - python-gpgme
