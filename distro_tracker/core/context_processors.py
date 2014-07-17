@@ -10,7 +10,6 @@
 """Implements Django context processors specific to Distro Tracker."""
 from __future__ import unicode_literals
 from django.conf import settings
-from django.contrib.sites.models import Site
 
 
 #: Defines a dictionary of all Distro Tracker extra context key/value pairs that are to be
@@ -20,7 +19,7 @@ DISTRO_TRACKER_EXTRAS = {
     'DISTRO_TRACKER_VENDOR_URL': getattr(settings, 'DISTRO_TRACKER_VENDOR_URL', ''),
     'DISTRO_TRACKER_CONTACT_EMAIL': settings.DISTRO_TRACKER_CONTACT_EMAIL,
     'DISTRO_TRACKER_CONTROL_EMAIL': settings.DISTRO_TRACKER_CONTROL_EMAIL,
-    'DISTRO_TRACKER_SITE_DOMAIN': Site.objects.get_current(),
+    'DISTRO_TRACKER_SITE_DOMAIN': settings.DISTRO_TRACKER_FQDN,
 }
 
 

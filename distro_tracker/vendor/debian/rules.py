@@ -14,7 +14,6 @@ import urllib
 import requests
 from django import forms
 from django.utils.http import urlencode
-from django.contrib.sites.models import Site
 from django.conf import settings
 from distro_tracker.core.models import PackageBugStats
 from distro_tracker.core.models import EmailNews
@@ -729,12 +728,11 @@ def post_logout(user, secure=False):
     if any(user_email.email.endswith('@debian.org')
            for user_email in user.emails.all()):
 
-        site_url = Site.objects.get_current()
         protocol = 'http' if not secure else 'https'
         return (
             'https://sso.debian.org/cgi-bin/dacs/dacs_signout?' + urlencode({
                 'SIGNOUT_HANDLER': '{protocol}://{url}'.format(
                     protocol=protocol,
-                    url=site_url)
+                    url=settings.DISTRO_TRACKER_FQDN)
             })
         )
