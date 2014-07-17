@@ -7,12 +7,14 @@
 # distribution and at http://deb.li/DTLicense. No part of Distro Tracker,
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
-"""Package Tracking System settings
+"""Distro Tracker settings
 
 The settings are created dynamically by first importing defaults
 values from :py:mod:`distro_tracker.project.settings.defaults` and then
-values :py:mod:`distro_tracker.project.settings.local`. The test suite
-is special cased and doesn't use the latter, instead it uses
+values from :py:mod:`distro_tracker.project.settings.local` (or from
+:py:mod:`distro_tracker.project.settings.selected` if the latter
+has not been created by the administrator). The test suite
+is special cased and doesn't use any of those, instead it uses
 :py:mod:`distro_tracker.project.settings.test`.
 """
 
@@ -22,6 +24,9 @@ from .defaults import *
 if sys.argv[1:2] == ['test']:
     from .test import *
 else:
-    from .local import *
+    try:
+        from .local import *
+    except ImportError:
+        from .selected import *
 
 compute_default_settings(globals())

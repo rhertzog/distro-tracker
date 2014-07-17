@@ -10,6 +10,8 @@
 .ropeproject
 MANIFEST
 
+distro_tracker/project/settings/local.py
+
 docs/_build/
 
 data/pts.sqlite

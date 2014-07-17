@@ -16,7 +16,8 @@ possibly overriden) by settings from the other modules in this package
 depending on the setup selected by the administrator. You likely won't
 have to modify that file.
 
-You should instead modify local.py to put your site-specific settings.
+You should instead create local.py to put your site-specific settings (use
+local.py.sample as template).
 
 Here are the most important settings:
 
@@ -407,18 +408,6 @@ _COMPUTE_DEFAULT_SETTINGS = (
         (t['DISTRO_TRACKER_VENDOR_NAME'] + ' Tracker Admins',
          t['DISTRO_TRACKER_CONTACT_EMAIL']),
     )),
-    ('DATABASES', lambda t: {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': os.path.join(t['DISTRO_TRACKER_DATA_PATH'],
-                                 'distro-tracker.sqlite'),
-            # The following settings are not used with sqlite3:
-            'USER': '',
-            'PASSWORD': '',
-            'HOST': '',
-            'PORT': '',
-        }
-    }),
     ('SERVER_EMAIL', lambda t: t['DISTRO_TRACKER_CONTACT_EMAIL']),
     ('STATIC_ROOT',
      lambda t: os.path.join(t['DISTRO_TRACKER_DATA_PATH'], 'static')),
@@ -448,6 +437,12 @@ def compute_default_settings(target):
             continue
         handler['filename'] = os.path.join(
             target['DISTRO_TRACKER_LOG_DIRECTORY'], handler['filename'])
+    # Update DATABASES with full paths
+    dbconf = target['DATABASES']['default']
+    if dbconf['ENGINE'] == 'django.db.backends.sqlite3' and \
+       '/' not in dbconf['NAME']:
+        dbconf['NAME'] = os.path.join(target['DISTRO_TRACKER_DATA_PATH'],
+                                      dbconf['NAME'])
 
 
 def GET_INSTANCE_NAME():

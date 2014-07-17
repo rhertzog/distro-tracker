@@ -5,6 +5,7 @@ When running in development mode, selected.py should point to this file.
 """
 
 from .defaults import INSTALLED_APPS, MIDDLEWARE_CLASSES
+from .db_sqlite import DATABASES
 
 DEBUG = True
 TEMPLATE_DEBUG = True

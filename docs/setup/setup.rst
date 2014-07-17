@@ -55,9 +55,11 @@ See also the Debian package's README.Debian for some details about the setup.
 Local Settings
 --------------
 
-While Distro Tracker tries to guess as much as needed, you generally will want
-to customize some of its parameters. You will do so in
-``distro_tracker/project/settings/local.py``. Have a look at the ``defaults.py``
+While Distro Tracker tries to guess as much as needed, you generally will
+want to customize some of its parameters. You can do so by copying
+``distro_tracker/project/settings/local.py.sample`` to
+``distro_tracker/project/settings/local.py`` and then editing the latter
+file. Have a look at :py:mod:`distro_tracker.project.settings.defaults`
 to learn about all the variables that you can override and extend.
 
 To make things easier, Distro Tracker provides default configuration suitable
