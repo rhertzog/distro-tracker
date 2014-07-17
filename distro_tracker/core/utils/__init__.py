@@ -20,7 +20,6 @@ import lzma
 import gpgme
 import tarfile
 import contextlib
-from south.modelsinspector import add_introspection_rules
 
 from .email_messages import extract_email_address_from_header
 from .email_messages import get_decoded_message_payload
@@ -164,9 +163,11 @@ class SpaceDelimitedTextField(models.TextField):
         return self.get_prep_value(value)
 
 
-# Register the custom field as safe to introspect by South
-add_introspection_rules([], ["^pts\.core\.utils\.SpaceDelimitedTextField"])
-
+if settings.DISTRO_TRACKER_ENABLE_SOUTH:
+    # Register the custom field as safe to introspect by South
+    from south.modelsinspector import add_introspection_rules
+    add_introspection_rules(
+        [], ["^distro_tracker\.core\.utils\.SpaceDelimitedTextField"])
 
 #: A map of currently available VCS systems' shorthands to their names.
 VCS_SHORTHAND_TO_NAME = {

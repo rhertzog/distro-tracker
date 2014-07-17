@@ -117,6 +117,7 @@ from __future__ import unicode_literals
 from django.utils import six
 from os.path import dirname
 
+import django
 import socket
 import os.path
 
@@ -238,11 +239,15 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.admin',
     'django_email_accounts',
-    'south',
     'distro_tracker.core',
     'distro_tracker.accounts',
     'distro_tracker.mail',
 )
+
+# Use south only with django < 1.7
+DISTRO_TRACKER_ENABLE_SOUTH = django.VERSION < (1, 7)
+if DISTRO_TRACKER_ENABLE_SOUTH:
+    INSTALLED_APPS += ('south',)
 
 # See http://docs.djangoproject.com/en/dev/topics/logging for
 # more details on how to customize your logging configuration.
