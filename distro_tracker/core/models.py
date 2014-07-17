@@ -2018,8 +2018,8 @@ class SourcePackageDeps(models.Model):
     source = models.ForeignKey(SourcePackageName, related_name='source_dependencies')
     dependency = models.ForeignKey(SourcePackageName, related_name='source_dependents')
     repository = models.ForeignKey(Repository)
-    build_dep = models.BooleanField()
-    binary_dep = models.BooleanField()
+    build_dep = models.BooleanField(default=False)
+    binary_dep = models.BooleanField(default=False)
     details = JSONField()
 
     class Meta:
