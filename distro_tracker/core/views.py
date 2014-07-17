@@ -147,7 +147,9 @@ class PackageAutocompleteView(View):
         # Limit the number of packages returned from the autocomplete
         AUTOCOMPLETE_ITEMS_LIMIT = 10
         filtered = filtered[:AUTOCOMPLETE_ITEMS_LIMIT]
-        return render_to_json_response([package['name'] for package in filtered])
+        return render_to_json_response([query_string,
+                                        [package['name']
+                                         for package in filtered]])
 
 
 def news_page(request, news_id):
