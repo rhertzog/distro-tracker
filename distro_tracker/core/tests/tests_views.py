@@ -340,7 +340,7 @@ class PackageAutocompleteViewTest(TestCase):
 
         # No packages given when there are no matching pseudo packages
         response = self.client.get(reverse('dtracker-api-package-autocomplete'), {
-            'package_type': 'source',
+            'package_type': 'pseudo',
             'q': '-',
         })
         response = json.loads(response.content.decode('utf-8'))
