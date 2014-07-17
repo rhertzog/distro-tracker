@@ -113,6 +113,8 @@ class OpenSearchDescription(View):
         return render(request, 'core/opensearch-description.xml', {
             'search_uri': request.build_absolute_uri(
                 reverse('dtracker-package-search')),
+            'autocomplete_uri': request.build_absolute_uri(
+                reverse('dtracker-api-package-autocomplete')),
             'favicon_uri': request.build_absolute_uri(
                 reverse('dtracker-favicon')),
         }, content_type='application/opensearchdescription+xml')
