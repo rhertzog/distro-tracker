@@ -6,7 +6,9 @@
 
 *.swp
 
-local_*.py
+.tox
+.ropeproject
+MANIFEST
 
 docs/_build/
 
