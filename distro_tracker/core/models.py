@@ -141,7 +141,7 @@ class PackageManager(models.Manager):
         super(PackageManager, self).__init__(*args, **kwargs)
         self.type = package_type
 
-    def get_query_set(self):
+    def get_queryset(self):
         """
         Overrides the default query set of the manager to exclude any
         :class:`PackageName` objects with a type that does not match this
