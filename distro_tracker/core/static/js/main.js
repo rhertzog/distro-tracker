@@ -24,6 +24,16 @@ $(function() {
             rateLimitWait: 500
         },
         {
+            name: 'binary-packages',
+            remote: {
+                url: '/api/package/search/autocomplete?q=%QUERY&package_type=binary',
+                filter: function(r) { return r[1]; }
+            },
+            header: '<h5 class="text-center typeahead-package-title">Binary packages</h5>',
+            // Use a slightly larger delay between requests than the default
+            rateLimitWait: 500
+        },
+        {
             name: 'pseudo-packages',
             remote: {
                 url: '/api/package/search/autocomplete?q=%QUERY&package_type=pseudo',

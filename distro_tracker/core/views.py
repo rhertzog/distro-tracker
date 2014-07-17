@@ -29,7 +29,7 @@ from distro_tracker.core.models import get_web_package
 from distro_tracker.core.forms import CreateTeamForm
 from distro_tracker.core.forms import AddTeamMemberForm
 from distro_tracker.core.utils import render_to_json_response
-from distro_tracker.core.models import SourcePackageName, PackageName, PseudoPackageName
+from distro_tracker.core.models import SourcePackageName, PackageName, PseudoPackageName, BinaryPackageName
 from distro_tracker.core.models import ActionItem
 from distro_tracker.core.models import EmailSettings
 from distro_tracker.core.models import News, NewsRenderer
@@ -136,6 +136,7 @@ class PackageAutocompleteView(View):
         MANAGERS = {
             'pseudo': PseudoPackageName.objects,
             'source': SourcePackageName.objects,
+            'binary': BinaryPackageName.objects,
         }
         # When no package type is given include both pseudo and source packages
         filtered = MANAGERS.get(

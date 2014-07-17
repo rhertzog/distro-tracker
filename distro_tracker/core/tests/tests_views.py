@@ -265,6 +265,8 @@ class PackageAutocompleteViewTest(TestCase):
         SourcePackageName.objects.create(name='package')
         PseudoPackageName.objects.create(name='pseudo-package')
         PseudoPackageName.objects.create(name='zzz')
+        BinaryPackageName.objects.create(name='package-dev')
+        BinaryPackageName.objects.create(name='libpackage')
         PackageName.objects.create(name='ppp')
 
     def test_source_package_autocomplete(self):
@@ -287,6 +289,32 @@ class PackageAutocompleteViewTest(TestCase):
         # No packages given when there are no matching source packages
         response = self.client.get(reverse('dtracker-api-package-autocomplete'), {
             'package_type': 'source',
+            'q': 'z',
+        })
+        response = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(len(response), 2)
+        self.assertEqual(response[0], 'z')
+        self.assertEqual(len(response[1]), 0)
+
+    def test_binary_package_autocomplete(self):
+        """
+        Tests the autocomplete functionality when the client asks for binary
+        packages.
+        """
+        response = self.client.get(reverse('dtracker-api-package-autocomplete'), {
+            'package_type': 'binary',
+            'q': 'p',
+        })
+
+        response = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(len(response), 2)
+        self.assertEqual(response[0], 'p')
+        self.assertEqual(len(response[1]), 1)
+        self.assertIn('package-dev', response[1])
+
+        # No packages given when there are no matching binary packages
+        response = self.client.get(reverse('dtracker-api-package-autocomplete'), {
+            'package_type': 'binary',
             'q': 'z',
         })
         response = json.loads(response.content.decode('utf-8'))
@@ -332,8 +360,9 @@ class PackageAutocompleteViewTest(TestCase):
         response = json.loads(response.content.decode('utf-8'))
         self.assertEqual(len(response), 2)
         self.assertEqual(response[0], 'p')
-        self.assertEqual(len(response[1]), 2)
+        self.assertEqual(len(response[1]), 3)
         self.assertIn('package', response[1])
+        self.assertIn('package-dev', response[1])
         self.assertIn('pseudo-package', response[1])
 
         # No packages given when there are no matching packages
