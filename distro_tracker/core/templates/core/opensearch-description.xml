@@ -1,5 +1,5 @@
 <OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/" xmlns:moz="http://www.mozilla.org/2006/browser/search/">
-        <ShortName>Search {{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracker</ShortName>
+        <ShortName>{{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracker</ShortName>
         <Description>
                 Lookup a package in the {{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracker
         </Description>
