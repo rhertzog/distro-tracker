@@ -127,8 +127,8 @@ six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
 DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
-DISTRO_TRACKER_BASE_PATH = dirname(dirname(dirname(dirname(__file__))))
-DISTRO_TRACKER_DATA_PATH = os.path.join(DISTRO_TRACKER_BASE_PATH, 'data')
+BASE_DIR = dirname(dirname(dirname(dirname(__file__))))
+DISTRO_TRACKER_DATA_PATH = os.path.join(BASE_DIR, 'data')
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -139,8 +139,6 @@ TIME_ZONE = 'UTC'
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
 LANGUAGE_CODE = 'en-us'
-
-SITE_ID = 1
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
@@ -198,8 +196,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    # Uncomment the next line for simple clickjacking protection:
-    # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
 AUTHENTICATION_BACKENDS = (
@@ -410,7 +407,6 @@ _COMPUTE_DEFAULT_SETTINGS = (
         (t['DISTRO_TRACKER_VENDOR_NAME'] + ' Tracker Admins',
          t['DISTRO_TRACKER_CONTACT_EMAIL']),
     )),
-    ('MANAGERS', lambda t: t['ADMINS']),
     ('DATABASES', lambda t: {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',

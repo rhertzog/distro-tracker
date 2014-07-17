@@ -47,7 +47,7 @@ class TempDirsTests(object):
     def test_temp_dirs_outside_of_base_path(self):
         """ Test that the settings no longer point inside the base path. """
         for name in self.get_settings_names():
-            self.assertNotIn(getattr(settings, 'DISTRO_TRACKER_BASE_PATH'),
+            self.assertNotIn(getattr(settings, 'BASE_DIR'),
                              getattr(settings, name))
 
     def test_temp_dirs_in_data_path(self):
