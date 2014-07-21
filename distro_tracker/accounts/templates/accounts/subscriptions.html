@@ -204,7 +204,7 @@
 
 <h3>Subscribe</h3>
         <form class="form-search" id="package-subscribe-form" action="{% url 'dtracker-api-accounts-subscribe' %}" method="POST">{% csrf_token %}
-            <div class="row-fluid span4" style="margin-bottom: 10px;">
+            <div id="subscription-email-list" class="row-fluid span4" style="margin-bottom: 10px;">
                 <div>Emails which should be subscribed: </div>
             {% for email in request.user.emails.all %}
             <label class="checkbox inline">

@@ -172,4 +172,34 @@ $(function() {
         $(this).closest('form').submit();
         return false;
     });
+
+    $('#package-subscribe-form').submit(function(){
+        /* First check that the textbox is filled */
+        var pkg_name = $.trim($('#package-search-input').val());
+        if(pkg_name === ''){
+            $(this).addClass('error').addClass('control-group');
+            var helper = $('<span class="help-inline">').text('This field is required.');
+            $(this).append(helper);
+            return false;
+        }
+        /* Then check that at least one email is selected */
+        var any_email_checked = false;
+        $("input[type='checkbox'][name='email']").each(function(){
+            if($(this).prop('checked')) any_email_checked = true;
+        });
+        if(!any_email_checked){
+            $("#subscription-email-list").addClass('error').addClass('control-group');
+            var helper = $('<span class="help-inline">').text('You need to select at least an email to subscribe.');
+            $("#subscription-email-list").append(helper);
+            return false;
+        }
+    });
+    $("input[type='checkbox'][name='email']").change(function(){
+        if(this.checked) {
+            $("#subscription-email-list").removeClass('error').removeClass('control-group');
+            if($("#subscription-email-list").children('.help-inline').length){
+                $("#subscription-email-list").children('.help-inline').remove();
+            }
+        }
+    });
 });
