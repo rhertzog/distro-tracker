@@ -208,7 +208,8 @@
                 <div>Emails which should be subscribed: </div>
             {% for email in request.user.emails.all %}
             <label class="checkbox inline">
-              <input type="checkbox" name="email" value="{{ email }}"> {{ email }}
+              <input type="checkbox" name="email" value="{{ email }}"
+              {% if email.email in selected_emails %}checked="True"{%endif %}> {{ email }}
             </label>
             {% endfor %}
             </div>

@@ -139,8 +139,11 @@ class SubscriptionsView(LoginRequiredMixin, View):
             }
             for user_email in user_emails
         }
+        # Initializing session variable if not set.
+        request.session.setdefault('selected_emails', [str(user_emails[0])])
         return render(request, self.template_name, {
             'subscriptions': subscriptions,
+            'selected_emails': request.session['selected_emails']
         })
 
 
@@ -167,6 +170,9 @@ class SubscribeUserToPackageView(LoginRequiredMixin, View):
 
         if not package or not emails:
             raise Http404
+
+        # Remember selected emails via session variable
+        request.session['selected_emails'] = emails
 
         # Check whether the logged in user is associated with the given emails
         users_emails = [e.email for e in request.user.emails.all()]
