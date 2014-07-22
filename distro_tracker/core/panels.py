@@ -740,7 +740,8 @@ class GeneralInfoLinkPanelItems(LinksPanel.ItemProvider):
     """
     def get_panel_items(self):
         items = []
-        if self.package.main_version and self.package.main_version.homepage:
+        if hasattr(self.package, 'main_version') and self.package.main_version \
+                and self.package.main_version.homepage:
             items.append(
                 LinksPanel.SimpleLinkItem(
                     'homepage',
