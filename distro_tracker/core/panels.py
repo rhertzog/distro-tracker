@@ -648,7 +648,7 @@ class ListPanelMeta(PluginRegistry):
             )
 
 
-class ListPanel(BasePanel, six.with_metaclass(ListPanelMeta)):
+class ListPanel(six.with_metaclass(ListPanelMeta, BasePanel)):
     """
     The base class for panels which would like to present an extensible list of
     items.
