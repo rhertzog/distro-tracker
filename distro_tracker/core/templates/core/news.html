@@ -7,7 +7,7 @@
 </div>
 <div class="row-fluid">
     {% if news_renderer.template_name %}
-    {% include news_renderer.template_name with context=news_renderer.context %}
+    {% include news_renderer.template_name with ctx=news_renderer.context %}
     {% else %}
         {% if news_renderer.html_output %}
         {{ news_renderer.html_output }}

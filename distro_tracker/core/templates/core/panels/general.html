@@ -1,40 +1,40 @@
 {% extends 'core/panels/panel.html' %}
 
 {% block panel-body %}
-{% with context=panel.context %}
+{% with ctx=panel.context %}
 <ul class="list-group list-group-flush">
-    {% if context.name %}
+    {% if ctx.name %}
     <li class="list-group-item">
         <div class="list-item-key"><b>source:</b></div>
         <div class="list-item-value">
-            {% with url=context.url|default:"#" %}
-            <a href="{{ url }}">{{ context.name }}</a>
+            {% with url=ctx.url|default:"#" %}
+            <a href="{{ url }}">{{ ctx.name }}</a>
             {% endwith %}
-            {% if context.priority %}
-            (<span title="priority">{{ context.priority }}</span>, <span title="section">{{ context.section }}</span>)
+            {% if ctx.priority %}
+            (<span title="priority">{{ ctx.priority }}</span>, <span title="section">{{ ctx.section }}</span>)
             {% endif %}
         </div>
         <div class="clear"></div>
     </li>
     {% endif %}
 
-    {% if context.version %}
+    {% if ctx.version %}
     <li class="list-group-item">
         <div class="list-item-key"><b>version:</b></div>
-        <div class="list-item-value">{{ context.version }}</div>
+        <div class="list-item-value">{{ ctx.version }}</div>
         <div class="clear"></div>
     </li>
     {% endif %}
 
-    {% if context.maintainer %}
+    {% if ctx.maintainer %}
     <li class="list-group-item">
         <div class="list-item-key"><b>maintainer:</b></div>
         <div class="list-item-value">
-            {% with mailto="mailto:"|add:context.maintainer.email %}
-            {% with url=context.maintainer.developer_info_url|default:mailto %}
-            <a href="{{ url }}">{{ context.maintainer.name }}</a>
+            {% with mailto="mailto:"|add:ctx.maintainer.email %}
+            {% with url=ctx.maintainer.developer_info_url|default:mailto %}
+            <a href="{{ url }}">{{ ctx.maintainer.name }}</a>
             {% endwith %}{% endwith %}
-            {% with developer=context.maintainer %}
+            {% with developer=ctx.maintainer %}
                 {% if developer.archive_url %}
                     <small>
                         (<a href="{{ developer.archive_url }}" title="Archives for the {{ developer.name }} list">archive</a>)
@@ -51,12 +51,12 @@
     </li>
     {% endif %}
 
-    {% if context.uploaders %}
+    {% if ctx.uploaders %}
     <li class="list-group-item">
         <div class="list-item-key"><b>uploaders:</b></div>
         <div class="list-item-value">
         <ul class="inline">
-            {% for uploader in context.uploaders %}
+            {% for uploader in ctx.uploaders %}
             <li>
                 {% with mailto="mailto:"|add:uploader.email %}
                 {% with url=uploader.developer_info_url|default:mailto %}
@@ -82,28 +82,28 @@
     </li>
     {% endif %}
 
-    {% if context.architectures %}
+    {% if ctx.architectures %}
     <li class="list-group-item">
         <div class="list-item-key"><b>arch:</b></div>
-        <div class="list-item-value">{% for arch in context.architectures %}{{ arch }} {% endfor %}</div>
+        <div class="list-item-value">{% for arch in ctx.architectures %}{{ arch }} {% endfor %}</div>
         <div class="clear"></div>
     </li>
     {% endif %}
 
-    {% if context.standards_version %}
+    {% if ctx.standards_version %}
     <li class="list-group-item">
         <div class="list-item-key"><b>std-ver:</b></div>
-        <div class="list-item-value">{{ context.standards_version }}</div>
+        <div class="list-item-value">{{ ctx.standards_version }}</div>
         <div class="clear"></div>
     </li>
     {% endif %}
 
-    {% if context.vcs %}
+    {% if ctx.vcs %}
     <li class="list-group-item">
         <div class="list-item-key"><b>VCS:</b></div>
         <div class="list-item-value">
-            {% with vcs=context.vcs.full_name|default:context.vcs.type %}
-            <a href="{{ context.vcs.url }}">{{ vcs }}</a> (<a href="{{ context.vcs.browser }}">Browse</a>)
+            {% with vcs=ctx.vcs.full_name|default:ctx.vcs.type %}
+            <a href="{{ ctx.vcs.url }}">{{ vcs }}</a> (<a href="{{ ctx.vcs.browser }}">Browse</a>)
             {% endwith %}
         </div>
         <div class="clear"></div>

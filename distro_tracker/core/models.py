@@ -1629,7 +1629,7 @@ class NewsRenderer(six.with_metaclass(PluginRegistry)):
         """
         if self.template_name:
             return mark_safe(distro_tracker_render_to_string(self.template_name, {
-                'context': self.context,
+                'ctx': self.context,
             }))
         elif self.html_output:
             return mark_safe(self.html_output)

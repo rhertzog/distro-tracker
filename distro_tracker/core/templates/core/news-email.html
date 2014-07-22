@@ -1,5 +1,5 @@
 <ul class="email-news-headers">
-{% for header, header_value in context.headers.items %}
+{% for header, header_value in ctx.headers.items %}
 <li><b>{{ header }}</b>: 
     {% if header_value.emails %}
         {% for email in header_value.emails %}
@@ -11,11 +11,11 @@
     {% endif %}
 </li>
 {% endfor %}
-{% for signer in context.signed_by %}
+{% for signer in ctx.signed_by %}
 <li><b>Signed by</b>: <a href="mailto:{{ signer.email }}" target="_blank">{{ signer.name }} &lt;{{ signer.email }}&gt;</a></li>
 {% endfor %}
 </ul>
 
 <div class="email-news-body">
-<pre>{% for part in context.parts %}{{ part }}{% endfor %}</pre>
+<pre>{% for part in ctx.parts %}{{ part }}{% endfor %}</pre>
 </div>
