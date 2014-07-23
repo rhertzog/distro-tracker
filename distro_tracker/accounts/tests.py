@@ -262,7 +262,7 @@ class UserEmailsViewTests(TestCase):
         # The array contains only the users main email
         self.assertEqual(
             [email.email for email in self.user.emails.all()],
-            json.loads(response.content))
+            json.loads(response.content.decode('utf-8')))
 
     def test_user_not_logged_in(self):
         """
@@ -281,7 +281,7 @@ class UserEmailsViewTests(TestCase):
         # The array contains only the users main email
         self.assertEqual(
             [email.email for email in self.user.emails.all()],
-            json.loads(response.content))
+            json.loads(response.content.decode('utf-8')))
 
 
 class SubscribeUserToPackageViewTests(TestCase):
@@ -322,7 +322,8 @@ class SubscribeUserToPackageViewTests(TestCase):
         expected = {
             'status': 'ok'
         }
-        self.assertDictEqual(expected, json.loads(response.content))
+        self.assertDictEqual(expected,
+                             json.loads(response.content.decode('utf-8')))
 
     def test_subscribe_not_logged_in(self):
         """
