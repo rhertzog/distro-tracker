@@ -155,8 +155,8 @@ class PackageViewTest(TestCase):
         # Admin URLs have precedence to the catch all package redirect
         url = reverse('admin:index')
         response = self.client.get(url, follow=True)
-        # No redirects - went directly to the admin
-        self.assertEqual(0, len(response.redirect_chain))
+        # No redirects to non-existing /pkg/admin, so no 404 either
+        self.assertNotEqual(404, response.status_code)
 
         # Non existing package
         url = '/{}'.format('no-exist')
