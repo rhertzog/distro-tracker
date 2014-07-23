@@ -642,7 +642,7 @@ class UpdateLintianStatsTask(BaseTask):
 
         # If there are errors make the item a high severity issue
         if errors:
-            lintian_action_item.set_severity('high')
+            lintian_action_item.severity = ActionItem.SEVERITY_HIGH
 
         lintian_action_item.save()
 
@@ -1025,17 +1025,17 @@ class UpdateBuildLogCheckStats(BaseTask):
                 's' if errors > 1 else '',
                 warnings,
                 's' if warnings > 1 else '')
-            action_item.set_severity('high')
+            action_item.severity = ActionItem.SEVERITY_HIGH
         elif errors:
             report = '{} error{}'.format(
                 errors,
                 's' if errors > 1 else '')
-            action_item.set_severity('high')
+            action_item.severity = ActionItem.SEVERITY_HIGH
         elif warnings:
             report = '{} warning{}'.format(
                 warnings,
                 's' if warnings > 1 else '')
-            action_item.set_severity('low')
+            action_item.severity = ActionItem.SEVERITY_LOW
 
         action_item.short_description = self.ITEM_DESCRIPTION.format(
             url=logcheck_url,

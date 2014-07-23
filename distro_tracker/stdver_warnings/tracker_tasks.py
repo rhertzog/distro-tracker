@@ -103,9 +103,9 @@ class UpdateStandardsVersionWarnings(BaseTask):
             standards_version, _ = standards_version.rsplit('.', 1)
 
         if severely_outdated:
-            action_item.set_severity('high')
+            action_item.severity = ActionItem.SEVERITY_HIGH
         else:
-            action_item.set_severity('wishlist')
+            action_item.severity = ActionItem.SEVERITY_WISHLIST
 
         action_item.short_description = self.ITEM_DESCRIPTION
         action_item.extra_data = {
