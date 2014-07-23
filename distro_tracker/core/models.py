@@ -1837,21 +1837,22 @@ class ActionItem(models.Model):
     Model for entries of the "action needed" panel.
     """
     #: All available severity levels
-    SEVERITY_LEVELS = {
-        'wishlist': 0,
-        'low': 1,
-        'normal': 2,
-        'high': 3,
-        'critical': 4,
-    }
+    SEVERITY_WISHLIST = 0
+    SEVERITY_LOW = 1
+    SEVERITY_NORMAL = 2
+    SEVERITY_HIGH = 3
+    SEVERITY_CRITICAL = 4
+    SEVERITIES = (
+        (SEVERITY_WISHLIST, 'wishlist'),
+        (SEVERITY_LOW, 'low'),
+        (SEVERITY_NORMAL, 'normal'),
+        (SEVERITY_HIGH, 'high'),
+        (SEVERITY_CRITICAL, 'critical'),
+    )
     package = models.ForeignKey(PackageName, related_name='action_items')
     item_type = models.ForeignKey(ActionItemType, related_name='action_items')
     short_description = models.TextField()
-    # Choices expects the choices to have a list of tuples (value, display)
-    # which is reversed to what a dict's items method gives
-    severity = models.IntegerField(
-        choices=((value, key) for key, value in SEVERITY_LEVELS.items()),
-        default=SEVERITY_LEVELS['normal'])
+    severity = models.IntegerField(choices=SEVERITIES, default=SEVERITY_NORMAL)
     created_timestamp = models.DateTimeField(auto_now_add=True)
     last_updated_timestamp = models.DateTimeField(auto_now=True)
     extra_data = JSONField(blank=True, null=True)
@@ -1886,10 +1887,10 @@ class ActionItem(models.Model):
             dict.
         :type severity: string
         """
-        severity_level = self.SEVERITY_LEVELS.get(severity, None)
-        if severity_level is None:
-            return
-        self.severity = severity_level
+        for value, name in self.SEVERITIES:
+            if name == severity:
+                self.severity = value
+                break
 
     @cached_property
     def full_description(self):

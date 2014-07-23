@@ -1098,10 +1098,10 @@ class DebianWatchFileScannerUpdate(BaseTask):
                 package=item.package.name)),
     }
     ITEM_SEVERITIES = {
-        'new-upstream-version': 'high',
-        'watch-failure': 'high',
-        'watch-file-broken': 'low',
-        'watch-file-available': 'wishlist',
+        'new-upstream-version': ActionItem.SEVERITY_HIGH,
+        'watch-failure': ActionItem.SEVERITY_HIGH,
+        'watch-file-broken': ActionItem.SEVERITY_LOW,
+        'watch-file-available': ActionItem.SEVERITY_WISHLIST,
     }
 
     def __init__(self, force_update=False, *args, **kwargs):
@@ -1246,7 +1246,7 @@ class DebianWatchFileScannerUpdate(BaseTask):
                 item_type=self.action_item_types[item_type])
 
         if item_type in self.ITEM_SEVERITIES:
-            action_item.set_severity(self.ITEM_SEVERITIES[item_type])
+            action_item.severity = self.ITEM_SEVERITIES[item_type]
         action_item.extra_data = stats
         action_item.short_description = self.ITEM_DESCRIPTIONS[item_type](action_item)
 
@@ -1988,7 +1988,7 @@ class UpdateDebciStatusTask(BaseTask):
             debci_action_item = ActionItem(
                 package=package,
                 item_type=self.debci_action_item_type,
-                severity=ActionItem.SEVERITY_LEVELS['high'])
+                severity=ActionItem.SEVERITY_HIGH)
 
         package_name = debci_status.get('package')
         url = 'http://ci.debian.net/#package/' + package_name
