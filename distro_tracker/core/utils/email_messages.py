@@ -201,8 +201,10 @@ def decode_header(header, default_encoding='utf-8'):
         return ''
     decoded_header = email.header.decode_header(header)
     # Join all the different parts of the header into a single unicode string
-    return ''.join((
-        (part.decode(encoding)
-         if encoding is not None else
-         part.decode(default_encoding))
-        for part, encoding in decoded_header))
+    result = ''
+    for part, encoding in decoded_header:
+        if isinstance(part, six.binary_type):
+            result += part.decode(encoding if encoding else default_encoding)
+        else:
+            result += part
+    return result
