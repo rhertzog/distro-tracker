@@ -760,6 +760,9 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
     """
     Tests for stories regarding subscribing to a package over the Web.
     """
+    def get_subscriptions_url(self):
+        return reverse('dtracker-accounts-subscriptions')
+
     def test_subscribe_from_package_page(self):
         """
         Tests that a user that has only one email address can subscribe to a
@@ -876,6 +879,99 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
         self.assertTrue(sub_button.is_displayed())
         unsub_button = self.get_element_by_id('unsubscribe-button')
         self.assertFalse(unsub_button.is_displayed())
+
+    def test_subscribe_package_from_subscription_tab(self):
+        """
+        This test validates that a user can correctly subscribe to a package
+        from the subscription tab in its personnal space.
+        """
+        # Initially the user is not subscribed to the package
+        self.assertFalse(self.user.is_subscribed_to(self.package))
+        # The user logs in and goes to his subscriptions page
+        self.log_in()
+        self.get_page(self.get_subscriptions_url())
+        # To ensure the subscription page is fully charged
+        self.wait_response(1)
+        self.assert_in_page_body('Subscribe')
+        # Checking that at least one checkbox is checked
+        available_mails = self.browser.find_elements_by_xpath(
+            "//input[@type='checkbox'][@name='email']")
+        is_there_checked_emails = False
+        for checkbox in available_mails:
+            if checkbox.is_selected():
+                is_there_checked_emails = True
+                break
+        self.assertTrue(is_there_checked_emails)
+        # Filling the package search field
+        self.assert_element_with_id_in_page('package-search-input')
+        self.input_to_element('package-search-input', self.package.name)
+        # Subscribing to the package and ensuring it's completely done!
+        self.send_enter('package-search-input')
+        self.wait_response(1)
+        self.assertTrue(self.user.is_subscribed_to(self.package))
+
+    def test_package_subscription_no_email_from_subscription_tab_fails(self):
+        """
+        The UI should prevent the user from forgetting to check at least one
+        email checkbox from the subscription tab in its personnal space.
+        """
+        # Initially the user is not subscribed to the package
+        self.assertFalse(self.user.is_subscribed_to(self.package))
+        # The user logs in and goes to his subscriptions page
+        self.log_in()
+        self.get_page(self.get_subscriptions_url())
+        # To ensure the subscription page is fully charged
+        self.wait_response(1)
+        self.assert_in_page_body('Subscribe')
+        # All email checkboxes should be unchecked
+        available_mails = self.browser.find_elements_by_xpath(
+            "//input[@type='checkbox'][@name='email']")
+        for checkbox in available_mails:
+            if checkbox.is_selected():
+                checkbox.click()
+        # Filling the package search field
+        self.assert_element_with_id_in_page('package-search-input')
+        self.input_to_element('package-search-input', self.package.name)
+        # Subscribing to the package
+        self.send_enter('package-search-input')
+        self.wait_response(1)
+        # He gets a message informing him that the field is required
+        self.assert_in_page_body('You need to select at least an email')
+        # The scubscription should not have been done!
+        self.assertFalse(self.user.is_subscribed_to(self.package))
+
+    def test_package_subscription_no_package_from_subscription_tab_fails(self):
+        """
+        The UI should prevent the user from forgetting to check at least one
+        email checkbox from the subscription tab in its personnal space.
+        """
+        # Initially the user is not subscribed to the package
+        self.assertFalse(self.user.is_subscribed_to(self.package))
+        # The user logs in and goes to his subscriptions page
+        self.log_in()
+        self.get_page(self.get_subscriptions_url())
+        # To ensure the subscription page is fully charged
+        self.wait_response(1)
+        self.assert_in_page_body('Subscribe')
+        # Checking that at least one checkbox is checked
+        available_mails = self.browser.find_elements_by_xpath(
+            "//input[@type='checkbox'][@name='email']")
+        is_there_checked_emails = False
+        for checkbox in available_mails:
+            if checkbox.is_selected():
+                is_there_checked_emails = True
+                break
+        self.assertTrue(is_there_checked_emails)
+        # Filling the package search field
+        self.assert_element_with_id_in_page('package-search-input')
+        self.input_to_element('package-search-input', '')
+        # Subscribing to the package
+        self.send_enter('package-search-input')
+        self.wait_response(1)
+        # He gets a message informing him that the field is required
+        self.assert_in_page_body('This field is required')
+        # The scubscription should not have been done!
+        self.assertFalse(self.user.is_subscribed_to(self.package))
 
 
 class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
