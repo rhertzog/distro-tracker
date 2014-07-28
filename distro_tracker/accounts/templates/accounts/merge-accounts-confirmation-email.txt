@@ -1,5 +1,5 @@
 You have requested to merge your account with another
-{{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracking System account.
+{{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracker account.
 
 In order to complete the operation, you must confirm that you are the
 owner of this email address by logging in to the account currently
@@ -18,7 +18,6 @@ If you have any problem with this service, please contact
 {{ DISTRO_TRACKER_CONTACT_EMAIL }}.
 
 Thanks,
-
 --
-{{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracking System
+{{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracker
 http://{{ DISTRO_TRACKER_SITE_DOMAIN }}

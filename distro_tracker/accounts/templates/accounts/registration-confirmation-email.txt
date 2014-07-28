@@ -1,4 +1,4 @@
-You have registered to the {{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracking System.
+You have registered to the {{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracker.
 
 In order to complete your registration, you must confirm that you are the
 owner of this email address by going to the following URL:
@@ -12,7 +12,6 @@ If you have any problem with this service, please contact
 {{ DISTRO_TRACKER_CONTACT_EMAIL }}.
 
 Thanks,
-
 --
-{{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracking System
+{{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracker
 http://{{ DISTRO_TRACKER_SITE_DOMAIN }}

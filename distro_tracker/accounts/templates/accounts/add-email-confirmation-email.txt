@@ -1,5 +1,5 @@
 You have requested to add this email to an existing account in
-the {{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracking System.
+the {{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracker.
 
 In order to complete the action, you must confirm that you are the
 owner of this email address by going to the following URL:
@@ -13,7 +13,6 @@ If you have any problem with this service, please contact
 {{ DISTRO_TRACKER_CONTACT_EMAIL }}.
 
 Thanks,
-
 --
-{{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracking System
+{{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracker
 http://{{ DISTRO_TRACKER_SITE_DOMAIN }}
