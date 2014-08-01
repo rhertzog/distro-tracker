@@ -648,7 +648,14 @@ class ListPanelMeta(PluginRegistry):
             )
 
 
-class ListPanel(six.with_metaclass(ListPanelMeta, BasePanel)):
+# Six in Django 1.6 creates an intermediary class that we don't
+# want in the list of registered panels
+SixListPanelMeta = six.with_metaclass(ListPanelMeta, BasePanel)
+if hasattr(SixListPanelMeta, 'unregister_plugin'):
+    SixListPanelMeta.unregister_plugin()
+
+
+class ListPanel(SixListPanelMeta):
     """
     The base class for panels which would like to present an extensible list of
     items.
@@ -701,7 +708,6 @@ class ListPanel(six.with_metaclass(ListPanelMeta, BasePanel)):
 # This should be a sort of "abstract" panel which should never be rendered on
 # its own, so it is removed from the list of registered panels.
 ListPanel.unregister_plugin()
-
 
 class LinksPanel(ListPanel):
     """
