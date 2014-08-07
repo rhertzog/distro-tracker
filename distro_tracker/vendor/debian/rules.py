@@ -328,102 +328,102 @@ def get_bug_tracker_url(package_name, package_type, category_name):
         category.
     """
     URL_PARAMETERS = {
-        'all': {
-            'repeatmerged': 'no',
-        },
-        'rc': {
-            'archive': 'no',
-            'pend-exc': 'pending-fixed',
-            'pend-exc': 'fixed',
-            'pend-exc': 'done',
-            'sev-inc': 'critical',
-            'sev-inc': 'grave',
-            'sev-inc': 'serious',
-            'repeatmerged': 'no',
-        },
-        'normal': {
-            'archive': 'no',
-            'pend-exc': 'pending-fixed',
-            'pend-exc': 'fixed',
-            'pend-exc': 'done',
-            'sev-inc': 'important',
-            'sev-inc': 'normal',
-            'repeatmerged': 'no',
-        },
-        'wishlist': {
-            'archive': 'no',
-            'pend-exc': 'pending-fixed',
-            'pend-exc': 'fixed',
-            'pend-exc': 'done',
-            'sev-inc': 'minor',
-            'sev-inc': 'wishlist',
-            'repeatmerged': 'no',
-        },
-        'fixed': {
-            'archive': 'no',
-            'pend-inc': 'pending-fixed',
-            'pend-inc': 'fixed',
-            'repeatmerged': 'no'
-        },
-        'patch': {
-            'include': 'tags:patch',
-            'exclude': 'tags:pending',
-            'pend-exc': 'done',
-            'repeatmerged': 'no',
-        },
-        'help': {
-            'tag': 'help',
-            'pend-exc': 'pending-fixed',
-            'pend-exc': 'fixed',
-            'pend-exc': 'done',
-        },
-        'gift': {
-            'users': 'debian-qa@lists.debian.org',
-            'tag': 'gift',
-        },
-        'all-merged': {
-            'repeatmerged': 'yes',
-        },
-        'rc-merged': {
-            'archive': 'no',
-            'pend-exc': 'pending-fixed',
-            'pend-exc': 'fixed',
-            'pend-exc': 'done',
-            'sev-inc': 'critical',
-            'sev-inc': 'grave',
-            'sev-inc': 'serious',
-            'repeatmerged': 'yes',
-        },
-        'normal-merged': {
-            'archive': 'no',
-            'pend-exc': 'pending-fixed',
-            'pend-exc': 'fixed',
-            'pend-exc': 'done',
-            'sev-inc': 'important',
-            'sev-inc': 'normal',
-            'repeatmerged': 'yes',
-        },
-        'wishlist-merged': {
-            'archive': 'no',
-            'pend-exc': 'pending-fixed',
-            'pend-exc': 'fixed',
-            'pend-exc': 'done',
-            'sev-inc': 'minor',
-            'sev-inc': 'wishlist',
-            'repeatmerged': 'yes',
-        },
-        'fixed-merged': {
-            'archive': 'no',
-            'pend-inc': 'pending-fixed',
-            'pend-inc': 'fixed',
-            'repeatmerged': 'yes'
-        },
-        'patch-merged': {
-            'include': 'tags:patch',
-            'exclude': 'tags:pending',
-            'pend-exc': 'done',
-            'repeatmerged': 'yes',
-        },
+        'all': (
+            ('repeatmerged', 'no'),
+        ),
+        'rc': (
+            ('archive', 'no'),
+            ('pend-exc', 'pending-fixed'),
+            ('pend-exc', 'fixed'),
+            ('pend-exc', 'done'),
+            ('sev-inc', 'critical'),
+            ('sev-inc', 'grave'),
+            ('sev-inc', 'serious'),
+            ('repeatmerged', 'no'),
+        ),
+        'normal': (
+            ('archive', 'no'),
+            ('pend-exc', 'pending-fixed'),
+            ('pend-exc', 'fixed'),
+            ('pend-exc', 'done'),
+            ('sev-inc', 'important'),
+            ('sev-inc', 'normal'),
+            ('repeatmerged', 'no'),
+        ),
+        'wishlist': (
+            ('archive', 'no'),
+            ('pend-exc', 'pending-fixed'),
+            ('pend-exc', 'fixed'),
+            ('pend-exc', 'done'),
+            ('sev-inc', 'minor'),
+            ('sev-inc', 'wishlist'),
+            ('repeatmerged', 'no'),
+        ),
+        'fixed': (
+            ('archive', 'no'),
+            ('pend-inc', 'pending-fixed'),
+            ('pend-inc', 'fixed'),
+            ('repeatmerged', 'no'),
+        ),
+        'patch': (
+            ('include', 'tags:patch'),
+            ('exclude', 'tags:pending'),
+            ('pend-exc', 'done'),
+            ('repeatmerged', 'no'),
+        ),
+        'help': (
+            ('tag', 'help'),
+            ('pend-exc', 'pending-fixed'),
+            ('pend-exc', 'fixed'),
+            ('pend-exc', 'done'),
+        ),
+        'gift': (
+            ('users', 'debian-qa@lists.debian.org'),
+            ('tag', 'gift'),
+        ),
+        'all-merged': (
+            ('repeatmerged', 'yes'),
+        ),
+        'rc-merged': (
+            ('archive', 'no'),
+            ('pend-exc', 'pending-fixed'),
+            ('pend-exc', 'fixed'),
+            ('pend-exc', 'done'),
+            ('sev-inc', 'critical'),
+            ('sev-inc', 'grave'),
+            ('sev-inc', 'serious'),
+            ('repeatmerged', 'yes'),
+        ),
+        'normal-merged': (
+            ('archive', 'no'),
+            ('pend-exc', 'pending-fixed'),
+            ('pend-exc', 'fixed'),
+            ('pend-exc', 'done'),
+            ('sev-inc', 'important'),
+            ('sev-inc', 'normal'),
+            ('repeatmerged', 'yes'),
+        ),
+        'wishlist-merged': (
+            ('archive', 'no'),
+            ('pend-exc', 'pending-fixed'),
+            ('pend-exc', 'fixed'),
+            ('pend-exc', 'done'),
+            ('sev-inc', 'minor'),
+            ('sev-inc', 'wishlist'),
+            ('repeatmerged', 'yes'),
+        ),
+        'fixed-merged': (
+            ('archive', 'no'),
+            ('pend-inc', 'pending-fixed'),
+            ('pend-inc', 'fixed'),
+            ('repeatmerged', 'yes'),
+        ),
+        'patch-merged': (
+            ('include', 'tags:patch'),
+            ('exclude', 'tags:pending'),
+            ('pend-exc', 'done'),
+            ('repeatmerged', 'yes'),
+        ),
     }
     if category_name not in URL_PARAMETERS:
         return
@@ -432,17 +432,14 @@ def get_bug_tracker_url(package_name, package_type, category_name):
     query_parameters = URL_PARAMETERS[category_name]
 
     if package_type == 'source':
-        query_parameters['src'] = package_name
+        query_parameters += (('src', package_name),)
     elif package_type == 'binary':
         if category_name == 'all':
             # All bugs for a binary package don't follow the same pattern as
             # the rest of the URLs.
             return domain + package_name
-        # A URL for the binary package does not include the repeatmerged
-        # parameter.
-        del query_parameters['repeatmerged']
-        query_parameters['which'] = 'pkg'
-        query_parameters['data'] = package_name
+        query_parameters += (('which', 'pkg'),)
+        query_parameters += (('data', package_name),)
 
     return (
         domain +
