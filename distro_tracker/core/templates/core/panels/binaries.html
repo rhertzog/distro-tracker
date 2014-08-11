@@ -3,7 +3,8 @@
 {% block panel-body %}
 <ul class="list-group list-group-flush">
     <div class="scrollable">
-    {% for item in panel.context %}
+    {% with items=panel.context|dictsort:'name' %}
+    {% for item in items %}
     <li class="list-group-item">
         {% with url=item.url|default:"#" %}
         <a href="{{ url }}" title="{{ item.repository_name }}">{{ item.name }}</a>
@@ -37,6 +38,7 @@
         {% endif %}
     </li>
     {% endfor %}
+    {% endwith %}
     </div>
 </ul>
 {% endblock %}
