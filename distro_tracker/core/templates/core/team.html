@@ -103,7 +103,8 @@
             <div class="panel-body">
                 <ul class="list-group list-group-flush">
                     <div class="scrollable">
-                    {% for package in team.packages.all %}
+                    {% with packages=team.packages.all|dictsort:'name' %}
+                    {% for package in packages %}
                     <div class="row-fluid">
                     <li class="list-group-item">
                         <div class="span10">
@@ -121,6 +122,7 @@
                     </div>
                     </li>
                     {% endfor %}
+                    {% endwith %}
                     </div>
                 </ul>
             </div>
