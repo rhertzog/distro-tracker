@@ -11,12 +11,6 @@ The recommended way to send feedback is to write to the Debian Quality
 Assurance mailing list <debian-qa@lists.debian.org>. You can also reach us
 using IRC on the #debian-qa channel at irc.debian.org.
 
-Until distro-tracker is uploaded to Debian as a proper Debian package,
-we use a `Trello board <https://trello.com/b/faDgzjwO/pts-rewrite>`_ to manage
-the development tasks of distro-tracker. You can create an account there and
-then ping `Raphaël Hertzog <hertzog@debian.org>`_ to get access to the
-distro-tracker board.
-
 You can also report bugs against the `tracker.debian.org pseudo-package
 <https://bugs.debian.org/cgi-bin/pkgreport.cgi?pkg=tracker.debian.org>`_, to do so
 please follow `the usual instructions
