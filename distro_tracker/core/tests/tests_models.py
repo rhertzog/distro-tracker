@@ -1245,7 +1245,7 @@ class NewsTests(TestCase):
         Tests that the :meth:`distro_tracker.core.models.News.content` property returns
         the correct contents when they are found in a file.
         """
-        expected_content = 'This is some news content'
+        expected_content = b'This is some news content'
         # Create a temporary file for the content
         content_file = ContentFile(expected_content, name='tmp-content')
         # Create the news item with the given content file
@@ -1285,7 +1285,7 @@ class NewsTests(TestCase):
         Tests the :meth:`distro_tracker.core.models.NewsManager.create` method when it
         should create an instance whose content is stored in a file.
         """
-        expected_content = 'Some content'
+        expected_content = b'Some content'
         news = News.objects.create(
             title='some title',
             file_content=expected_content,

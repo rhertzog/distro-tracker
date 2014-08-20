@@ -67,7 +67,7 @@ class BasicNewsGeneration(TestCase):
         news = News.objects.all()[0]
         # The title of the news is set correctly.
         self.assertEqual(subject, news.title)
-        self.assertIn(content, news.content)
+        self.assertIn(content, news.content.decode('utf-8'))
         # The content type is set to render email messages
         self.assertEqual(news.content_type, 'message/rfc822')
 
