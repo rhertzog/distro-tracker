@@ -295,7 +295,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
 
         self.assertEqual(2, News.objects.count())
         ## This is a sort by repository name
-        titles = [news.title for news in News.objects.all()]
+        titles = [news.title for news in News.objects.order_by('title')]
         for title, repository_name in zip(titles, repositories):
             self.assert_correct_migrated_message(
                 title,
@@ -330,7 +330,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         # Only two news messages.
         self.assertEqual(2, News.objects.count())
         ## This is a sort by repository name
-        titles = [news.title for news in News.objects.all()]
+        titles = [news.title for news in News.objects.order_by('title')]
         for title, repository_name in zip(titles, repositories):
             self.assert_correct_migrated_message(
                 title,
@@ -361,7 +361,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         self.run_task()
 
         self.assertEqual(2, News.objects.count())
-        titles = [news.title for news in News.objects.all()]
+        titles = [news.title for news in News.objects.order_by('title')]
         titles.sort()
         for title, version, repository in zip(titles, versions, repositories):
             self.assert_correct_accepted_message(
@@ -465,12 +465,13 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
 
         # Two news items - removed from one repositories, migrated to another
         self.assertEqual(2, News.objects.count())
+        news1, news2 = News.objects.all()
+        if repositories[1] in news1.title:
+            news1, news2 = news2, news1
         self.assert_correct_removed_message(
-            News.objects.all()[0].title,
-            source_package_name, repositories[0])
+            news1.title, source_package_name, repositories[0])
         self.assert_correct_migrated_message(
-            News.objects.all()[1].title,
-            source_package_name, version, repositories[1])
+            news2.title, source_package_name, version, repositories[1])
 
     def test_multiple_packages_added_same_repo(self):
         """
