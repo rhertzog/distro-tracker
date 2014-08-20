@@ -1686,6 +1686,89 @@ class UpdateUbuntuStatsTask(BaseTask):
                     patch_diff=diff)
 
 
+class UpdateDebianDuckTask(BaseTask):
+    """
+    A task for updating upstream url issue information on all packages.
+    """
+
+    DUCK_LINK = 'http://duck.debian.net'
+    # URL of the list of source packages with issues.
+    DUCK_SP_LIST_URL = 'http://duck.debian.net/static/sourcepackages.txt'
+
+    ACTION_ITEM_TYPE_NAME = 'debian-duck'
+    ACTION_ITEM_TEMPLATE = 'debian/duck-action-item.html'
+    ITEM_DESCRIPTION = 'The URL(s) for this package had some ' + \
+        'recent persistent <a href="{issues_link}">issues</a>'
+
+    def __init__(self, force_update=False, *args, **kwargs):
+        super(UpdateDebianDuckTask, self).__init__(*args, **kwargs)
+        self.force_update = force_update
+        self.action_item_type = ActionItemType.objects.create_or_update(
+            type_name=self.ACTION_ITEM_TYPE_NAME,
+            full_description_template=self.ACTION_ITEM_TEMPLATE)
+
+    def set_parameters(self, parameters):
+        if 'force_update' in parameters:
+            self.force_update = parameters['force_update']
+
+    @classmethod
+    def prefix(self, pname):
+        if pname.startswith("lib") and len(pname) > 3:
+            return pname[0:4]
+        return pname[0:1]
+
+    def _get_duck_urls_content(self):
+        """
+        Gets the list of packages with URL issues from
+        duck.debian.net
+
+        :returns: A array if source package names.
+        """
+
+        ducklist = get_resource_content(self.DUCK_SP_LIST_URL)
+        if ducklist is None:
+            return None
+
+        packages = []
+        for package_name in ducklist.splitlines():
+            package_name = package_name.strip()
+            packages.append(package_name)
+        return packages
+
+    def update_action_item(self, package):
+        action_item = package.get_action_item_for_type(self.action_item_type)
+        if not action_item:
+            action_item = ActionItem(
+                package=package,
+                item_type=self.action_item_type,
+            )
+
+        issues_link = self.DUCK_LINK + "/static/sp/" \
+            + self.prefix(package.name) + "/" + package.name + ".html"
+        action_item.short_description = self.ITEM_DESCRIPTION.format(issues_link=issues_link)
+
+        action_item.extra_data = {
+            'duck_link': self.DUCK_LINK,
+            'issues_link': issues_link
+        }
+        action_item.severity = ActionItem.SEVERITY_LOW
+        action_item.save()
+
+    def execute(self):
+        ducklings = self._get_duck_urls_content()
+        if ducklings is None:
+            return
+
+        ActionItem.objects.delete_obsolete_items(
+            item_types=[self.action_item_type],
+            non_obsolete_packages=ducklings)
+
+        packages = SourcePackageName.objects.filter(name__in=ducklings)
+
+        for package in packages:
+            self.update_action_item(package)
+
+
 class UpdateWnppStatsTask(BaseTask):
     """
     The task updates the WNPP bugs for all packages.
