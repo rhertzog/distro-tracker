@@ -261,10 +261,11 @@ def add_headers(message, new_headers):
     Adds the given headers to the given message in a safe way.
     """
     for header_name, header_value in new_headers:
-        # Make sure we are adding bytes to the message
-        header_name, header_value = (
-            header_name.encode('utf-8'),
-            header_value.encode('utf-8'))
+        # With Python 2, make sure we are adding bytes to the message
+        if six.PY2:
+            header_name, header_value = (
+                header_name.encode('utf-8'),
+                header_value.encode('utf-8'))
         message[header_name] = header_value
 
 
