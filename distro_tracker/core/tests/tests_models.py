@@ -1334,7 +1334,8 @@ class NewsTests(TestCase):
         message['Subject'] = 'Some subject'
         content = 'è'
         raw_content = content.encode('utf-8')
-        message.set_payload(raw_content)
+        message.set_payload(raw_content, 'utf-8')
+        del message['Content-Type']
 
         news = EmailNews.objects.create_email_news(
             message=message,
@@ -1346,7 +1347,7 @@ class NewsTests(TestCase):
         # The news can be converted back to a Message instance
         msg_from_news = message_from_bytes(news.content)
         # The payload is correct?
-        self.assertEqual(raw_content, msg_from_news.get_payload())
+        self.assertEqual(raw_content, msg_from_news.get_payload(decode=True))
         # It can be converted correctly to an actual unicode object
         self.assertEqual(
             content,
@@ -1362,7 +1363,8 @@ class NewsTests(TestCase):
         message['Subject'] = 'Some subject'
         content = 'è'
         raw_content = content.encode('latin-1')
-        message.set_payload(raw_content)
+        message.set_payload(raw_content, 'latin-1')
+        del message['Content-Type']
 
         news = EmailNews.objects.create_email_news(
             message=message,
@@ -1374,7 +1376,7 @@ class NewsTests(TestCase):
         # The news can be converted back to a Message instance
         msg_from_news = message_from_bytes(news.content)
         # The payload is correct?
-        self.assertEqual(raw_content, msg_from_news.get_payload())
+        self.assertEqual(raw_content, msg_from_news.get_payload(decode=True))
         # It can be converted correctly to an actual unicode object
         self.assertEqual(
             content,
@@ -1389,11 +1391,13 @@ class NewsTests(TestCase):
         message['Subject'] = 'Some subject'
         content = 'è'
         # Create two news items: one latin-1 the other utf-8 encoded.
-        message.set_payload(content.encode('latin-1'))
+        message.set_payload(content.encode('latin-1'), 'latin-1')
+        del message['Content-Type']
         news_latin = EmailNews.objects.create_email_news(
             message=message,
             package=self.package)
-        message.set_payload(content.encode('utf-8'))
+        message.set_payload(content.encode('utf-8'), 'utf-8')
+        del message['Content-Type']
         news_utf = EmailNews.objects.create_email_news(
             message=message,
             package=self.package)

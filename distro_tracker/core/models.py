@@ -1566,7 +1566,10 @@ class EmailNews(News):
                                                 default_encoding='iso-8859-1')
         else:
             kwargs['title'] = 'Email news from {sender}'.format(sender=from_email)
-        kwargs['file_content'] = message.as_string()
+        if hasattr(message, 'as_bytes'):
+            kwargs['file_content'] = message.as_bytes()
+        else:
+            kwargs['file_content'] = message.as_string()
         kwargs['content_type'] = 'message/rfc822'
 
         return kwargs
