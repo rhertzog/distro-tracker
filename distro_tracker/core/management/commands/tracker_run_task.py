@@ -47,7 +47,8 @@ class Command(BaseCommand):
                 'force_update': True
             }
         for task_name in args:
-            task_name = task_name.decode('utf-8')
+            if isinstance(task_name, bytes):
+                task_name = task_name.decode('utf-8')
             logger.info("Starting task %s (from ./manage.py tracker_run_task)",
                         task_name)
             try:
