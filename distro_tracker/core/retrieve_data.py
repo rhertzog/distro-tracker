@@ -285,7 +285,7 @@ class UpdateRepositoriesTask(PackageUpdateTask):
         return entry
 
     def _update_sources_file(self, repository, sources_file):
-        for stanza in deb822.Sources.iter_paragraphs(file(sources_file)):
+        for stanza in deb822.Sources.iter_paragraphs(sources_file):
             allow, implemented = vendor.call('allow_package', stanza)
             if allow is not None and implemented and not allow:
                 # The vendor-provided function indicates that the package
@@ -367,7 +367,7 @@ class UpdateRepositoriesTask(PackageUpdateTask):
         return source_name, source_version
 
     def _update_packages_file(self, repository, packages_file):
-        for stanza in deb822.Packages.iter_paragraphs(file(packages_file)):
+        for stanza in deb822.Packages.iter_paragraphs(packages_file):
             bin_pkg_name, created = BinaryPackageName.objects.get_or_create(
                 name=stanza['package']
             )
@@ -574,7 +574,8 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                          repository.shorthand)
                 # First update package information based on updated files
                 for sources_file in sources_files:
-                    self._update_sources_file(repository, sources_file)
+                    with open(sources_file) as sources_fd:
+                        self._update_sources_file(repository, sources_fd)
 
                 # Mark package versions found in un-updated files as still existing
                 all_sources = self.apt_cache.get_sources_files_for_repository(repository)
@@ -620,7 +621,8 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                      repository.shorthand)
             # First update package information based on updated files
             for packages_file in packages_files:
-                self._update_packages_file(repository, packages_file)
+                with open(packages_file) as packages_fd:
+                    self._update_packages_file(repository, packages_fd)
 
             # Mark package versions found in un-updated files as still existing
             all_sources = self.apt_cache.get_packages_files_for_repository(repository)
@@ -692,17 +694,18 @@ class UpdateRepositoriesTask(PackageUpdateTask):
         # based on the Sources file.
         source_dependency_types = ('Build-Depends', 'Build-Depends-Indep')
         for sources_file in sources_files:
-            for stanza in deb822.Sources.iter_paragraphs(file(sources_file)):
-                source_name = stanza['package']
+            with open(sources_file) as sources_fd:
+                for stanza in deb822.Sources.iter_paragraphs(sources_fd):
+                    source_name = stanza['package']
 
-                for binary in itertools.chain(*stanza.relations['binary']):
-                    sources_set = bin_to_src.setdefault(binary['name'], set())
-                    sources_set.add(source_name)
+                    for binary in itertools.chain(*stanza.relations['binary']):
+                        sources_set = bin_to_src.setdefault(binary['name'], set())
+                        sources_set.add(source_name)
 
-                dependencies = source_to_binary_deps.setdefault(source_name, [])
-                dependencies.extend(self._update_dependencies_for_source(
-                    stanza,
-                    source_dependency_types))
+                    dependencies = source_to_binary_deps.setdefault(source_name, [])
+                    dependencies.extend(self._update_dependencies_for_source(
+                        stanza,
+                        source_dependency_types))
 
         # Then a list of binary dependencies based on the Packages file.
         binary_dependency_types = (
@@ -711,20 +714,21 @@ class UpdateRepositoriesTask(PackageUpdateTask):
             'Suggests',
         )
         for packages_file in packages_files:
-            for stanza in deb822.Packages.iter_paragraphs(file(packages_file)):
-                binary_name = stanza['package']
-                source_name, source_version = self.get_source_for_binary(stanza)
+            with open(packages_file) as packages_fd:
+                for stanza in deb822.Packages.iter_paragraphs(packages_fd):
+                    binary_name = stanza['package']
+                    source_name, source_version = self.get_source_for_binary(stanza)
 
-                sources_set = bin_to_src.setdefault(binary_name, set())
-                sources_set.add(source_name)
+                    sources_set = bin_to_src.setdefault(binary_name, set())
+                    sources_set.add(source_name)
 
-                new_dependencies = self._update_dependencies_for_source(
-                    stanza,
-                    binary_dependency_types)
-                for dependency in new_dependencies:
-                    dependency['source_binary'] = binary_name
-                dependencies = source_to_binary_deps.setdefault(source_name, [])
-                dependencies.extend(new_dependencies)
+                    new_dependencies = self._update_dependencies_for_source(
+                        stanza,
+                        binary_dependency_types)
+                    for dependency in new_dependencies:
+                        dependency['source_binary'] = binary_name
+                    dependencies = source_to_binary_deps.setdefault(source_name, [])
+                    dependencies.extend(new_dependencies)
 
         # The binary packages are matched with their source packages and each
         # source to source dependency created.
