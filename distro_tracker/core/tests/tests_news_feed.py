@@ -105,7 +105,7 @@ class NewsFeedTests(TestCase):
         response = self.get_rss_feed_response(self.package.name)
 
         self.assertEqual(200, response.status_code)
-        self.assertTrue(response.content.startswith('<?xml version="1.0" encoding="utf-8"?>'))
+        self.assertTrue(response.content.startswith(b'<?xml version="1.0" encoding="utf-8"?>'))
 
     def test_no_news_feed_for_non_existing_package(self):
         """
