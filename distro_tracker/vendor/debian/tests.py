@@ -1913,9 +1913,9 @@ class DebianWatchFileScannerUpdateTests(TestCase):
 
         self.task = DebianWatchFileScannerUpdate()
         # Stub the data providing methods: no content by default
-        self.task._get_udd_dehs_content = mock.MagicMock(return_value='')
-        self.task._get_watch_broken_content = mock.MagicMock(return_value='')
-        self.task._get_watch_available_content = mock.MagicMock(return_value='')
+        self.task._get_udd_dehs_content = mock.MagicMock(return_value=b'')
+        self.task._get_watch_broken_content = mock.MagicMock(return_value=b'')
+        self.task._get_watch_available_content = mock.MagicMock(return_value=b'')
 
     def run_task(self):
         self.task.execute()
@@ -1929,7 +1929,7 @@ class DebianWatchFileScannerUpdateTests(TestCase):
         """
         self.task._get_udd_dehs_content.return_value = yaml.safe_dump(
             content,
-            default_flow_style=False)
+            default_flow_style=False).encode('utf-8')
 
     def set_watch_broken_content(self, packages):
         """
@@ -1939,7 +1939,8 @@ class DebianWatchFileScannerUpdateTests(TestCase):
         :param packages: A list of packages which should be returned to
             indicate a broken watch file.
         """
-        self.task._get_watch_broken_content.return_value = '\n'.join(packages)
+        self.task._get_watch_broken_content.return_value = \
+            '\n'.join(packages).encode('utf-8')
 
     def set_watch_available_content(self, packages):
         """
@@ -1949,7 +1950,8 @@ class DebianWatchFileScannerUpdateTests(TestCase):
         :param packages: A list of packages which should be returned to
             indicate an available watch file.
         """
-        self.task._get_watch_available_content.return_value = '\n'.join(packages)
+        self.task._get_watch_available_content.return_value = \
+            '\n'.join(packages).encode('utf-8')
 
     def get_item_type(self, type_name):
         """

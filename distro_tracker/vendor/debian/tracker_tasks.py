@@ -1198,7 +1198,7 @@ class DebianWatchFileScannerUpdate(BaseTask):
 
         :returns: A list of packages which have broken watch files.
         """
-        content = self._get_watch_broken_content()
+        content = self._get_watch_broken_content().decode('utf-8')
         packages = []
         for package_name in content.splitlines():
             package_name = package_name.strip()
@@ -1219,7 +1219,7 @@ class DebianWatchFileScannerUpdate(BaseTask):
 
         :returns: A list of packages which have available watch files.
         """
-        content = self._get_watch_available_content()
+        content = self._get_watch_available_content().decode('utf-8')
         packages = []
         for package_name in content.splitlines():
             package_name = package_name.strip()
