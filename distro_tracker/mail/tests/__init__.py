@@ -1,4 +1,4 @@
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2014 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -10,7 +10,3 @@
 """
 Tests for the :mod:`distro_tracker.mail` app.
 """
-from .tests_control import *
-from .tests_dispatch import *
-from .tests_mail_news import *
-from .tests_management_commands import *

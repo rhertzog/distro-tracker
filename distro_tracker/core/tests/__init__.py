@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2014 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -13,13 +13,3 @@
 """
 Tests for the Distro Tracker core package.
 """
-from __future__ import unicode_literals
-
-from .tests_models import *
-from .tests_retrieve_data import *
-from .tests_tasks import *
-from .tests_utils import *
-from .tests_views import *
-from .tests_management import *
-from .tests_panels import *
-from .tests_news_feed import *
