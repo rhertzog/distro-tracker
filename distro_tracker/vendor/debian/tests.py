@@ -684,7 +684,7 @@ class DebianNewsFromEmailTest(TestCase):
         subject = self.get_accepted_subject(
             self.package_name, self.package.version)
         self.set_subject(subject)
-        content = 'Content'
+        content = b'Content'
         self.set_message_content(content)
 
         self.process_mail()
@@ -819,7 +819,7 @@ class DebianNewsFromEmailTest(TestCase):
             "  Previous version: 1.0.0\n"
             "  Current version: (not in testing)\n"
             "  Hint: some hint..."
-        ).format(pkg=self.package_name)
+        ).format(pkg=self.package_name).encode('utf-8')
         self.set_message_content(content)
         self.add_header('X-Testing-Watch-Package', self.package.name)
 
