@@ -15,7 +15,10 @@ from django.contrib import auth
 from distro_tracker.accounts.models import UserEmail
 from distro_tracker.accounts.models import User
 
-import ldap
+try:
+    import ldap
+except ImportError:
+    ldap = None
 
 
 class DebianSsoUserMiddleware(RemoteUserMiddleware):
@@ -107,6 +110,9 @@ class DebianSsoUserBackend(RemoteUserBackend):
         :return: Dict with the keys ``first_name``, ``last_name``
             ``None`` if the LDAP lookup did not return anything.
         """
+        if ldap is None:
+            return None
+
         l = ldap.initialize('ldap://db.debian.org')
         result_set = l.search_s(
             'dc=debian,dc=org',
