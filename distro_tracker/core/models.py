@@ -1526,6 +1526,9 @@ class EmailNewsManager(NewsManager):
 
         return self.create(package=package, **create_kwargs)
 
+    def get_queryset(self):
+        return super(EmailNewsManager, self).get_queryset().filter(
+            content_type='message/rfc822')
 
 class EmailNews(News):
     objects = EmailNewsManager()
