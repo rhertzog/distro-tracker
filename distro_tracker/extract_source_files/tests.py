@@ -217,7 +217,7 @@ class ExtractSourcePackageFilesTest(TestCase):
             mock_cache.return_value = os.path.join(pkg_directory)
 
             # Make a previously extracted file.
-            original_content = 'Original content'
+            original_content = b'Original content'
             ExtractedSourceFile.objects.create(
                 source_package=package,
                 name='changelog',
