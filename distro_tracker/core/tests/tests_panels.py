@@ -16,10 +16,10 @@ Tests for the Distro Tracker core panels.
 from __future__ import unicode_literals
 from distro_tracker.test import TestCase
 from django.core.urlresolvers import reverse
-from BeautifulSoup import BeautifulSoup as soup
 from distro_tracker.core.models import SourcePackageName
 from distro_tracker.core.models import SourcePackage
 from distro_tracker.core.panels import VersionedLinks
+from distro_tracker.core.utils.soup import soup
 
 
 class VersionedLinksPanelTests(TestCase):

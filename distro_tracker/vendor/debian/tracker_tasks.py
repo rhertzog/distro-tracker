@@ -41,14 +41,22 @@ from .models import DebianContributor
 from distro_tracker import vendor
 
 import re
-import SOAPpy
 import yaml
 import json
 from debian import deb822
 from debian.debian_support import AptPkgVersion
 from debian import debian_support
 from copy import deepcopy
-from BeautifulSoup import BeautifulSoup as soup
+
+try:
+    from distro_tracker.core.utils.soup import soup
+except ImportError:
+    soup = None
+
+try:
+    import SOAPpy
+except ImportError:
+    pass
 
 import logging
 logger = logging.getLogger(__name__)
@@ -782,6 +790,10 @@ class UpdateExcusesTask(BaseTask):
         If the excuse contains any anchor links, convert them to links to
         Distro Tracker package pages. Return the original text unmodified, otherwise.
         """
+        if soup is None:
+            # BeautifulSoup not available, do nothing
+            return excuse
+
         re_anchor_href = re.compile(r'^#(.*)$')
         html = soup(excuse)
         for a_tag in html.findAll('a', {'href': True}):
