@@ -1,8 +1,16 @@
+Bugs and new features:
+----------------------
+See http://bugs.debian.org/tracker.debian.org for almost everything.
+
 * Implement backwards compatibility with X-PTS- fields in the debian
   vendor.
-* Add missing indexes.
-* Make the code base a bit more "pylint" compliant.
-* Write some "contributing to distro-tracker" guide.
 
-More ideas from the initial Google Summer of Code:
-https://trello.com/b/faDgzjwO/pts-rewrite
+Refactoring:
+------------
+* Create a generic task downloading data from an URL and transforming it
+  into action items.
+* Cleanup the code base to pass the flake8 test.
+
+Misc possible enhancements:
+---------------------------
+Paul Wise's input: https://lists.debian.org/debian-qa/2014/07/msg00092.html
