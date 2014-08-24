@@ -87,7 +87,8 @@ class RetrieveDebianMaintainersTask(BaseTask):
             return
 
         maintainers = {}
-        for stanza in deb822.Deb822.iter_paragraphs(response.iter_lines()):
+        lines = response.iter_lines(decode_unicode=True)
+        for stanza in deb822.Deb822.iter_paragraphs(lines):
             if 'Uid' in stanza and 'Allow' in stanza:
                 # Allow is a comma-separated string of 'package (DD fpr)' items,
                 # where DD fpr is the fingerprint of the DD that granted the
@@ -97,7 +98,6 @@ class RetrieveDebianMaintainersTask(BaseTask):
                 for pair in stanza['Allow'].split(','):
                     pair = pair.strip()
                     pkg, dd_fpr = pair.split()
-                    pkg = pkg.encode('utf-8')
                     maintainers.setdefault(email, [])
                     maintainers[email].append(pkg)
 
