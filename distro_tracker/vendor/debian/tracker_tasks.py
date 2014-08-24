@@ -834,7 +834,6 @@ class UpdateExcusesTask(BaseTask):
         problematic = {}
         excuses = []
         for line in content_lines:
-            line = line.decode('utf-8')
             if '</ul>' in line:
                 # The inner list is closed -- all excuses for the package are
                 # processed and we're back to the top-level list.
@@ -934,7 +933,7 @@ class UpdateExcusesTask(BaseTask):
         if not updated:
             return
 
-        return response.iter_lines()
+        return response.iter_lines(decode_unicode=True)
 
     def execute(self):
         content_lines = self._get_update_excuses_content()
