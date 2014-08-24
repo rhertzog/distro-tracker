@@ -13,7 +13,7 @@ import re
 import urllib
 import requests
 from django import forms
-from django.utils.http import urlencode
+from django.utils.http import urlencode, urlquote
 from django.conf import settings
 from distro_tracker.core.models import PackageBugStats
 from distro_tracker.core.models import EmailNews
@@ -211,7 +211,7 @@ def get_developer_information_url(developer_email):
     developer, given his email.
     """
     URL_TEMPLATE = 'https://qa.debian.org/developer.php?email={email}'
-    return URL_TEMPLATE.format(email=urllib.quote(developer_email))
+    return URL_TEMPLATE.format(email=urlquote(developer_email))
 
 
 def get_external_version_information_urls(package_name):
