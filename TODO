@@ -13,4 +13,9 @@ Refactoring:
 
 Misc possible enhancements:
 ---------------------------
-Paul Wise's input: https://lists.debian.org/debian-qa/2014/07/msg00092.html
+* Paul Wise's input: https://lists.debian.org/debian-qa/2014/07/msg00092.html
+* Codebase is Python 3 compatible but some optional dependencies need to
+  be ported:
+  - python-soappy (no python3-soappy yet)
+  - python-ldap (no python3-ldap, but maybe could be ported to
+    python-ldap3?)
