@@ -60,7 +60,10 @@ class Command(BaseCommand):
 
             try:
                 with open(news_file_path, 'rb') as f:
-                    msg = email.message_from_file(f)
+                    if hasattr(email, 'message_from_binary_file'):
+                        msg = email.message_from_binary_file(f)
+                    else:
+                        msg = email.message_from_file(f)
                 if 'Date' in msg:
                     timestamp = email.utils.mktime_tz(email.utils.parsedate_tz(msg['Date']))
                     date = datetime.utcfromtimestamp(timestamp)

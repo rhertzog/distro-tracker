@@ -4126,10 +4126,10 @@ class ImportOldNewsTests(TestCase):
     """
     def create_message(self, subject, from_email, date, content):
         msg = Message()
-        msg['Subject'] = subject.encode('utf-8')
-        msg['From'] = from_email.encode('utf-8')
+        msg['Subject'] = subject
+        msg['From'] = from_email
         msg['Date'] = date
-        msg.set_payload(content.encode('utf-8'))
+        msg.set_payload(content.encode('utf-8'), 'utf-8')
 
         return msg
 
@@ -4155,7 +4155,10 @@ class ImportOldNewsTests(TestCase):
                     date,
                     content_template.format(package))
                 with open(os.path.join(news_dir, 'news.txt'), 'wb') as f:
-                    content = msg.as_string()
+                    if hasattr(msg, 'as_bytes'):
+                        content = msg.as_bytes()
+                    else:
+                        content = msg.as_string()
                     f.write(content)
 
             call_command('tracker_import_old_news', old_distro_tracker_root)
@@ -4168,7 +4171,6 @@ class ImportOldNewsTests(TestCase):
                 subject = subject_template.format(package)
                 content = content_template.format(package).encode('utf-8')
                 self.assertEqual(subject, news.title)
-                self.assertIn(content, news.content)
                 # The date of the news item is correctly set to the old item's
                 # date?
                 self.assertEqual(
@@ -4178,7 +4180,7 @@ class ImportOldNewsTests(TestCase):
                 # an email Message object.
                 msg = message_from_bytes(news.content)
                 self.assertEqual(subject, msg['Subject'])
-                self.assertEqual(content, msg.get_payload())
+                self.assertEqual(content, msg.get_payload(decode=True))
 
 
 class ImportOldSubscribersTests(TestCase):
