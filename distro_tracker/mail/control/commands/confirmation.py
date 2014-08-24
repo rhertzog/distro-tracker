@@ -21,8 +21,8 @@ from distro_tracker.mail.control.commands.base import Command
 def needs_confirmation(klass):
     """
     A class decorator to mark that a
-    :py:class:`Command <distro_tracker.mail.control.commands.base.Command>` subclass requires
-    confirmation before it is executed.
+    :py:class:`Command <distro_tracker.mail.control.commands.base.Command>`
+    subclass requires confirmation before it is executed.
 
     Classes decorated by this decorator can provide two additional methods:
 
@@ -68,7 +68,7 @@ def needs_confirmation(klass):
             # After that get the response to the command.
             # The handle method becomes a no-op
             handle = self.handle
-            self.handle = lambda: None
+            self.handle = lambda: None  # noqa
             out = func(self)
             # handle returned to the normal method.
             self.handle = handle
@@ -81,7 +81,7 @@ def needs_confirmation(klass):
     # Add place-holders for the two optional methods if the class itself did
     # not define them.
     if not getattr(klass, 'get_confirmation_message', None):
-        klass.get_confirmation_message = lambda self: ''
+        klass.get_confirmation_message = lambda self: ''  # noqa
     if not getattr(klass, 'pre_confirm', None):
         klass.pre_confirm = pre_confirm_default
 
@@ -112,7 +112,8 @@ class ConfirmCommand(Command):
         return Command.get_command_text(self, self.confirmation_key)
 
     def handle(self):
-        from distro_tracker.mail.control.commands import CommandFactory, CommandProcessor
+        from distro_tracker.mail.control.commands import CommandFactory, \
+            CommandProcessor
 
         command_confirmation = get_or_none(
             CommandConfirmation,

@@ -11,7 +11,8 @@ from __future__ import unicode_literals
 from django import forms
 from django.contrib.auth import get_user_model
 from django_email_accounts.models import UserEmail
-from django.contrib.auth.forms import AuthenticationForm as ContribAuthenticationForm
+from django.contrib.auth.forms \
+    import AuthenticationForm as ContribAuthenticationForm
 from django_email_accounts import run_hook
 
 User = get_user_model()
@@ -105,7 +106,8 @@ class ForgotPasswordForm(forms.Form):
     def clean_email(self):
         email = self.cleaned_data['email']
         if User.objects.filter(emails__email=email).count() == 0:
-            raise forms.ValidationError("No user with the given email is registered")
+            raise forms.ValidationError(
+                "No user with the given email is registered")
 
         return email
 

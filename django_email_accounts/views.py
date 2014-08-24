@@ -76,11 +76,11 @@ class LogoutView(View):
         if redirect_url:
             return redirect(redirect_url)
         else:
-            if self.redirect_parameter in request.GET and request.GET[self.redirect_parameter]:
+            if self.redirect_parameter in request.GET and \
+                    request.GET[self.redirect_parameter]:
                 return redirect(request.GET[self.redirect_parameter])
             else:
                 return redirect(self.success_url)
-
 
 
 class RegisterUser(CreateView):
@@ -225,7 +225,8 @@ class ForgotPasswordView(FormView):
     success_url = reverse_lazy('accounts-password-reset-success')
     template_name = 'accounts/forgot-password.html'
 
-    confirmation_email_template = 'accounts/password-reset-confirmation-email.txt'
+    confirmation_email_template = \
+        'accounts/password-reset-confirmation-email.txt'
     confirmation_email_subject = 'Password Reset Confirmation'
     confirmation_email_from_address = settings.DEFAULT_FROM_EMAIL
 
@@ -238,7 +239,8 @@ class ForgotPasswordView(FormView):
         # Create a ResetPasswordConfirmation instance
         email = form.cleaned_data['email']
         user = User.objects.get(emails__email=email)
-        confirmation = ResetPasswordConfirmation.objects.create_confirmation(user=user)
+        confirmation = \
+            ResetPasswordConfirmation.objects.create_confirmation(user=user)
 
         # Send a confirmation email
         send_mail(
@@ -341,7 +343,8 @@ class AccountMergeConfirmView(LoginRequiredMixin, View):
     template_name = 'accounts/account-merge-confirm.html'
     success_url = reverse_lazy('accounts-merge-confirmed')
 
-    confirmation_email_template = 'accounts/merge-accounts-confirmation-email.txt'
+    confirmation_email_template = \
+        'accounts/merge-accounts-confirmation-email.txt'
     confirmation_email_subject = 'Merge Accounts'
     confirmation_email_from_address = settings.DEFAULT_FROM_EMAIL
 
@@ -438,7 +441,8 @@ class AccountMergeConfirmedView(LoginRequiredMixin, TemplateView):
             raise Http404
         email = self.request.GET['email']
         user_email = get_object_or_404(UserEmail, email=email)
-        context = super(AccountMergeConfirmedView, self).get_context_data(**kwargs)
+        context = super(AccountMergeConfirmedView,
+                        self).get_context_data(**kwargs)
         context['email'] = user_email
 
         return context

@@ -16,9 +16,9 @@ appropriate functions.
 
 Each rule should be implemented as a callable which takes a defined set of
 arguments with a predefined name. The supported callables are listed in the
-:py:mod:`distro_tracker.vendor.skeleton.rules` module of the :py:mod:`distro_tracker.vendor.skeleton`
-package which can serve as a starting point for the implementation of the
-vendor-specific functions.
+:py:mod:`distro_tracker.vendor.skeleton.rules` module of the
+:py:mod:`distro_tracker.vendor.skeleton` package which can serve as a starting
+point for the implementation of the vendor-specific functions.
 
 .. note::
    You should copy this package to a new directory and give it a descriptive
@@ -29,4 +29,5 @@ vendor-specific functions.
 
 """
 
-from distro_tracker.vendor.common import get_callable, call
+# Re-export vendor.call
+from distro_tracker.vendor.common import call  # noqa

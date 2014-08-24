@@ -29,7 +29,7 @@ class SourceFilesLinkProvider(VersionedLinks.LinkProvider):
         mark_safe('<i class="icon-info-sign" title="control"></i>'),
     ]
 
-    _file_names =[
+    _file_names = [
         'changelog',
         'copyright',
         'rules',

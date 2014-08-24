@@ -27,7 +27,8 @@ import importlib
 
 def get_subpackages():
     """
-    Helper function returns all subpackages of the :py:mod:`distro_tracker.vendor` package.
+    Helper function returns all subpackages of the
+    :py:mod:`distro_tracker.vendor` package.
     """
     import pkgutil
 
@@ -59,7 +60,8 @@ def get_test_cases(tests_module):
 
 def suite():
     """
-    Loads tests found in all subpackages of the :py:mod:`distro_tracker.vendor` package.
+    Loads tests found in all subpackages of the :py:mod:`distro_tracker.vendor`
+    package.
     """
     import unittest
     suite = unittest.TestSuite()
@@ -90,7 +92,8 @@ def suite():
         else:
             # Just add all SimpleTestCase subclasses.
             for test_case in get_test_cases(tests_module):
-                all_tests = unittest.TestLoader().loadTestsFromTestCase(test_case)
+                all_tests = \
+                    unittest.TestLoader().loadTestsFromTestCase(test_case)
                 suite.addTest(all_tests)
 
     return suite

@@ -24,7 +24,8 @@ from django.utils import six
 from django.utils.six.moves import mock
 from django.utils.encoding import force_bytes
 from django.utils.functional import curry
-from distro_tracker.mail.tests.tests_dispatch import DispatchTestHelperMixin, DispatchBaseTest
+from distro_tracker.mail.tests.tests_dispatch \
+    import DispatchTestHelperMixin, DispatchBaseTest
 from distro_tracker.accounts.models import User
 from distro_tracker.accounts.models import UserEmail
 from distro_tracker.test.utils import make_temp_directory
@@ -55,23 +56,27 @@ from distro_tracker.vendor.debian.tracker_tasks import UpdateSecurityIssuesTask
 from distro_tracker.vendor.debian.tracker_tasks import UpdatePiuPartsTask
 from distro_tracker.vendor.debian.tracker_tasks import UpdateBuildLogCheckStats
 from distro_tracker.vendor.debian.tracker_tasks import UpdatePackageBugStats
-from distro_tracker.vendor.debian.tracker_tasks import RetrieveDebianMaintainersTask
-from distro_tracker.vendor.debian.tracker_tasks import RetrieveLowThresholdNmuTask
-from distro_tracker.vendor.debian.tracker_tasks import DebianWatchFileScannerUpdate
+from distro_tracker.vendor.debian.tracker_tasks \
+    import RetrieveDebianMaintainersTask
+from distro_tracker.vendor.debian.tracker_tasks \
+    import RetrieveLowThresholdNmuTask
+from distro_tracker.vendor.debian.tracker_tasks \
+    import DebianWatchFileScannerUpdate
 from distro_tracker.vendor.debian.tracker_tasks import UpdateExcusesTask
 from distro_tracker.vendor.debian.tracker_tasks import UpdateDebciStatusTask
 from distro_tracker.vendor.debian.tracker_tasks import UpdateDebianDuckTask
-from distro_tracker.vendor.debian.tracker_tasks import UpdateAutoRemovalsStatsTask
+from distro_tracker.vendor.debian.tracker_tasks \
+    import UpdateAutoRemovalsStatsTask
 from distro_tracker.vendor.debian.models import DebianContributor
 from distro_tracker.vendor.debian.models import UbuntuPackage
 from distro_tracker.vendor.debian.tracker_tasks import UpdateLintianStatsTask
 from distro_tracker.vendor.debian.models import LintianStats
-from distro_tracker.vendor.debian.management.commands.tracker_import_old_subscriber_dump import (
-    Command as ImportOldSubscribersCommand
-)
-from distro_tracker.vendor.debian.management.commands.tracker_import_old_tags_dump import (
-    Command as ImportOldTagsCommand
-)
+from distro_tracker.vendor.debian.management.commands\
+    .tracker_import_old_subscriber_dump \
+    import Command as ImportOldSubscribersCommand
+from distro_tracker.vendor.debian.management.commands\
+    .tracker_import_old_tags_dump \
+    import Command as ImportOldTagsCommand
 from distro_tracker.mail.mail_news import process
 
 from email.message import Message
@@ -84,21 +89,27 @@ import yaml
 __all__ = ('DispatchDebianSpecificTest', 'DispatchBaseDebianSettingsTest')
 
 
-@override_settings(DISTRO_TRACKER_VENDOR_RULES='distro_tracker.vendor.debian.rules')
+@override_settings(
+    DISTRO_TRACKER_VENDOR_RULES='distro_tracker.vendor.debian.rules')
 class DispatchBaseDebianSettingsTest(DispatchBaseTest):
+
     """
     This test class makes sure that base tests pass when
-    :py:data:`DISTRO_TRACKER_VENDOR_RULES <distro_tracker.project.settings.DISTRO_TRACKER_VENDOR_RULES>` is set
-    to use debian.
+    :py:data:`DISTRO_TRACKER_VENDOR_RULES
+    <distro_tracker.project.settings.DISTRO_TRACKER_VENDOR_RULES>` is set to use
+    debian.
     """
     pass
 
 
-@override_settings(DISTRO_TRACKER_VENDOR_RULES='distro_tracker.vendor.debian.rules')
+@override_settings(
+    DISTRO_TRACKER_VENDOR_RULES='distro_tracker.vendor.debian.rules')
 class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
+
     """
     Tests Debian-specific keyword classification.
     """
+
     def setUp(self):
         self.clear_message()
         self.from_email = 'dummy-email@domain.com'
@@ -243,6 +254,7 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
 
 
 class GetPseudoPackageListTest(TestCase):
+
     @mock.patch('distro_tracker.core.utils.http.requests')
     def test_debian_pseudo_packages(self, mock_requests):
         """
@@ -276,6 +288,7 @@ class GetPseudoPackageListTest(TestCase):
 
 
 class GetPackageInformationSiteUrlTest(SimpleTestCase):
+
     def setUp(self):
         self.repository = {
             'name': 'Debian Stable',
@@ -324,8 +337,9 @@ class GetPackageInformationSiteUrlTest(SimpleTestCase):
         # Binary package in a repository
         self.assertEqual(
             'http://packages.debian.org/stable/dpkg',
-            get_package_information_site_url('dpkg', repository=self.repository)
-        )
+            get_package_information_site_url(
+                'dpkg',
+                repository=self.repository))
         # Binary package in a proposed-updates repository
         for suite in ('stable', 'oldstable'):
             self.repository['suite'] = '{}-proposed-updates'.format(suite)
@@ -338,15 +352,16 @@ class GetPackageInformationSiteUrlTest(SimpleTestCase):
 
 
 class GetDeveloperInformationSiteUrlTest(SimpleTestCase):
+
     def test_get_developer_site_info_url(self):
         """
         Test retrieving a URL to a developer information Web site.
         """
         developer_email = 'debian-dpkg@lists.debian.org'
         self.assertEqual(
-            'https://qa.debian.org/developer.php?email=debian-dpkg%40lists.debian.org',
-            get_developer_information_url(developer_email)
-        )
+            'https://qa.debian.org/developer.php'
+            '?email=debian-dpkg%40lists.debian.org',
+            get_developer_information_url(developer_email))
 
         developer_email = 'email@domain.com'
         self.assertEqual(
@@ -356,6 +371,7 @@ class GetDeveloperInformationSiteUrlTest(SimpleTestCase):
 
 
 class RetrieveLowThresholdNmuTest(TestCase):
+
     @mock.patch('distro_tracker.core.utils.http.requests')
     def test_developer_did_not_exist(self, mock_requests):
         """
@@ -363,11 +379,11 @@ class RetrieveLowThresholdNmuTest(TestCase):
         NMU when the developer did not previously exist in the database.
         """
         set_mock_response(mock_requests,
-            "Text text text\n"
-            "text more text...\n"
-            " 1. [[DeveloperName|Name]] - "
-            "([[https://qa.debian.org/developer.php?"
-            "login=dummy|all packages]])\n")
+                          "Text text text\n"
+                          "text more text...\n"
+                          " 1. [[DeveloperName|Name]] - "
+                          "([[https://qa.debian.org/developer.php?"
+                          "login=dummy|all packages]])\n")
 
         run_task(RetrieveLowThresholdNmuTask)
 
@@ -384,11 +400,11 @@ class RetrieveLowThresholdNmuTest(TestCase):
         """
         UserEmail.objects.create(email='dummy@debian.org')
         set_mock_response(mock_requests,
-            "Text text text\n"
-            "text more text...\n"
-            " 1. [[DeveloperName|Name]] - "
-            "([[https://qa.debian.org/developer.php?"
-            "login=dummy|all packages]])\n")
+                          "Text text text\n"
+                          "text more text...\n"
+                          " 1. [[DeveloperName|Name]] - "
+                          "([[https://qa.debian.org/developer.php?"
+                          "login=dummy|all packages]])\n")
 
         run_task(RetrieveLowThresholdNmuTask)
 
@@ -408,11 +424,11 @@ class RetrieveLowThresholdNmuTest(TestCase):
         DebianContributor.objects.create(email=email,
                                          agree_with_low_threshold_nmu=True)
         set_mock_response(mock_requests,
-            "Text text text\n"
-            "text more text...\n"
-            " 1. [[DeveloperName|Name]] - "
-            "([[https://qa.debian.org/developer.php?"
-            "login=other|all packages]])\n")
+                          "Text text text\n"
+                          "text more text...\n"
+                          " 1. [[DeveloperName|Name]] - "
+                          "([[https://qa.debian.org/developer.php?"
+                          "login=other|all packages]])\n")
 
         run_task(RetrieveLowThresholdNmuTask)
 
@@ -422,17 +438,18 @@ class RetrieveLowThresholdNmuTest(TestCase):
 
 
 class RetrieveDebianMaintainersTest(TestCase):
+
     @mock.patch('distro_tracker.core.utils.http.requests')
     def test_developer_did_not_exist(self, mock_requests):
         """
         Tests updating the DM list when a new developer is to be added.
         """
-        set_mock_response(mock_requests,
+        set_mock_response(
+            mock_requests,
             "Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
             "Uid: Dummy Developer <dummy@debian.org>\n"
             "Allow: dummy-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E),\n"
-            " second-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E)\n"
-        )
+            " second-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E)\n")
 
         run_task(RetrieveDebianMaintainersTask)
 
@@ -452,12 +469,12 @@ class RetrieveDebianMaintainersTest(TestCase):
         in the database.
         """
         UserEmail.objects.create(email='dummy@debian.org')
-        set_mock_response(mock_requests,
+        set_mock_response(
+            mock_requests,
             "Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
             "Uid: Dummy Developer <dummy@debian.org>\n"
             "Allow: dummy-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E),\n"
-            " second-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E)\n"
-        )
+            " second-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E)\n")
 
         run_task(RetrieveDebianMaintainersTask)
 
@@ -482,12 +499,12 @@ class RetrieveDebianMaintainersTest(TestCase):
                                          is_debian_maintainer=True,
                                          allowed_packages=['one'])
 
-        set_mock_response(mock_requests,
+        set_mock_response(
+            mock_requests,
             "Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
             "Uid: Dummy Developer <dummy@debian.org>\n"
             "Allow: dummy-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E),\n"
-            " second-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E)\n"
-        )
+            " second-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E)\n")
 
         run_task(RetrieveDebianMaintainersTask)
 
@@ -510,12 +527,12 @@ class RetrieveDebianMaintainersTest(TestCase):
                                          is_debian_maintainer=True,
                                          allowed_packages=['one'])
 
-        set_mock_response(mock_requests,
+        set_mock_response(
+            mock_requests,
             "Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
             "Uid: Dummy Developer <different-developer@debian.org>\n"
             "Allow: dummy-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E),\n"
-            " second-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E)\n"
-        )
+            " second-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E)\n")
 
         run_task(RetrieveDebianMaintainersTask)
 
@@ -525,6 +542,7 @@ class RetrieveDebianMaintainersTest(TestCase):
 
 
 class DebianContributorExtraTest(TestCase):
+
     def test_maintainer_extra(self):
         email = UserEmail.objects.create(email='dummy@debian.org')
         d = DebianContributor.objects.create(email=email,
@@ -586,8 +604,10 @@ class DebianContributorExtraTest(TestCase):
         )
 
 
-@override_settings(DISTRO_TRACKER_VENDOR_RULES='distro_tracker.vendor.debian.rules')
+@override_settings(
+    DISTRO_TRACKER_VENDOR_RULES='distro_tracker.vendor.debian.rules')
 class RetrieveSourcesInformationDebian(TestCase):
+
     """
     Tests the Debian-specific aspects of retrieving package information from a
     repository.
@@ -597,7 +617,8 @@ class RetrieveSourcesInformationDebian(TestCase):
     def setUp(self):
         self.repository = Repository.objects.all()[0]
 
-    @mock.patch('distro_tracker.core.retrieve_data.AptCache.update_repositories')
+    @mock.patch(
+        'distro_tracker.core.retrieve_data.AptCache.update_repositories')
     def test_extra_source_only_ignored(self, mock_update_repositories):
         """
         Tests that the packages with the 'Extra-Source-Only' key are ignored.
@@ -636,23 +657,29 @@ Files:
             # Only one package exists
             self.assertEqual(1, SourcePackageName.objects.count())
             # It is the one without the Extra-Source-Only: yes
-            self.assertEqual('dummy-package', SourcePackageName.objects.all()[0].name)
+            self.assertEqual(
+                'dummy-package',
+                SourcePackageName.objects.all()[0].name)
 
 
-@override_settings(DISTRO_TRACKER_VENDOR_RULES='distro_tracker.vendor.debian.rules')
+@override_settings(
+    DISTRO_TRACKER_VENDOR_RULES='distro_tracker.vendor.debian.rules')
 class DebianNewsFromEmailTest(TestCase):
+
     """
     Tests creating Debian-specific news from received emails.
     """
+
     def setUp(self):
-        self.package_name = SourcePackageName.objects.create(name='dummy-package')
+        self.package_name = SourcePackageName.objects.create(
+            name='dummy-package')
         self.package = SourcePackage.objects.create(
             source_package_name=self.package_name, version='1.0.0')
         self.message = Message()
 
     def set_subject(self, subject):
         if 'Subject' in self.message:
-           del self.message['Subject']
+            del self.message['Subject']
         self.message['Subject'] = subject
 
     def add_header(self, header_name, header_value):
@@ -719,8 +746,9 @@ class DebianNewsFromEmailTest(TestCase):
         content = (
             'We believe that the bug you reported is now fixed; the following\n'
             'package(s) have been removed from unstable:\n\n'
-            '{pkg} |  {ver} | source, all'
-        ).format(pkg=self.package_name, ver=self.package.version)
+            '{pkg} |  {ver} | source, all').format(
+            pkg=self.package_name,
+            ver=self.package.version)
         self.set_message_content(content)
         self.add_header('X-DAK', 'dak rm')
         self.add_header('X-Debian', 'DAK')
@@ -746,8 +774,9 @@ class DebianNewsFromEmailTest(TestCase):
         content = (
             'We believe that the bug you reported is now fixed; the following\n'
             'package(s) have been removed from unstable:\n\n'
-            '{pkg} |  {ver} | source, all'
-        ).format(pkg='does-not-exist', ver='1.0.0')
+            '{pkg} |  {ver} | source, all').format(
+            pkg='does-not-exist',
+            ver='1.0.0')
         self.set_message_content(content)
         self.add_header('X-DAK', 'dak rm')
         self.add_header('X-Debian', 'DAK')
@@ -768,8 +797,9 @@ class DebianNewsFromEmailTest(TestCase):
         content = (
             'We believe that the bug you reported is now fixed; the following\n'
             'package(s) have been removed from unstable:\n\n'
-            '{pkg} |  {ver} | source, all'
-        ).format(pkg=self.package_name, ver=self.package.version)
+            '{pkg} |  {ver} | source, all').format(
+            pkg=self.package_name,
+            ver=self.package.version)
         self.set_message_content(content)
         self.add_header('X-DAK', 'dak somethingelse')
         self.add_header('X-Debian', 'DAK')
@@ -789,8 +819,7 @@ class DebianNewsFromEmailTest(TestCase):
         self.set_subject(subject)
         content = (
             'We believe that the bug you reported is now fixed; the following\n'
-            'package(s) have been removed from unstable:\n\n'
-        )
+            'package(s) have been removed from unstable:\n\n')
         content += (
             '{pkg} |  {ver} | source, all\n'
         ).format(pkg=self.package_name, ver=self.package.version)
@@ -854,11 +883,16 @@ class DebianNewsFromEmailTest(TestCase):
 
 
 class UpdateLintianStatsTaskTest(TestCase):
+
     """
-    Tests for the :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateLintianStatsTask` task.
+    Tests for the
+    :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateLintianStatsTask`
+    task.
     """
+
     def setUp(self):
-        self.package_name = SourcePackageName.objects.create(name='dummy-package')
+        self.package_name = SourcePackageName.objects.create(
+            name='dummy-package')
         self.package = SourcePackage(
             source_package_name=self.package_name, version='1.0.0')
 
@@ -871,7 +905,8 @@ class UpdateLintianStatsTaskTest(TestCase):
 
     def assert_correct_category_stats(self, stats, expected_stats):
         """
-        Helper method which asserts that the given stats match the expected stats.
+        Helper method which asserts that the given stats match the expected
+        stats.
 
         :param stats: Mapping category names to count
         :type stats: dict
@@ -889,10 +924,15 @@ class UpdateLintianStatsTaskTest(TestCase):
         for category, count in zip(categories, expected_stats):
             self.assertEqual(stats[category], count)
 
-    def assert_action_item_warnings_and_errors_count(self, item, errors=0, warnings=0):
+    def assert_action_item_warnings_and_errors_count(
+            self,
+            item,
+            errors=0,
+            warnings=0):
         """
-        Helper method which checks if an instance of :class:`distro_tracker.core.ActionItem`
-        contains the given error and warning count in its extra_data.
+        Helper method which checks if an instance of
+        :class:`distro_tracker.core.ActionItem` contains the given error and
+        warning count in its extra_data.
         """
         self.assertEqual(item.extra_data['errors'], errors)
         self.assertEqual(item.extra_data['warnings'], warnings)
@@ -958,7 +998,8 @@ class UpdateLintianStatsTaskTest(TestCase):
 
         # Stats created for both packages
         self.assertEqual(2, LintianStats.objects.count())
-        all_names = [stats.package.name for stats in LintianStats.objects.all()]
+        all_names = [stats.package.name
+                     for stats in LintianStats.objects.all()]
         self.assertIn('dummy-package', all_names)
         self.assertIn('other-package', all_names)
 
@@ -1025,7 +1066,10 @@ class UpdateLintianStatsTaskTest(TestCase):
         self.assertEqual(1, ActionItem.objects.count())
         # The correct number of errors and warnings is stored in the item
         item = ActionItem.objects.all()[0]
-        self.assert_action_item_warnings_and_errors_count(item, errors, warnings)
+        self.assert_action_item_warnings_and_errors_count(
+            item,
+            errors,
+            warnings)
         # It has the correct type
         self.assertEqual(
             item.item_type.type_name,
@@ -1060,7 +1104,10 @@ class UpdateLintianStatsTaskTest(TestCase):
         self.assertEqual(1, ActionItem.objects.count())
         # Extra data updated?
         item = ActionItem.objects.all()[0]
-        self.assert_action_item_warnings_and_errors_count(item, errors, warnings)
+        self.assert_action_item_warnings_and_errors_count(
+            item,
+            errors,
+            warnings)
         # The timestamp is updated
         self.assertNotEqual(old_timestamp, item.last_updated_timestamp)
 
@@ -1108,7 +1155,10 @@ class UpdateLintianStatsTaskTest(TestCase):
         self.assertEqual(1, ActionItem.objects.count())
         # The correct number of errors and warnings is stored in the item
         item = ActionItem.objects.all()[0]
-        self.assert_action_item_warnings_and_errors_count(item, errors, warnings)
+        self.assert_action_item_warnings_and_errors_count(
+            item,
+            errors,
+            warnings)
         # It is a normal severity issue
         self.assertEqual('normal', item.get_severity_display())
 
@@ -1133,8 +1183,12 @@ class UpdateLintianStatsTaskTest(TestCase):
         item = ActionItem.objects.all()[0]
         self.assertEqual(item.package.name, self.package_name.name)
         # The correct number of errors and warnings is stored in the item
-        self.assert_action_item_warnings_and_errors_count(item, errors, warnings)
-        # It is a high severity issue since it contains both errors and warnings
+        self.assert_action_item_warnings_and_errors_count(
+            item,
+            errors,
+            warnings)
+        # It is a high severity issue since it contains both errors and
+        # warnings
         self.assertEqual('high', item.get_severity_display())
 
     @mock.patch('distro_tracker.core.utils.http.requests')
@@ -1200,7 +1254,9 @@ class UpdateLintianStatsTaskTest(TestCase):
         Tests that action items are created correctly when there are stats
         for multiple different packages in the response.
         """
-        other_package = PackageName.objects.create(name='other-package', source=True)
+        other_package = PackageName.objects.create(
+            name='other-package',
+            source=True)
         errors, warnings = (2, 0), (0, 2)
         response = (
             "dummy-package {err1} {warn1} 0 0 0 0\n"
@@ -1220,9 +1276,15 @@ class UpdateLintianStatsTaskTest(TestCase):
         self.assertEqual(1, other_package.action_items.count())
         # The items contain correct data.
         item = self.package_name.action_items.all()[0]
-        self.assert_action_item_warnings_and_errors_count(item, errors[0], warnings[0])
+        self.assert_action_item_warnings_and_errors_count(
+            item,
+            errors[0],
+            warnings[0])
         item = other_package.action_items.all()[0]
-        self.assert_action_item_warnings_and_errors_count(item, errors[1], warnings[1])
+        self.assert_action_item_warnings_and_errors_count(
+            item,
+            errors[1],
+            warnings[1])
 
     @mock.patch('distro_tracker.core.utils.http.requests')
     def test_update_does_not_affect_other_item_types(self, mock_requests):
@@ -1250,9 +1312,10 @@ class UpdateLintianStatsTaskTest(TestCase):
 
 
 class DebianBugActionItemsTests(TestCase):
+
     """
-    Tests the creation of :class:`distro_tracker.core.ActionItem` instances based on
-    Debian bug stats.
+    Tests the creation of :class:`distro_tracker.core.ActionItem` instances
+    based on Debian bug stats.
     """
     @staticmethod
     def stub_tagged_bugs(tag, user=None, help_bugs=None, gift_bugs=None):
@@ -1262,7 +1325,8 @@ class DebianBugActionItemsTests(TestCase):
             return gift_bugs
 
     def setUp(self):
-        self.package_name = SourcePackageName.objects.create(name='dummy-package')
+        self.package_name = SourcePackageName.objects.create(
+            name='dummy-package')
         self.package = SourcePackage(
             source_package_name=self.package_name, version='1.0.0')
 
@@ -1309,20 +1373,21 @@ class DebianBugActionItemsTests(TestCase):
 
     def get_patch_action_type(self):
         """
-        Helper method returning a :class:`distro_tracker.core.models.ActionItemType` for
-        the debian patch bug warning action item type.
+        Helper method returning a
+        :class:`distro_tracker.core.models.ActionItemType` for the debian patch
+        bug warning action item type.
         """
         return ActionItemType.objects.get_or_create(
             type_name=UpdatePackageBugStats.PATCH_BUG_ACTION_ITEM_TYPE_NAME)[0]
 
     def get_help_action_type(self):
         """
-        Helper method returning a :class:`distro_tracker.core.models.ActionItemType` for
-        the debian help bug warning action item type.
+        Helper method returning a
+        :class:`distro_tracker.core.models.ActionItemType` for the debian help
+        bug warning action item type.
         """
         return ActionItemType.objects.get_or_create(
             type_name=UpdatePackageBugStats.HELP_BUG_ACTION_ITEM_TYPE_NAME)[0]
-
 
     def test_patch_bug_action_item(self):
         """
@@ -1522,8 +1587,9 @@ class DebianBugActionItemsTests(TestCase):
 
     def test_multiple_action_items_for_package(self):
         """
-        Tests that multiple :class:`distro_tracker.core.models.ActionItem` instances are
-        created for a package if it contains both patch and help bugs.
+        Tests that multiple :class:`distro_tracker.core.models.ActionItem`
+        instances are created for a package if it contains both patch and help
+        bugs.
         """
         patch_bug_count = 2
         help_bug_count = 5
@@ -1571,19 +1637,24 @@ class DebianBugActionItemsTests(TestCase):
             self.assertEqual(2, package.action_items.count())
             patch_item = package.action_items.get(
                 item_type=self.get_patch_action_type())
-            self.assertEqual(patch_item.extra_data['bug_count'], patch_bug_count)
+            self.assertEqual(
+                patch_item.extra_data['bug_count'],
+                patch_bug_count)
             help_item = package.action_items.get(
                 item_type=self.get_help_action_type())
             self.assertEqual(help_item.extra_data['bug_count'], help_bug_count)
 
 
 class UpdateExcusesTaskActionItemTest(TestCase):
+
     """
     Tests for the creating of action items by the
     :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateExcusesTask`.
     """
+
     def setUp(self):
-        self.package_name = SourcePackageName.objects.create(name='dummy-package')
+        self.package_name = SourcePackageName.objects.create(
+            name='dummy-package')
         self.package = SourcePackage(
             source_package_name=self.package_name, version='1.0.0')
 
@@ -1703,13 +1774,17 @@ class UpdateExcusesTaskActionItemTest(TestCase):
 
 
 class UpdateBuildLogCheckStatsActionItemTests(TestCase):
+
     """
-    Tests that :class:`distro_tracker.core.models.ActionItem` instances are correctly
-    created when running the
-    :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateBuildLogCheckStats` task.
+    Tests that :class:`distro_tracker.core.models.ActionItem` instances are
+    correctly created when running the
+    :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateBuildLogCheckStats`
+    task.
     """
+
     def setUp(self):
-        self.package_name = SourcePackageName.objects.create(name='dummy-package')
+        self.package_name = SourcePackageName.objects.create(
+            name='dummy-package')
         self.package = SourcePackage(
             source_package_name=self.package_name, version='1.0.0')
 
@@ -1904,11 +1979,14 @@ class UpdateBuildLogCheckStatsActionItemTests(TestCase):
 
 
 class DebianWatchFileScannerUpdateTests(TestCase):
+
     """
-    Tests that :class:`distro_tracker.core.models.ActionItem` instances are correctly
-    created when running the
-    :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateBuildLogCheckStats` task.
+    Tests that :class:`distro_tracker.core.models.ActionItem` instances are
+    correctly created when running the
+    :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateBuildLogCheckStats`
+    task.
     """
+
     def setUp(self):
         self.package = SourcePackageName.objects.create(name='dummy-package')
 
@@ -1916,7 +1994,8 @@ class DebianWatchFileScannerUpdateTests(TestCase):
         # Stub the data providing methods: no content by default
         self.task._get_udd_dehs_content = mock.MagicMock(return_value=b'')
         self.task._get_watch_broken_content = mock.MagicMock(return_value=b'')
-        self.task._get_watch_available_content = mock.MagicMock(return_value=b'')
+        self.task._get_watch_available_content = mock.MagicMock(
+            return_value=b'')
 
     def run_task(self):
         self.task.execute()
@@ -1956,8 +2035,9 @@ class DebianWatchFileScannerUpdateTests(TestCase):
 
     def get_item_type(self, type_name):
         """
-        Helper method returning a :class:`distro_tracker.core.models.ActionItemType`
-        instance with the given type name.
+        Helper method returning a
+        :class:`distro_tracker.core.models.ActionItemType` instance with the
+        given type name.
         """
         return ActionItemType.objects.get_or_create(type_name=type_name)[0]
 
@@ -1991,8 +2071,8 @@ class DebianWatchFileScannerUpdateTests(TestCase):
             item.item_type.type_name)
         # Correct full description template
         self.assertEqual(
-            DebianWatchFileScannerUpdate.ACTION_ITEM_TEMPLATES['new-upstream-version'],
-            item.full_description_template)
+            DebianWatchFileScannerUpdate.ACTION_ITEM_TEMPLATES
+            ['new-upstream-version'], item.full_description_template)
         # Correct extra data
         expected_data = {
             'upstream_version': version,
@@ -2156,7 +2236,8 @@ class DebianWatchFileScannerUpdateTests(TestCase):
 
     def test_no_dehs_data(self):
         """
-        Tests that when there is no DEHS data at all, no action items are created.
+        Tests that when there is no DEHS data at all, no action items are
+        created.
         """
         self.run_task()
 
@@ -2164,8 +2245,9 @@ class DebianWatchFileScannerUpdateTests(TestCase):
 
     def test_watch_broken_item_created(self):
         """
-        Tests that a ``watch-file-broken`` action item is created when the package
-        contains a watch failure as indicated by the watch-broken.txt file.
+        Tests that a ``watch-file-broken`` action item is created when the
+        package contains a watch failure as indicated by the watch-broken.txt
+        file.
         """
         self.set_watch_broken_content([self.package.name])
         # Sanity check: no action items
@@ -2182,8 +2264,8 @@ class DebianWatchFileScannerUpdateTests(TestCase):
             item.item_type.type_name)
         # Correct full description template
         self.assertEqual(
-            DebianWatchFileScannerUpdate.ACTION_ITEM_TEMPLATES['watch-file-broken'],
-            item.full_description_template)
+            DebianWatchFileScannerUpdate.ACTION_ITEM_TEMPLATES
+            ['watch-file-broken'], item.full_description_template)
         # Correct extra data
         self.assertIsNone(item.extra_data)
         # Low severity item
@@ -2191,8 +2273,8 @@ class DebianWatchFileScannerUpdateTests(TestCase):
 
     def test_watch_broken_item_removed(self):
         """
-        Tests that a ``watch-file-broken`` item is removed when a package no longer
-        has the issue.
+        Tests that a ``watch-file-broken`` item is removed when a package no
+        longer has the issue.
         """
         # Make sure the package previously had an action item.
         item_type = self.get_item_type('watch-file-broken')
@@ -2231,8 +2313,8 @@ class DebianWatchFileScannerUpdateTests(TestCase):
 
     def test_watch_available_item_created(self):
         """
-        Tests that a ``watch-file-available`` action item is created when the package
-        is found in the watch-avail.txt file.
+        Tests that a ``watch-file-available`` action item is created when the
+        package is found in the watch-avail.txt file.
         """
         self.set_watch_available_content([self.package.name])
         # Sanity check: no action items
@@ -2249,8 +2331,8 @@ class DebianWatchFileScannerUpdateTests(TestCase):
             item.item_type.type_name)
         # Correct full description template
         self.assertEqual(
-            DebianWatchFileScannerUpdate.ACTION_ITEM_TEMPLATES['watch-file-available'],
-            item.full_description_template)
+            DebianWatchFileScannerUpdate.ACTION_ITEM_TEMPLATES
+            ['watch-file-available'], item.full_description_template)
         # Correct extra data
         self.assertIsNone(item.extra_data)
         # Wishlist severity item
@@ -2258,8 +2340,8 @@ class DebianWatchFileScannerUpdateTests(TestCase):
 
     def test_watch_available_item_removed(self):
         """
-        Tests that a ``watch-file-available`` item is removed when a package no longer
-        has the issue.
+        Tests that a ``watch-file-available`` item is removed when a package no
+        longer has the issue.
         """
         # Make sure the package previously had an action item.
         item_type = self.get_item_type('watch-file-available')
@@ -2275,8 +2357,8 @@ class DebianWatchFileScannerUpdateTests(TestCase):
 
     def test_watch_available_item_updated(self):
         """
-        Tests that a ``watch-file-available`` action item is updated when there is
-        newer data available for the package.
+        Tests that a ``watch-file-available`` action item is updated when there
+        is newer data available for the package.
         """
         item_type = self.get_item_type('watch-file-available')
         ActionItem.objects.create(
@@ -2298,6 +2380,7 @@ class DebianWatchFileScannerUpdateTests(TestCase):
 
 
 class UpdateSecurityIssuesTaskTests(TestCase):
+
     def setUp(self):
         self.package = SourcePackageName.objects.create(name='dummy-package')
 
@@ -2400,8 +2483,9 @@ class UpdateSecurityIssuesTaskTests(TestCase):
 
     def test_multiple_packages(self):
         """
-        Tests that an :class:`ActionItem <distro_tracker.core.models.ActionItem>` is
-        created when there are multiple packages with issues.
+        Tests that an :class:`ActionItem
+        <distro_tracker.core.models.ActionItem>` is created when there are
+        multiple packages with issues.
         """
         counts = [5, 10]
         packages = [
@@ -2423,9 +2507,11 @@ class UpdateSecurityIssuesTaskTests(TestCase):
 
 
 class CodeSearchLinksTest(TestCase):
+
     """
     Tests that the code search links are shown in the package page.
     """
+
     def setUp(self):
         self.package_name = SourcePackageName.objects.create(name='dummy')
         self.package = SourcePackage.objects.create(
@@ -2510,9 +2596,11 @@ class CodeSearchLinksTest(TestCase):
 
 
 class PopconLinkTest(TestCase):
+
     """
     Tests that the popcon link is added to source package pages.
     """
+
     def get_package_page_response(self, package_name):
         package_page_url = reverse('dtracker-package-page', kwargs={
             'package_name': package_name,
@@ -2540,9 +2628,11 @@ class PopconLinkTest(TestCase):
 
 
 class DebtagsLinkTest(TestCase):
+
     """
     Tests that the debtags link is added to source package pages.
     """
+
     def get_package_page_response(self, package_name):
         package_page_url = reverse('dtracker-package-page', kwargs={
             'package_name': package_name,
@@ -2632,7 +2722,8 @@ class UpdatePiupartsTaskTests(TestCase):
         self.assertEqual(
             len(suites),
             len(self.task._get_piuparts_content.mock_calls))
-        for suite, mock_call in zip(suites, self.task._get_piuparts_content.call_args_list):
+        for suite, mock_call in \
+                zip(suites, self.task._get_piuparts_content.call_args_list):
             self.assertEqual(mock.call(suite), mock_call)
 
     @override_settings(DISTRO_TRACKER_DEBIAN_PIUPARTS_SUITES=suites)
@@ -2826,10 +2917,13 @@ class UpdatePiupartsTaskTests(TestCase):
 
 
 class UpdateReleaseGoalsTaskTests(TestCase):
+
     """
-    Tests for the :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateReleaseGoalsTask`
+    Tests for the
+    :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateReleaseGoalsTask`
     task.
     """
+
     def setUp(self):
         self.package = SourcePackageName.objects.create(name='dummy-package')
 
@@ -2874,8 +2968,9 @@ class UpdateReleaseGoalsTaskTests(TestCase):
 
     def test_action_item_created(self):
         """
-        Tests that an :class:`ActionItem <distro_tracker.core.models.ActionItem>` is
-        created when the package has a release goal bug for one release goal.
+        Tests that an :class:`ActionItem
+        <distro_tracker.core.models.ActionItem>` is created when the package has
+        a release goal bug for one release goal.
         """
         user = 'user@domain.com'
         tag = 'goal'
@@ -2921,9 +3016,9 @@ class UpdateReleaseGoalsTaskTests(TestCase):
 
     def test_action_item_created_multiple_bugs(self):
         """
-        Tests that an :class:`ActionItem <distro_tracker.core.models.ActionItem>` is
-        created when the package has multiple release goal bugs for one release
-        goal.
+        Tests that an :class:`ActionItem
+        <distro_tracker.core.models.ActionItem>` is created when the package has
+        multiple release goal bugs for one release goal.
         """
         user = 'user@domain.com'
         tag = 'goal'
@@ -2961,9 +3056,9 @@ class UpdateReleaseGoalsTaskTests(TestCase):
 
     def test_action_item_created_multiple_release_goals(self):
         """
-        Tests that an :class:`ActionItem <distro_tracker.core.models.ActionItem>` is
-        created when the package has multiple release goal bugs for multiple
-        release goals.
+        Tests that an :class:`ActionItem
+        <distro_tracker.core.models.ActionItem>` is created when the package has
+        multiple release goal bugs for multiple release goals.
         """
         release_goals = [
             {
@@ -3018,8 +3113,9 @@ class UpdateReleaseGoalsTaskTests(TestCase):
 
     def test_action_item_updated(self):
         """
-        Tests that an existing :class:`ActionItem <distro_tracker.core.models.ActionItem>`
-        is updated when there is new release goal information for the package.
+        Tests that an existing :class:`ActionItem
+        <distro_tracker.core.models.ActionItem>` is updated when there is new
+        release goal information for the package.
         """
         # Create an already existing action item...
         old_bug_id = 1
@@ -3073,9 +3169,9 @@ class UpdateReleaseGoalsTaskTests(TestCase):
 
     def test_action_item_updated_new_bug(self):
         """
-        Tests that an existing :class:`ActionItem <distro_tracker.core.models.ActionItem>`
-        is updated when there is new release goal information for the package:
-        a new bug is added.
+        Tests that an existing :class:`ActionItem
+        <distro_tracker.core.models.ActionItem>` is updated when there is new
+        release goal information for the package: a new bug is added.
         """
         # Create an already existing action item...
         release_goal_name = 'Goal'
@@ -3127,9 +3223,9 @@ class UpdateReleaseGoalsTaskTests(TestCase):
 
     def test_action_item_not_updated(self):
         """
-        Tests that an existing :class:`ActionItem <distro_tracker.core.models.ActionItem>`
-        is not updated when the release goal information has not changed
-        between updates.
+        Tests that an existing :class:`ActionItem
+        <distro_tracker.core.models.ActionItem>` is not updated when the release
+        goal information has not changed between updates.
         """
         user = 'user@domain.com'
         tag = 'goal'
@@ -3175,9 +3271,9 @@ class UpdateReleaseGoalsTaskTests(TestCase):
 
     def test_action_item_removed(self):
         """
-        Tests that an existing :class:`ActionItem <distro_tracker.core.models.ActionItem>`
-        is removed when there is no longer any release goal information after
-        an update.
+        Tests that an existing :class:`ActionItem
+        <distro_tracker.core.models.ActionItem>` is removed when there is no
+        longer any release goal information after an update.
         """
         # Create an already existing action item...
         old_bug_id = 1
@@ -3201,8 +3297,9 @@ class UpdateReleaseGoalsTaskTests(TestCase):
 
     def test_action_item_no_changes_in_cache(self):
         """
-        Tests that an existing :class:`ActionItem <distro_tracker.core.models.ActionItem>`
-        is not removed when there were no changes in the cached content.
+        Tests that an existing :class:`ActionItem
+        <distro_tracker.core.models.ActionItem>` is not removed when there were
+        no changes in the cached content.
         """
         # Create an already existing action item...
         old_bug_id = 1
@@ -3228,10 +3325,13 @@ class UpdateReleaseGoalsTaskTests(TestCase):
 
 
 class UpdateUbuntuStatsTaskTests(TestCase):
+
     """
-    Tests for the :class:`distro_tracker.vendor.debian.tracker_taks.UpdateUbuntuStatsTask`
+    Tests for the
+    :class:`distro_tracker.vendor.debian.tracker_taks.UpdateUbuntuStatsTask`
     task.
     """
+
     def setUp(self):
         self.package = SourcePackageName.objects.create(name='dummy-package')
 
@@ -3239,7 +3339,8 @@ class UpdateUbuntuStatsTaskTests(TestCase):
         # Stub the data providing method
         self.task._get_versions_content = mock.MagicMock(return_value='')
         self.task._get_bug_stats_content = mock.MagicMock(return_value='')
-        self.task._get_ubuntu_patch_diff_content = mock.MagicMock(return_value='')
+        self.task._get_ubuntu_patch_diff_content = mock.MagicMock(
+            return_value='')
 
     def set_versions_content(self, versions):
         """
@@ -3279,7 +3380,8 @@ class UpdateUbuntuStatsTaskTests(TestCase):
 
     def test_ubuntu_package_created(self):
         """
-        Tests that a new :class:`distro_tracker.vendor.debian.models.UbuntuPackage` model
+        Tests that a new
+        :class:`distro_tracker.vendor.debian.models.UbuntuPackage` model
         instance is created if an Ubuntu version of the package is found.
         """
         version = '1.0-1ubuntu1'
@@ -3299,9 +3401,9 @@ class UpdateUbuntuStatsTaskTests(TestCase):
 
     def test_ubuntu_package_removed(self):
         """
-        Tests that an existing :class:`distro_tracker.vendor.debian.models.UbuntuPackage`
-        instance is removed if an Ubuntu version of the package is no longer
-        found.
+        Tests that an existing
+        :class:`distro_tracker.vendor.debian.models.UbuntuPackage` instance is
+        removed if an Ubuntu version of the package is no longer found.
         """
         version = '1.0-1ubuntu1'
         # Create an old ubuntu package
@@ -3343,9 +3445,10 @@ class UpdateUbuntuStatsTaskTests(TestCase):
 
     def test_ubuntu_package_bugs_updated(self):
         """
-        Tests that an existing :class:`distro_tracker.vendor.debian.models.UbuntuPackage`
-        instance is correctly updated to contain the new Ubuntu package bugs
-        when it previously contained no bug information.
+        Tests that an existing
+        :class:`distro_tracker.vendor.debian.models.UbuntuPackage` instance is
+        correctly updated to contain the new Ubuntu package bugs when it
+        previously contained no bug information.
         """
         version = '1.0-1ubuntu1'
         UbuntuPackage.objects.create(
@@ -3372,9 +3475,10 @@ class UpdateUbuntuStatsTaskTests(TestCase):
 
     def test_ubuntu_package_bugs_updated_existing(self):
         """
-        Tests that an existing :class:`distro_tracker.vendor.debian.models.UbuntuPackage`
-        instance is correctly updated to contain the new Ubuntu package bugs
-        when it previously contained older bug information.
+        Tests that an existing
+        :class:`distro_tracker.vendor.debian.models.UbuntuPackage` instance is
+        correctly updated to contain the new Ubuntu package bugs when it
+        previously contained older bug information.
         """
         version = '1.0-1ubuntu1'
         UbuntuPackage.objects.create(
@@ -3405,9 +3509,10 @@ class UpdateUbuntuStatsTaskTests(TestCase):
 
     def test_ubuntu_package_bug_stats_removed(self):
         """
-        Tests that an existing :class:`distro_tracker.vendor.debian.models.UbuntuPackage`
-        instance is correctly updated to contain no bug stats when there are
-        no bug stats found for the package by the update.
+        Tests that an existing
+        :class:`distro_tracker.vendor.debian.models.UbuntuPackage` instance is
+        correctly updated to contain no bug stats when there are no bug stats
+        found for the package by the update.
         """
         version = '1.0-1ubuntu1'
         UbuntuPackage.objects.create(
@@ -3459,9 +3564,10 @@ class UpdateUbuntuStatsTaskTests(TestCase):
 
     def test_ubuntu_package_diff_updated(self):
         """
-        Tests that an existing :class:`distro_tracker.vendor.debian.models.UbuntuPackage`
-        instance is correctly updated to contain the new Ubuntu patch diffs
-        when it previously contained no diff info.
+        Tests that an existing
+        :class:`distro_tracker.vendor.debian.models.UbuntuPackage` instance is
+        correctly updated to contain the new Ubuntu patch diffs when it
+        previously contained no diff info.
         """
         # Create an UbuntuPackage with no patch diff info
         version = '1.0-1ubuntu1'
@@ -3490,9 +3596,10 @@ class UpdateUbuntuStatsTaskTests(TestCase):
 
     def test_ubuntu_package_diff_updated_existing(self):
         """
-        Tests that an existing :class:`distro_tracker.vendor.debian.models.UbuntuPackage`
-        instance is correctly updated to contain the new Ubuntu patch diff info
-        when it previously contained older patch diff info.
+        Tests that an existing
+        :class:`distro_tracker.vendor.debian.models.UbuntuPackage` instance is
+        correctly updated to contain the new Ubuntu patch diff info when it
+        previously contained older patch diff info.
         """
         version = '1.0-1ubuntu1'
         UbuntuPackage.objects.create(
@@ -3524,9 +3631,10 @@ class UpdateUbuntuStatsTaskTests(TestCase):
 
     def test_ubuntu_package_diff_removed(self):
         """
-        Tests that an existing :class:`distro_tracker.vendor.debian.models.UbuntuPackage`
-        instance is correctly updated to contain no diff info when there is no
-        diff info found for the package by the update.
+        Tests that an existing
+        :class:`distro_tracker.vendor.debian.models.UbuntuPackage` instance is
+        correctly updated to contain no diff info when there is no diff info
+        found for the package by the update.
         """
         version = '1.0-1ubuntu1'
         UbuntuPackage.objects.create(
@@ -3549,9 +3657,12 @@ class UpdateUbuntuStatsTaskTests(TestCase):
 
 
 class UbuntuPanelTests(TestCase):
+
     """
-    Tests for the :class:`distro_tracker.vendor.debian.tracker_panels.UbuntuPanel` panel.
+    Tests for the
+    :class:`distro_tracker.vendor.debian.tracker_panels.UbuntuPanel` panel.
     """
+
     def setUp(self):
         self.package = PackageName.objects.create(
             source=True,
@@ -3648,10 +3759,13 @@ class UbuntuPanelTests(TestCase):
 
 
 class UpdateWnppStatsTaskTests(TestCase):
+
     """
-    Tests for the :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateWnppStatsTask`
+    Tests for the
+    :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateWnppStatsTask`
     task.
     """
+
     def setUp(self):
         self.package = SourcePackageName.objects.create(name='dummy-package')
 
@@ -3684,8 +3798,9 @@ class UpdateWnppStatsTaskTests(TestCase):
 
     def test_action_item_created(self):
         """
-        Tests that an :class:`ActionItem <distro_tracker.core.models.ActionItem>` instance
-        is created when the package has a WNPP bug.
+        Tests that an :class:`ActionItem
+        <distro_tracker.core.models.ActionItem>` instance is created when the
+        package has a WNPP bug.
         """
         wnpp_type, bug_id = 'O', 12345
         self.set_wnpp_content([(
@@ -3716,8 +3831,9 @@ class UpdateWnppStatsTaskTests(TestCase):
 
     def test_action_item_updated(self):
         """
-        Tests that an existing :class:`ActionItem <distro_tracker.core.models.ActionItem>`
-        instance is updated when there are changes to the WNPP bug info.
+        Tests that an existing :class:`ActionItem
+        <distro_tracker.core.models.ActionItem>` instance is updated when there
+        are changes to the WNPP bug info.
         """
         # Create an existing action item
         old_bug_id = 54321
@@ -3756,8 +3872,9 @@ class UpdateWnppStatsTaskTests(TestCase):
 
     def test_action_item_not_updated(self):
         """
-        Tests that an existing :class:`ActionItem <distro_tracker.core.models.ActionItem>`
-        instance is not updated when there are no changes to the WNPP bug info.
+        Tests that an existing :class:`ActionItem
+        <distro_tracker.core.models.ActionItem>` instance is not updated when
+        there are no changes to the WNPP bug info.
         """
         # Create an existing action item
         wnpp_type, bug_id = 'O', 12345
@@ -3789,8 +3906,9 @@ class UpdateWnppStatsTaskTests(TestCase):
 
     def test_action_item_removed(self):
         """
-        Tests that an existing :class:`ActionItem <distro_tracker.core.models.ActionItem>`
-        instance is removed when there is no more WNPP bug info.
+        Tests that an existing :class:`ActionItem
+        <distro_tracker.core.models.ActionItem>` instance is removed when there
+        is no more WNPP bug info.
         """
         # Create an existing action item
         wnpp_type, bug_id = 'O', 12345
@@ -3813,8 +3931,9 @@ class UpdateWnppStatsTaskTests(TestCase):
 
     def test_action_item_not_created(self):
         """
-        Tests that an :class:`ActionItem <distro_tracker.core.models.ActionItem>` instance
-        is not created for non existing packages.
+        Tests that an :class:`ActionItem
+        <distro_tracker.core.models.ActionItem>` instance is not created for non
+        existing packages.
         """
         wnpp_type, bug_id = 'O', 12345
         self.set_wnpp_content([(
@@ -3831,8 +3950,9 @@ class UpdateWnppStatsTaskTests(TestCase):
 
     def test_action_item_multiple_packages(self):
         """
-        Tests that an :class:`ActionItem <distro_tracker.core.models.ActionItem>` instance
-        is created for multiple packages.
+        Tests that an :class:`ActionItem
+        <distro_tracker.core.models.ActionItem>` instance is created for
+        multiple packages.
         """
         wnpp = [
             {
@@ -3844,7 +3964,9 @@ class UpdateWnppStatsTaskTests(TestCase):
                 'bug_id': 11111,
             }
         ]
-        other_package = PackageName.objects.create(name='other-package', source=True)
+        other_package = PackageName.objects.create(
+            name='other-package',
+            source=True)
         packages = [other_package, self.package]
         self.set_wnpp_content([
             (package.name, [wnpp_item])
@@ -3861,12 +3983,16 @@ class UpdateWnppStatsTaskTests(TestCase):
             self.assertEqual(wnpp_info, item.extra_data['wnpp_info'])
 
 
-@override_settings(DISTRO_TRACKER_VENDOR_RULES='distro_tracker.vendor.debian.rules')
+@override_settings(
+    DISTRO_TRACKER_VENDOR_RULES='distro_tracker.vendor.debian.rules')
 class UpdateNewQueuePackagesTests(TestCase):
+
     """
-    Tests for the :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateNewQueuePackages`
+    Tests for the
+    :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateNewQueuePackages`
     task.
     """
+
     def setUp(self):
         self.package = SourcePackageName.objects.create(name='dummy-package')
 
@@ -3888,9 +4014,9 @@ class UpdateNewQueuePackagesTests(TestCase):
     def get_new_info(self, package):
         """
         Helper method which returns the package's
-        :class:`PackageExtractedInfo <distro_tracker.core.models.PackageExtractedInfo>`
-        instance containing the NEW queue info, or ``None`` if there is no
-        such instance.
+        :class:`PackageExtractedInfo
+        <distro_tracker.core.models.PackageExtractedInfo>` instance containing
+        the NEW queue info, or ``None`` if there is no such instance.
         """
         try:
             return package.packageextractedinfo_set.get(
@@ -3942,7 +4068,9 @@ class UpdateNewQueuePackagesTests(TestCase):
         # The distribution is found in the info
         self.assertIn(distribution, new_info.value)
         # The correct version is found in the info
-        self.assertEqual(latest_version, new_info.value[distribution]['version'])
+        self.assertEqual(
+            latest_version,
+            new_info.value[distribution]['version'])
 
     def test_multiple_distributions(self):
         """
@@ -4004,7 +4132,9 @@ class UpdateNewQueuePackagesTests(TestCase):
         # The distribution is found in the info
         self.assertIn(distribution, new_info.value)
         # The correct version is found in the info
-        self.assertEqual(latest_version, new_info.value[distribution]['version'])
+        self.assertEqual(
+            latest_version,
+            new_info.value[distribution]['version'])
 
     def test_malformed_entry(self):
         """
@@ -4057,11 +4187,14 @@ class UpdateNewQueuePackagesTests(TestCase):
         self.assertEqual(version, new_info.value[distribution]['version'])
 
 
-@override_settings(DISTRO_TRACKER_VENDOR_RULES='distro_tracker.vendor.debian.rules')
+@override_settings(
+    DISTRO_TRACKER_VENDOR_RULES='distro_tracker.vendor.debian.rules')
 class NewQueueVersionsPanelTests(TestCase):
+
     """
     Tests that the NEW queue versions are displayed in the versions panel.
     """
+
     def setUp(self):
         self.package = PackageName.objects.create(
             source=True,
@@ -4077,7 +4210,8 @@ class NewQueueVersionsPanelTests(TestCase):
 
     def add_new_queue_entry(self, distribution, version):
         info, _ = PackageExtractedInfo.objects.get_or_create(
-            package=self.package, key=UpdateNewQueuePackages.EXTRACTED_INFO_KEY)
+            package=self.package, key=UpdateNewQueuePackages.
+            EXTRACTED_INFO_KEY)
         if not info.value:
             info.value = {}
         info.value.update({
@@ -4121,9 +4255,11 @@ class NewQueueVersionsPanelTests(TestCase):
 
 
 class ImportOldNewsTests(TestCase):
+
     """
     Tests the management command for importing old news.
     """
+
     def create_message(self, subject, from_email, date, content):
         msg = Message()
         msg['Subject'] = subject
@@ -4184,11 +4320,13 @@ class ImportOldNewsTests(TestCase):
 
 
 class ImportOldSubscribersTests(TestCase):
+
     """
     Tests for the
     :mod:`distro_tracker.vendor.debian.management.commands.tracker_import_old_subscriber_dump`
     management command.
     """
+
     def setUp(self):
         self.packages = {}
 
@@ -4280,10 +4418,12 @@ class ImportOldSubscribersTests(TestCase):
 
 
 class ImportTagsTests(TestCase):
+
     """
     Tests for the management command for importing the dump of user tags
     (subscription-specific keywords and user default keywords).
     """
+
     def setUp(self):
         self.tags = {}
 
@@ -4378,21 +4518,25 @@ class ImportTagsTests(TestCase):
             settings.default_keywords.all())
 
 
-@mock.patch('distro_tracker.vendor.debian.sso_auth.DebianSsoUserBackend.get_user_details')
+@mock.patch(
+    'distro_tracker.vendor.debian.sso_auth.'
+    'DebianSsoUserBackend.get_user_details')
 @override_settings(MIDDLEWARE_CLASSES=(
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'distro_tracker.vendor.debian.sso_auth.DebianSsoUserMiddleware',
-),AUTHENTICATION_BACKENDS=(
+), AUTHENTICATION_BACKENDS=(
     'distro_tracker.vendor.debian.sso_auth.DebianSsoUserBackend',
     'django_email_accounts.auth.UserEmailBackend',
 ))
 class DebianSsoLoginTests(TestCase):
+
     """
     Tests relating to logging in via the sso.debian.org
     """
+
     def get_page(self, remote_user=None):
         self.client.get(reverse('dtracker-index'), **{
             'REMOTE_USER': remote_user,
@@ -4478,7 +4622,8 @@ class DebianSsoLoginTests(TestCase):
 
     def test_user_logged_out(self, get_user_details):
         """
-        Tests that Distro Tracker logs out the user after the SSO headers are invalid.
+        Tests that Distro Tracker logs out the user after the SSO headers are
+        invalid.
         """
         user = User.objects.create_user(
             main_email='user@debian.org')
@@ -4507,12 +4652,18 @@ class DebianSsoLoginTests(TestCase):
 
 @mock.patch('distro_tracker.core.utils.http.requests')
 class UpdateDebianDuckTaskTest(TestCase):
+
     """
-    Tests for the :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateDebianDuckTask` task.
+    Tests for the
+    :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateDebianDuckTask`
+    task.
     """
+
     def setUp(self):
-        self.dummy_package = SourcePackageName.objects.create(name='dummy-package')
-        self.other_package = SourcePackageName.objects.create(name='other-package')
+        self.dummy_package = SourcePackageName.objects.create(
+            name='dummy-package')
+        self.other_package = SourcePackageName.objects.create(
+            name='other-package')
         self.duck_data = """
         dummy-package
         dummy-package2
@@ -4543,7 +4694,9 @@ class UpdateDebianDuckTaskTest(TestCase):
         self.run_task()
         self.assertEqual(0, self.other_package.action_items.count())
 
-    def test_action_item_is_dropped_when_duck_reports_nothing_again(self, mock_requests):
+    def test_action_item_is_dropped_when_duck_reports_nothing_again(
+            self,
+            mock_requests):
         """
         Tests that ActionItems are dropped when a package was previousy reported
         but is now not reported anymore.
@@ -4563,12 +4716,18 @@ class UpdateDebianDuckTaskTest(TestCase):
 
 @mock.patch('distro_tracker.core.utils.http.requests')
 class UpdateDebciStatusTaskTest(TestCase):
+
     """
-    Tests for the :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateDebciStatusTask` task.
+    Tests for the
+    :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateDebciStatusTask`
+    task.
     """
+
     def setUp(self):
-        self.dummy_package = SourcePackageName.objects.create(name='dummy-package')
-        self.other_package = SourcePackageName.objects.create(name='other-package')
+        self.dummy_package = SourcePackageName.objects.create(
+            name='dummy-package')
+        self.other_package = SourcePackageName.objects.create(
+            name='other-package')
         self.json_data = """[
             {
                 "run_id": "20140705_145427",
@@ -4672,7 +4831,9 @@ class UpdateDebciStatusTaskTest(TestCase):
         self.assertEqual(action_item.extra_data['url'], url)
         self.assertEqual(action_item.extra_data['log'], log)
 
-    def test_action_item_is_dropped_when_test_passes_again(self, mock_requests):
+    def test_action_item_is_dropped_when_test_passes_again(
+            self,
+            mock_requests):
         """
         Tests that ActionItems are dropped when the test passes again.
         """
@@ -4744,10 +4905,12 @@ class UpdateDebciStatusTaskTest(TestCase):
 
 @mock.patch('distro_tracker.core.utils.http.requests')
 class UpdateAutoRemovalsStatsTaskTest(TestCase):
+
     """
     Tests for the :class:`distro_tracker.vendor.debian.tracker_tasks
     .UpdateAutoRemovalsStatsTask` task.
     """
+
     def setUp(self):
         self.dummy_package = SourcePackageName.objects.create(
             name='dummy-package')

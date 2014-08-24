@@ -47,7 +47,6 @@ from email import encoders
 from debian import deb822
 import os
 import time
-import gpgme
 import tempfile
 
 
@@ -92,7 +91,8 @@ class VerpModuleTest(SimpleTestCase):
             ('bounce@asdf.com', 'addr+40@dom.com'))
 
         self.assertEqual(
-            verp.decode('bounce-user+2B+21+25+2D+3A+40+5B+5D+2B=other.com@dom.com'),
+            verp.decode(
+                'bounce-user+2B+21+25+2D+3A+40+5B+5D+2B=other.com@dom.com'),
             ('bounce@dom.com', 'user+!%-:@[]+@other.com'))
 
     def test_invariant_encode_decode(self):
@@ -180,6 +180,7 @@ Content-Transfer-Encoding: 8bit
 from distro_tracker.core.utils.email_messages import (
     name_and_address_from_string,
     names_and_addresses_from_string)
+
 
 class EmailUtilsTest(SimpleTestCase):
     def test_name_and_address_from_string(self):
@@ -276,8 +277,6 @@ class CustomEmailMessageTest(TestCase):
         custom_message.send()
 
         self.assertIn(attachment, mail.outbox[0].message().get_payload())
-
-
 
 
 class DAGTests(SimpleTestCase):
@@ -682,21 +681,31 @@ Architecture: any
 Standards-Version: 3.9.3
 Format: 3.0 (quilt)
 Files:
- 602b2a11624744e2e92353f5e76ad7e6 2531 dummy-package_7.26.0.dsc
- 3fa4d5236f2a36ca5c3af6715e837691 3073624 dummy-package_7.26.0.orig.tar.gz
- 2972826d5b1ebadace83f236e946b33f 33360 dummy-package_7.26.0-1+wheezy3.debian.tar.gz
+ {} 2531 dummy-package_7.26.0.dsc
+ {} 3073624 dummy-package_7.26.0.orig.tar.gz
+ {} 33360 dummy-package_7.26.0-1+wheezy3.debian.tar.gz
 Checksums-Sha1:
- 50fd8c0de138e80903443927365565151291338c 2531 dummy-package_7.26.0.dsc
- 66e1fd0312f62374b96fe02e644f66202fd6324b 3073624 dummy-package_7.26.0.orig.tar.gz
- a0f16b381d3ac3e02de307dced481eaf01b3ead1 33360 dummy-package_7.26.0-1+wheezy3.debian.tar.gz
+ {} 2531 dummy-package_7.26.0.dsc
+ {} 3073624 dummy-package_7.26.0.orig.tar.gz
+ {} 33360 dummy-package_7.26.0-1+wheezy3.debian.tar.gz
 Checksums-Sha256:
- daf4c6c8ad485f98cc6ad684b5de30d7d07e45e521a1a6caf148406f7c9993cd 2531 dummy-package_7.26.0.dsc
- 79ccce9edb8aee17d20ad4d75e1f83a789f8c2e71e68f468e1bf8abf8933193f 3073624 dummy-package_7.26.0.orig.tar.gz
- 335bf9f847e68df71dc0b9bd14863c6a8951198af3ac19fc67b8817835fd0e17 33360 dummy-package_7.26.0-1+wheezy3.debian.tar.gz
+ {} 2531 dummy-package_7.26.0.dsc
+ {} 3073624 dummy-package_7.26.0.orig.tar.gz
+ {} 33360 dummy-package_7.26.0-1+wheezy3.debian.tar.gz
 Directory: pool/updates/main/c/curl
 Priority: source
 Section: libs
-""")
+""".format(
+    '602b2a11624744e2e92353f5e76ad7e6',  # noqa
+    '3fa4d5236f2a36ca5c3af6715e837691',  # noqa
+    '2972826d5b1ebadace83f236e946b33f',  # noqa
+    '50fd8c0de138e80903443927365565151291338c',  # noqa
+    '66e1fd0312f62374b96fe02e644f66202fd6324b',  # noqa
+    'a0f16b381d3ac3e02de307dced481eaf01b3ead1',  # noqa
+    'daf4c6c8ad485f98cc6ad684b5de30d7d07e45e521a1a6caf148406f7c9993cd',  # noqa
+    '79ccce9edb8aee17d20ad4d75e1f83a789f8c2e71e68f468e1bf8abf8933193f',  # noqa
+    '335bf9f847e68df71dc0b9bd14863c6a8951198af3ac19fc67b8817835fd0e17',  # noqa
+))  # noqa
 
         self.assertEqual(
             'dummy-package_7.26.0.dsc',
@@ -836,10 +845,9 @@ class HttpCacheTest(SimpleTestCase):
         response, updated = cache.update(url)
 
         self.assertFalse(updated)
-        mock_requests.get.assert_called_with(url, verify=False,
-            allow_redirects=True, headers={
-            'If-Modified-Since': last_modified,
-        })
+        mock_requests.get.assert_called_with(
+            url, verify=False, allow_redirects=True,
+            headers={'If-Modified-Since': last_modified})
         # The actual server's response is returned
         self.assertEqual(response.status_code, 304)
 
@@ -946,10 +954,9 @@ class HttpCacheTest(SimpleTestCase):
         response, updated = cache.update(url)
 
         self.assertFalse(updated)
-        mock_requests.get.assert_called_with(url, verify=False,
-            allow_redirects=True, headers={
-            'If-None-Match': etag,
-        })
+        mock_requests.get.assert_called_with(
+            url, verify=False, allow_redirects=True,
+            headers={'If-None-Match': etag, })
         # The actual server's response is returned
         self.assertEqual(response.status_code, 304)
 
@@ -1005,16 +1012,16 @@ class HttpCacheTest(SimpleTestCase):
         response, updated = cache.update(url, force=True)
 
         # Make sure that we ask for a non-cached version
-        mock_requests.get.assert_called_with(url, verify=False,
-            allow_redirects=True, headers={
-            'Cache-Control': 'no-cache'
-        })
+        mock_requests.get.assert_called_with(
+            url, verify=False, allow_redirects=True,
+            headers={'Cache-Control': 'no-cache'})
         self.assertTrue(updated)
 
     def test_get_resource_content_utlity_function_cached(self):
         """
-        Tests the :func:`distro_tracker.core.utils.http.get_resource_content` utility
-        function when the resource is cached in the given cache instance.
+        Tests the :func:`distro_tracker.core.utils.http.get_resource_content`
+        utility function when the resource is cached in the given cache
+        instance.
         """
         mock_cache = mock.create_autospec(HttpCache)
         mock_cache.is_expired.return_value = False
@@ -1031,8 +1038,9 @@ class HttpCacheTest(SimpleTestCase):
 
     def test_get_resource_content_utility_function_not_cached(self):
         """
-        Tests the :func:`distro_tracker.core.utils.http.get_resource_content` utility
-        function when the resource is not cached in the given cache instance.
+        Tests the :func:`distro_tracker.core.utils.http.get_resource_content`
+        utility function when the resource is not cached in the given cache
+        instance.
         """
         mock_cache = mock.create_autospec(HttpCache)
         mock_cache.is_expired.return_value = True
@@ -1088,7 +1096,8 @@ class VerifySignatureTest(SimpleTestCase):
         Tests extracting signature information when the signature itself is
         wrong.
         """
-        with self.settings(DISTRO_TRACKER_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
+        with self.settings(
+                DISTRO_TRACKER_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
             self.assertIsNone(verify_signature(b"This is not a signature"))
 
     def test_utf8_content(self):
@@ -1136,6 +1145,7 @@ class DecodeHeaderTest(SimpleTestCase):
         header_text = decode_header(h)
         self.assertEqual('München München', header_text)
 
+
 class AptCacheTests(TestCase):
     """
     Tests for :class:`distro_tracker.core.utils.packages.AptCache`.
@@ -1152,9 +1162,10 @@ class AptCacheTests(TestCase):
 
     def create_cache(self):
         """
-        Helper method which creates an :class:`distro_tracker.core.utils.packages.AptCache`
-        instance which is used for testing. Some of its methods are replaced by
-        mocks and stubs to avoid HTTP calls.
+        Helper method which creates an
+        :class:`distro_tracker.core.utils.packages.AptCache` instance which is
+        used for testing. Some of its methods are replaced by mocks and stubs to
+        avoid HTTP calls.
         """
         self.cache = AptCache()
         self.cache._get_apt_source_records = mock.MagicMock()
@@ -1179,7 +1190,8 @@ class AptCacheTests(TestCase):
         files for a given repository.
 
         :param repository: The repository to which these files are associated.
-        :type repository: :class:`Repository <distro_tracker.core.models.Repository>`
+        :type repository: :class:`Repository
+            <distro_tracker.core.models.Repository>`
         :param files: List of cached file names. The function uses the list to
             build the stub by prefixing the names with expected repository
             identifiers.
@@ -1292,7 +1304,8 @@ class AptCacheTests(TestCase):
                 ]
                 self.set_stub_cached_files_for_repository(repository, files)
 
-                sources = self.cache.get_sources_files_for_repository(repository)
+                sources = \
+                    self.cache.get_sources_files_for_repository(repository)
 
                 self.assertEqual(len(expected_source_files), len(sources))
                 for expected_source, returned_source in zip(
@@ -1322,7 +1335,8 @@ class AptCacheTests(TestCase):
                 ]
                 self.set_stub_cached_files_for_repository(repository, files)
 
-                packages = self.cache.get_packages_files_for_repository(repository)
+                packages = \
+                    self.cache.get_packages_files_for_repository(repository)
 
                 self.assertEqual(len(expected_packages_files), len(packages))
                 for expected, returned in zip(

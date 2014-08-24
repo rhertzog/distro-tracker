@@ -165,8 +165,8 @@ class JobTests(SimpleTestCase):
 
     def test_run_job_by_task_name(self, *args, **kwargs):
         """
-        Tests that the :func:`distro_tracker.core.tasks.run_task` function correctly
-        runs a task when given its name, not a task class object.
+        Tests that the :func:`distro_tracker.core.tasks.run_task` function
+        correctly runs a task when given its name, not a task class object.
         """
         A = self.create_task_class(('a',), (), ('a',))
         B = self.create_task_class((), ('a',), ())
@@ -180,7 +180,7 @@ class JobTests(SimpleTestCase):
         """
         Tests running a job consisting of no dependencies.
         """
-        A = self.create_task_class(('a',), (), ('a',))
+        self.create_task_class(('a',), (), ('a',))
         B = self.create_task_class(('b',), (), ('b',))
 
         run_task(B)
@@ -193,7 +193,7 @@ class JobTests(SimpleTestCase):
         not emitted during execution.
         """
         A = self.create_task_class(('a',), (), ())
-        B = self.create_task_class((), ('a',), ())
+        self.create_task_class((), ('a',), ())
 
         run_task(A)
 
@@ -206,8 +206,8 @@ class JobTests(SimpleTestCase):
         T0 = self.create_task_class(('A', 'B'), (), ('A',))
         T1 = self.create_task_class(('D', 'D1'), ('A',), ('D'))
         T2 = self.create_task_class(('C',), ('A',), ('C',))
-        T3 = self.create_task_class(('E',), ('B',), ('E',))
-        T4 = self.create_task_class((), ('B',), ())
+        self.create_task_class(('E',), ('B',), ('E',))  # T3
+        self.create_task_class((), ('B',), ())  # T4
         T5 = self.create_task_class(('evt-5',), ('D',), ('evt-5',))
         T6 = self.create_task_class(('evt-6',), ('C'), ('evt-6',))
         T7 = self.create_task_class((), ('D1', 'A'), ())
@@ -221,8 +221,8 @@ class JobTests(SimpleTestCase):
         self.assert_executed_tasks_equal([T0, T1, T2, T5, T6, T7, T8])
         # Check execution order.
         self.assert_task_dependency_preserved(T0, [T1, T2, T7])
-        ## Even though task T1 does not emit the event D1, it still needs to
-        ## execute before task T7.
+        # Even though task T1 does not emit the event D1, it still needs to
+        # execute before task T7.
         self.assert_task_dependency_preserved(T1, [T5, T7])
         self.assert_task_dependency_preserved(T2, [T6])
         self.assert_task_dependency_preserved(T5, [T8])
@@ -233,13 +233,13 @@ class JobTests(SimpleTestCase):
         Tests running a job consisting of complex dependencies.
         """
         T0 = self.create_task_class(('A', 'B'), (), ('B',))
-        T1 = self.create_task_class(('D', 'D1'), ('A',), ('D'))
-        T2 = self.create_task_class(('C',), ('A',), ('C',))
+        self.create_task_class(('D', 'D1'), ('A',), ('D'))  # T1
+        self.create_task_class(('C',), ('A',), ('C',))      # T2
         T3 = self.create_task_class(('E',), ('B',), ('E',))
         T4 = self.create_task_class((), ('B',), ())
-        T5 = self.create_task_class(('evt-5',), ('D',), ('evt-5',))
-        T6 = self.create_task_class(('evt-6',), ('C'), ('evt-6',))
-        T7 = self.create_task_class((), ('D1', 'A'), ())
+        self.create_task_class(('evt-5',), ('D',), ('evt-5',))  # T5
+        self.create_task_class(('evt-6',), ('C'), ('evt-6',))   # T6
+        self.create_task_class((), ('D1', 'A'), ())             # T7
         T8 = self.create_task_class((), ('evt-5', 'evt-6', 'E'), ())
 
         run_task(T0)
@@ -256,12 +256,12 @@ class JobTests(SimpleTestCase):
         Tests running a job consisting of complex dependencies.
         """
         T0 = self.create_task_class(('A', 'B', 'B1'), (), ('B', 'B1'))
-        T1 = self.create_task_class(('D', 'D1'), ('A',), ('D'))
-        T2 = self.create_task_class(('C',), ('A',), ('C',))
+        self.create_task_class(('D', 'D1'), ('A',), ('D'))  # T1
+        self.create_task_class(('C',), ('A',), ('C',))      # T2
         T3 = self.create_task_class(('E',), ('B',), ('E',))
         T4 = self.create_task_class((), ('B',), ())
-        T5 = self.create_task_class(('evt-5',), ('D',), ('evt-5',))
-        T6 = self.create_task_class(('evt-6',), ('C'), ('evt-6',))
+        self.create_task_class(('evt-5',), ('D',), ('evt-5',))  # T5
+        self.create_task_class(('evt-6',), ('C'), ('evt-6',))   # T6
         T7 = self.create_task_class((), ('D1', 'A', 'B1'), ())
         T8 = self.create_task_class((), ('evt-5', 'evt-6', 'E'), ())
 
@@ -276,14 +276,14 @@ class JobTests(SimpleTestCase):
         Tests running a job consisting of complex dependencies when the initial
         task is not the task which has 0 dependencies in the full tasks DAG.
         """
-        T0 = self.create_task_class(('A', 'B'), (), ('B',))
+        self.create_task_class(('A', 'B'), (), ('B',))  # T0
         T1 = self.create_task_class(('D', 'D1'), ('A',), ('D'))
-        T2 = self.create_task_class(('C',), ('A',), ('C',))
-        T3 = self.create_task_class(('E',), ('B',), ('E',))
-        T4 = self.create_task_class((), ('B',), ())
+        self.create_task_class(('C',), ('A',), ('C',))  # T2
+        self.create_task_class(('E',), ('B',), ('E',))  # T3
+        self.create_task_class((), ('B',), ())          # T4
         T5 = self.create_task_class(('evt-5',), ('D',), ('evt-5',))
-        T6 = self.create_task_class(('evt-6',), ('C'), ('evt-6',))
-        T7 = self.create_task_class((), ('D1', 'A'), ())
+        self.create_task_class(('evt-6',), ('C'), ('evt-6',))  # T6
+        self.create_task_class((), ('D1', 'A'), ())            # T7
         T8 = self.create_task_class((), ('evt-5', 'evt-6', 'E'), ())
 
         run_task(T1)
@@ -295,13 +295,13 @@ class JobTests(SimpleTestCase):
         Tests running a job consisting of complex dependencies when the initial
         task is not the task which has 0 dependencies in the full tasks DAG.
         """
-        T0 = self.create_task_class(('A', 'B'), (), ('B',))
+        self.create_task_class(('A', 'B'), (), ('B',))  # T0
         T1 = self.create_task_class(('D', 'D1'), ('A',), ('D', 'D1'))
-        T2 = self.create_task_class(('C',), ('A',), ('C',))
-        T3 = self.create_task_class(('E',), ('B',), ('E',))
-        T4 = self.create_task_class((), ('B',), ())
+        self.create_task_class(('C',), ('A',), ('C',))  # T2
+        self.create_task_class(('E',), ('B',), ('E',))  # T3
+        self.create_task_class((), ('B',), ())          # T4
         T5 = self.create_task_class(('evt-5',), ('D',), ('evt-5',))
-        T6 = self.create_task_class(('evt-6',), ('C'), ('evt-6',))
+        self.create_task_class(('evt-6',), ('C'), ('evt-6',))  # T6
         T7 = self.create_task_class((), ('D1', 'A'), ())
         T8 = self.create_task_class((), ('evt-5', 'evt-6', 'E'), ())
 

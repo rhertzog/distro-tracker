@@ -7,7 +7,10 @@
 # distribution and at http://deb.li/DTLicense. No part of Distro Tracker,
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
-"""Implements the Distro Tracker tasks necessary for interesting package source files."""
+"""
+Implements the Distro Tracker tasks necessary for interesting package source
+files.
+"""
 from __future__ import unicode_literals
 from distro_tracker.core.tasks import BaseTask
 from distro_tracker.core.utils.packages import AptCache
@@ -56,7 +59,8 @@ class ExtractSourcePackageFiles(BaseTask):
         """
         Extract files for just the given source package.
 
-        :type source_package: :class:`SourcePackage <distro_tracker.core.models.SourcePackage>`
+        :type source_package: :class:`SourcePackage
+            <distro_tracker.core.models.SourcePackage>`
         :type files_to_extract: An iterable of file names which should be
             extracted
         """
@@ -91,7 +95,8 @@ class ExtractSourcePackageFiles(BaseTask):
         them.
         """
         # First remove all source files which are no longer to be included.
-        qs = ExtractedSourceFile.objects.exclude(name__in=self.ALL_FILES_TO_EXTRACT)
+        qs = ExtractedSourceFile.objects.exclude(
+            name__in=self.ALL_FILES_TO_EXTRACT)
         qs.delete()
 
         # Retrieves the packages and all the associated files with each of them
@@ -101,10 +106,10 @@ class ExtractSourcePackageFiles(BaseTask):
 
         # Find the difference of packages and extract only those for each
         # package
-        for source_package in source_packages:
+        for srcpkg in source_packages:
             extracted_files = [
                 extracted_file.name
-                for extracted_file in source_package.extracted_source_files.all()
+                for extracted_file in srcpkg.extracted_source_files.all()
             ]
             files_to_extract = [
                 file_name
@@ -113,12 +118,12 @@ class ExtractSourcePackageFiles(BaseTask):
             ]
             if files_to_extract:
                 try:
-                    self.extract_files(source_package, files_to_extract)
+                    self.extract_files(srcpkg, files_to_extract)
                 except:
                     logger.exception(
                         'Problem extracting source files for'
                         ' {pkg} version {ver}'.format(
-                            pkg=source_package, ver=source_package.version))
+                            pkg=srcpkg, ver=srcpkg.version))
 
     def execute(self):
         if self.is_initial_task():

@@ -54,7 +54,8 @@ def process(message, sent_to_address=None):
     :param sent_to_address: The address to which the message was sent.
         Necessary in order to determine which package it was sent to.
     """
-    assert isinstance(message, six.binary_type), 'Message must be given as bytes'
+    assert isinstance(message, six.binary_type), \
+        'Message must be given as bytes'
     msg = message_from_bytes(message)
 
     logdata = {
@@ -348,7 +349,9 @@ def send_to_subscribers(received_message, package_name, keyword):
     # Build a list of all messages to be sent
     date = timezone.now().date()
     messages_to_send = [
-        prepare_message(received_message, subscription.email_settings.user_email.email, date)
+        prepare_message(received_message,
+                        subscription.email_settings.user_email.email,
+                        date)
         for subscription in package.subscription_set.all_active(keyword)
     ]
     send_messages(messages_to_send, date)
@@ -370,7 +373,8 @@ def send_messages(messages_to_send, date):
 def prepare_message(received_message, to_email, date):
     """
     Converts a message which is to be sent to a subscriber to a
-    :py:class:`CustomEmailMessage <distro_tracker.core.utils.email_messages.CustomEmailMessage>`
+    :py:class:`CustomEmailMessage
+    <distro_tracker.core.utils.email_messages.CustomEmailMessage>`
     so that it can be sent out using Django's API.
     It also sets the required evelope-to value in order to track the bounce for
     the message.

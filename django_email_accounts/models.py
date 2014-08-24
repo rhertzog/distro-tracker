@@ -21,8 +21,6 @@ import string
 import random
 import hashlib
 
-DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS = settings.DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS
-
 
 class ConfirmationException(Exception):
     """
@@ -56,7 +54,8 @@ class ConfirmationManager(models.Manager):
 
         :param identifier: A string representation of an identifier for the
             confirmation instance.
-        :raises pts.mail.models.ConfirmationException: If it is unable to generate a unique key.
+        :raises pts.mail.models.ConfirmationException: If it is unable to
+            generate a unique key.
         """
         MAX_TRIES = 10
         errors = 0
@@ -114,7 +113,8 @@ class Confirmation(models.Model):
         :returns False: if the confirmation key is still valid
         """
         delta = timezone.now() - self.date_created
-        return delta.days >= DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS
+        return delta.days >= \
+            settings.DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS
 
 
 class UserManager(BaseUserManager):
@@ -148,7 +148,7 @@ class UserManager(BaseUserManager):
 
     def create(self, main_email, password=None, **extra_fields):
         return self._create_user(main_email, password, False, False, False,
-                          **extra_fields)
+                                 **extra_fields)
 
     def create_superuser(self, main_email, password, **extra_fields):
         return self._create_user(main_email, password, True, True,
@@ -175,6 +175,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def get_short_name(self):
         return self.get_full_name()
+
 
 @python_2_unicode_compatible
 class UserEmail(models.Model):

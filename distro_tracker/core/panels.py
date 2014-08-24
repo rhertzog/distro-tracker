@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 class BasePanel(six.with_metaclass(PluginRegistry)):
+
     """
     A base class representing panels which are displayed on a package page.
 
@@ -148,6 +149,7 @@ def get_panels_for_package(package, request):
 
 
 class GeneralInformationPanel(BasePanel):
+
     """
     This panel displays general information regarding a package.
 
@@ -162,9 +164,12 @@ class GeneralInformationPanel(BasePanel):
     Several vendor-specific functions can be implemented which augment this
     panel:
 
-    - :func:`get_developer_information_url <distro_tracker.vendor.skeleton.rules.get_developer_information_url>`
-    - :func:`get_maintainer_extra <distro_tracker.vendor.skeleton.rules.get_maintainer_extra>`
-    - :func:`get_uploader_extra <distro_tracker.vendor.skeleton.rules.get_uploader_extra>`
+    - :func:`get_developer_information_url
+      <distro_tracker.vendor.skeleton.rules.get_developer_information_url>`
+    - :func:`get_maintainer_extra
+      <distro_tracker.vendor.skeleton.rules.get_maintainer_extra>`
+    - :func:`get_uploader_extra
+      <distro_tracker.vendor.skeleton.rules.get_uploader_extra>`
     """
     position = 'left'
     title = 'general'
@@ -176,9 +181,8 @@ class GeneralInformationPanel(BasePanel):
             return ml.archive_url_for_email(email)
 
     def _get_developer_information_url(self, email):
-        info_url, implemented = vendor.call('get_developer_information_url', **{
-            'developer_email': email,
-        })
+        info_url, implemented = vendor.call(
+            'get_developer_information_url', **{'developer_email': email, })
         if implemented and info_url:
             return info_url
 
@@ -254,6 +258,7 @@ class GeneralInformationPanel(BasePanel):
 
 
 class VersionsInformationPanel(BasePanel):
+
     """
     This panel displays the versions of the package in each of the repositories
     it is found in.
@@ -261,8 +266,10 @@ class VersionsInformationPanel(BasePanel):
     Several vendor-specific functions can be implemented which augment this
     panel:
 
-    - :func:`get_package_information_site_url <distro_tracker.vendor.skeleton.rules.get_package_information_site_url>`
-    - :func:`get_external_version_information_urls <distro_tracker.vendor.skeleton.rules.get_external_version_information_urls>`
+    - :func:`get_package_information_site_url
+      <distro_tracker.vendor.skeleton.rules.get_package_information_site_url>`
+    - :func:`get_external_version_information_urls
+      <distro_tracker.vendor.skeleton.rules.get_external_version_information_urls>`
     """
     position = 'left'
     title = 'versions'
@@ -282,12 +289,15 @@ class VersionsInformationPanel(BasePanel):
             version_info = info.value
             package_name = info.package.name
             for item in version_info.get('version_list', ()):
-                url, implemented = vendor.call('get_package_information_site_url', **{
-                    'package_name': package_name,
-                    'repository': item.get('repository'),
-                    'source_package': True,
-                    'version': item.get('version'),
-                })
+                url, implemented = vendor.call(
+                    'get_package_information_site_url',
+                    **
+                    {'package_name': package_name,
+                     'repository': item.get(
+                         'repository'),
+                     'source_package': True,
+                     'version':
+                     item.get('version'), })
                 if implemented and url:
                     item['url'] = url
 
@@ -316,6 +326,7 @@ class VersionsInformationPanel(BasePanel):
 
 
 class VersionedLinks(BasePanel):
+
     """
     A panel displaying links specific for source package versions.
 
@@ -328,6 +339,7 @@ class VersionedLinks(BasePanel):
     template_name = 'core/panels/versioned-links.html'
 
     class LinkProvider(six.with_metaclass(PluginRegistry)):
+
         """
         A base class for classes which should provide a list of version
         specific links.
@@ -354,7 +366,8 @@ class VersionedLinks(BasePanel):
             If no link can be given for the icon, ``None`` should be returned
             instead.
 
-            :type package: :class:`SourcePackage <distro_tracker.core.models.SourcePackage>`
+            :type package: :class:`SourcePackage
+                <distro_tracker.core.models.SourcePackage>`
             :type icon_index: int
 
             :rtype: :class:`string` or ``None``
@@ -363,15 +376,16 @@ class VersionedLinks(BasePanel):
 
         def get_links(self, package):
             """
-            For each of the icons returned by the :attr:`icons` property, returns
-            a URL specific for the given package.
+            For each of the icons returned by the :attr:`icons` property,
+            returns a URL specific for the given package.
 
             The order of the URLs must match the order of the icons (matching
             links and icons need to have the same index). Consequently, the
             length of the returned list is the same as the length of the
             :attr:`icons` property.
 
-            If no link can be given for some icon, ``None`` should be put instead.
+            If no link can be given for some icon, ``None`` should be put
+            instead.
 
             This method has a default implementation which calls the
             :meth:`get_link_for_icon` for each icon defined in the :attr:`icons`
@@ -380,7 +394,8 @@ class VersionedLinks(BasePanel):
 
             :param package: The source package instance for which links should
                 be provided
-            :type package: :class:`SourcePackage <distro_tracker.core.models.SourcePackage>`
+            :type package: :class:`SourcePackage
+                <distro_tracker.core.models.SourcePackage>`
 
             :returns: List of URLs for the package
             :rtype: list
@@ -417,7 +432,8 @@ class VersionedLinks(BasePanel):
         # Only process source files
         if not isinstance(self.package, SourcePackageName):
             return
-        # Make sure we display the versions in a version-number increasing order
+        # Make sure we display the versions in a version-number increasing
+        # order
         versions = sorted(
             self.package.source_package_versions.all(),
             key=lambda x: AptPkgVersion(x.version)
@@ -465,6 +481,7 @@ class DscLinkProvider(VersionedLinks.LinkProvider):
 
 
 class BinariesInformationPanel(BasePanel):
+
     """
     This panel displays a list of binary package names which a given source
     package produces.
@@ -475,14 +492,17 @@ class BinariesInformationPanel(BasePanel):
     If implemented, the following functions can augment the information of
     this panel:
 
-    - :func:`get_package_information_site_url <distro_tracker.vendor.skeleton.rules.get_package_information_site_url>`
+    - :func:`get_package_information_site_url
+      <distro_tracker.vendor.skeleton.rules.get_package_information_site_url>`
       provides the link used for each binary package name.
-    - :func:`get_binary_package_bug_stats <distro_tracker.vendor.skeleton.rules.get_binary_package_bug_stats>`
+    - :func:`get_binary_package_bug_stats
+      <distro_tracker.vendor.skeleton.rules.get_binary_package_bug_stats>`
       provides bug statistics for a given binary package in terms of a list of
       bug counts for different categories. If this is implemented, the panel
       will display only the categories returned by this function, not all stats
       found in the database.
-    - :func:`get_bug_tracker_url <distro_tracker.vendor.skeleton.rules.get_bug_tracker_url>`
+    - :func:`get_bug_tracker_url
+      <distro_tracker.vendor.skeleton.rules.get_bug_tracker_url>`
       provides a link to an external bug tracker based on the name of a package
       and the bug category.
     """
@@ -517,10 +537,11 @@ class BinariesInformationPanel(BasePanel):
         all_bugs_url, implemented = vendor.call(
             'get_bug_tracker_url', binary_name, 'binary', 'all')
         return {
-            'total_count': sum(category['bug_count'] for category in bug_stats),
+            'total_count': sum(
+                category['bug_count'] for category in bug_stats),
             'all_bugs_url': all_bugs_url,
             'categories': bug_stats,
-        }
+            }
 
     @cached_property
     def context(self):
@@ -558,6 +579,7 @@ class BinariesInformationPanel(BasePanel):
 
 
 class PanelItem(object):
+
     """
     The base class for all items embeddable in panels.
 
@@ -577,21 +599,25 @@ class PanelItem(object):
 
 
 class TemplatePanelItem(PanelItem):
+
     """
     A subclass of :class:`PanelItem` which gives a more convenient interface
     for defining items rendered by a template + context.
     """
+
     def __init__(self, template_name, context=None):
         self.template_name = template_name
         self.context = context
 
 
 class HtmlPanelItem(PanelItem):
+
     """
     A subclass of :class:`PanelItem` which gives a more convenient interface
     for defining items which already provide HTML text.
     Takes care of marking the given text as safe.
     """
+
     def __init__(self, html):
         self._html = mark_safe(html)
 
@@ -601,6 +627,7 @@ class HtmlPanelItem(PanelItem):
 
 
 class PanelItemProvider(six.with_metaclass(PluginRegistry)):
+
     """
     A base class for classes which produce :class:`PanelItem` instances.
 
@@ -634,6 +661,7 @@ class PanelItemProvider(six.with_metaclass(PluginRegistry)):
 
 
 class ListPanelMeta(PluginRegistry):
+
     """
     A meta class for the :class:`ListPanel`. Makes sure that each subclass of
     :class:`ListPanel` has a new :class:`PanelItemProvider` subclass.
@@ -656,6 +684,7 @@ if hasattr(SixListPanelMeta, 'unregister_plugin'):
 
 
 class ListPanel(SixListPanelMeta):
+
     """
     The base class for panels which would like to present an extensible list of
     items.
@@ -709,7 +738,9 @@ class ListPanel(SixListPanelMeta):
 # its own, so it is removed from the list of registered panels.
 ListPanel.unregister_plugin()
 
+
 class LinksPanel(ListPanel):
+
     """
     This panel displays a list of important links for a given source package.
 
@@ -720,6 +751,7 @@ class LinksPanel(ListPanel):
     title = 'links'
 
     class SimpleLinkItem(HtmlPanelItem):
+
         """
         A convenience :class:`PanelItem` which renders a simple link in the
         panel, by having the text, url and, optionally, the tooltip text
@@ -738,12 +770,14 @@ class LinksPanel(ListPanel):
 
 
 class GeneralInfoLinkPanelItems(LinksPanel.ItemProvider):
+
     """
     Provides the :class:`LinksPanel` with links derived from general package
     information.
 
     For now, this is only the homepage of the package, if available.
     """
+
     def get_panel_items(self):
         items = []
         if hasattr(self.package, 'main_version') and self.package.main_version \
@@ -761,7 +795,10 @@ class GeneralInfoLinkPanelItems(LinksPanel.ItemProvider):
 class NewsPanel(BasePanel):
     _DEFAULT_NEWS_LIMIT = 30
     panel_importance = 1
-    NEWS_LIMIT = getattr(settings, 'DISTRO_TRACKER_NEWS_PANEL_LIMIT', _DEFAULT_NEWS_LIMIT)
+    NEWS_LIMIT = getattr(
+        settings,
+        'DISTRO_TRACKER_NEWS_PANEL_LIMIT',
+        _DEFAULT_NEWS_LIMIT)
 
     template_name = 'core/panels/news.html'
     title = 'news'
@@ -781,6 +818,7 @@ class NewsPanel(BasePanel):
 
 
 class BugsPanel(BasePanel):
+
     """
     The panel displays bug statistics for the package.
 
@@ -794,7 +832,8 @@ class BugsPanel(BasePanel):
     all categories is also displayed as the first row of the panel.
 
     A vendor can choose to implement the
-    :func:`get_bug_panel_stats <distro_tracker.vendor.skeleton.rules.get_bug_panel_stats>`
+    :func:`get_bug_panel_stats
+    <distro_tracker.vendor.skeleton.rules.get_bug_panel_stats>`
     function in order to provide a custom list of bug categories to be
     displayed in the panel. This is useful if, for example, the vendor does
     not want to display the count of all bug categories.
@@ -802,11 +841,13 @@ class BugsPanel(BasePanel):
 
     Finally, for vendors which require an even higher degree of customization,
     it is possible to provide a
-    :data:`DISTRO_TRACKER_BUGS_PANEL_TEMPLATE <distro_tracker.project.local_settings.DISTRO_TRACKER_BUGS_PANEL_TEMPLATE>`
+    :data:`DISTRO_TRACKER_BUGS_PANEL_TEMPLATE
+    <distro_tracker.project.local_settings.DISTRO_TRACKER_BUGS_PANEL_TEMPLATE>`
     settings value which gives the path to a template which should be used to
     render the panel. It is recommended that this template extends
     ``core/panels/bugs.html``, but not mandatory. If a custom
-    :func:`get_bug_panel_stats <distro_tracker.vendor.skeleton.rules.get_bug_panel_stats>`
+    :func:`get_bug_panel_stats
+    <distro_tracker.vendor.skeleton.rules.get_bug_panel_stats>`
     function is also defined then its return value is simply passed to the
     and does not require any special format; the vendor's template can access
     this value in the ``panel.context`` context variable and can use it any way
@@ -824,7 +865,9 @@ class BugsPanel(BasePanel):
     @property
     def template_name(self):
         return getattr(
-            settings, 'DISTRO_TRACKER_BUGS_PANEL_TEMPLATE', self._default_template_name)
+            settings,
+            'DISTRO_TRACKER_BUGS_PANEL_TEMPLATE',
+            self._default_template_name)
 
     @cached_property
     def context(self):
@@ -860,8 +903,10 @@ class BugsPanel(BasePanel):
 
 
 class ActionNeededPanel(BasePanel):
+
     """
-    The panel displays a list of :class:`ActionItem <distro_tracker.core.models.ActionItem>`
+    The panel displays a list of
+    :class:`ActionItem <distro_tracker.core.models.ActionItem>`
     model instances which are associated with the package.
 
     This means that all other modules can create action items which are

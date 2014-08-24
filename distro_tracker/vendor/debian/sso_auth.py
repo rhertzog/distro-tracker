@@ -26,9 +26,9 @@ class DebianSsoUserMiddleware(RemoteUserMiddleware):
     Middleware that initiates user authentication based on the REMOTE_USER
     field provided by Debian's SSO system.
 
-    If the currently logged in user is a DD (as identified by having a @debian.org
-    address), he is forcefully logged out if the header is no longer found or is
-    invalid.
+    If the currently logged in user is a DD (as identified by having a
+    @debian.org address), he is forcefully logged out if the header is no longer
+    found or is invalid.
     """
     header = 'REMOTE_USER'
 

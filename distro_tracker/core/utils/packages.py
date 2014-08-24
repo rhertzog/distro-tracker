@@ -36,8 +36,8 @@ def extract_vcs_information(stanza):
         Maps ``Sources`` key names to values.
     :type stanza: dict
 
-    :returns: VCS information regarding the package. Contains the following keys:
-        type[, browser, url]
+    :returns: VCS information regarding the package. Contains the following
+        keys: type[, browser, url]
     :rtype: dict
     """
     vcs = {}
@@ -146,7 +146,8 @@ class AptCache(object):
             return True
 
     def __init__(self):
-        # The root cache directory is a subdirectory in the DISTRO_TRACKER_CACHE_DIRECTORY
+        # The root cache directory is a subdirectory in the
+        # DISTRO_TRACKER_CACHE_DIRECTORY
         self.cache_root_dir = os.path.join(
             settings.DISTRO_TRACKER_CACHE_DIRECTORY,
             'apt-cache'
@@ -163,9 +164,11 @@ class AptCache(object):
         self.sources = []
         self.packages = []
         self.cache_max_size = getattr(
-            settings, 'DISTRO_TRACKER_APT_CACHE_MAX_SIZE', self.DEFAULT_MAX_SIZE)
+            settings, 'DISTRO_TRACKER_APT_CACHE_MAX_SIZE',
+            self.DEFAULT_MAX_SIZE)
         #: The directory where source package files are cached
-        self.source_cache_directory = os.path.join(self.cache_root_dir, 'packages')
+        self.source_cache_directory = os.path.join(self.cache_root_dir,
+                                                   'packages')
         self._cache_size = None  # Evaluate the cache size lazily
 
         self.configure_cache()
@@ -173,7 +176,8 @@ class AptCache(object):
     @property
     def cache_size(self):
         if self._cache_size is None:
-            self._cache_size = self.get_directory_size(self.source_cache_directory)
+            self._cache_size = \
+                self.get_directory_size(self.source_cache_directory)
         return self._cache_size
 
     def get_directory_size(self, directory_path):
@@ -235,8 +239,9 @@ class AptCache(object):
                 conf_file.write('"{arch}"; '.format(arch=architecture))
             conf_file.write('};\n')
             conf_file.write('Dir "apt";\n')
-            conf_file.write('Dir::State::status "{status}";\n'.format(status= \
-                    os.path.join(self.cache_root_dir, 'var/lib/dpkg/status')))
+            conf_file.write('Dir::State::status "{status}";\n'.format(
+                status=os.path.join(self.cache_root_dir,
+                                    'var/lib/dpkg/status')))
             conf_file.write('Dir::Etc "{etc}";\n'.format(
                 etc=self.cache_root_dir))
             conf_file.write('Dir::Etc::sourcelist "{src}";\n'.format(
@@ -271,8 +276,8 @@ class AptCache(object):
 
     def _match_index_file_to_repository(self, sources_file):
         """
-        Returns the :class:`Repository <distro_tracker.core.models.Repository>` instance
-        which matches the given cached ``Sources`` file.
+        Returns the :class:`Repository <distro_tracker.core.models.Repository>`
+        instance which matches the given cached ``Sources`` file.
 
         :rtype: :class:`Repository <distro_tracker.core.models.Repository>`
         """
@@ -319,7 +324,7 @@ class AptCache(object):
         """
         if filter_function is None:
             # Include all files if the filter function is not provided
-            filter_function = lambda x: True
+            filter_function = lambda x: True  # noqa
 
         return [
             file_name
@@ -337,7 +342,8 @@ class AptCache(object):
 
         :param repository: The repository for which to return all cached
             ``Sources`` files
-        :type repository: :class:`Repository <distro_tracker.core.models.Repository>`
+        :type repository: :class:`Repository
+            <distro_tracker.core.models.Repository>`
 
         :rtype: ``iterable`` of strings
         """
@@ -356,7 +362,8 @@ class AptCache(object):
 
         :param repository: The repository for which to return all cached
             ``Packages`` files
-        :type repository: :class:`Repository <distro_tracker.core.models.Repository>`
+        :type repository: :class:`Repository
+            <distro_tracker.core.models.Repository>`
 
         :rtype: ``iterable`` of strings
         """
@@ -375,10 +382,10 @@ class AptCache(object):
 
         :returns: A two-tuple ``(updated_sources, updated_packages)``. Each of
             the tuple's members is a list of
-            (:class:`Repository <distro_tracker.core.models.Repository>`, ``file_name``)
-            pairs representing the repository which was updated and the file
-            which contains the fresh information. The file is either a
-            ``Sources`` or a ``Packages`` file, respectively.
+            (:class:`Repository <distro_tracker.core.models.Repository>`,
+             ``file_name``) pairs representing the repository which was updated
+            and the file which contains the fresh information. The file is
+            either a ``Sources`` or a ``Packages`` file, respectively.
         """
         if force_download:
             self.clear_cache()
@@ -480,7 +487,6 @@ class AptCache(object):
         Returns a :class:`apt_pkg.SourceRecords` instance where the given
         source package is the current working record.
         """
-        cache = apt.cache.Cache(rootdir=self.cache_root_dir)
         source_records = apt_pkg.SourceRecords()
         source_records.restart()
         # Find the cached record matching this source package and version
@@ -564,7 +570,8 @@ class AptCache(object):
             if item.status != item.STAT_DONE:
                 raise SourcePackageRetrieveError(
                     'Could not retrieve file {file}: {error}'.format(
-                        file=item.destfile, error=item.error_text.decode('utf-8')))
+                        file=item.destfile,
+                        error=item.error_text.decode('utf-8')))
             retrieved_paths.append(item.destfile)
 
         return retrieved_paths
@@ -588,7 +595,8 @@ class AptCache(object):
         :rtype: string
         """
         if self.cache_size > self.cache_max_size:
-            # If the maximum allowed cache size has been exceeded, clear the cache
+            # If the maximum allowed cache size has been exceeded,
+            # clear the cache
             self.clear_cached_sources()
 
         source_records = self._get_apt_source_records(source_name, version)

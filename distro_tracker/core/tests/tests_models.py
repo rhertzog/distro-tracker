@@ -19,11 +19,13 @@ from django.test.utils import override_settings
 from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.urlresolvers import reverse
-from distro_tracker.core.models import Subscription, EmailSettings, PackageName, BinaryPackageName
+from distro_tracker.core.models import Subscription, EmailSettings
+from distro_tracker.core.models import PackageName, BinaryPackageName
 from distro_tracker.core.models import BinaryPackage
 from distro_tracker.core.models import Architecture
 from distro_tracker.core.models import BinaryPackageRepositoryEntry
-from distro_tracker.core.models import SourcePackageName, SourcePackageRepositoryEntry
+from distro_tracker.core.models import SourcePackageName
+from distro_tracker.core.models import SourcePackageRepositoryEntry
 from distro_tracker.core.models import Keyword
 from distro_tracker.core.models import ActionItem, ActionItemType
 from distro_tracker.core.models import PseudoPackageName
@@ -52,7 +54,8 @@ class SubscriptionManagerTest(TestCase):
     def setUp(self):
         self.package = PackageName.objects.create(name='dummy-package')
         self.user_email = UserEmail.objects.create(email='email@domain.com')
-        self.email_settings = EmailSettings.objects.create(user_email=self.user_email)
+        self.email_settings = \
+            EmailSettings.objects.create(user_email=self.user_email)
 
     def create_subscription(self, package, email, active=True):
         """
@@ -68,7 +71,8 @@ class SubscriptionManagerTest(TestCase):
         subscription = self.create_subscription(
             self.package.name, self.user_email.email)
 
-        self.assertEqual(subscription.email_settings.user_email, self.user_email)
+        self.assertEqual(subscription.email_settings.user_email,
+                         self.user_email)
         self.assertEqual(subscription.package, self.package)
         self.assertIn(self.email_settings, self.package.subscriptions.all())
         self.assertTrue(subscription.active)
@@ -178,7 +182,8 @@ class KeywordsTest(TestCase):
     def setUp(self):
         self.package = PackageName.objects.create(name='dummy-package')
         self.user_email = UserEmail.objects.create(email='email@domain.com')
-        self.email_settings = EmailSettings.objects.create(user_email=self.user_email)
+        self.email_settings = \
+            EmailSettings.objects.create(user_email=self.user_email)
         Keyword.objects.all().delete()
         self.email_settings.default_keywords.add(
             Keyword.objects.get_or_create(name='cvs')[0])
@@ -229,7 +234,8 @@ class UserEmailTest(TestCase):
     def setUp(self):
         self.package = PackageName.objects.create(name='dummy-package')
         self.user_email = UserEmail.objects.create(email='email@domain.com')
-        self.email_settings = EmailSettings.objects.create(user_email=self.user_email)
+        self.email_settings = \
+            EmailSettings.objects.create(user_email=self.user_email)
 
     def test_is_subscribed_to(self):
         """
@@ -239,16 +245,20 @@ class UserEmailTest(TestCase):
         Subscription.objects.create_for(
             package_name=self.package.name,
             email=self.user_email.email)
-        self.assertTrue(self.user_email.emailsettings.is_subscribed_to(self.package))
-        self.assertTrue(self.user_email.emailsettings.is_subscribed_to(self.package.name))
+        self.assertTrue(
+            self.user_email.emailsettings.is_subscribed_to(self.package))
+        self.assertTrue(
+            self.user_email.emailsettings.is_subscribed_to(self.package.name))
 
     def test_is_subscribed_to_false(self):
         """
         Tests that the ``is_subscribed_to`` method returns False when the user
         is not subscribed to the package.
         """
-        self.assertFalse(self.user_email.emailsettings.is_subscribed_to(self.package))
-        self.assertFalse(self.user_email.emailsettings.is_subscribed_to(self.package.name))
+        self.assertFalse(
+            self.user_email.emailsettings.is_subscribed_to(self.package))
+        self.assertFalse(
+            self.user_email.emailsettings.is_subscribed_to(self.package.name))
 
     def test_is_subscribed_to_false_inactive(self):
         """
@@ -259,7 +269,8 @@ class UserEmailTest(TestCase):
             package_name=self.package.name,
             email=self.user_email.email,
             active=False)
-        self.assertFalse(self.user_email.emailsettings.is_subscribed_to(self.package))
+        self.assertFalse(
+            self.user_email.emailsettings.is_subscribed_to(self.package))
 
     def test_new_user_has_default_keywords(self):
         """
@@ -287,7 +298,8 @@ class UserEmailManagerTest(TestCase):
     def setUp(self):
         self.package = PackageName.objects.create(name='dummy-package')
         self.user_email = UserEmail.objects.create(email='email@domain.com')
-        self.email_settings = EmailSettings.objects.create(user_email=self.user_email)
+        self.email_settings = \
+            EmailSettings.objects.create(user_email=self.user_email)
 
     def test_is_subscribed_to(self):
         """
@@ -583,8 +595,8 @@ class BinaryPackageManagerTest(TestCase):
             name='binary-package')
 
     def test_package_exists(self):
-        self.assertTrue(
-            BinaryPackageName.objects.exists_with_name(self.binary_package.name))
+        self.assertTrue(BinaryPackageName.objects.exists_with_name(
+            self.binary_package.name))
 
     def test_package_exists_false(self):
         self.assertFalse(
@@ -596,7 +608,8 @@ class RepositoryTests(TestCase):
 
     def setUp(self):
         self.repository = Repository.objects.all()[0]
-        self.src_pkg_name = SourcePackageName.objects.create(name='dummy-package')
+        self.src_pkg_name = \
+            SourcePackageName.objects.create(name='dummy-package')
         self.source_package = SourcePackage.objects.create(
             source_package_name=self.src_pkg_name, version='1.0.0')
         self.bin_pkg_name = PackageName.objects.get(name='dummy-package')
@@ -727,9 +740,9 @@ class RepositoryTests(TestCase):
     def test_get_source_package_repository_entry_single(self):
         """
         Tests the
-        :meth:`get_source_package_entry <distro_tracker.core.models.Repository.get_source_package_entry>`
-        method when there is only one version of the given package in the
-        repository.
+        :meth:`get_source_package_entry
+        <distro_tracker.core.models.Repository.get_source_package_entry>` method
+        when there is only one version of the given package in the repository.
         """
         entry = self.repository.add_source_package(self.source_package)
 
@@ -748,9 +761,9 @@ class RepositoryTests(TestCase):
     def test_get_source_package_repository_entry_multiple(self):
         """
         Tests the
-        :meth:`get_source_package_entry <distro_tracker.core.models.Repository.get_source_package_entry>`
-        method when there are multiple versions of the given package in the
-        repository.
+        :meth:`get_source_package_entry
+        <distro_tracker.core.models.Repository.get_source_package_entry>` method
+        when there are multiple versions of the given package in the repository.
         """
         higher_version_package = SourcePackage.objects.create(
             source_package_name=self.src_pkg_name, version='2.0.0')
@@ -776,7 +789,8 @@ class SourcePackageTests(TestCase):
 
     def setUp(self):
         self.repository = Repository.objects.all()[0]
-        self.src_pkg_name = SourcePackageName.objects.create(name='dummy-package')
+        self.src_pkg_name = \
+            SourcePackageName.objects.create(name='dummy-package')
         self.source_package = SourcePackage.objects.create(
             source_package_name=self.src_pkg_name, version='1.0.0')
 
@@ -926,10 +940,11 @@ class SourcePackageTests(TestCase):
     def test_get_version_entry_default_repo(self):
         """
         Tests that the
-        :class:`SourcePackageRepositoryEntry <distro_tracker.core.models.SourcePackageRepositoryEntry>`
-        matching the default repository is always returned from the
-        :meth:`SourcePackage.main_entry <distro_tracker.core.models.SourcePackage.main_entry>`
-        property.
+        :class:`SourcePackageRepositoryEntry
+        <distro_tracker.core.models.SourcePackageRepositoryEntry>` matching the
+        default repository is always returned from the
+        :meth:`SourcePackage.main_entry
+        <distro_tracker.core.models.SourcePackage.main_entry>` property.
         """
         # Make sure the repository is default
         self.repository.default = True
@@ -943,12 +958,13 @@ class SourcePackageTests(TestCase):
     def test_get_version_entry_non_default_repo(self):
         """
         Tests that the
-        :class:`SourcePackageRepositoryEntry <distro_tracker.core.models.SourcePackageRepositoryEntry>`
-        matching the repository with the highest
-        :attr:`position <distro_tracker.core.models.Repository.position>` field is returned
-        from
-        :meth:`SourcePackage.main_entry <distro_tracker.core.models.SourcePackage.main_entry>`
-        when the package is not found in the default repository.
+        :class:`SourcePackageRepositoryEntry
+        <distro_tracker.core.models.SourcePackageRepositoryEntry>` matching the
+        repository with the highest :attr:`position
+        <distro_tracker.core.models.Repository.position>` field is returned from
+        :meth:`SourcePackage.main_entry
+        <distro_tracker.core.models.SourcePackage.main_entry>` when the package
+        is not found in the default repository.
         """
         self.repository.default = False
         self.repository.save()
@@ -963,18 +979,18 @@ class SourcePackageTests(TestCase):
 
     def test_get_version_entry_no_repo(self):
         """
-        Tests that the
-        :meth:`SourcePackage.main_entry <distro_tracker.core.models.SourcePackage.main_entry>`
-        property returns ``None`` when the version is not found in any repository.
+        Tests that the :meth:`SourcePackage.main_entry
+        <distro_tracker.core.models.SourcePackage.main_entry>` property returns
+        ``None`` when the version is not found in any repository.
         """
         self.assertIsNone(self.source_package.main_entry)
 
     def test_changelog_entry_only(self):
         """
-        Tests that the
-        :meth:`get_changelog_entry <distro_tracker.core.models.SourcePackage.get_changelog_entry>`
-        returns the changelog part correctly when it is the only entry in the
-        changelog file.
+        Tests that the :meth:`get_changelog_entry
+        <distro_tracker.core.models.SourcePackage.get_changelog_entry>` returns
+        the changelog part correctly when it is the only entry in the changelog
+        file.
         """
         changelog_entry = (
             "{pkg} ({ver}) suite; urgency=high\n\n"
@@ -996,9 +1012,9 @@ class SourcePackageTests(TestCase):
 
     def test_changelog_entry_beginning(self):
         """
-        Tests that the
-        :meth:`get_changelog_entry <distro_tracker.core.models.SourcePackage.get_changelog_entry>`
-        returns the changelog part correctly when it is the latest entry in the
+        Tests that the :meth:`get_changelog_entry
+        <distro_tracker.core.models.SourcePackage.get_changelog_entry>` returns
+        the changelog part correctly when it is the latest entry in the
         changelog file.
         """
         changelog_entry = (
@@ -1027,9 +1043,9 @@ class SourcePackageTests(TestCase):
 
     def test_changelog_entry_not_first(self):
         """
-        Tests that the
-        :meth:`get_changelog_entry <distro_tracker.core.models.SourcePackage.get_changelog_entry>`
-        returns the changelog part correctly when it is not the latest entry in the
+        Tests that the :meth:`get_changelog_entry
+        <distro_tracker.core.models.SourcePackage.get_changelog_entry>` returns
+        the changelog part correctly when it is not the latest entry in the
         changelog file.
         """
         changelog_entry = (
@@ -1057,10 +1073,10 @@ class SourcePackageTests(TestCase):
 
     def test_changelog_entry_regex_meta_chars(self):
         """
-        Tests that the
-        :meth:`get_changelog_entry <distro_tracker.core.models.SourcePackage.get_changelog_entry>`
-        returns the changelog part correctly when the version contains a
-        regex meta character.
+        Tests that the :meth:`get_changelog_entry
+        <distro_tracker.core.models.SourcePackage.get_changelog_entry>` returns
+        the changelog part correctly when the version contains a regex meta
+        character.
         """
         self.source_package.version = self.source_package.version + '+deb7u1'
         self.source_package.save()
@@ -1088,7 +1104,8 @@ class BinaryPackageTests(TestCase):
 
     def setUp(self):
         self.repository = Repository.objects.all()[0]
-        self.src_pkg_name = SourcePackageName.objects.create(name='dummy-package')
+        self.src_pkg_name = \
+            SourcePackageName.objects.create(name='dummy-package')
         self.source_package = SourcePackage.objects.create(
             source_package_name=self.src_pkg_name, version='1.0.0')
         self.binary_package = BinaryPackageName.objects.create(
@@ -1228,8 +1245,8 @@ class NewsTests(TestCase):
 
     def test_content_from_db(self):
         """
-        Tests that the :meth:`distro_tracker.core.models.News.content` property returns
-        the correct contents when they are found in the database.
+        Tests that the :meth:`distro_tracker.core.models.News.content` property
+        returns the correct contents when they are found in the database.
         """
         expected_content = 'This is some news content'
         news = News.objects.create(
@@ -1242,8 +1259,8 @@ class NewsTests(TestCase):
 
     def test_content_from_file(self):
         """
-        Tests that the :meth:`distro_tracker.core.models.News.content` property returns
-        the correct contents when they are found in a file.
+        Tests that the :meth:`distro_tracker.core.models.News.content` property
+        returns the correct contents when they are found in a file.
         """
         expected_content = b'This is some news content'
         # Create a temporary file for the content
@@ -1259,8 +1276,9 @@ class NewsTests(TestCase):
 
     def test_no_content(self):
         """
-        Tests that the :meth:`distro_tracker.core.models.News.content` property returns
-        no content when neither the database content nor file content is set.
+        Tests that the :meth:`distro_tracker.core.models.News.content` property
+        returns no content when neither the database content nor file content is
+        set.
         """
         news = News.objects.create(title='some title', package=self.package)
 
@@ -1268,8 +1286,9 @@ class NewsTests(TestCase):
 
     def test_create_db_content(self):
         """
-        Tests the :meth:`distro_tracker.core.models.NewsManager.create` method when it
-        should create an instance whose content is stored in the database.
+        Tests the :meth:`distro_tracker.core.models.NewsManager.create` method
+        when it should create an instance whose content is stored in the
+        database.
         """
         expected_content = 'Some content'
         news = News.objects.create(
@@ -1282,8 +1301,8 @@ class NewsTests(TestCase):
 
     def test_create_file_content(self):
         """
-        Tests the :meth:`distro_tracker.core.models.NewsManager.create` method when it
-        should create an instance whose content is stored in a file.
+        Tests the :meth:`distro_tracker.core.models.NewsManager.create` method
+        when it should create an instance whose content is stored in a file.
         """
         expected_content = b'Some content'
         news = News.objects.create(
@@ -1437,8 +1456,9 @@ class ActionItemTests(TestCase):
 
     def test_full_description_from_template(self):
         """
-        Tests that the :attr:`distro_tracker.core.models.ActionItem.full_description`
-        property returns content by rendering the correct template.
+        Tests that the
+        :attr:`distro_tracker.core.models.ActionItem.full_description` property
+        returns content by rendering the correct template.
         """
         self.set_action_type_template('action-item-test.html')
         action_item = ActionItem.objects.create(
@@ -1455,9 +1475,9 @@ class ActionItemTests(TestCase):
 
     def test_full_description_unexisting_template(self):
         """
-        Tests that the :attr:`distro_tracker.core.models.ActionItem.full_description`
-        returns an empty full description if the given template does not
-        exist.
+        Tests that the
+        :attr:`distro_tracker.core.models.ActionItem.full_description` returns
+        an empty full description if the given template does not exist.
         """
         self.set_action_type_template('this-template-does-not-exist.html')
         action_item = ActionItem.objects.create(
@@ -1469,8 +1489,9 @@ class ActionItemTests(TestCase):
 
     def test_full_description_no_template_given(self):
         """
-        Tests that the :attr:`distro_tracker.core.models.ActionItem.full_description`
-        returns an empty full description if no template is set for the item.
+        Tests that the
+        :attr:`distro_tracker.core.models.ActionItem.full_description` returns
+        an empty full description if no template is set for the item.
         """
         action_item = ActionItem.objects.create(
             package=self.package,
@@ -1481,8 +1502,9 @@ class ActionItemTests(TestCase):
 
     def test_full_description_extra_data(self):
         """
-        Tests that the :attr:`distro_tracker.core.models.ActionItem.full_description`
-        returns a description which can use the extra_data of a
+        Tests that the
+        :attr:`distro_tracker.core.models.ActionItem.full_description` returns a
+        description which can use the extra_data of a
         :class:`distro_tracker.core.models.ActionItem`.
         """
         self.set_action_type_template('action-item-test.html')
@@ -1511,7 +1533,8 @@ class TeamTests(TestCase):
         self.team.packages.add(self.package_name)
         self.user_email = UserEmail.objects.create(
             email='other@domain.com')
-        self.email_settings = EmailSettings.objects.create(user_email=self.user_email)
+        self.email_settings = \
+            EmailSettings.objects.create(user_email=self.user_email)
 
     def assert_keyword_sets_equal(self, set1, set2):
         self.assertEqual(

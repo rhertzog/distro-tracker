@@ -32,7 +32,8 @@ class GenerateNewsFromRepositoryUpdates(BaseTask):
         Generates the content for a news item created when a package version is
         first created.
 
-        :type package: :class:`SourcePackageName <distro_tracker.core.models.SourcePackageName>`
+        :type package: :class:`SourcePackageName
+            <distro_tracker.core.models.SourcePackageName>`
         :type version: :class:`string`
         """
         package_version = package.source_package_versions.get(version=version)
@@ -59,7 +60,8 @@ class GenerateNewsFromRepositoryUpdates(BaseTask):
             if event.name == 'source-files-extracted':
                 continue
 
-            package_name, version = event.arguments['name'], event.arguments['version']
+            package_name = event.arguments['name']
+            version = event.arguments['version']
             package_changes.setdefault(package_name, [])
             package_changes[package_name].append(event)
 
@@ -68,7 +70,8 @@ class GenerateNewsFromRepositoryUpdates(BaseTask):
                 new_source_versions[package_name].append(version)
 
         # Retrieve all relevant packages from the db
-        packages = SourcePackageName.objects.filter(name__in=package_changes.keys())
+        packages = SourcePackageName.objects.filter(
+            name__in=package_changes.keys())
 
         for package in packages:
             package_name = package.name
@@ -89,7 +92,8 @@ class GenerateNewsFromRepositoryUpdates(BaseTask):
                 for event in events:
                     # First time seeing this version?
                     version = event.arguments['version']
-                    new_source_version = version in new_source_versions[package_name]
+                    new_source_version = \
+                        version in new_source_versions[package_name]
                     title, content = None, None
                     if event.name == 'new-source-package-version-in-repository':
                         if new_source_version:
@@ -98,7 +102,8 @@ class GenerateNewsFromRepositoryUpdates(BaseTask):
                                 package, version)
                         else:
                             title = "{pkg} version {ver} MIGRATED to {repo}"
-                    elif event.name == 'lost-source-package-version-in-repository':
+                    elif event.name == \
+                            'lost-source-package-version-in-repository':
                         # Check if the repository still has some version of the
                         # source package. If not, a news item needs to be added
                         if package_removed_processed:
@@ -106,7 +111,8 @@ class GenerateNewsFromRepositoryUpdates(BaseTask):
                             # repository, package pair
                             continue
                         package_removed_processed = True
-                        repository = Repository.objects.get(name=repository_name)
+                        repository = \
+                            Repository.objects.get(name=repository_name)
                         if not repository.has_source_package_name(package.name):
                             title = "{pkg} REMOVED from {repo}"
 

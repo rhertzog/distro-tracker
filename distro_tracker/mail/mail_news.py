@@ -47,14 +47,15 @@ def process(message):
     Process an incoming message which is potentially a news item.
 
     The function first tries to call the vendor-provided function
-    :func:`create_news_from_email_message <distro_tracker.vendor.skeleton.rules.create_news_from_email_message>`.
+    :func:`create_news_from_email_message
+    <distro_tracker.vendor.skeleton.rules.create_news_from_email_message>`.
 
     If this function does not exist a news item is created only if there is a
-    ``X-Distro-Tracker-Package`` header set giving the name of an existing source or
-    pseudo package.
+    ``X-Distro-Tracker-Package`` header set giving the name of an existing
+    source or pseudo package.
 
-    If the ``X-Distro-Tracker-Url`` is also set then the content of the message will not
-    be the email content, rather the URL given in this header.
+    If the ``X-Distro-Tracker-Url`` is also set then the content of the message
+    will not be the email content, rather the URL given in this header.
 
     :param message: The received message
     :type message: :class:`bytes`
@@ -68,8 +69,8 @@ def process(message):
     if implemented and created:
         return
 
-    # If the message has an X-Distro-Tracker-Package header, it is automatically made into
-    # a news item.
+    # If the message has an X-Distro-Tracker-Package header, it is
+    # automatically made into a news item.
     if 'X-Distro-Tracker-Package' in msg:
         package_name = msg['X-Distro-Tracker-Package']
         package = get_or_none(PackageName, name=package_name)
@@ -81,7 +82,7 @@ def process(message):
             distro_tracker_url = msg['X-Distro-Tracker-Url']
             News.objects.create(
                 title=distro_tracker_url,
-                content="<a href={url}>{url}</a>".format(url=escape(distro_tracker_url)),
+                content="<a href={url}>{url}</a>".format(
+                    url=escape(distro_tracker_url)),
                 package=package,
                 content_type='text/html')
-

@@ -26,8 +26,10 @@ class CommandConfirmationManager(ConfirmationManager):
         """
         Creates a :py:class:`CommandConfirmation` object for the given commands.
 
-        :param commands: An iterable of commands for which a confirmation is requested.
-        :raises distro_tracker.mail.models.CommandConfirmationException: If it is unable to generate a unique key.
+        :param commands: An iterable of commands for which a confirmation is
+            requested.
+        :raises distro_tracker.mail.models.CommandConfirmationException: If it
+            is unable to generate a unique key.
         """
         commands = '\n'.join(commands)
         return self.create_confirmation(commands, **{
@@ -64,7 +66,8 @@ class UserEmailBounceStatsManager(models.Manager):
     def get_bounce_stats(self, email, date):
         """
         Gets the :py:class:`UserEmailBounceStats` instance for the given
-        :py:class:`UserEmail <distro_tracker.core.models.UserEmail>` on the given ``date``
+        :py:class:`UserEmail <distro_tracker.core.models.UserEmail>` on the
+        given ``date``
 
         :param email: The email of the
             :py:class:`UserEmail <distro_tracker.core.models.UserEmail>`
@@ -85,8 +88,8 @@ class UserEmailBounceStatsManager(models.Manager):
         :py:class:`UserEmail <distro_tracker.core.models.UserEmail>`
 
         :param email: The email of the
-            :py:class:`UserEmail <distro_tracker.core.models.UserEmail>` for which a
-            bounce will be logged
+            :py:class:`UserEmail <distro_tracker.core.models.UserEmail>` for
+            which a bounce will be logged
         :type email: string
 
         :param date: The date of the bounce
@@ -102,8 +105,8 @@ class UserEmailBounceStatsManager(models.Manager):
         :py:class:`UserEmail <distro_tracker.core.models.UserEmail>`
 
         :param email: The email of the
-            :py:class:`UserEmail <distro_tracker.core.models.UserEmail>` for which a
-            sent email will be logged
+            :py:class:`UserEmail <distro_tracker.core.models.UserEmail>` for
+            which a sent email will be logged
         :type email: string
 
         :param date: The date of the sent email
@@ -116,7 +119,7 @@ class UserEmailBounceStatsManager(models.Manager):
     def limit_bounce_information(self, email):
         """
         Makes sure not to keep more records than the number of days set by
-        :py:attr:`DISTRO_TRACKER_MAX_DAYS_TOLERATE_BOUNCE <distro_tracker.project.settings.DISTRO_TRACKER_MAX_DAYS_TOLERATE_BOUNCE>`
+        DISTRO_TRACKER_MAX_DAYS_TOLERATE_BOUNCE
         """
         user = self.get(email=email)
         days = settings.DISTRO_TRACKER_MAX_DAYS_TOLERATE_BOUNCE
@@ -126,8 +129,8 @@ class UserEmailBounceStatsManager(models.Manager):
 
 class UserEmailBounceStats(UserEmail):
     """
-    A proxy model for the :py:class:`UserEmail <distro_tracker.core.models.UserEmail>`
-    model.
+    A proxy model for the :py:class:`UserEmail
+    <distro_tracker.core.models.UserEmail>` model.
     It is defined in order to implement additional bounce stats-related
     methods without needlessly adding them to the public interface of
     :py:class:`UserEmail <distro_tracker.core.models.UserEmail>` when only the
@@ -170,7 +173,8 @@ class BounceStats(models.Model):
 
     def __str__(self):
         return (
-            'Got {bounced} bounces out of {sent} mails to {email} on {date}'.format(
+            'Got {bounced} bounces out of {sent} '
+            'mails to {email} on {date}'.format(
                 email=self.user_email,
                 date=self.date,
                 sent=self.mails_sent,

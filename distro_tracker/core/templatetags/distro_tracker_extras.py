@@ -16,8 +16,8 @@ register = template.Library()
 
 class RepeatNode(template.Node):
     """
-    A :class:`Node <django.template.base.Node>` for implementing the :func:`repeat`
-    template tag.
+    A :class:`Node <django.template.base.Node>` for implementing the
+    :func:`repeat` template tag.
     """
     def __init__(self, nodelist, count):
         self.nodelist = nodelist
@@ -41,7 +41,8 @@ def repeat(parser, token):
         tag_name, count = token.split_contents()
     except ValueError:
         raise template.TemplateSyntaxError(
-            '{tag} tag requires an argument'.format(tag=token.contents.split()[0]))
+            '{tag} tag requires an argument'.format(
+                tag=token.contents.split()[0]))
 
     nodelist = parser.parse(('endrepeat',))
     parser.delete_first_token()

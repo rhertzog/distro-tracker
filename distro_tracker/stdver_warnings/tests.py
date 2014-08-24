@@ -16,7 +16,8 @@ Tests for the :mod:`distro_tracker.stdver_warnings` app.
 from __future__ import unicode_literals
 from distro_tracker.test import TestCase
 from django.utils.six.moves import mock
-from distro_tracker.stdver_warnings.tracker_tasks import UpdateStandardsVersionWarnings
+from distro_tracker.stdver_warnings.tracker_tasks \
+    import UpdateStandardsVersionWarnings
 from distro_tracker.core.tasks import Event, Job, JobState
 from distro_tracker.core.models import SourcePackageName
 from distro_tracker.core.models import SourcePackage
@@ -30,7 +31,8 @@ class StandardsVersionActionItemTests(TestCase):
     task.
     """
     def setUp(self):
-        self.package_name = SourcePackageName.objects.create(name='dummy-package')
+        self.package_name = \
+            SourcePackageName.objects.create(name='dummy-package')
         self.package = SourcePackage.objects.create(
             source_package_name=self.package_name, version='1.0.0')
 
@@ -285,14 +287,16 @@ class StandardsVersionActionItemTests(TestCase):
         self.package.standards_version = '3.9.3'
         self.package.save()
         # Create another package with an outdated standards version
-        outdated_package_name = SourcePackageName.objects.create(name='outdated')
-        outdated_package = SourcePackage.objects.create(
+        outdated_package_name = \
+            SourcePackageName.objects.create(name='outdated')
+        SourcePackage.objects.create(
             source_package_name=outdated_package_name,
             version='4.0.0',
             standards_version='3.9.1.0')
         # Create a package with an up to date standards version
-        up_to_date_package_name = SourcePackageName.objects.create(name='uptodate')
-        up_to_date_package = SourcePackage.objects.create(
+        up_to_date_package_name = \
+            SourcePackageName.objects.create(name='uptodate')
+        SourcePackage.objects.create(
             source_package_name=up_to_date_package_name,
             version='4.0.0',
             standards_version='3.9.4')

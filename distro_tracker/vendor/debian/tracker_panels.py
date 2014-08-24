@@ -74,8 +74,9 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
             has_checks = True
         except:
             has_checks = False
-        logcheck_url = "https://qa.debian.org/bls/packages/{hash}/{pkg}.html".format(
-            hash=self.package.name[0], pkg=self.package.name)
+        logcheck_url = \
+            "https://qa.debian.org/bls/packages/{hash}/{pkg}.html".format(
+                hash=self.package.name[0], pkg=self.package.name)
 
         return [
             TemplatePanelItem('debian/logcheck-links.html', {
@@ -135,7 +136,8 @@ class SourceCodeSearchLinks(LinksPanel.ItemProvider):
             if allowed_repo in repositories:
                 links.append(LinksPanel.SimpleLinkItem(
                     'browse source code',
-                    self.SOURCES_URL_TEMPLATE.format(package=self.package.name)))
+                    self.SOURCES_URL_TEMPLATE.format(
+                        package=self.package.name)))
                 break
 
         if 'unstable' in repositories:
@@ -192,7 +194,8 @@ class TransitionsPanel(BasePanel):
 
     @property
     def has_content(self):
-        return bool(self.context['transitions']) or bool(self.context['excuses'])
+        return bool(self.context['transitions']) or \
+            bool(self.context['excuses'])
 
 
 class UbuntuPanel(BasePanel):

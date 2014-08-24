@@ -39,12 +39,14 @@ class PackageNewsFeed(Feed):
         return obj.get_absolute_url()
 
     def description(self, obj):
-        return "Latest developer's news for {vendor} source package {pkg}".format(
+        return "Latest developer's news for {vendor} "
+        "source package {pkg}".format(
             vendor=settings.DISTRO_TRACKER_VENDOR_NAME,
             pkg=obj.name)
 
     def items(self, obj):
-        item_limit = getattr(settings, 'DISTRO_TRACKER_RSS_ITEM_LIMIT', self._DEFAULT_LIMIT)
+        item_limit = getattr(settings, 'DISTRO_TRACKER_RSS_ITEM_LIMIT',
+                             self._DEFAULT_LIMIT)
 
         news = obj.news_set.all()
         action_items = obj.action_items.all()
@@ -76,7 +78,6 @@ class PackageNewsFeed(Feed):
             return renderer.render_to_string()
         elif isinstance(item, ActionItem):
             return item.full_description
-
 
     def item_pubdate(self, item):
         if isinstance(item, ActionItem):

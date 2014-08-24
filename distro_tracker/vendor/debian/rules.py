@@ -308,7 +308,8 @@ def get_bug_tracker_url(package_name, package_type, category_name):
     - ``rc`` - release critical bugs
     - ``rc-merged`` - release critical bugs, including the merged ones
     - ``normal`` - bugs tagged as normal and important
-    - ``normal`` - bugs tagged as normal and important, including the merged ones
+    - ``normal`` - bugs tagged as normal and important, including the merged
+      ones
     - ``wishlist`` - bugs tagged as wishlist and minor
     - ``wishlist-merged`` - bugs tagged as wishlist and minor, including the
       merged ones
@@ -551,7 +552,8 @@ def get_bug_panel_stats(package_name):
 
     # Debian also includes a custom graph of bug history
     graph_url = (
-        'https://qa.debian.org/data/bts/graphs/{package_hash}/{package_name}.png'
+        'https://qa.debian.org/data/bts/graphs/'
+        '{package_hash}/{package_name}.png'
     )
     if package_name.startswith('lib'):
         package_hash = package_name[:4]
@@ -604,7 +606,8 @@ def get_binary_package_bug_stats(binary_name):
     # Filter the bug stats to only include some categories and add a custom
     # display name for each of them.
     return [
-        extend_category(category, category_descriptions[category['category_name']])
+        extend_category(category,
+                        category_descriptions[category['category_name']])
         for category in stats.stats
         if category['category_name'] in category_descriptions.keys()
     ]
@@ -656,7 +659,8 @@ def create_news_from_email_message(message):
             if not package:
                 # This package is not tracked
                 continue
-            title = "Removed {ver} from {suite}".format(ver=version, suite=suite)
+            title = "Removed {ver} from {suite}".format(ver=version,
+                                                        suite=suite)
             created_news.append(EmailNews.objects.create_email_news(
                 title=title,
                 message=message,
@@ -714,7 +718,8 @@ def pre_login(user):
            for user_email in user.emails.all()):
         raise forms.ValidationError(
             "Your account has a @debian.org email address associated. "
-            "To log in to the package tracker, you must first authenticate on http://sso.debian.org")
+            "To log in to the package tracker, you must first authenticate "
+            "on http://sso.debian.org")
 
 
 def post_logout(user, secure=False):

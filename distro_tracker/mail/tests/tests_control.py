@@ -46,6 +46,7 @@ import re
 
 DISTRO_TRACKER_CONTACT_EMAIL = settings.DISTRO_TRACKER_CONTACT_EMAIL
 DISTRO_TRACKER_CONTROL_EMAIL = settings.DISTRO_TRACKER_CONTROL_EMAIL
+MAX_ALLOWED_ERRORS = settings.DISTRO_TRACKER_MAX_ALLOWED_ERRORS_CONTROL_COMMANDS
 
 
 class EmailControlTest(TestCase):
@@ -447,7 +448,6 @@ class ControlBotBasic(EmailControlTest):
         """
         Tests that processing stops after encountering five garbage lines.
         """
-        MAX_ALLOWED_ERRORS = settings.DISTRO_TRACKER_MAX_ALLOWED_ERRORS_CONTROL_COMMANDS
         self.set_input_lines(
             ['help'] + ['garbage'] * MAX_ALLOWED_ERRORS + ['#command'])
 
@@ -487,7 +487,6 @@ class ControlBotBasic(EmailControlTest):
         Tests that processing skips commented lines and that they are not
         considered garbage.
         """
-        MAX_ALLOWED_ERRORS = settings.DISTRO_TRACKER_MAX_ALLOWED_ERRORS_CONTROL_COMMANDS
         self.set_input_lines(
             [self.make_comment(command)
              for command in ['comment'] * MAX_ALLOWED_ERRORS] + ['help']
@@ -731,7 +730,8 @@ class ConfirmationTests(EmailControlTest):
             'subscribe ' + package.name + ' ' + self.user_email_address,
             'who',
             'keywords',
-            'unsubscribe ' + self.packages[1].name + ' ' + self.user_email_address,
+            'unsubscribe ' + self.packages[1].name + ' ' +
+            self.user_email_address,
         ])
 
         self.control_process()
@@ -741,7 +741,8 @@ class ConfirmationTests(EmailControlTest):
         expected = '\n'.join([
             'unsubscribeall ' + self.user_email_address,
             'subscribe ' + package.name + ' ' + self.user_email_address,
-            'unsubscribe ' + self.packages[1].name + ' ' + self.user_email_address,
+            'unsubscribe ' + self.packages[1].name + ' ' +
+            self.user_email_address,
         ])
         self.assertEqual(expected, c.commands)
 
@@ -776,9 +777,10 @@ class HelpCommandTest(EmailControlTest):
 
         self.control_process()
 
-        self.assert_in_response(distro_tracker_render_to_string('control/help.txt', {
-            'descriptions': self.get_all_help_command_descriptions()
-        }))
+        self.assert_in_response(distro_tracker_render_to_string(
+            'control/help.txt',
+            {'descriptions': self.get_all_help_command_descriptions()}
+        ))
 
 
 class KeywordCommandHelperMixin(object):
@@ -1426,7 +1428,8 @@ class KeywordCommandShowDefault(EmailControlTest, KeywordCommandHelperMixin):
         self.assert_in_response(
             self.get_default_keywords_list_message(self.user.email))
         self.assert_keywords_in_response(
-            keyword.name for keyword in self.email_settings.default_keywords.all()
+            keyword.name for keyword in
+            self.email_settings.default_keywords.all()
         )
 
     def test_show_default_keywords_email_not_given(self):
@@ -1441,7 +1444,8 @@ class KeywordCommandShowDefault(EmailControlTest, KeywordCommandHelperMixin):
         self.assert_in_response(
             self.get_default_keywords_list_message(self.user.email))
         self.assert_keywords_in_response(
-            keyword.name for keyword in self.email_settings.default_keywords.all()
+            keyword.name for keyword in
+            self.email_settings.default_keywords.all()
         )
 
     def test_show_default_keywords_email_no_subscriptions(self):
@@ -1460,7 +1464,8 @@ class KeywordCommandShowDefault(EmailControlTest, KeywordCommandHelperMixin):
         self.assert_in_response(
             self.get_default_keywords_list_message(user.email))
         self.assert_keywords_in_response(
-            keyword.name for keyword in user.emailsettings.default_keywords.all()
+            keyword.name for keyword in
+            user.emailsettings.default_keywords.all()
         )
 
     def test_tag_alias_for_keyword(self):
@@ -1474,7 +1479,8 @@ class KeywordCommandShowDefault(EmailControlTest, KeywordCommandHelperMixin):
         self.assert_in_response(
             self.get_default_keywords_list_message(self.user.email))
         self.assert_keywords_in_response(
-            keyword.name for keyword in self.email_settings.default_keywords.all()
+            keyword.name for keyword in
+            self.email_settings.default_keywords.all()
         )
 
     def test_tags_alias_for_keyword(self):
@@ -1488,7 +1494,8 @@ class KeywordCommandShowDefault(EmailControlTest, KeywordCommandHelperMixin):
         self.assert_in_response(
             self.get_default_keywords_list_message(self.user.email))
         self.assert_keywords_in_response(
-            keyword.name for keyword in self.email_settings.default_keywords.all()
+            keyword.name for keyword in
+            self.email_settings.default_keywords.all()
         )
 
     def test_keywords_alias_for_keyword(self):
@@ -1502,7 +1509,8 @@ class KeywordCommandShowDefault(EmailControlTest, KeywordCommandHelperMixin):
         self.assert_in_response(
             self.get_default_keywords_list_message(self.user.email))
         self.assert_keywords_in_response(
-            keyword.name for keyword in self.email_settings.default_keywords.all()
+            keyword.name for keyword in
+            self.email_settings.default_keywords.all()
         )
 
 
@@ -1758,7 +1766,8 @@ class SubscribeToPackageTest(EmailControlTest):
         c = CommandConfirmation.objects.create_for_commands(
             ['subscribe {package} {user}'.format(user=self.user_email_address,
                                                  package=self.package.name)])
-        delta = timedelta(days=settings.DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS + 1)
+        delta = timedelta(
+            days=settings.DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS + 1)
         c.date_created = c.date_created - delta
         c.save()
         self.set_input_lines(['confirm ' + c.confirmation_key])
@@ -2020,7 +2029,8 @@ class UnsubscribeallCommandTest(EmailControlTest):
         """
         Tests the unsubscribeall command with the confirmation.
         """
-        old_subscriptions = [pkg.name for pkg in self.user.emailsettings.packagename_set.all()]
+        old_subscriptions = [pkg.name for pkg
+                             in self.user.emailsettings.packagename_set.all()]
         self.set_input_lines(['unsubscribeall ' + self.user.email])
 
         self.control_process()
@@ -2188,8 +2198,10 @@ class WhoCommandTest(EmailControlTest):
         """
         # Subscribe users
         for user in self.users:
-            email_settings, _ = EmailSettings.objects.get_or_create(user_email=user)
-            Subscription.objects.create(email_settings=email_settings, package=self.package)
+            email_settings, _ = \
+                EmailSettings.objects.get_or_create(user_email=user)
+            Subscription.objects.create(email_settings=email_settings,
+                                        package=self.package)
         self.set_input_lines(['who ' + self.package.name])
 
         self.control_process()
@@ -2292,7 +2304,8 @@ class JoinTeamCommandsTests(TeamCommandsMixin, EmailControlTest):
         # Confirmation mail sent
         self.assert_confirmation_sent_to(self.user_email.email)
         # The response to the original control message indicates that
-        self.assert_in_response(self.get_confirmation_text(self.user_email.email))
+        self.assert_in_response(
+            self.get_confirmation_text(self.user_email.email))
         # The user isn't a member of the team yet
         self.assertNotIn(self.user_email, self.team.members.all())
         # A confirmation instance is created
@@ -2315,7 +2328,8 @@ class JoinTeamCommandsTests(TeamCommandsMixin, EmailControlTest):
         Tests that a confirmation mail is sent to the user being added to the
         team, not the user who sent the control command.
         """
-        self.set_input_lines([self.get_join_command(self.team.slug, self.user_email)])
+        self.set_input_lines([self.get_join_command(self.team.slug,
+                                                    self.user_email)])
         self.set_header('From', 'different-user@domain.com')
 
         self.control_process()
@@ -2352,7 +2366,8 @@ class JoinTeamCommandsTests(TeamCommandsMixin, EmailControlTest):
         already a member of.
         """
         self.team.add_members([self.user_email])
-        self.set_input_lines([self.get_join_command(self.team.slug, self.user_email)])
+        self.set_input_lines([self.get_join_command(self.team.slug,
+                                                    self.user_email)])
 
         self.control_process()
 
@@ -2392,7 +2407,8 @@ class LeaveTeamCommandTests(TeamCommandsMixin, EmailControlTest):
         # A confirmation sent to the user
         self.assert_confirmation_sent_to(self.user_email.email)
         # Which is displayed in the response to the original message
-        self.assert_in_response(self.get_confirmation_text(self.user_email.email))
+        self.assert_in_response(
+            self.get_confirmation_text(self.user_email.email))
         # The user is still a member of the team
         self.assertIn(self.user_email, self.team.members.all())
         # A confirmation is created
@@ -2468,7 +2484,9 @@ class ListTeamPackagesTests(TeamCommandsMixin, EmailControlTest):
         """
         Tests that a public team's packages can be obtained by any user.
         """
-        self.set_input_lines([self.get_list_team_packages_command(self.team.slug)])
+        self.set_input_lines([
+            self.get_list_team_packages_command(self.team.slug)
+        ])
 
         self.control_process()
 
@@ -2483,7 +2501,9 @@ class ListTeamPackagesTests(TeamCommandsMixin, EmailControlTest):
         """
         self.team.public = False
         self.team.save()
-        self.set_input_lines([self.get_list_team_packages_command(self.team.slug)])
+        self.set_input_lines([
+            self.get_list_team_packages_command(self.team.slug)
+        ])
 
         self.control_process()
 
@@ -2501,7 +2521,9 @@ class ListTeamPackagesTests(TeamCommandsMixin, EmailControlTest):
         self.team.add_members([user_email])
         # Set the from field so that the member sends the control email
         self.set_header('From', user_email.email)
-        self.set_input_lines([self.get_list_team_packages_command(self.team.slug)])
+        self.set_input_lines([
+            self.get_list_team_packages_command(self.team.slug)
+        ])
 
         self.control_process()
 
@@ -2537,7 +2559,9 @@ class WhichTeamsCommandTests(TeamCommandsMixin, EmailControlTest):
         not_member_of = self.teams[2:]
         for team in member_of:
             team.add_members([self.user_email])
-        self.set_input_lines([self.get_which_teams_command(self.user_email.email)])
+        self.set_input_lines([
+            self.get_which_teams_command(self.user_email.email)
+        ])
 
         self.control_process()
 
@@ -2554,8 +2578,11 @@ class WhichTeamsCommandTests(TeamCommandsMixin, EmailControlTest):
         """
         Tests the situation when the user is not a member of any teams.
         """
-        self.set_input_lines([self.get_which_teams_command(self.user_email.email)])
+        self.set_input_lines([
+            self.get_which_teams_command(self.user_email.email)
+        ])
 
         self.control_process()
 
-        self.assert_warning_in_response(self.get_no_teams_warning(self.user_email.email))
+        self.assert_warning_in_response(
+            self.get_no_teams_warning(self.user_email.email))

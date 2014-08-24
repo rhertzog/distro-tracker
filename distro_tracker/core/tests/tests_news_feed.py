@@ -59,9 +59,10 @@ class NewsFeedTests(TestCase):
         xmldoc = minidom.parseString(content)
 
         items = xmldoc.getElementsByTagName('item')
-        extract_child_value = lambda item, name: (
-            item.getElementsByTagName(name)[0].childNodes[0].toxml()
-        )
+
+        def extract_child_value(item, name):
+            return item.getElementsByTagName(name)[0].childNodes[0].toxml()
+
         for item in items:
             title = extract_child_value(item, 'title')
             if title == item_title:
@@ -83,9 +84,10 @@ class NewsFeedTests(TestCase):
         xmldoc = minidom.parseString(content)
 
         items = xmldoc.getElementsByTagName('item')
-        extract_child_value = lambda item, name: (
-            item.getElementsByTagName(name)[0].childNodes[0].toxml()
-        )
+
+        def extract_child_value(item, name):
+            return item.getElementsByTagName(name)[0].childNodes[0].toxml()
+
         return [
             {
                 'description': extract_child_value(item, 'description'),
@@ -105,7 +107,8 @@ class NewsFeedTests(TestCase):
         response = self.get_rss_feed_response(self.package.name)
 
         self.assertEqual(200, response.status_code)
-        self.assertTrue(response.content.startswith(b'<?xml version="1.0" encoding="utf-8"?>'))
+        self.assertTrue(response.content.startswith(
+            b'<?xml version="1.0" encoding="utf-8"?>'))
 
     def test_no_news_feed_for_non_existing_package(self):
         """
@@ -117,8 +120,8 @@ class NewsFeedTests(TestCase):
 
     def test_news_feed_action_item(self):
         """
-        Tests that :class:`ActionItem <distro_tracker.core.models.ActionItem>` instances
-        are included in the news feed.
+        Tests that :class:`ActionItem <distro_tracker.core.models.ActionItem>`
+        instances are included in the news feed.
         """
         # Create an action item
         item_type = ActionItemType.objects.create(
@@ -151,8 +154,8 @@ class NewsFeedTests(TestCase):
 
     def test_news_feed_news_item(self):
         """
-        Tests that :class:`News <distro_tracker.core.models.News>` instances are included
-        in the news feed.
+        Tests that :class:`News <distro_tracker.core.models.News>` instances are
+        included in the news feed.
         """
         expected_content = 'Some content'
         title = 'Some title'
@@ -244,7 +247,8 @@ class NewsFeedTests(TestCase):
             dom_items,
             sorted(
                 dom_items,
-                key=lambda x: datetime.strptime(x['pubDate'], '%a, %d %b %Y %H:%M:%S +0000'),
+                key=lambda x: datetime.strptime(x['pubDate'],
+                                                '%a, %d %b %Y %H:%M:%S +0000'),
                 reverse=True))
 
         # Add two more items: news item and action item in different order
@@ -276,7 +280,8 @@ class NewsFeedTests(TestCase):
             dom_items,
             sorted(
                 dom_items,
-                key=lambda x: datetime.strptime(x['pubDate'], '%a, %d %b %Y %H:%M:%S +0000'),
+                key=lambda x: datetime.strptime(x['pubDate'],
+                                                '%a, %d %b %Y %H:%M:%S +0000'),
                 reverse=True))
 
     def test_action_item_news_limited(self):

@@ -19,11 +19,30 @@ import sys
 import inspect
 
 from distro_tracker.core.utils import distro_tracker_render_to_string
-from distro_tracker.mail.control.commands.base import *
-from distro_tracker.mail.control.commands.keywords import *
-from distro_tracker.mail.control.commands.teams import *
-from distro_tracker.mail.control.commands.misc import *
-from distro_tracker.mail.control.commands.confirmation import *
+from distro_tracker.mail.control.commands.base import Command
+from distro_tracker.mail.control.commands.keywords import (  # noqa
+    ViewDefaultKeywordsCommand,
+    ViewPackageKeywordsCommand,
+    SetDefaultKeywordsCommand,
+    SetPackageKeywordsCommand,
+)
+from distro_tracker.mail.control.commands.teams import (  # noqa
+    JoinTeam,
+    LeaveTeam,
+    ListTeamPackages,
+    WhichTeams,
+)
+from distro_tracker.mail.control.commands.misc import (  # noqa
+    SubscribeCommand,
+    UnsubscribeCommand,
+    WhichCommand,
+    WhoCommand,
+    QuitCommand,
+    UnsubscribeallCommand,
+)
+from distro_tracker.mail.control.commands.confirmation import (  # noqa
+    ConfirmCommand
+)
 
 MAX_ALLOWED_ERRORS = settings.DISTRO_TRACKER_MAX_ALLOWED_ERRORS_CONTROL_COMMANDS
 
@@ -65,7 +84,8 @@ A list of all :py:class:`Command` that are defined.
 
 class CommandFactory(object):
     """
-    Creates instances of :py:class:`Command <distro_tracker.mail.control.commands.base.Command>`
+    Creates instances of
+    :py:class:`Command <distro_tracker.mail.control.commands.base.Command>`
     classes based on the given context.
 
     Context is used to fill in parameters when the command has not found
@@ -86,8 +106,8 @@ class CommandFactory(object):
 
         :returns: A callable which when called executes the functionality of a
             command matching the given line.
-        :rtype: :py:class:`Command <distro_tracker.mail.control.commands.base.Command>`
-            subclass
+        :rtype: :py:class:`Command
+            <distro_tracker.mail.control.commands.base.Command>` subclass
         """
         for cmd in UNIQUE_COMMANDS:
             # Command exists
@@ -120,7 +140,8 @@ class CommandProcessor(object):
     def __init__(self, factory, confirmed=False):
         """
         :param factory: Used to obtain
-            :py:class:`Command <distro_tracker.mail.control.commands.base.Command>` instances
+            :py:class:`Command
+            <distro_tracker.mail.control.commands.base.Command>` instances
             from command text which is processed.
         :type factory: :py:class`CommandFactory` instance
         :param confirmed: Indicates whether the commands being executed have
@@ -158,7 +179,8 @@ class CommandProcessor(object):
         Runs the given command.
 
         :param command: The command to be ran.
-        :type command: :py:class:`Command <distro_tracker.mail.control.commands.base.Command>`
+        :type command: :py:class:`Command
+            <distro_tracker.mail.control.commands.base.Command>`
         """
         if command.get_command_text() not in self.processed:
             # Only process the command if it was not previously processed.

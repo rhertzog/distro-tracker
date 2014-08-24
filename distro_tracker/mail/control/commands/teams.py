@@ -192,7 +192,8 @@ class ListTeamPackages(Command):
                 return
 
         self.reply("Packages found in team {}:".format(team))
-        self.list_reply(package for package in team.packages.all().order_by('name'))
+        self.list_reply(package for package in
+                        team.packages.all().order_by('name'))
 
 
 class WhichTeams(Command):

@@ -211,7 +211,8 @@ def get_bug_tracker_url(package_name, package_type, category_name):
     The function provides a way for vendors to give a URL to a bug tracker
     based on a package name, its type and the bug category name.
 
-    This function is used by :class:`BugsPanel <distro_tracker.core.panels.BugsPanel>` to
+    This function is used by
+    :class:`BugsPanel <distro_tracker.core.panels.BugsPanel>` to
     include a link to the bug tracking site on top of the known bug statistics.
 
     :param package_name: The name of the package for which the bug tracker URL
@@ -234,7 +235,8 @@ def get_bug_panel_stats(package_name):
     displayed in the :class:`BugsPanel <distro_tracker.core.panels.BugsPanel>`.
 
     This is useful if the vendor does not want to have all categories which are
-    stored in the :class:`PackageBugStats <distro_tracker.core.models.PackageBugStats>`
+    stored in the
+    :class:`PackageBugStats <distro_tracker.core.models.PackageBugStats>`
     displayed on the package page.
 
     In this case the return value must be a list of dicts where each element
@@ -243,7 +245,8 @@ def get_bug_panel_stats(package_name):
     Each dict has to provide at minimum the following keys:
 
     - ``category_name`` - the name of the bug category
-    - ``bug_count`` - the number of known bugs for the given package and category
+    - ``bug_count`` - the number of known bugs for the given package and
+      category
 
     Optionally, the following keys can be provided:
 
@@ -253,7 +256,8 @@ def get_bug_panel_stats(package_name):
       tooltip when mousing over the display name.
 
     Another use case is when the vendor provides a custom
-    :data:`DISTRO_TRACKER_BUGS_PANEL_TEMPLATE <distro_tracker.project.local_settings.DISTRO_TRACKER_BUGS_PANEL_TEMPLATE>`
+    :data:`DISTRO_TRACKER_BUGS_PANEL_TEMPLATE
+    <distro_tracker.project.local_settings.DISTRO_TRACKER_BUGS_PANEL_TEMPLATE>`
     in which case the return value is passed to the template in the
     ``panel.context`` context variable and does not need to follow any special
     format.
@@ -267,7 +271,8 @@ def get_binary_package_bug_stats(binary_name):
     for binary packages.
 
     This function is used by the
-    :class:`BinariesInformationPanel <distro_tracker.core.panels.BinariesInformationPanel>`
+    :class:`BinariesInformationPanel
+    <distro_tracker.core.panels.BinariesInformationPanel>`
     to display the bug information next to the binary name.
 
     It should return a list of dicts where each element describes a single bug
@@ -276,12 +281,14 @@ def get_binary_package_bug_stats(binary_name):
     Each dict has to provide at minimum the following keys:
 
     - ``category_name`` - the name of the bug category
-    - ``bug_count`` - the number of known bugs for the given package and category
+    - ``bug_count`` - the number of known bugs for the given package and
+      category
 
     Optionally, the following keys can be provided:
 
     - ``display_name`` - a name for the bug category. It is used by the
-      :class:`BinariesInformationPanel <distro_tracker.core.panels.BinariesInformationPanel>`
+      :class:`BinariesInformationPanel
+      <distro_tracker.core.panels.BinariesInformationPanel>`
       to display a tooltip when mousing over the bug count number.
     """
     pass
@@ -292,19 +299,20 @@ def create_news_from_email_message(message):
     The function provides a way for vendors to customize the news created from
     received emails.
 
-    The function should create a :class:`distro_tracker.core.models.News` model instance
-    for any news items it wishes to generate out of the received email message.
-    The content type of the created :class:`News <distro_tracker.core.models.News>` does
-    not have to be ``message/rfc822`` if the created news is only based on
-    information found in the message. It should be set to ``message/rfc822`` if
-    the content of the news is set to the content of the email message to make
-    sure it is rendered appropriately.
+    The function should create a :class:`distro_tracker.core.models.News` model
+    instance for any news items it wishes to generate out of the received email
+    message.  The content type of the created :class:`News
+    <distro_tracker.core.models.News>` does not have to be ``message/rfc822`` if
+    the created news is only based on information found in the message. It
+    should be set to ``message/rfc822`` if the content of the news is set to the
+    content of the email message to make sure it is rendered appropriately.
 
-    The function :func:`distro_tracker.mail.mail_news.process.create_news` can be used to
-    create simple news from the message after determining that it should in
-    fact be created.
+    The function :func:`distro_tracker.mail.mail_news.process.create_news` can
+    be used to create simple news from the message after determining that it
+    should in fact be created.
 
-    The function should return a list of created :class:`News <distro_tracker.core.models.News>`
+    The function should return a list of created
+    :class:`News <distro_tracker.core.models.News>`
     instances or ``None`` if it did not create any.
     """
     pass

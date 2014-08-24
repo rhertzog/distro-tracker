@@ -20,7 +20,8 @@ from distro_tracker.core.models import SourcePackage, SourcePackageName
 from distro_tracker.core.models import ExtractedSourceFile
 from distro_tracker.core.tasks import JobState, Event, Job
 from distro_tracker.test.utils import make_temp_directory
-from distro_tracker.extract_source_files.tracker_tasks import ExtractSourcePackageFiles
+from distro_tracker.extract_source_files.tracker_tasks \
+    import ExtractSourcePackageFiles
 from django.utils.six.moves import mock
 
 import os
@@ -28,7 +29,8 @@ import os
 
 class ExtractSourcePackageFilesTest(TestCase):
     """
-    Tests for the task :class:`distro_tracker.extract_source_files.ExtractSourcePackageFiles`.
+    Tests for the task
+    :class:`distro_tracker.extract_source_files.ExtractSourcePackageFiles`.
     """
     def setUp(self):
         self.job_state = mock.create_autospec(JobState)
@@ -66,7 +68,8 @@ class ExtractSourcePackageFilesTest(TestCase):
 
         self.task.execute()
 
-    @mock.patch('distro_tracker.extract_source_files.tracker_tasks.AptCache.retrieve_source')
+    @mock.patch('distro_tracker.extract_source_files.tracker_tasks.'
+                'AptCache.retrieve_source')
     def test_create_extracted_files(self, mock_cache):
         """
         Tests that the task creates an
@@ -100,7 +103,8 @@ class ExtractSourcePackageFilesTest(TestCase):
             extracted_file = ExtractedSourceFile.objects.all()[0]
             self.assertEqual('changelog', extracted_file.name)
 
-    @mock.patch('distro_tracker.extract_source_files.tracker_tasks.AptCache.retrieve_source')
+    @mock.patch('distro_tracker.extract_source_files.tracker_tasks.'
+                'AptCache.retrieve_source')
     def test_create_extracted_files_only_wanted_files(self, mock_cache):
         """
         Tests that the task creates an
@@ -136,7 +140,8 @@ class ExtractSourcePackageFilesTest(TestCase):
             self.run_task()
 
             # Check that only the wanted files are created!
-            self.assertEqual(len(wanted_files), ExtractedSourceFile.objects.count())
+            self.assertEqual(len(wanted_files),
+                             ExtractedSourceFile.objects.count())
             extracted_names = [
                 extracted_file.name
                 for extracted_file in ExtractedSourceFile.objects.all()
@@ -144,14 +149,15 @@ class ExtractSourcePackageFilesTest(TestCase):
             for wanted_file in wanted_files:
                 self.assertIn(wanted_file, extracted_names)
 
-    @mock.patch('distro_tracker.extract_source_files.tracker_tasks.AptCache.retrieve_source')
+    @mock.patch('distro_tracker.extract_source_files.tracker_tasks.'
+                'AptCache.retrieve_source')
     def test_task_is_initial_no_existing_files(self, mock_cache):
         """
         Tests the task when it is run as the initial task, but there are no
         extracted files for existing packages.
         """
         name = SourcePackageName.objects.create(name='dummy-package')
-        package = SourcePackage.objects.create(
+        SourcePackage.objects.create(
             source_package_name=name, version='1.0.0')
 
         with make_temp_directory('dtracker-pkg-dir') as pkg_directory:
@@ -177,7 +183,8 @@ class ExtractSourcePackageFilesTest(TestCase):
             self.run_task(initial_task=True)
 
             # Check that all the wanted files are created!
-            self.assertEqual(len(wanted_files), ExtractedSourceFile.objects.count())
+            self.assertEqual(len(wanted_files),
+                             ExtractedSourceFile.objects.count())
             extracted_names = [
                 extracted_file.name
                 for extracted_file in ExtractedSourceFile.objects.all()
@@ -185,8 +192,8 @@ class ExtractSourcePackageFilesTest(TestCase):
             for wanted_file in wanted_files:
                 self.assertIn(wanted_file, extracted_names)
 
-
-    @mock.patch('distro_tracker.extract_source_files.tracker_tasks.AptCache.retrieve_source')
+    @mock.patch('distro_tracker.extract_source_files.tracker_tasks.'
+                'AptCache.retrieve_source')
     def test_task_is_initial_existing_files(self, mock_cache):
         """
         Tests the task when it is run as the initial task, but some files for
@@ -226,7 +233,8 @@ class ExtractSourcePackageFilesTest(TestCase):
             self.run_task(initial_task=True)
 
             # Check that all the wanted files exist.
-            self.assertEqual(len(wanted_files), ExtractedSourceFile.objects.count())
+            self.assertEqual(len(wanted_files),
+                             ExtractedSourceFile.objects.count())
             # Check that the existing file was not changed.
             extracted_file = ExtractedSourceFile.objects.get(
                 name='changelog',
@@ -236,7 +244,8 @@ class ExtractSourcePackageFilesTest(TestCase):
             extracted_file.extracted_file.close()
             self.assertEqual(original_content, content)
 
-    @mock.patch('distro_tracker.extract_source_files.tracker_tasks.AptCache.retrieve_source')
+    @mock.patch('distro_tracker.extract_source_files.tracker_tasks.'
+                'AptCache.retrieve_source')
     def test_task_is_initial_existing_file_remove(self, mock_cache):
         """
         Tests the task when it is run as the initial task, but some of the
@@ -276,7 +285,8 @@ class ExtractSourcePackageFilesTest(TestCase):
             self.run_task(initial_task=True)
 
             # Check that all the wanted files exist.
-            self.assertEqual(len(wanted_files), ExtractedSourceFile.objects.count())
+            self.assertEqual(len(wanted_files),
+                             ExtractedSourceFile.objects.count())
             # Check that only the wanted files exist.
             extracted_names = [
                 extracted_file.name

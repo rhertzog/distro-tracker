@@ -14,7 +14,6 @@ Debian-specific tasks.
 
 from __future__ import unicode_literals
 from django.db import transaction
-from django.db.models import Q
 from django.conf import settings
 from django.utils import six
 from django.utils.http import urlencode
@@ -163,7 +162,8 @@ class RetrieveLowThresholdNmuTask(BaseTask):
         emails = self._retrieve_emails()
         with transaction.atomic():
             # Reset all threshold flags first.
-            qs = DebianContributor.objects.filter(agree_with_low_threshold_nmu=True)
+            qs = DebianContributor.objects.filter(
+                agree_with_low_threshold_nmu=True)
             qs.update(agree_with_low_threshold_nmu=False)
             for email in emails:
                 email, _ = UserEmail.objects.get_or_create(email=email)
@@ -177,8 +177,8 @@ class RetrieveLowThresholdNmuTask(BaseTask):
 class UpdatePackageBugStats(BaseTask):
     """
     Updates the BTS bug stats for all packages (source, binary and pseudo).
-    Creates :class:`distro_tracker.core.ActionItem` instances for packages which have bugs
-    tagged help or patch.
+    Creates :class:`distro_tracker.core.ActionItem` instances for packages
+    which have bugs tagged help or patch.
     """
     PATCH_BUG_ACTION_ITEM_TYPE_NAME = 'debian-patch-bugs-warning'
     HELP_BUG_ACTION_ITEM_TYPE_NAME = 'debian-help-bugs-warning'
@@ -204,8 +204,8 @@ class UpdatePackageBugStats(BaseTask):
         super(UpdatePackageBugStats, self).__init__(*args, **kwargs)
         self.force_update = force_update
         self.cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
-        # The :class:`distro_tracker.core.models.ActionItemType` instances which this task
-        # can create.
+        # The :class:`distro_tracker.core.models.ActionItemType` instances which
+        # this task can create.
         self.patch_item_type = ActionItemType.objects.create_or_update(
             type_name=self.PATCH_BUG_ACTION_ITEM_TYPE_NAME,
             full_description_template=self.PATCH_ITEM_FULL_DESCRIPTION_TEMPLATE)
@@ -243,7 +243,8 @@ class UpdatePackageBugStats(BaseTask):
         statuses = statuses[0]
         for status in statuses:
             status = status['value']
-            if status['done'] or status['fixed'] or status['pending'] == 'fixed':
+            if status['done'] or status['fixed'] or \
+                    status['pending'] == 'fixed':
                 continue
 
             package_name = status['package']
@@ -276,8 +277,8 @@ class UpdatePackageBugStats(BaseTask):
 
     def _create_patch_bug_action_item(self, package, bug_stats):
         """
-        Creates a :class:`distro_tracker.core.models.ActionItem` instance for the given
-        package if it contains any bugs tagged patch.
+        Creates a :class:`distro_tracker.core.models.ActionItem` instance for
+        the given package if it contains any bugs tagged patch.
 
         :param package: The package for which the action item should be
             updated.
@@ -307,15 +308,16 @@ class UpdatePackageBugStats(BaseTask):
 
         bug_count = bug_stats['patch']['bug_count']
         # Include the URL in the short description
-        url, _ = vendor.call('get_bug_tracker_url', package.name, 'source', 'patch')
+        url, _ = vendor.call('get_bug_tracker_url', package.name, 'source',
+                             'patch')
         if not url:
             url = ''
         # Include the bug count in the short description
         count = '{bug_count} bug'.format(bug_count=bug_count)
         if bug_count > 1:
             count += 's'
-        action_item.short_description = self.PATCH_ITEM_SHORT_DESCRIPTION.format(
-            url=url, count=count)
+        action_item.short_description = \
+            self.PATCH_ITEM_SHORT_DESCRIPTION.format(url=url, count=count)
         # Set additional URLs and merged bug count in the extra data for a full
         # description
         action_item.extra_data = {
@@ -323,14 +325,15 @@ class UpdatePackageBugStats(BaseTask):
             'merged_count': bug_stats['patch'].get('merged_count', 0),
             'url': url,
             'merged_url': vendor.call(
-                'get_bug_tracker_url', package.name, 'source', 'patch-merged')[0],
+                'get_bug_tracker_url', package.name, 'source',
+                'patch-merged')[0],
         }
         action_item.save()
 
     def _create_help_bug_action_item(self, package, bug_stats):
         """
-        Creates a :class:`distro_tracker.core.models.ActionItem` instance for the given
-        package if it contains any bugs tagged help.
+        Creates a :class:`distro_tracker.core.models.ActionItem` instance for
+        the given package if it contains any bugs tagged help.
 
         :param package: The package for which the action item should be
             updated.
@@ -360,7 +363,8 @@ class UpdatePackageBugStats(BaseTask):
 
         bug_count = bug_stats['help']['bug_count']
         # Include the URL in the short description
-        url, _ = vendor.call('get_bug_tracker_url', package.name, 'source', 'help')
+        url, _ = vendor.call('get_bug_tracker_url', package.name, 'source',
+                             'help')
         if not url:
             url = ''
         # Include the bug count in the short description
@@ -379,8 +383,8 @@ class UpdatePackageBugStats(BaseTask):
 
     def _create_action_items(self, package_bug_stats):
         """
-        Method which creates a :class:`distro_tracker.core.models.ActionItem` instance
-        for a package based on the given package stats.
+        Method which creates a :class:`distro_tracker.core.models.ActionItem`
+        instance for a package based on the given package stats.
 
         For now, an action item is created if the package either has bugs
         tagged as help or patch.
@@ -456,7 +460,8 @@ class UpdatePackageBugStats(BaseTask):
 
         # Add in gift bugs from the BTS SOAP interface
         try:
-            gift_bugs = self._get_tagged_bug_stats('gift', 'debian-qa@lists.debian.org')
+            gift_bugs = self._get_tagged_bug_stats('gift',
+                                                   'debian-qa@lists.debian.org')
             self._extend_bug_stats(bug_stats, gift_bugs, 'gift')
         except:
             logger.exception("Could not get bugs tagged gift")
@@ -518,10 +523,12 @@ class UpdatePackageBugStats(BaseTask):
         with transaction.atomic():
             # Clear previous stats
             BinaryPackageBugStats.objects.all().delete()
-            packages = BinaryPackageName.objects.filter(name__in=bug_stats.keys())
+            packages = \
+                BinaryPackageName.objects.filter(name__in=bug_stats.keys())
             # Create new stats in a single query
             stats = [
-                BinaryPackageBugStats(package=package, stats=bug_stats[package.name])
+                BinaryPackageBugStats(package=package,
+                                      stats=bug_stats[package.name])
                 for package in packages
             ]
             BinaryPackageBugStats.objects.bulk_create(stats)
@@ -578,7 +585,8 @@ class UpdateLintianStatsTask(BaseTask):
                 }
             except ValueError:
                 logger.exception(
-                    'Failed to parse lintian information for {pkg}: {line}'.format(
+                    'Failed to parse lintian information for {pkg}: '
+                    '{line}'.format(
                         pkg=package, line=line))
                 continue
 
@@ -587,8 +595,8 @@ class UpdateLintianStatsTask(BaseTask):
     def update_action_item(self, package, lintian_stats):
         """
         Updates the :class:`ActionItem` for the given package based on the
-        :class:`LintianStats <distro_tracker.vendor.debian.models.LintianStats` given in
-        ``package_stats``. If the package has errors or warnings an
+        :class:`LintianStats <distro_tracker.vendor.debian.models.LintianStats`
+        given in ``package_stats``. If the package has errors or warnings an
         :class:`ActionItem` is created.
         """
         package_stats = lintian_stats.stats
@@ -753,7 +761,8 @@ class UpdateTransitionsTask(BaseTask):
             name__in=package_transitions.keys())
         transitions = []
         for package in packages:
-            for transition_name, data in package_transitions[package.name].items():
+            for transition_name, data in \
+                    package_transitions[package.name].items():
                 transitions.append(PackageTransition(
                     package=package,
                     transition_name=transition_name,
@@ -783,8 +792,8 @@ class UpdateExcusesTask(BaseTask):
 
     def _adapt_excuse_links(self, excuse):
         """
-        If the excuse contains any anchor links, convert them to links to
-        Distro Tracker package pages. Return the original text unmodified, otherwise.
+        If the excuse contains any anchor links, convert them to links to Distro
+        Tracker package pages. Return the original text unmodified, otherwise.
         """
         re_anchor_href = re.compile(r'^#(.*)$')
         html = soup(excuse)
@@ -851,14 +860,13 @@ class UpdateExcusesTask(BaseTask):
                 top_level_list = False
                 continue
 
-            component = 'main'
             line = line.strip()
             for subline in line.split("<li>"):
                 if not subline:
                     continue
                 # We ignore these excuses
                 if 'Section:' in subline:
-                    component = re.sub(r'Section: *(.*)', '\\1', subline)
+                    re.sub(r'Section: *(.*)', '\\1', subline)
                     continue
                 if 'Maintainer:' in subline:
                     continue
@@ -884,11 +892,12 @@ class UpdateExcusesTask(BaseTask):
 
     def _create_action_item(self, package, extra_data):
         """
-        Creates a :class:`distro_tracker.core.models.ActionItem` for the given package
-        including the given extra data. The item indicates that there is a
-        problem with the package migrating to testing.
+        Creates a :class:`distro_tracker.core.models.ActionItem` for the given
+        package including the given extra data. The item indicates that there is
+        a problem with the package migrating to testing.
         """
-        action_item = package.get_action_item_for_type(self.ACTION_ITEM_TYPE_NAME)
+        action_item = \
+            package.get_action_item_for_type(self.ACTION_ITEM_TYPE_NAME)
         if action_item is None:
             action_item = ActionItem(
                 package=package,
@@ -995,10 +1004,11 @@ class UpdateBuildLogCheckStats(BaseTask):
 
     def create_action_item(self, package, stats):
         """
-        Creates a :class:`distro_tracker.core.models.ActionItem` instance for the given
-        package if the build logcheck stats indicate
+        Creates a :class:`distro_tracker.core.models.ActionItem` instance for
+        the given package if the build logcheck stats indicate
         """
-        action_item = package.get_action_item_for_type(self.ACTION_ITEM_TYPE_NAME)
+        action_item = \
+            package.get_action_item_for_type(self.ACTION_ITEM_TYPE_NAME)
 
         errors = stats.get('errors', 0)
         warnings = stats.get('warnings', 0)
@@ -1020,8 +1030,8 @@ class UpdateBuildLogCheckStats(BaseTask):
                 # Nothing has changed -- do not update the item
                 return
 
-        logcheck_url = "https://qa.debian.org/bls/packages/{hash}/{pkg}.html".format(
-            hash=package.name[0], pkg=package.name)
+        logcheck_url = "https://qa.debian.org/bls/packages/{hash}/{pkg}.html"\
+            .format(hash=package.name[0], pkg=package.name)
         if errors and warnings:
             report = '{} error{} and {} warning{}'.format(
                 errors,
@@ -1045,7 +1055,6 @@ class UpdateBuildLogCheckStats(BaseTask):
             report=report)
         action_item.extra_data = stats
         action_item.save()
-
 
     def execute(self):
         # Build a dict with stats from both buildd and clang
@@ -1096,8 +1105,8 @@ class DebianWatchFileScannerUpdate(BaseTask):
             'Problem with the debian/watch file included in the package'),
         'watch-file-available': lambda item: (
             'An updated debian/watch file is '
-            '<a href="https://qa.debian.org/cgi-bin/watchfile.cgi?package={package}">'
-            'available</a>.'.format(
+            '<a href="https://qa.debian.org/cgi-bin/watchfile.cgi'
+            '?package={package}">available</a>.'.format(
                 package=item.package.name)),
     }
     ITEM_SEVERITIES = {
@@ -1134,7 +1143,8 @@ class DebianWatchFileScannerUpdate(BaseTask):
         url = 'https://qa.debian.org/watch/watch-avail.txt'
         return get_resource_content(url)
 
-    def _remove_obsolete_action_items(self, item_type_name, non_obsolete_packages):
+    def _remove_obsolete_action_items(self, item_type_name,
+                                      non_obsolete_packages):
         """
         Removes any existing :class:`ActionItem` with the given type name based
         on the list of package names which should still have the items based on
@@ -1251,7 +1261,8 @@ class DebianWatchFileScannerUpdate(BaseTask):
         if item_type in self.ITEM_SEVERITIES:
             action_item.severity = self.ITEM_SEVERITIES[item_type]
         action_item.extra_data = stats
-        action_item.short_description = self.ITEM_DESCRIPTIONS[item_type](action_item)
+        action_item.short_description = \
+            self.ITEM_DESCRIPTIONS[item_type](action_item)
 
         action_item.save()
 
@@ -1401,9 +1412,9 @@ class UpdatePiuPartsTask(BaseTask):
 
     def create_action_item(self, package, suites):
         """
-        Creates an :class:`ActionItem <distro_tracker.core.models.ActionItem>` instance
-        for the package based on the list of suites in which the piuparts
-        installation test failed.
+        Creates an :class:`ActionItem <distro_tracker.core.models.ActionItem>`
+        instance for the package based on the list of suites in which the
+        piuparts installation test failed.
         """
         action_item = package.get_action_item_for_type(self.action_item_type)
         if action_item is None:
@@ -1468,7 +1479,8 @@ class UpdateReleaseGoalsTask(BaseTask):
         cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         release_goals_url = 'https://release.debian.org/testing/goals.yaml'
         bugs_list_url = 'https://udd.debian.org/pts-release-goals.cgi'
-        if not self.force_update and (not cache.is_expired(release_goals_url) and
+        if not self.force_update and (
+                not cache.is_expired(release_goals_url) and
                 not cache.is_expired(bugs_list_url)):
             return
 
@@ -1748,7 +1760,8 @@ class UpdateDebianDuckTask(BaseTask):
 
         issues_link = self.DUCK_LINK + "/static/sp/" \
             + self.prefix(package.name) + "/" + package.name + ".html"
-        action_item.short_description = self.ITEM_DESCRIPTION.format(issues_link=issues_link)
+        action_item.short_description = \
+            self.ITEM_DESCRIPTION.format(issues_link=issues_link)
 
         action_item.extra_data = {
             'duck_link': self.DUCK_LINK,
@@ -1833,8 +1846,9 @@ class UpdateWnppStatsTask(BaseTask):
 
     def update_action_item(self, package, stats):
         """
-        Creates an :class:`ActionItem <distro_tracker.core.models.ActionItem>` instance
-        for the given type indicating that the package has a WNPP issue.
+        Creates an :class:`ActionItem <distro_tracker.core.models.ActionItem>`
+        instance for the given type indicating that the package has a WNPP
+        issue.
         """
         action_item = package.get_action_item_for_type(self.action_item_type)
         if not action_item:
@@ -1865,15 +1879,15 @@ class UpdateWnppStatsTask(BaseTask):
 
     def update_depneedsmaint_action_item(self, package_needs_maintainer):
         short_description_template = (
-            'The package depends on source packages which need a new maintainer.'
+            'The package depends on source packages which need '
+            'a new maintainer.'
         )
-        package_url = package_needs_maintainer.get_absolute_url()
+        package_needs_maintainer.get_absolute_url()
         action_item_type = ActionItemType.objects.create_or_update(
             type_name='debian-depneedsmaint',
             full_description_template='debian/depneedsmaint-action-item.html')
         dependencies = SourcePackageDeps.objects.filter(
             dependency=package_needs_maintainer)
-        action_items = []
         for dependency in dependencies:
             package = dependency.source
             action_item = package.get_action_item_for_type(action_item_type)
@@ -1888,7 +1902,8 @@ class UpdateWnppStatsTask(BaseTask):
                     # Nothing has changed
                     continue
             action_item.short_description = short_description_template
-            action_item.extra_data[package_needs_maintainer.name] = dependency.details
+            action_item.extra_data[package_needs_maintainer.name] = \
+                dependency.details
 
             action_item.save()
 
@@ -1908,13 +1923,13 @@ class UpdateWnppStatsTask(BaseTask):
             if stats['wnpp_type'] in ('O', 'RFA'):
                 packages_need_maintainer.append(name)
         packages_depneeds_maint = [
-            package.name
-            for package in SourcePackageName.objects.filter(
-                    source_dependencies__dependency__name__in=packages_need_maintainer)
+            package.name for package in SourcePackageName.objects.filter(
+                source_dependencies__dependency__name__in=packages_need_maintainer)  # noqa
         ]
         ActionItem.objects.delete_obsolete_items(
             item_types=[
-                ActionItemType.objects.get_or_create(type_name='debian-depneedsmaint')[0],
+                ActionItemType.objects.get_or_create(
+                    type_name='debian-depneedsmaint')[0],
             ],
             non_obsolete_packages=packages_depneeds_maint)
 
@@ -1982,15 +1997,15 @@ class UpdateNewQueuePackages(BaseTask):
             version = max(versions, key=lambda x: AptPkgVersion(x))
 
             package_name = stanza['Source']
-            packages.setdefault(package_name, {})
+            pkginfo = packages.setdefault(package_name, {})
             distribution = stanza['Distribution']
-            if distribution in packages[package_name]:
-                current_version = packages[package_name][distribution]['version']
+            if distribution in pkginfo:
+                current_version = pkginfo[distribution]['version']
                 if debian_support.version_compare(version, current_version) < 0:
                     # The already saved version is more recent than this one.
                     continue
 
-            packages[package_name][distribution] = {
+            pkginfo[distribution] = {
                 'version': version,
             }
 
@@ -2017,7 +2032,8 @@ class UpdateNewQueuePackages(BaseTask):
             old_versions = new_queue_info.value
             for distribution, version in all_package_info[package.name].items():
                 if distribution in old_versions:
-                    if old_versions[distribution]['version'] == version['version']:
+                    if old_versions[distribution]['version'] == \
+                            version['version']:
                         continue
                 new_queue_info.value[distribution] = version
                 self.raise_event(self.NEW_VERSION_IN_QUEUE_EVENT, {
@@ -2034,7 +2050,9 @@ class UpdateDebciStatusTask(BaseTask):
     """
     ACTION_ITEM_TYPE_NAME = 'debci-failed-tests'
     ITEM_DESCRIPTION = (
-        'Debci reports <a href="{debci_url}">failed tests</a> (<a href="{log_url}">log</a>)')
+        'Debci reports <a href="{debci_url}">failed tests</a> '
+        '(<a href="{log_url}">log</a>)'
+    )
     ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/debci-action-item.html'
 
     def __init__(self, force_update=False, *args, **kwargs):
@@ -2108,7 +2126,8 @@ class UpdateDebciStatusTask(BaseTask):
             for result in all_debci_status:
                 if result['status'] == 'fail':
                     try:
-                        package = SourcePackageName.objects.get(name=result['package'])
+                        package = SourcePackageName.objects.get(
+                            name=result['package'])
                         packages.append(package)
                         self.update_action_item(package, result)
                     except SourcePackageName.DoesNotExist:

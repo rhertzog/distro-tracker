@@ -65,7 +65,8 @@ class Command(BaseCommand):
                     else:
                         msg = email.message_from_file(f)
                 if 'Date' in msg:
-                    timestamp = email.utils.mktime_tz(email.utils.parsedate_tz(msg['Date']))
+                    timestamp = email.utils.mktime_tz(
+                        email.utils.parsedate_tz(msg['Date']))
                     date = datetime.utcfromtimestamp(timestamp)
                     date = timezone.make_aware(date, timezone.utc)
                 else:
@@ -73,7 +74,8 @@ class Command(BaseCommand):
 
                 news_kwargs = EmailNews.get_email_news_parameters(msg)
                 content = news_kwargs.pop('file_content')
-                news_kwargs['news_file'] = ContentFile(content, name='news-file')
+                news_kwargs['news_file'] = ContentFile(content,
+                                                       name='news-file')
 
                 email_news.append(News(
                     package=package,
@@ -84,24 +86,28 @@ class Command(BaseCommand):
                 traceback.print_exc()
                 self.write('Problem importing news {}'.format(news_file_path))
 
-        self.write("All news for the package processed. Bulk creating the instances.")
+        self.write("All news for the package processed. "
+                   "Bulk creating the instances.")
         News.objects.bulk_create(email_news)
 
         self.write('Complete.')
 
     def import_all_news(self, root_directory):
-        for hash_directory_path in self.get_directories(root_directory):
-            for package_directory_path in self.get_directories(hash_directory_path):
-                self.import_package_news(package_directory_path)
+        for hash_directory in self.get_directories(root_directory):
+            for package_directory in self.get_directories(hash_directory):
+                self.import_package_news(package_directory)
 
     def handle(self, *args, **kwargs):
         if len(args) != 1:
             raise CommandError("Root directory of old news not provided")
         self.verbose = int(kwargs.get('verbosity', 1)) > 1
 
-        # Hack to be able to set the date created field to something else than now.
-        EmailNews._meta.get_field_by_name('datetime_created')[0].auto_now_add = False
+        # Hack to be able to set the date created field to something else
+        # than now.
+        EmailNews._meta.get_field_by_name('datetime_created')[0]\
+            .auto_now_add = False
 
         self.import_all_news(args[0])
 
-        EmailNews._meta.get_field_by_name('datetime_created')[0].auto_now_add = True
+        EmailNews._meta.get_field_by_name('datetime_created')[0]\
+            .auto_now_add = True

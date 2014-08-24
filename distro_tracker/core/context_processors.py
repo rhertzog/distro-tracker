@@ -12,11 +12,13 @@ from __future__ import unicode_literals
 from django.conf import settings
 
 
-#: Defines a dictionary of all Distro Tracker extra context key/value pairs that are to be
-#: included in the :class:`RequestContext <django.template.RequestContext>`.
+#: Defines a dictionary of all Distro Tracker extra context key/value pairs that
+#: are to be included in the
+#: :class:`RequestContext <django.template.RequestContext>`.
 DISTRO_TRACKER_EXTRAS = {
     'DISTRO_TRACKER_VENDOR_NAME': settings.DISTRO_TRACKER_VENDOR_NAME,
-    'DISTRO_TRACKER_VENDOR_URL': getattr(settings, 'DISTRO_TRACKER_VENDOR_URL', ''),
+    'DISTRO_TRACKER_VENDOR_URL': getattr(settings, 'DISTRO_TRACKER_VENDOR_URL',
+                                         ''),
     'DISTRO_TRACKER_CONTACT_EMAIL': settings.DISTRO_TRACKER_CONTACT_EMAIL,
     'DISTRO_TRACKER_CONTROL_EMAIL': settings.DISTRO_TRACKER_CONTROL_EMAIL,
     'DISTRO_TRACKER_SITE_DOMAIN': settings.DISTRO_TRACKER_FQDN,
@@ -26,7 +28,8 @@ DISTRO_TRACKER_EXTRAS = {
 def extras(request):
     """
     The context processor which includes the
-    :py:data:`DISTRO_TRACKER_EXTRAS <distro_tracker.core.context_processors.DISTRO_TRACKER_EXTRAS>` in the
+    :py:data:`DISTRO_TRACKER_EXTRAS
+    <distro_tracker.core.context_processors.DISTRO_TRACKER_EXTRAS>` in the
     :class:`RequestContext <django.template.RequestContext>`.
     """
     return DISTRO_TRACKER_EXTRAS

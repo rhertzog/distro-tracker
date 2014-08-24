@@ -67,7 +67,7 @@ class Command(BaseCommand):
                     self.output_package(package, inactive)
                 else:
                     self.warn("{package} does not exist.".format(
-                            package=str(package_name)))
+                        package=str(package_name)))
 
         format = 'default'
         if kwargs['json']:

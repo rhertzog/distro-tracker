@@ -21,8 +21,8 @@ from distro_tracker.core.models import EmailNews
 class Command(BaseCommand):
     """
     A Django management command which tries to update the signature information
-    for :class:`News <distro_tracker.core.models.News>` instances which do not have
-    any associated signatures.
+    for :class:`News <distro_tracker.core.models.News>` instances which do not
+    have any associated signatures.
     """
     help = (
         "Update the signature information related to News items which do not"

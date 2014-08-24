@@ -51,8 +51,8 @@ class KeywordCommandMixin(object):
     def get_subscription(self, email, package_name):
         """
         Helper method returning a
-        :py:class:`Subscription <distro_tracker.core.models.Subscription>` instance for
-        the given package and user.
+        :py:class:`Subscription <distro_tracker.core.models.Subscription>`
+        instance for the given package and user.
         It logs any errors found while retrieving this instance, such as the
         user not being subscribed to the given package.
 
@@ -82,11 +82,13 @@ class KeywordCommandMixin(object):
     def keyword_name_to_object(self, keyword_name):
         """
         Takes a keyword name and returns a
-        :py:class:`Keyword <distro_tracker.core.models.Keyword>` object with the given name
-        if it exists. If not, a warning is added to the commands' output.
+        :py:class:`Keyword <distro_tracker.core.models.Keyword>` object with
+        the given name if it exists. If not, a warning is added to the commands'
+        output.
 
         :param keyword_name: The name of the keyword to be retrieved.
-        :rtype: :py:class:`Keyword <distro_tracker.core.models.Keyword>` or ``None``
+        :rtype: :py:class:`Keyword <distro_tracker.core.models.Keyword>` or
+            ``None``
         """
         keyword = get_or_none(Keyword, name=keyword_name)
         if not keyword:
@@ -189,7 +191,8 @@ class ViewDefaultKeywordsCommand(Command, KeywordCommandMixin):
 
     def handle(self):
         user_email, _ = UserEmail.objects.get_or_create(email=self.email)
-        email_settings, _ = EmailSettings.objects.get_or_create(user_email=user_email)
+        email_settings, _ = \
+            EmailSettings.objects.get_or_create(user_email=user_email)
         self.reply(
             "Here's the default list of accepted keywords for {email}:".format(
                 email=self.email))
@@ -276,7 +279,8 @@ class SetDefaultKeywordsCommand(Command, KeywordCommandMixin):
     def handle(self):
         keywords = re.split('[,\s]+', self.keywords)
         user_email, _ = UserEmail.objects.get_or_create(email=self.email)
-        email_settings, _ = EmailSettings.objects.get_or_create(user_email=user_email)
+        email_settings, _ = \
+            EmailSettings.objects.get_or_create(user_email=user_email)
 
         operation_method = self.OPERATIONS[self.operation]
         operation_method(self, keywords, email_settings.default_keywords)

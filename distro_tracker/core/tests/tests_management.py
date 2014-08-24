@@ -26,18 +26,19 @@ from distro_tracker.core.utils import message_from_bytes
 
 class RunTaskManagementCommandTest(SimpleTestCase):
     """
-    Test for the :mod:`distro_tracker.core.management.commands.tracker_run_task` management
-    command.
+    Test for the :mod:`distro_tracker.core.management.commands.tracker_run_task`
+    management command.
     """
     def run_command(self, tasks, **kwargs):
         call_command('tracker_run_task', *tasks, **kwargs)
 
-    @mock.patch('distro_tracker.core.management.commands.tracker_run_task.run_task')
+    @mock.patch(
+        'distro_tracker.core.management.commands.tracker_run_task.run_task')
     def test_runs_all(self, mock_run_task):
         """
         Tests that the management command calls the
-        :func:`run_task <distro_tracker.core.tasks.run_task>` function for each given task
-        name.
+        :func:`run_task <distro_tracker.core.tasks.run_task>` function for each
+        given task name.
         """
         self.run_command(['TaskName1', 'TaskName2'])
 
@@ -46,7 +47,8 @@ class RunTaskManagementCommandTest(SimpleTestCase):
         mock_run_task.assert_any_call('TaskName1', None)
         mock_run_task.assert_any_call('TaskName2', None)
 
-    @mock.patch('distro_tracker.core.management.commands.tracker_run_task.run_task')
+    @mock.patch(
+        'distro_tracker.core.management.commands.tracker_run_task.run_task')
     def test_passes_force_flag(self, mock_run_task):
         """
         Tests that the management command passes the force flag to the task
@@ -60,11 +62,12 @@ class RunTaskManagementCommandTest(SimpleTestCase):
 
 
 @mock.patch('distro_tracker.core.tasks.import_all_tasks')
-@mock.patch('distro_tracker.core.management.commands.tracker_run_all_tasks.run_all_tasks')
+@mock.patch('distro_tracker.core.management.commands.'
+            'tracker_run_all_tasks.run_all_tasks')
 class RunAllTasksTests(SimpleTestCase):
     """
-    Test for the :mod:`distro_tracker.core.management.commands.tracker_run_task` management
-    command.
+    Test for the :mod:`distro_tracker.core.management.commands.tracker_run_task`
+    management command.
     """
     def run_command(self, *args, **kwargs):
         call_command('tracker_run_all_tasks', *args, **kwargs)
@@ -72,8 +75,8 @@ class RunAllTasksTests(SimpleTestCase):
     def test_runs_all(self, mock_run_all_tasks, *args, **kwargs):
         """
         Tests that the management command calls the
-        :func:`run_task <distro_tracker.core.tasks.run_task>` function for each given task
-        name.
+        :func:`run_task <distro_tracker.core.tasks.run_task>` function for each
+        given task name.
         """
         self.run_command()
 

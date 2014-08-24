@@ -9,34 +9,15 @@
 # except according to the terms contained in the LICENSE file.
 """Views for the :mod:`distro_tracker.accounts` app."""
 from __future__ import unicode_literals
-from django.views.generic import TemplateView
-from django.views.generic.edit import CreateView
-from django.views.generic.edit import UpdateView
-from django.views.generic.edit import FormView
 from django.views.generic.base import View
 from django.core.urlresolvers import reverse_lazy
-from django.core.urlresolvers import reverse
-from django.core.mail import send_mail
-from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render
 from django.shortcuts import redirect
-from django.contrib import messages
-from django.contrib.auth import authenticate
-from django.contrib.auth import login
-from django.contrib.auth import logout
-from django.contrib.auth.forms import PasswordChangeForm
-from django.contrib.auth.decorators import login_required
-from django.utils.decorators import method_decorator
-from django.utils.http import urlencode
 from django.http import HttpResponseForbidden
 from django.http import Http404
 from django.conf import settings
-from distro_tracker.accounts.models import User
 from distro_tracker.accounts.models import UserEmail
-from distro_tracker.accounts.models import UserRegistrationConfirmation
-from distro_tracker.accounts.models import AddEmailConfirmation
-from distro_tracker.accounts.models import ResetPasswordConfirmation
 from distro_tracker.core.utils import distro_tracker_render_to_string
 from distro_tracker.core.utils import render_to_json_response
 from distro_tracker.core.models import Subscription
@@ -49,9 +30,10 @@ from django_email_accounts.views import LoginRequiredMixin
 
 class ConfirmationRenderMixin(object):
     def get_confirmation_email_content(self, confirmation):
-        return distro_tracker_render_to_string(self.confirmation_email_template, {
-            'confirmation': confirmation,
-        })
+        return distro_tracker_render_to_string(
+            self.confirmation_email_template,
+            {'confirmation': confirmation}
+        )
 
 
 class LoginView(email_accounts_views.LoginView):
@@ -76,11 +58,13 @@ class RegistrationConfirmation(email_accounts_views.RegistrationConfirmation):
         name=settings.GET_INSTANCE_NAME())
 
 
-class ResetPasswordView(ConfirmationRenderMixin, email_accounts_views.ResetPasswordView):
+class ResetPasswordView(ConfirmationRenderMixin,
+                        email_accounts_views.ResetPasswordView):
     success_url = reverse_lazy('dtracker-accounts-profile')
 
 
-class ForgotPasswordView(ConfirmationRenderMixin, email_accounts_views.ForgotPasswordView):
+class ForgotPasswordView(ConfirmationRenderMixin,
+                         email_accounts_views.ForgotPasswordView):
     success_url = reverse_lazy('dtracker-accounts-password-reset-success')
     email_subject = '{name} Password Reset Confirmation'.format(
         name=settings.GET_INSTANCE_NAME())
@@ -99,7 +83,8 @@ class AccountProfile(email_accounts_views.AccountProfile):
     pass
 
 
-class ManageAccountEmailsView(ConfirmationRenderMixin, email_accounts_views.ManageAccountEmailsView):
+class ManageAccountEmailsView(ConfirmationRenderMixin,
+                              email_accounts_views.ManageAccountEmailsView):
     success_url = reverse_lazy('dtracker-accounts-manage-emails')
     merge_accounts_url = reverse_lazy('dtracker-accounts-merge-confirmation')
 
@@ -108,7 +93,8 @@ class ManageAccountEmailsView(ConfirmationRenderMixin, email_accounts_views.Mana
     confirmation_email_from_address = settings.DISTRO_TRACKER_CONTACT_EMAIL
 
 
-class AccountMergeConfirmView(ConfirmationRenderMixin, email_accounts_views.AccountMergeConfirmView):
+class AccountMergeConfirmView(ConfirmationRenderMixin,
+                              email_accounts_views.AccountMergeConfirmView):
     success_url = reverse_lazy('dtracker-accounts-merge-confirmed')
     confirmation_email_subject = 'Merge {name} Accounts'.format(
         name=settings.GET_INSTANCE_NAME())
@@ -139,14 +125,13 @@ class SubscriptionsView(LoginRequiredMixin, View):
         user = request.user
         user_emails = UserEmail.objects.filter(user=user)
         # Map users emails to the subscriptions of that email
-        email_settings = [
-            EmailSettings.objects.get_or_create(user_email=user_email)[0]
-            for user_email in user_emails
-        ]
+        for user_email in user_emails:
+            EmailSettings.objects.get_or_create(user_email=user_email)
         subscriptions = {
             user_email: {
                 'subscriptions': sorted([
-                    subscription for subscription in user_email.emailsettings.subscription_set.all()
+                    subscription for subscription
+                    in user_email.emailsettings.subscription_set.all()
                 ], key=lambda sub: sub.package.name),
                 'team_memberships': sorted([
                     membership for membership in user_email.membership_set.all()
@@ -221,8 +206,9 @@ class UnsubscribeUserView(LoginRequiredMixin, View):
 
         if 'email' not in request.POST:
             # Unsubscribe all the user's emails from the package
+            user_emails = UserEmail.objects.filter(user=user)
             qs = Subscription.objects.filter(
-                email_settings__user_email__in=UserEmail.objects.filter(user=user),
+                email_settings__user_email__in=user_emails,
                 package__name=package)
         else:
             # Unsubscribe only the given email from the package
@@ -257,7 +243,8 @@ class UnsubscribeAllView(LoginRequiredMixin, View):
             emails = user.emails.filter(email__in=request.POST.getlist('email'))
 
         # Remove all the subscriptions
-        Subscription.objects.filter(email_settings__user_email__in=emails).delete()
+        Subscription.objects.filter(
+            email_settings__user_email__in=emails).delete()
 
         if request.is_ajax():
             return render_to_json_response({
@@ -277,6 +264,7 @@ class ChooseSubscriptionEmailView(LoginRequiredMixin, View):
     cannot be offered in a popup.
     """
     template_name = 'accounts/choose-email.html'
+
     def get(self, request):
         if 'package' not in request.GET:
             raise Http404
@@ -294,8 +282,8 @@ class ModifyKeywordsView(LoginRequiredMixin, View):
     """
     def get_keywords(self, keywords):
         """
-        :returns: :class:`Keyword <distro_tracker.core.models.Keyword>` instances for the
-            given keyword names.
+        :returns: :class:`Keyword <distro_tracker.core.models.Keyword>`
+            instances for the given keyword names.
         """
         return Keyword.objects.filter(name__in=keywords)
 
@@ -305,7 +293,8 @@ class ModifyKeywordsView(LoginRequiredMixin, View):
         except (UserEmail.DoesNotExist):
             return HttpResponseForbidden()
 
-        email_settings, _ = EmailSettings.objects.get_or_create(user_email=user_email)
+        email_settings, _ = \
+            EmailSettings.objects.get_or_create(user_email=user_email)
         email_settings.default_keywords = self.get_keywords(keywords)
 
         return self.render_response()
@@ -316,9 +305,11 @@ class ModifyKeywordsView(LoginRequiredMixin, View):
         except (UserEmail.DoesNotExist):
             return HttpResponseForbidden()
 
-        email_settings, _ = EmailSettings.objects.get_or_create(user_email=user_email)
+        email_settings, _ = \
+            EmailSettings.objects.get_or_create(user_email=user_email)
         subscription = get_object_or_404(
-            Subscription, email_settings__user_email=user_email, package__name=package)
+            Subscription, email_settings__user_email=user_email,
+            package__name=package)
 
         subscription.keywords.clear()
         for keyword in self.get_keywords(keywords):
@@ -332,8 +323,8 @@ class ModifyKeywordsView(LoginRequiredMixin, View):
                 'status': 'ok',
             })
         else:
-            if 'next' in request.POST:
-                return redirect(request.POST['next'])
+            if 'next' in self.request.POST:
+                return redirect(self.request.POST['next'])
             else:
                 return redirect('dtracker-index')
 
@@ -365,7 +356,8 @@ class ModifyKeywordsView(LoginRequiredMixin, View):
         if 'package' in request.GET:
             package = request.GET['package']
             subscription = get_object_or_404(
-                Subscription, email_settings__user_emailr=user_email, package__name=package)
+                Subscription, email_settings__user_emailr=user_email,
+                package__name=package)
             context = {
                 'post': {
                     'email': email,
@@ -379,7 +371,8 @@ class ModifyKeywordsView(LoginRequiredMixin, View):
                 'post': {
                     'email': email,
                 },
-                'user_keywords': user_email.emailsettings.default_keywords.all(),
+                'user_keywords':
+                    user_email.emailsettings.default_keywords.all(),
             }
 
         context.update({

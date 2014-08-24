@@ -21,8 +21,8 @@ class UserEmailBackend(object):
         Since a particular user may have multiple email accounts associated
         with their account and they should be able to log in using any one of
         them, this authentication backend first matches the given email to the
-        :class:`django_email_accounts.models.User` instance to which the email is
-        associated and then authenticates the credentials against that user
+        :class:`django_email_accounts.models.User` instance to which the email
+        is associated and then authenticates the credentials against that user
         instance.
 
         The signature of the method is adapted to take a username argument
@@ -30,8 +30,8 @@ class UserEmailBackend(object):
         Django authentication backend method signature which allows admin users
         to log in to the admin console using any of their associated emails.
 
-        :returns: :class:`django_email_accounts.models.User` instance if the authentication
-            is successful, or ``None`` otherwise.
+        :returns: :class:`django_email_accounts.models.User` instance if the
+            authentication is successful, or ``None`` otherwise.
         """
         email = username
         # Find a user with the given email

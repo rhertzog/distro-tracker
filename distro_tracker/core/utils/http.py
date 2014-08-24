@@ -127,8 +127,8 @@ class HttpCache(object):
         :param force: To force the method to perform a full GET request, set
             the parameter to ``True``
 
-        :returns: The original HTTP response and a Boolean indicating whether the
-            cached value was updated.
+        :returns: The original HTTP response and a Boolean indicating whether
+            the cached value was updated.
         :rtype: two-tuple of (:class:`requests.Response`, ``Boolean``)
         """
         cached_headers = self.get_headers(url)
@@ -143,7 +143,7 @@ class HttpCache(object):
             headers['Cache-Control'] = 'no-cache'
 
         response = requests.get(url, headers=headers, verify=False,
-                allow_redirects=True)
+                                allow_redirects=True)
 
         # Invalidate previously cached value if the response is not valid now
         if not response.ok:
@@ -184,7 +184,7 @@ def get_resource_content(url, cache=None):
     :param cache: A cache object which should be used to look up and store
         the cached resource. If it is not provided, an instance of
         :class:`HttpCache` with a
-        :data:`distro_tracker.project.local_settings.DISTRO_TRACKER_CACHE_DIRECTORY` cache directory
+        ``DISTRO_TRACKER_CACHE_DIRECTORY`` cache directory
         is used.
     :type cache: :class:`HttpCache` or an object with an equivalent interface
 

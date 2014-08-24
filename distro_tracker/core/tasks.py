@@ -49,8 +49,8 @@ class BaseTask(six.with_metaclass(PluginRegistry)):
       Subclasses of this class are automatically registered when created which
       allows the :class:`BaseTask` to have the full picture of all tasks and
       their mutual dependencies. However, to make sure the subclass is always
-      loaded, make sure to place it in a ``tracker_tasks`` module at the top level
-      of a Django app.
+      loaded, make sure to place it in a ``tracker_tasks`` module at the top
+      level of a Django app.
     """
     DEPENDS_ON_EVENTS = ()
     PRODUCES_EVENTS = ()
@@ -90,9 +90,9 @@ class BaseTask(six.with_metaclass(PluginRegistry)):
         """
         Performs the actual processing of the task.
 
-        This method must raise appropriate events by using the :meth:`raise_event`
-        method during the processing so that tasks which are dependent on those
-        events can be notified.
+        This method must raise appropriate events by using the
+        :meth:`raise_event` method during the processing so that tasks which are
+        dependent on those events can be notified.
         """
         pass
 
@@ -182,7 +182,8 @@ class BaseTask(six.with_metaclass(PluginRegistry)):
                 dag.add_task(task)
 
         # Create the edges of the graph by creating an edge between each pair of
-        # tasks T1, T2 where T1 produces an event E and T2 depends on the event E.
+        # tasks T1, T2 where T1 produces an event E and T2 depends on the event
+        # E.
         from itertools import product as cross_product
         events = cls.build_task_event_dependency_graph()
         for event_producers, event_consumers in events.values():
@@ -194,9 +195,9 @@ class BaseTask(six.with_metaclass(PluginRegistry)):
     @classmethod
     def build_task_event_dependency_graph(cls):
         """
-        Returns a dict mapping event names to a two-tuple of a list of task classes
-        which produce the event and a list of task classes which depend on the
-        event, respectively.
+        Returns a dict mapping event names to a two-tuple of a list of task
+        classes which produce the event and a list of task classes which depend
+        on the event, respectively.
         Only tasks which are subclassed from `cls` are included.
 
         .. note::
@@ -241,8 +242,8 @@ class Event(object):
 
 class TaskDAG(DAG):
     """
-    A :class:`DAG <distro_tracker.core.utils.datastructures.DAG>` subclass which exposes
-    some methods specific for DAGs of dependent tasks.
+    A :class:`DAG <distro_tracker.core.utils.datastructures.DAG>` subclass which
+    exposes some methods specific for DAGs of dependent tasks.
     """
     @property
     def all_tasks(self):
@@ -313,8 +314,9 @@ class JobState(object):
     @classmethod
     def deserialize_running_job_state(cls, running_job):
         """
-        Deserializes a :class:`RunningJob <distro_tracker.core.models.RunningJob>` instance
-        and returns a matching :class:`JobState`.
+        Deserializes a :class:`RunningJob
+        <distro_tracker.core.models.RunningJob>` instance and returns a matching
+        :class:`JobState`.
         """
         instance = cls(running_job.initial_task_name)
         instance.additional_parameters = running_job.additional_parameters
@@ -429,8 +431,9 @@ class Job(object):
         :type job_state: :class:`JobState`
 
         :returns: the reconstructed :class:`Job` instance.
-            Calling the run method of this instance will continue execution of the
-            job at the task following the last executed task in the job state.
+            Calling the run method of this instance will continue execution of
+            the job at the task following the last executed task in the job
+            state.
         :rtype: :class:`Job`
         """
         job = cls(BaseTask.get_task_class_by_name(job_state.initial_task_name))
@@ -469,7 +472,8 @@ class Job(object):
             event.name
             for event in processed_task.raised_events
         )
-        for dependent_task in self.job_dag.directly_dependent_tasks(processed_task):
+        for dependent_task in \
+                self.job_dag.directly_dependent_tasks(processed_task):
             if dependent_task.event_received:
                 continue
             # Update this task's raised events.
@@ -557,7 +561,7 @@ def import_all_tasks():
             # The app does not implement Distro Tracker tasks.
             pass
     # This one is an exception, many core tasks are there
-    import distro_tracker.core.retrieve_data
+    import distro_tracker.core.retrieve_data  # noqa
 
 
 def run_task(initial_task, parameters=None):

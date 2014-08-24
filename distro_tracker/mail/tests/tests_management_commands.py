@@ -21,8 +21,8 @@ from distro_tracker.mail.management.commands.tracker_stats import (
 from django.core.management import call_command
 from django.core.management.base import CommandError
 
-from distro_tracker.core.models import PackageName, UserEmail, EmailSettings, Subscription
-from distro_tracker.core.models import Keyword
+from distro_tracker.core.models import PackageName, UserEmail, EmailSettings
+from distro_tracker.core.models import Subscription, Keyword
 from distro_tracker.core.models import SourcePackageName, PseudoPackageName
 
 from django.utils import six
@@ -39,7 +39,8 @@ class UnsubscribeAllManagementCommand(TestCase):
         self.user = UserEmail.objects.create(email='email-user@domain.com')
         self.email_settings = EmailSettings.objects.create(user_email=self.user)
         for package in self.packages:
-            Subscription.objects.create(package=package, email_settings=self.email_settings)
+            Subscription.objects.create(package=package,
+                                        email_settings=self.email_settings)
 
         self.nosub_user = UserEmail.objects.create(email='nosub@dom.com')
 
@@ -71,8 +72,8 @@ class UnsubscribeAllManagementCommand(TestCase):
 
     def test_unsubscribe_user(self):
         """
-        Tests the management command ``distro_tracker_unsubscribe_all`` when a user with
-        subscriptions is given.
+        Tests the management command ``distro_tracker_unsubscribe_all`` when a
+        user with subscriptions is given.
         """
         self.call_command(self.user.email)
 
@@ -81,8 +82,8 @@ class UnsubscribeAllManagementCommand(TestCase):
 
     def test_unsubscribe_doesnt_exist(self):
         """
-        Tests the management command ``distro_tracker_unsubscribe_all`` when the given
-        user does not exist.
+        Tests the management command ``distro_tracker_unsubscribe_all`` when
+        the given user does not exist.
         """
         self.call_command('no-exist')
 
@@ -90,8 +91,8 @@ class UnsubscribeAllManagementCommand(TestCase):
 
     def test_unsubscribe_no_subscriptions(self):
         """
-        Tests the management command ``distro_tracker_unsubscribe_all`` when the given
-        user is not subscribed to any packages.
+        Tests the management command ``distro_tracker_unsubscribe_all`` when
+        the given user is not subscribed to any packages.
         """
         self.call_command(self.nosub_user)
 
@@ -99,8 +100,8 @@ class UnsubscribeAllManagementCommand(TestCase):
 
     def test_unsubscribe_multiple_user(self):
         """
-        Tests the management command ``distro_tracker_unsubscribe_all`` when multiple
-        users are passed to it.
+        Tests the management command ``distro_tracker_unsubscribe_all`` when
+        multiple users are passed to it.
         """
         args = ['no-exist', self.nosub_user.email, self.user.email]
         self.call_command(*args)
@@ -140,8 +141,10 @@ class DumpSubscribersManagementCommandTest(TestCase):
         # The management command stdout oject's write method automatically
         # inserts new lines, so we do the same.
         real_write = cmd.stdout.write
+
         def write_stdout(value):
             real_write(value + '\n')
+
         cmd.stdout.write = write_stdout
 
         cmd.stderr = six.StringIO()
@@ -153,7 +156,8 @@ class DumpSubscribersManagementCommandTest(TestCase):
         user = self.users[0]
         email_settings = EmailSettings.objects.create(user_email=user)
         package = self.packages[0]
-        Subscription.objects.create(email_settings=email_settings, package=package)
+        Subscription.objects.create(email_settings=email_settings,
+                                    package=package)
 
         self.call_command()
 
@@ -165,7 +169,8 @@ class DumpSubscribersManagementCommandTest(TestCase):
         for user in self.users:
             email_settings = EmailSettings.objects.create(user_email=user)
             for package in self.packages:
-                Subscription.objects.create(email_settings=email_settings, package=package)
+                Subscription.objects.create(email_settings=email_settings,
+                                            package=package)
 
         self.call_command()
 
@@ -181,7 +186,8 @@ class DumpSubscribersManagementCommandTest(TestCase):
         # All users have an active subscription to the first package
         for user in self.users:
             email_settings = EmailSettings.objects.create(user_email=user)
-            Subscription.objects.create(email_settings=email_settings, package=self.packages[0])
+            Subscription.objects.create(email_settings=email_settings,
+                                        package=self.packages[0])
         # The first user has an active subscription to the second package
         Subscription.objects.create(email_settings=self.users[0].emailsettings,
                                     package=self.packages[1])
@@ -199,8 +205,8 @@ class DumpSubscribersManagementCommandTest(TestCase):
         user = self.users[0]
         package = self.packages[0]
         email_settings = EmailSettings.objects.create(user_email=user)
-        Subscription.objects.create(email_settings=email_settings, package=package,
-                                    active=False)
+        Subscription.objects.create(email_settings=email_settings,
+                                    package=package, active=False)
 
         self.call_command(inactive=True)
 
@@ -212,7 +218,8 @@ class DumpSubscribersManagementCommandTest(TestCase):
         for user in self.users:
             email_settings = EmailSettings.objects.create(user_email=user)
             for package in self.packages:
-                Subscription.objects.create(email_settings=email_settings, package=package)
+                Subscription.objects.create(email_settings=email_settings,
+                                            package=package)
 
         self.call_command(json=True)
 
@@ -230,7 +237,8 @@ class DumpSubscribersManagementCommandTest(TestCase):
         for user in self.users:
             email_settings = EmailSettings.objects.create(user_email=user)
             for package in self.packages:
-                Subscription.objects.create(email_settings=email_settings, package=package)
+                Subscription.objects.create(email_settings=email_settings,
+                                            package=package)
 
         self.call_command(udd_format=True)
 
@@ -271,7 +279,8 @@ class StatsCommandTest(TestCase):
         for user in UserEmail.objects.all():
             email_settings = EmailSettings.objects.create(user_email=user)
             for package in SourcePackageName.objects.all():
-                Subscription.objects.create(email_settings=email_settings, package=package)
+                Subscription.objects.create(email_settings=email_settings,
+                                            package=package)
 
     def call_command(self, *args, **kwargs):
         kwargs.setdefault('json', False)
@@ -355,7 +364,7 @@ class AddKeywordManagementCommandTest(TransactionTestCase):
         # A user who does not have the existing keyword.
         u = UserEmail.objects.create(email='no-keyword@domain.com')
         s = EmailSettings.objects.create(user_email=u)
-        ## Make sure that it is so!
+        # Make sure that it is so!
         self.assertNotIn(existing_keyword, s.default_keywords.all())
         # Sanity check - the keyword we want to add does not already exist
         self.assertEqual(Keyword.objects.filter(name='new-keyword').count(), 0)
@@ -376,7 +385,8 @@ class AddKeywordManagementCommandTest(TransactionTestCase):
         # New keyword added to the user that had the existing keyword in its
         # default list
         default_user = UserEmail.objects.get(email='defaultuser@domain.com')
-        self.assertIn(keyword, default_user.emailsettings.default_keywords.all())
+        self.assertIn(keyword,
+                      default_user.emailsettings.default_keywords.all())
         # Keyword not added to the default list of the user that did not have
         # the existing keyword
         u = UserEmail.objects.get(email='no-keyword@domain.com')
@@ -408,7 +418,8 @@ class AddKeywordManagementCommandTest(TransactionTestCase):
 
         # Error raised
         with self.assertRaises(CommandError):
-            call_command('tracker_add_keyword', 'new-keyword', 'existing-keyword')
+            call_command('tracker_add_keyword', 'new-keyword',
+                         'existing-keyword')
 
         # ...and nothing changed.
         self.assertEqual(Keyword.objects.count(), old_count)
@@ -427,7 +438,7 @@ class AddKeywordManagementCommandTest(TransactionTestCase):
         # A user who does not have any keywords apart from the defaults
         u = UserEmail.objects.create(email='no-keyword@domain.com')
         s = EmailSettings.objects.create(user_email=u)
-        ## Make sure that it is so!
+        # Make sure that it is so!
         self.assertNotIn(existing_keyword, s.default_keywords.all())
         # Sanity check - the keyword we want to add does not already exist
         self.assertEqual(Keyword.objects.filter(name='new-keyword').count(), 0)
@@ -453,7 +464,8 @@ class AddKeywordManagementCommandTest(TransactionTestCase):
         user1 = UserEmail.objects.create(email='subscription-user@domain.com')
         email_settings1 = EmailSettings.objects.create(user_email=user1)
         p = PackageName.objects.create(name='dummy-package')
-        sub = Subscription.objects.create(email_settings=email_settings1, package=p)
+        sub = Subscription.objects.create(email_settings=email_settings1,
+                                          package=p)
         sub.keywords.add(existing_keyword)
         sub.save()
         # A user who added the existing keyword to its default keywords
@@ -465,14 +477,14 @@ class AddKeywordManagementCommandTest(TransactionTestCase):
         user2 = UserEmail.objects.create(email='no-keyword@domain.com')
         email_settings2 = EmailSettings.objects.create(user_email=user2)
         # And is subscribed to a package without having the keyword
-        sub = Subscription.objects.create(email_settings=email_settings2, package=p)
+        sub = Subscription.objects.create(email_settings=email_settings2,
+                                          package=p)
         sub.keywords.add(Keyword.objects.create(name='some-other-keyword'))
         # Sanity check - the keyword we want to add does not already exist
         self.assertEqual(Keyword.objects.filter(name='new-keyword').count(), 0)
 
-        call_command('tracker_add_keyword', 'new-keyword', 'existing-keyword', **{
-            'is_default_keyword': True,
-        })
+        call_command('tracker_add_keyword', 'new-keyword', 'existing-keyword',
+                     **{'is_default_keyword': True})
 
         new_keyword = Keyword.objects.get(name='new-keyword')
         # Every user has the keyword
@@ -481,8 +493,10 @@ class AddKeywordManagementCommandTest(TransactionTestCase):
             EmailSettings.objects.count()
         )
         # Subscription with the existing keyword has the new keyword
-        sub = Subscription.objects.get(email_settings=email_settings1, package=p)
+        sub = Subscription.objects.get(email_settings=email_settings1,
+                                       package=p)
         self.assertIn(new_keyword, sub.keywords.all())
         # Subscription without the existing keyword not modified
-        sub = Subscription.objects.get(email_settings=email_settings2, package=p)
+        sub = Subscription.objects.get(email_settings=email_settings2,
+                                       package=p)
         self.assertNotIn(new_keyword, sub.keywords.all())

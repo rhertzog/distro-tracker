@@ -30,7 +30,8 @@ class UpdateStandardsVersionWarnings(BaseTask):
     )
 
     ACTION_ITEM_TYPE = 'debian-std-ver-outdated'
-    FULL_DESCRIPTION_TEMPLATE = 'stdver_warnings/standards-version-action-item.html'
+    FULL_DESCRIPTION_TEMPLATE = \
+        'stdver_warnings/standards-version-action-item.html'
     ITEM_DESCRIPTION = "Standards version of the package is outdated."
 
     def __init__(self, force_update=False, *args, **kwargs):
@@ -46,14 +47,16 @@ class UpdateStandardsVersionWarnings(BaseTask):
 
     def get_packages_from_events(self):
         """
-        :returns: A list of :class:`distro_tracker.core.models.SourcePackageName`
-            instances which are found from all raised events.
+        :returns: A list of
+            :class:`distro_tracker.core.models.SourcePackageName` instances
+            which are found from all raised events.
         """
         package_pks = [
             event.arguments['pk']
             for event in self.get_all_events()
         ]
-        qs = SourcePackageName.objects.filter(source_package_versions__pk__in=package_pks)
+        qs = SourcePackageName.objects.filter(
+            source_package_versions__pk__in=package_pks)
         qs.prefetch_related('action_items')
 
         return qs

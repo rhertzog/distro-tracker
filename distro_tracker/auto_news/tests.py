@@ -22,7 +22,8 @@ from distro_tracker.core.models import Repository
 from distro_tracker.core.tasks import Job
 from distro_tracker.core.tasks import JobState
 from distro_tracker.core.tasks import Event
-from distro_tracker.auto_news.tracker_tasks import GenerateNewsFromRepositoryUpdates
+from distro_tracker.auto_news.tracker_tasks \
+    import GenerateNewsFromRepositoryUpdates
 
 
 class GenerateNewsFromRepositoryUpdatesTest(TestCase):
@@ -244,7 +245,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         # Two news items exist
         self.assertEqual(2, News.objects.count())
         titles = [news.title for news in News.objects.all()]
-        ## This is actually a sort by version found in the title
+        # This is actually a sort by version found in the title
         titles.sort()
         for title, version in zip(titles, versions):
             self.assert_correct_accepted_message(
@@ -270,9 +271,10 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
 
         self.assertEqual(2, News.objects.count())
         titles = [news.title for news in News.objects.all()]
-        ## This is actually a sort by version found in the title
+        # This is actually a sort by version found in the title
         titles.sort()
-        for title, version, repository_name in zip(titles, versions, repositories):
+        for title, version, repository_name in zip(titles, versions,
+                                                   repositories):
             self.assert_correct_accepted_message(
                 title,
                 source_package_name, version, repository_name
@@ -294,7 +296,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         self.run_task()
 
         self.assertEqual(2, News.objects.count())
-        ## This is a sort by repository name
+        # This is a sort by repository name
         titles = [news.title for news in News.objects.order_by('title')]
         for title, repository_name in zip(titles, repositories):
             self.assert_correct_migrated_message(
@@ -329,7 +331,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
 
         # Only two news messages.
         self.assertEqual(2, News.objects.count())
-        ## This is a sort by repository name
+        # This is a sort by repository name
         titles = [news.title for news in News.objects.order_by('title')]
         for title, repository_name in zip(titles, repositories):
             self.assert_correct_migrated_message(
@@ -535,7 +537,8 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         self.create_source_package(name, version)
         self.add_source_package_to_repository(name, version, repository)
         expected_content = 'This is fake content'
-        mock_get_resource_content.return_value = expected_content.encode('utf-8')
+        mock_get_resource_content.return_value = \
+            expected_content.encode('utf-8')
 
         self.run_task()
 

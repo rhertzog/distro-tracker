@@ -101,7 +101,8 @@ class UserTests(TestCase):
     def test_is_subscribed_to_main_email(self):
         """
         Tests the
-        :meth:`is_subscribed_to <distro_tracker.accounts.models.User.is_subscribed_to>`
+        :meth:`is_subscribed_to
+        <distro_tracker.accounts.models.User.is_subscribed_to>`
         method when the user is subscribed to the package with his main email
         only.
         """
@@ -116,7 +117,8 @@ class UserTests(TestCase):
     def test_is_subscribed_to_associated_email(self):
         """
         Tests the
-        :meth:`is_subscribed_to <distro_tracker.accounts.models.User.is_subscribed_to>`
+        :meth:`is_subscribed_to
+        <distro_tracker.accounts.models.User.is_subscribed_to>`
         method when the user is subscribed to the package with one of his
         associated emails.
         """
@@ -131,7 +133,8 @@ class UserTests(TestCase):
     def test_is_subscribed_to_all_emails(self):
         """
         Tests the
-        :meth:`is_subscribed_to <distro_tracker.accounts.models.User.is_subscribed_to>`
+        :meth:`is_subscribed_to
+        <distro_tracker.accounts.models.User.is_subscribed_to>`
         method when the user is subscribed to the package with all of his
         associated emails.
         """
@@ -160,7 +163,8 @@ class UserTests(TestCase):
 
         self.assertEqual(
             len(Subscription.objects.get_for_email(self.main_email)),
-            0, 'unsubscribe_all() should remove all subscriptions to main_email')
+            0,
+            'unsubscribe_all() should remove all subscriptions to main_email')
         self.assertEqual(
             len(Subscription.objects.get_for_email(other_email)),
             1, 'unsubscribe_all() should not remove other subscriptions')
@@ -169,7 +173,9 @@ class UserTests(TestCase):
 
         self.assertEqual(
             len(Subscription.objects.get_for_email(other_email)), 0,
-            'unsubscribe_all(email) should remove all subscriptions of that email')
+            'unsubscribe_all(email) should remove all subscriptions of '
+            ' that email')
+
 
 class SubscriptionsViewTests(TestCase):
     """
@@ -211,7 +217,8 @@ class SubscriptionsViewTests(TestCase):
         # The packages in the context are correct
         self.assertEqual(
             [self.package_name.name],
-            [sub.package.name for sub in context_subscriptions[email]['subscriptions']])
+            [sub.package.name for sub
+             in context_subscriptions[email]['subscriptions']])
 
     def test_multiple_emails(self):
         """
@@ -234,7 +241,8 @@ class SubscriptionsViewTests(TestCase):
             # Each email has the correct package?
             self.assertEqual(
                 [package.name],
-                [sub.package.name for sub in context_subscriptions[email]['subscriptions']])
+                [sub.package.name for sub
+                 in context_subscriptions[email]['subscriptions']])
 
 
 class UserEmailsViewTests(TestCase):
@@ -286,7 +294,8 @@ class UserEmailsViewTests(TestCase):
 
 class SubscribeUserToPackageViewTests(TestCase):
     """
-    Tests for the :class:`distro_tracker.accounts.views.SubscribeUserToPackageView` view.
+    Tests for the
+    :class:`distro_tracker.accounts.views.SubscribeUserToPackageView` view.
     """
     def setUp(self):
         self.password = 'asdf'
@@ -358,7 +367,8 @@ class SubscribeUserToPackageViewTests(TestCase):
         self.log_in_user()
 
         self.post_to_view(
-            email=[e.email for e in self.user.emails.all()], package=self.package.name)
+            email=[e.email for e in self.user.emails.all()],
+            package=self.package.name)
 
         for email in self.user.emails.all():
             self.assertTrue(email.emailsettings.is_subscribed_to(self.package))
@@ -383,7 +393,8 @@ class SubscribeUserToPackageViewTests(TestCase):
 
 class UnsubscribeUserViewTests(TestCase):
     """
-    Tests for the :class:`distro_tracker.accounts.views.UnsubscribeUserView` view.
+    Tests for the :class:`distro_tracker.accounts.views.UnsubscribeUserView`
+    view.
     """
     def setUp(self):
         self.package = PackageName.objects.create(name='dummy-package')
@@ -466,9 +477,11 @@ class UnsubscribeUserViewTests(TestCase):
         # However, the main email is no longer subscribed
         for email in self.user.emails.all():
             if email.email == self.user.main_email:
-                self.assertFalse(email.emailsettings.is_subscribed_to(self.package))
+                self.assertFalse(
+                    email.emailsettings.is_subscribed_to(self.package))
             else:
-                self.assertTrue(email.emailsettings.is_subscribed_to(self.package))
+                self.assertTrue(
+                    email.emailsettings.is_subscribed_to(self.package))
 
     def test_package_name_not_provided(self):
         """
@@ -476,14 +489,16 @@ class UnsubscribeUserViewTests(TestCase):
         """
         self.log_in()
 
-        response = self.client.post(reverse('dtracker-api-accounts-unsubscribe'))
+        response = \
+            self.client.post(reverse('dtracker-api-accounts-unsubscribe'))
 
         self.assertEqual(404, response.status_code)
 
 
 class UnsubscribeAllViewTests(TestCase):
     """
-    Tests for the :class:`distro_tracker.accounts.views.UnsubscribeAllView` view.
+    Tests for the :class:`distro_tracker.accounts.views.UnsubscribeAllView`
+    view.
     """
     def setUp(self):
         self.package = PackageName.objects.create(name='dummy-package')
@@ -513,7 +528,8 @@ class UnsubscribeAllViewTests(TestCase):
                 'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest',
             }
         return self.client.post(
-            reverse('dtracker-api-accounts-unsubscribe-all'), post_params, **kwargs)
+            reverse('dtracker-api-accounts-unsubscribe-all'), post_params,
+            **kwargs)
 
     def test_subscriptions_removed(self):
         """
@@ -539,12 +555,14 @@ class UnsubscribeAllViewTests(TestCase):
                 # These emails no longer have any subscriptions
                 self.assertEqual(
                     0,
-                    Subscription.objects.filter(email_settings__user_email__email=email).count())
+                    Subscription.objects.filter(
+                        email_settings__user_email__email=email).count())
             else:
                 # Otherwise, they have all the subscriptions!
                 self.assertEqual(
                     2,
-                    Subscription.objects.filter(email_settings__user_email__email=email).count())
+                    Subscription.objects.filter(
+                        email_settings__user_email__email=email).count())
 
     def test_user_not_logged_in(self):
         """
@@ -561,7 +579,8 @@ class UnsubscribeAllViewTests(TestCase):
 
 class ModifyKeywordsViewTests(TestCase):
     """
-    Tests for the :class:`distro_tracker.accounts.views.ModifyKeywordsView` view.
+    Tests for the :class:`distro_tracker.accounts.views.ModifyKeywordsView`
+    view.
     """
     def setUp(self):
         self.package = PackageName.objects.create(name='dummy-package')
@@ -570,7 +589,8 @@ class ModifyKeywordsViewTests(TestCase):
             main_email='user@domain.com', password=self.password)
         for user_email in self.user.emails.all():
             EmailSettings.objects.create(user_email=user_email)
-        self.other_email = UserEmail.objects.create(user=self.user, email='other@domain.com')
+        self.other_email = UserEmail.objects.create(user=self.user,
+                                                    email='other@domain.com')
 
     def subscribe_email_to_package(self, email, package_name):
         """
@@ -593,12 +613,15 @@ class ModifyKeywordsViewTests(TestCase):
                 'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest',
             }
         return self.client.post(
-            reverse('dtracker-api-accounts-profile-keywords'), post_params, **kwargs)
+            reverse('dtracker-api-accounts-profile-keywords'), post_params,
+            **kwargs)
 
     def get_email_keywords(self, email):
         user_email = UserEmail.objects.get(email=email)
-        email_settings, _ = EmailSettings.objects.get_or_create(user_email=user_email)
-        return [keyword.name for keyword in email_settings.default_keywords.all()]
+        email_settings, _ = \
+            EmailSettings.objects.get_or_create(user_email=user_email)
+        return [keyword.name for keyword
+                in email_settings.default_keywords.all()]
 
     def default_keywords_equal(self, new_keywords):
         default_keywords = self.get_email_keywords(self.user.main_email)
@@ -642,7 +665,7 @@ class ModifyKeywordsViewTests(TestCase):
         new_keywords = [keyword.name for keyword in Keyword.objects.all()[:2]]
         old_keywords = self.get_email_keywords(self.user.main_email)
 
-        response = self.post_to_view(
+        self.post_to_view(
             email=self.user.main_email,
             keyword=new_keywords)
 

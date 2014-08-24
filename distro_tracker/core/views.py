@@ -29,9 +29,9 @@ from distro_tracker.core.models import get_web_package
 from distro_tracker.core.forms import CreateTeamForm
 from distro_tracker.core.forms import AddTeamMemberForm
 from distro_tracker.core.utils import render_to_json_response
-from distro_tracker.core.models import SourcePackageName, PackageName, PseudoPackageName, BinaryPackageName
+from distro_tracker.core.models import SourcePackageName, PackageName
+from distro_tracker.core.models import PseudoPackageName, BinaryPackageName
 from distro_tracker.core.models import ActionItem
-from distro_tracker.core.models import EmailSettings
 from distro_tracker.core.models import News, NewsRenderer
 from distro_tracker.core.models import Keyword
 from distro_tracker.core.models import Team
@@ -39,7 +39,6 @@ from distro_tracker.core.models import TeamMembership
 from distro_tracker.core.models import MembershipConfirmation
 from distro_tracker.core.panels import get_panels_for_package
 from distro_tracker.accounts.views import LoginRequiredMixin
-from distro_tracker.accounts.models import User
 from distro_tracker.accounts.models import UserEmail
 from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.utils import distro_tracker_render_to_string
@@ -82,7 +81,8 @@ def legacy_package_url_redirect(request, package_hash, package_name):
     .. note::
        The "old" package URL is: /<hash>/<package_name>.html
     """
-    return redirect('dtracker-package-page', package_name=package_name, permanent=True)
+    return redirect('dtracker-package-page', package_name=package_name,
+                    permanent=True)
 
 
 class PackageSearchView(View):
@@ -161,9 +161,11 @@ def news_page(request, news_id):
     """
     news = get_object_or_404(News, pk=news_id)
 
-    renderer_class = NewsRenderer.get_renderer_for_content_type(news.content_type)
+    renderer_class = \
+        NewsRenderer.get_renderer_for_content_type(news.content_type)
     if renderer_class is None:
-        renderer_class = NewsRenderer.get_renderer_for_content_type('text/plain')
+        renderer_class = \
+            NewsRenderer.get_renderer_for_content_type('text/plain')
 
     renderer = renderer_class(news)
     return render(request, 'core/news.html', {
@@ -174,7 +176,8 @@ def news_page(request, news_id):
 
 class ActionItemJsonView(View):
     """
-    View renders a :class:`distro_tracker.core.models.ActionItem` in a JSON response.
+    View renders a :class:`distro_tracker.core.models.ActionItem` in a JSON
+    response.
     """
     @method_decorator(cache_control(must_revalidate=True, max_age=3600))
     def get(self, request, item_pk):
@@ -184,7 +187,8 @@ class ActionItemJsonView(View):
 
 class ActionItemView(View):
     """
-    View renders a :class:`distro_tracker.core.models.ActionItem` in an HTML response.
+    View renders a :class:`distro_tracker.core.models.ActionItem` in an HTML
+    response.
     """
     def get(self, request, item_pk):
         item = get_object_or_404(ActionItem, pk=item_pk)
@@ -394,7 +398,8 @@ class LeaveTeamView(LoginRequiredMixin, View):
             raise PermissionDenied
 
         # Remove all the user's emails from the team
-        team.remove_members(UserEmail.objects.filter(pk__in=request.user.emails.all()))
+        team.remove_members(
+            UserEmail.objects.filter(pk__in=request.user.emails.all()))
 
         return redirect(team)
 
@@ -412,7 +417,8 @@ class ManageTeamMembers(LoginRequiredMixin, ListView):
         return self.team.members.all().order_by('email')
 
     def get_context_data(self, *args, **kwargs):
-        context = super(ManageTeamMembers, self).get_context_data(*args, **kwargs)
+        context = super(ManageTeamMembers, self).get_context_data(*args,
+                                                                  **kwargs)
         context['team'] = self.team
         context['form'] = AddTeamMemberForm()
         return context
@@ -455,10 +461,12 @@ class AddTeamMember(LoginRequiredMixin, View):
                 membership=membership)
             send_mail(
                 'Team Membership Confirmation',
-                distro_tracker_render_to_string('core/email-team-membership-confirmation.txt', {
-                    'confirmation': confirmation,
-                    'team': self.team,
-                }),
+                distro_tracker_render_to_string(
+                    'core/email-team-membership-confirmation.txt',
+                    {
+                        'confirmation': confirmation,
+                        'team': self.team,
+                    }),
                 from_email=settings.DISTRO_TRACKER_CONTACT_EMAIL,
                 recipient_list=[email])
 
@@ -521,7 +529,8 @@ class SetMuteTeamView(LoginRequiredMixin, View):
             raise Http404
 
         if 'package' in request.POST:
-            package = get_object_or_404(PackageName, name=request.POST['package'])
+            package = get_object_or_404(PackageName,
+                                        name=request.POST['package'])
             membership.set_mute_package(package, mute)
         else:
             membership.muted = mute
@@ -567,7 +576,8 @@ class SetMembershipKeywords(LoginRequiredMixin, View):
 
         keywords = request.POST.getlist('keyword[]')
         if 'package' in request.POST:
-            package = get_object_or_404(PackageName, name=request.POST['package'])
+            package = get_object_or_404(PackageName,
+                                        name=request.POST['package'])
             membership.set_keywords(package, keywords)
         else:
             membership.set_membership_keywords(keywords)
@@ -591,7 +601,8 @@ class EditMembershipView(LoginRequiredMixin, ListView):
             raise PermissionDenied
 
         try:
-            self.membership = self.team.team_membership_set.get(user_email=email)
+            self.membership = \
+                self.team.team_membership_set.get(user_email=email)
         except TeamMembership.DoesNotExist:
             raise Http404
 
@@ -609,6 +620,7 @@ class EditMembershipView(LoginRequiredMixin, ListView):
             pkg.keywords = sorted(
                 self.membership.get_keywords(pkg),
                 key=lambda x: x.name)
-        context = super(EditMembershipView, self).get_context_data(*args, **kwargs)
+        context = super(EditMembershipView, self).get_context_data(*args,
+                                                                   **kwargs)
         context['membership'] = self.membership
         return context

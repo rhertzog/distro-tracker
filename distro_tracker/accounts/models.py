@@ -13,7 +13,7 @@ from django_email_accounts.models import User as EmailAccountsUser
 
 # Re-export some objects of django_email_accounts
 from django_email_accounts.models import UserEmail
-from django_email_accounts.models import (
+from django_email_accounts.models import (  # noqa
     UserRegistrationConfirmation,
     ResetPasswordConfirmation,
     AddEmailConfirmation,

@@ -208,7 +208,7 @@ class DAG(object):
         while len(queue):
             current_node = queue.popleft()
             for successor_id in self.graph[current_node.id]:
-                if not successor_id in visited:
+                if successor_id not in visited:
                     visited.add(successor_id)
                     successor = id_to_node_map[successor_id]
                     queue.append(successor)

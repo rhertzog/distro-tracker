@@ -36,7 +36,8 @@ class PackageViewTest(TestCase):
         self.package = SourcePackageName.objects.create(name='dummy-package')
         self.binary_package = BinaryPackageName.objects.create(
             name='binary-package')
-        self.pseudo_package = PseudoPackageName.objects.create(name='pseudo-pkg')
+        self.pseudo_package = \
+            PseudoPackageName.objects.create(name='pseudo-pkg')
         src_pkg = SourcePackage.objects.create(
             source_package_name=self.package, version='1.0.0')
         src_pkg.binary_packages = [self.binary_package]
@@ -166,8 +167,10 @@ class PackageViewTest(TestCase):
 
 class PackageSearchViewTest(TestCase):
     def setUp(self):
-        self.pseudo_package = PseudoPackageName.objects.create(name='pseudo-package')
-        self.source_package = SourcePackageName.objects.create(name='dummy-package')
+        self.pseudo_package = \
+            PseudoPackageName.objects.create(name='pseudo-package')
+        self.source_package = \
+            SourcePackageName.objects.create(name='dummy-package')
         self.binary_package = BinaryPackageName.objects.create(
             name='binary-package')
         src_pkg = SourcePackage.objects.create(
@@ -274,10 +277,8 @@ class PackageAutocompleteViewTest(TestCase):
         Tests the autocomplete functionality when the client asks for source
         packages.
         """
-        response = self.client.get(reverse('dtracker-api-package-autocomplete'), {
-            'package_type': 'source',
-            'q': 'd',
-        })
+        response = self.client.get(reverse('dtracker-api-package-autocomplete'),
+                                   {'package_type': 'source', 'q': 'd'})
 
         response = json.loads(response.content.decode('utf-8'))
         self.assertEqual(len(response), 2)
@@ -287,10 +288,8 @@ class PackageAutocompleteViewTest(TestCase):
         self.assertIn('d-package', response[1])
 
         # No packages given when there are no matching source packages
-        response = self.client.get(reverse('dtracker-api-package-autocomplete'), {
-            'package_type': 'source',
-            'q': 'z',
-        })
+        response = self.client.get(reverse('dtracker-api-package-autocomplete'),
+                                   {'package_type': 'source', 'q': 'z'})
         response = json.loads(response.content.decode('utf-8'))
         self.assertEqual(len(response), 2)
         self.assertEqual(response[0], 'z')
@@ -301,10 +300,8 @@ class PackageAutocompleteViewTest(TestCase):
         Tests the autocomplete functionality when the client asks for binary
         packages.
         """
-        response = self.client.get(reverse('dtracker-api-package-autocomplete'), {
-            'package_type': 'binary',
-            'q': 'p',
-        })
+        response = self.client.get(reverse('dtracker-api-package-autocomplete'),
+                                   {'package_type': 'binary', 'q': 'p'})
 
         response = json.loads(response.content.decode('utf-8'))
         self.assertEqual(len(response), 2)
@@ -313,10 +310,8 @@ class PackageAutocompleteViewTest(TestCase):
         self.assertIn('package-dev', response[1])
 
         # No packages given when there are no matching binary packages
-        response = self.client.get(reverse('dtracker-api-package-autocomplete'), {
-            'package_type': 'binary',
-            'q': 'z',
-        })
+        response = self.client.get(reverse('dtracker-api-package-autocomplete'),
+                                   {'package_type': 'binary', 'q': 'z'})
         response = json.loads(response.content.decode('utf-8'))
         self.assertEqual(len(response), 2)
         self.assertEqual(response[0], 'z')
@@ -327,10 +322,8 @@ class PackageAutocompleteViewTest(TestCase):
         Tests the autocomplete functionality when the client asks for pseudo
         packages.
         """
-        response = self.client.get(reverse('dtracker-api-package-autocomplete'), {
-            'package_type': 'pseudo',
-            'q': 'p',
-        })
+        response = self.client.get(reverse('dtracker-api-package-autocomplete'),
+                                   {'package_type': 'pseudo', 'q': 'p'})
 
         response = json.loads(response.content.decode('utf-8'))
         self.assertEqual(len(response), 2)
@@ -339,10 +332,8 @@ class PackageAutocompleteViewTest(TestCase):
         self.assertIn('pseudo-package', response[1])
 
         # No packages given when there are no matching pseudo packages
-        response = self.client.get(reverse('dtracker-api-package-autocomplete'), {
-            'package_type': 'pseudo',
-            'q': '-',
-        })
+        response = self.client.get(reverse('dtracker-api-package-autocomplete'),
+                                   {'package_type': 'pseudo', 'q': '-'})
         response = json.loads(response.content.decode('utf-8'))
         self.assertEqual(len(response), 2)
         self.assertEqual(response[0], '-')
@@ -353,9 +344,8 @@ class PackageAutocompleteViewTest(TestCase):
         Tests the autocomplete functionality when the client does not specify
         the type of package.
         """
-        response = self.client.get(reverse('dtracker-api-package-autocomplete'), {
-            'q': 'p',
-        })
+        response = self.client.get(reverse('dtracker-api-package-autocomplete'),
+                                   {'q': 'p'})
 
         response = json.loads(response.content.decode('utf-8'))
         self.assertEqual(len(response), 2)
@@ -366,9 +356,8 @@ class PackageAutocompleteViewTest(TestCase):
         self.assertIn('pseudo-package', response[1])
 
         # No packages given when there are no matching packages
-        response = self.client.get(reverse('dtracker-api-package-autocomplete'), {
-            'q': '-',
-        })
+        response = self.client.get(reverse('dtracker-api-package-autocomplete'),
+                                   {'q': '-'})
         response = json.loads(response.content.decode('utf-8'))
         self.assertEqual(len(response), 2)
         self.assertEqual(response[0], '-')
@@ -378,9 +367,8 @@ class PackageAutocompleteViewTest(TestCase):
         """
         Tests the autocomplete when there is no query parameter given.
         """
-        response = self.client.get(reverse('dtracker-api-package-autocomplete'), {
-            'package_type': 'source',
-        })
+        response = self.client.get(reverse('dtracker-api-package-autocomplete'),
+                                   {'package_type': 'source'})
 
         self.assertEqual(response.status_code, 404)
 
@@ -432,7 +420,8 @@ class ActionItemJsonViewTest(TestCase):
         """
         does_not_exist = 100
         # Sanity check - the PK actually does not exist
-        self.assertEqual(0, ActionItem.objects.filter(pk=does_not_exist).count())
+        self.assertEqual(0,
+                         ActionItem.objects.filter(pk=does_not_exist).count())
         response = self.client.get(reverse('dtracker-api-action-item', kwargs={
             'item_pk': does_not_exist,
         }))

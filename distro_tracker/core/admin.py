@@ -8,8 +8,8 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """
-Settings for the admin panel for the models defined in the :mod:`distro_tracker.core`
-app.
+Settings for the admin panel for the models defined in the
+:mod:`distro_tracker.core` app.
 """
 from __future__ import unicode_literals
 from django.contrib import admin
@@ -55,17 +55,17 @@ def validate_sources_list_entry(value):
         url = url.rstrip('/')
     try:
         response = requests.head(Repository.release_file_url(url, name),
-                allow_redirects=True)
-    except requests.exceptions.Timeout as e:
+                                 allow_redirects=True)
+    except requests.exceptions.Timeout:
         raise ValidationError(
             "Invalid repository: Could not connect to {url}."
             " Request timed out.".format(url=url))
-    except requests.exceptions.ConnectionError as e:
+    except requests.exceptions.ConnectionError:
         raise ValidationError(
             "Invalid repository: Could not connect to {url} due to a network"
             " problem. The URL may not exist or is refusing to receive"
             " connections.".format(url=url))
-    except requests.exceptions.HTTPError as e:
+    except requests.exceptions.HTTPError:
         raise ValidationError(
             "Invalid repository:"
             " Received an invalid HTTP response from {url}.".format(url=url))
@@ -83,7 +83,8 @@ def validate_sources_list_entry(value):
 class RepositoryAdminForm(forms.ModelForm):
     """
     A custom :class:`ModelForm <django.forms.ModelForm>` used for creating and
-    modifying :class:`Repository <distro_tracker.core.models.Repository>` model instances.
+    modifying :class:`Repository <distro_tracker.core.models.Repository>` model
+    instances.
 
     The class adds the ability to enter only a sources.list entry describing
     the repository and other properties of the repository are automatically
@@ -132,7 +133,8 @@ class RepositoryAdminForm(forms.ModelForm):
         parent class to allow validating the form based on the sources.list
         entry, not only the model fields.
         """
-        self.cleaned_data = super(RepositoryAdminForm, self).clean(*args, **kwargs)
+        self.cleaned_data = super(RepositoryAdminForm, self).clean(*args,
+                                                                   **kwargs)
         if 'sources_list_entry' not in self.cleaned_data:
             # Sources list entry was given to the form but it failed
             # validation.
@@ -150,7 +152,7 @@ class RepositoryAdminForm(forms.ModelForm):
             try:
                 repository_info = retrieve_repository_info(
                     self.cleaned_data['sources_list_entry'])
-            except InvalidRepositoryException as e:
+            except InvalidRepositoryException:
                 raise ValidationError("The Release file was invalid.")
             # Use the data to construct a Repository object.
             self.cleaned_data.update(repository_info)
@@ -166,7 +168,8 @@ class RepositoryAdminForm(forms.ModelForm):
 
 class RepositoryAdmin(admin.ModelAdmin):
     """
-    Actual configuration for the :class:`Repository <distro_tracker.core.models.Repository>`
+    Actual configuration for the
+    :class:`Repository <distro_tracker.core.models.Repository>`
     admin panel.
     """
     class Media:
@@ -212,8 +215,8 @@ class RepositoryAdmin(admin.ModelAdmin):
     ]
 
     #: Gives a list of fields which should be displayed as columns in the
-    #: list of existing :class:`Repository <distro_tracker.core.models.Repository>`
-    #: instances.
+    #: list of existing
+    #: :class:`Repository <distro_tracker.core.models.Repository>` instances.
     list_display = (
         'name',
         'shorthand',

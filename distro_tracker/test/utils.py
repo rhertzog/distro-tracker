@@ -36,7 +36,8 @@ def make_temp_directory(suffix=''):
 
 def create_source_package(arguments):
     """
-    Creates and returns a new :class:`SourcePackage <distro_tracker.core.models.SourcePackage>`
+    Creates and returns a new
+    :class:`SourcePackage <distro_tracker.core.models.SourcePackage>`
     instance based on the parameters given in the arguments.
 
     It takes care to automatically create any missing maintainers, package

@@ -1,6 +1,6 @@
 """Appropriate settings to run the test suite."""
 
-from .development import *
+from .development import *  # noqa
 
 # Don't use bcrypt to run tests (speed gain)
 PASSWORD_HASHERS = (

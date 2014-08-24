@@ -24,8 +24,6 @@ from datetime import timedelta
 
 from distro_tracker.core.models import PackageName, Subscription, Keyword
 from distro_tracker.core.models import Team
-from distro_tracker.core.models import UserEmail
-from distro_tracker.core.models import EmailSettings
 from distro_tracker.accounts.models import User
 from distro_tracker.core.utils import verp
 from distro_tracker.core.utils import get_decoded_message_payload
@@ -130,7 +128,8 @@ class DispatchTestHelperMixin(object):
         keyword.
         """
         return '{package}_{keyword}@{distro_tracker_fqdn}'.format(
-            package=package, keyword=keyword, distro_tracker_fqdn=DISTRO_TRACKER_FQDN)
+            package=package, keyword=keyword,
+            distro_tracker_fqdn=DISTRO_TRACKER_FQDN)
 
     def assert_message_forwarded_to(self, email):
         """
@@ -197,7 +196,7 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         self.run_dispatch()
 
         msg = mail.outbox[0]
-        # No exception thrown trying to get the entire message's content as bytes
+        # No exception thrown trying to get the entire message as bytes
         content = msg.message().as_string()
         # The content is actually bytes
         self.assertTrue(isinstance(content, bytes))
@@ -314,8 +313,8 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         from the message to header address.
         """
         self.set_header('To', 'Someone <someone@domain.com>')
-        address = '{package}@{distro_tracker_fqdn}'.format(package=self.package_name,
-                                                distro_tracker_fqdn=DISTRO_TRACKER_FQDN)
+        address = '{package}@{distro_tracker_fqdn}'.format(
+            package=self.package_name, distro_tracker_fqdn=DISTRO_TRACKER_FQDN)
         self.add_header('Cc', address)
         # Make sure there is a user to forward the message to
         self.subscribe_user_to_package('user@domain.com', self.package_name)
@@ -478,7 +477,8 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         """
         # Set up some prior bounces - one each day.
         date = timezone.now().date()
-        for days in range(1, settings.DISTRO_TRACKER_MAX_DAYS_TOLERATE_BOUNCE - 1):
+        for days in range(1,
+                          settings.DISTRO_TRACKER_MAX_DAYS_TOLERATE_BOUNCE - 1):
             self.add_sent(self.user, date - timedelta(days=days))
             self.add_bounce(self.user, date - timedelta(days=days))
         # Set up a sent mail today.
@@ -491,7 +491,8 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         self.run_dispatch(self.create_bounce_address(self.user.email))
 
         # Assert that the user's subscriptions have not been dropped.
-        self.assertEqual(self.user.emailsettings.subscription_set.count(), subscription_count)
+        self.assertEqual(self.user.emailsettings.subscription_set.count(),
+                         subscription_count)
 
     def test_bounces_not_every_day(self):
         """
@@ -513,12 +514,14 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         self.run_dispatch(self.create_bounce_address(self.user.email))
 
         # Assert that the user's subscriptions have not been dropped.
-        self.assertEqual(self.user.emailsettings.subscription_set.count(), subscription_count)
+        self.assertEqual(self.user.emailsettings.subscription_set.count(),
+                         subscription_count)
 
 
 class BounceStatsTest(TestCase):
     """
-    Tests for the ``distro_tracker.mail.models`` handling users' bounce information.
+    Tests for the ``distro_tracker.mail.models`` handling users' bounce
+    information.
     """
     def setUp(self):
         self.user = UserEmailBounceStats.objects.get(
@@ -589,7 +592,7 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
         self.team.packages.add(self.package)
         self.user_email = UserEmail.objects.create(email='other@domain.com')
 
-        ## Set up a message which will be sent to the package
+        # Setup a message which will be sent to the package
         self.clear_message()
         self.from_email = 'dummy-email@domain.com'
         self.set_package_name('dummy-package')

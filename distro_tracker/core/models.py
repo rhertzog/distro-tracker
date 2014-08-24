@@ -42,7 +42,8 @@ import hashlib
 import string
 import random
 
-DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS = settings.DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS
+DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS = \
+    settings.DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS
 
 
 @python_2_unicode_compatible
@@ -129,7 +130,7 @@ class PackageManagerQuerySet(models.query.QuerySet):
             super(PackageManagerQuerySet, self).delete()
         else:
             # Called from a proxy class: here, this is only a soft delete
-            self.update(**{self.model.objects.type : False})
+            self.update(**{self.model.objects.type: False})
 
 
 class PackageManager(models.Manager):
@@ -168,8 +169,8 @@ class PackageManager(models.Manager):
     def create(self, *args, **kwargs):
         """
         Overrides the default :meth:`create <django.db.models.Manager.create>`
-        method to inject a :attr:`package_type <PackageName.package_type>` to the
-        instance being created.
+        method to inject a :attr:`package_type <PackageName.package_type>` to
+        the instance being created.
 
         The type is the type given in this manager instance's :attr:`type`
         attribute.
@@ -193,7 +194,7 @@ class PackageManager(models.Manager):
             defaults.update({self.type: True})
         kwargs['defaults'] = defaults
         entry, created = PackageName.default_manager.get_or_create(*args,
-                **kwargs)
+                                                                   **kwargs)
         if self.type and getattr(entry, self.type) is False:
             created = True
             setattr(entry, self.type, True)
@@ -241,7 +242,8 @@ class PackageName(models.Model):
     binary = models.BooleanField(default=False)
     pseudo = models.BooleanField(default=False)
 
-    subscriptions = models.ManyToManyField(EmailSettings, through='Subscription')
+    subscriptions = models.ManyToManyField(EmailSettings,
+                                           through='Subscription')
 
     objects = PackageManager()
     source_packages = PackageManager('source')
@@ -454,8 +456,8 @@ def get_web_package(package_name):
     :class:`SourcePackageName` based on the given ``package_name``.
 
     If neither of them are found, it tries to find a :class:`BinaryPackageName`
-    with the given name and returns the corresponding :class:`SourcePackageName`,
-    if found.
+    with the given name and returns the corresponding
+    :class:`SourcePackageName`, if found.
 
     If that is not possible, ``None`` is returned.
 
@@ -548,7 +550,8 @@ class SubscriptionManager(models.Manager):
         .. note::
            Since this method is not guaranteed to return a
            :py:class:`QuerySet <django.db.models.query.QuerySet>` object,
-           clients should not count on chaining additional filters to the result.
+           clients should not count on chaining additional filters to the
+           result.
         """
         user_email = get_or_none(UserEmail, email=email)
         email_settings = get_or_none(EmailSettings, user_email=user_email)
@@ -566,7 +569,8 @@ class SubscriptionManager(models.Manager):
         .. note::
            Since this method is not guaranteed to return a
            :py:class:`QuerySet <django.db.models.query.QuerySet>` object,
-           clients should not count on chaining additional filters to the result.
+           clients should not count on chaining additional filters to the
+           result.
         """
         actives = self.filter(active=True)
         if keyword:
@@ -805,7 +809,8 @@ class Repository(models.Model):
         :type package: :class:`SourcePackage`
 
         The parameters needed for the corresponding
-        :class:`SourcePackageRepositoryEntry` should be in the keyword arguments.
+        :class:`SourcePackageRepositoryEntry` should be in the keyword
+        arguments.
 
         Returns the newly created :class:`SourcePackageRepositoryEntry` for the
         given :class:`SourcePackage`.
@@ -865,7 +870,8 @@ class Repository(models.Model):
         :type package: :class:`BinaryPackage`
 
         The parameters needed for the corresponding
-        :class:`BinaryPackageRepositoryEntry` should be in the keyword arguments.
+        :class:`BinaryPackageRepositoryEntry` should be in the keyword
+        arguments.
 
         Returns the newly created :class:`BinaryPackageRepositoryEntry` for the
         given :class:`BinaryPackage`.
@@ -999,7 +1005,8 @@ class SourcePackage(models.Model):
     def main_entry(self):
         """
         Returns the
-        :class:`SourcePackageRepositoryEntry <distro_tracker.core.models.SourcePackageRepositoryEntry>`
+        :class:`SourcePackageRepositoryEntry
+        <distro_tracker.core.models.SourcePackageRepositoryEntry>`
         found in the instance's :attr:`repository_entries` which should be
         considered the main entry for this version.
 
@@ -1007,8 +1014,8 @@ class SourcePackage(models.Model):
         default repository is returned.
 
         Otherwise, the entry for the repository with the highest
-        :attr:`position <distro_tracker.core.models.Repository.position>` field is
-        returned.
+        :attr:`position <distro_tracker.core.models.Repository.position>`
+        field is returned.
 
         If the source package version is not found in any repository,
         ``None`` is returned.
@@ -1036,7 +1043,8 @@ class SourcePackage(models.Model):
         """
         # If there is no changelog, return immediately
         try:
-            extracted_changelog = self.extracted_source_files.get(name='changelog')
+            extracted_changelog = \
+                self.extracted_source_files.get(name='changelog')
         except ExtractedSourceFile.DoesNotExist:
             return
 
@@ -1150,7 +1158,8 @@ class BinaryPackageRepositoryEntry(models.Model):
 
     def __str__(self):
         return '{pkg} ({arch}) in the repository {repo}'.format(
-            pkg=self.binary_package, arch=self.architecture, repo=self.repository)
+            pkg=self.binary_package, arch=self.architecture,
+            repo=self.repository)
 
     @cached_property
     def version(self):
@@ -1322,9 +1331,9 @@ class MailingList(models.Model):
     """
     Describes a known mailing list.
 
-    This provides Distro Tracker users to define the known mailing lists through the admin
-    panel in order to support displaying their archives in the package pages
-    without modifying any code.
+    This provides Distro Tracker users to define the known mailing lists
+    through the admin panel in order to support displaying their archives in the
+    package pages without modifying any code.
 
     Instances should have the :attr:`archive_url_template` field set to the
     template which archive URLs should follow where a mandatory parameter is
@@ -1530,6 +1539,7 @@ class EmailNewsManager(NewsManager):
         return super(EmailNewsManager, self).get_queryset().filter(
             content_type='message/rfc822')
 
+
 class EmailNews(News):
     objects = EmailNewsManager()
 
@@ -1568,7 +1578,8 @@ class EmailNews(News):
                 kwargs['title'] = decode_header(message['Subject'],
                                                 default_encoding='iso-8859-1')
         else:
-            kwargs['title'] = 'Email news from {sender}'.format(sender=from_email)
+            kwargs['title'] = \
+                'Email news from {sender}'.format(sender=from_email)
         if hasattr(message, 'as_bytes'):
             kwargs['file_content'] = message.as_bytes()
         else:
@@ -1576,6 +1587,7 @@ class EmailNews(News):
         kwargs['content_type'] = 'message/rfc822'
 
         return kwargs
+
 
 class NewsRenderer(six.with_metaclass(PluginRegistry)):
     """
@@ -1591,6 +1603,7 @@ class NewsRenderer(six.with_metaclass(PluginRegistry)):
     #: A renderer can define a template name which will be included when its
     #: output is required
     template_name = None
+
     #: The context is made available to the renderer's template, if available.
     #: By default this is only the news instance which should be rendered.
     @property
@@ -1634,9 +1647,9 @@ class NewsRenderer(six.with_metaclass(PluginRegistry)):
         :returns: A safe string representing the rendered HTML output.
         """
         if self.template_name:
-            return mark_safe(distro_tracker_render_to_string(self.template_name, {
-                'ctx': self.context,
-            }))
+            return mark_safe(distro_tracker_render_to_string(
+                self.template_name,
+                {'ctx': self.context, }))
         elif self.html_output:
             return mark_safe(self.html_output)
         else:
@@ -1691,7 +1704,8 @@ class EmailNewsRenderer(NewsRenderer):
             'resent-cc',
             'resent-bcc',
         )
-        USER_DEFINED_HEADERS = getattr(settings, 'DISTRO_TRACKER_EMAIL_NEWS_HEADERS', ())
+        USER_DEFINED_HEADERS = getattr(settings,
+                                       'DISTRO_TRACKER_EMAIL_NEWS_HEADERS', ())
         ALL_HEADERS = [
             header.lower()
             for header in DEFAULT_HEADERS + USER_DEFINED_HEADERS
@@ -1726,10 +1740,11 @@ class EmailNewsRenderer(NewsRenderer):
             try:
                 plain_text_payloads.append(get_decoded_message_payload(part))
             except UnicodeDecodeError:
-                # Decoding can fail with this error if the message does not have a
-                # header specifying the charset and it isn't utf-8.
-                # We attempt to decode the message using latin-1 as a fallback in
-                # this situation before bailing out by propagating the exception.
+                # Decoding can fail with this error if the message does not
+                # have a header specifying the charset and it isn't utf-8.
+                # We attempt to decode the message using latin-1 as a fallback
+                # in this situation before bailing out by propagating the
+                # exception.
                 plain_text_payloads.append(
                     get_decoded_message_payload(part, 'latin-1'))
 
@@ -1759,7 +1774,8 @@ class BinaryPackageBugStats(models.Model):
     """
     Model for bug statistics of binary packages (:class:`BinaryPackageName`).
     """
-    package = models.OneToOneField(BinaryPackageName, related_name='binary_bug_stats')
+    package = models.OneToOneField(BinaryPackageName,
+                                   related_name='binary_bug_stats')
     stats = JSONField(blank=True)
 
     def __str__(self):
@@ -1825,8 +1841,8 @@ class ActionItemManager(models.Manager):
         :param item_types: A list of action item types to be considered for
             removal.
         :type item_types: list of :class:`ActionItemType` instances
-        :param non_obsolete_packages: A list of package names whose items are not
-            to be removed.
+        :param non_obsolete_packages: A list of package names whose items are
+            not to be removed.
         :type non_obsolete_packages: list of strings
         """
         if len(item_types) == 1:
@@ -1889,9 +1905,9 @@ class ActionItem(models.Model):
             return ''
         try:
             return mark_safe(
-                distro_tracker_render_to_string(self.full_description_template, {
-                    'item': self,
-                }))
+                distro_tracker_render_to_string(
+                    self.full_description_template,
+                    {'item': self, }))
         except:
             return ''
 
@@ -1944,7 +1960,8 @@ class ConfirmationManager(models.Manager):
 
         :param identifier: A string representation of an identifier for the
             confirmation instance.
-        :raises distro_tracker.mail.models.ConfirmationException: If it is unable to generate a unique key.
+        :raises distro_tracker.mail.models.ConfirmationException: If it is
+            unable to generate a unique key.
         """
         MAX_TRIES = 10
         errors = 0
@@ -2007,8 +2024,10 @@ class Confirmation(models.Model):
 
 @python_2_unicode_compatible
 class SourcePackageDeps(models.Model):
-    source = models.ForeignKey(SourcePackageName, related_name='source_dependencies')
-    dependency = models.ForeignKey(SourcePackageName, related_name='source_dependents')
+    source = models.ForeignKey(SourcePackageName,
+                               related_name='source_dependencies')
+    dependency = models.ForeignKey(SourcePackageName,
+                                   related_name='source_dependents')
     repository = models.ForeignKey(Repository)
     build_dep = models.BooleanField(default=False)
     binary_dep = models.BooleanField(default=False)
@@ -2094,7 +2113,8 @@ class Team(models.Model):
             user excplicitely unmutes it.
         :type active: bool
 
-        :returns: :class:`TeamMembership` instances for each user added to the team
+        :returns: :class:`TeamMembership` instances for each user added to
+            the team
         :rtype: list
         """
         users = [
@@ -2257,8 +2277,9 @@ class TeamMembership(models.Model):
             package_name = PackageName.objects.get(package_name)
 
         try:
-            membership_package_specifics = self.membership_package_specifics.get(
-                package_name=package_name)
+            membership_package_specifics = \
+                self.membership_package_specifics.get(
+                    package_name=package_name)
             if membership_package_specifics._has_keywords:
                 return membership_package_specifics.keywords.all()
         except MembershipPackageSpecifics.DoesNotExist:
@@ -2267,7 +2288,8 @@ class TeamMembership(models.Model):
         if self.has_membership_keywords:
             return self.default_keywords.all()
 
-        email_settings, _ = EmailSettings.objects.get_or_create(user_email=self.user_email)
+        email_settings, _ = \
+            EmailSettings.objects.get_or_create(user_email=self.user_email)
         return email_settings.default_keywords.all()
 
 

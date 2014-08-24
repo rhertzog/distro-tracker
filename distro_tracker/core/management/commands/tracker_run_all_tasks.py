@@ -43,5 +43,6 @@ class Command(BaseCommand):
                 'force_update': True
             }
 
-        logger.info('Starting all tasks (from ./manage.py tracker_run_all_tasks')
+        logger.info(
+            'Starting all tasks (from ./manage.py tracker_run_all_tasks')
         run_all_tasks(additional_arguments)

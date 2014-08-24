@@ -38,7 +38,8 @@ def get_callable(name):
             not settings.DISTRO_TRACKER_VENDOR_RULES):
         raise InvalidPluginException("No vendor specific module set.")
 
-    vendor_module = importlib.import_module(settings.DISTRO_TRACKER_VENDOR_RULES)
+    vendor_module = \
+        importlib.import_module(settings.DISTRO_TRACKER_VENDOR_RULES)
 
     function = getattr(vendor_module, name, None)
     if not function:

@@ -149,9 +149,9 @@ class CustomEmailMessage(EmailMessage):
     """
     def __init__(self, msg=None, *args, **kwargs):
         """
-        Use the keyword argument ``msg`` to set the :class:`email.message.Message`
-        instance which should be used to define the body of the message.
-        The original object is copied.
+        Use the keyword argument ``msg`` to set the
+        :class:`email.message.Message` instance which should be used to define
+        the body of the message.  The original object is copied.
 
         If no ``msg`` is set, the object's behaviour is identical to
         :class:`django.core.mail.EmailMessage`
@@ -163,8 +163,8 @@ class CustomEmailMessage(EmailMessage):
         """
         Returns the underlying :class:`email.message.Message` object.
         In case the user did not set a :attr:`msg` attribute for this instance
-        the parent :meth:`EmailMessage.message <django.core.mail.EmailMessage.message>`
-        method is used.
+        the parent :meth:`EmailMessage.message
+        <django.core.mail.EmailMessage.message>` method is used.
         """
         if self.msg:
             msg = self._attach_all()

@@ -21,9 +21,10 @@ import gpgme
 import tarfile
 import contextlib
 
-from .email_messages import extract_email_address_from_header
-from .email_messages import get_decoded_message_payload
-from .email_messages import message_from_bytes
+# Re-export some functions
+from .email_messages import extract_email_address_from_header  # noqa
+from .email_messages import get_decoded_message_payload        # noqa
+from .email_messages import message_from_bytes                 # noqa
 
 
 def get_or_none(model, **kwargs):
@@ -44,9 +45,10 @@ def distro_tracker_render_to_string(template_name, context=None):
     of the derivative.
 
     This function is necessary since Django's
-    :data:`TEMPLATE_CONTEXT_PROCESSORS <distro_tracker.project.settings.TEMPLATE_CONTEXT_PROCESSORS>
-    only work when using a :class:`RequestContext <django.template.RequestContext>`,
-    whereas this function can be called independently from any HTTP request.
+    :data:`TEMPLATE_CONTEXT_PROCESSORS
+    <distro_tracker.project.settings.TEMPLATE_CONTEXT_PROCESSORS> only work when
+    using a :class:`RequestContext <django.template.RequestContext>`, whereas
+    this function can be called independently from any HTTP request.
     """
     from distro_tracker.core import context_processors
     if context is None:
@@ -131,9 +133,9 @@ class SpaceDelimitedTextField(six.with_metaclass(models.SubfieldBase,
     """
     A custom Django model field which stores a list of strings.
 
-    It stores the list in a :class:`TextField <django.db.models.TextField>`
-    as a space delimited list. It is marshalled back to a :class:`PrettyPrintList`
-    in the Python domain.
+    It stores the list in a :class:`TextField <django.db.models.TextField>` as a
+    space delimited list. It is marshalled back to a :class:`PrettyPrintList` in
+    the Python domain.
     """
 
     description = "Stores a space delimited list of strings"
@@ -199,9 +201,8 @@ def verify_signature(content):
     The function extracts any possible signature information found in the given
     content.
 
-    Uses the :data:`distro_tracker.project.local_settings.DISTRO_TRACKER_KEYRING_DIRECTORY` setting
-    to access the keyring. If this setting does not exist, no signatures can
-    be validated.
+    Uses the ``DISTRO_TRACKER_KEYRING_DIRECTORY`` setting to access the keyring.
+    If this setting does not exist, no signatures can be validated.
 
     :type content: :class:`bytes` or :class:`string`
 
@@ -210,7 +211,8 @@ def verify_signature(content):
     :rtype: list of ``(name, email)`` pairs or ``None``
     :type content: :class:`bytes`
     """
-    keyring_directory = getattr(settings, 'DISTRO_TRACKER_KEYRING_DIRECTORY', None)
+    keyring_directory = getattr(settings, 'DISTRO_TRACKER_KEYRING_DIRECTORY',
+                                None)
     if not keyring_directory:
         # The vendor has not provided a keyring
         return None
@@ -225,7 +227,7 @@ def verify_signature(content):
     plain = six.BytesIO()
     try:
         signatures = ctx.verify(six.BytesIO(content), None, plain)
-    except gpgme.GpgmeError as e:
+    except gpgme.GpgmeError:
         return None
 
     # Extract signer information

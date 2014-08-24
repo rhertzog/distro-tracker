@@ -12,8 +12,8 @@ Implements a command to initiate the update of package information found in
 registered repositories.
 
 It launches an
-:class:`UpdateRepositoriesTask <distro_tracker.core.retrieve_data.UpdateRepositoriesTask>`
-task.
+:class:`UpdateRepositoriesTask
+<distro_tracker.core.retrieve_data.UpdateRepositoriesTask>` task.
 """
 from __future__ import unicode_literals
 from django.core.management.base import BaseCommand

@@ -52,7 +52,8 @@ class CreateTeamForm(forms.ModelForm):
     def save(self, *args, **kwargs):
         # Create a maintainer email instance based on the email given to the
         # form.
-        if 'maintainer_email' in self.cleaned_data and self.cleaned_data['maintainer_email']:
+        if 'maintainer_email' in self.cleaned_data and \
+                self.cleaned_data['maintainer_email']:
             maintainer_email, _ = UserEmail.objects.get_or_create(
                 email=self.cleaned_data['maintainer_email'])
             self.instance.maintainer_email = maintainer_email

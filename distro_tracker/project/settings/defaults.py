@@ -74,7 +74,8 @@ of those settings.
     Any Distro Tracker app should be able to use this directory to store
     its caches. For example, it is used to store the APT cache of repository
     information and the cache of retrieved Web resources.
-    Defaults to the "cache" sub-directory of :py:data:`DISTRO_TRACKER_DATA_PATH`.
+    Defaults to the "cache" sub-directory of
+    :py:data:`DISTRO_TRACKER_DATA_PATH`.
 
 :py:data:`DISTRO_TRACKER_KEYRING_DIRECTORY`
     This directory should contain a gpg.conf listing the GPG keyrings of known
@@ -212,7 +213,7 @@ ROOT_URLCONF = 'distro_tracker.project.urls'
 WSGI_APPLICATION = 'distro_tracker.project.wsgi.application'
 
 TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
+    # Put strings here, like "/home/html/django_templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
 )
@@ -380,11 +381,13 @@ DISTRO_TRACKER_EMAIL_NEWS_HEADERS = (
     'Date',
 )
 
-#: The maximum size that the :class:`distro_tracker.core.utils.packages.AptCache` should
+#: The maximum size that the
+#: :class:`distro_tracker.core.utils.packages.AptCache` should
 #: consume for all of its cached source files, given in bytes.
 DISTRO_TRACKER_APT_CACHE_MAX_SIZE = 5 * 1024 ** 3  # 5 GiB
 
-DJANGO_EMAIL_ACCOUNTS_POST_MERGE_HOOK = 'distro_tracker.accounts.hooks.post_merge'
+DJANGO_EMAIL_ACCOUNTS_POST_MERGE_HOOK = \
+    'distro_tracker.accounts.hooks.post_merge'
 
 # The lambda functions are evaluated at the end of the settings import
 # logic. They provide default values to settings which have not yet been

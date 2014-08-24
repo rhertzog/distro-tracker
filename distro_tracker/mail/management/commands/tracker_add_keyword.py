@@ -50,43 +50,52 @@ class Command(BaseCommand):
     def add_keyword_to_user_defaults(self, keyword, user_set):
         """
         Adds the given ``keyword`` to the
-        :py:attr:`default_keywords <distro_tracker.core.models.EmailSettings.default_keywords>`
+        :py:attr:`default_keywords
+        <distro_tracker.core.models.EmailSettings.default_keywords>`
         list of each user found in the given QuerySet ``user_set``.
 
         :param keyword: The keyword which should be added to all the users'
-            :py:attr:`default_keywords <distro_tracker.core.models.EmailSettings.default_keywords>`
+            :py:attr:`default_keywords
+            <distro_tracker.core.models.EmailSettings.default_keywords>`
         :type keyword: :py:class:`Keyword <distro_tracker.core.models.Keyword>`
 
         :param user_set: The set of users to which the given keyword should be
             added as a default keyword.
         :type user_set: :py:class:`QuerySet <django.db.models.query.QuerySet>`
-            or other iterable of :py:class:`UserEmail <distro_tracker.core.models.UserEmail>`
+            or other iterable of
+            :py:class:`UserEmail <distro_tracker.core.models.UserEmail>`
             instances
         """
         for user_email in user_set:
-            email_settings, _ = EmailSettings.objects.get_or_create(user_email=user_email)
+            email_settings, _ = \
+                EmailSettings.objects.get_or_create(user_email=user_email)
             email_settings.default_keywords.add(keyword)
 
     def add_keyword_to_subscriptions(self, new_keyword, existing_keyword):
         """
         Adds the given ``new_keyword`` to each
-        :py:class:`Subscription <distro_tracker.core.models.Subscription>`'s keywords
-        list which already contains the ``existing_keyword``.
+        :py:class:`Subscription <distro_tracker.core.models.Subscription>`'s
+        keywords list which already contains the ``existing_keyword``.
 
         :param new_keyword: The keyword to add to the
-            :py:class:`Subscription <distro_tracker.core.models.Subscription>`'s keywords
-        :type new_keyword: :py:class:`Keyword <distro_tracker.core.models.Keyword>`
+            :py:class:`Subscription <distro_tracker.core.models.Subscription>`'s
+            keywords
+        :type new_keyword:
+            :py:class:`Keyword <distro_tracker.core.models.Keyword>`
 
         :param existing_keyword: The keyword or name of the keyword based on
-            which all :py:class:`Subscription <distro_tracker.core.models.Subscription>`
+            which all
+            :py:class:`Subscription <distro_tracker.core.models.Subscription>`
             to which the ``new_keyword`` should be added are chosen.
-        :type existing_keyword: :py:class:`Keyword <distro_tracker.core.models.Keyword>`
+        :type existing_keyword:
+            :py:class:`Keyword <distro_tracker.core.models.Keyword>`
             or string
         """
         if not isinstance(existing_keyword, Keyword):
             existing_keyword = get_or_none(Keyword, name=existing_keyword)
             if not existing_keyword:
-                raise CommandError("Given keyword does not exist. No actions taken.")
+                raise CommandError("Given keyword does not exist. "
+                                   "No actions taken.")
 
         self.add_keyword_to_user_defaults(
             new_keyword,
@@ -121,7 +130,8 @@ class Command(BaseCommand):
             return
 
         if default:
-            self.add_keyword_to_user_defaults(keyword, EmailSettings.objects.all())
+            self.add_keyword_to_user_defaults(keyword,
+                                              EmailSettings.objects.all())
 
         if len(args) > 1:
             # Add the new keyword to all subscribers and subscriptions which

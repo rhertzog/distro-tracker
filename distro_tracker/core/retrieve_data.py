@@ -21,9 +21,10 @@ from distro_tracker.core.models import PackageExtractedInfo
 from distro_tracker.core.models import BinaryPackageName
 from distro_tracker.core.models import BinaryPackage
 from distro_tracker.core.models import SourcePackageDeps
-from distro_tracker.core.utils.packages import extract_information_from_sources_entry
-from distro_tracker.core.utils.packages import extract_information_from_packages_entry
-from distro_tracker.core.utils.packages import AptCache
+from distro_tracker.core.utils.packages import (
+    extract_information_from_sources_entry,
+    extract_information_from_packages_entry,
+    AptCache)
 from distro_tracker.core.tasks import BaseTask
 from distro_tracker.core.tasks import clear_all_events_on_exception
 from distro_tracker.core.models import SourcePackageName, Architecture
@@ -52,7 +53,8 @@ def update_pseudo_package_list():
     list if necessary.
 
     Uses a vendor-provided function
-    :func:`get_pseudo_package_list <distro_tracker.vendor.skeleton.rules.get_pseudo_package_list>`
+    :func:`get_pseudo_package_list
+    <distro_tracker.vendor.skeleton.rules.get_pseudo_package_list>`
     to get the list of currently available pseudo packages.
     """
     try:
@@ -68,8 +70,8 @@ def update_pseudo_package_list():
     pseudo_packages = set(pseudo_packages)
     for existing_package in PseudoPackageName.objects.all():
         if existing_package.name not in pseudo_packages:
-            # Existing packages which are no longer considered pseudo packages are
-            # demoted -- losing their pseudo package flag.
+            # Existing packages which are no longer considered pseudo packages
+            # are demoted -- losing their pseudo package flag.
             existing_package.pseudo = False
             existing_package.save()
         else:
@@ -155,8 +157,8 @@ def retrieve_repository_info(sources_list_entry):
 
 class PackageUpdateTask(BaseTask):
     """
-    A subclass of the :class:`BaseTask <distro_tracker.core.tasks.BaseTask>` providing
-    some methods specific to tasks dealing with package updates.
+    A subclass of the :class:`BaseTask <distro_tracker.core.tasks.BaseTask>`
+    providing some methods specific to tasks dealing with package updates.
     """
     def __init__(self, force_update=False, *args, **kwargs):
         super(PackageUpdateTask, self).__init__(*args, **kwargs)
@@ -411,7 +413,8 @@ class UpdateRepositoriesTask(PackageUpdateTask):
 
             self._add_processed_repository_entry(entry)
 
-    def _remove_query_set_if_count_zero(self, qs, count_field, event_generator=None):
+    def _remove_query_set_if_count_zero(self, qs, count_field,
+                                        event_generator=None):
         """
         Removes elements from the given query set if their count of the given
         ``count_field`` is ``0``.
@@ -480,7 +483,8 @@ class UpdateRepositoriesTask(PackageUpdateTask):
 
         :param all_entries_qs: All currently existing entries which should be
             filtered to only contain the ones still found after the update.
-        :type all_entries_qs: :class:`QuerySet <django.db.models.query.QuerySet>`
+        :type all_entries_qs:
+            :class:`QuerySet <django.db.models.query.QuerySet>`
         :event_generator: Takes a repository entry as a parameter and returns a
             two-tuple of ``(event_name, event_arguments)``. An event with the
             return parameters is raised by the function for each removed entry.
@@ -522,7 +526,8 @@ class UpdateRepositoriesTask(PackageUpdateTask):
         still existing in order to avoid deleting them.
 
         :param repository: The repository to which the file is associated
-        :type repository: :class:`Repository <distro_tracker.core.models.Repository>`
+        :type repository:
+            :class:`Repository <distro_tracker.core.models.Repository>`
         :param file_name: The name of the file whose packages should be saved
         :param entry_manager: The manager instance which handles the package
             entries.
@@ -533,7 +538,8 @@ class UpdateRepositoriesTask(PackageUpdateTask):
 
         # Only issue one DB query to retrieve the entries for packages with
         # the given names
-        repository_entries = entry_manager.filter_by_package_name(packages.keys())
+        repository_entries = \
+            entry_manager.filter_by_package_name(packages.keys())
         repository_entries = repository_entries.filter(
             repository=repository)
         repository_entries = repository_entries.select_related()
@@ -577,8 +583,10 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                     with open(sources_file) as sources_fd:
                         self._update_sources_file(repository, sources_fd)
 
-                # Mark package versions found in un-updated files as still existing
-                all_sources = self.apt_cache.get_sources_files_for_repository(repository)
+                # Mark package versions found in un-updated files as still
+                # existing
+                all_sources = \
+                    self.apt_cache.get_sources_files_for_repository(repository)
                 for sources_file in all_sources:
                     if sources_file not in sources_files:
                         self._mark_file_not_processed(
@@ -625,7 +633,8 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                     self._update_packages_file(repository, packages_fd)
 
             # Mark package versions found in un-updated files as still existing
-            all_sources = self.apt_cache.get_packages_files_for_repository(repository)
+            all_sources = \
+                self.apt_cache.get_packages_files_for_repository(repository)
             for packages_file in all_sources:
                 if packages_file not in packages_files:
                     self._mark_file_not_processed(
@@ -699,10 +708,12 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                     source_name = stanza['package']
 
                     for binary in itertools.chain(*stanza.relations['binary']):
-                        sources_set = bin_to_src.setdefault(binary['name'], set())
+                        sources_set = bin_to_src.setdefault(binary['name'],
+                                                            set())
                         sources_set.add(source_name)
 
-                    dependencies = source_to_binary_deps.setdefault(source_name, [])
+                    dependencies = source_to_binary_deps.setdefault(source_name,
+                                                                    [])
                     dependencies.extend(self._update_dependencies_for_source(
                         stanza,
                         source_dependency_types))
@@ -717,7 +728,8 @@ class UpdateRepositoriesTask(PackageUpdateTask):
             with open(packages_file) as packages_fd:
                 for stanza in deb822.Packages.iter_paragraphs(packages_fd):
                     binary_name = stanza['package']
-                    source_name, source_version = self.get_source_for_binary(stanza)
+                    source_name, source_version = \
+                        self.get_source_for_binary(stanza)
 
                     sources_set = bin_to_src.setdefault(binary_name, set())
                     sources_set.add(source_name)
@@ -727,7 +739,8 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                         binary_dependency_types)
                     for dependency in new_dependencies:
                         dependency['source_binary'] = binary_name
-                    dependencies = source_to_binary_deps.setdefault(source_name, [])
+                    dependencies = source_to_binary_deps.setdefault(source_name,
+                                                                    [])
                     dependencies.extend(new_dependencies)
 
         # The binary packages are matched with their source packages and each
@@ -758,7 +771,8 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                     if source_name == source_dependency:
                         continue
 
-                    source_dependencies = all_dependencies.setdefault(source_dependency, {})
+                    source_dependencies = \
+                        all_dependencies.setdefault(source_dependency, {})
                     source_dependencies.setdefault(dependency_type, [])
                     if dependency not in source_dependencies[dependency_type]:
                         source_dependencies[dependency_type].append(dependency)
@@ -766,8 +780,12 @@ class UpdateRepositoriesTask(PackageUpdateTask):
             # Create the dependency instances for the current source package.
             for dependency_name, details in all_dependencies.items():
                 if dependency_name in all_sources:
-                    build_dep = any(dependency_type in details for dependency_type in source_dependency_types)
-                    binary_dep = any(dependency_type in details for dependency_type in binary_dependency_types)
+                    build_dep = any(dependency_type in details
+                                    for dependency_type
+                                    in source_dependency_types)
+                    binary_dep = any(dependency_type in details
+                                     for dependency_type
+                                     in binary_dependency_types)
                     dependency_instances.append(
                         SourcePackageDeps(
                             source=all_sources[source_name],
@@ -995,10 +1013,12 @@ class UpdateTeamPackagesTask(BaseTask):
         set as the maintainer email.
 
         :param package: The package to add to the maintainers teams.
-        :type package: :class:`SourcePackageName <distro_tracker.core.models.SourcePackageName>`
+        :type package: :class:`SourcePackageName
+            <distro_tracker.core.models.SourcePackageName>`
         :param maintainer: The maintainer to whose teams the package should be
             added.
-        :type maintainer: :class:`ContributorName <distro_tracker.core.models.UserEmail>`
+        :type maintainer:
+            :class:`ContributorName <distro_tracker.core.models.UserEmail>`
         """
         teams = Team.objects.filter(maintainer_email__email=maintainer.email)
         for team in teams:

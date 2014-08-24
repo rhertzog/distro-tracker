@@ -69,5 +69,6 @@ class Command(BaseCommand):
             else:
                 # User default keywords
                 user_email, _ = UserEmail.objects.get_or_create(email=email)
-                email_settings, _ = EmailSettings.objects.get_or_create(user_email=user_email)
+                email_settings, _ = \
+                    EmailSettings.objects.get_or_create(user_email=user_email)
                 email_settings.default_keywords = keywords

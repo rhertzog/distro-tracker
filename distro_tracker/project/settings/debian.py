@@ -1,8 +1,9 @@
 """Debian.org specific settings"""
 
 import os.path
-from .defaults import INSTALLED_APPS, MIDDLEWARE_CLASSES, AUTHENTICATION_BACKENDS
-from .db_postgresql import DATABASES
+from .defaults import (
+    INSTALLED_APPS, MIDDLEWARE_CLASSES, AUTHENTICATION_BACKENDS)
+from .db_postgresql import DATABASES  # noqa
 
 INSTALLED_APPS += (
     # Many debian.org customizations

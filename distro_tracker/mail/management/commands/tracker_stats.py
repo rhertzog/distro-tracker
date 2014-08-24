@@ -18,7 +18,8 @@ from optparse import make_option
 
 import json
 
-from distro_tracker.core.models import SourcePackageName, Subscription, UserEmail
+from distro_tracker.core.models import SourcePackageName, Subscription
+from distro_tracker.core.models import UserEmail
 
 
 class Command(BaseCommand):

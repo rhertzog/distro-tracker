@@ -56,10 +56,11 @@ class LintianStats(models.Model):
     def get_lintian_url(self, full=False):
         """
         Returns the lintian URL for the package matching the
-        :class:`LintianStats <distro_tracker.vendor.debian.models.LintianStats>`.
+        :class:`LintianStats
+        <distro_tracker.vendor.debian.models.LintianStats>`.
 
-        :param full: Whether the URL should include the full lintian report or only
-            the errors and warnings.
+        :param full: Whether the URL should include the full lintian report or
+            only the errors and warnings.
         :type full: Boolean
         """
         package = get_or_none(SourcePackageName, pk=self.package.pk)
@@ -70,7 +71,7 @@ class LintianStats(models.Model):
             maintainer = package.main_version.maintainer
             if maintainer:
                 maintainer_email = maintainer.email
-        # First adapt the maintainer URL to the form expected by lintian.debian.org
+        # Adapt the maintainer URL to the form expected by lintian.debian.org
         lintian_maintainer_email = re.sub(
             r"""[àáèéëêòöøîìùñ~/\(\)" ']""",
             '_',

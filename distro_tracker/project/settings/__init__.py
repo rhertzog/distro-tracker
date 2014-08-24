@@ -7,7 +7,8 @@
 # distribution and at http://deb.li/DTLicense. No part of Distro Tracker,
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
-"""Distro Tracker settings
+"""
+Distro Tracker settings
 
 The settings are created dynamically by first importing defaults
 values from :py:mod:`distro_tracker.project.settings.defaults` and then
@@ -19,14 +20,14 @@ is special cased and doesn't use any of those, instead it uses
 """
 
 import sys
-from .defaults import *
+from .defaults import *          # noqa
 
 if sys.argv[1:2] == ['test']:
-    from .test import *
+    from .test import *          # noqa
 else:
     try:
-        from .local import *
+        from .local import *     # noqa
     except ImportError:
-        from .selected import *
+        from .selected import *  # noqa
 
 compute_default_settings(globals())

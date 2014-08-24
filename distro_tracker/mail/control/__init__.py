@@ -167,7 +167,8 @@ def process(message):
     :param message: The received command email message.
     :type message: ``bytes``
     """
-    assert isinstance(message, six.binary_type), 'Message must be given as bytes'
+    assert isinstance(message, six.binary_type), \
+        'Message must be given as bytes'
     msg = message_from_bytes(message)
     email = extract_email_address_from_header(msg.get('From', ''))
     logdata = {
@@ -175,7 +176,8 @@ def process(message):
         'msgid': msg.get('Message-ID', 'no-msgid-present@localhost'),
     }
     logger.info("control <= %(from)s %(msgid)s", logdata)
-    if 'X-Loop' in msg and DISTRO_TRACKER_CONTROL_EMAIL in msg.get_all('X-Loop'):
+    if 'X-Loop' in msg and \
+            DISTRO_TRACKER_CONTROL_EMAIL in msg.get_all('X-Loop'):
         logger.info("control :: discarded %(msgid)s due to X-Loop", logdata)
         return
     # Get the first plain-text part of the message

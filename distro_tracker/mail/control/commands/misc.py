@@ -14,7 +14,8 @@ from __future__ import unicode_literals
 
 from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.utils import distro_tracker_render_to_string
-from distro_tracker.core.models import Subscription, UserEmail, EmailSettings, PackageName, BinaryPackageName
+from distro_tracker.core.models import Subscription, UserEmail, EmailSettings, \
+    PackageName, BinaryPackageName
 from distro_tracker.core.models import SourcePackageName, PseudoPackageName
 from distro_tracker.mail.control.commands.confirmation import needs_confirmation
 from distro_tracker.mail.control.commands.base import Command
@@ -71,7 +72,8 @@ class SubscribeCommand(Command):
 
         if not SourcePackageName.objects.exists_with_name(self.package):
             if BinaryPackageName.objects.exists_with_name(self.package):
-                binary_package = BinaryPackageName.objects.get_by_name(self.package)
+                binary_package = \
+                    BinaryPackageName.objects.get_by_name(self.package)
                 self.warn('{package} is not a source package.'.format(
                     package=self.package))
                 self.reply('{package} is the source package '
@@ -158,9 +160,12 @@ class UnsubscribeCommand(Command):
         Implementation of a hook method which is executed instead of
         :py:meth:`handle` when the command is not confirmed.
         """
-        if not PackageName.objects.exclude(binary=True).filter(name=self.package).exists():
+        nonbinary_pkgname = \
+            PackageName.objects.exclude(binary=True).filter(name=self.package)
+        if not nonbinary_pkgname.exists():
             if BinaryPackageName.objects.exists_with_name(self.package):
-                binary_package = BinaryPackageName.objects.get_by_name(self.package)
+                binary_package = \
+                    BinaryPackageName.objects.get_by_name(self.package)
                 self.warn('{package} is not a source package.'.format(
                     package=self.package))
                 self.reply('{package} is the source package '
@@ -292,7 +297,8 @@ class WhoCommand(Command):
         Helper method which obfuscates the given email.
 
         :param user_email: The user whose email should be obfuscated.
-        :type user_email: :py:class:`UserEmail <distro_tracker.core.models.UserEmail>`
+        :type user_email:
+            :py:class:`UserEmail <distro_tracker.core.models.UserEmail>`
 
         :returns: An obfuscated email address of the given user.
         :rtype: string
@@ -364,7 +370,8 @@ class UnsubscribeallCommand(Command):
         """
         user = get_or_none(UserEmail, email=self.user_email)
         email_settings = get_or_none(EmailSettings, user_email=user)
-        if not user or not email_settings or email_settings.subscription_set.count() == 0:
+        if not user or not email_settings or \
+                email_settings.subscription_set.count() == 0:
             self.warn('User {email} is not subscribed to any packages'.format(
                 email=self.user_email))
             return False

@@ -20,8 +20,8 @@ class PluginRegistry(type):
     The concrete classes using this metaclass are free to decide how to use
     this list.
 
-    This metaclass also adds an :meth:`unregister_plugin` classmethod to all concrete
-    classes which removes the class from the list of plugins.
+    This metaclass also adds an :meth:`unregister_plugin` classmethod to all
+    concrete classes which removes the class from the list of plugins.
     """
     def __init__(cls, name, bases, attrs):
         if not hasattr(cls, 'plugins'):

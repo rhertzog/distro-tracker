@@ -60,13 +60,15 @@ from distro_tracker.accounts.views import AccountMergeConfirmedView
 from django.contrib import admin
 admin.autodiscover()
 
-urlpatterns = patterns('',
+urlpatterns = patterns(
+    '',
     # Redirects for the old PTS package page URLs
     url(r'^(?P<package_hash>(lib)?.)/(?P<package_name>(\1).+)\.html$',
         'distro_tracker.core.views.legacy_package_url_redirect'),
 
     # Permanent redirect for the old RSS URL
-    url(r'^(?P<package_hash>(lib)?.)/(?P<package_name>(\1).+)/news\.rss20\.xml$',
+    url(r'^(?P<package_hash>(lib)?.)/(?P<package_name>(\1).+)'
+        '/news\.rss20\.xml$',
         'distro_tracker.core.views.legacy_rss_redirect'),
 
     url(r'^search$', PackageSearchView.as_view(),
@@ -98,7 +100,8 @@ urlpatterns = patterns('',
     url(r'^accounts/register/$', RegisterUser.as_view(),
         name='dtracker-accounts-register'),
     url(r'^accounts/\+reset-password/\+success/$',
-        TemplateView.as_view(template_name='accounts/password-reset-success.html'),
+        TemplateView.as_view(
+            template_name='accounts/password-reset-success.html'),
         name='dtracker-accounts-password-reset-success'),
     url(r'^accounts/\+reset-password/(?P<confirmation_key>.+)/$',
         ResetPasswordView.as_view(),
@@ -113,14 +116,18 @@ urlpatterns = patterns('',
     url(r'^accounts/\+confirm-new-email/(?P<confirmation_key>.+)/$',
         ConfirmAddAccountEmail.as_view(),
         name='dtracker-accounts-confirm-add-email'),
-    url(r'^accounts/\+merge-accounts/confirm/$', AccountMergeConfirmView.as_view(),
+    url(r'^accounts/\+merge-accounts/confirm/$',
+        AccountMergeConfirmView.as_view(),
         name='dtracker-accounts-merge-confirmation'),
-    url(r'^accounts/\+merge-accounts/confirmed/$', AccountMergeConfirmedView.as_view(),
+    url(r'^accounts/\+merge-accounts/confirmed/$',
+        AccountMergeConfirmedView.as_view(),
         name='dtracker-accounts-merge-confirmed'),
-    url(r'^accounts/\+merge-accounts/finalize/(?P<confirmation_key>.+)/$', AccountMergeFinalize.as_view(),
+    url(r'^accounts/\+merge-accounts/finalize/(?P<confirmation_key>.+)/$',
+        AccountMergeFinalize.as_view(),
         name='dtracker-accounts-merge-finalize'),
     url(r'^accounts/\+merge-accounts/finalized/$',
-        TemplateView.as_view(template_name='accounts/accounts-merge-finalized.html'),
+        TemplateView.as_view(
+            template_name='accounts/accounts-merge-finalized.html'),
         name='dtracker-accounts-merge-finalized'),
     url(r'^accounts/confirm/(?P<confirmation_key>[^/]+)$',
         RegistrationConfirmation.as_view(),
@@ -145,11 +152,13 @@ urlpatterns = patterns('',
 
     url(r'^api/accounts/profile/emails/$', UserEmailsView.as_view(),
         name='dtracker-api-accounts-emails'),
-    url(r'^api/accounts/profile/subscribe/$', SubscribeUserToPackageView.as_view(),
+    url(r'^api/accounts/profile/subscribe/$',
+        SubscribeUserToPackageView.as_view(),
         name='dtracker-api-accounts-subscribe'),
     url(r'^api/accounts/profile/unsubscribe/$', UnsubscribeUserView.as_view(),
         name='dtracker-api-accounts-unsubscribe'),
-    url(r'^api/accounts/profile/unsubscribe-all/$', UnsubscribeAllView.as_view(),
+    url(r'^api/accounts/profile/unsubscribe-all/$',
+        UnsubscribeAllView.as_view(),
         name='dtracker-api-accounts-unsubscribe-all'),
     url(r'^api/accounts/profile/keywords/$', ModifyKeywordsView.as_view(),
         name='dtracker-api-accounts-profile-keywords'),
@@ -168,7 +177,8 @@ urlpatterns = patterns('',
         name='dtracker-team-update'),
     url(r'^teams/(?P<slug>.+)/\+add-package/$', AddPackageToTeamView.as_view(),
         name='dtracker-team-add-package'),
-    url(r'^teams/(?P<slug>.+)/\+remove-package/$', RemovePackageFromTeamView.as_view(),
+    url(r'^teams/(?P<slug>.+)/\+remove-package/$',
+        RemovePackageFromTeamView.as_view(),
         name='dtracker-team-remove-package'),
     url(r'^teams/(?P<slug>.+)/\+join/$', JoinTeamView.as_view(),
         name='dtracker-team-join'),
@@ -182,30 +192,36 @@ urlpatterns = patterns('',
         name='dtracker-team-manage'),
     url(r'^teams/$', TeamListView.as_view(),
         name='dtracker-team-list'),
-    url(r'^teams/\+confirm/(?P<confirmation_key>.+)/$', ConfirmMembershipView.as_view(),
+    url(r'^teams/\+confirm/(?P<confirmation_key>.+)/$',
+        ConfirmMembershipView.as_view(),
         name='dtracker-team-confirm-membership'),
     url(r'^teams/(?P<slug>.+)/\+mute/$', SetMuteTeamView.as_view(action='mute'),
         name='dtracker-team-mute'),
-    url(r'^teams/(?P<slug>.+)/\+unmute/$', SetMuteTeamView.as_view(action='unmute'),
+    url(r'^teams/(?P<slug>.+)/\+unmute/$',
+        SetMuteTeamView.as_view(action='unmute'),
         name='dtracker-team-unmute'),
-    url(r'^teams/(?P<slug>.+)/\+set-keywords/$', SetMembershipKeywords.as_view(),
+    url(r'^teams/(?P<slug>.+)/\+set-keywords/$',
+        SetMembershipKeywords.as_view(),
         name='dtracker-team-set-keywords'),
-    url(r'^teams/(?P<slug>.+)/\+manage-membership/$', EditMembershipView.as_view(),
+    url(r'^teams/(?P<slug>.+)/\+manage-membership/$',
+        EditMembershipView.as_view(),
         name='dtracker-team-manage-membership'),
     url(r'^teams/(?P<slug>.+?)/$', TeamDetailsView.as_view(),
         name='dtracker-team-page'),
 
 
     # Dedicated package page
-    url(r'^pkg/(?P<package_name>[^/]+)/?$', 'distro_tracker.core.views.package_page',
+    url(r'^pkg/(?P<package_name>[^/]+)/?$',
+        'distro_tracker.core.views.package_page',
         name='dtracker-package-page'),
     # RSS news feed
     url(r'^pkg/(?P<package_name>.+)/rss$', PackageNewsFeed(),
         name='dtracker-package-rss-news-feed'),
 
-    # The package page view catch all. It must be listed *after* the admin URL so that
-    # the admin URL is not interpreted as a package named "admin".
-    url(r'^(?P<package_name>[^/]+)/?$', 'distro_tracker.core.views.package_page_redirect',
+    # The package page view catch all. It must be listed *after* the admin
+    # URL so that the admin URL is not interpreted as a package named "admin".
+    url(r'^(?P<package_name>[^/]+)/?$',
+        'distro_tracker.core.views.package_page_redirect',
         name='dtracker-package-page-redirect'),
 
     # Uncomment the admin/doc line below to enable admin documentation:
@@ -214,15 +230,16 @@ urlpatterns = patterns('',
 
 
 if settings.DEBUG:
-    urlpatterns = patterns('',
+    urlpatterns = patterns(
+        '',
         (r'^media/(?P<path>.*)$',
-         'django.views.static.serve', {
-            'document_root': settings.MEDIA_ROOT
-          }
-        ),
+         'django.views.static.serve',
+         {
+             'document_root': settings.MEDIA_ROOT
+         }),
         (r'^static/(?P<path>.*)$',
-         'django.views.static.serve', {
-            'document_root': settings.STATIC_ROOT,
-          }
-        ),
+         'django.views.static.serve',
+         {
+             'document_root': settings.STATIC_ROOT,
+         }),
     ) + urlpatterns

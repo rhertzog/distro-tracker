@@ -34,7 +34,9 @@ class VersionedLinksPanelTests(TestCase):
         VersionedLinks.LinkProvider.plugins = []
 
     def add_link_provider(self, icons):
-        type(str('TestProvider'), (VersionedLinks.LinkProvider,), {'icons': icons})
+        type(str('TestProvider'),
+             (VersionedLinks.LinkProvider,),
+             {'icons': icons})
 
     def get_package_page_response(self):
         url = reverse('dtracker-package-page', kwargs={
@@ -99,7 +101,7 @@ class GeneralInfoLinkPanelItemsTests(TestCase):
         html = soup(response.content)
         panels = html.findAll("div", {'class': 'panel-heading'})
         for panel in panels:
-            if 'links' in str(panel) and not 'versioned links' in str(panel):
+            if 'links' in str(panel) and 'versioned links' not in str(panel):
                 return panel
         return False
 

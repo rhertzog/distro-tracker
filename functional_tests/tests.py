@@ -121,7 +121,8 @@ class SeleniumTestCase(LiveServerTestCase):
         except NoSuchElementException:
             self.fail(custom_message)
 
-    def assert_element_with_class_in_page(self, class_name, custom_message=None):
+    def assert_element_with_class_in_page(self, class_name,
+                                          custom_message=None):
         if custom_message is None:
             custom_message = class_name + " not found in the page."
         try:
@@ -384,8 +385,9 @@ class RepositoryAdminTest(SeleniumTestCase):
             'id_sources_list_entry',
             'deb http://ftp.ba.debian.org/debian stable'
         )
-        ## Make sure that no actual HTTP requests are sent out
-        self.set_mock_http_response(mock_requests,
+        # === Make sure that no actual HTTP requests are sent out ===
+        self.set_mock_http_response(
+            mock_requests,
             'Suite: stable\n'
             'Codename: wheezy\n'
             'Architectures: amd64 armel armhf i386 ia64 kfreebsd-amd64'
@@ -465,8 +467,8 @@ class UserAccountsTestMixin(object):
 
     def log_in(self, user=None, password=None):
         """
-        Helper method which logs the user in, without taking any shortcuts (it goes
-        through the steps to fill in the form and submit it).
+        Helper method which logs the user in, without taking any shortcuts (it
+        goes through the steps to fill in the form and submit it).
         """
         if user is None:
             user = self.user
@@ -477,7 +479,6 @@ class UserAccountsTestMixin(object):
         self.input_to_element('id_username', user.main_email)
         self.input_to_element('id_password', password)
         self.send_enter('id_password')
-
 
 
 class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
@@ -507,12 +508,12 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
         profile_url = self.get_profile_url()
         password_form_id = 'form-reset-password'
         user_email = 'user@domain.com'
-        ## Preconditions:
-        ## No registered users or command confirmations
+        # === Preconditions: ===
+        # === No registered users or command confirmations ===
         self.assertEqual(0, User.objects.count())
         self.assertEqual(0, UserRegistrationConfirmation.objects.count())
 
-        ## Start of the test.
+        # === Start of the test. ===
         # The user opens the front page
         self.get_page('/')
         # He can see a link to a registration page
@@ -533,11 +534,12 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
         self.send_enter('id_main_email')
 
         # The user is notified of a successful registration
-        self.assert_current_url_equal(reverse('dtracker-accounts-register-success'))
+        self.assert_current_url_equal(
+            reverse('dtracker-accounts-register-success'))
 
         # The user receives an email with the confirmation URL
         self.assertEqual(1, len(mail.outbox))
-        ## Get confirmation key from the database
+        # === Get confirmation key from the database ===
         self.assertEqual(1, UserRegistrationConfirmation.objects.count())
         confirmation = UserRegistrationConfirmation.objects.all()[0]
         self.assertIn(confirmation.confirmation_key, mail.outbox[0].body)
@@ -573,7 +575,7 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
         self.get_page(confirmation_url)
         with self.assertRaises(NoSuchElementException):
             self.browser.find_element_by_id(password_form_id)
-        ## This is because the confirmation model instance has been removed...
+        # This is because the confirmation model instance has been removed...
         self.assertEqual(0, UserRegistrationConfirmation.objects.count())
 
         # The user goes back to the profile page and this time there is no
@@ -601,7 +603,7 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
         Tests that a user can register using an email which already has
         subscriptions to some packages.
         """
-        ## Set up such an email
+        # === Set up such an email ===
         email = UserEmail.objects.create(email='user@domain.com')
         package_name = 'dummy-package'
         Subscription.objects.create_for(
@@ -621,7 +623,8 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
             [email.email],
             [e.email for e in user.emails.all()])
         # ...a notification is displayed informing him of that
-        self.assert_in_page_body('Congratulations, the registration is almost over.')
+        self.assert_in_page_body(
+            'Congratulations, the registration is almost over.')
 
         # The existing subscriptions are not removed
         self.assertTrue(user.is_subscribed_to(package_name))
@@ -631,7 +634,7 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
         Tests that a user registration fails when there is already a registered
         user with the given email.
         """
-        ## Set up a registered user
+        # === Set up a registered user ===
         user_email = 'user@domain.com'
         associated_email = 'email@domain.com'
         self.create_user(user_email, 'asdf', [associated_email])
@@ -661,7 +664,7 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
         """
         Tests that a user can log in when he already has an existing account.
         """
-        ## Set up an account
+        # === Set up an account ===
         user_email = 'user@domain.com'
         associated_emails = ['email@domain.com']
         password = 'asdf'
@@ -695,7 +698,7 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
         """
         Tests that a user can log in with an associated email.
         """
-        ## Set up an account
+        # === Set up an account ===
         user_email = 'user@domain.com'
         associated_emails = ['email@domain.com']
         password = 'asdf'
@@ -719,12 +722,12 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
         If a user logs out when on the package page, he should not be
         redirected to the index.
         """
-        ## Set up an account
+        # === Set up an account ===
         user_email = 'user@domain.com'
         associated_emails = ['email@domain.com']
         password = 'asdf'
         self.create_user(user_email, password, associated_emails)
-        ## Set up an existing package
+        # === Set up an existing package ===
         package_name = 'dummy'
         SourcePackageName.objects.create(name=package_name)
 
@@ -773,7 +776,7 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
 
         # The subscribe button is no longer found in the page
         button = self.get_element_by_id('subscribe-button')
-        ## Give the page a chance to refresh
+        # === Give the page a chance to refresh ===
         wait = ui.WebDriverWait(self.browser, 1)
         wait.until(lambda browser: not button.is_displayed())
         self.assertFalse(button.is_displayed())
@@ -783,7 +786,7 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
         unsubscribe_button = self.get_element_by_id('unsubscribe-button')
         self.assertTrue(unsubscribe_button.is_displayed())
 
-        ## The user has really been subscribed to the package?
+        # === The user has really been subscribed to the package? ===
         self.assertTrue(self.user.is_subscribed_to(self.package))
 
     def test_subscribe_not_logged_in(self):
@@ -803,7 +806,7 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
         Tests that a user is offered a choice which email to use to subscribe
         to a package when he has multiple associated emails.
         """
-        ## Set up such a user
+        # === Set up such a user ===
         other_email = 'other-email@domain.com'
         self.user.emails.create(email=other_email)
 
@@ -821,7 +824,7 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
         self.get_element_by_id('cancel-choose-email').click()
         self.wait_response(1)
 
-        ## The user is not subscribed to anything yet
+        # === The user is not subscribed to anything yet ===
         self.assertEqual(0, Subscription.objects.count())
         # The user clicks the subscribe button again
         self.get_element_by_id('subscribe-button').click()
@@ -831,7 +834,7 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
         self.get_element_by_id('choose-email-1').click()
         self.wait_response(1)
 
-        ## The user is now subscribed to the package with only the clicked email
+        # === User is now subscribed with only the clicked email ===
         self.assertEqual(1, Subscription.objects.count())
         sub = Subscription.objects.all()[0]
         self.assertEqual(other_email, sub.email_settings.user_email.email)
@@ -845,7 +848,7 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
         """
         Tests unsubscribing all user's emails from a package.
         """
-        ## Set up a user with multiple emails subscribed to a package
+        # === Set up a user with multiple emails subscribed to a package ===
         other_email = 'other-email@domain.com'
         self.user.emails.create(email=other_email)
         for email in self.user.emails.all():
@@ -863,7 +866,7 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
         self.get_element_by_id('unsubscribe-button').click()
         self.wait_response(1)
 
-        ## The user is really unsubscribed from the package
+        # === The user is really unsubscribed from the package ===
         self.assertFalse(self.user.is_subscribed_to(self.package))
 
         # The user sees the subscribe button instead of the unsubscribe button
@@ -898,10 +901,10 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         # The user is met with a notification that the information has been
         # updated.
         self.assert_in_page_body('Successfully changed your information')
-        ## The user's name has really changed
+        # === The user's name has really changed ===
         self.refresh_user_object()
         self.assertEqual(name, self.user.first_name)
-        ## But the last name has not
+        # === But the last name has not ===
         self.assertEqual(old_last_name, self.user.last_name)
 
         # The user now wants to update both his first and last name
@@ -915,7 +918,7 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
 
         # He is faced with another notification of success
         self.assert_in_page_body('Successfully changed your information')
-        ## The information has actually been updated
+        # === The information has actually been updated ===
         self.refresh_user_object()
         self.assertEqual(new_first_name, self.user.first_name)
         self.assertEqual(new_last_name, self.user.last_name)
@@ -1018,7 +1021,7 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         # The user is taken to another page where he is informed that he must
         # check his email for a confirmation email
         self.assert_in_page_body('Please check your email inbox for details')
-        ## A confirmation email is actually sent?
+        # === A confirmation email is actually sent? ===
         self.assertEqual(1, len(mail.outbox))
         confirmation = ResetPasswordConfirmation.objects.all()[0]
         # The user goes to the confirmation URL!
@@ -1063,10 +1066,10 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         # he must confirm the ownership of the email address.
         self.assert_in_page_body('you must follow the confirmation link')
         self.assert_not_in_page_body(new_email)
-        ## The confirmation email sent?
+        # === The confirmation email sent? ===
         self.assertEqual(1, len(mail.outbox))
         self.assertIn(new_email, mail.outbox[0].to)
-        ## Confirmation created?
+        # === Confirmation created? ===
         self.assertEqual(1, AddEmailConfirmation.objects.count())
         confirmation = AddEmailConfirmation.objects.all()[0]
 
@@ -1093,7 +1096,7 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
             'This email is already associated with your account')
 
     def test_merge_accounts(self):
-        ## Set up an additional existing user account
+        # === Set up an additional existing user account ===
         password = 'other-password'
         other_email = 'other@domain.com'
         other_user = self.create_user(other_email, password)
@@ -1115,7 +1118,7 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         # The mail was not sent to the logged in user, rather the one being
         # merged to the account
         self.assertIn(other_email, mail.outbox[0].to)
-        ## A confirmation instance is created?
+        # === A confirmation instance is created? ===
         self.assertEqual(1, MergeAccountConfirmation.objects.count())
         confirmation = MergeAccountConfirmation.objects.all()[0]
 
@@ -1139,8 +1142,9 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         self.get_element_by_id('finalize-merge-button').click()
 
         # The user is notified that the merge was successful
-        self.assert_in_page_body('The two accounts have been successfully merged')
-        ## User accounts are really changed?
+        self.assert_in_page_body(
+            'The two accounts have been successfully merged')
+        # === User accounts are really changed? ===
         self.assertEqual(1, User.objects.count())
         # He tries logging in with the merged account's password
         self.log_in(password=password)
@@ -1155,6 +1159,7 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         self.click_link('Account Emails')
         self.assert_in_page_body(self.user.main_email)
         self.assert_in_page_body(other_email)
+
 
 class TeamTests(SeleniumTestCase):
     def setUp(self):
@@ -1200,8 +1205,8 @@ class TeamTests(SeleniumTestCase):
 
     def log_in(self, user=None, password=None):
         """
-        Helper method which logs the user in, without taking any shortcuts (it goes
-        through the steps to fill in the form and submit it).
+        Helper method which logs the user in, without taking any shortcuts (it
+        goes through the steps to fill in the form and submit it).
         """
         if user is None:
             user = self.user
@@ -1246,9 +1251,9 @@ class TeamTests(SeleniumTestCase):
         self.wait_response(1)
         # The user is now redirected to the team's page
         self.assert_current_url_equal(self.get_team_url(team_name))
-        ## The team actually exists
+        # === The team actually exists ===
         self.assertEqual(1, Team.objects.filter(name=team_name).count())
-        ## The user is its owner
+        # === The user is its owner ===
         team = Team.objects.get(name=team_name)
         self.assertEqual(self.user, team.owner)
         # The user goes back to the team creation page now
@@ -1266,7 +1271,7 @@ class TeamTests(SeleniumTestCase):
         The team should become automatically associated with the maintainer's
         packages.
         """
-        ## Set up some packages maintained by the same maintainer
+        # === Set up some packages maintained by the same maintainer ===
         package_names = [
             'pkg1',
             'pkg2',
@@ -1281,9 +1286,9 @@ class TeamTests(SeleniumTestCase):
                     name=package_name),
                 version='1.0.0',
                 maintainer=maintainer)
-        ## Create a package with no maintainer
+        # === Create a package with no maintainer ===
         SourcePackageName.objects.create(name='dummy-package')
-        ## --
+        # === -- ===
 
         # The user logs in and accesses the create team page.
         self.log_in()
@@ -1300,7 +1305,7 @@ class TeamTests(SeleniumTestCase):
         # maintainer's packages already in the team's page
         for package_name in package_names:
             self.assert_in_page_body(package_name)
-        ## The team really is associated with the packages?
+        # === The team really is associated with the packages? ===
         team = Team.objects.all()[0]
         self.assert_team_packages_equal(team, package_names)
 
@@ -1330,7 +1335,7 @@ class TeamTests(SeleniumTestCase):
         for package_name in package_names:
             self.assert_in_page_body(package_name)
 
-        ## The team is really associated with all these packages?
+        # === The team is really associated with all these packages? ===
         self.assert_team_packages_equal(
             team, package_names + [new_package_name])
 
@@ -1338,7 +1343,7 @@ class TeamTests(SeleniumTestCase):
         """
         Tests that the owner can delete a team.
         """
-        ## Set up a team owned by the user
+        # === Set up a team owned by the user ===
         team_name = 'Team name'
         Team.objects.create_with_slug(owner=self.user, name=team_name)
 
@@ -1369,7 +1374,7 @@ class TeamTests(SeleniumTestCase):
         self.wait_response(1)
         # He is still found in the team page and the team has not been deleted
         self.assert_current_url_equal(self.get_team_url(team_name))
-        ## The team is still here
+        # === The team is still here ===
         self.assertEqual(1, Team.objects.count())
         # The user now decides he really wants to delete the team
         self.get_element_by_id('delete-team-button').click()
@@ -1380,14 +1385,14 @@ class TeamTests(SeleniumTestCase):
         # He is now taken to a page informing him the team has been
         # successfully deleted.
         self.assert_current_url_equal(self.get_team_deleted_url())
-        ## The team is also really deleted?
+        # === The team is also really deleted? ===
         self.assertEqual(0, Team.objects.count())
 
     def test_update_team(self):
         """
         Tests that the team owner can update the team's basic info.
         """
-        ## Set up a team owned by the user
+        # === Set up a team owned by the user ===
         team_name = 'Team name'
         Team.objects.create_with_slug(owner=self.user, name=team_name)
 
@@ -1421,7 +1426,7 @@ class TeamTests(SeleniumTestCase):
         self.assert_current_url_equal(self.get_team_url(team_name))
         # The updated information is displayed in the page already
         self.assert_in_page_body(new_description)
-        ## The team's info is actually updated?
+        # === The team's info is actually updated? ===
         team = Team.objects.all()[0]
         self.assertEqual(new_description, team.description)
 
@@ -1454,24 +1459,24 @@ class TeamTests(SeleniumTestCase):
         # The user is once again back on the team page.
         # The URL has been modified now to contain the new team slug.
         self.assertIn(new_slug, self.browser.current_url)
-        ## The slug really is updated?
+        # === The slug really is updated? ===
         self.assertEqual(new_slug, Team.objects.all()[0].slug)
 
     def test_package_management(self):
         """
         Tests that adding/removing packages from the team works as expected.
         """
-        ## Set up a team owned by the user
+        # === Set up a team owned by the user ===
         team_name = 'Team name'
         team = Team.objects.create_with_slug(owner=self.user, name=team_name)
-        ## Set up some packages which the user can add to the team
+        # === Set up some packages which the user can add to the team ===
         package_names = [
             'pkg1',
             'pkg2',
         ]
         for package_name in package_names:
             PackageName.objects.create(name=package_name)
-        ## --
+        # === -- ===
 
         # The user opens the team page without logging in
         self.get_page(self.get_team_url(team_name))
@@ -1515,7 +1520,7 @@ class TeamTests(SeleniumTestCase):
         self.wait_response(1)
         # He is still found on the team page and the package is not removed
         self.assert_current_url_equal(self.get_team_url(team_name))
-        ## The package is not removed?
+        # === The package is not removed? ===
         self.assertEqual(1, team.packages.count())
 
         # The user decides to definitely remove the package now
@@ -1528,21 +1533,21 @@ class TeamTests(SeleniumTestCase):
         # a part of the team.
         self.assert_current_url_equal(self.get_team_url(team_name))
         self.assert_not_in_page_body(package_names[0])
-        ## The package is really removed from the team
+        # === The package is really removed from the team ===
         self.assertEqual(0, team.packages.count())
 
     def test_team_access(self):
         """
         Tests joining and leaving a team.
         """
-        ## Set up a team and a user who isn't the owner of the team
+        # === Set up a team and a user who isn't the owner of the team ===
         team_name = 'Team name'
         team = Team.objects.create_with_slug(owner=self.user, name=team_name)
         user = User.objects.create_user(
             main_email='other@domain.com',
             password=self.password)
-        useremail = UserEmail.objects.get_or_create(email=user.main_email)
-        ## --
+        UserEmail.objects.get_or_create(email=user.main_email)
+        # === end setup ===
 
         # The user logs in and goes to the team page
         self.log_in(user)
@@ -1556,7 +1561,7 @@ class TeamTests(SeleniumTestCase):
         # The user is still found in the team page, but now he is a member of
         # the team.
         self.assert_element_with_id_in_page('add-team-package-form')
-        ## The user is really a member?
+        # === The user is really a member? ===
         self.assertTrue(team.user_is_member(user))
         # Which means he can leave the team now.
         self.assert_element_with_id_in_page('leave-team-button')
@@ -1566,7 +1571,7 @@ class TeamTests(SeleniumTestCase):
 
         # The user is now again not a member of the team
         self.assert_element_with_id_in_page('join-team-button')
-        ## He really isn't a member any more.
+        # === He really isn't a member any more. ===
         self.assertFalse(team.user_is_member(user))
 
         # The user now logs out
@@ -1577,7 +1582,7 @@ class TeamTests(SeleniumTestCase):
         # But he is redirected to the login page
         self.assert_element_with_id_in_page('form-login')
 
-        ## The privacy of the team is switched to private.
+        # === The privacy of the team is switched to private. ===
         team.public = False
         team.save()
 
@@ -1591,10 +1596,8 @@ class TeamTests(SeleniumTestCase):
         Tests that a team owner is able to add/remove members from a separate
         panel.
         """
-        ## --
         team_name = 'Team name'
-        team = Team.objects.create_with_slug(owner=self.user, name=team_name)
-        ## --
+        Team.objects.create_with_slug(owner=self.user, name=team_name)
 
         self.log_in()
         self.get_page(self.get_team_url(team_name))
@@ -1609,15 +1612,16 @@ class TeamTests(SeleniumTestCase):
         # The user is still in the same page, but can see the new member in the
         # list of all members
         self.assert_in_page_body(new_team_member)
-        ## The membership is marked muted, though
+        # === The membership is marked muted, though ===
         membership = TeamMembership.objects.all()[0]
         self.assertTrue(membership.muted)
-        ## And an email was sent to the new member asking him to confirm it
+        # === Email was sent to the new member asking him to confirm it ===
         self.assertEqual(1, len(mail.outbox))
         self.assertIn(new_team_member, mail.outbox[0].to)
 
         # The user now decides to remove the team member
-        button = self.browser.find_element_by_css_selector('.remove-user-button')
+        button = \
+            self.browser.find_element_by_css_selector('.remove-user-button')
         button.click()
         self.wait_response(1)
         # The user is no longer a part of the team
@@ -1628,11 +1632,11 @@ class TeamTests(SeleniumTestCase):
         Tests that a team member is able to mute and unmute a team membership
         from the subscription details page.
         """
-        ## --
+        # === -- ===
         team_name = 'Team name'
         team = Team.objects.create_with_slug(owner=self.user, name=team_name)
         membership = team.add_members([self.user.emails.all()[0]])[0]
-        ## --
+        # === -- ===
         # The user logs in and goes to his subscriptions page
         self.log_in()
         self.get_page(self.get_subscriptions_url())
@@ -1645,7 +1649,7 @@ class TeamTests(SeleniumTestCase):
         # The user is still in he same page, but now he has a warning that his
         # team membership is muted
         self.assert_element_with_class_in_page('mute-warning')
-        ## The membership is actually muted?
+        # === The membership is actually muted? ===
         membership = TeamMembership.objects.get(pk=membership.pk)
         self.assertTrue(membership.muted)
 

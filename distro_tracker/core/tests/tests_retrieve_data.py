@@ -21,7 +21,8 @@ from distro_tracker.core.tasks import run_task
 from distro_tracker.core.tasks import Job
 from distro_tracker.core.tasks import JobState
 from distro_tracker.core.tasks import Event
-from distro_tracker.core.models import Subscription, EmailSettings, PackageName, BinaryPackageName
+from distro_tracker.core.models import Subscription
+from distro_tracker.core.models import PackageName, BinaryPackageName
 from distro_tracker.core.models import SourcePackageName, SourcePackage
 from distro_tracker.core.models import SourcePackageRepositoryEntry
 from distro_tracker.core.models import PseudoPackageName
@@ -42,7 +43,8 @@ import os
 import sys
 
 
-@override_settings(DISTRO_TRACKER_VENDOR_RULES='distro_tracker.core.tests.tests_retrieve_data')
+@override_settings(
+    DISTRO_TRACKER_VENDOR_RULES='distro_tracker.core.tests.tests_retrieve_data')
 class RetrievePseudoPackagesTest(TestCase):
     """
     Tests the update_pseudo_package_list data retrieval function.
@@ -86,7 +88,7 @@ class RetrievePseudoPackagesTest(TestCase):
 
         self.assertSequenceEqual(
             sorted(self.packages),
-            sorted([package.name for package in PseudoPackageName.objects.all()])
+            sorted([pkg.name for pkg in PseudoPackageName.objects.all()])
         )
 
     def test_pseudo_package_exists(self):
@@ -100,7 +102,7 @@ class RetrievePseudoPackagesTest(TestCase):
 
         self.assertSequenceEqual(
             sorted(self.packages),
-            sorted([package.name for package in PseudoPackageName.objects.all()])
+            sorted([pkg.name for pkg in PseudoPackageName.objects.all()])
         )
 
     def test_pseudo_package_update(self):
@@ -115,7 +117,7 @@ class RetrievePseudoPackagesTest(TestCase):
 
         self.assertSequenceEqual(
             sorted(self.packages),
-            sorted([package.name for package in PseudoPackageName.objects.all()])
+            sorted([pkg.name for pkg in PseudoPackageName.objects.all()])
         )
 
     def test_pseudo_package_update_remove(self):
@@ -133,14 +135,15 @@ class RetrievePseudoPackagesTest(TestCase):
         # package
         self.assertSequenceEqual(
             sorted(self.packages),
-            sorted([package.name for package in PseudoPackageName.objects.all()])
+            sorted([pkg.name for pkg in PseudoPackageName.objects.all()])
         )
         # Old pseudo packages are now demoted to subscription-only packages
         self.assertSequenceEqual(
             sorted(old_packages),
             sorted([
                 pkg.name
-                for pkg in PackageName.objects.filter(pseudo=False, binary=False, source=False).all()
+                for pkg in PackageName.objects.filter(
+                    pseudo=False, binary=False, source=False).all()
             ])
         )
 
@@ -158,7 +161,7 @@ class RetrievePseudoPackagesTest(TestCase):
 
         self.assertSequenceEqual(
             sorted(self.packages),
-            sorted([package.name for package in PseudoPackageName.objects.all()])
+            sorted([pkg.name for pkg in PseudoPackageName.objects.all()])
         )
 
     def test_subscriptions_remain_after_update(self):
@@ -180,9 +183,11 @@ class RetrievePseudoPackagesTest(TestCase):
 
         user_email = UserEmail.objects.get(email=user_email)
         # Still subscribed to the demoted package
-        self.assertTrue(user_email.emailsettings.is_subscribed_to(removed_package))
+        self.assertTrue(
+            user_email.emailsettings.is_subscribed_to(removed_package))
         # Still subscribed to the pseudo package
-        self.assertTrue(user_email.emailsettings.is_subscribed_to(self.packages[0]))
+        self.assertTrue(
+            user_email.emailsettings.is_subscribed_to(self.packages[0]))
 
     def test_all_pseudo_packages_demoted(self):
         """
@@ -194,14 +199,18 @@ class RetrievePseudoPackagesTest(TestCase):
         old_packages = self.packages
         self.packages = []
         # Sanity check: there were no subscription-only packages originaly
-        self.assertEqual(PackageName.objects.filter(source=False, binary=False, pseudo=False).count(),
-                         0)
+        self.assertEqual(
+            PackageName.objects.filter(source=False, binary=False,
+                                       pseudo=False).count(),
+            0)
 
         self.update_pseudo_package_list()
 
         self.assertEqual(PseudoPackageName.objects.count(), 0)
-        self.assertEqual(PackageName.objects.filter(source=False, binary=False, pseudo=False).count(),
-                         len(old_packages))
+        self.assertEqual(
+            PackageName.objects.filter(source=False, binary=False,
+                                       pseudo=False).count(),
+            len(old_packages))
 
     @mock.patch('distro_tracker.core.retrieve_data.update_pseudo_package_list')
     def test_management_command_called(self, mock_update_pseudo_package_list):
@@ -229,11 +238,12 @@ class RetrieveRepositoryInfoTests(TestCase):
         # Starts with deb, but no URL given.
         with self.assertRaises(ValidationError):
             validate_sources_list_entry('deb thisisnotaurl part3 part4')
-        ## Make sure requests returns 404
+        # Make sure requests returns 404
         set_mock_response(mock_requests, status_code=404)
         # There is no Release file at the given URL
         with self.assertRaises(ValidationError):
-            validate_sources_list_entry('deb http://does-not-matter.com/ part3 part4')
+            validate_sources_list_entry(
+                'deb http://does-not-matter.com/ part3 part4')
 
     @mock.patch('distro_tracker.core.retrieve_data.requests')
     def test_retrieve_repository_info_correct(self, mock_requests):
@@ -345,6 +355,7 @@ class RetrieveSourcesInformationTest(TestCase):
         Helper method creates and returns a new BaseTask subclass.
         """
         caught_events = self.caught_events
+
         class TestTask(BaseTask):
             PRODUCES_EVENTS = produces
             DEPENDS_ON_EVENTS = depends_on
@@ -397,7 +408,8 @@ class RetrieveSourcesInformationTest(TestCase):
     def assert_package_by_name_in(self, pkg_name, qs):
         self.assertIn(pkg_name, [pkg.name for pkg in qs])
 
-    @mock.patch('distro_tracker.core.retrieve_data.AptCache.update_repositories')
+    @mock.patch(
+        'distro_tracker.core.retrieve_data.AptCache.update_repositories')
     def test_update_repositories_creates_source(self, mock_update_repositories):
         """
         Tests that a new source package is created when a sources file is
@@ -420,7 +432,8 @@ class RetrieveSourcesInformationTest(TestCase):
             'new-source-package-version-in-repository',
         ] + ['new-binary-package'] * 8)
 
-    @mock.patch('distro_tracker.core.retrieve_data.AptCache.update_repositories')
+    @mock.patch(
+        'distro_tracker.core.retrieve_data.AptCache.update_repositories')
     def test_update_repositories_existing(self, mock_update_repositories):
         """
         Tests that when an existing source repository is changed in the newly
@@ -447,7 +460,8 @@ class RetrieveSourcesInformationTest(TestCase):
             'new-source-package-version-in-repository',
         ] + ['new-binary-package'] * 8)
 
-    @mock.patch('distro_tracker.core.retrieve_data.AptCache.update_repositories')
+    @mock.patch(
+        'distro_tracker.core.retrieve_data.AptCache.update_repositories')
     def test_update_repositories_no_changes(self, mock_update_repositories):
         """
         Tests that when an update is ran multiple times with no changes to the
@@ -464,7 +478,8 @@ class RetrieveSourcesInformationTest(TestCase):
         # No events emitted since nothing was done.
         self.assertEqual(len(self.caught_events), 0)
 
-    @mock.patch('distro_tracker.core.retrieve_data.AptCache.update_repositories')
+    @mock.patch(
+        'distro_tracker.core.retrieve_data.AptCache.update_repositories')
     def test_update_changed_binary_mapping_1(self, mock_update):
         """
         Tests the scenario when new data changes the source package to which
@@ -539,7 +554,8 @@ class RetrieveSourcesInformationTest(TestCase):
             ['lost-version-of-source-package'] * 2
         )
 
-    @mock.patch('distro_tracker.core.retrieve_data.AptCache.update_repositories')
+    @mock.patch(
+        'distro_tracker.core.retrieve_data.AptCache.update_repositories')
     def test_update_changed_binary_mapping_2(self, mock_update):
         """
         Tests the scenario when new data changes the source package to which
@@ -606,7 +622,8 @@ class RetrieveSourcesInformationTest(TestCase):
             ['lost-source-package']
         )
 
-    @mock.patch('distro_tracker.core.retrieve_data.AptCache.update_repositories')
+    @mock.patch(
+        'distro_tracker.core.retrieve_data.AptCache.update_repositories')
     def test_update_removed_binary_package(self, mock_update):
         """
         Test the scenario when new data removes an existing binary package.
@@ -652,8 +669,10 @@ class RetrieveSourcesInformationTest(TestCase):
             ['lost-binary-package']
         )
 
-    @mock.patch('distro_tracker.core.retrieve_data.AptCache.get_sources_files_for_repository')
-    @mock.patch('distro_tracker.core.retrieve_data.AptCache.update_repositories')
+    @mock.patch('distro_tracker.core.retrieve_data.AptCache.'
+                'get_sources_files_for_repository')
+    @mock.patch(
+        'distro_tracker.core.retrieve_data.AptCache.update_repositories')
     def test_update_multiple_sources_files(self,
                                            mock_update_repositories,
                                            mock_all_sources):
@@ -696,7 +715,7 @@ class RetrieveSourcesInformationTest(TestCase):
             1,
             SourcePackageRepositoryEntry.objects.filter(
                 repository=self.repository,
-                source_package__source_package_name__name='dummy-package').count(),
+                source_package__source_package_name__name='dummy-package').count(),  # noqa
         )
         # The matching binary package is also there
         self.assert_package_by_name_in(
@@ -706,9 +725,10 @@ class RetrieveSourcesInformationTest(TestCase):
         # The new package from the updated file is there
         self.assertEqual(SourcePackageName.objects.count(), 2)
 
-
-    @mock.patch('distro_tracker.core.retrieve_data.AptCache.get_sources_files_for_repository')
-    @mock.patch('distro_tracker.core.retrieve_data.AptCache.update_repositories')
+    @mock.patch('distro_tracker.core.retrieve_data.AptCache.'
+                'get_sources_files_for_repository')
+    @mock.patch(
+        'distro_tracker.core.retrieve_data.AptCache.update_repositories')
     def test_update_multiple_versions_in_source_file(self,
                                                      mock_update_repositories,
                                                      mock_all_sources):
@@ -754,19 +774,21 @@ class RetrieveSourcesInformationTest(TestCase):
         )
         # Both versions are still in the repository
         entries = SourcePackageRepositoryEntry.objects.filter(
-                repository=self.repository,
-                source_package__source_package_name__name='dummy-package')
+            repository=self.repository,
+            source_package__source_package_name__name='dummy-package')
         self.assertEqual(2, entries.count())
         for entry in entries:
             self.assertIn(entry.source_package.version, versions)
 
-    @mock.patch('distro_tracker.core.retrieve_data.AptCache.update_repositories')
+    @mock.patch(
+        'distro_tracker.core.retrieve_data.AptCache.update_repositories')
     def test_binary_package_entry_created_1(self, mock_update_repositories):
         """
-        Tests that a :class:`BinaryPackage <distro_tracker.core.models.BinaryPackage>`
-        instance is added to a :class:`Repository <distro_tracker.core.models.Repository>`
-        (a :class:`BinaryPackageRepositoryEntry <distro_tracker.core.models.BinaryPackageRepositoryEntry>`
-        is created)
+        Tests that a :class:`BinaryPackage
+        <distro_tracker.core.models.BinaryPackage>` instance is added to a
+        :class:`Repository <distro_tracker.core.models.Repository>` (a
+        :class:`BinaryPackageRepositoryEntry
+        <distro_tracker.core.models.BinaryPackageRepositoryEntry>` is created)
         """
         package_name = 'chromium-browser'
         self.set_mock_sources(mock_update_repositories, 'Sources')
@@ -791,14 +813,17 @@ class RetrieveSourcesInformationTest(TestCase):
             package_name,
             entry.binary_package.source_package.name)
 
-    @mock.patch('distro_tracker.core.retrieve_data.AptCache.update_repositories')
+    @mock.patch(
+        'distro_tracker.core.retrieve_data.AptCache.update_repositories')
     def test_binary_package_entry_created_2(self, mock_update_repositories):
         """
-        Tests that a :class:`BinaryPackage <distro_tracker.core.models.BinaryPackage>`
-        instance is added to a :class:`Repository <distro_tracker.core.models.Repository>`
-        (a :class:`BinaryPackageRepositoryEntry <distro_tracker.core.models.BinaryPackageRepositoryEntry>`
-        is created) when the name of the binary package is different than the
-        name of the source package.
+        Tests that a :class:`BinaryPackage
+        <distro_tracker.core.models.BinaryPackage>` instance is added to a
+        :class:`Repository <distro_tracker.core.models.Repository>` (a
+        :class:`BinaryPackageRepositoryEntry
+        <distro_tracker.core.models.BinaryPackageRepositoryEntry>` is created)
+        when the name of the binary package is different than the name of the
+        source package.
         """
         package_name = 'chromium-browser'
         binary_name = 'chromium-browser-dbg'
@@ -824,14 +849,17 @@ class RetrieveSourcesInformationTest(TestCase):
             package_name,
             entry.binary_package.source_package.name)
 
-    @mock.patch('distro_tracker.core.retrieve_data.AptCache.update_repositories')
+    @mock.patch(
+        'distro_tracker.core.retrieve_data.AptCache.update_repositories')
     def test_binary_package_entry_created_3(self, mock_update_repositories):
         """
-        Tests that a :class:`BinaryPackage <distro_tracker.core.models.BinaryPackage>`
-        instance is added to a :class:`Repository <distro_tracker.core.models.Repository>`
-        (a :class:`BinaryPackageRepositoryEntry <distro_tracker.core.models.BinaryPackageRepositoryEntry>`
-        is created) when both the name and the version of the binary package
-        differ to the ones of the source package.
+        Tests that a :class:`BinaryPackage
+        <distro_tracker.core.models.BinaryPackage>` instance is added to a
+        :class:`Repository <distro_tracker.core.models.Repository>` (a
+        :class:`BinaryPackageRepositoryEntry
+        <distro_tracker.core.models.BinaryPackageRepositoryEntry>` is created)
+        when both the name and the version of the binary package differ to the
+        ones of the source package.
         """
         package_name = 'chromium-browser'
         binary_name = 'chromium-browser-dbg'
@@ -861,12 +889,14 @@ class RetrieveSourcesInformationTest(TestCase):
             binary_version,
             entry.binary_package.version)
 
-    @mock.patch('distro_tracker.core.retrieve_data.AptCache.update_repositories')
+    @mock.patch(
+        'distro_tracker.core.retrieve_data.AptCache.update_repositories')
     def test_binary_package_entry_removed(self, mock_update_repositories):
         """
         Tests that an existing
-        :class:`BinaryPackageRepositoryEntry <distro_tracker.core.models.BinaryPackageRepositoryEntry>`
-        is removed if the updated ``Packages`` file no longer contains it.
+        :class:`BinaryPackageRepositoryEntry
+        <distro_tracker.core.models.BinaryPackageRepositoryEntry>` is removed if
+        the updated ``Packages`` file no longer contains it.
         """
         binary_name = 'dummy-package-binary'
         source_package = create_source_package({
@@ -936,6 +966,7 @@ class RetrieveSourcesFailureTest(TransactionTestCase):
         Helper method creates and returns a new BaseTask subclass.
         """
         caught_events = self.caught_events
+
         class TestTask(BaseTask):
             PRODUCES_EVENTS = produces
             DEPENDS_ON_EVENTS = depends_on
@@ -971,7 +1002,8 @@ class RetrieveSourcesFailureTest(TransactionTestCase):
             []
         )
 
-    @mock.patch('distro_tracker.core.retrieve_data.AptCache.update_repositories')
+    @mock.patch(
+        'distro_tracker.core.retrieve_data.AptCache.update_repositories')
     def test_update_repositories_invalid(self, mock_update_repositories):
         """
         Tests updating the repositories when the repository's Sources file is
@@ -991,7 +1023,8 @@ class RetrieveSourcesFailureTest(TransactionTestCase):
 
 class UpdateTeamPackagesTaskTests(TestCase):
     """
-    Tests for the :class:`distro_tracker.core.retrieve_data.UpdateTeamPackagesTask` task.
+    Tests for the
+    :class:`distro_tracker.core.retrieve_data.UpdateTeamPackagesTask` task.
     """
     def setUp(self):
         self.maintainer_email = 'maintainer@domain.com'
@@ -1133,7 +1166,8 @@ class UpdateTeamPackagesTaskTests(TestCase):
 
         # The team is now associated with a new package
         self.assertEqual(1, uploader_team.packages.count())
-        self.assertEqual(self.package.name, uploader_team.packages.all()[0].name)
+        self.assertEqual(self.package.name,
+                         uploader_team.packages.all()[0].name)
         # The maintainer's team is updated in the same time?
         self.assertEqual(1, self.team.packages.count())
 
@@ -1167,7 +1201,8 @@ class UpdateTeamPackagesTaskTests(TestCase):
             })
         ]
         # Add them all to the default repository
-        for source_package in team_maintainer_packages + unknown_maintainer_packages:
+        for source_package in \
+                team_maintainer_packages + unknown_maintainer_packages:
             self.repository.add_source_package(source_package)
             self.add_mock_events('new-source-package-version-in-repository', {
                 'name': source_package.name,
@@ -1180,7 +1215,8 @@ class UpdateTeamPackagesTaskTests(TestCase):
         self.run_task()
 
         # The team is not related to the packages with an unknown maintainer
-        self.assertEqual(len(team_maintainer_packages), self.team.packages.count())
+        self.assertEqual(len(team_maintainer_packages),
+                         self.team.packages.count())
         all_packages = [p.name for p in self.team.packages.all()]
         for source_package in team_maintainer_packages:
             self.assertIn(source_package.source_package_name.name, all_packages)

@@ -29,7 +29,8 @@ from email.message import Message
 
 class BasicNewsGeneration(TestCase):
     def setUp(self):
-        self.package_name = SourcePackageName.objects.create(name='dummy-package')
+        self.package_name = \
+            SourcePackageName.objects.create(name='dummy-package')
         self.package = SourcePackage.objects.create(
             source_package_name=self.package_name,
             version='1.0.0')
@@ -37,7 +38,7 @@ class BasicNewsGeneration(TestCase):
 
     def set_subject(self, subject):
         if 'Subject' in self.message:
-           del self.message['Subject']
+            del self.message['Subject']
         self.message['Subject'] = subject
 
     def add_header(self, header_name, header_value):
@@ -73,8 +74,8 @@ class BasicNewsGeneration(TestCase):
 
     def test_create_news_url_from_email(self):
         """
-        Tests that when an X-Distro-Tracker-Url header is given the news content is the
-        URL, not the email message.
+        Tests that when an X-Distro-Tracker-Url header is given the news
+        content is the URL, not the email message.
         """
         subject = 'Some message'
         content = 'Some message content'
@@ -95,8 +96,8 @@ class BasicNewsGeneration(TestCase):
 
     def test_create_news_package_does_not_exist(self):
         """
-        Tests that when the package given in X-Distro-Tracker-Package does not exist, no
-        news items are created.
+        Tests that when the package given in X-Distro-Tracker-Package does
+        not exist, no news items are created.
         """
         subject = 'Some message'
         content = 'Some message content'
@@ -130,15 +131,18 @@ class BasicNewsGeneration(TestCase):
         # The function was called?
         self.assertTrue(mock_vendor_call.called)
         # The correct vendor function was asked for?
-        self.assertEqual(mock_vendor_call.call_args[0][0], 'create_news_from_email_message')
+        self.assertEqual(mock_vendor_call.call_args[0][0],
+                         'create_news_from_email_message')
 
 
 class MailNewsManagementCommandTest(SimpleTestCase):
     """
-    Tests that the :mod:`distro_tracker.mail.management.commands.tracker_receive_news`
+    Tests that the
+    :mod:`distro_tracker.mail.management.commands.tracker_receive_news`
     management command calls the correct function.
     """
-    @mock.patch('distro_tracker.mail.management.commands.tracker_receive_news.process')
+    @mock.patch(
+        'distro_tracker.mail.management.commands.tracker_receive_news.process')
     def test_calls_process(self, mock_process):
         cmd = MailNewsCommand()
         cmd.input_file = mock.create_autospec(six.BytesIO)
