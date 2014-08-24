@@ -22,10 +22,11 @@ Distro Tracker currently depends on the following Debian packages:
 - python-bs4 or python-beautifulsoup
 - python-soappy (optional)
 - python-ldap (optional)
+- python-tox (for development only)
 
 For Python2.7, the following additional packages are required:
 
-- python-mock
+- python-mock (for development only)
 - python-lzma
 
 .. _database_setup:

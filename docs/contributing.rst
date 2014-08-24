@@ -62,9 +62,13 @@ Usual workflow
 
   6. Develop your new feature, ideally following the rules of :ref:`tdd`.
 
-  7. When you're done, check that all tests are succeeding::
+  7. When you're done, check that all tests are succeeding in all
+     supported platforms::
 
-       $ python manage test
+       $ tox
+
+     This basically runs “./manage.py test” with multiple versions
+     of Django and Python.
 
   8. Push your changes on a public repository or send them by
      email to the Debian Quality Assurance team::
