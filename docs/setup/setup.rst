@@ -19,7 +19,7 @@ Distro Tracker currently depends on the following Debian packages:
 - python-apt
 - python-gpgme
 - python-yaml
-- python-bs4 or python-beautifulsoup
+- python-bs4
 - python-soappy (optional)
 - python-ldap (optional)
 - python-tox (for development only)
