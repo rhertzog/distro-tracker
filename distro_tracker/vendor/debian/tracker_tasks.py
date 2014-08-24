@@ -2122,3 +2122,88 @@ class UpdateDebciStatusTask(BaseTask):
             # Remove action items for packages without failing tests.
             ActionItem.objects.delete_obsolete_items(
                 [self.debci_action_item_type], packages)
+
+
+class UpdateAutoRemovalsStatsTask(BaseTask):
+    """
+    A task for updating autoremovals information on all packages.
+    """
+    ACTION_ITEM_TYPE_NAME = 'debian-autoremoval'
+    ACTION_ITEM_TEMPLATE = 'debian/autoremoval-action-item.html'
+    ITEM_DESCRIPTION = 'Marked for autoremoval on {removal_date}: {bugs}'
+
+    def __init__(self, force_update=False, *args, **kwargs):
+        super(UpdateAutoRemovalsStatsTask, self).__init__(*args, **kwargs)
+        self.force_update = force_update
+        self.action_item_type = ActionItemType.objects.create_or_update(
+            type_name=self.ACTION_ITEM_TYPE_NAME,
+            full_description_template=self.ACTION_ITEM_TEMPLATE)
+
+    def set_parameters(self, parameters):
+        if 'force_update' in parameters:
+            self.force_update = parameters['force_update']
+
+    def get_autoremovals_stats(self):
+        """
+        Retrieves and parses the autoremoval stats for all packages.
+        Autoremoval stats include the BTS bugs id.
+
+        :returns: A dict mapping package names to autoremoval stats.
+        """
+        content = get_resource_content(
+            'https://udd.debian.org/cgi-bin/autoremovals.yaml.cgi')
+        if content:
+            return yaml.safe_load(six.BytesIO(content))
+
+    def update_action_item(self, package, stats):
+        """
+        Creates an :class:`ActionItem <distro_tracker.core.models.ActionItem>`
+        instance for the given type indicating that the package has an
+        autoremoval issue.
+        """
+        action_item = package.get_action_item_for_type(self.action_item_type)
+        if not action_item:
+            action_item = ActionItem(
+                package=package,
+                item_type=self.action_item_type,
+                severity=ActionItem.SEVERITY_HIGH)
+
+        bugs_dependencies = stats.get('bugs_dependencies', [])
+        buggy_dependencies = stats.get('buggy_dependencies', [])
+        all_bugs = stats['bugs'] + bugs_dependencies
+        link = '<a href="https://bugs.debian.org/{}">{}</a>'
+
+        action_item.short_description = self.ITEM_DESCRIPTION.format(
+            removal_date=stats['removal_date'].strftime('%d %B'),
+            bugs=', '.join(link.format(bug, bug) for bug in all_bugs))
+
+        action_item.extra_data = {
+            'stats': stats,
+            'removal_date': stats['removal_date'].strftime('%a %d %b %Y'),
+            'bugs': ', '.join(link.format(bug, bug) for bug in stats['bugs']),
+            'bugs_dependencies': ', '.join(
+                link.format(bug, bug) for bug in bugs_dependencies),
+            'buggy_dependencies': ' and '.join(
+                ['<a href="/pkg/{}">{}</a>'.format(
+                    reverse(
+                        'dtracker-package-page',
+                        kwargs={'package_name': p}),
+                    p) for p in buggy_dependencies])}
+        action_item.save()
+
+    def execute(self):
+        autoremovals_stats = self.get_autoremovals_stats()
+        if autoremovals_stats is None:
+            # Nothing to do: cached content up to date
+            return
+
+        ActionItem.objects.delete_obsolete_items(
+            item_types=[self.action_item_type],
+            non_obsolete_packages=autoremovals_stats.keys())
+
+        packages = SourcePackageName.objects.filter(
+            name__in=autoremovals_stats.keys())
+        packages = packages.prefetch_related('action_items')
+
+        for package in packages:
+            self.update_action_item(package, autoremovals_stats[package.name])

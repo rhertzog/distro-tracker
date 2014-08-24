@@ -62,6 +62,7 @@ from distro_tracker.vendor.debian.tracker_tasks import DebianWatchFileScannerUpd
 from distro_tracker.vendor.debian.tracker_tasks import UpdateExcusesTask
 from distro_tracker.vendor.debian.tracker_tasks import UpdateDebciStatusTask
 from distro_tracker.vendor.debian.tracker_tasks import UpdateDebianDuckTask
+from distro_tracker.vendor.debian.tracker_tasks import UpdateAutoRemovalsStatsTask
 from distro_tracker.vendor.debian.models import DebianContributor
 from distro_tracker.vendor.debian.models import UbuntuPackage
 from distro_tracker.vendor.debian.tracker_tasks import UpdateLintianStatsTask
@@ -4707,3 +4708,74 @@ class UpdateDebciStatusTaskTest(TestCase):
         self.run_task()
 
         self.assertEqual(ActionItem.objects.count(), 0)
+
+
+@mock.patch('distro_tracker.core.utils.http.requests')
+class UpdateAutoRemovalsStatsTaskTest(TestCase):
+    """
+    Tests for the :class:`distro_tracker.vendor.debian.tracker_tasks
+    .UpdateAutoRemovalsStatsTask` task.
+    """
+    def setUp(self):
+        self.dummy_package = SourcePackageName.objects.create(
+            name='dummy-package')
+        self.other_package = SourcePackageName.objects.create(
+            name='other-package')
+        self.autoremovals_data = """
+        dummy-package:
+            bugs:
+            - '12345'
+            removal_date: 2014-08-24 10:20:00
+        dummy-package2:
+            bugs:
+            - '123456'
+            removal_date: 2014-08-25 12:00:00
+        """
+
+    def run_task(self):
+        """
+        Runs the autoremovals status update task.
+        """
+        task = UpdateAutoRemovalsStatsTask()
+        task.execute()
+
+    def test_action_item_when_in_list(self, mock_requests):
+        """
+        Tests that an ActionItem is created for a package reported by
+        autoremovals.
+        """
+        set_mock_response(mock_requests, text=self.autoremovals_data)
+
+        self.run_task()
+        self.assertEqual(1, self.dummy_package.action_items.count())
+
+    def test_no_action_item_when_not_in_list(self, mock_requests):
+        """
+        Tests that no ActionItem is created for a package not reported by
+        autoremovals.
+        """
+        set_mock_response(mock_requests, text=self.autoremovals_data)
+
+        self.run_task()
+        self.assertEqual(0, self.other_package.action_items.count())
+
+    def test_action_item_is_dropped_when_autoremovals_reports_nothing_again(
+            self, mock_requests):
+        """
+        Tests that ActionItems are dropped when a package was previousy
+        reported but is now not reported anymore.
+        """
+        set_mock_response(mock_requests, text=self.autoremovals_data)
+        self.run_task()
+        self.assertEqual(1, self.dummy_package.action_items.count())
+
+        autoremovals_data = """
+        dummy-package3:
+            bugs:
+            - '1234567'
+            removal_date: 2014-08-22 12:21:00
+        """
+        set_mock_response(mock_requests, text=autoremovals_data)
+
+        self.run_task()
+        self.assertEqual(0, self.dummy_package.action_items.count())
