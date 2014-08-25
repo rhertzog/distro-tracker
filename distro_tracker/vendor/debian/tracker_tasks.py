@@ -2085,9 +2085,13 @@ class UpdateDebciStatusTask(BaseTask):
                 severity=ActionItem.SEVERITY_HIGH)
 
         package_name = debci_status.get('package')
+        if package_name[:3] == 'lib':
+            log_dir = package_name[:4]
+        else:
+            log_dir = package_name[:1]
         url = 'http://ci.debian.net/#package/' + package_name
         log = 'http://ci.debian.net/data/packages/unstable/amd64/' + \
-            package_name[:1] + "/" + package_name + '/latest-autopkgtest/log'
+            log_dir + "/" + package_name + '/latest-autopkgtest/log'
         debci_action_item.short_description = self.ITEM_DESCRIPTION.format(
             debci_url=url,
             log_url=log)

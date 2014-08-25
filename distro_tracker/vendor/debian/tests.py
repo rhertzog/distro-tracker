@@ -4711,6 +4711,36 @@ class UpdateDebciStatusTaskTest(TestCase):
 
         self.assertEqual(ActionItem.objects.count(), 0)
 
+    def test_lib_package_link(self, mock_requests):
+        """
+        Tests that links to lib packages' log files are correct.
+        """
+        libpackage = SourcePackageName.objects.create(name='libpackage')
+        json_data = """
+            [{
+                "run_id": "20140705_143518",
+                "package": "libpackage",
+                "version": "3.0-3",
+                "date": "2014-07-05 17:33:08",
+                "status": "fail",
+                "blame": [ ],
+                "previous_status": "fail",
+                "duration_seconds": "222",
+                "duration_human": "0h 3m 42s",
+                "message": "Tests failed"
+            }]
+        """
+        set_mock_response(mock_requests, text=json_data)
+
+        self.run_task()
+
+        action_item = libpackage.action_items.all()[0]
+        action_item_log_url = action_item.extra_data['log']
+        log_url = "http://ci.debian.net/data/packages/unstable/amd64/libp/" + \
+            "libpackage/latest-autopkgtest/log"
+
+        self.assertEqual(action_item_log_url, log_url)
+
 
 @mock.patch('distro_tracker.core.utils.http.requests')
 class UpdateAutoRemovalsStatsTaskTest(TestCase):
