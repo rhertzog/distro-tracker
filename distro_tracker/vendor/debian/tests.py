@@ -67,6 +67,8 @@ from distro_tracker.vendor.debian.tracker_tasks import UpdateDebciStatusTask
 from distro_tracker.vendor.debian.tracker_tasks import UpdateDebianDuckTask
 from distro_tracker.vendor.debian.tracker_tasks \
     import UpdateAutoRemovalsStatsTask
+from distro_tracker.vendor.debian.tracker_tasks \
+    import UpdatePackageScreenshotsTask
 from distro_tracker.vendor.debian.models import DebianContributor
 from distro_tracker.vendor.debian.models import UbuntuPackage
 from distro_tracker.vendor.debian.tracker_tasks import UpdateLintianStatsTask
@@ -2669,6 +2671,52 @@ class DebtagsLinkTest(TestCase):
         self.assertNotIn('edit tags', response_content)
 
 
+class ScreenshotsLinkTest(TestCase):
+    """
+    Tests that the screenshots link is added to source package pages.
+    """
+    def setUp(self):
+        self.package_name = SourcePackageName.objects.create(name='dummy')
+        self.package = SourcePackage.objects.create(
+            source_package_name=self.package_name,
+            version='1.0.0')
+        PackageExtractedInfo.objects.create(
+            package=self.package.source_package_name,
+            key='screenshots',
+            value={'screenshots': 'true'}
+        )
+
+    def get_package_page_response(self, package_name):
+        package_page_url = reverse('dtracker-package-page', kwargs={
+            'package_name': package_name,
+        })
+        return self.client.get(package_page_url)
+
+    def test_source_package_with_screenshot(self):
+        response = self.get_package_page_response(self.package.name)
+
+        response_content = response.content.decode('utf8')
+        self.assertIn('screenshots', response_content)
+
+    def test_source_package_without_screenshot(self):
+        package_name = SourcePackageName.objects.create(name='other')
+        package = SourcePackage.objects.create(
+            source_package_name=package_name,
+            version='1.0.0')
+        response = self.get_package_page_response(package.name)
+
+        response_content = response.content.decode('utf8')
+        self.assertNotIn('screenshots', response_content)
+
+    def test_pseudo_package(self):
+        package = PseudoPackageName.objects.create(name='somepackage')
+
+        response = self.get_package_page_response(package.name)
+
+        response_content = response.content.decode('utf-8')
+        self.assertNotIn('screenshots', response_content)
+
+
 class UpdatePiupartsTaskTests(TestCase):
     suites = []
 
@@ -4974,3 +5022,130 @@ class UpdateAutoRemovalsStatsTaskTest(TestCase):
 
         self.run_task()
         self.assertEqual(0, self.dummy_package.action_items.count())
+
+
+@mock.patch('distro_tracker.core.utils.http.requests')
+class UpdatePackageScreenshotsTaskTest(TestCase):
+    """
+    Tests for the:class:`distro_tracker.vendor.debian.tracker_tasks.
+    UpdatePackageScreenshotsTask` task.
+    """
+    def setUp(self):
+        self.dummy_package = SourcePackageName.objects.create(name='dummy')
+        self.json_data = """{
+            "packages": [{
+                "maintainer": "Jane Doe",
+                "name": "dummy",
+                "url": "http://screenshots.debian.net/package/dummy",
+                "section": "universe/games",
+                "maintainer_email": "jane@example.com",
+                "homepage": "http://example.com/packages/dummy",
+                "description": "a game that you can play"
+            }]}
+        """
+        PackageExtractedInfo.objects.create(
+            package=self.dummy_package,
+            key='general',
+            value={
+                'name': 'dummy',
+                'maintainer': {
+                    'email': 'jane@example.com',
+                }
+            }
+        )
+        self.other_json_data = """{
+            "packages": [{
+                "maintainer": "John Doe",
+                "name": "other",
+                "url": "http://screenshots.debian.net/package/other",
+                "section": "universe/games",
+                "maintainer_email": "john@example.com",
+                "homepage": "http://example.com/packages/other",
+                "description": "yet another game that you can play"
+            }]}
+        """
+
+    def run_task(self):
+        """
+        Runs the debci status update task.
+        """
+        task = UpdatePackageScreenshotsTask()
+        task.execute()
+
+    def test_extractedinfo_item_for_without_screenshot(self, mock_requests):
+        """
+        Tests that packages without screenshots don't claim to have them.
+        """
+        set_mock_response(mock_requests, text=self.json_data)
+        other_package = SourcePackageName.objects.create(name='other-package')
+
+        self.run_task()
+
+        with self.assertRaises(PackageExtractedInfo.DoesNotExist):
+            other_package.packageextractedinfo_set.get(key='screenshots')
+
+    def test_no_extractedinfo_for_unknown_package(self, mock_requests):
+        """
+        Tests that UpdatePackageScreenshotsTask doesn't fail with an unknown
+        package.
+        """
+        data = """{
+            "packages": [{
+                "maintainer": "John Doe",
+                "name": "other",
+                "url": "http://screenshots.debian.net/package/other",
+                "section": "universe/games",
+                "maintainer_email": "john@example.com",
+                "homepage": "http://example.com/packages/other",
+                "description": "yet another game that you can play"
+            }]}
+        """
+        set_mock_response(mock_requests, text=data)
+
+        self.run_task()
+
+        count = PackageExtractedInfo.objects.filter(key='screenshots').count()
+        self.assertEqual(0, count)
+
+    def test_extractedinfo_for_package_with_screenshots(self, mock_requests):
+        """
+        Tests that PackageExtractedInfo for a package with a screenshot is
+        correct.
+        """
+        set_mock_response(mock_requests, text=self.json_data)
+
+        self.run_task()
+
+        info = \
+            self.dummy_package.packageextractedinfo_set.get(key='screenshots')
+
+        self.assertEqual(info.value['screenshots'], 'true')
+
+    def test_extractedinfo_is_dropped_when_no_more_screenshot(self,
+                                                              mock_requests):
+        """
+        Tests that PackageExtractedInfo is dropped if screenshot goes away.
+        """
+        set_mock_response(mock_requests, text=self.json_data)
+        self.run_task()
+
+        set_mock_response(mock_requests, text=self.other_json_data)
+        self.run_task()
+
+        with self.assertRaises(PackageExtractedInfo.DoesNotExist):
+            self.dummy_package.packageextractedinfo_set.get(key='screenshots')
+
+    def test_other_extractedinfo_keys_not_dropped(self, mock_requests):
+        """
+        Ensure that other PackageExtractedInfo keys are not dropped when
+        deleting the screenshot key.
+        """
+        set_mock_response(mock_requests, text=self.json_data)
+        self.run_task()
+
+        set_mock_response(mock_requests, text=self.other_json_data)
+        self.run_task()
+
+        info = self.dummy_package.packageextractedinfo_set.get(key='general')
+
+        self.assertEqual(info.value['name'], 'dummy')

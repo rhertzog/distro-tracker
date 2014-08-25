@@ -2215,3 +2215,60 @@ class UpdateAutoRemovalsStatsTask(BaseTask):
 
         for package in packages:
             self.update_action_item(package, autoremovals_stats[package.name])
+
+
+class UpdatePackageScreenshotsTask(BaseTask):
+    """
+    Check if a screenshot exists on screenshots.debian.net, and add a
+    key to PackageExtractedInfo if it does.
+    """
+    EXTRACTED_INFO_KEY = 'screenshots'
+
+    def __init__(self, force_update=False, *args, **kwargs):
+        super(UpdatePackageScreenshotsTask, self).__init__(*args, **kwargs)
+        self.force_update = force_update
+
+    def set_parameters(self, parameters):
+        if 'force_update' in parameters:
+            self.force_update = parameters['force_update']
+
+    def _get_screenshots(self):
+        url = 'https://screenshots.debian.net/json/packages'
+        cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
+        response, updated = cache.update(url, force=self.force_update)
+        response.raise_for_status()
+        if not updated:
+            return
+
+        data = json.loads(response.text)
+        return data
+
+    def execute(self):
+        content = self._get_screenshots()
+
+        packages_with_screenshots = []
+        for item in content['packages']:
+            try:
+                package = SourcePackageName.objects.get(name=item['name'])
+                packages_with_screenshots.append(package)
+            except SourcePackageName.DoesNotExist:
+                pass
+
+        with transaction.atomic():
+            PackageExtractedInfo.objects.filter(key='screenshots').delete()
+
+            extracted_info = []
+            for package in packages_with_screenshots:
+                try:
+                    screenshot_info = package.packageextractedinfo_set.get(
+                        key=self.EXTRACTED_INFO_KEY)
+                    screenshot_info.value['screenshots'] = 'true'
+                except PackageExtractedInfo.DoesNotExist:
+                    screenshot_info = PackageExtractedInfo(
+                        key=self.EXTRACTED_INFO_KEY,
+                        package=package,
+                        value={'screenshots': 'true'})
+
+                extracted_info.append(screenshot_info)
+
+            PackageExtractedInfo.objects.bulk_create(extracted_info)

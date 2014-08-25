@@ -172,6 +172,31 @@ class DebtagsLink(LinksPanel.ItemProvider):
         ]
 
 
+class ScreenshotsLink(LinksPanel.ItemProvider):
+    """
+    Add a link to screenshots.debian.net
+    """
+    SOURCES_URL_TEMPLATE = \
+        'http://screenshots.debian.net/package/{package}'
+
+    def get_panel_items(self):
+        if not isinstance(self.package, SourcePackageName):
+            return
+        try:
+            infos = self.package.packageextractedinfo_set.get(key='screenshots')
+        except PackageExtractedInfo.DoesNotExist:
+            return
+        if infos.value['screenshots'] == 'true':
+            return [
+                LinksPanel.SimpleLinkItem(
+                    'screenshots',
+                    self.SOURCES_URL_TEMPLATE.format(package=self.package.name)
+                )
+            ]
+        else:
+            return
+
+
 class TransitionsPanel(BasePanel):
     template_name = 'debian/transitions-panel.html'
     panel_importance = 2
