@@ -30,7 +30,6 @@ from distro_tracker.accounts.models import UserEmail
 from distro_tracker.test.utils import make_temp_directory
 from distro_tracker.test.utils import set_mock_response
 from distro_tracker.core.utils.email_messages import message_from_bytes
-from distro_tracker.core.utils.soup import soup
 from distro_tracker.core.models import ActionItem, ActionItemType
 from distro_tracker.core.models import News
 from distro_tracker.core.models import Keyword
@@ -76,6 +75,7 @@ from distro_tracker.vendor.debian.management.commands.tracker_import_old_tags_du
 from distro_tracker.mail.mail_news import process
 
 from email.message import Message
+from bs4 import BeautifulSoup as soup
 
 import os
 import yaml

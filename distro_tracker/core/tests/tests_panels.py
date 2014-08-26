@@ -19,7 +19,7 @@ from django.core.urlresolvers import reverse
 from distro_tracker.core.models import SourcePackageName
 from distro_tracker.core.models import SourcePackage
 from distro_tracker.core.panels import VersionedLinks
-from distro_tracker.core.utils.soup import soup
+from bs4 import BeautifulSoup as soup
 
 
 class VersionedLinksPanelTests(TestCase):
