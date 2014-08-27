@@ -9,7 +9,6 @@ Refactoring:
 ------------
 * Create a generic task downloading data from an URL and transforming it
   into action items.
-* Cleanup the code base to pass the flake8 test.
 
 Misc possible enhancements:
 ---------------------------
