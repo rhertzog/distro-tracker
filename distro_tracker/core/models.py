@@ -655,7 +655,7 @@ class Subscription(models.Model):
         self.keywords = Subscription.KeywordsAdapter(self)
 
     def __str__(self):
-        return str(self.user_email) + ' ' + str(self.package)
+        return str(self.email_settings.user_email) + ' ' + str(self.package)
 
 
 from jsonfield import JSONField
