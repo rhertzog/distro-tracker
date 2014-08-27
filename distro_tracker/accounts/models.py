@@ -41,7 +41,7 @@ class User(EmailAccountsUser):
         from distro_tracker.core.models import PackageName
         if not isinstance(package, PackageName):
             package = PackageName.objects.get(name=package)
-        qs = package.subscriptions.filter(pk__in=self.emails.all())
+        qs = package.subscriptions.filter(user_email__in=self.emails.all())
         return qs.exists()
 
     def unsubscribe_all(self, email=None):
