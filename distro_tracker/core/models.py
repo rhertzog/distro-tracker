@@ -30,6 +30,7 @@ from distro_tracker.core.utils.plugins import PluginRegistry
 from distro_tracker.core.utils.email_messages import decode_header
 from distro_tracker.core.utils.email_messages import get_decoded_message_payload
 from distro_tracker.core.utils.email_messages import message_from_bytes
+from distro_tracker.core.utils.packages import package_hashdir
 
 from debian.debian_support import AptPkgVersion
 from debian import changelog as debian_changelog
@@ -1256,9 +1257,7 @@ class ExtractedSourceFile(models.Model):
     extracted_file = models.FileField(
         upload_to=lambda instance, filename: '/'.join((
             'packages',
-            (instance.source_package.name[0]
-             if not instance.source_package.name.startswith('lib') else
-             instance.source_package.name[:4]),
+            package_hashdir(instance.source_package.name),
             instance.source_package.name,
             os.path.basename(filename) + '-' + instance.source_package.version
         )))

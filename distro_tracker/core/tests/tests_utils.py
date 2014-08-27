@@ -32,6 +32,7 @@ from distro_tracker.core.utils import verify_signature
 from distro_tracker.core.utils.packages import AptCache
 from distro_tracker.core.utils.packages import extract_vcs_information
 from distro_tracker.core.utils.packages import extract_dsc_file_name
+from distro_tracker.core.utils.packages import package_hashdir
 from distro_tracker.core.utils.datastructures import DAG, InvalidDAGException
 from distro_tracker.core.utils.email_messages import CustomEmailMessage
 from distro_tracker.core.utils.email_messages import decode_header
@@ -669,6 +670,15 @@ class PackageUtilsTests(SimpleTestCase):
             'have': 'anything to do',
             'with': 'vcs'
         }))
+
+    def test_package_hash_dir(self):
+        self.assertEqual(package_hashdir("dpkg"), "d")
+        self.assertEqual(package_hashdir("lua"), "l")
+        self.assertEqual(package_hashdir("lib"), "lib")
+        self.assertEqual(package_hashdir("libc6"), "libc")
+        self.assertEqual(package_hashdir("lib+fancy"), "lib+")
+        self.assertEqual(package_hashdir(""), "")
+        self.assertEqual(package_hashdir(None), None)
 
     def test_extract_dsc_file_name(self):
 

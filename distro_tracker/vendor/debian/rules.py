@@ -24,6 +24,7 @@ from distro_tracker.mail.dispatch import get_keyword_from_address
 from distro_tracker.core.utils import get_decoded_message_payload
 from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.utils.http import HttpCache
+from distro_tracker.core.utils.packages import package_hashdir
 from .models import DebianContributor
 from distro_tracker.vendor.common import PluginProcessingError
 from distro_tracker.vendor.debian.tracker_tasks import UpdateNewQueuePackages
@@ -555,16 +556,13 @@ def get_bug_panel_stats(package_name):
         'https://qa.debian.org/data/bts/graphs/'
         '{package_hash}/{package_name}.png'
     )
-    if package_name.startswith('lib'):
-        package_hash = package_name[:4]
-    else:
-        package_hash = package_name[0]
 
     # Final context variables which are available in the template
     return {
         'categories': categories,
         'graph_url': graph_url.format(
-            package_hash=package_hash, package_name=package_name),
+            package_hash=package_hashdir(package_name),
+            package_name=package_name),
     }
 
 

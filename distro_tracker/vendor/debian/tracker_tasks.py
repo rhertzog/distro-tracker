@@ -36,6 +36,7 @@ from distro_tracker.vendor.debian.models import PackageExcuses
 from distro_tracker.vendor.debian.models import UbuntuPackage
 from distro_tracker.core.utils.http import HttpCache
 from distro_tracker.core.utils.http import get_resource_content
+from distro_tracker.core.utils.packages import package_hashdir
 from .models import DebianContributor
 from distro_tracker import vendor
 
@@ -1726,12 +1727,6 @@ class UpdateDebianDuckTask(BaseTask):
         if 'force_update' in parameters:
             self.force_update = parameters['force_update']
 
-    @classmethod
-    def prefix(self, pname):
-        if pname.startswith("lib") and len(pname) > 3:
-            return pname[0:4]
-        return pname[0:1]
-
     def _get_duck_urls_content(self):
         """
         Gets the list of packages with URL issues from
@@ -1759,7 +1754,7 @@ class UpdateDebianDuckTask(BaseTask):
             )
 
         issues_link = self.DUCK_LINK + "/static/sp/" \
-            + self.prefix(package.name) + "/" + package.name + ".html"
+            + package_hashdir(package.name) + "/" + package.name + ".html"
         action_item.short_description = \
             self.ITEM_DESCRIPTION.format(issues_link=issues_link)
 

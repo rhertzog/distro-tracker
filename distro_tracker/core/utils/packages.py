@@ -18,14 +18,33 @@ from django.utils.encoding import force_bytes
 
 from debian import deb822
 from distro_tracker.core.utils import extract_tar_archive
-from distro_tracker.core.models import Repository
-from distro_tracker.core.models import Architecture
 
 import os
 import apt
 import shutil
 import apt_pkg
 import subprocess
+
+
+def package_hashdir(package_name):
+    """
+    Returns the name of the hash directory used to avoid having too
+    many entries in a single directory. It's usually the first letter
+    of the package except for lib* packages where it's the first 4
+    letters.
+
+    :param package_name: The package name.
+    :type package_name: str
+
+    :returns: Name of the hash directory.
+    :rtype: str
+    """
+    if package_name is None:
+        return None
+    if package_name.startswith('lib'):
+        return package_name[0:4]
+    else:
+        return package_name[0:1]
 
 
 def extract_vcs_information(stanza):
@@ -220,6 +239,8 @@ class AptCache(object):
         Updates the ``sources.list`` file used to list repositories for which
         package information should be cached.
         """
+        from distro_tracker.core.models import Repository
+
         with open(self.sources_list_path, 'w') as sources_list:
             for repository in Repository.objects.all():
                 sources_list.write(repository.sources_list_entry + '\n')
@@ -233,6 +254,8 @@ class AptCache(object):
         be considered in package updates based on architectures that the
         repositories support.
         """
+        from distro_tracker.core.models import Architecture
+
         with open(self.conf_file_path, 'w') as conf_file:
             conf_file.write('APT::Architectures { ')
             for architecture in Architecture.objects.all():
@@ -281,6 +304,8 @@ class AptCache(object):
 
         :rtype: :class:`Repository <distro_tracker.core.models.Repository>`
         """
+        from distro_tracker.core.models import Repository
+
         sources_list = apt_pkg.SourceList()
         sources_list.read_main_list()
         component_url = None
