@@ -50,6 +50,8 @@ class SeleniumTestCase(LiveServerTestCase):
         fp.set_preference('network.proxy.type', 0)
         self.browser = webdriver.Firefox(firefox_profile=fp)
         self.browser.implicitly_wait(3)
+        self.browser.set_page_load_timeout(3)
+        self.browser.set_script_timeout(3)
 
     def tearDown(self):
         self.browser.close()
