@@ -611,6 +611,42 @@ def get_binary_package_bug_stats(binary_name):
     ]
 
 
+def _create_news_from_dak_email(message):
+    x_dak = message['X-DAK']
+    katie = x_dak.split()[1]
+
+    if katie != 'rm':
+        # Only rm mails are processed.
+        return
+
+    body = get_decoded_message_payload(message)
+    if not body:
+        # The content cannot be decoded.
+        return
+    # Find all lines giving information about removed source packages
+    re_rmline = re.compile(r"^\s*(\S+)\s*\|\s*(\S+)\s*\|.*source", re.M)
+    source_removals = re_rmline.findall(body)
+    # Find the suite from which the packages have been removed
+    suite = re.search(r"have been removed from (\S+):", body).group(1)
+    news_from = message.get('Sender', '')
+    # Add a news item for each source removal.
+    created_news = []
+    for removal in source_removals:
+        package_name, version = removal
+        package = get_or_none(SourcePackageName, name=package_name)
+        if not package:
+            # This package is not tracked
+            continue
+        title = "Removed {ver} from {suite}".format(ver=version,
+                                                    suite=suite)
+        created_news.append(EmailNews.objects.create_email_news(
+            title=title,
+            message=message,
+            package=package,
+            created_by=news_from))
+    return created_news
+
+
 def create_news_from_email_message(message):
     """
     In Debian's implementation, this function creates news when the received
@@ -632,39 +668,7 @@ def create_news_from_email_message(message):
             return [EmailNews.objects.create_email_news(message, package)]
     # DAK rm?
     elif 'X-DAK' in message:
-        x_dak = message['X-DAK']
-        katie = x_dak.split()[1]
-
-        if katie != 'rm':
-            # Only rm mails are processed.
-            return
-
-        body = get_decoded_message_payload(message)
-        if not body:
-            # The content cannot be decoded.
-            return
-        # Find all lines giving information about removed source packages
-        re_rmline = re.compile(r"^\s*(\S+)\s*\|\s*(\S+)\s*\|.*source", re.M)
-        source_removals = re_rmline.findall(body)
-        # Find the suite from which the packages have been removed
-        suite = re.search(r"have been removed from (\S+):", body).group(1)
-        news_from = message.get('Sender', '')
-        # Add a news item for each source removal.
-        created_news = []
-        for removal in source_removals:
-            package_name, version = removal
-            package = get_or_none(SourcePackageName, name=package_name)
-            if not package:
-                # This package is not tracked
-                continue
-            title = "Removed {ver} from {suite}".format(ver=version,
-                                                        suite=suite)
-            created_news.append(EmailNews.objects.create_email_news(
-                title=title,
-                message=message,
-                package=package,
-                created_by=news_from))
-        return created_news
+        return _create_news_from_dak_email(message)
     # Testing Watch?
     elif 'X-Testing-Watch-Package' in message:
         package_name = message['X-Testing-Watch-Package']

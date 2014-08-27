@@ -53,6 +53,61 @@ class GenerateNewsFromRepositoryUpdates(BaseTask):
 
         return content
 
+    def _process_package_event(self, package, event, repository,
+                               new_source_version):
+        version = event.arguments['version']
+        title, content = None, None
+        if event.name == 'new-source-package-version-in-repository':
+            if new_source_version:
+                title = "Accepted {pkg} version {ver} to {repo}"
+                content = self.generate_accepted_news_content(
+                    package, version)
+            else:
+                title = "{pkg} version {ver} MIGRATED to {repo}"
+        elif event.name == 'lost-source-package-version-in-repository':
+            # Check if the repository still has some version of the
+            # source package. If not, a news item needs to be added
+            if self._package_removed_processed:
+                # Create only one package removed item per
+                # repository, package pair
+                return
+            self._package_removed_processed = True
+            if not repository.has_source_package_name(package.name):
+                title = "{pkg} REMOVED from {repo}"
+
+        if title is not None:
+            News.objects.create(
+                package=package,
+                title=title.format(
+                    pkg=package.name,
+                    repo=event.arguments['repository'],
+                    ver=version
+                ),
+                _db_content=content
+            )
+
+    def _process_package_events(self, package, events, new_source_versions):
+        # Group all the events for this package by repository
+        repository_events = {}
+        for event in events:
+            if event.name == 'new-source-package-version':
+                continue
+            repository = event.arguments['repository']
+            repository_events.setdefault(repository, [])
+            repository_events[repository].append(event)
+
+        # Process each event for each repository.
+        for repository_name, events in repository_events.items():
+            self._package_removed_processed = False
+            repository = Repository.objects.get(name=repository_name)
+            for event in events:
+                # First time seeing this version?
+                new_source_version = \
+                    event.arguments['version'] in \
+                    new_source_versions[package.name]
+                self._process_package_event(package, event, repository,
+                                            new_source_version)
+
     def execute(self):
         package_changes = {}
         new_source_versions = {}
@@ -74,55 +129,5 @@ class GenerateNewsFromRepositoryUpdates(BaseTask):
             name__in=package_changes.keys())
 
         for package in packages:
-            package_name = package.name
-            events = package_changes[package_name]
-
-            # Group all the events for this package by repository
-            repository_events = {}
-            for event in events:
-                if event.name == 'new-source-package-version':
-                    continue
-                repository = event.arguments['repository']
-                repository_events.setdefault(repository, [])
-                repository_events[repository].append(event)
-
-            # Process each event for each repository.
-            for repository_name, events in repository_events.items():
-                package_removed_processed = False
-                for event in events:
-                    # First time seeing this version?
-                    version = event.arguments['version']
-                    new_source_version = \
-                        version in new_source_versions[package_name]
-                    title, content = None, None
-                    if event.name == 'new-source-package-version-in-repository':
-                        if new_source_version:
-                            title = "Accepted {pkg} version {ver} to {repo}"
-                            content = self.generate_accepted_news_content(
-                                package, version)
-                        else:
-                            title = "{pkg} version {ver} MIGRATED to {repo}"
-                    elif event.name == \
-                            'lost-source-package-version-in-repository':
-                        # Check if the repository still has some version of the
-                        # source package. If not, a news item needs to be added
-                        if package_removed_processed:
-                            # Create only one package removed item per
-                            # repository, package pair
-                            continue
-                        package_removed_processed = True
-                        repository = \
-                            Repository.objects.get(name=repository_name)
-                        if not repository.has_source_package_name(package.name):
-                            title = "{pkg} REMOVED from {repo}"
-
-                    if title is not None:
-                        News.objects.create(
-                            package=package,
-                            title=title.format(
-                                pkg=package_name,
-                                repo=event.arguments['repository'],
-                                ver=version
-                            ),
-                            _db_content=content
-                        )
+            events = package_changes[package.name]
+            self._process_package_events(package, events, new_source_versions)

@@ -810,6 +810,26 @@ class UpdateExcusesTask(BaseTask):
 
         return str(html)
 
+    def _skip_excuses_item(self, item_text):
+        if not item_text:
+            return True
+        # We ignore these excuses
+        if "Section" in item_text or "Maintainer" in item_text:
+            return True
+        return False
+
+    def _extract_problems_in_excuses_item(self, subline, package, problematic):
+        if 'days old (needed' in subline:
+            words = subline.split()
+            age, limit = words[0], words[4]
+            if age != limit:
+                # It is problematic only when the age is strictly
+                # greater than the limit.
+                problematic[package] = {
+                    'age': age,
+                    'limit': limit,
+                }
+
     def _get_excuses_and_problems(self, content_lines):
         """
         Gets the excuses for each package from the given iterator of lines
@@ -863,26 +883,12 @@ class UpdateExcusesTask(BaseTask):
 
             line = line.strip()
             for subline in line.split("<li>"):
-                if not subline:
-                    continue
-                # We ignore these excuses
-                if 'Section:' in subline:
-                    re.sub(r'Section: *(.*)', '\\1', subline)
-                    continue
-                if 'Maintainer:' in subline:
+                if self._skip_excuses_item(subline):
                     continue
 
                 # Check if there is a problem for the package.
-                if 'days old (needed' in subline:
-                    words = subline.split()
-                    age, limit = words[0], words[4]
-                    if age != limit:
-                        # It is problematic only when the age is strictly
-                        # greater than the limit.
-                        problematic[package] = {
-                            'age': age,
-                            'limit': limit,
-                        }
+                self._extract_problems_in_excuses_item(subline, package,
+                                                       problematic)
 
                 # Extract the rest of the excuses
                 # If it contains a link to an anchor convert it to a link to a
@@ -1501,10 +1507,9 @@ class UpdateReleaseGoalsTask(BaseTask):
         release_goals_content, bug_list_content = content
 
         release_goals = yaml.safe_load(release_goals_content)
+        release_goals_list = []
         if release_goals:
             release_goals_list = release_goals['release-goals']
-        else:
-            release_goals_list = []
         # Map (user, tag) tuples to the release goals.
         # This is used to match the bugs with the correct release goal.
         release_goals = {}
@@ -1514,13 +1519,10 @@ class UpdateReleaseGoalsTask(BaseTask):
                 for tag in goal['bugs']['usertags']:
                     release_goals[(user, tag)] = goal
 
-        bugs_processed = set()
         release_goal_stats = {}
         # Build a dict mapping package names to a list of bugs matched to a
         # release goal.
-        bug_list = yaml.safe_load(bug_list_content)
-        if not bug_list:
-            bug_list = []
+        bug_list = yaml.safe_load(bug_list_content) or []
         for bug in bug_list:
             user, tag = bug['email'], bug['tag']
             if (user, tag) not in release_goals:
@@ -1528,9 +1530,6 @@ class UpdateReleaseGoalsTask(BaseTask):
                 continue
             release_goal = release_goals[(user, tag)]
             if release_goal['state'] != 'accepted':
-                continue
-            if bug['id'] in bugs_processed:
-                # Skip any duplicate bugs
                 continue
             package = bug['source']
             release_goal_stats.setdefault(package, [])

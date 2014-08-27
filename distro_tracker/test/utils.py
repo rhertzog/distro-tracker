@@ -55,12 +55,9 @@ def create_source_package(arguments):
         name = arguments['name']
         kwargs['source_package_name'] = (
             SourcePackageName.objects.get_or_create(name=name)[0])
-    if 'version' in arguments:
-        kwargs['version'] = arguments['version']
-    if 'directory' in arguments:
-        kwargs['directory'] = arguments['directory']
-    if 'dsc_file_name' in arguments:
-        kwargs['dsc_file_name'] = arguments['dsc_file_name']
+    for arg in ('version', 'directory', 'dsc_file_name'):
+        if arg in arguments:
+            kwargs[arg] = arguments[arg]
 
     src_pkg = SourcePackage.objects.create(**kwargs)
 

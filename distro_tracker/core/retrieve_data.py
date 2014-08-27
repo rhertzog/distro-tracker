@@ -195,6 +195,9 @@ class UpdateRepositoriesTask(PackageUpdateTask):
         'lost-binary-package',
     )
 
+    SOURCE_DEPENDENCY_TYPES = ('Build-Depends', 'Build-Depends-Indep')
+    BINARY_DEPENDENCY_TYPES = ('Depends', 'Recommends', 'Suggests')
+
     def __init__(self, *args, **kwargs):
         super(UpdateRepositoriesTask, self).__init__(*args, **kwargs)
         self._all_packages = []
@@ -677,84 +680,9 @@ class UpdateRepositoriesTask(PackageUpdateTask):
 
         return binary_dependencies
 
-    def update_dependencies(self):
-        """
-        Updates source-to-source package dependencies stemming from
-        build bependencies and their binary packages' dependencies.
-        """
-        # Build the dependency mapping
-        try:
-            default_repository = Repository.objects.get(default=True)
-        except Repository.DoesNotExist:
-            self.log("No default repository, no dependencies created.",
-                     level=logging.WARNING)
-            return
-
-        self.log("Parsing files to discover dependencies")
-        sources_files = self.apt_cache.get_sources_files_for_repository(
-            default_repository)
-        packages_files = self.apt_cache.get_packages_files_for_repository(
-            default_repository)
-
-        bin_to_src = {}
-        source_to_binary_deps = {}
-
-        # First builds a list of binary dependencies of all source packages
-        # based on the Sources file.
-        source_dependency_types = ('Build-Depends', 'Build-Depends-Indep')
-        for sources_file in sources_files:
-            with open(sources_file) as sources_fd:
-                for stanza in deb822.Sources.iter_paragraphs(sources_fd):
-                    source_name = stanza['package']
-
-                    for binary in itertools.chain(*stanza.relations['binary']):
-                        sources_set = bin_to_src.setdefault(binary['name'],
-                                                            set())
-                        sources_set.add(source_name)
-
-                    dependencies = source_to_binary_deps.setdefault(source_name,
-                                                                    [])
-                    dependencies.extend(self._update_dependencies_for_source(
-                        stanza,
-                        source_dependency_types))
-
-        # Then a list of binary dependencies based on the Packages file.
-        binary_dependency_types = (
-            'Depends',
-            'Recommends',
-            'Suggests',
-        )
-        for packages_file in packages_files:
-            with open(packages_file) as packages_fd:
-                for stanza in deb822.Packages.iter_paragraphs(packages_fd):
-                    binary_name = stanza['package']
-                    source_name, source_version = \
-                        self.get_source_for_binary(stanza)
-
-                    sources_set = bin_to_src.setdefault(binary_name, set())
-                    sources_set.add(source_name)
-
-                    new_dependencies = self._update_dependencies_for_source(
-                        stanza,
-                        binary_dependency_types)
-                    for dependency in new_dependencies:
-                        dependency['source_binary'] = binary_name
-                    dependencies = source_to_binary_deps.setdefault(source_name,
-                                                                    [])
-                    dependencies.extend(new_dependencies)
-
-        # The binary packages are matched with their source packages and each
-        # source to source dependency created.
-        all_sources = {
-            source.name: source
-            for source in SourcePackageName.objects.all()
-        }
-
-        self.log("Creating in-memory SourcePackageDeps")
-        # Keeps a list of SourcePackageDeps instances which are to be bulk
-        # created in the end.
+    def _process_source_to_binary_deps(self, source_to_binary_deps, all_sources,
+                                       bin_to_src, default_repository):
         dependency_instances = []
-
         for source_name, dependencies in source_to_binary_deps.items():
             if source_name not in all_sources:
                 continue
@@ -782,10 +710,10 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                 if dependency_name in all_sources:
                     build_dep = any(dependency_type in details
                                     for dependency_type
-                                    in source_dependency_types)
+                                    in self.SOURCE_DEPENDENCY_TYPES)
                     binary_dep = any(dependency_type in details
                                      for dependency_type
-                                     in binary_dependency_types)
+                                     in self.BINARY_DEPENDENCY_TYPES)
                     dependency_instances.append(
                         SourcePackageDeps(
                             source=all_sources[source_name],
@@ -794,6 +722,83 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                             binary_dep=binary_dep,
                             repository=default_repository,
                             details=details))
+
+        return dependency_instances
+
+    def update_dependencies(self):
+        """
+        Updates source-to-source package dependencies stemming from
+        build bependencies and their binary packages' dependencies.
+        """
+        # Build the dependency mapping
+        try:
+            default_repository = Repository.objects.get(default=True)
+        except Repository.DoesNotExist:
+            self.log("No default repository, no dependencies created.",
+                     level=logging.WARNING)
+            return
+
+        self.log("Parsing files to discover dependencies")
+        sources_files = self.apt_cache.get_sources_files_for_repository(
+            default_repository)
+        packages_files = self.apt_cache.get_packages_files_for_repository(
+            default_repository)
+
+        bin_to_src = {}
+        source_to_binary_deps = {}
+
+        # First builds a list of binary dependencies of all source packages
+        # based on the Sources file.
+        for sources_file in sources_files:
+            with open(sources_file) as sources_fd:
+                for stanza in deb822.Sources.iter_paragraphs(sources_fd):
+                    source_name = stanza['package']
+
+                    for binary in itertools.chain(*stanza.relations['binary']):
+                        sources_set = bin_to_src.setdefault(binary['name'],
+                                                            set())
+                        sources_set.add(source_name)
+
+                    dependencies = source_to_binary_deps.setdefault(source_name,
+                                                                    [])
+                    dependencies.extend(self._update_dependencies_for_source(
+                        stanza,
+                        self.SOURCE_DEPENDENCY_TYPES))
+
+        # Then a list of binary dependencies based on the Packages file.
+        for packages_file in packages_files:
+            with open(packages_file) as packages_fd:
+                for stanza in deb822.Packages.iter_paragraphs(packages_fd):
+                    binary_name = stanza['package']
+                    source_name, source_version = \
+                        self.get_source_for_binary(stanza)
+
+                    sources_set = bin_to_src.setdefault(binary_name, set())
+                    sources_set.add(source_name)
+
+                    new_dependencies = self._update_dependencies_for_source(
+                        stanza,
+                        self.BINARY_DEPENDENCY_TYPES)
+                    for dependency in new_dependencies:
+                        dependency['source_binary'] = binary_name
+                    dependencies = source_to_binary_deps.setdefault(source_name,
+                                                                    [])
+                    dependencies.extend(new_dependencies)
+
+        # The binary packages are matched with their source packages and each
+        # source to source dependency created.
+        all_sources = {
+            source.name: source
+            for source in SourcePackageName.objects.all()
+        }
+
+        self.log("Creating in-memory SourcePackageDeps")
+        # Keeps a list of SourcePackageDeps instances which are to be bulk
+        # created in the end.
+        dependency_instances = \
+            self._process_source_to_binary_deps(source_to_binary_deps,
+                                                all_sources, bin_to_src,
+                                                default_repository)
 
         # Create all the model instances in one transaction
         self.log("Commiting SourcePackagesDeps to database")
