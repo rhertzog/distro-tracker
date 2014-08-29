@@ -1615,3 +1615,55 @@ class TeamTests(TestCase):
         self.assertTrue(membership.is_muted(self.package_name))
         # The other package isn't
         self.assertFalse(membership.is_muted(package))
+
+
+class SourcePackageNameTests(TestCase):
+    """
+    Tests for the :class:`distro_tracker.core.models.SourcePackageName` model.
+    """
+    def setUp(self):
+        self.package = SourcePackageName.objects.create(name='dummy-package')
+        self.binary_package = BinaryPackageName.objects.create(
+            name='binary-package')
+        self.pseudo_package = \
+            PseudoPackageName.objects.create(name='pseudo-pkg')
+        self.src_pkg = SourcePackage.objects.create(
+            source_package_name=self.package, version='1.0.0')
+        self.bin_pkg = BinaryPackage.objects.create(
+            binary_package_name=self.binary_package,
+            source_package=self.src_pkg,
+            short_description='a useful package')
+        self.src_pkg.binary_packages = [self.binary_package]
+        self.src_pkg.save()
+        self.bin_pkg.save()
+
+    def test_get_short_description_with_single_binary(self):
+        self.assertEqual(self.package.short_description(), 'a useful package')
+
+    def test_get_short_description_with_multiple_binary(self):
+        """
+        When we have multiple binary packages, we want to pick the
+        package that has the same name as the source package.
+        """
+        binary_package, _ = BinaryPackageName.objects.get_or_create(
+            name='dummy-package')
+        BinaryPackage.objects.get_or_create(
+            binary_package_name=binary_package,
+            source_package=self.src_pkg,
+            short_description='another useful package')
+        self.src_pkg.binary_packages = [self.binary_package, binary_package]
+        self.src_pkg.save()
+
+        self.assertEqual(self.package.short_description(),
+                         'another useful package')
+
+    def test_get_short_description_with_no_source(self):
+        pkg = SourcePackageName.objects.create(name='some-package')
+
+        self.assertEqual(pkg.short_description(), '')
+
+    def test_get_short_description_with_source_and_no_binary(self):
+        pkg = SourcePackageName.objects.create(name='some-package')
+        SourcePackage.objects.create(source_package_name=pkg, version='1.0.0')
+
+        self.assertEqual(pkg.short_description(), '')

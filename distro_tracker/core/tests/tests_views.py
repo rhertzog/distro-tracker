@@ -16,9 +16,9 @@ Tests for the Distro Tracker core views.
 from __future__ import unicode_literals
 from distro_tracker.test import TestCase
 from django.test.utils import override_settings
-from distro_tracker.core.models import PackageName, BinaryPackageName
+from distro_tracker.core.models import BinaryPackage, BinaryPackageName
 from distro_tracker.core.models import SourcePackageName, SourcePackage
-from distro_tracker.core.models import PseudoPackageName
+from distro_tracker.core.models import PackageName, PseudoPackageName
 from distro_tracker.core.models import ActionItem, ActionItemType
 import json
 
@@ -38,10 +38,15 @@ class PackageViewTest(TestCase):
             name='binary-package')
         self.pseudo_package = \
             PseudoPackageName.objects.create(name='pseudo-pkg')
-        src_pkg = SourcePackage.objects.create(
+        self.src_pkg = SourcePackage.objects.create(
             source_package_name=self.package, version='1.0.0')
-        src_pkg.binary_packages = [self.binary_package]
-        src_pkg.save()
+        self.bin_pkg = BinaryPackage.objects.create(
+            binary_package_name=self.binary_package,
+            source_package=self.src_pkg,
+            short_description='a useful package')
+        self.src_pkg.binary_packages = [self.binary_package]
+        self.src_pkg.save()
+        self.bin_pkg.save()
 
     def get_package_url(self, package_name):
         """
@@ -163,6 +168,16 @@ class PackageViewTest(TestCase):
         url = '/{}'.format('no-exist')
         response = self.client.get(url, follow=True)
         self.assertEqual(404, response.status_code)
+
+    def test_short_description(self):
+        """
+        Tests that the short description is displayed.
+        """
+        url = self.get_package_url(self.package.name)
+        response = self.client.get(url)
+        response_content = response.content.decode('utf-8')
+
+        self.assertIn('a useful package', response_content)
 
 
 class PackageSearchViewTest(TestCase):

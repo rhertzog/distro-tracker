@@ -450,6 +450,29 @@ class SourcePackageName(PackageName):
         }
         return Repository.objects.filter(**kwargs).distinct()
 
+    def short_description(self):
+        """
+        Returns the most recent short description for a source package. If there
+        is a binary package whose name matches the source package, its
+        description will be used. If not, the short description for the first
+        binary package will be used.
+        """
+        desc = ''
+
+        if not self.main_version:
+            return desc
+
+        binary_packages = self.main_version.binarypackage_set.all()
+
+        for pkg in binary_packages:
+            if desc == '':
+                desc = pkg.short_description
+            if pkg.binary_package_name.name == self.name:
+                desc = pkg.short_description
+                break
+
+        return desc
+
 
 def get_web_package(package_name):
     """
