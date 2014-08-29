@@ -261,7 +261,7 @@ class AptCache(object):
             for architecture in Architecture.objects.all():
                 conf_file.write('"{arch}"; '.format(arch=architecture))
             conf_file.write('};\n')
-            conf_file.write('Dir "apt";\n')
+            conf_file.write('Dir "/";\n')
             conf_file.write('Dir::State::status "{status}";\n'.format(
                 status=os.path.join(self.cache_root_dir,
                                     'var/lib/dpkg/status')))
@@ -417,7 +417,7 @@ class AptCache(object):
 
         self.configure_cache()
 
-        cache = apt.cache.Cache(rootdir=self.cache_root_dir)
+        cache = apt.Cache(rootdir=self.cache_root_dir)
         progress = AptCache.AcquireProgress()
         cache.update(progress)
 
@@ -512,6 +512,7 @@ class AptCache(object):
         Returns a :class:`apt_pkg.SourceRecords` instance where the given
         source package is the current working record.
         """
+        apt.Cache(rootdir=self.cache_root_dir)  # must be pre-created
         source_records = apt_pkg.SourceRecords()
         source_records.restart()
         # Find the cached record matching this source package and version
