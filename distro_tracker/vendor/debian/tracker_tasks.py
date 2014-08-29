@@ -856,6 +856,8 @@ class UpdateExcusesTask(BaseTask):
         problematic = {}
         excuses = []
         for line in content_lines:
+            if isinstance(line, six.binary_type):
+                line = line.decode('utf-8')
             if '</ul>' in line:
                 # The inner list is closed -- all excuses for the package are
                 # processed and we're back to the top-level list.
