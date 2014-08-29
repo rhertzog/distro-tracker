@@ -417,9 +417,9 @@ class UpdatePackageBugStats(BaseTask):
             try:
                 bug_counts = [int(count) for count in bug_counts]
             except ValueError:
-                logger.exception(
+                logger.warning(
                     'Failed to parse bug information for {pkg}: {cnts}'.format(
-                        pkg=package_name, cnts=bug_counts))
+                        pkg=package_name, cnts=bug_counts), exc_info=1)
                 continue
 
             # Match the extracted counts with category names
