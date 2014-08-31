@@ -179,6 +179,16 @@ class PackageViewTest(TestCase):
 
         self.assertIn('a useful package', response_content)
 
+    def test_page_does_not_contain_None(self):
+        """
+        Ensure Python's None never ends up displayed on the web page.
+        """
+        url = self.get_package_url(self.package.name)
+        response = self.client.get(url)
+        response_content = response.content.decode('utf-8')
+
+        self.assertNotIn('None', response_content)
+
 
 class PackageSearchViewTest(TestCase):
     def setUp(self):
