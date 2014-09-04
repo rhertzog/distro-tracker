@@ -171,13 +171,10 @@ class AptCache(object):
             settings.DISTRO_TRACKER_CACHE_DIRECTORY,
             'apt-cache'
         )
-        # Create the cache directory if it didn't already exist
-        self._create_cache_directory()
-
         self.sources_list_path = os.path.join(
-            self.cache_root_dir,
-            'sources.list')
-        self.conf_file_path = os.path.join(self.cache_root_dir, 'apt.conf')
+            self.cache_root_dir, 'etc', 'sources.list')
+        self.conf_file_path = os.path.join(self.cache_root_dir,
+                                           'etc', 'apt.conf')
         os.environ['APT_CONFIG'] = self.conf_file_path
 
         self.sources = []
@@ -222,10 +219,6 @@ class AptCache(object):
 
         return total_size
 
-    def _create_cache_directory(self):
-        if not os.path.exists(self.cache_root_dir):
-            os.makedirs(self.cache_root_dir)
-
     def clear_cache(self):
         """
         Removes all cache information. This causes the next update to retrieve
@@ -240,6 +233,10 @@ class AptCache(object):
         package information should be cached.
         """
         from distro_tracker.core.models import Repository
+
+        directory = os.path.dirname(self.sources_list_path)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
 
         with open(self.sources_list_path, 'w') as sources_list:
             for repository in Repository.objects.all():
@@ -261,12 +258,10 @@ class AptCache(object):
             for architecture in Architecture.objects.all():
                 conf_file.write('"{arch}"; '.format(arch=architecture))
             conf_file.write('};\n')
-            conf_file.write('Dir "/";\n')
-            conf_file.write('Dir::State::status "{status}";\n'.format(
-                status=os.path.join(self.cache_root_dir,
-                                    'var/lib/dpkg/status')))
-            conf_file.write('Dir::Etc "{etc}";\n'.format(
-                etc=self.cache_root_dir))
+            conf_file.write('Dir "{}/";\n'.format(self.cache_root_dir))
+            conf_file.write('Dir::State "state/";\n')
+            conf_file.write('Dir::State::status "dpkg-status";\n')
+            conf_file.write('Dir::Etc "etc/";\n')
             conf_file.write('Dir::Etc::sourcelist "{src}";\n'.format(
                 src=self.sources_list_path))
             conf_file.write('Dir::Etc::Trusted "{src}";\n'.format(
@@ -280,7 +275,17 @@ class AptCache(object):
         """
         self.update_sources_list()
         self.update_apt_conf()
+        # Clean up the configuration we might have read during "import apt"
+        for root_key in apt_pkg.config.list():
+            apt_pkg.config.clear(root_key)
+        # Load the proper configuration
         apt_pkg.init()
+        # Ensure we have the required directories
+        for apt_dir in [apt_pkg.config.find_dir('Dir::State::lists'),
+                        apt_pkg.config.find_dir('Dir::Etc::sourceparts'),
+                        apt_pkg.config.find_dir('Dir::Cache::archives')]:
+            if not os.path.exists(apt_dir):
+                os.makedirs(apt_dir)
 
     def _index_file_full_path(self, file_name):
         """
