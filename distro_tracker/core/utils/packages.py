@@ -297,8 +297,7 @@ class AptCache(object):
         :rtype: string
         """
         return os.path.join(
-            self.cache_root_dir,
-            'var/lib/apt/lists',
+            apt_pkg.config.find_dir('Dir::State::lists'),
             file_name
         )
 
@@ -328,7 +327,7 @@ class AptCache(object):
         """
         Returns a list of all cached files.
         """
-        lists_directory = os.path.join(self.cache_root_dir, 'var/lib/apt/lists')
+        lists_directory = apt_pkg.config.find_dir('Dir::State::lists')
         try:
             return [
                 os.path.join(lists_directory, file_name)
