@@ -549,7 +549,7 @@ class UpdateRepositoriesTask(PackageUpdateTask):
         # For each of those entries, make sure to keep only the ones
         # corresponding to the version found in the sources file
         for entry in repository_entries:
-            if entry.version in packages[entry.source_package.name]:
+            if entry.version in packages[entry.name]:
                 self._add_processed_repository_entry(entry)
 
     def group_files_by_repository(self, cached_files):

@@ -1185,6 +1185,11 @@ class BinaryPackageRepositoryEntry(models.Model):
             pkg=self.binary_package, arch=self.architecture,
             repo=self.repository)
 
+    @property
+    def name(self):
+        """The name of the binary package"""
+        return self.binary_package.name
+
     @cached_property
     def version(self):
         """The version of the binary package"""
@@ -1260,6 +1265,11 @@ class SourcePackageRepositoryEntry(models.Model):
             return base_url + '/' + self.source_package.directory
         else:
             return None
+
+    @property
+    def name(self):
+        """The name of the source package"""
+        return self.source_package.name
 
     @cached_property
     def version(self):
