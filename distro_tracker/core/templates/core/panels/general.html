@@ -103,7 +103,10 @@
         <div class="list-item-key"><b>VCS:</b></div>
         <div class="list-item-value">
             {% with vcs=ctx.vcs.full_name|default:ctx.vcs.type %}
-            <a href="{{ ctx.vcs.url }}">{{ vcs }}</a> (<a href="{{ ctx.vcs.browser }}">Browse</a>)
+            <a href="{{ ctx.vcs.url }}">{{ vcs }}</a>
+            {% if ctx.vcs.browser %}
+            (<a href="{{ ctx.vcs.browser }}">Browse</a>)
+            {% endif %}
             {% endwith %}
         </div>
         <div class="clear"></div>
