@@ -225,7 +225,7 @@ class AptCache(object):
         fresh repository files.
         """
         self._remove_dir(self.cache_root_dir)
-        self._create_cache_directory()
+        self.configure_cache()
 
     def update_sources_list(self):
         """
