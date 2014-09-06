@@ -15,3 +15,7 @@ distro_tracker/project/settings/local.py
 docs/_build/
 
 data/pts.sqlite
+
+.coverage
+.coverage.*
+coverage.html/
