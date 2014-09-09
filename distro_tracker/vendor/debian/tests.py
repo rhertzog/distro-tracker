@@ -727,8 +727,9 @@ class DebianNewsFromEmailTest(TestCase):
 
     def test_source_upload_package_does_not_exist(self):
         """
-        Tests that no news are created when the notification of a new source
-        upload for a package not tracked by Distro Tracker is received.
+        Tests that a news and the associated source package are created when
+        the notification of a new source upload for a package not yet tracked by
+        Distro Tracker is received.
         """
         subject = self.get_accepted_subject('no-exist', '1.0.0')
         self.set_subject(subject)
@@ -737,7 +738,8 @@ class DebianNewsFromEmailTest(TestCase):
 
         self.process_mail()
 
-        self.assertEqual(0, News.objects.count())
+        self.assertTrue(PackageName.objects.filter(name='no-exist').exists())
+        self.assertEqual(1, News.objects.count())
 
     def test_dak_rm_news(self):
         """

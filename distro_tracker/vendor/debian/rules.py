@@ -17,6 +17,7 @@ from django.utils.http import urlencode, urlquote
 from django.conf import settings
 from distro_tracker.core.models import PackageBugStats
 from distro_tracker.core.models import EmailNews
+from distro_tracker.core.models import PackageName
 from distro_tracker.core.models import SourcePackageName
 from distro_tracker.core.models import BinaryPackageBugStats
 from distro_tracker.core.models import PackageExtractedInfo
@@ -663,9 +664,8 @@ def create_news_from_email_message(message):
             # Only source uploads should be considered.
             return
         package_name = subject_words[1]
-        package = get_or_none(SourcePackageName, name=package_name)
-        if package:
-            return [EmailNews.objects.create_email_news(message, package)]
+        package, _ = PackageName.objects.get_or_create(name=package_name)
+        return [EmailNews.objects.create_email_news(message, package)]
     # DAK rm?
     elif 'X-DAK' in message:
         return _create_news_from_dak_email(message)
