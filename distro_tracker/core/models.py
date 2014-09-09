@@ -256,10 +256,9 @@ class PackageName(models.Model):
         return self.name
 
     def get_absolute_url(self):
-        if self.source or self.pseudo:
-            return reverse('dtracker-package-page', kwargs={
-                'package_name': self.name,
-            })
+        return reverse('dtracker-package-page', kwargs={
+            'package_name': self.name,
+        })
 
     def get_package_type_display(self):
         if self.source:
@@ -476,14 +475,20 @@ class SourcePackageName(PackageName):
 
 def get_web_package(package_name):
     """
-    Utility function returning either a :class:`PseudoPackageName` or a
-    :class:`SourcePackageName` based on the given ``package_name``.
+    Utility function mapping a package name to its most adequate Python
+    representation (among :class:`SourcePackageName`,
+    :class:`PseudoPackageName`, :class:`PackageName` and ``None``).
 
-    If neither of them are found, it tries to find a :class:`BinaryPackageName`
-    with the given name and returns the corresponding
-    :class:`SourcePackageName`, if found.
+    The rules are simple: a source package is returned as SourcePackageName,
+    a pseudo-package is returned as PseudoPackageName, a binary package
+    is turned into the corresponding SourcePackageName (which might have a
+    different name!).
 
-    If that is not possible, ``None`` is returned.
+    If the package name is known but is none of the above, it's only returned
+    if it has associated :class:`News` since that proves that it used to be
+    a former source package.
+
+    If that is not the case, then ``None`` is returned.
 
     :rtype: :class:`PackageName` or ``None``
 
@@ -497,6 +502,13 @@ def get_web_package(package_name):
     elif BinaryPackageName.objects.exists_with_name(package_name):
         binary_package = BinaryPackageName.objects.get(name=package_name)
         return binary_package.main_source_package_name
+    elif PackageName.objects.exists_with_name(package_name):
+        pkg = PackageName.objects.get(name=package_name)
+        # This is not a current source or binary package, but if it has
+        # associated news, then it's likely a former source package where we can
+        # display something useful
+        if pkg.news_set.count():
+            return pkg
 
     return None
 

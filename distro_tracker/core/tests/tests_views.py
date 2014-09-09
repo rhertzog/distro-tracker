@@ -19,6 +19,7 @@ from django.test.utils import override_settings
 from distro_tracker.core.models import BinaryPackage, BinaryPackageName
 from distro_tracker.core.models import SourcePackageName, SourcePackage
 from distro_tracker.core.models import PackageName, PseudoPackageName
+from distro_tracker.core.models import News
 from distro_tracker.core.models import ActionItem, ActionItemType
 import json
 
@@ -116,6 +117,21 @@ class PackageViewTest(TestCase):
 
         url = self.get_package_url(package_name)
         self.assertEqual(self.client.get(url).status_code, 404)
+
+    def test_old_package_with_news(self):
+        """
+        Tests that when visiting the package page for an old package with news,
+        a response based on the correct template is returned.
+        """
+        package_name = 'old-pkg-with-news'
+        oldpackage = PackageName.objects.create(name=package_name)
+        News.objects.create(package=oldpackage, title='sample-title',
+                            content='sample-content')
+        url = self.get_package_url(package_name)
+
+        response = self.client.get(url)
+
+        self.assertTemplateUsed(response, 'core/package.html')
 
     def test_legacy_url_redirects(self):
         """
