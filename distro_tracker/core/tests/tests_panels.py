@@ -14,12 +14,16 @@
 Tests for the Distro Tracker core panels.
 """
 from __future__ import unicode_literals
-from distro_tracker.test import TestCase
 from django.core.urlresolvers import reverse
-from distro_tracker.core.models import SourcePackageName
-from distro_tracker.core.models import SourcePackage
-from distro_tracker.core.panels import VersionedLinks
 from bs4 import BeautifulSoup as soup
+
+from distro_tracker.test import TestCase
+from distro_tracker.core.models import SourcePackageName
+from distro_tracker.core.models import PseudoPackageName
+from distro_tracker.core.models import PackageName
+from distro_tracker.core.models import SourcePackage
+from distro_tracker.core.models import Repository, SourcePackageRepositoryEntry
+from distro_tracker.core.panels import VersionedLinks, DeadPackageWarningPanel
 
 
 class VersionedLinksPanelTests(TestCase):
@@ -124,3 +128,59 @@ class GeneralInfoLinkPanelItemsTests(TestCase):
         response = self.get_package_page_response()
         self.assertTrue(self.get_general_info_link_panel(response))
         self.assertTrue(self.homepage_is_in_linkspanel(response))
+
+
+class DeadPackageWarningPanelTests(TestCase):
+    def setUp(self):
+        self.pkgname = SourcePackageName.objects.create(name='dummy-package')
+        self.srcpkg = SourcePackage.objects.create(
+            source_package_name=self.pkgname, version='1.0.0')
+        self.default_repo = \
+            Repository.objects.create(name='default', shorthand='default',
+                                      default=True)
+        self.repo1 = Repository.objects.create(name='repo1', shorthand='repo1')
+        self.panel = DeadPackageWarningPanel(self.pkgname, None)
+
+    def test_has_content_pkg_in_no_repository(self):
+        """The package is not in any repository. We should display the
+        warning."""
+        self.assertTrue(self.panel.has_content)
+
+    def test_has_content_pkg_not_in_devel_repos(self):
+        """The package is not in a development repository. We should display
+        the warning."""
+        SourcePackageRepositoryEntry.objects.create(
+            source_package=self.srcpkg, repository=self.repo1)
+        self.assertTrue(self.panel.has_content)
+
+    def test_has_content_pkg_in_devel_repos(self):
+        """The package is in at least one of the development repositories.
+        We should not display the warning."""
+        SourcePackageRepositoryEntry.objects.create(
+            source_package=self.srcpkg, repository=self.default_repo)
+        self.assertFalse(self.panel.has_content)
+
+    def test_has_content_for_pseudo_package(self):
+        """A pseudo-package is never obsolete. No warning displayed."""
+        pkgname = PseudoPackageName.objects.create(name='pseudo')
+        panel = DeadPackageWarningPanel(pkgname, None)
+
+        self.assertFalse(panel.has_content)
+
+    def test_has_content_for_old_packages(self):
+        """Old package only exists as PackageName. We should display the
+        warning in this case."""
+        pkgname = PackageName.objects.create(name='oldpkg')
+        panel = DeadPackageWarningPanel(pkgname, None)
+
+        self.assertTrue(panel.has_content)
+
+    def test_context_pkg_disappeared_completely(self):
+        """The package is not in any repository. The context exports this."""
+        self.assertTrue(self.panel.context['disappeared'])
+
+    def test_context_pkg_disappeared_from_devel_repository(self):
+        """The package is in a few repositories. The context exports this."""
+        SourcePackageRepositoryEntry.objects.create(
+            source_package=self.srcpkg, repository=self.repo1)
+        self.assertFalse(self.panel.context['disappeared'])

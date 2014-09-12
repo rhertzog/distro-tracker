@@ -19,6 +19,7 @@ from distro_tracker.core.utils import get_vcs_name
 from distro_tracker.core.utils import get_or_none
 from distro_tracker import vendor
 from distro_tracker.core.models import SourcePackageName
+from distro_tracker.core.models import PseudoPackageName
 from distro_tracker.core.models import ActionItem
 from distro_tracker.core.models import PackageExtractedInfo
 from distro_tracker.core.models import MailingList
@@ -930,3 +931,39 @@ class ActionNeededPanel(BasePanel):
     @property
     def has_content(self):
         return bool(self.context['items'])
+
+
+class DeadPackageWarningPanel(BasePanel):
+    """
+    The panel displays a warning when the package has been dropped
+    from development repositories, and another one when the package no longer
+    exists in any repository.
+    """
+    title = 'package is gone'
+    template_name = 'core/panels/package-is-gone.html'
+    panel_importance = 9
+    position = 'center'
+
+    @property
+    def has_content(self):
+        if isinstance(self.package, SourcePackageName):
+            for repo in self.package.repositories:
+                if repo.is_development_repository():
+                    return False
+            return True
+        elif isinstance(self.package, PseudoPackageName):
+            return False
+        else:
+            return True
+
+    @cached_property
+    def context(self):
+        if isinstance(self.package, SourcePackageName):
+            disappeared = len(self.package.repositories) == 0
+        else:
+            disappeared = True
+        return {
+            'disappeared': disappeared,
+            'removals_url': getattr(settings, 'DISTRO_TRACKER_REMOVALS_URL',
+                                    ''),
+        }

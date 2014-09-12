@@ -1,0 +1,22 @@
+{% extends 'core/panels/panel.html' %}
+
+{% block panel-body %}
+{% if panel.context.disappeared %}
+This package is not part of any {{ DISTRO_TRACKER_VENDOR_NAME }}
+distribution. Thus you won't find much information here. The package is
+either very new and hasn't appeared on mirrors yet, or it's an old package
+that eventually got removed. The old news are kept for historic purpose
+only.
+{% else %}
+This package is not in any development repository. This probably
+means that the package
+{% if panel.context.removals_url %}
+<a href="{{ panel.context.removals_url }}">has been removed</a>
+{% else %}
+has been removed
+{% endif %}
+(or has been renamed). Thus the information here is of little interest ...
+the package is going to disappear unless someone takes it over and
+reintroduces it.
+{% endif %}
+{% endblock %}
