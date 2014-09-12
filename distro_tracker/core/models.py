@@ -952,6 +952,27 @@ class Repository(models.Model):
                 raise ValidationError(
                     "Only one repository can be set as the default")
 
+    def is_development_repository(self):
+        """Returns a boolean indicating whether the repository is used for
+        development.
+
+        A developement repository is a repository where new
+        versions of packages tend to be uploaded. The list of development
+        repositories can be provided in the list
+        DISTRO_TRACKER_DEVEL_REPOSITORIES (it should contain codenames and/or
+        suite names). If that setting does not exist, then the default
+        repository is assumed to be the only development repository.
+
+        :rtype: bool
+        """
+        if hasattr(settings, 'DISTRO_TRACKER_DEVEL_REPOSITORIES'):
+            for repo in settings.DISTRO_TRACKER_DEVEL_REPOSITORIES:
+                if self.codename == repo or self.suite == repo:
+                    return True
+        else:
+            return self.default
+        return False
+
 
 @python_2_unicode_compatible
 class ContributorName(models.Model):

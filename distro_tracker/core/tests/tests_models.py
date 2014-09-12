@@ -620,6 +620,12 @@ class RepositoryTests(TestCase):
             binary_package_name=self.bin_pkg_name,
             version='1.0.0',
             source_package=self.source_package)
+        self.repo1 = Repository.objects.create(
+            name='repo1', shorthand='repo1', codename='codename1',
+            suite='suite1')
+        self.repo2 = Repository.objects.create(
+            name='repo2', shorthand='repo2', codename='codename2',
+            suite='suite2')
 
     def test_add_source_entry_to_repository(self):
         """
@@ -782,6 +788,22 @@ class RepositoryTests(TestCase):
             self.repository.get_source_package_entry(
                 self.source_package.source_package_name.name),
             expected_entry)
+
+    def test_is_development_repository_default_case(self):
+        """We have not provided any explicit list of development repositories.
+        The default repository is the only development repository."""
+        self.assertTrue(self.repository.is_development_repository())
+        self.assertFalse(self.repo1.is_development_repository())
+        self.assertFalse(self.repo2.is_development_repository())
+
+    @override_settings(
+        DISTRO_TRACKER_DEVEL_REPOSITORIES=['suite1', 'codename2'])
+    def test_is_development_repository_explicit_list(self):
+        """We have provided an explicit list of development repositories. It
+        should be the reference."""
+        self.assertFalse(self.repository.is_development_repository())
+        self.assertTrue(self.repo1.is_development_repository())
+        self.assertTrue(self.repo2.is_development_repository())
 
 
 class SourcePackageTests(TestCase):
