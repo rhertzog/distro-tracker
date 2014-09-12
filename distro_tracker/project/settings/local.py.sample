@@ -9,12 +9,12 @@ overrides on top of those type-of-installation-specific settings.
 # Load the selected configuration (selected.py is a symlink to preferred config)
 
 from .defaults import INSTALLED_APPS
-from .selected import *
+from .selected import *  # noqa
 
 # If you want to run a development setup close to what's running on
 # tracker.debian.org, then uncomment the next two lines.
-# from .debian import *
-# from .db_sqlite import DATABASES
+# from .debian import *             # noqa
+# from .db_sqlite import DATABASES  # noqa
 
 ## Add your custom settings here
 
