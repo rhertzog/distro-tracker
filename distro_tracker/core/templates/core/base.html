@@ -7,7 +7,6 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet" media="screen">
         <link href="{% static 'css/style.css' %}" rel="stylesheet" media="screen">
-        <link href="{% static 'css/perfect-scrollbar.css' %}" rel="stylesheet" media="screen">
         <link type="application/opensearchdescription+xml" title="{{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracker Search" rel="search" href="{% url 'dtracker-opensearch-description' %}"/>
         {% include 'core/extra-head.html' %}
         {% block extra-head %}{% endblock %}
@@ -50,7 +49,6 @@
         <script src="{% static 'js/bootstrap.min.js' %}"></script>
         <script src="{% static 'js/typeahead.js' %}"></script>
         <script src="{% static 'js/jquery.mousewheel.js' %}"></script>
-        <script src="{% static 'js/perfect-scrollbar.js' %}"></script>
         <script src="{% static 'js/main.js' %}"></script>
         {% block extra-js %}{% endblock %}
     </body>

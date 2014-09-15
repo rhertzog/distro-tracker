@@ -97,19 +97,6 @@ $(function() {
         });
     });
 
-    // Activate scrolling for divs. Lets us have a visually nicer scroll bar
-    // in a cross-browser compatible way for panels with
-    $('.scrollable').each(function(index) {
-        var $this = $(this);
-        // Hack to allow using max-height for without height in the CSS.
-        $this.height($this.height() + 1);
-        // On mobile the overflow is set to auto and we want to let the browser
-        // handle the scrolling for us.
-        if ($this.css('overflow') !== 'auto') {
-            $this.perfectScrollbar();
-        }
-    });
-
     var subscribe_url = $('#subscribe-button').data('url');
     var unsubscribe_url = $('#unsubscribe-button').data('url')
     var toggle_subscription_buttons = function() {
