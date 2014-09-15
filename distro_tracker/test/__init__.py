@@ -22,13 +22,10 @@ import os
 import os.path
 import inspect
 
-# Django 1.7 needs StaticLiveServerCase to continue to serve static
+# Django 1.7 needs StaticLiveServerTestCase to continue to serve static
 # assets transparently without doing collectstatic first
-# XXX: might need to be updated if Django fixes
-# https://code.djangoproject.com/attachment/ticket/23374
 try:
-    from django.contrib.staticfiles.testing \
-        import StaticLiveServerCase as StaticLiveServerTestCase
+    from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 except ImportError:
     StaticLiveServerTestCase = django.test.LiveServerTestCase
 
