@@ -4615,6 +4615,27 @@ class DebianSsoLoginTests(TestCase):
         user = User.objects.all()[0]
         self.assertEqual(first_name, user.first_name)
         self.assertEqual(last_name, user.last_name)
+        self.assertEqual('user@debian.org', user.main_email)
+        self.assert_user_logged_in(user)
+
+    def test_first_log_in_via_alioth(self, get_user_details):
+        """
+        Tests that when an Alioth user first logs in an account is
+        automatically created.
+        """
+        first_name, last_name = 'First', 'Last'
+        get_user_details.return_value = {
+            'first_name': first_name,
+            'last_name': last_name,
+        }
+
+        self.get_page('DEBIANORG::DEBIAN:foo-guest@users.alioth.debian.org')
+
+        self.assertEqual(1, User.objects.count())
+        user = User.objects.all()[0]
+        self.assertEqual(first_name, user.first_name)
+        self.assertEqual(last_name, user.last_name)
+        self.assertEqual('foo-guest@users.alioth.debian.org', user.main_email)
         self.assert_user_logged_in(user)
 
     def test_no_log_in_invalid_username(self, get_user_details):

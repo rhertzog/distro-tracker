@@ -37,10 +37,12 @@ class DebianSsoUserMiddleware(RemoteUserMiddleware):
         federation, jurisdiction = parts[:2]
         if (federation, jurisdiction) != ('DEBIANORG', 'DEBIAN'):
             return
+        username = parts[-1]
+        if '@' in username:
+            return username  # Full email already
+        return username + '@debian.org'
 
-        return parts[-1] + '@debian.org'
-
-    def is_debian_user(self, user):
+    def is_debian_member(self, user):
         return any(
             email.email.endswith('@debian.org')
             for email in user.emails.all()
@@ -48,7 +50,7 @@ class DebianSsoUserMiddleware(RemoteUserMiddleware):
 
     def log_out_user(self, request):
         if request.user.is_authenticated():
-            if self.is_debian_user(request.user):
+            if self.is_debian_member(request.user):
                 auth.logout(request)
 
     def process_request(self, request):
@@ -102,7 +104,9 @@ class DebianSsoUserBackend(RemoteUserBackend):
 
     def get_uid(self, remote_user):
         # Strips off the @debian.org part of the email leaving the uid
-        return remote_user[:-11]
+        if remote_user.endswith('@debian.org'):
+            return remote_user[:-11]
+        return remote_user
 
     def get_user_details(self, remote_user):
         """
@@ -111,6 +115,9 @@ class DebianSsoUserBackend(RemoteUserBackend):
             ``None`` if the LDAP lookup did not return anything.
         """
         if ldap is None:
+            return None
+        if not remote_user.endswith('@debian.org'):
+            # We only know how to extract data for DD via LDAP
             return None
 
         l = ldap.initialize('ldap://db.debian.org')
