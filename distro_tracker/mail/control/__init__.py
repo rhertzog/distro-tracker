@@ -188,11 +188,7 @@ def process(message):
         return
 
     # Decode the plain text into a unicode string
-    try:
-        text = get_decoded_message_payload(plain_text_part)
-    except UnicodeDecodeError:
-        send_plain_text_warning(msg, logdata)
-        return
+    text = get_decoded_message_payload(plain_text_part)
 
     lines = extract_command_from_subject(msg) + text.splitlines()
     # Process the commands

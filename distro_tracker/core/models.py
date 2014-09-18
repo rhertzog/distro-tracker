@@ -1613,14 +1613,7 @@ class EmailNews(News):
 
     def get_signed_content(self):
         msg = message_from_bytes(self.content)
-        try:
-            return get_decoded_message_payload(msg)
-        except UnicodeDecodeError:
-            # Decoding can fail with this error if the message does not have a
-            # header specifying the charset and it isn't utf-8 encoded.
-            # We attempt to decode the message using latin-1 as a fallback in
-            # this situation before bailing out by propagating the exception.
-            return get_decoded_message_payload(msg, 'latin-1')
+        return get_decoded_message_payload(msg)
 
     @classmethod
     def get_email_news_parameters(self, message):
@@ -1802,16 +1795,7 @@ class EmailNewsRenderer(NewsRenderer):
 
         plain_text_payloads = []
         for part in typed_subpart_iterator(msg, 'text', 'plain'):
-            try:
-                plain_text_payloads.append(get_decoded_message_payload(part))
-            except UnicodeDecodeError:
-                # Decoding can fail with this error if the message does not
-                # have a header specifying the charset and it isn't utf-8.
-                # We attempt to decode the message using latin-1 as a fallback
-                # in this situation before bailing out by propagating the
-                # exception.
-                plain_text_payloads.append(
-                    get_decoded_message_payload(part, 'latin-1'))
+            plain_text_payloads.append(get_decoded_message_payload(part))
 
         return {
             'headers': headers,
