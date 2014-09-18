@@ -456,21 +456,19 @@ class SourcePackageName(PackageName):
         description will be used. If not, the short description for the first
         binary package will be used.
         """
-        desc = ''
-
         if not self.main_version:
-            return desc
+            return ''
 
         binary_packages = self.main_version.binarypackage_set.all()
 
         for pkg in binary_packages:
-            if desc == '':
-                desc = pkg.short_description
             if pkg.binary_package_name.name == self.name:
-                desc = pkg.short_description
-                break
+                return pkg.short_description
 
-        return desc
+        if len(binary_packages) == 1:
+            return binary_packages[0].short_description
+
+        return ''
 
 
 def get_web_package(package_name):
