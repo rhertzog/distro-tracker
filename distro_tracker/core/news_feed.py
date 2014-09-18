@@ -39,10 +39,10 @@ class PackageNewsFeed(Feed):
         return obj.get_absolute_url()
 
     def description(self, obj):
-        return "Latest developer's news for {vendor} "
-        "source package {pkg}".format(
-            vendor=settings.DISTRO_TRACKER_VENDOR_NAME,
-            pkg=obj.name)
+        return (
+            "Latest developer's news for {vendor} source package {pkg}"
+            .format(vendor=settings.DISTRO_TRACKER_VENDOR_NAME, pkg=obj.name)
+        )
 
     def items(self, obj):
         item_limit = getattr(settings, 'DISTRO_TRACKER_RSS_ITEM_LIMIT',
