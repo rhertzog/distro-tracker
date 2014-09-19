@@ -13,7 +13,9 @@ import re
 import urllib
 import requests
 from django import forms
+from django.core.urlresolvers import reverse
 from django.utils.http import urlencode, urlquote
+from django.utils.safestring import mark_safe
 from django.conf import settings
 from distro_tracker.core.models import PackageBugStats
 from distro_tracker.core.models import EmailNews
@@ -21,6 +23,7 @@ from distro_tracker.core.models import PackageName
 from distro_tracker.core.models import SourcePackageName
 from distro_tracker.core.models import BinaryPackageBugStats
 from distro_tracker.core.models import PackageExtractedInfo
+from distro_tracker.core.models import UserEmail
 from distro_tracker.mail.dispatch import get_keyword_from_address
 from distro_tracker.core.utils import get_decoded_message_payload
 from distro_tracker.core.utils import get_or_none
@@ -711,19 +714,26 @@ def get_extra_versions(package):
     ]
 
 
-def pre_login(user):
+def pre_login(form):
     """
     If the user has a @debian.org email associated, don't let him log in
     directly through local authentication.
     """
-    if user is None:
-        return
-    if any(user_email.email.endswith('@debian.org')
-           for user_email in user.emails.all()):
-        raise forms.ValidationError(
+    username = form.cleaned_data.get('username')
+    user_email = get_or_none(UserEmail, email=username)
+    emails = [username]
+    if user_email and user_email.user:
+        emails += [x.email for x in user_email.user.emails.all()]
+    if any(email.endswith('@debian.org') for email in emails):
+        raise forms.ValidationError(mark_safe(
             "Your account has a @debian.org email address associated. "
-            "To log in to the package tracker, you must first authenticate "
-            "on http://sso.debian.org")
+            "To log in to the package tracker, you must do so "
+            "on <a href='https://sso.debian.org/sso/login?url="
+            "https://{}{}&site=TRACKER'>"
+            "sso.debian.org</a> (click on the link!).".format(
+                settings.DISTRO_TRACKER_FQDN,
+                reverse('dtracker-accounts-profile')
+            )))
 
 
 def post_logout(request, user, next_url=None):

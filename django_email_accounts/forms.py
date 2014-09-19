@@ -20,8 +20,8 @@ User = get_user_model()
 
 class AuthenticationForm(ContribAuthenticationForm):
     def clean(self):
+        run_hook('pre-login', self)
         cleaned_data = super(AuthenticationForm, self).clean()
-        run_hook('pre-login', self.get_user())
 
         return cleaned_data
 
