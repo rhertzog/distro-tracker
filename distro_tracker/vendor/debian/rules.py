@@ -726,19 +726,17 @@ def pre_login(user):
             "on http://sso.debian.org")
 
 
-def post_logout(user, secure=False):
+def post_logout(request, user, next_url=None):
     """
-    If the user has a @debian.org email associated, sign him out at the SSO
-    level too.
+    If the user is authenticated via the SSO, sign him out at the SSO level too.
     """
-    if any(user_email.email.endswith('@debian.org')
-           for user_email in user.emails.all()):
-
-        protocol = 'http' if not secure else 'https'
+    if request.META.get('REMOTE_USER'):
+        if next_url is None:
+            next_url = 'https://' + settings.DISTRO_TRACKER_FQDN
+        elif next_url.startswith('/'):
+            next_url = 'https://' + settings.DISTRO_TRACKER_FQDN + next_url
         return (
             'https://sso.debian.org/cgi-bin/dacs/dacs_signout?' + urlencode({
-                'SIGNOUT_HANDLER': '{protocol}://{url}'.format(
-                    protocol=protocol,
-                    url=settings.DISTRO_TRACKER_FQDN)
+                'SIGNOUT_HANDLER': next_url
             })
         )

@@ -72,15 +72,12 @@ class LogoutView(View):
     def get(self, request):
         user = request.user
         logout(request)
-        redirect_url = run_hook('post-logout-redirect', user)
+        next_url = request.GET.get(self.redirect_parameter, self.success_url)
+        redirect_url = run_hook('post-logout-redirect', request, user, next_url)
         if redirect_url:
             return redirect(redirect_url)
         else:
-            if self.redirect_parameter in request.GET and \
-                    request.GET[self.redirect_parameter]:
-                return redirect(request.GET[self.redirect_parameter])
-            else:
-                return redirect(self.success_url)
+            return redirect(next_url)
 
 
 class RegisterUser(CreateView):
