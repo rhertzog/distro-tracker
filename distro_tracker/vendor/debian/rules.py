@@ -716,6 +716,8 @@ def pre_login(user):
     If the user has a @debian.org email associated, don't let him log in
     directly through local authentication.
     """
+    if user is None:
+        return
     if any(user_email.email.endswith('@debian.org')
            for user_email in user.emails.all()):
         raise forms.ValidationError(
