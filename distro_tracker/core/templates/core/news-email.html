@@ -17,5 +17,5 @@
 </ul>
 
 <div class="email-news-body">
-<pre>{% for part in ctx.parts %}{{ part }}{% endfor %}</pre>
+	<pre>{% for part in ctx.parts %}{{ part|safe }}{% endfor %}</pre>
 </div>

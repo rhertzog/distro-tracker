@@ -40,6 +40,9 @@ DISTRO_TRACKER_REMOVALS_URL = "https://ftp-master.debian.org/removals.txt"
 #: A list of the repositories where new versions are uploaded
 DISTRO_TRACKER_DEVEL_REPOSITORIES = ['unstable', 'experimental']
 
+#: URL for CVE tracker
+DISTRO_TRACKER_CVE_URL = 'https://security-tracker.debian.org/tracker/'
+
 # Various settings for sso.debian.org support
 _index_auth = MIDDLEWARE_CLASSES.index(
     'django.contrib.auth.middleware.AuthenticationMiddleware') + 1

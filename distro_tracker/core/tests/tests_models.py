@@ -1457,6 +1457,50 @@ class NewsTests(TestCase):
         # The response contains the correctly decoded content
         self.assertIn(content, response.content.decode('utf-8'))
 
+    def create_email_news_with_links(self):
+        """Create email news with content that should be linkified."""
+        message = email.message.Message()
+        message['Subject'] = 'Some subject'
+        content = """fix "a > 5" for more
+        information https://www.debian.org/ thanks"""
+        message.set_payload(content)
+        return(EmailNews.objects.create_email_news(message=message,
+                                                   package=self.package))
+
+    def test_email_news_render_links(self):
+        """
+        Tests that an email news is correctly rendered with html link when
+        needed and that quotes and angle brackets are properly escaped.
+        """
+        mail_news = self.create_email_news_with_links()
+        response = self.client.get(reverse('dtracker-news-page', kwargs={
+            'news_id': mail_news.id,
+        }))
+        content = response.content.decode('utf-8')
+        self.assertInHTML(
+            '<a href="https://www.debian.org/">https://www.debian.org/</a>',
+            content)
+        # Ensure angle brackets and quotes are encoded
+        self.assertNotIn('"a > 5"', content)
+        self.assertIn('&quot;a &gt; 5&quot;', content)
+
+    def test_email_news_render_links_in_rss_feed(self):
+        """
+        Tests that an email news is correctly rendered within the package
+        RSS feed. HTML links are escaped once and normal quotes/angle brackets
+        are doubly escaped.
+        """
+        self.create_email_news_with_links()
+        response = self.client.get(
+            reverse('dtracker-package-rss-news-feed',
+                    kwargs={'package_name': self.package}))
+        content_response = response.content.decode('utf-8')
+        self.assertIn(
+            '&lt;a href="https://www.debian.org/"&gt;'
+            'https://www.debian.org/&lt;/a&gt;',
+            content_response)
+        self.assertIn('&amp;quot;a &amp;gt; 5&amp;quot;', content_response)
+
 
 @override_settings(TEMPLATE_DIRS=(os.path.join(
     os.path.dirname(__file__),

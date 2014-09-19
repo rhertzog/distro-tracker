@@ -15,6 +15,7 @@ from django.utils import six
 from django.utils import timezone
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.encoding import force_text
+from django.utils.html import escape
 from django.utils.functional import cached_property
 from django.utils.safestring import mark_safe
 from django.core.urlresolvers import reverse
@@ -31,6 +32,7 @@ from distro_tracker.core.utils.email_messages import decode_header
 from distro_tracker.core.utils.email_messages import get_decoded_message_payload
 from distro_tracker.core.utils.email_messages import message_from_bytes
 from distro_tracker.core.utils.packages import package_hashdir
+from distro_tracker.core.utils.linkify import linkify
 
 from debian.debian_support import AptPkgVersion
 from debian import changelog as debian_changelog
@@ -1793,7 +1795,8 @@ class EmailNewsRenderer(NewsRenderer):
 
         plain_text_payloads = []
         for part in typed_subpart_iterator(msg, 'text', 'plain'):
-            plain_text_payloads.append(get_decoded_message_payload(part))
+            message = linkify(escape(get_decoded_message_payload(part)))
+            plain_text_payloads.append(message)
 
         return {
             'headers': headers,

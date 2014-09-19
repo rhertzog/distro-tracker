@@ -36,6 +36,11 @@ from distro_tracker.core.utils.packages import package_hashdir
 from distro_tracker.core.utils.datastructures import DAG, InvalidDAGException
 from distro_tracker.core.utils.email_messages import CustomEmailMessage
 from distro_tracker.core.utils.email_messages import decode_header
+from distro_tracker.core.utils.linkify import linkify
+from distro_tracker.core.utils.linkify import LinkifyDebianBugLinks
+from distro_tracker.core.utils.linkify import LinkifyUbuntuBugLinks
+from distro_tracker.core.utils.linkify import LinkifyHttpLinks
+from distro_tracker.core.utils.linkify import LinkifyCVELinks
 from distro_tracker.core.utils.http import HttpCache
 from distro_tracker.core.utils.http import get_resource_content
 
@@ -1352,3 +1357,140 @@ class AptCacheTests(TestCase):
                 for expected, returned in zip(
                         expected_packages_files, packages):
                     self.assertTrue(returned.endswith(expected))
+
+
+class LinkifyTests(TestCase):
+    """
+    Tests for :func:`distro_tracker.core.utils.linkify`.
+    """
+    sample_url = "http://www.example.com/foo/"
+    https_url = "https://www.example.com.foo/"
+
+    @classmethod
+    def link(self, url):
+        return '<a href="{url}">{url}</a>'.format(url=url)
+
+    @classmethod
+    def debian_bug(self, bug, baseurl='https://bugs.debian.org/'):
+        bugno = bug[1:] if bug[0] == '#' else bug
+        return '<a href="{}{}">{}</a>'.format(baseurl, bugno, bug)
+
+    @classmethod
+    def lp_bug(self, bug):
+        return self.debian_bug(bug, 'https://bugs.launchpad.net/bugs/')
+
+    @classmethod
+    def cve_link(self, cve,
+                 baseurl='https://cve.mitre.org/cgi-bin/cvename.cgi?name='):
+        return '<a href="{}{}">{}</a>'.format(baseurl, cve, cve)
+
+    def setUp(self):
+        self.data = {
+            'LinkifyHttpLinks': {
+                'simple': (self.sample_url, self.link(self.sample_url)),
+                'https': (self.https_url, self.link(self.https_url)),
+                # Default case, link in text
+                'intext': ('see ' + self.sample_url + ' for example',
+                           'see ' + self.link(self.sample_url) +
+                           ' for example'),
+                # Existing HTML links are not re-processed
+                'htmllink': (self.link(self.sample_url),
+                             self.link(self.sample_url)),
+                # Ensure xhttp:// is not recognized as a link
+                'badlink': ('x' + self.sample_url, 'x' + self.sample_url)
+            },
+            'LinkifyDebianBugLinks': {
+                'simple': ('closes: ' + '1234', 'closes: ' +
+                           self.debian_bug(bug='1234')),
+                'withsharp': ('Closes: ' + '#1234', 'Closes: ' +
+                              self.debian_bug(bug='#1234')),
+                'intext': ('see closes: ' + '#1234' +
+                           'for informations',
+                           'see closes: ' + self.debian_bug(bug='#1234') +
+                           'for informations'),
+                'multipleintext': ('see Closes: ' + '1234, 5678,\n9123' +
+                                   'or closes: ' + '456' + 'for example',
+                                   'see Closes: ' +
+                                   self.debian_bug(bug='1234') + ', ' +
+                                   self.debian_bug(bug='5678') + ',\n' +
+                                   self.debian_bug(bug='9123') + 'or ' +
+                                   'closes: ' +
+                                   self.debian_bug(bug='456') + 'for example'),
+            },
+            'LinkifyUbuntuBugLinks': {
+                'simple': ('lp: ' + '1234', 'lp: ' +
+                           self.lp_bug(bug='1234')),
+                'withsharp': ('Lp: ' + '#1234', 'Lp: ' +
+                              self.lp_bug(bug='#1234')),
+                'intext': ('see lp: ' + '#1234' +
+                           'for informations',
+                           'see lp: ' + self.lp_bug('#1234') +
+                           'for informations'),
+                'multipleintext': ('see lp: ' + '1234, 5678,\n9123' +
+                                   'or lp: ' + '456' + 'for example',
+                                   'see lp: ' +
+                                   self.lp_bug(bug='1234') + ', ' +
+                                   self.lp_bug(bug='5678') + ',\n' +
+                                   self.lp_bug(bug='9123') + 'or lp: ' +
+                                   self.lp_bug(bug='456') + 'for example')
+            },
+            'LinkifyCVELinks': {
+                'oldformat': ('CVE-2012-1234',
+                              self.cve_link('CVE-2012-1234')),
+                'newformat': ('CVE-2014-1234567',
+                              self.cve_link('CVE-2014-1234567')),
+                'intext': ('see ' + 'cve-2014-67890' + ' for informations',
+                           'see ' + self.cve_link('cve-2014-67890') +
+                           ' for informations'),
+            },
+        }
+
+    def _test_linkify_class(self, cls):
+        linkifier = cls()
+        for name, data in self.data[cls.__name__].items():
+            output = linkifier.linkify(data[0])
+            self.assertEqual(output, data[1],
+                             '{} failed with "{}" test data'.format(
+                                 cls.__name__, name))
+
+    def test_linkify_http(self):
+        """Test the linkifyHttpLinks class"""
+        self._test_linkify_class(LinkifyHttpLinks)
+
+    def test_linkify_debian_bug(self):
+        """Test the linkifyDebianbug class"""
+        self._test_linkify_class(LinkifyDebianBugLinks)
+
+    def test_linkify_ubuntu_bug(self):
+        """Test the linkifyUbuntubug class"""
+        self._test_linkify_class(LinkifyUbuntuBugLinks)
+
+    def test_linkify_CVE_links(self):
+        """Test the LinkifyCVELinks class"""
+        self._test_linkify_class(LinkifyCVELinks)
+
+    @override_settings(
+        DISTRO_TRACKER_CVE_URL='https://security-tracker.debian.org/tracker/')
+    def test_linkify_CVE_links_custom_url(self):
+        """Test LinkifyCVELinks with a custom DISTRO_TRACKER_CVE_URL"""
+        url = 'https://security-tracker.debian.org/tracker/'
+        # Replace the URL in the expected data
+        for key, content in self.data['LinkifyCVELinks'].items():
+            self.data['LinkifyCVELinks'][key] = (
+                content[0],
+                content[1].replace(
+                    "https://cve.mitre.org/cgi-bin/cvename.cgi?name=", url)
+            )
+        self._test_linkify_class(LinkifyCVELinks)
+
+    def test_linkify(self):
+        """Test the linkify function as a combination of all the individual
+        tests."""
+        text = ''
+        expected = ''
+        for linkifier_test_data in self.data.values():
+            for before, after in linkifier_test_data.values():
+                text += before + '\n'
+                expected += after + '\n'
+        linkify_output = linkify(text)
+        self.assertEqual(linkify_output, expected)
