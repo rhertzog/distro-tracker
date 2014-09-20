@@ -77,7 +77,7 @@ class LogoutView(View):
         if redirect_url:
             return redirect(redirect_url)
         else:
-            return redirect(next_url)
+            return redirect(next_url if next_url else '/')
 
 
 class RegisterUser(CreateView):
