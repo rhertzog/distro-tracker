@@ -112,7 +112,7 @@ class LinkifyUbuntuBugLinks(LinkifyDebianBugLinks):
     """
 
     close_prefix = 'LP:'
-    close_field = None
+    close_field = 'Launchpad-Bugs-Fixed:'
     bug_url = 'https://bugs.launchpad.net/bugs/'
 
 
