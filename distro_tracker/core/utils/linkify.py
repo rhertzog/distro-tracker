@@ -57,13 +57,33 @@ class LinkifyDebianBugLinks(Linkify):
     """
     Detect "Closes: #123, 234" syntax used in Debian changelogs to close
     bugs and inject HTML links to the corresponding bug tracker entry.
+    Also handles the "Closes: 123 456" fields of .changes files.
     """
 
     close_prefix = 'Closes:'
+    close_field = 'Closes:'
     bug_url = 'https://bugs.debian.org/'
 
     @classmethod
-    def linkify(self, text):
+    def _linkify_field(self, text):
+        if not self.close_field:
+            return text
+        split_text = re.split(
+            '(^' + self.close_field + r'(?: \d+)+\s*$)',
+            text, flags=re.IGNORECASE | re.MULTILINE)
+        generated_link = ''
+        for i, txt in enumerate(split_text):
+            if i % 2:
+                new_txt = re.sub(
+                    r'(\d+)', r'<a href="{}\1">\1</a>'.format(self.bug_url),
+                    txt, flags=re.IGNORECASE)
+                generated_link += new_txt
+            else:
+                generated_link += txt
+        return generated_link
+
+    @classmethod
+    def _linkify_changelog_entry(self, text):
         split_text = re.split(
             '(' + self.close_prefix +
             r'\s*(?:bug)?(?:#)?\d+(?:\s*,\s*(?:bug)?(?:#)?\d+)*)',
@@ -80,6 +100,10 @@ class LinkifyDebianBugLinks(Linkify):
                 generated_link += txt
         return generated_link
 
+    @classmethod
+    def linkify(self, text):
+        return self._linkify_changelog_entry(self._linkify_field(text))
+
 
 class LinkifyUbuntuBugLinks(LinkifyDebianBugLinks):
     """
@@ -88,6 +112,7 @@ class LinkifyUbuntuBugLinks(LinkifyDebianBugLinks):
     """
 
     close_prefix = 'LP:'
+    close_field = None
     bug_url = 'https://bugs.launchpad.net/bugs/'
 
 

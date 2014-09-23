@@ -1416,6 +1416,16 @@ class LinkifyTests(TestCase):
                                    self.debian_bug(bug='9123') + 'or ' +
                                    'closes: ' +
                                    self.debian_bug(bug='456') + 'for example'),
+                # Case of a Closes field on its single line (space-separated)
+                'closesfield': ('\nCloses: 123 456\n',
+                                '\nCloses: ' + self.debian_bug('123') + ' ' +
+                                self.debian_bug('456') + '\n'),
+                'txtbeforefield': ('\nFinally Closes: 123 456\n',
+                                   '\nFinally Closes: ' +
+                                   self.debian_bug('123') + ' 456\n'),
+                'txtafterfield': ('\nCloses: 123 456 foobar\n',
+                                  '\nCloses: ' + self.debian_bug('123') +
+                                  ' 456 foobar\n'),
             },
             'LinkifyUbuntuBugLinks': {
                 'simple': ('lp: ' + '1234', 'lp: ' +
