@@ -4885,7 +4885,7 @@ class UpdateDebciStatusTaskTest(TestCase):
         # Check that the ActionItem contains the correct contents.
         self.assertEqual(self.other_package.action_items.count(), 1)
         action_item = self.other_package.action_items.all()[0]
-        url = "http://ci.debian.net/o/other-package"
+        url = "http://ci.debian.net/packages/o/other-package/"
         log = "http://ci.debian.net/data/packages/unstable/amd64/o/" + \
             "other-package/latest-autopkgtest/log"
         self.assertIn(url, action_item.short_description)
