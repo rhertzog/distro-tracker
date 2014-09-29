@@ -974,6 +974,18 @@ class Repository(models.Model):
         return False
 
 
+class RepositoryFlag(models.Model):
+    """
+    Boolean options associated to repositories.
+    """
+    repository = models.ForeignKey(Repository, related_name='flags')
+    name = models.CharField(max_length=50)
+    value = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('repository', 'name')
+
+
 @python_2_unicode_compatible
 class ContributorName(models.Model):
     """

@@ -19,6 +19,7 @@ from django.test.utils import override_settings
 from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.urlresolvers import reverse
+from django.db import IntegrityError
 from distro_tracker.core.models import Subscription, EmailSettings
 from distro_tracker.core.models import PackageName, BinaryPackageName
 from distro_tracker.core.models import BinaryPackage
@@ -30,6 +31,7 @@ from distro_tracker.core.models import Keyword
 from distro_tracker.core.models import ActionItem, ActionItemType
 from distro_tracker.core.models import PseudoPackageName
 from distro_tracker.core.models import Repository
+from distro_tracker.core.models import RepositoryFlag
 from distro_tracker.core.models import News
 from distro_tracker.core.models import EmailNews
 from distro_tracker.core.models import SourcePackage
@@ -804,6 +806,33 @@ class RepositoryTests(TestCase):
         self.assertFalse(self.repository.is_development_repository())
         self.assertTrue(self.repo1.is_development_repository())
         self.assertTrue(self.repo2.is_development_repository())
+
+
+class RepositoryFlagsTests(TestCase):
+
+    def setUp(self):
+        self.repo1 = Repository.objects.create(
+            name='repo1', shorthand='repo1', codename='codename1',
+            suite='suite1')
+
+    def test_add_flags(self):
+        """
+        Test adding a flag to a repository and accessing to the flag via
+        the repository
+        """
+        self.repo_flag = RepositoryFlag.objects.create(
+            repository=self.repo1, name='hidden', value=True)
+        self.assertEqual(self.repo_flag, self.repo1.flags.first())
+
+    def test_unique_keys(self):
+        """
+        Test that we can't create two identique flags for the same repository
+        """
+        self.repo_flag = RepositoryFlag.objects.create(
+            repository=self.repo1, name='hidden', value=True)
+        with self.assertRaises(IntegrityError):
+            RepositoryFlag.objects.create(repository=self.repo1, name='hidden',
+                                          value=True)
 
 
 class SourcePackageTests(TestCase):
