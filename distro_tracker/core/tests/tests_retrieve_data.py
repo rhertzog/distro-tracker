@@ -28,11 +28,13 @@ from distro_tracker.core.models import SourcePackageRepositoryEntry
 from distro_tracker.core.models import PseudoPackageName
 from distro_tracker.core.models import BinaryPackage
 from distro_tracker.core.models import Repository
+from distro_tracker.core.models import RepositoryFlag
 from distro_tracker.core.models import Architecture
 from distro_tracker.core.models import Team
 from distro_tracker.core.retrieve_data import UpdateRepositoriesTask
 from distro_tracker.core.retrieve_data import UpdateTeamPackagesTask
 from distro_tracker.core.retrieve_data import retrieve_repository_info
+from distro_tracker.core.retrieve_data import UpdateVersionInformation
 from distro_tracker.test.utils import create_source_package
 from distro_tracker.test.utils import set_mock_response
 from distro_tracker.accounts.models import User, UserEmail
@@ -930,6 +932,38 @@ class RetrieveSourcesInformationTest(TestCase):
             for entry in self.repository.binary_entries.all()
         ]
         self.assertNotIn(binary_name, bin_pkgs_in_repo)
+
+
+class UpdateVersionInformationTest(TestCase):
+
+    def setUp(self):
+        self.repo1 = Repository.objects.create(
+            name='repo1', shorthand='repo1')
+        self.package = create_source_package({
+            'name': 'dummy-package',
+            'version': '1.0.0',
+        })
+        self.repo1.add_source_package(self.package)
+        self.update = UpdateVersionInformation()
+
+    def test_extract_versions_if_no_hidden_flag(self):
+        versions = self.update._extract_versions_for_package(
+            self.package.source_package_name)
+        self.assertTrue(versions['version_list'])
+
+    def test_extract_versions_if_hidden_flag_false(self):
+        RepositoryFlag.objects.create(repository=self.repo1, name='hidden',
+                                      value=False)
+        versions = self.update._extract_versions_for_package(
+            self.package.source_package_name)
+        self.assertTrue(versions['version_list'])
+
+    def test_extract_versions_if_hidden_flag_true(self):
+        RepositoryFlag.objects.create(repository=self.repo1, name='hidden',
+                                      value=True)
+        versions = self.update._extract_versions_for_package(
+            self.package.source_package_name)
+        self.assertFalse(versions['version_list'])
 
 
 class RetrieveSourcesFailureTest(TransactionTestCase):

@@ -905,6 +905,8 @@ class UpdateVersionInformation(PackageUpdateTask):
         """
         version_list = []
         for repository in package_name.repositories:
+            if repository.get_flags()['hidden']:
+                continue
             entry = repository.get_source_package_entry(package_name)
             version_list.append({
                 'repository': {
