@@ -229,6 +229,7 @@ class RepositoryAdmin(admin.ModelAdmin):
         'binary',
         'source',
         'position',
+        'flags_string',
     )
 
     ordering = (
@@ -265,6 +266,11 @@ class RepositoryAdmin(admin.ModelAdmin):
         """
         return ' '.join(map(str, obj.architectures.all()))
     architectures_string.short_description = 'architectures'
+
+    def flags_string(self, obj):
+        return ' '.join("{}={}".format(x.name, x.value)
+                        for x in obj.flags.all())
+    flags_string.short_description = 'Flags'
 
 
 admin.site.register(Repository, RepositoryAdmin)
