@@ -442,6 +442,10 @@ class VersionedLinks(BasePanel):
 
         versioned_links = []
         for package in versions:
+            if all([src_repo_entry.repository.get_flags()['hidden']
+                    for src_repo_entry in package.repository_entries.all()]):
+                # All associated repositories are hidden
+                continue
             links = [
                 link
                 for link_provider in VersionedLinks.LinkProvider.get_providers()

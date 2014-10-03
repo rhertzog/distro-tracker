@@ -33,6 +33,9 @@ class VersionedLinksPanelTests(TestCase):
         self.package = SourcePackage.objects.create(
             source_package_name=self.package_name,
             version='1.0.0')
+        self.repo1 = Repository.objects.create(name='repo1', shorthand='repo1')
+        self.repo1.source_entries.create(source_package=self.package)
+        self.panel = VersionedLinks(self.package_name, None)
         # Clear any registered link providers to let the test control which
         # ones exist.
         VersionedLinks.LinkProvider.plugins = []
@@ -79,6 +82,38 @@ class VersionedLinksPanelTests(TestCase):
         response = self.get_package_page_response()
 
         self.assertTrue(self.panel_is_in_response(response))
+
+    def test_context_returns_something(self):
+        """Tests that the context returns data for the source package
+        version we have."""
+        self.add_link_provider(['icon1'])
+
+        context = self.panel.context
+
+        self.assertEqual(len(context), 1)
+
+    def test_context_does_not_contain_hidden_versions(self):
+        """Tests that the context doesn't return data for source
+        package versions that are only in hidden repositories."""
+        self.repo1.flags.create(name='hidden', value=True)
+        self.add_link_provider(['icon1'])
+
+        context = self.panel.context
+
+        self.assertEqual(len(context), 0)
+
+    def test_context_returns_version_in_hidden_and_non_hidden_repo(self):
+        """Tests that the context doesn't return data for source
+        package versions that are only in hidden repositories."""
+        self.repo1.flags.create(name='hidden', value=True)
+        self.repo2 = Repository.objects.create(name='repo2', shorthand='repo2')
+        self.repo2.source_entries.create(source_package=self.package)
+        self.repo2.flags.create(name='hidden', value=False)
+        self.add_link_provider(['icon1'])
+
+        context = self.panel.context
+
+        self.assertEqual(len(context), 1)
 
 
 class GeneralInfoLinkPanelItemsTests(TestCase):
