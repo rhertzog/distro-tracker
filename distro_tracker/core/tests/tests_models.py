@@ -834,6 +834,35 @@ class RepositoryFlagsTests(TestCase):
             RepositoryFlag.objects.create(repository=self.repo1, name='hidden',
                                           value=True)
 
+    def test_get_flags_existing(self):
+        """Ensure Repository.get_flags() returns existing flags"""
+        self.repo1.flags.create(name='testflag', value=True)
+        self.repo1.flags.create(name='testflag2', value=False)
+
+        flags = self.repo1.get_flags()
+
+        self.assertEqual(flags['testflag'], True)
+        self.assertEqual(flags['testflag2'], False)
+
+    def test_get_flags_non_existing(self):
+        """Ensure Repository.get_flags() returns default values for
+        non-existing flags"""
+        flags = self.repo1.get_flags()
+
+        for flag, defvalue in RepositoryFlag.FLAG_DEFAULT_VALUES.items():
+            self.assertEqual(flags[flag], defvalue)
+
+    def test_get_flags_existing_non_default_value(self):
+        """Ensure get_flags() returns the value of the RepositoryFlag
+        and not only the default value of the flag"""
+        for flag, defvalue in RepositoryFlag.FLAG_DEFAULT_VALUES.items():
+            self.repo1.flags.create(name=flag, value=not defvalue)
+
+        flags = self.repo1.get_flags()
+
+        for flag, defvalue in RepositoryFlag.FLAG_DEFAULT_VALUES.items():
+            self.assertEqual(flags[flag], not defvalue)
+
 
 class SourcePackageTests(TestCase):
     fixtures = ['repository-test-fixture.json']

@@ -973,13 +973,32 @@ class Repository(models.Model):
             return self.default
         return False
 
+    def get_flags(self):
+        """
+        Returns a dict of existing flags and values. If no existing flag it
+        returns the default value.
+        """
+        d = {}
+        for flag, defvalue in RepositoryFlag.FLAG_DEFAULT_VALUES.items():
+            d[flag] = defvalue
+        for flag in self.flags.all():
+            d[flag.name] = flag.value
+        return d
+
 
 class RepositoryFlag(models.Model):
     """
     Boolean options associated to repositories.
     """
+    FLAG_NAMES = (
+        ('hidden', 'Hidden repository'),
+    )
+    FLAG_DEFAULT_VALUES = {
+        'hidden': False,
+    }
+
     repository = models.ForeignKey(Repository, related_name='flags')
-    name = models.CharField(max_length=50)
+    name = models.CharField(max_length=50, choices=FLAG_NAMES)
     value = models.BooleanField(default=False)
 
     class Meta:
