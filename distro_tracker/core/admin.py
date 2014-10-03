@@ -18,6 +18,7 @@ from .models import Repository
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from distro_tracker.core.models import Architecture
+from distro_tracker.core.models import RepositoryFlag
 from distro_tracker.core.retrieve_data import retrieve_repository_info
 from distro_tracker.core.retrieve_data import InvalidRepositoryException
 import requests
@@ -105,6 +106,10 @@ class RepositoryAdminForm(forms.ModelForm):
         ]
     )
 
+    flags = forms.MultipleChoiceField(
+        required=False,
+        widget=forms.CheckboxSelectMultiple, choices=RepositoryFlag.FLAG_NAMES)
+
     class Meta:
         model = Repository
         exclude = (
@@ -113,6 +118,17 @@ class RepositoryAdminForm(forms.ModelForm):
         )
 
     def __init__(self, *args, **kwargs):
+        # Inject initial data for flags field
+        initial = kwargs.get('initial', {})
+        instance = kwargs.get('instance', None)
+        if instance is None:
+            flags = RepositoryFlag.FLAG_DEFAULT_VALUES
+        else:
+            flags = instance.get_flags()
+        initial['flags'] = [
+            flag_name for flag_name in flags if flags[flag_name]
+        ]
+        kwargs['initial'] = initial
         super(RepositoryAdminForm, self).__init__(*args, **kwargs)
         # Fields can't be required if we want to support different methods of
         # setting their value through the same form (sources.list and directly)
@@ -185,7 +201,7 @@ class RepositoryAdmin(admin.ModelAdmin):
 
     form = RepositoryAdminForm
 
-    #: Sections the form in three main parts
+    # Sections the form in multiple parts
     fieldsets = [
         (None, {
             'fields': [
@@ -211,7 +227,12 @@ class RepositoryAdmin(admin.ModelAdmin):
                 'binary',
                 'source',
             ]
-        })
+        }),
+        ('Repository flags', {
+            'fields': [
+                'flags',
+            ]
+        }),
     ]
 
     #: Gives a list of fields which should be displayed as columns in the
@@ -244,6 +265,14 @@ class RepositoryAdmin(admin.ModelAdmin):
         if not change and obj.position == 0:
             obj.position = Repository.objects.count() + 1
         obj.save()
+        for flag in RepositoryFlag.FLAG_DEFAULT_VALUES:
+            value = flag in form.cleaned_data['flags']
+            try:
+                repo_flag = obj.flags.get(name=flag)
+                repo_flag.value = value
+                repo_flag.save()
+            except RepositoryFlag.DoesNotExist:
+                obj.flags.create(name=flag, value=value)
 
     def components_string(self, obj):
         """
