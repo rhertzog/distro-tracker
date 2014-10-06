@@ -173,6 +173,25 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
             news.title,
             source_package_name, source_package_version, repository_name)
 
+    def test_new_source_package_in_hidden_repository(self):
+        """
+        Tests the case when a completely new source package is created and
+        appears in a hidden repository.
+        """
+        source_package_name = 'dummy-package'
+        source_package_version = '1.0.0'
+        repository_name = 'some-repository'
+        self.create_source_package(source_package_name, source_package_version)
+        self.add_source_package_to_repository(
+            source_package_name, source_package_version, repository_name)
+        Repository.objects.get(name=repository_name).flags.create(name='hidden',
+                                                                  value=True)
+
+        self.run_task()
+
+        # No news item is created
+        self.assertEqual(0, News.objects.count())
+
     def test_new_source_package_version(self):
         """
         Tests the case when a new version of an already existing source package
@@ -197,6 +216,28 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         self.assert_correct_migrated_message(
             news.title,
             source_package_name, source_package_version, repository_name)
+
+    def test_new_source_package_version_in_hidden_repository(self):
+        """
+        Tests the case when a new version of an already existing source package
+        is created in a hidden repository.
+        """
+        source_package_name = 'dummy-package'
+        source_package_version = '1.1.0'
+        repository_name = 'some-repository'
+        # Create the package, but do not add those events to the task
+        self.create_source_package(
+            source_package_name, source_package_version, events=False)
+        # Add the package to the repository
+        self.add_source_package_to_repository(
+            source_package_name, source_package_version, repository_name)
+        Repository.objects.get(name=repository_name).flags.create(name='hidden',
+                                                                  value=True)
+
+        self.run_task()
+
+        # No news item is created
+        self.assertEqual(0, News.objects.count())
 
     def test_new_source_package_version_replaces_old_one(self):
         """
@@ -304,6 +345,28 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
                 source_package_name, version, repository_name
             )
 
+    def test_package_version_add_different_repos_one_hidden(self):
+        """
+        Tests the case where a single existing package version is added to two
+        repositories (one of them is hidden) and tests that a news is generated
+        if the flag 'hidden' is false.
+        """
+        source_package_name = 'dummy-package'
+        version = '1.1.0'
+        repositories = ['repo1', 'repo2']
+        self.create_source_package(source_package_name, version, events=False)
+        for repository in repositories:
+            self.add_source_package_to_repository(
+                source_package_name, version, repository)
+        Repository.objects.get(name='repo1').flags.create(name='hidden',
+                                                          value=True)
+        Repository.objects.get(name='repo2').flags.create(name='hidden',
+                                                          value=False)
+
+        self.run_task()
+
+        self.assertEqual(1, News.objects.count())
+
     def test_package_version_updates_different_repos(self):
         """
         Tests the case where a single existing package version is added to two
@@ -392,6 +455,54 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
             News.objects.all()[0].title,
             source_package_name, repository
         )
+
+    def test_source_package_removed_from_hidden_repository(self):
+        """
+        Tests the case where a single source package version is removed
+        from a hidden repository.
+        """
+        source_package_name = 'dummy-package'
+        version = '1.0.0'
+        repository = 'repo'
+        self.create_source_package(source_package_name, version, events=False)
+        self.add_source_package_to_repository(
+            source_package_name, version, repository, events=False)
+        self.remove_source_package_from_repository(
+            source_package_name, version, repository)
+        Repository.objects.get(name=repository).flags.create(name='hidden',
+                                                             value=True)
+
+        self.run_task()
+
+        # No news item is created.
+        self.assertEqual(0, News.objects.count())
+
+    def test_migrate_from_a_hidden_repository(self):
+        """
+        Tests the case where a package version existing in a hidden repository
+        is added to one repository.
+        """
+        source_package_name = 'dummy-package'
+        version = '1.0.0'
+        repositories = ['repo1', 'repo2']
+
+        self.create_source_package(
+            source_package_name, version, events=False)
+        self.add_source_package_to_repository(
+            source_package_name, version, repositories[0], events=False)
+        # Add the version to one repository
+        self.add_source_package_to_repository(
+            source_package_name, version, repositories[1])
+        Repository.objects.get(name='repo1').flags.create(name='hidden',
+                                                          value=True)
+
+        self.run_task()
+
+        # One news item - migrated to a non-hidden repository
+        self.assertEqual(1, News.objects.count())
+        news = News.objects.first()
+        self.assert_correct_migrated_message(
+            news.title, source_package_name, version, repositories[1])
 
     def test_multiple_versions_removed_same_repo(self):
         """

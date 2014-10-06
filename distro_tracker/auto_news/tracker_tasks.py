@@ -57,6 +57,9 @@ class GenerateNewsFromRepositoryUpdates(BaseTask):
                                new_source_version):
         version = event.arguments['version']
         title, content = None, None
+        # Don't process event if the repository is hidden
+        if repository.get_flags()['hidden']:
+            return
         if event.name == 'new-source-package-version-in-repository':
             if new_source_version:
                 title = "Accepted {pkg} version {ver} to {repo}"
