@@ -131,7 +131,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
     def assert_correct_accepted_message(self, title,
                                         package_name, version, repository):
         self.assertEqual(
-            'Accepted {pkg} version {ver} to {repo}'.format(
+            '{pkg} {ver} has been added to {repo}'.format(
                 pkg=package_name, ver=version, repo=repository),
             title
         )
@@ -139,14 +139,14 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
     def assert_correct_migrated_message(self, title,
                                         package_name, version, repository):
         self.assertEqual(
-            '{pkg} version {ver} MIGRATED to {repo}'.format(
+            '{pkg} {ver} migrated to {repo}'.format(
                 pkg=package_name, ver=version, repo=repository),
             title
         )
 
     def assert_correct_removed_message(self, title, package_name, repository):
         self.assertEqual(
-            '{pkg} REMOVED from {repo}'.format(
+            '{pkg} has been removed from {repo}'.format(
                 pkg=package_name, repo=repository),
             title
         )

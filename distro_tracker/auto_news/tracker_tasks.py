@@ -62,11 +62,11 @@ class GenerateNewsFromRepositoryUpdates(BaseTask):
             return
         if event.name == 'new-source-package-version-in-repository':
             if new_source_version:
-                title = "Accepted {pkg} version {ver} to {repo}"
+                title = "{pkg} {ver} has been added to {repo}"
                 content = self.generate_accepted_news_content(
                     package, version)
             else:
-                title = "{pkg} version {ver} MIGRATED to {repo}"
+                title = "{pkg} {ver} migrated to {repo}"
         elif event.name == 'lost-source-package-version-in-repository':
             # Check if the repository still has some version of the
             # source package. If not, a news item needs to be added
@@ -76,7 +76,7 @@ class GenerateNewsFromRepositoryUpdates(BaseTask):
                 return
             self._package_removed_processed = True
             if not repository.has_source_package_name(package.name):
-                title = "{pkg} REMOVED from {repo}"
+                title = "{pkg} has been removed from {repo}"
 
         if title is not None:
             News.objects.create(
