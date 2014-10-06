@@ -445,7 +445,7 @@ class SourcePackageName(PackageName):
             :py:class:`Repository` instances.
         """
         kwargs = {
-            'sourcepackagerepositoryentry'
+            'source_entries'
             '__source_package'
             '__source_package_name': self
         }
@@ -827,7 +827,7 @@ class Repository(models.Model):
         """
         if isinstance(package_name, SourcePackageName):
             package_name = package_name.name
-        qs = self.sourcepackagerepositoryentry_set.filter(
+        qs = self.source_entries.filter(
             source_package__source_package_name__name=package_name)
         qs = qs.select_related()
         try:
@@ -895,7 +895,7 @@ class Repository(models.Model):
         :returns True: If it does contain the given :class:`SourcePackage`
         :returns False: If it does not contain the given :class:`SourcePackage`
         """
-        qs = self.binary_package_entries.filter(binary_package=binary_package)
+        qs = self.binary_entries.filter(binary_package=binary_package)
         return qs.exists()
 
     def add_binary_package(self, package, **kwargs):
@@ -1201,7 +1201,7 @@ class BinaryPackageRepositoryEntry(models.Model):
     )
     repository = models.ForeignKey(
         Repository,
-        related_name='binary_package_entries'
+        related_name='binary_entries'
     )
     architecture = models.ForeignKey(Architecture)
 
@@ -1252,7 +1252,7 @@ class SourcePackageRepositoryEntry(models.Model):
         SourcePackage,
         related_name='repository_entries'
     )
-    repository = models.ForeignKey(Repository)
+    repository = models.ForeignKey(Repository, related_name='source_entries')
 
     priority = models.CharField(max_length=50, blank=True)
     section = models.CharField(max_length=50, blank=True)

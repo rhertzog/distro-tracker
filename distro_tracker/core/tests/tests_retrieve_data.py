@@ -803,8 +803,8 @@ class RetrieveSourcesInformationTest(TestCase):
         # All binary names related to the source package are created
         self.assertEqual(BinaryPackageName.objects.count(), 8)
         # The binary package is found in the repository
-        self.assertEqual(1, self.repository.binary_package_entries.count())
-        entry = self.repository.binary_package_entries.all()[0]
+        self.assertEqual(1, self.repository.binary_entries.count())
+        entry = self.repository.binary_entries.all()[0]
         self.assertEqual(
             package_name,
             entry.binary_package.binary_package_name.name)
@@ -839,8 +839,8 @@ class RetrieveSourcesInformationTest(TestCase):
         # All binary names related to the source package are created
         self.assertEqual(BinaryPackageName.objects.count(), 8)
         # The binary package is found in the repository
-        self.assertEqual(1, self.repository.binary_package_entries.count())
-        entry = self.repository.binary_package_entries.all()[0]
+        self.assertEqual(1, self.repository.binary_entries.count())
+        entry = self.repository.binary_entries.all()[0]
         self.assertEqual(
             binary_name,
             entry.binary_package.binary_package_name.name)
@@ -876,8 +876,8 @@ class RetrieveSourcesInformationTest(TestCase):
         # All binary names related to the source package are created
         self.assertEqual(BinaryPackageName.objects.count(), 8)
         # The binary package is found in the repository
-        self.assertEqual(1, self.repository.binary_package_entries.count())
-        entry = self.repository.binary_package_entries.all()[0]
+        self.assertEqual(1, self.repository.binary_entries.count())
+        entry = self.repository.binary_entries.all()[0]
         self.assertEqual(
             binary_name,
             entry.binary_package.binary_package_name.name)
@@ -927,7 +927,7 @@ class RetrieveSourcesInformationTest(TestCase):
         # The entry is removed from the repository
         bin_pkgs_in_repo = [
             entry.binary_package.name
-            for entry in self.repository.binary_package_entries.all()
+            for entry in self.repository.binary_entries.all()
         ]
         self.assertNotIn(binary_name, bin_pkgs_in_repo)
 
