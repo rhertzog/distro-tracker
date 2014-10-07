@@ -265,6 +265,8 @@ class RepositoryAdmin(admin.ModelAdmin):
         if not change and obj.position == 0:
             obj.position = Repository.objects.count() + 1
         obj.save()
+        if 'flags' not in form.cleaned_data:
+            return
         for flag in RepositoryFlag.FLAG_DEFAULT_VALUES:
             value = flag in form.cleaned_data['flags']
             try:
