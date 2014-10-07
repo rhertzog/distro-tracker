@@ -1005,6 +1005,25 @@ class RepositoryFlag(models.Model):
         unique_together = ('repository', 'name')
 
 
+class RepositoryRelation(models.Model):
+    """
+    Relations between two repositories. The relations are to be interpreted
+    like "<repository> is a <relation> of <target_repository>".
+    """
+    RELATION_NAMES = (
+        ('derivative', 'Derivative repository (target=parent)'),
+        ('overlay', 'Overlay of target repository'),
+    )
+
+    repository = models.ForeignKey(Repository, related_name='relations')
+    name = models.CharField(max_length=50, choices=RELATION_NAMES)
+    target_repository = models.ForeignKey(Repository,
+                                          related_name='reverse_relations')
+
+    class Meta:
+        unique_together = ('repository', 'name')
+
+
 @python_2_unicode_compatible
 class ContributorName(models.Model):
     """

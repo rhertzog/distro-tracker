@@ -32,6 +32,7 @@ from distro_tracker.core.models import ActionItem, ActionItemType
 from distro_tracker.core.models import PseudoPackageName
 from distro_tracker.core.models import Repository
 from distro_tracker.core.models import RepositoryFlag
+from distro_tracker.core.models import RepositoryRelation
 from distro_tracker.core.models import News
 from distro_tracker.core.models import EmailNews
 from distro_tracker.core.models import SourcePackage
@@ -826,7 +827,7 @@ class RepositoryFlagsTests(TestCase):
 
     def test_unique_keys(self):
         """
-        Test that we can't create two identique flags for the same repository
+        Test that we can't create two identic flags for the same repository
         """
         self.repo_flag = RepositoryFlag.objects.create(
             repository=self.repo1, name='hidden', value=True)
@@ -862,6 +863,43 @@ class RepositoryFlagsTests(TestCase):
 
         for flag, defvalue in RepositoryFlag.FLAG_DEFAULT_VALUES.items():
             self.assertEqual(flags[flag], not defvalue)
+
+
+class RepositoryRelationTests(TestCase):
+    def setUp(self):
+        self.repo1 = Repository.objects.create(
+            name='repo1', shorthand='repo1', codename='codename1',
+            suite='suite1')
+        self.repo2 = Repository.objects.create(
+            name='repo2', shorthand='repo2', codename='codename2',
+            suite='suite2')
+        self.repo3 = Repository.objects.create(
+            name='repo3', shorthand='repo3', codename='codename3',
+            suite='suite3')
+
+    def test_add_relation(self):
+        """
+        Test adding a relation between two repositories and acessing to the
+        relation information.
+        """
+        repo_relation = RepositoryRelation.objects.create(
+            repository=self.repo1,
+            target_repository=self.repo2,
+            name='derivative')
+        self.assertEqual(repo_relation, self.repo1.relations.first())
+        self.assertEqual(repo_relation, self.repo2.reverse_relations.first())
+
+    def test_unique_keys(self):
+        """
+        Test that we can't create two identic relations for the same repository.
+        """
+        RepositoryRelation.objects.create(repository=self.repo1,
+                                          target_repository=self.repo2,
+                                          name='derivative')
+        with self.assertRaises(IntegrityError):
+            RepositoryRelation.objects.create(
+                repository=self.repo1, target_repository=self.repo3,
+                name='derivative')
 
 
 class SourcePackageTests(TestCase):
