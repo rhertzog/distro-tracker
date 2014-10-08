@@ -19,6 +19,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from distro_tracker.core.models import Architecture
 from distro_tracker.core.models import RepositoryFlag
+from distro_tracker.core.models import RepositoryRelation
 from distro_tracker.core.retrieve_data import retrieve_repository_info
 from distro_tracker.core.retrieve_data import InvalidRepositoryException
 import requests
@@ -304,4 +305,19 @@ class RepositoryAdmin(admin.ModelAdmin):
     flags_string.short_description = 'Flags'
 
 
+class RepositoryRelationAdmin(admin.ModelAdmin):
+    """
+    Actual configuration for the
+    :class:`Repository <distro_tracker.core.models.RepositoryRelation>`
+    admin panel.
+    """
+
+    list_display = (
+        'repository',
+        'name',
+        'target_repository',
+    )
+
+
 admin.site.register(Repository, RepositoryAdmin)
+admin.site.register(RepositoryRelation, RepositoryRelationAdmin)
