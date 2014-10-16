@@ -1,0 +1,11 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ block.super }} - Data for derivative distributions{% endblock %}
+
+{% block content %}
+<ul class="list-group">
+{% for relation in list_derivatives %}
+<li><a href="{% url 'dtracker-derivative-comparison' relation.repository.shorthand %}">{{ relation.repository.name }}</a> (derives from {{ relation.target_repository.name }})</li>
+{% endfor %}
+</ul>
+{% endblock %}

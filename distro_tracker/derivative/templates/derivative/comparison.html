@@ -1,0 +1,26 @@
+{% extends 'core/base.html' %}
+{% load distro_tracker_extras%}
+
+{% block title %}{{ block.super }} - {{ repository }} compared to {{ target_repository }}{% endblock %}
+
+{% block content %}
+{% regroup pkglist by category as category_list %}
+
+<table class="table table-condensed">
+{% for category in category_list %}
+    <tr><th colspan="3">{{ categories|lookup:category.grouper }}</th></tr>
+    <tr><th>Package Name</th>
+	<th>Version in derivative distribution</th>
+	<th>Version in parent distribution</th>
+    </tr>
+    {% for pkg in category.list %}
+    <tr>
+	<td><a href="{% url 'dtracker-package-page' pkg.name %}">{{ pkg.name }}</a></td>
+	<td>{{ pkg.deriv_version }}</td>
+	<td>{{ pkg.parent_version }}</td>
+    </tr>
+    {% endfor %}
+{% endfor %}
+</table>
+{% endblock %}
+
