@@ -9,6 +9,7 @@
 # except according to the terms contained in the LICENSE file.
 """Views for the :mod:`distro_tracker.core` app."""
 from __future__ import unicode_literals
+import importlib
 from django.conf import settings
 from django.shortcuts import render, redirect
 from django.shortcuts import get_object_or_404
@@ -20,6 +21,7 @@ from django.views.generic.edit import UpdateView
 from django.views.generic.detail import DetailView
 from django.views.generic import DeleteView
 from django.views.generic import ListView
+from django.views.generic import TemplateView
 from django.views.decorators.cache import cache_control
 from django.core.mail import send_mail
 from django.core.exceptions import PermissionDenied
@@ -623,4 +625,22 @@ class EditMembershipView(LoginRequiredMixin, ListView):
         context = super(EditMembershipView, self).get_context_data(*args,
                                                                    **kwargs)
         context['membership'] = self.membership
+        return context
+
+
+class IndexView(TemplateView):
+    template_name = 'core/index.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(IndexView, self).get_context_data(**kwargs)
+        links = []
+        for app in settings.INSTALLED_APPS:
+            try:
+                urlmodule = importlib.import_module(app + '.tracker_urls')
+                if hasattr(urlmodule, 'frontpagelinks'):
+                    links += [(reverse(name), text)
+                              for name, text in urlmodule.frontpagelinks]
+            except ImportError:
+                pass
+        context['application_links'] = links
         return context

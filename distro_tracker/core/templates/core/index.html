@@ -1,10 +1,15 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
-<div class="row-fluid">
-    <div><a href="{% url 'dtracker-team-list' %}">Browse public teams</a></div>
-</div>
+<h3>Lookup package information</h3>
 <div class="row-fluid">
     {% include 'core/package-search-form.html' with search_form_use_label=1 autofocus=1 %}
 </div>
+
+<h3>Other useful pages</h3>
+<ul>
+{% for link_url, link_text in application_links %}
+<li><a href="{{ link_url }}">{{ link_text }}</a></li>
+{% endfor %}
+</ul>
 {% endblock %}

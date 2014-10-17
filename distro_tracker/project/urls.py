@@ -38,6 +38,7 @@ from distro_tracker.core.views import ConfirmMembershipView
 from distro_tracker.core.views import SetMuteTeamView
 from distro_tracker.core.views import SetMembershipKeywords
 from distro_tracker.core.views import EditMembershipView
+from distro_tracker.core.views import IndexView
 from distro_tracker.core.news_feed import PackageNewsFeed
 from distro_tracker.accounts.views import ConfirmAddAccountEmail
 from distro_tracker.accounts.views import LoginView
@@ -97,8 +98,7 @@ urlpatterns = patterns(
     url(r'^action-items/(?P<item_pk>\d+)$', ActionItemView.as_view(),
         name='dtracker-action-item'),
 
-    url(r'^$', TemplateView.as_view(template_name='core/index.html'),
-        name='dtracker-index'),
+    url(r'^$', IndexView.as_view(), name='dtracker-index'),
 
     # Account related URLs
     url(r'^accounts/register/$', RegisterUser.as_view(),
@@ -229,7 +229,8 @@ urlpatterns = patterns(
 for app in settings.INSTALLED_APPS:
     try:
         urlmodule = importlib.import_module(app + '.tracker_urls')
-        urlpatterns += urlmodule.urlpatterns
+        if hasattr(urlmodule, 'urlpatterns'):
+            urlpatterns += urlmodule.urlpatterns
     except ImportError:
         pass
 
