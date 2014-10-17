@@ -6,9 +6,21 @@
 {% block content %}
 {% regroup pkglist by category as category_list %}
 
-<table class="table table-condensed">
+<p>Quick links:</p>
+<ul>
 {% for category in category_list %}
-    <tr><th colspan="3">{{ categories|lookup:category.grouper }}</th></tr>
+<li><a href='#{{ category.grouper }}'>{{ categories|lookup:category.grouper }}</a>
+    ({{ category.list|length }} packages)</li>
+{% endfor %}
+</ul>
+
+<table style="margin-top: 15px" class="table table-striped table-condensed">
+{% for category in category_list %}
+    <tr><th colspan="3" id='{{ category.grouper}}'
+            style='text-align: center; padding-top: 15px; padding-bottom: 15px;'>
+	{{ categories|lookup:category.grouper }} ({{ category.list|length }} packages)
+	</th>
+    </tr>
     <tr><th>Package Name</th>
 	<th>Version in derivative distribution</th>
 	<th>Version in parent distribution</th>
