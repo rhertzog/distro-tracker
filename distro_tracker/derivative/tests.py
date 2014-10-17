@@ -8,17 +8,17 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """
-Tests for the :mod:`distro_tracker.related_repositories` app.
+Tests for the :mod:`distro_tracker.derivative` app.
 """
 
-from django.test import TestCase
+from distro_tracker.test import TestCase
 
 from distro_tracker.core.models import Repository
 from distro_tracker.core.models import RepositoryRelation
 from distro_tracker.core.models import SourcePackageName
-from distro_tracker.derivative.views import generatediff
-from distro_tracker.derivative.views import divide
-from distro_tracker.derivative.views import categorize_version_comparison
+from distro_tracker.derivative.utils import compare_repositories
+from distro_tracker.derivative.utils import split_version
+from distro_tracker.derivative.utils import categorize_version_comparison
 
 
 class GenerateComparatingListTest(TestCase):
@@ -49,21 +49,21 @@ class GenerateComparatingListTest(TestCase):
         self.add_package('pkg2', '1.0.0', '1.0.1')
         self.add_package('foopkg', '1.0.0', '1.0.1')
 
-    def test_generatediff_same_categories(self):
+    def test_compare_repositories_same_categories(self):
         # Test that the list is correctly sorted by package name as all packages
         # are in the same category
-        pkglist = generatediff(self.relation)
+        pkglist = compare_repositories(self.derivative_repo, self.target_repo)
         self.assertEqual(pkglist[0]['name'], 'foopkg')
         self.assertEqual(pkglist[1]['name'], 'pkg1')
         self.assertEqual(pkglist[0]['category'], pkglist[2]['category'])
         self.assertEqual(pkglist[0]['category'], 'older_version')
 
-    def test_generatediff_different_categories(self):
+    def test_compare_repositories_different_categories(self):
         # Test that the list is sorted by category then by name
         self.add_package('foopkg2', None, '1.0.1')
         self.add_package('firstpkg', None, '1.0')
 
-        pkglist = generatediff(self.relation)
+        pkglist = compare_repositories(self.derivative_repo, self.target_repo)
 
         self.assertEqual(pkglist[0]['name'], 'foopkg')
         self.assertEqual(pkglist[1]['name'], 'pkg1')
@@ -115,24 +115,24 @@ class CategorizeVersionComparisonTest(TestCase):
         self.assertEqual('newer_revision', categorize_version_comparison(a, b))
 
 
-class DivideVersionTest(TestCase):
+class SplitVersionTest(TestCase):
     def test_with_epoch_and_revision(self):
         version = '4:9.3.4-1-12'
-        divide_version = divide(version)
-        self.assertEqual(divide_version['epoch'], '4')
-        self.assertEqual(divide_version['upstream'], '9.3.4-1')
-        self.assertEqual(divide_version['debian_rev'], '12')
+        epoch, upstream, revision = split_version(version)
+        self.assertEqual(epoch, '4')
+        self.assertEqual(upstream, '9.3.4-1')
+        self.assertEqual(revision, '12')
 
     def test_without_epoch_but_revision(self):
         version = '9.3.4-12'
-        divide_version = divide(version)
-        self.assertEqual(divide_version['epoch'], '~')
-        self.assertEqual(divide_version['upstream'], '9.3.4')
-        self.assertEqual(divide_version['debian_rev'], '12')
+        epoch, upstream, revision = split_version(version)
+        self.assertEqual(epoch, '~')
+        self.assertEqual(upstream, '9.3.4')
+        self.assertEqual(revision, '12')
 
     def test_without_epoch_and_revision(self):
         version = '9.3.4'
-        divide_version = divide(version)
-        self.assertEqual(divide_version['epoch'], '~')
-        self.assertEqual(divide_version['upstream'], '9.3.4')
-        self.assertEqual(divide_version['debian_rev'], '~')
+        epoch, upstream, revision = split_version(version)
+        self.assertEqual(epoch, '~')
+        self.assertEqual(upstream, '9.3.4')
+        self.assertEqual(revision, '~')
