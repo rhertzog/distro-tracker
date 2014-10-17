@@ -10,10 +10,14 @@
 """The URL routes for the Distro Tracker project."""
 
 from __future__ import unicode_literals
+
+import importlib
+
 from django.conf.urls import patterns, include, url
 from django.conf import settings
 from django.shortcuts import redirect
 from django.views.generic import TemplateView
+
 from distro_tracker.core.views import PackageSearchView, PackageAutocompleteView
 from distro_tracker.core.views import OpenSearchDescription
 from distro_tracker.core.views import ActionItemJsonView, ActionItemView
@@ -218,16 +222,25 @@ urlpatterns = patterns(
     url(r'^pkg/(?P<package_name>.+)/rss$', PackageNewsFeed(),
         name='dtracker-package-rss-news-feed'),
 
+    # Uncomment the admin/doc line below to enable admin documentation:
+    # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
+)
+
+for app in settings.INSTALLED_APPS:
+    try:
+        urlmodule = importlib.import_module(app + '.tracker_urls')
+        urlpatterns += urlmodule.urlpatterns
+    except ImportError:
+        pass
+
+urlpatterns += patterns(
+    '',
     # The package page view catch all. It must be listed *after* the admin
     # URL so that the admin URL is not interpreted as a package named "admin".
     url(r'^(?P<package_name>[^/]+)/?$',
         'distro_tracker.core.views.package_page_redirect',
         name='dtracker-package-page-redirect'),
-
-    # Uncomment the admin/doc line below to enable admin documentation:
-    # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
 )
-
 
 if settings.DEBUG:
     urlpatterns = patterns(
