@@ -765,11 +765,7 @@ class Repository(models.Model):
         )
 
     def __str__(self):
-        return ' '.join((
-            self.uri,
-            self.codename,
-            ' '.join(self.components)
-        ))
+        return self.name
 
     @property
     def sources_list_entry(self):
