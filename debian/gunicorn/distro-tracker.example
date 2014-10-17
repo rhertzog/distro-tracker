@@ -1,5 +1,5 @@
 CONFIG = {
-    'mode': 'django',
+    'mode': 'wsgi',
     #'environment': {
     #    'PYTHONPATH': '/path/to/custom/python/packages',
     #},
@@ -9,7 +9,7 @@ CONFIG = {
     'args': (
         '--bind=unix:/var/lib/distro-tracker/gunicorn.sock',
         '--workers=4',
-        'distro_tracker.project.settings',
+        'distro_tracker.project.wsgi',
     ),
 }
 
