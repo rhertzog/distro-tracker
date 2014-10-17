@@ -20,3 +20,7 @@ urlpatterns = patterns(
     url('^derivative/(?P<distribution>[^/]+)/$', comparison,
         name='dtracker-derivative-comparison'),
 )
+
+frontpagelinks = [
+    ('dtracker-derivative-index', 'Data about this Debian derivative'),
+]
