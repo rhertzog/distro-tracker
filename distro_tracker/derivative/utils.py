@@ -13,12 +13,12 @@ import collections
 from debian.debian_support import version_compare, BaseVersion
 
 CATEGORIES_VERSION_COMPARISON = {
-    'missing_pkg': 'Missing packages',
-    'older_version': 'Packages with older version',
-    'older_revision': 'Packages with older revision',
-    'new_pkg': 'Packages not in initial distribution',
-    'newer_version': 'Packages with newer version',
-    'newer_revision': 'Packages with newer revision'
+    'missing_pkg': 'Packages missing in the derivative',
+    'older_version': 'Packages with older upstream version',
+    'older_revision': 'Packages with older Debian revision',
+    'new_pkg': 'Packages specific to the derivative',
+    'newer_version': 'Packages with newer upstream version',
+    'newer_revision': 'Packages with newer Debian revision'
 }
 
 CATEGORIES_PRIORITY = {
