@@ -24,6 +24,7 @@ Standards-Version: 3.9.5
 Homepage: http://wiki.debian.org/qa.debian.org/distro-tracker
 Vcs-Git: git://anonscm.debian.org/qa/distro-tracker.git
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=qa/distro-tracker.git;a=summary
+X-Python-Version: >= 2.7
 
 Package: distro-tracker
 Architecture: all
