@@ -1,4 +1,4 @@
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2014 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -58,3 +58,16 @@ def zip_iterables(first, second):
     sequences in the same time in the template itself.
     """
     return zip(first, second)
+
+
+@register.filter()
+def lookup(dictionary, key):
+    """
+    A filter to retrieve values from dictionaries.
+
+    The lookup filter can access dictionnary entries by their key, where the
+    key can be a variable and not only a literal value. It can be used
+    like this "dictionary|lookup:key" where both "dictionary" and "key"
+    are variables.
+    """
+    return dictionary.get(key, '')
