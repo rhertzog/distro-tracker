@@ -1358,6 +1358,15 @@ class SourcePackageRepositoryEntry(models.Model):
         return self.source_package.version
 
 
+def _extracted_source_file_upload_path(instance, filename):
+    return '/'.join((
+        'packages',
+        package_hashdir(instance.source_package.name),
+        instance.source_package.name,
+        os.path.basename(filename) + '-' + instance.source_package.version
+    ))
+
+
 @python_2_unicode_compatible
 class ExtractedSourceFile(models.Model):
     """
@@ -1367,12 +1376,7 @@ class ExtractedSourceFile(models.Model):
         SourcePackage,
         related_name='extracted_source_files')
     extracted_file = models.FileField(
-        upload_to=lambda instance, filename: '/'.join((
-            'packages',
-            package_hashdir(instance.source_package.name),
-            instance.source_package.name,
-            os.path.basename(filename) + '-' + instance.source_package.version
-        )))
+        upload_to=_extracted_source_file_upload_path)
     name = models.CharField(max_length=100)
     date_extracted = models.DateTimeField(auto_now_add=True)
 
@@ -1546,6 +1550,15 @@ class NewsManager(models.Manager):
         return super(NewsManager, self).create(**kwargs)
 
 
+def news_upload_path(instance, filename):
+    return '/'.join((
+        'news',
+        package_hashdir(instance.package.name),
+        instance.package.name,
+        filename
+    ))
+
+
 @python_2_unicode_compatible
 class News(models.Model):
     """
@@ -1555,16 +1568,7 @@ class News(models.Model):
     title = models.CharField(max_length=255)
     content_type = models.CharField(max_length=100, default='text/plain')
     _db_content = models.TextField(blank=True, null=True)
-    news_file = models.FileField(
-        upload_to=lambda instance, filename: '/'.join((
-            'news',
-            (instance.package.name[:4]
-             if instance.package.name.startswith('lib') else
-             instance.package.name[0]),
-            instance.package.name,
-            filename
-        )),
-        blank=True)
+    news_file = models.FileField(upload_to=news_upload_path, blank=True)
     created_by = models.CharField(max_length=100, blank=True)
     datetime_created = models.DateTimeField(auto_now_add=True)
     signed_by = models.ManyToManyField(
