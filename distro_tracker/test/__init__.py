@@ -14,20 +14,15 @@
 Distro Tracker test infrastructure.
 """
 
-from django.conf import settings
-import django.test
 import shutil
 import tempfile
 import os
 import os.path
 import inspect
 
-# Django 1.7 needs StaticLiveServerTestCase to continue to serve static
-# assets transparently without doing collectstatic first
-try:
-    from django.contrib.staticfiles.testing import StaticLiveServerTestCase
-except ImportError:
-    StaticLiveServerTestCase = django.test.LiveServerTestCase
+from django.conf import settings
+from django.contrib.staticfiles.testing import StaticLiveServerTestCase
+import django.test
 
 
 class TempDirsMixin(object):

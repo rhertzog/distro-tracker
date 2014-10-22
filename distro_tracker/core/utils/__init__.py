@@ -165,12 +165,6 @@ class SpaceDelimitedTextField(six.with_metaclass(models.SubfieldBase,
         return self.get_prep_value(value)
 
 
-if settings.DISTRO_TRACKER_ENABLE_SOUTH:
-    # Register the custom field as safe to introspect by South
-    from south.modelsinspector import add_introspection_rules
-    add_introspection_rules(
-        [], ["^distro_tracker\.core\.utils\.SpaceDelimitedTextField"])
-
 #: A map of currently available VCS systems' shorthands to their names.
 VCS_SHORTHAND_TO_NAME = {
     'svn': 'Subversion',

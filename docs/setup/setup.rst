@@ -10,10 +10,9 @@ Requirements
 
 Distro Tracker currently depends on the following Debian packages:
 
-- python-django (>= 1.6)
+- python-django (>= 1.7)
 - python-requests
 - python-django-jsonfield
-- python-django-south
 - python-django-debug-toolbar (in development mode only)
 - python-debian
 - python-apt
@@ -44,7 +43,6 @@ i.e. psycopg2 for PostgreSQL and MySQL-Python for MySQL, etc.
 
 To create the database you must run the following commands::
 
-$ ./manage.py syncdb
 $ ./manage.py migrate
 
 This is because some of the apps' models are managed by South.
