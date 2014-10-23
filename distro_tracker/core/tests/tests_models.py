@@ -35,6 +35,7 @@ from distro_tracker.core.models import RepositoryFlag
 from distro_tracker.core.models import RepositoryRelation
 from distro_tracker.core.models import News
 from distro_tracker.core.models import EmailNews
+from distro_tracker.core.models import EmailNewsRenderer
 from distro_tracker.core.models import SourcePackage
 from distro_tracker.core.models import ExtractedSourceFile
 from distro_tracker.core.models import MailingList
@@ -45,8 +46,6 @@ from distro_tracker.core.utils import message_from_bytes
 from distro_tracker.core.utils.email_messages import get_decoded_message_payload
 from distro_tracker.accounts.models import User, UserEmail
 from distro_tracker.test.utils import create_source_package
-
-from email import message_from_string
 
 import os
 import email
@@ -1442,14 +1441,14 @@ class NewsTests(TestCase):
         # The content of the test news item is found in a file
         file_path = self.get_test_data_path(
             'signed-message-quoted-printable')
-        with open(file_path, 'r') as f:
+        with open(file_path, 'rb') as f:
             content = f.read()
         expected_name = 'PTS Tests'
         expected_email = 'fake-address@domain.com'
         sender_name = 'Some User'
 
         news = EmailNews.objects.create_email_news(
-            message=message_from_string(content),
+            message=message_from_bytes(content),
             package=self.package)
 
         # The news contains a signature
@@ -1596,6 +1595,25 @@ class NewsTests(TestCase):
             'https://www.debian.org/&lt;/a&gt;',
             content_response)
         self.assertIn('&amp;quot;a &amp;gt; 5&amp;quot;', content_response)
+
+    def test_email_news_render_latin1_message_without_encoding(self):
+        file_path = self.get_test_data_path('message-without-encoding')
+        with open(file_path, 'rb') as f:
+            content = f.read()
+        news = EmailNews.objects.create_email_news(
+            message=message_from_bytes(content),
+            package=self.package)
+        renderer = EmailNewsRenderer(news)
+
+        # Ensure the headers are correctly decoded
+        header_from = renderer.context['headers']['From']
+        self.assertEqual(header_from['emails'][0]['name'],
+                         'David Martínez Moreno')
+        self.assertEqual(header_from['emails'][0]['email'], 'ender@debian.org')
+
+        # Ensure the body is also correctly decoded as latin1
+        self.assertIn('Maintainer: David Martínez Moreno',
+                      renderer.context['parts'][0])
 
 
 @override_settings(TEMPLATE_DIRS=(os.path.join(

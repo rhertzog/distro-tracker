@@ -1672,19 +1672,11 @@ class EmailNews(News):
         fields based on the given email message.
         """
         kwargs = {}
-        try:
-            from_email = decode_header(message.get('From', 'unknown'))
-        except UnicodeDecodeError:
-            from_email = decode_header(message.get('From', 'unknown'),
-                                       default_encoding='iso-8859-1')
+        from_email = decode_header(message.get('From', 'unknown'))
 
         kwargs['created_by'], _ = parseaddr(from_email)
         if 'Subject' in message:
-            try:
-                kwargs['title'] = decode_header(message['Subject'])
-            except UnicodeDecodeError:
-                kwargs['title'] = decode_header(message['Subject'],
-                                                default_encoding='iso-8859-1')
+            kwargs['title'] = decode_header(message['Subject'])
         else:
             kwargs['title'] = \
                 'Email news from {sender}'.format(sender=from_email)

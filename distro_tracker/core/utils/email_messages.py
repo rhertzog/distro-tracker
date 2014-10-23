@@ -208,8 +208,16 @@ def decode_header(header, default_encoding='utf-8'):
     # Join all the different parts of the header into a single unicode string
     result = ''
     for part, encoding in decoded_header:
+        if encoding == 'unknown-8bit':
+            # Python 3 returns unknown-8bit instead of None when you have 8bit
+            # characters without any encoding information
+            encoding = 'iso-8859-1'
         if isinstance(part, six.binary_type):
-            result += part.decode(encoding if encoding else default_encoding)
+            encoding = encoding if encoding else default_encoding
+            try:
+                result += part.decode(encoding)
+            except UnicodeDecodeError:
+                result += part.decode('iso-8859-1', 'replace')
         else:
             result += part
     return result

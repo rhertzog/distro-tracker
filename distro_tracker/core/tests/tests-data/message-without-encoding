@@ -1,0 +1,84 @@
+Return-path: <list@lists.debian.org>
+Received: from murphy.debian.org [216.234.231.6] 
+ by master.debian.org with smtp (Exim 3.12 1 (Debian))
+ id 16lWUN-00082N-00; Thu, 14 Mar 2002 08:45:55 -0600
+Received: (qmail 10757 invoked by uid 38); 14 Mar 2002 13:31:35 -0000
+Resent-Date: 14 Mar 2002 13:31:35 -0000
+Resent-Cc: recipient list not shown: ;
+X-Envelope-Sender: katie@auric.debian.org
+Received: (qmail 10654 invoked from network); 14 Mar 2002 13:31:32 -0000
+Received: from auric.debian.org (mail@206.246.226.45)
+ by murphy.debian.org with SMTP; 14 Mar 2002 13:31:32 -0000
+Received: from katie by auric.debian.org with local (Exim 3.12 1 (Debian))
+ id 16lV6T-0002Ng-00; Thu, 14 Mar 2002 08:17:09 -0500
+From: David "Martínez" Moreno <ender@debian.org>
+To: debian-devel-changes@lists.debian.org
+X-Katie: $Revision: 1.8 $
+Subject: Accepted fcmp 0.14.20020310-1 (all source)
+Message-Id: <E16lV6T-0002Ng-00@auric.debian.org>
+Sender: Archive Administrator <katie@auric.debian.org>
+Date: Thu, 14 Mar 2002 08:17:09 -0500
+Reply-To: debian-devel@lists.debian.org
+Mail-Followup-To: debian-devel@lists.debian.org
+X-Spam-Status: No, hits=-105.0 required=5.0
+ tests=PGP_SIGNATURE,USER_IN_WHITELIST version=2.01
+Resent-Message-ID: <sjEkQD.A.CoC.3YKk8@murphy>
+Resent-From: debian-devel-changes@lists.debian.org
+X-Mailing-List: <debian-devel-changes@lists.debian.org> archive/latest/121082
+X-Loop: debian-devel-changes@lists.debian.org
+Precedence: list
+Resent-Sender: debian-devel-changes-request@lists.debian.org
+Delivered-To: joy-list-archive@debian.org
+
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+Format: 1.7
+Date: Thu, 14 Mar 2002 01:22:20 +0100
+Source: fcmp
+Binary: fcmp
+Architecture: source all
+Version: 0.14.20020310-1
+Distribution: unstable
+Urgency: low
+Maintainer: David Martínez Moreno <ender@debian.org>
+Changed-By: David Martínez Moreno <ender@debian.org>
+Description: 
+ fcmp       - Free media files for FreeCraft.
+Closes: 137318
+Changes: 
+ fcmp (0.14.20020310-1) unstable; urgency=low
+ .
+   * New upstream release.
+   * This release also adds some missing artwork, and replaces other.
+   * Several files had non-free licenses, but this issue has been
+     resolved with the new puds included in this release (thanks, aj).
+     This closes: #137318.
+   * Also, this includes data for campaigns, the new addition to FreeCraft.
+Files: 
+ ee895b12ce9772d6296de5cbd6f366cf 630 games optional fcmp_0.14.20020310-1.dsc
+ 825caa5893923c7f3c1165616a436007 5897490 games optional fcmp_0.14.20020310.orig.tar.gz
+ 88b3b5093b45f7ad2397b88cc447b8af 2630 games optional fcmp_0.14.20020310-1.diff.gz
+ 720d9fd1609c8b74769fce8a0556ce75 5926818 games optional fcmp_0.14.20020310-1_all.deb
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.0.6 (GNU/Linux)
+Comment: For info see http://www.gnupg.org
+
+iD8DBQE8j+6FWs/EhA1iABsRAo3pAJ47REhpzNbBEOw7ORZLLT47oZjoNwCaA/fj
+E+nG2S/MP1DIAKQwbxlLIgs=
+=UJCh
+-----END PGP SIGNATURE-----
+
+
+Accepted:
+fcmp_0.14.20020310-1.diff.gz
+  to pool/main/f/fcmp/fcmp_0.14.20020310-1.diff.gz
+fcmp_0.14.20020310-1.dsc
+  to pool/main/f/fcmp/fcmp_0.14.20020310-1.dsc
+fcmp_0.14.20020310-1_all.deb
+  to pool/main/f/fcmp/fcmp_0.14.20020310-1_all.deb
+fcmp_0.14.20020310.orig.tar.gz
+  to pool/main/f/fcmp/fcmp_0.14.20020310.orig.tar.gz
+
+

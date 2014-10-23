@@ -14,17 +14,21 @@
 Tests for the :mod:`distro_tracker.core.news_feed` module.
 """
 from __future__ import unicode_literals
-from distro_tracker.test import TestCase
+
+from datetime import datetime
+import os
+
 from django.test.utils import override_settings
 from django.core.urlresolvers import reverse
+from xml.dom import minidom
+
+from distro_tracker.test import TestCase
 from distro_tracker.core.models import PackageName
 from distro_tracker.core.models import ActionItemType
 from distro_tracker.core.models import ActionItem
 from distro_tracker.core.models import News
-
-from xml.dom import minidom
-from datetime import datetime
-import os
+from distro_tracker.core.models import EmailNews
+from distro_tracker.core.utils import message_from_bytes
 
 
 @override_settings(TEMPLATE_DIRS=(os.path.join(
@@ -179,6 +183,19 @@ class NewsFeedTests(TestCase):
             dom_item['pubDate'],
             '%a, %d %b %Y %H:%M:%S +0000')
         self.assertTrue(pub_date, news.datetime_created)
+
+    def test_news_feed_with_latin1_message_without_encoding(self):
+        file_path = self.get_test_data_path('message-without-encoding')
+        with open(file_path, 'rb') as f:
+            content = f.read()
+        EmailNews.objects.create_email_news(
+            message=message_from_bytes(content),
+            package=self.package)
+
+        response = self.get_rss_feed_response(self.package.name)
+
+        # Ensure the name is correctly decoded
+        self.assertContains(response, 'David Martínez Moreno')
 
     def test_action_items_and_news(self):
         """
