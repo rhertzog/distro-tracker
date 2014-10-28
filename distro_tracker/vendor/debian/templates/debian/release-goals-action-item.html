@@ -2,7 +2,7 @@
 <span>There are {{ item.extra_data|length }} bugs that must be fixed to meet some Debian release goals:</span>
 <ul>
 {% for bug in item.extra_data %}
-<li>Bug <a href="http://bugs.debian.org/{{ bug.id }}">#{{ bug.id }}</a> must be fixed to complete Debian's release goal known as "<a href="{{ bug.url }}">{{ bug.name }}</a>".</li>
+<li>Bug <a href="https://bugs.debian.org/{{ bug.id }}">#{{ bug.id }}</a> must be fixed to complete Debian's release goal known as "<a href="{{ bug.url }}">{{ bug.name }}</a>".</li>
 {% endfor %}
 </ul>
 </div>

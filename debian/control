@@ -20,9 +20,9 @@ Build-Depends: debhelper (>= 9),
     python-soappy,
     python-yaml,
 Standards-Version: 3.9.5
-Homepage: http://wiki.debian.org/qa.debian.org/distro-tracker
+Homepage: https://wiki.debian.org/qa.debian.org/distro-tracker
 Vcs-Git: git://anonscm.debian.org/qa/distro-tracker.git
-Vcs-Browser: http://anonscm.debian.org/gitweb/?p=qa/distro-tracker.git;a=summary
+Vcs-Browser: https://anonscm.debian.org/gitweb/?p=qa/distro-tracker.git;a=summary
 X-Python-Version: >= 2.7
 
 Package: distro-tracker
@@ -43,7 +43,7 @@ Description: follow the status of packages of a Debian-based distribution
  package provided as well as an email interface to be notified of changes
  concerning packages that the user monitors.
  .
- The main deployment of this software is on http://tracker.debian.org
+ The main deployment of this software is on https://tracker.debian.org
  but each Debian derivative can have its own instance.
  .
  This package provides all the services to run a Distro Tracker

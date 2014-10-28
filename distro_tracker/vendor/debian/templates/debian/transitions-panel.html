@@ -5,9 +5,9 @@
     {% for transition in panel.context.transitions %}
     <li class="list-group-item">
         {% if transition.status == 'planned' %}
-        <span>This package will soon be part of the <a href="http://release.debian.org/transitions/html/{{ transition.transition_name }}.html">{{ transition.transition_name }}</a> transition. You might want to ensure that your package is ready for it.</span>
+        <span>This package will soon be part of the <a href="https://release.debian.org/transitions/html/{{ transition.transition_name }}.html">{{ transition.transition_name }}</a> transition. You might want to ensure that your package is ready for it.</span>
         {% elif transition.status == 'ongoing' %}
-        <span>This package is part of the ongoing testing transition known as <a href="http://release.debian.org/transitions/html/{{ transition.transition_name }}.html">{{ transition.transition_name }}</a>.</span>
+        <span>This package is part of the ongoing testing transition known as <a href="https://release.debian.org/transitions/html/{{ transition.transition_name }}.html">{{ transition.transition_name }}</a>.</span>
         {% if not transition.reject %}
         <span>
           Please avoid uploads unrelated to this transition, they would
@@ -23,9 +23,9 @@
 
         <span>
           You can probably find supplementary information in the
-          <a href="http://lists.debian.org/debian-release/">debian-release
+          <a href="https://lists.debian.org/debian-release/">debian-release
           archives</a> or in the corresponding
-          <a href="http://bugs.debian.org/cgi-bin/pkgreport.cgi?users=release.debian.org@packages.debian.org;tag=transition">release.debian.org
+          <a href="https://bugs.debian.org/cgi-bin/pkgreport.cgi?users=release.debian.org@packages.debian.org;tag=transition">release.debian.org
           bug</a>.
         </span>
 

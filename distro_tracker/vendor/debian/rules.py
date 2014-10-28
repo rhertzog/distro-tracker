@@ -145,10 +145,10 @@ def _get_message_body(msg):
 def get_pseudo_package_list():
     """
     Existing pseudo packages for Debian are obtained from
-    `BTS <http://bugs.debian.org/pseudo-packages.maintainers>`_
+    `BTS <https://bugs.debian.org/pseudo-packages.maintainers>`_
     """
     PSEUDO_PACKAGE_LIST_URL = (
-        'http://bugs.debian.org/pseudo-packages.maintainers'
+        'https://bugs.debian.org/pseudo-packages.maintainers'
     )
     cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
     if not cache.is_expired(PSEUDO_PACKAGE_LIST_URL):
@@ -175,7 +175,7 @@ def get_package_information_site_url(package_name, source_package=False,
     Return a link pointing to more information about a package in a
     given repository.
     """
-    BASE_URL = 'http://packages.debian.org/'
+    BASE_URL = 'https://packages.debian.org/'
     PU_URL = 'https://release.debian.org/proposed-updates/'
     SOURCE_PACKAGE_URL_TEMPLATES = {
         'repository': BASE_URL + 'source/{repo}/{package}',
@@ -255,7 +255,7 @@ def get_maintainer_extra(developer_email, package_name=None):
         extra.append({
             'display': 'LowNMU',
             'description': 'maintainer agrees with Low Threshold NMU',
-            'link': 'http://wiki.debian.org/LowThresholdNmu',
+            'link': 'https://wiki.debian.org/LowThresholdNmu',
         })
     if package_name and developer.is_debian_maintainer:
         if package_name in developer.allowed_packages:
@@ -434,7 +434,7 @@ def get_bug_tracker_url(package_name, package_type, category_name):
     if category_name not in URL_PARAMETERS:
         return
 
-    domain = 'http://bugs.debian.org/'
+    domain = 'https://bugs.debian.org/'
     query_parameters = URL_PARAMETERS[category_name]
 
     if package_type == 'source':
@@ -701,14 +701,14 @@ def get_extra_versions(package):
     except PackageExtractedInfo.DoesNotExist:
         return
 
-    version_url_template = 'http://ftp-master.debian.org/new/{pkg}_{ver}.html'
+    version_url_template = 'https://ftp-master.debian.org/new/{pkg}_{ver}.html'
     return [
         {
             'version': ver['version'],
             'repository_shorthand': 'NEW/' + dist,
             'version_link': version_url_template.format(
                 pkg=package.name, ver=ver['version']),
-            'repository_link': 'http://ftp-master.debian.org/new.html',
+            'repository_link': 'https://ftp-master.debian.org/new.html',
         }
         for dist, ver in info.value.items()
     ]

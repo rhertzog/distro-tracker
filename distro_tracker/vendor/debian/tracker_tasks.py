@@ -72,7 +72,7 @@ class RetrieveDebianMaintainersTask(BaseTask):
 
     def execute(self):
         cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
-        url = "http://ftp-master.debian.org/dm.txt"
+        url = "https://ftp-master.debian.org/dm.txt"
         if not self.force_update and not cache.is_expired(url):
             # No need to do anything when the previously cached value is fresh
             return
@@ -131,7 +131,7 @@ class RetrieveLowThresholdNmuTask(BaseTask):
         Helper function which obtains the list of emails of maintainers that
         agree with the lowthreshold NMU.
         """
-        url = 'http://wiki.debian.org/LowThresholdNmu?action=raw'
+        url = 'https://wiki.debian.org/LowThresholdNmu?action=raw'
         cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         if not self.force_update and not cache.is_expired(url):
             return
@@ -228,7 +228,7 @@ class UpdatePackageBugStats(BaseTask):
         :returns: A dict mapping package names to the count of bugs with the
             given tag.
         """
-        url = 'http://bugs.debian.org/cgi-bin/soap.cgi'
+        url = 'https://bugs.debian.org/cgi-bin/soap.cgi'
         namespace = 'Debbugs/SOAP'
         server = SOAPpy.SOAPProxy(url, namespace)
         if user:
@@ -401,7 +401,7 @@ class UpdatePackageBugStats(BaseTask):
         self._create_help_bug_action_item(package, bug_stats)
 
     def _get_udd_bug_stats(self):
-        url = 'http://udd.debian.org/cgi-bin/ddpo-bugs.cgi'
+        url = 'https://udd.debian.org/cgi-bin/ddpo-bugs.cgi'
         response_content = get_resource_content(url)
         if not response_content:
             return
@@ -493,7 +493,7 @@ class UpdatePackageBugStats(BaseTask):
         """
         Performs the update of bug statistics for binary packages.
         """
-        url = 'http://udd.debian.org/cgi-bin/bugs-binpkgs-distro_tracker.cgi'
+        url = 'https://udd.debian.org/cgi-bin/bugs-binpkgs-distro_tracker.cgi'
         response_content = get_resource_content(url)
         if not response_content:
             return
@@ -561,7 +561,7 @@ class UpdateLintianStatsTask(BaseTask):
             self.force_update = parameters['force_update']
 
     def get_lintian_stats(self):
-        url = 'http://lintian.debian.org/qa-list.txt'
+        url = 'https://lintian.debian.org/qa-list.txt'
         cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         response, updated = cache.update(url, force=self.force_update)
         response.raise_for_status()
@@ -687,9 +687,9 @@ class UpdateLintianStatsTask(BaseTask):
 
 
 class UpdateTransitionsTask(BaseTask):
-    REJECT_LIST_URL = 'http://ftp-master.debian.org/transitions.yaml'
+    REJECT_LIST_URL = 'https://ftp-master.debian.org/transitions.yaml'
     PACKAGE_TRANSITION_LIST_URL = (
-        'http://release.debian.org/transitions/export/packages.yaml')
+        'https://release.debian.org/transitions/export/packages.yaml')
 
     def __init__(self, force_update=False, *args, **kwargs):
         super(UpdateTransitionsTask, self).__init__(*args, **kwargs)
@@ -918,7 +918,7 @@ class UpdateExcusesTask(BaseTask):
             if section not in ('contrib', 'non-free'):
                 query_string = urlencode({'package': package.name})
                 extra_data['check_why_url'] = (
-                    'http://release.debian.org/migration/testing.pl'
+                    'https://release.debian.org/migration/testing.pl'
                     '?{query_string}'.format(query_string=query_string))
 
         action_item.extra_data = extra_data
@@ -938,7 +938,7 @@ class UpdateExcusesTask(BaseTask):
         terable of lines.
         Returns ``None`` if the content in the cache is up to date.
         """
-        url = 'http://ftp-master.debian.org/testing/update_excuses.html'
+        url = 'https://ftp-master.debian.org/testing/update_excuses.html'
         response, updated = self.cache.update(url, force=self.force_update)
         if not updated:
             return
@@ -1398,7 +1398,7 @@ class UpdatePiuPartsTask(BaseTask):
         :returns: The content of the piuparts report for the given package
             or ``None`` if there is no data for the particular suite.
         """
-        url = 'http://piuparts.debian.org/{suite}/sources.txt'
+        url = 'https://piuparts.debian.org/{suite}/sources.txt'
         return get_resource_content(url.format(suite=suite))
 
     def get_piuparts_stats(self):
@@ -1595,7 +1595,7 @@ class UpdateUbuntuStatsTask(BaseTask):
             self.force_update = parameters['force_update']
 
     def _get_versions_content(self):
-        url = 'http://udd.debian.org/cgi-bin/ubuntupackages.cgi'
+        url = 'https://udd.debian.org/cgi-bin/ubuntupackages.cgi'
         return get_resource_content(url)
 
     def get_ubuntu_versions(self):
@@ -1615,7 +1615,7 @@ class UpdateUbuntuStatsTask(BaseTask):
         return package_versions
 
     def _get_bug_stats_content(self):
-        url = 'http://udd.debian.org/cgi-bin/ubuntubugs.cgi'
+        url = 'https://udd.debian.org/cgi-bin/ubuntubugs.cgi'
         return get_resource_content(url)
 
     def get_ubuntu_bug_stats(self):
@@ -1865,7 +1865,7 @@ class UpdateWnppStatsTask(BaseTask):
         except:
             release = None
         action_item.short_description = self.ITEM_DESCRIPTION.format(
-            url='http://bugs.debian.org/{}'.format(stats['bug_id']),
+            url='https://bugs.debian.org/{}'.format(stats['bug_id']),
             wnpp_type=stats['wnpp_type'])
         action_item.extra_data = {
             'wnpp_info': stats,
@@ -1964,7 +1964,7 @@ class UpdateNewQueuePackages(BaseTask):
             packages found in NEW.
             ``None`` if the cached resource is up to date.
         """
-        url = 'http://ftp-master.debian.org/new.822'
+        url = 'https://ftp-master.debian.org/new.822'
         cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         if not cache.is_expired(url):
             return

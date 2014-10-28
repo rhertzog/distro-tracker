@@ -278,7 +278,7 @@ class GetPseudoPackageListTest(TestCase):
 
         # Correct URL used?
         mock_requests.get.assert_called_with(
-            'http://bugs.debian.org/pseudo-packages.maintainers',
+            'https://bugs.debian.org/pseudo-packages.maintainers',
             headers={},
             allow_redirects=True,
             verify=False)
@@ -306,12 +306,12 @@ class GetPackageInformationSiteUrlTest(SimpleTestCase):
         """
         # Source package with no repository given
         self.assertEqual(
-            'http://packages.debian.org/src:dpkg',
+            'https://packages.debian.org/src:dpkg',
             get_package_information_site_url('dpkg', source_package=True)
         )
         # Source package in a repository
         self.assertEqual(
-            'http://packages.debian.org/source/stable/dpkg',
+            'https://packages.debian.org/source/stable/dpkg',
             get_package_information_site_url('dpkg', source_package=True,
                                              repository=self.repository)
         )
@@ -333,12 +333,12 @@ class GetPackageInformationSiteUrlTest(SimpleTestCase):
         """
         # Binary package with no repository given
         self.assertEqual(
-            'http://packages.debian.org/dpkg',
+            'https://packages.debian.org/dpkg',
             get_package_information_site_url('dpkg')
         )
         # Binary package in a repository
         self.assertEqual(
-            'http://packages.debian.org/stable/dpkg',
+            'https://packages.debian.org/stable/dpkg',
             get_package_information_site_url(
                 'dpkg',
                 repository=self.repository))
@@ -555,7 +555,7 @@ class DebianContributorExtraTest(TestCase):
             [{
                 'display': 'LowNMU',
                 'description': 'maintainer agrees with Low Threshold NMU',
-                'link': 'http://wiki.debian.org/LowThresholdNmu',
+                'link': 'https://wiki.debian.org/LowThresholdNmu',
             }],
             get_maintainer_extra('dummy@debian.org')
         )
@@ -568,7 +568,7 @@ class DebianContributorExtraTest(TestCase):
             [{
                 'display': 'LowNMU',
                 'description': 'maintainer agrees with Low Threshold NMU',
-                'link': 'http://wiki.debian.org/LowThresholdNmu',
+                'link': 'https://wiki.debian.org/LowThresholdNmu',
             }],
             get_maintainer_extra('dummy@debian.org')
         )
@@ -577,7 +577,7 @@ class DebianContributorExtraTest(TestCase):
             {
                 'display': 'LowNMU',
                 'description': 'maintainer agrees with Low Threshold NMU',
-                'link': 'http://wiki.debian.org/LowThresholdNmu',
+                'link': 'https://wiki.debian.org/LowThresholdNmu',
             },
             {'display': 'dm'}
         ],
@@ -1050,7 +1050,7 @@ class UpdateLintianStatsTaskTest(TestCase):
         # We only care about the URL used, not the headers or other arguments
         self.assertEqual(
             mock_requests.get.call_args[0][0],
-            'http://lintian.debian.org/qa-list.txt')
+            'https://lintian.debian.org/qa-list.txt')
 
     @mock.patch('distro_tracker.core.utils.http.requests')
     def test_action_item_created_errors(self, mock_requests):

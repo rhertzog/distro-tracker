@@ -48,7 +48,7 @@ def forwards_func(apps, schema_editor):
         MailingList(name='debian', domain='lists.debian.org',
                     archive_url_template='https://lists.debian.org/{user}/'),
         MailingList(name='alioth-debian', domain='lists.alioth.debian.org',
-                    archive_url_template='http://lists.alioth.debian.org/pipermail/{user}/'),
+                    archive_url_template='https://lists.alioth.debian.org/pipermail/{user}/'),
         MailingList(name='ubuntu', domain='lists.ubuntu.com',
                     archive_url_template='https://lists.ubuntu.com/archives/{user}/'),
         MailingList(name='riseup', domain='lists.riseup.net',

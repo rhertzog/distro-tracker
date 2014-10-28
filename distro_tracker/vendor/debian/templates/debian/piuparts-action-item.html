@@ -3,7 +3,7 @@
 <ul>
 {% with package=item.package.name %}
 {% for suite in item.extra_data.suites %}
-<li><a href="http://www.debian.org/releases/{{ suite }}/">{{ suite }}</a> - <a href="http://piuparts.debian.org/{{ suite }}/source/{% if package|slice:":3" == 'lib' %}{{ package|slice:"4" }}{% else %}{{ package|slice:"1" }}{% endif %}/{{ package }}.html">piuparts</a>
+<li><a href="https://www.debian.org/releases/{{ suite }}/">{{ suite }}</a> - <a href="https://piuparts.debian.org/{{ suite }}/source/{% if package|slice:":3" == 'lib' %}{{ package|slice:"4" }}{% else %}{{ package|slice:"1" }}{% endif %}/{{ package }}.html">piuparts</a>
 </li>
 {% endfor %}
 {% endwith %}

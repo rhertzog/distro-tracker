@@ -42,7 +42,7 @@ setup(name='DistroTracker',
       description='Synoptic view of all packages of a Debian-based distribution',
       author='Distro Tracker Developers',
       author_email='debian-qa@lists.debian.org',
-      url='http://wiki.debian.org/qa.debian.org/distro-tracker',
+      url='https://wiki.debian.org/qa.debian.org/distro-tracker',
       packages=[
         '.'.join(directory.split(os.sep))
         for directory, _, files in os.walk('distro_tracker')
@@ -55,7 +55,7 @@ setup(name='DjangoEmailAccounts',
       description='User registration app for Django',
       author='Distro Tracker Developers',
       author_email='debian-qa@lists.debian.org',
-      url='http://wiki.debian.org/qa.debian.org/distro-tracker',
+      url='https://wiki.debian.org/qa.debian.org/distro-tracker',
       packages=[
         '.'.join(directory.split(os.sep))
         for directory, _, files in os.walk('django_email_accounts')
