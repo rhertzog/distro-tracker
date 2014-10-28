@@ -180,6 +180,9 @@ Content-Transfer-Encoding: 8bit
         mock_connection.sendmail.assert_called_with(
             'from@domain.com',
             ['to@domain.com'],
+            mock.ANY)
+        self.assertEqual(
+            mock_connection.sendmail.call_args[0][2].replace(b"\r\n", b"\n"),
             message.as_string())
 
 

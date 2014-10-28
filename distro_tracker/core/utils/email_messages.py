@@ -115,8 +115,9 @@ def message_from_bytes(message_bytes):
         from email import message_from_string as email_message_from_bytes
     message = email_message_from_bytes(message_bytes)
 
-    # Django expects patched versions of as_string/as_bytes
-    def as_string(self, unixfrom=False, maxheaderlen=0):
+    # Django expects patched versions of as_string/as_bytes, see
+    # django/core/mail/message.py
+    def as_string(self, unixfrom=False, maxheaderlen=0, linesep='\n'):
         """
         Returns the payload of the message encoded as bytes.
         """
@@ -127,7 +128,10 @@ def message_from_bytes(message_bytes):
 
         fp = six.BytesIO()
         g = Generator(fp, mangle_from_=False, maxheaderlen=maxheaderlen)
-        g.flatten(self, unixfrom=unixfrom)
+        if six.PY3:
+            g.flatten(self, unixfrom=unixfrom, linesep=linesep)
+        else:
+            g.flatten(self, unixfrom=unixfrom)
         return fp.getvalue()
 
     message.as_string = types.MethodType(as_string, message)
