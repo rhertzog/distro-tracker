@@ -2262,3 +2262,94 @@ class UpdatePackageScreenshotsTask(BaseTask):
                 extracted_info.append(screenshot_info)
 
             PackageExtractedInfo.objects.bulk_create(extracted_info)
+
+
+class UpdateBuildReproducibilityTask(BaseTask):
+    BASE_URL = 'https://reproducible.debian.net'
+    ACTION_ITEM_TYPE_NAME = 'debian-build-reproducibility'
+    ACTION_ITEM_TEMPLATE = 'debian/build-reproducibility-action-item.html'
+    ITEM_DESCRIPTION = {
+        'blacklisted': '<a href="{url}">Blacklisted</a> from build '
+                       'reproducibility testing',
+        'FTBFS': '<a href="{url}">Fails to build</a> during reproducibility '
+                 'testing',
+        'reproducible': None,
+        'unreproducible': '<a href="{url}">Does not build reproducibly</a> '
+                          'during testing and no .buildinfo file is created',
+        'unreproducible-with-buildinfo': '<a href="{url}">Does not build '
+                                         'reproducibly</a> during testing',
+        '404': None,
+        'not for us': None,
+    }
+
+    def __init__(self, force_update=False, *args, **kwargs):
+        super(UpdateBuildReproducibilityTask, self).__init__(*args, **kwargs)
+        self.force_update = force_update
+        self.action_item_type = ActionItemType.objects.create_or_update(
+            type_name=self.ACTION_ITEM_TYPE_NAME,
+            full_description_template=self.ACTION_ITEM_TEMPLATE)
+
+    def set_parameters(self, parameters):
+        if 'force_update' in parameters:
+            self.force_update = parameters['force_update']
+
+    def get_build_reproducibility(self):
+        url = '{}/reproducible.json'.format(self.BASE_URL)
+        cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
+        if not self.force_update and not cache.is_expired(url):
+            return
+        response, updated = cache.update(url, force=self.force_update)
+        response.raise_for_status()
+        if not updated:
+            return
+        reproducibilities = json.loads(response.text)
+        reproducibilities = dict([(item['package'], item['status'])
+                                  for item in reproducibilities])
+        return reproducibilities
+
+    def update_action_item(self, package, status):
+        description = self.ITEM_DESCRIPTION.get(status)
+
+        if not (status and description):
+            return
+
+        action_item = package.get_action_item_for_type(
+            self.action_item_type.type_name)
+        if action_item is None:
+            action_item = ActionItem(
+                package=package,
+                item_type=self.action_item_type,
+                severity=ActionItem.SEVERITY_NORMAL)
+
+        url = "{}/rb-pkg/{}.html".format(self.BASE_URL, package.name)
+        action_item.short_description = description.format(url=url)
+        action_item.save()
+
+    def execute(self):
+        reproducibilities = self.get_build_reproducibility()
+        if reproducibilities is None:
+            return
+
+        with transaction.atomic():
+            PackageExtractedInfo.objects.filter(key='reproducibility').delete()
+
+            packages = []
+            extracted_info = []
+
+            for name, status in reproducibilities.items():
+                try:
+                    package = SourcePackageName.objects.get(name=name)
+                    packages.append(package)
+                    self.update_action_item(package, status)
+                except SourcePackageName.DoesNotExist:
+                    continue
+
+                reproducibility_info = PackageExtractedInfo(
+                    key='reproducibility',
+                    package=package,
+                    value={'reproducibility': status})
+                extracted_info.append(reproducibility_info)
+
+            ActionItem.objects.delete_obsolete_items([self.action_item_type],
+                                                     packages)
+            PackageExtractedInfo.objects.bulk_create(extracted_info)

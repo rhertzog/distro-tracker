@@ -69,6 +69,8 @@ from distro_tracker.vendor.debian.tracker_tasks \
     import UpdateAutoRemovalsStatsTask
 from distro_tracker.vendor.debian.tracker_tasks \
     import UpdatePackageScreenshotsTask
+from distro_tracker.vendor.debian.tracker_tasks \
+    import UpdateBuildReproducibilityTask
 from distro_tracker.vendor.debian.models import DebianContributor
 from distro_tracker.vendor.debian.models import UbuntuPackage
 from distro_tracker.vendor.debian.tracker_tasks import UpdateLintianStatsTask
@@ -5178,6 +5180,119 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
         """
         Ensure that other PackageExtractedInfo keys are not dropped when
         deleting the screenshot key.
+        """
+        set_mock_response(mock_requests, text=self.json_data)
+        self.run_task()
+
+        set_mock_response(mock_requests, text=self.other_json_data)
+        self.run_task()
+
+        info = self.dummy_package.packageextractedinfo_set.get(key='general')
+
+        self.assertEqual(info.value['name'], 'dummy')
+
+
+@mock.patch('distro_tracker.core.utils.http.requests')
+class UpdateBuildReproducibilityTaskTest(TestCase):
+    """
+    Tests for the:class:`distro_tracker.vendor.debian.tracker_tasks.
+    UpdateBuildReproducibilityTask` task.
+    """
+    def setUp(self):
+        self.json_data = """
+            [{
+                "package": "dummy",
+                "version": "1.2-3",
+                "status": "unreproducible",
+                "suite": "sid"
+            }]
+        """
+        self.other_json_data = """
+        [{
+            "package": "other",
+            "version": "1.2-3",
+            "status": "unreproducible",
+            "suite": "sid"
+        }]
+        """
+        self.dummy_package = SourcePackageName.objects.create(name='dummy')
+        PackageExtractedInfo.objects.create(
+            package=self.dummy_package,
+            key='general',
+            value={
+                'name': 'dummy',
+                'maintainer': {
+                    'email': 'jane@example.com',
+                }
+            }
+        )
+
+    def run_task(self):
+        """
+        Runs the build reproducibility status update task.
+        """
+        task = UpdateBuildReproducibilityTask()
+        task.execute()
+
+    def test_extractedinfo_without_reproducibility(self, mock_requests):
+        """
+        Tests that packages without reproducibility info don't claim to have
+        them.
+        """
+        set_mock_response(mock_requests, text=self.json_data)
+        other_package = SourcePackageName.objects.create(name='other-package')
+
+        self.run_task()
+
+        with self.assertRaises(PackageExtractedInfo.DoesNotExist):
+            other_package.packageextractedinfo_set.get(key='reproducibility')
+
+    def test_no_extractedinfo_for_unknown_package(self, mock_requests):
+        """
+        Tests that BuildReproducibilityTask doesn't fail with an unknown
+        package.
+        """
+        set_mock_response(mock_requests, text=self.other_json_data)
+
+        self.run_task()
+
+        count = PackageExtractedInfo.objects.filter(
+            key='reproducibility').count()
+        self.assertEqual(0, count)
+
+    def test_extractedinfo_with_reproducibility(self, mock_requests):
+        """
+        Tests that PackageExtractedInfo for a package with reproducibility info
+        is correct.
+        """
+        set_mock_response(mock_requests, text=self.json_data)
+
+        self.run_task()
+
+        info = self.dummy_package.packageextractedinfo_set.get(
+            key='reproducibility')
+
+        self.assertEqual(info.value['reproducibility'], 'unreproducible')
+
+    def test_extractedinfo_is_dropped_when_data_is_gone(self, mock_requests):
+        """
+        Tests that PackageExtractedInfo is dropped if reproducibility info
+        goes away.
+        """
+        set_mock_response(mock_requests, text=self.json_data)
+        self.run_task()
+
+        set_mock_response(mock_requests, text=self.other_json_data)
+        self.run_task()
+
+        with self.assertRaises(PackageExtractedInfo.DoesNotExist):
+            self.dummy_package.packageextractedinfo_set.get(
+                key='reproducibility')
+
+    def test_other_extractedinfo_keys_not_dropped(self, mock_requests):
+        """
+        Ensure that other PackageExtractedInfo keys are not dropped when
+        deleting the reproducibility key.
         """
         set_mock_response(mock_requests, text=self.json_data)
         self.run_task()

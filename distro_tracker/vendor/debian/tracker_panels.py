@@ -77,12 +77,25 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
         logcheck_url = \
             "https://qa.debian.org/bls/packages/{hash}/{pkg}.html".format(
                 hash=self.package.name[0], pkg=self.package.name)
+        try:
+            infos = self.package.packageextractedinfo_set.get(
+                key='reproducibility')
+            has_reproducibility = True
+            reproducibility_status = infos.value['reproducibility']
+        except PackageExtractedInfo.DoesNotExist:
+            has_reproducibility = False
+            reproducibility_status = None
+        reproducibility_url = "https://reproducible.debian.net/rb-pkg/{}.html"
+        reproducibility_url = reproducibility_url.format(self.package.name)
 
         return [
             TemplatePanelItem('debian/logcheck-links.html', {
                 'package_query_string': query_string,
                 'has_checks': has_checks,
                 'logcheck_url': logcheck_url,
+                'has_reproducibility': has_reproducibility,
+                'reproducibility_url': reproducibility_url,
+                'reproducibility_status': reproducibility_status,
                 'has_experimental': has_experimental,
             })
         ]
