@@ -3,7 +3,6 @@
 {% block panel-body %}
 <ul class="list-group list-group-flush">
     {% for version in panel.context %}
-    <div class="row-fluid">
     <li class="list-group-item">
         <div class="list-item-key versioned-links-version"><b>{{ version.number }}:</b></div>
         <div class="list-item-value versioned-links-icons">
@@ -17,7 +16,6 @@
         </div>
         <div class="clear"></div>
     </li>
-    </div>
     {% endfor %}
 </ul>
 {% endblock %}

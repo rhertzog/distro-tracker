@@ -25,7 +25,6 @@
 <ul class="list-group list-group-flush">
 {% with versions=panel.context.version_info %}
     {% for item in versions.version_list %}
-    <div class="row-fluid">
     <li class="list-group-item">
         <div class="list-item-key versions-repository"><b><span title="{{ item.repository.name }}">{{ item.repository.shorthand }}:</span></b></div>
         <div class="list-item-value">
@@ -35,13 +34,11 @@
         </div>
         <div class="clear"></div>
     </li>
-    </div>
     {% endfor %}
 {% endwith %}
 
     {# Add any vendor provided versions #}
     {% for item in panel.context.vendor_versions %}
-    <div class="row-fluid">
     <li class="list-group-item">
         <div class="list-item-key versions-repository">
             {% if item.repository_link %}<a href="{{ item.repository_link }}">{% endif %}
@@ -55,7 +52,6 @@
         </div>
         <div class="clear"></div>
     </li>
-    </div>
     {% endfor %}
 </ul>
 {% endblock %}
