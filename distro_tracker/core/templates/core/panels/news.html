@@ -15,7 +15,6 @@
 
 {% block panel-body %}
 <ul class="list-group list-group-flush">
-    <div class="scrollable">
     {% for news_item in panel.context.news %}
     <li class="list-group-item">
         [<span class="news-date">{{ news_item.datetime_created|date:"Y-m-d" }}</span>]
@@ -37,6 +36,5 @@
         {% endwith %}
     </li>
     {% endfor %}
-    </div>
 </ul>
 {% endblock %}

@@ -8,7 +8,6 @@
 
 {% block bugs-list %}
     {% for category in panel.context.categories %}
-    <div class="row-fluid">
     <li class="list-group-item">
         <div class="list-item-key">
             {% if category.display_name == "gift" %}
@@ -44,6 +43,5 @@
         </div>
         <div class="clear"></div>
     </li>
-    </div>
     {% endfor %}
 {% endblock %}

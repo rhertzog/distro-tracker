@@ -2,7 +2,6 @@
 
 {% block panel-body %}
 <ul class="list-group list-group-flush">
-    <div class="scrollable">
     {% with items=panel.context|dictsort:'name' %}
     {% for item in items %}
     <li class="list-group-item">
@@ -39,6 +38,5 @@
     </li>
     {% endfor %}
     {% endwith %}
-    </div>
 </ul>
 {% endblock %}
