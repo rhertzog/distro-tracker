@@ -4236,6 +4236,28 @@ class UpdateNewQueuePackagesTests(TestCase):
         # The correct version is found in the info
         self.assertEqual(version, new_info.value[distribution]['version'])
 
+    def test_entry_dropped(self):
+        """
+        Tests that the NEW entry is correctly dropped from PackageExtractedInfo
+        when the entry is gone.
+        """
+        distribution = 'sid'
+        old_version = '1.0.0'
+        # Create an old entry
+        PackageExtractedInfo.objects.create(
+            package=self.package,
+            key=UpdateNewQueuePackages.EXTRACTED_INFO_KEY,
+            value={
+                distribution: {
+                    'version': old_version,
+                }
+            })
+
+        self.run_task()
+
+        new_info = self.get_new_info(self.package)
+        self.assertIsNone(new_info)
+
 
 @override_settings(
     DISTRO_TRACKER_VENDOR_RULES='distro_tracker.vendor.debian.rules')

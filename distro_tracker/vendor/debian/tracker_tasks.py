@@ -1944,10 +1944,6 @@ class UpdateNewQueuePackages(BaseTask):
     """
     Updates the versions of source packages found in the NEW queue.
     """
-    NEW_VERSION_IN_QUEUE_EVENT = 'new-source-package-version-in-new-queue'
-    PRODUCES_EVENTS = (
-        NEW_VERSION_IN_QUEUE_EVENT,
-    )
     EXTRACTED_INFO_KEY = 'debian-new-queue-info'
 
     def __init__(self, force_update=False, *args, **kwargs):
@@ -2015,29 +2011,20 @@ class UpdateNewQueuePackages(BaseTask):
         packages = SourcePackageName.objects.filter(
             name__in=all_package_info.keys())
 
-        for package in packages:
-            try:
-                new_queue_info = package.packageextractedinfo_set.get(
-                    key=self.EXTRACTED_INFO_KEY)
-            except PackageExtractedInfo.DoesNotExist:
+        with transaction.atomic():
+            # Drop old entries
+            PackageExtractedInfo.objects.filter(
+                key=self.EXTRACTED_INFO_KEY).delete()
+            # Prepare current entries
+            extracted_info = []
+            for package in packages:
                 new_queue_info = PackageExtractedInfo(
                     key=self.EXTRACTED_INFO_KEY,
                     package=package,
-                    value={})
-
-            old_versions = new_queue_info.value
-            for distribution, version in all_package_info[package.name].items():
-                if distribution in old_versions:
-                    if old_versions[distribution]['version'] == \
-                            version['version']:
-                        continue
-                new_queue_info.value[distribution] = version
-                self.raise_event(self.NEW_VERSION_IN_QUEUE_EVENT, {
-                    'name': package.name,
-                    'version': version['version'],
-                })
-
-            new_queue_info.save()
+                    value=all_package_info[package.name])
+                extracted_info.append(new_queue_info)
+            # Bulk create them
+            PackageExtractedInfo.objects.bulk_create(extracted_info)
 
 
 class UpdateDebciStatusTask(BaseTask):
