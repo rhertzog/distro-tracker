@@ -57,6 +57,8 @@ def forwards_func(apps, schema_editor):
                     archive_url_template='https://lists.launchpad.net/{user}/'),
         MailingList(name='freedesktop', domain='lists.freedesktop.org',
                     archive_url_template='https://lists.freedesktop.org/archives/{user}/'),
+        MailingList(name='lxde', domain='lists.lxde.org',
+                    archive_url_template='http://lists.lxde.org/pipermail/{user}/'),
     ])
 
 
