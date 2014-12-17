@@ -116,6 +116,8 @@ def add_new_headers(received_message, package_name, keyword):
     new_headers = [
         ('X-Debian-Package', package_name),
         ('X-Debian', 'PTS'),
+        ('X-PTS-Package', package_name),  # for compat with old PTS
+        ('X-PTS-Keyword', keyword),       # for compat with old PTS
     ]
     return new_headers
 
