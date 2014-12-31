@@ -2537,7 +2537,7 @@ class CodeSearchLinksTest(TestCase):
     def browse_link_in_content(self, content):
         html = soup(content)
         for a_tag in html.findAll('a', {'href': True}):
-            if a_tag['href'].startswith('http://sources.debian.net'):
+            if a_tag['href'].startswith('https://sources.debian.net'):
                 return True
         return False
 

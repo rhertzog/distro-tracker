@@ -115,7 +115,7 @@ class SourceCodeSearchLinks(LinksPanel.ItemProvider):
         'testing',
         'stable',
     )
-    SOURCES_URL_TEMPLATE = 'http://sources.debian.net/src/{package}/latest'
+    SOURCES_URL_TEMPLATE = 'https://sources.debian.net/src/{package}/latest'
     SEARCH_FORM_TEMPLATE = (
         '<form class="code-search-form"'
         ' action="https://packages.qa.debian.org/cgi-bin/codesearch.cgi"'
