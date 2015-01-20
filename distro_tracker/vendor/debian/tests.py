@@ -5106,7 +5106,7 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
 
     def run_task(self):
         """
-        Runs the debci status update task.
+        Runs the screenshots status update task.
         """
         task = UpdatePackageScreenshotsTask()
         task.execute()
