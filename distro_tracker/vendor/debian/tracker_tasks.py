@@ -2275,9 +2275,7 @@ class UpdateBuildReproducibilityTask(BaseTask):
                  'testing',
         'reproducible': None,
         'unreproducible': '<a href="{url}">Does not build reproducibly</a> '
-                          'during testing and no .buildinfo file is created',
-        'unreproducible-with-buildinfo': '<a href="{url}">Does not build '
-                                         'reproducibly</a> during testing',
+                          'during testing',
         '404': None,
         'not for us': None,
     }
