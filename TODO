@@ -18,3 +18,8 @@ Misc possible enhancements:
   - python-soappy (no python3-soappy yet)
   - python-ldap (no python3-ldap, but maybe could be ported to
     python-ldap3?)
+* Re-enable a smarter clickjacking protection: only activate it when the
+  page is rendered for a logged in user and allow callers to pass a
+  "anonymous=1" parameter that will force render the web page as if
+  the user was not authenticated. This requires writing a dedicated
+  Middleware.
