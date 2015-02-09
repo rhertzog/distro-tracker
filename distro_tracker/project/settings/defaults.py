@@ -407,6 +407,7 @@ _COMPUTE_DEFAULT_SETTINGS = (
          t['DISTRO_TRACKER_CONTACT_EMAIL']),
     )),
     ('SERVER_EMAIL', lambda t: t['DISTRO_TRACKER_CONTACT_EMAIL']),
+    ('DEFAULT_FROM_EMAIL', lambda t: t['DISTRO_TRACKER_CONTACT_EMAIL']),
     ('STATIC_ROOT',
      lambda t: os.path.join(t['DISTRO_TRACKER_DATA_PATH'], 'static')),
     ('MEDIA_ROOT',
