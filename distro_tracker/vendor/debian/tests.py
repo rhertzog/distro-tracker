@@ -5273,6 +5273,10 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
             key='reproducibility')
 
         self.assertEqual(info.value['reproducibility'], 'unreproducible')
+        action_items = self.dummy_package.action_items
+        self.assertEqual(action_items.count(), 1)
+        self.assertEqual(action_items.first().item_type.type_name,
+                         UpdateBuildReproducibilityTask.ACTION_ITEM_TYPE_NAME)
 
     def test_extractedinfo_is_dropped_when_data_is_gone(self, mock_requests):
         """
@@ -5288,6 +5292,29 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
         with self.assertRaises(PackageExtractedInfo.DoesNotExist):
             self.dummy_package.packageextractedinfo_set.get(
                 key='reproducibility')
+        self.assertEqual(self.dummy_package.action_items.count(), 0)
+
+    def test_action_item_is_dropped_when_status_is_reproducible(self,
+                                                                mock_requests):
+        """
+        Ensure the action item is dropped when status switches from
+        unreproducible to reproducible.
+        """
+        set_mock_response(mock_requests, text=self.json_data)
+        self.run_task()
+        self.assertEqual(self.dummy_package.action_items.count(), 1)
+        json_data = """
+            [{
+                "package": "dummy",
+                "version": "1.2-3",
+                "status": "reproducible",
+                "suite": "sid"
+            }]
+        """
+        set_mock_response(mock_requests, text=json_data)
+        self.run_task()
+
+        self.assertEqual(self.dummy_package.action_items.count(), 0)
 
     def test_other_extractedinfo_keys_not_dropped(self, mock_requests):
         """

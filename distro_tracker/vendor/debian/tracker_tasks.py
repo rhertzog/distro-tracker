@@ -2308,8 +2308,8 @@ class UpdateBuildReproducibilityTask(BaseTask):
     def update_action_item(self, package, status):
         description = self.ITEM_DESCRIPTION.get(status)
 
-        if not (status and description):
-            return
+        if not description:  # Not worth an action item
+            return False
 
         action_item = package.get_action_item_for_type(
             self.action_item_type.type_name)
@@ -2322,6 +2322,7 @@ class UpdateBuildReproducibilityTask(BaseTask):
         url = "{}/rb-pkg/{}.html".format(self.BASE_URL, package.name)
         action_item.short_description = description.format(url=url)
         action_item.save()
+        return True
 
     def execute(self):
         reproducibilities = self.get_build_reproducibility()
@@ -2337,8 +2338,8 @@ class UpdateBuildReproducibilityTask(BaseTask):
             for name, status in reproducibilities.items():
                 try:
                     package = SourcePackageName.objects.get(name=name)
-                    packages.append(package)
-                    self.update_action_item(package, status)
+                    if self.update_action_item(package, status):
+                        packages.append(package)
                 except SourcePackageName.DoesNotExist:
                     continue
 
