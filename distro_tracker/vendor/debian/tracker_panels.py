@@ -123,12 +123,13 @@ class SourceCodeSearchLinks(LinksPanel.ItemProvider):
     #: A list of repositories that cause the sources.debian.net link to be
     #: displayed if the package is found in one of them.
     ALLOWED_REPOSITORIES = (
-        'experimental',
         'unstable',
+        'experimental',
         'testing',
         'stable',
+        'oldstable',
     )
-    SOURCES_URL_TEMPLATE = 'https://sources.debian.net/src/{package}/latest'
+    SOURCES_URL_TEMPLATE = 'https://sources.debian.net/src/{package}/{suite}/'
     SEARCH_FORM_TEMPLATE = (
         '<form class="code-search-form"'
         ' action="https://packages.qa.debian.org/cgi-bin/codesearch.cgi"'
@@ -150,7 +151,7 @@ class SourceCodeSearchLinks(LinksPanel.ItemProvider):
                 links.append(LinksPanel.SimpleLinkItem(
                     'browse source code',
                     self.SOURCES_URL_TEMPLATE.format(
-                        package=self.package.name)))
+                        package=self.package.name, suite=allowed_repo)))
                 break
 
         if 'unstable' in repositories:
