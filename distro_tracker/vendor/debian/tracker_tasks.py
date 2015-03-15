@@ -2301,9 +2301,15 @@ class UpdateBuildReproducibilityTask(BaseTask):
         if not updated:
             return
         reproducibilities = json.loads(response.text)
-        reproducibilities = dict([(item['package'], item['status'])
-                                  for item in reproducibilities])
-        return reproducibilities
+        packages = {}
+        for item in reproducibilities:
+            package = item['package']
+            status = item['status']
+            missing = package not in packages
+            important = self.ITEM_DESCRIPTION.get(status) is not None
+            if important or missing:
+                packages[package] = status
+        return packages
 
     def update_action_item(self, package, status):
         description = self.ITEM_DESCRIPTION.get(status)
