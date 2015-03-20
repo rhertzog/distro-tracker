@@ -28,4 +28,6 @@ override_dh_auto_install:
 	rm -f debian/tmp/etc/$(NAME)/settings/*.pyc
 
 override_dh_auto_test:
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 	./manage.py test django_email_accounts/ distro_tracker/
+endif
