@@ -159,6 +159,7 @@ class SeleniumTestCase(LiveServerTestCase):
         mock_response.status_code = status_code
         mock_response.text = text
         mock_requests.get.return_value = mock_response
+        mock_requests.head.return_value = mock_response
 
 
 def create_test_panel(panel_position):
@@ -340,8 +341,9 @@ class RepositoryAdminTest(SeleniumTestCase):
         self.input_to_element('id_password', password)
         self.send_enter('id_password')
 
+    @mock.patch('distro_tracker.core.admin.requests')
     @mock.patch('distro_tracker.core.retrieve_data.requests')
-    def test_repository_add(self, mock_requests):
+    def test_repository_add(self, mock_requests, mock_requests2):
         """
         Tests that an admin user is able to add a new repository.
         """
@@ -385,7 +387,7 @@ class RepositoryAdminTest(SeleniumTestCase):
         # He wants to create the repository by using a sources.list entry
         self.input_to_element(
             'id_sources_list_entry',
-            'deb http://ftp.ba.debian.org/debian stable'
+            'deb http://ftp.bad.debian.org/debian stable'
         )
         # === Make sure that no actual HTTP requests are sent out ===
         self.set_mock_http_response(
@@ -398,6 +400,7 @@ class RepositoryAdminTest(SeleniumTestCase):
             'Version: 7.1\n'
             'Description: Debian 7.1 Released 15 June 2013\n'
         )
+        self.set_mock_http_response(mock_requests2, 'OK')
         # The user decides to save by hitting the enter key
         self.send_enter('id_sources_list_entry')
         # The user sees a message telling him the repository has been added.
@@ -413,7 +416,7 @@ class RepositoryAdminTest(SeleniumTestCase):
         # This time, he wants to enter all the necessary data manually.
         self.input_to_element('id_name', 'testing')
         self.input_to_element('id_shorthand', 'testing')
-        self.input_to_element('id_uri', 'http://ftp.ba.debian.org/debian')
+        self.input_to_element('id_uri', 'http://ftp.bad.debian.org/debian')
         self.input_to_element('id_suite', 'testing')
         self.input_to_element('id_codename', 'jessie')
         self.input_to_element('id_components', 'main non-free')
