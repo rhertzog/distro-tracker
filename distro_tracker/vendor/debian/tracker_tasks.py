@@ -40,6 +40,7 @@ from distro_tracker.core.utils.packages import package_hashdir
 from .models import DebianContributor
 from distro_tracker import vendor
 
+import os
 import re
 import yaml
 import json
@@ -228,6 +229,9 @@ class UpdatePackageBugStats(BaseTask):
         :returns: A dict mapping package names to the count of bugs with the
             given tag.
         """
+        debian_ca_bundle = '/etc/ssl/ca-debian/ca-certificates.crt'
+        if os.path.exists(debian_ca_bundle):
+            os.environ['SSL_CERT_FILE'] = debian_ca_bundle
         url = 'https://bugs.debian.org/cgi-bin/soap.cgi'
         namespace = 'Debbugs/SOAP'
         server = SOAPpy.SOAPProxy(url, namespace)
