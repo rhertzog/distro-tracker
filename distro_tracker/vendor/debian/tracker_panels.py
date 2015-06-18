@@ -13,7 +13,7 @@
 from __future__ import unicode_literals
 from django.utils.safestring import mark_safe
 from django.utils.functional import cached_property
-from django.utils.http import urlencode
+from django.utils.http import urlencode, urlquote
 from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.models import Repository
 from distro_tracker.core.models import SourcePackageName
@@ -228,7 +228,7 @@ class TransitionsPanel(BasePanel):
         return {
             'transitions': self.package.package_transitions.all(),
             'excuses': excuses,
-            'package_name': self.package.name,
+            'package_name': urlquote(self.package.name),
         }
 
     @property
