@@ -942,7 +942,7 @@ class UpdateExcusesTask(BaseTask):
         terable of lines.
         Returns ``None`` if the content in the cache is up to date.
         """
-        url = 'https://ftp-master.debian.org/testing/update_excuses.html'
+        url = 'https://release.debian.org/britney/update_excuses.html'
         response, updated = self.cache.update(url, force=self.force_update)
         if not updated:
             return
