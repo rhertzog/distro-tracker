@@ -39,7 +39,7 @@ Usual workflow
        $ git clone git://anonscm.debian.org/qa/distro-tracker.git
 
      Note that you can also browse the sources at
-     https://anonscm.debian.org/gitweb/?p=qa/distro-tracker.git
+     https://anonscm.debian.org/cgit/qa/distro-tracker.git
 
   2. Follow the steps in the chapter :ref:`setting-up`.
 
