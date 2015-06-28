@@ -413,8 +413,11 @@ class UpdatePackageBugStats(BaseTask):
         # Each line in the response should be bug stats for a single package
         bug_stats = {}
         for line in response_content.splitlines():
-            line = line.decode('utf-8', 'ignore')
-            package_name, bug_counts = line.split(':', 1)
+            line = line.decode('utf-8', 'ignore').strip()
+            if line.startswith('src:'):
+                src, package_name, bug_counts = line.split(':')
+            else:
+                package_name, bug_counts = line.split(':')
             # Merged counts are in parentheses so remove those before splitting
             # the numbers
             bug_counts = re.sub(r'[()]', ' ', bug_counts).split()
