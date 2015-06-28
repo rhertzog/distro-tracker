@@ -2179,7 +2179,8 @@ class UpdateAutoRemovalsStatsTask(BaseTask):
         link = '<a href="https://bugs.debian.org/{}">{}</a>'
 
         action_item.short_description = self.ITEM_DESCRIPTION.format(
-            removal_date=stats['removal_date'].strftime('%d %B'),
+            removal_date=stats['removal_date'].strftime(
+                '%d %B').decode('utf-8'),
             bugs=', '.join(link.format(bug, bug) for bug in all_bugs))
 
         action_item.extra_data = {
