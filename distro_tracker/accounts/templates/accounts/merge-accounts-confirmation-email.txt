@@ -1,9 +1,7 @@
 You have requested to merge your account with another
 {{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracker account.
 
-In order to complete the operation, you must confirm that you are the
-owner of this email address by logging in to the account currently
-associated with this email address and going to the following URL:
+In order to complete the operation please go to the following URL:
 
 http://{{ DISTRO_TRACKER_SITE_DOMAIN }}{% url 'dtracker-accounts-merge-finalize' confirmation.confirmation_key %}
 

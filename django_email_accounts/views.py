@@ -396,9 +396,6 @@ class AccountMergeFinalize(LoginRequiredMixin, View):
             MergeAccountConfirmation,
             confirmation_key=confirmation_key)
 
-        if confirmation.merge_with != request.user:
-            raise PermissionDenied
-
         return render(request, self.template_name, {
             'confirmation': confirmation,
         })
@@ -407,8 +404,6 @@ class AccountMergeFinalize(LoginRequiredMixin, View):
         confirmation = get_object_or_404(
             MergeAccountConfirmation,
             confirmation_key=confirmation_key)
-        if confirmation.merge_with != request.user:
-            raise PermissionDenied
 
         initial_user = confirmation.initial_user
         merge_with = confirmation.merge_with
