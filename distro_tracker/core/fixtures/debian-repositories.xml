@@ -273,8 +273,8 @@
     <object pk="19" model="core.repository">
         <field type="CharField" name="name">Debian Oldoldstable Security</field>
         <field type="CharField" name="shorthand">o-o-sec</field>
-        <field type="CharField" name="uri">http://http.debian.net/debian</field>
-        <field type="CharField" name="public_uri">http://http.debian.net/debian</field>
+        <field type="CharField" name="uri">http://security.debian.org</field>
+        <field type="CharField" name="public_uri">http://security.debian.org</field>
         <field type="CharField" name="suite">oldoldstable</field>
         <field type="CharField" name="codename">squeeze</field>
         <field type="TextField" name="components">updates/main updates/contrib updates/non-free</field>
