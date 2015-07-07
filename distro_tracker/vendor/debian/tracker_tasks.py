@@ -2177,10 +2177,12 @@ class UpdateAutoRemovalsStatsTask(BaseTask):
         buggy_dependencies = stats.get('buggy_dependencies', [])
         all_bugs = stats['bugs'] + bugs_dependencies
         link = '<a href="https://bugs.debian.org/{}">{}</a>'
+        removal_date = stats['removal_date'].strftime('%d %B')
+        if removal_date is six.binary_type:
+            removal_date = removal_date.decode('utf-8', 'ignore')
 
         action_item.short_description = self.ITEM_DESCRIPTION.format(
-            removal_date=stats['removal_date'].strftime(
-                '%d %B').decode('utf-8'),
+            removal_date=removal_date,
             bugs=', '.join(link.format(bug, bug) for bug in all_bugs))
 
         action_item.extra_data = {
