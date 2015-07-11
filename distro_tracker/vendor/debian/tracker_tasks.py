@@ -2302,7 +2302,7 @@ class UpdateBuildReproducibilityTask(BaseTask):
             self.force_update = parameters['force_update']
 
     def get_build_reproducibility(self):
-        url = '{}/reproducible.json'.format(self.BASE_URL)
+        url = '{}/reproducible-tracker.json'.format(self.BASE_URL)
         cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         if not self.force_update and not cache.is_expired(url):
             return
