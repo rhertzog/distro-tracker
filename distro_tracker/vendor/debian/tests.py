@@ -88,7 +88,7 @@ from bs4 import BeautifulSoup as soup
 
 import os
 import yaml
-
+import json
 
 __all__ = ('DispatchDebianSpecificTest', 'DispatchBaseDebianSettingsTest')
 
@@ -1670,9 +1670,6 @@ class UpdateExcusesTaskActionItemTest(TestCase):
     def run_task(self):
         self.task.execute()
 
-    def get_test_file_path(self, file_name):
-        return os.path.join(os.path.dirname(__file__), 'tests-data', file_name)
-
     def set_update_excuses_content(self, content):
         """
         Sets the stub content of the update_excuses.html that the task will
@@ -1687,7 +1684,7 @@ class UpdateExcusesTaskActionItemTest(TestCase):
         have access to based on the content of the test file with the given
         name.
         """
-        with open(self.get_test_file_path(file_name), 'r') as f:
+        with open(self.get_test_data_path(file_name), 'r') as f:
             content = f.read()
 
         self.set_update_excuses_content(content)
@@ -2389,70 +2386,207 @@ class UpdateSecurityIssuesTaskTests(TestCase):
 
     def setUp(self):
         self.package = SourcePackageName.objects.create(name='dummy-package')
-
         self.task = UpdateSecurityIssuesTask()
         # Stub the data providing methods: no content by default
         self.task._get_issues_content = mock.MagicMock(return_value='')
 
+    def load_test_json(self, key):
+        datafn = 'security-tracker-{}.json'.format(key)
+        with open(self.get_test_data_path(datafn), 'r') as f:
+            content = json.load(f)
+        return content
+
+    def mock_json_data(self, key=None, content={}):
+        if key:
+            content = self.load_test_json(key)
+        self.task._get_issues_content = mock.MagicMock(return_value=content)
+        return content
+
     def run_task(self):
         self.task.execute()
-
-    def set_issues_content(self, content):
-        """
-        Sets the stub issues content returned to the task.
-
-        :param content: A list of (package_name, issue_count) pairs.
-        """
-        self.task._get_issues_content.return_value = '\n'.join(
-            '{name}:{count}'.format(name=name, count=count)
-            for name, count in content)
 
     def get_item_type(self):
         return ActionItemType.objects.get_or_create(
             type_name='debian-security-issue')[0]
+
+    def test_get_issues_summary_with_eol(self):
+        data = self.load_test_json('eol')['dummy-package']
+        stats = self.task.get_issues_summary(data)
+        self.assertEqual(stats['jessie']['open'], 0)
+        self.assertEqual(stats['sid']['open'], 1)
+
+    def test_get_issues_summary_with_unimportant(self):
+        data = self.load_test_json('unimportant')['dummy-package']
+        stats = self.task.get_issues_summary(data)
+        self.assertEqual(stats['jessie']['open'], 0)
+        self.assertEqual(stats['sid']['open'], 0)
+        self.assertEqual(stats['jessie']['nodsa'], 0)
+        self.assertEqual(stats['sid']['nodsa'], 0)
+        self.assertEqual(stats['jessie']['unimportant'], 1)
+        self.assertEqual(stats['sid']['unimportant'], 0)
+
+    def test_get_issues_summary_with_nodsa(self):
+        data = self.load_test_json('nodsa')['dummy-package']
+        stats = self.task.get_issues_summary(data)
+        self.assertEqual(stats['jessie']['open'], 0)
+        self.assertEqual(stats['sid']['open'], 0)
+        self.assertEqual(stats['jessie']['nodsa'], 1)
+        self.assertEqual(stats['sid']['nodsa'], 0)
+        self.assertEqual(stats['jessie']['unimportant'], 0)
+        self.assertEqual(stats['sid']['unimportant'], 0)
+
+    def test_get_issues_summary_with_open(self):
+        data = self.load_test_json('open')['dummy-package']
+        stats = self.task.get_issues_summary(data)
+        self.assertEqual(stats['jessie']['open'], 2)
+        self.assertEqual(stats['jessie']['nodsa'], 1)
+        self.assertEqual(stats['jessie']['unimportant'], 0)
+        self.assertEqual(stats['stretch']['open'], 0)
+        self.assertEqual(stats['stretch']['nodsa'], 0)
+        self.assertEqual(stats['stretch']['unimportant'], 1)
+        self.assertEqual(stats['sid']['open'], 2)
+        self.assertEqual(stats['sid']['nodsa'], 0)
+        self.assertEqual(stats['sid']['unimportant'], 0)
+
+    def test_get_issues_summary_has_details(self):
+        data = self.load_test_json('open')['dummy-package']
+        stats = self.task.get_issues_summary(data)
+        self.assertDictEqual(
+            stats['jessie']['open_details'],
+            {
+                'CVE-2015-0234': 'Description of CVE-2015-0234',
+                'CVE-2015-0235': '',
+            }
+        )
+        self.assertDictEqual(
+            stats['jessie']['nodsa_details'],
+            {
+                'CVE-2015-0233': 'Description of CVE-2015-0233',
+            }
+        )
+
+    def test_get_issues_stats(self):
+        content = self.mock_json_data('open')
+        stats = self.task.get_issues_stats(content)
+        self.assertTrue(stats['dummy-package']['jessie']['open'], 2)
+        self.assertTrue(stats['dummy-package']['jessie']['nodsa'], 1)
+
+    def test_get_data_checksum(self):
+        checksum = self.task.get_data_checksum({})
+        self.assertEqual(checksum, '99914b932bd37a50b983c5e7c90ae93b')
+
+    def test_execute_create_data(self):
+        self.mock_json_data('open')
+        self.run_task()
+        data = self.package.packageextractedinfo_set.get(
+            key='debian-security').value
+        self.assertEqual(data['stats']['jessie']['open'], 2)
+        self.assertEqual(data['stats']['jessie']['nodsa'], 1)
+
+    def test_execute_drop_data(self):
+        pkg = SourcePackageName.objects.create(name='pkg')
+        pkg.packageextractedinfo_set.create(key='debian-security', value={})
+        self.mock_json_data('open')
+        self.assertEqual(
+            pkg.packageextractedinfo_set.filter(key='debian-security').count(),
+            1)
+        self.run_task()
+        self.assertEqual(
+            pkg.packageextractedinfo_set.filter(key='debian-security').count(),
+            0)
+
+    def test_execute_update_data(self):
+        self.package.packageextractedinfo_set.create(
+            key='debian-security',
+            value={
+                'details': {},
+                'stats': {},
+                'checksum': '99914b932bd37a50b983c5e7c90ae93b',
+            })
+        content = self.mock_json_data('open')
+        self.run_task()
+        after = self.package.packageextractedinfo_set.get(key='debian-security')
+        self.assertNotEqual(after.value['checksum'],
+                            '99914b932bd37a50b983c5e7c90ae93b')
+        self.maxDiff = None
+        self.assertDictEqual(
+            after.value,
+            self.task.generate_package_data(content['dummy-package'])
+        )
+
+    def test_execute_update_data_skipped(self):
+        # Inject an inconsistent initial value that would be overwritten
+        # in case of update
+        initial_value = {
+            'details': {
+                'test_key': 'test_value'
+            },
+            'stats': {
+                'test_key': 'test_value'
+            },
+            # This checksum is for details={} (empty dict)
+            'checksum': '99914b932bd37a50b983c5e7c90ae93b',
+        }
+        self.package.packageextractedinfo_set.create(
+            key='debian-security', value=initial_value)
+        # Ensure the data retrieved is empty for the package we test
+        content = {
+            'dummy-package': {}
+        }
+        self.mock_json_data(content=content)
+        self.run_task()
+        # Ensure that we still have the initial data and that it has not
+        # been updated
+        after = self.package.packageextractedinfo_set.get(key='debian-security')
+        self.assertDictEqual(after.value, initial_value)
+
+    def test_update_action_item(self):
+        action_item = ActionItem(extra_data={'release': 'jessie'},
+                                 package=self.package)
+        # First case, normal issue
+        data = self.load_test_json('open')['dummy-package']
+        stats = self.task.get_issues_summary(data)['jessie']
+        self.task.update_action_item(stats, action_item)
+        self.assertEqual(action_item.severity, ActionItem.SEVERITY_HIGH)
+        self.assertIn('security issues</a> in jessie',
+                      action_item.short_description)
+        self.assertEqual(action_item.extra_data['security_issues_count'], 3)
+        # Second case, nodsa issue only
+        data = self.load_test_json('nodsa')['dummy-package']
+        stats = self.task.get_issues_summary(data)['jessie']
+        self.task.update_action_item(stats, action_item)
+        self.assertEqual(action_item.severity, ActionItem.SEVERITY_LOW)
+        self.assertIn('ignored security issue</a> in jessie',
+                      action_item.short_description)
+        self.assertEqual(action_item.extra_data['security_issues_count'], 1)
 
     def test_action_item_created(self):
         """
         Tests that an action item is created when a package has security
         issues.
         """
-        issue_count = 2
-        self.set_issues_content([
-            (self.package.name, issue_count),
-        ])
-        # Sanity check: no action items yet
+        self.mock_json_data('open')
         self.assertEqual(0, ActionItem.objects.count())
 
         self.run_task()
 
-        # An action item is created
-        self.assertEqual(1, ActionItem.objects.count())
-        # Correct item type?
-        item = ActionItem.objects.all()[0]
-        self.assertEqual(
-            UpdateSecurityIssuesTask.ACTION_ITEM_TYPE_NAME,
-            item.item_type.type_name)
-        # Correct template?
-        self.assertEqual(
-            UpdateSecurityIssuesTask.ACTION_ITEM_TEMPLATE,
-            item.full_description_template)
-        # Correct extra data?
-        expected_data = {
-            'security_issues_count': issue_count,
-        }
-        self.assertDictEqual(expected_data, item.extra_data)
+        self.assertEqual(2, ActionItem.objects.count())
+        for item in ActionItem.objects.all():
+            self.assertTrue(item.item_type.type_name.startswith(
+                'debian-security-issue-in'))
+            self.assertTrue('release' in item.extra_data)
+            self.assertTrue('security_issues_count' in item.extra_data)
 
     def test_action_item_removed(self):
         """
         Tests that an action item is removed when a package no longer has
         security issues.
         """
-        item_type = self.get_item_type()
-        ActionItem.objects.create(
-            package=self.package,
-            item_type=item_type,
-            short_description="Desc")
+        self.mock_json_data('open')
+        self.run_task()
+        self.assertTrue(ActionItem.objects.count() > 0)
 
+        self.mock_json_data('unimportant')
         self.run_task()
 
         # Removed the action item
@@ -2463,53 +2597,31 @@ class UpdateSecurityIssuesTaskTests(TestCase):
         Tests that an action item is updated when there are no package security
         issue stats.
         """
-        item_type = self.get_item_type()
-        ActionItem.objects.create(
-            package=self.package,
-            item_type=item_type,
-            short_description="Desc",
-            extra_data={
-                'security_issues_count': 2,
-            })
-        new_count = 5
-        self.set_issues_content([
-            (self.package.name, new_count),
-        ])
-
+        self.mock_json_data('nodsa')
         self.run_task()
+        ai = ActionItem.objects.get(
+            item_type__type_name='debian-security-issue-in-jessie')
+        self.assertEqual(ai.extra_data['security_issues_count'], 1)
+        self.assertEqual(ai.severity, ActionItem.SEVERITY_LOW)
+        self.assertIn("1 ignored security issue", ai.short_description)
 
-        # Still only one action item
-        self.assertEqual(1, ActionItem.objects.count())
-        # Updated the extra data?
-        item = ActionItem.objects.all()[0]
-        expected_data = {
-            'security_issues_count': new_count,
-        }
-        self.assertDictEqual(expected_data, item.extra_data)
-
-    def test_multiple_packages(self):
-        """
-        Tests that an :class:`ActionItem
-        <distro_tracker.core.models.ActionItem>` is created when there are
-        multiple packages with issues.
-        """
-        counts = [5, 10]
-        packages = [
-            self.package,
-            PackageName.objects.create(name='other-package', source=True)
-        ]
-        self.set_issues_content([
-            (package, count)
-            for package, count in zip(packages, counts)
-        ])
-
+        self.mock_json_data('open')
         self.run_task()
+        ai = ActionItem.objects.get(id=ai.id)
+        self.assertEqual(ai.extra_data['security_issues_count'], 3)
+        self.assertEqual(ai.severity, ActionItem.SEVERITY_HIGH)
+        self.assertIn("3 security issues", ai.short_description)
 
-        # Each package has an action item with the correct count
-        for package, count in zip(packages, counts):
-            self.assertEqual(1, package.action_items.count())
-            item = package.action_items.all()[0]
-            self.assertEqual(count, item.extra_data['security_issues_count'])
+    def test_get_template_action_item(self):
+        self.mock_json_data('nodsa')
+        self.run_task()
+        ai = ActionItem.objects.get(
+            item_type__type_name='debian-security-issue-in-jessie')
+
+        response = self.client.get(ai.get_absolute_url())
+
+        self.assertTemplateUsed(response,
+                                'debian/security-issue-action-item.html')
 
 
 class CodeSearchLinksTest(TestCase):

@@ -1,0 +1,71 @@
+{
+ "dummy-package": {
+  "CVE-2015-0233": {
+   "description": "Description of CVE-2015-0233",
+   "releases": {
+    "jessie": {
+     "nodsa": "Minor issue",
+     "repositories": {
+      "jessie": "1.1.35-2"
+     }, 
+     "status": "open", 
+     "urgency": "low"
+    }, 
+    "sid": {
+     "fixed_version": "1.1.38-1", 
+     "repositories": {
+      "sid": "1.1.38-2"
+     }, 
+     "status": "resolved", 
+     "urgency": "low"
+    }
+   }
+  },
+  "CVE-2015-0234": {
+   "description": "Description of CVE-2015-0234",
+   "releases": {
+    "jessie": {
+     "repositories": {
+      "jessie": "1.1.35-2"
+     }, 
+     "status": "open", 
+     "urgency": "low"
+    }, 
+    "sid": {
+     "repositories": {
+      "sid": "1.1.38-2"
+     }, 
+     "status": "open", 
+     "urgency": "low"
+    }
+   }
+  },
+  "CVE-2015-0235": {
+   "releases": {
+    "jessie": {
+     "repositories": {
+      "jessie": "1.1.35-2"
+     }, 
+     "status": "open", 
+     "urgency": "low"
+    }, 
+    "stretch": {
+     "nodsa": "Minor issue",
+     "repositories": {
+      "stretch": "1.1.38-2"
+     }, 
+     "status": "open", 
+     "urgency": "unimportant"
+    },
+    "sid": {
+     "repositories": {
+      "sid": "1.1.38-2"
+     }, 
+     "status": "open", 
+     "urgency": "low"
+    }
+   }
+  }
+
+ }
+}

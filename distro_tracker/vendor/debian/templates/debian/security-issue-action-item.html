@@ -1,2 +1,24 @@
-<span>There {% if item.extra_data.security_issues_count > 1 %}are{% else %}is{% endif %} <a href="https://security-tracker.debian.org/tracker/source-package/{{ item.package.name }}">{{ item.extra_data.security_issues_count }} open security issue{% if item.extra_data.security_issues_count > 1 %}s{% endif %}</a>.</span>
-<span>Please fix {% if item.extra_data.security_issues_count > 1 %}them{% else %}it{% endif %}.</span>
+{% with count=item.extra_data.security_issues_count open_count=item.extra_data.open_details.keys|length nodsa_count=item.extra_data.nodsa_details.keys|length sectracker="https://security-tracker.debian.org/tracker/" %}
+<span>There {{ count|pluralize:"is,are" }} <a href="https://security-tracker.debian.org/tracker/source-package/{{ item.package.name }}">{{ count }} open security issue{{ count|pluralize }}</a> in {{ item.extra_data.release }}.</span>
+{% if open_count > 0 %}
+<div>
+{{ open_count }} important issue{{ open_count|pluralize }}:
+<ul>
+{% for issue, desc in item.extra_data.open_details.items %}
+<li><a href="{{ sectracker }}{{ issue }}">{{ issue }}</a>: {{ desc }}</li>
+{% endfor %}
+</ul>
+</div>
+{% endif %}
+{% if nodsa_count > 0 %}
+<div>
+{{ nodsa_count }} issue{{ nodsa_count|pluralize }} skipped by the security teams:
+<ul>
+{% for issue, desc in item.extra_data.nodsa_details.items %}
+<li><a href="{{ sectracker }}{{ issue }}">{{ issue }}</a>: {{ desc }}</li>
+{% endfor %}
+</ul>
+</div>
+{% endif %}
+<span>Please fix {{ count|pluralize:"it,them" }}.</span>
+{% endwith %}

@@ -40,15 +40,19 @@ from distro_tracker.core.utils.packages import package_hashdir
 from .models import DebianContributor
 from distro_tracker import vendor
 
+import collections
 import os
 import re
-import yaml
 import json
+import hashlib
+import itertools
+
 from debian import deb822
 from debian.debian_support import AptPkgVersion
 from debian import debian_support
 from copy import deepcopy
 from bs4 import BeautifulSoup as soup
+import yaml
 
 try:
     import SOAPpy
@@ -1312,72 +1316,222 @@ class DebianWatchFileScannerUpdate(BaseTask):
 
 
 class UpdateSecurityIssuesTask(BaseTask):
-    ACTION_ITEM_TYPE_NAME = 'debian-security-issue'
+    ACTION_ITEM_TYPE_NAME = 'debian-security-issue-in-{}'
     ACTION_ITEM_TEMPLATE = 'debian/security-issue-action-item.html'
-    ITEM_DESCRIPTION_TEMPLATE = "{count} security {issue}"
+    ITEM_DESCRIPTION_TEMPLATE = {
+        'open': '<a href="{url}">{count} security {issue}</a> in {release}',
+        'nodsa':
+            '<a href="{url}">{count} ignored security {issue}</a> in {release}',
+        'none': 'No known security issue in {release}',
+    }
 
     def __init__(self, force_update=False, *args, **kwargs):
         super(UpdateSecurityIssuesTask, self).__init__(*args, **kwargs)
+        self._action_item_type = {}
         self.force_update = force_update
-        self.action_item_type = ActionItemType.objects.create_or_update(
-            type_name=self.ACTION_ITEM_TYPE_NAME,
-            full_description_template=self.ACTION_ITEM_TEMPLATE)
+
+    def action_item_type(self, release):
+        return self._action_item_type.setdefault(
+            release, ActionItemType.objects.create_or_update(
+                type_name=self.ACTION_ITEM_TYPE_NAME.format(release),
+                full_description_template=self.ACTION_ITEM_TEMPLATE))
 
     def set_parameters(self, parameters):
         if 'force_update' in parameters:
             self.force_update = parameters['force_update']
 
     def _get_issues_content(self):
-        url = 'https://security-tracker.debian.org/tracker/data/pts/1'
-        return get_resource_content(url)
+        if hasattr(self, '_content'):
+            return self._content
+        url = 'https://security-tracker.debian.org/tracker/data/json'
+        self._content = json.loads(get_resource_content(url))
+        return self._content
 
-    def get_issues_stats(self):
+    @staticmethod
+    def get_issues_summary(issues):
+        result = {}
+        for issue_id, issue_data in six.iteritems(issues):
+            for release, data in six.iteritems(issue_data['releases']):
+                stats = result.setdefault(release, {
+                    'open': 0,
+                    'open_details': {},
+                    'nodsa': 0,
+                    'nodsa_details': {},
+                    'unimportant': 0,
+                })
+                if (data.get('status', '') == 'resolved' or
+                        data.get('urgency', '') == 'end-of-life'):
+                    continue
+                elif data.get('urgency', '') == 'unimportant':
+                    stats['unimportant'] += 1
+                elif data.get('nodsa', False):
+                    stats['nodsa'] += 1
+                    stats['nodsa_details'][issue_id] = \
+                        issue_data.get('description', '')
+                else:
+                    stats['open'] += 1
+                    stats['open_details'][issue_id] = \
+                        issue_data.get('description', '')
+        return result
+
+    @classmethod
+    def get_issues_stats(self, content):
         """
         Gets package issue stats from Debian's security tracker.
         """
-        content = self._get_issues_content()
         stats = {}
-        for line in content.splitlines():
-            package_name, count = line.rsplit(':', 1)
-            try:
-                count = int(count)
-            except ValueError:
-                continue
-            stats[package_name] = count
-
+        for pkg, issues in six.iteritems(content):
+            stats[pkg] = self.get_issues_summary(issues)
         return stats
 
-    def update_action_item(self, package, security_issue_count):
-        """
-        Updates the ``debian-security-issue`` action item for the given package
-        based on the count of security issues.
-        """
-        action_item = package.get_action_item_for_type(self.action_item_type)
-        if action_item is None:
-            action_item = ActionItem(
-                package=package,
-                item_type=self.action_item_type)
+    @staticmethod
+    def get_data_checksum(data):
+        json_dump = json.dumps(data, sort_keys=True)
+        if json_dump is not six.binary_type:
+            json_dump = json_dump.encode('UTF-8')
+        return hashlib.md5(json_dump).hexdigest()
 
-        action_item.short_description = self.ITEM_DESCRIPTION_TEMPLATE.format(
-            count=security_issue_count,
-            issue='issues' if security_issue_count > 1 else 'issue')
-        action_item.extra_data = {
-            'security_issues_count': security_issue_count,
+    def _get_short_description(self, key, action_item):
+        count = action_item.extra_data['security_issues_count']
+        url = 'https://security-tracker.debian.org/tracker/source-package/{}'
+        return self.ITEM_DESCRIPTION_TEMPLATE[key].format(
+            count=count,
+            issue='issues' if count > 1 else 'issue',
+            release=action_item.extra_data.get('release', 'sid'),
+            url=url.format(action_item.package.name),
+        )
+
+    def update_action_item(self, stats, action_item):
+        """
+        Updates the ``debian-security-issue`` action item based on the count of
+        security issues.
+        """
+        security_issues_count = stats['open'] + stats['nodsa']
+        action_item.extra_data['security_issues_count'] = security_issues_count
+        action_item.extra_data['open_details'] = stats['open_details']
+        action_item.extra_data['nodsa_details'] = stats['nodsa_details']
+        if stats['open']:
+            action_item.severity = ActionItem.SEVERITY_HIGH
+            action_item.short_description = \
+                self._get_short_description('open', action_item)
+        elif stats['nodsa']:
+            action_item.severity = ActionItem.SEVERITY_LOW
+            action_item.short_description = \
+                self._get_short_description('nodsa', action_item)
+        else:
+            action_item.severity = ActionItem.SEVERITY_WISHLIST
+            action_item.short_description = \
+                self._get_short_description('none', action_item)
+
+    @classmethod
+    def generate_package_data(self, issues):
+        return {
+            'details': issues,
+            'stats': self.get_issues_summary(issues),
+            'checksum': self.get_data_checksum(issues)
         }
-        action_item.save()
+
+    def process_pkg_action_items(self, pkgdata, existing_action_items):
+        release_ai = {}
+        to_add = []
+        to_update = []
+        to_drop = []
+        global_stats = pkgdata.value.get('stats', {})
+        for ai in existing_action_items:
+            release = ai.extra_data['release']
+            release_ai[release] = ai
+            if release not in global_stats:
+                to_drop.append(ai)
+        for release, stats in global_stats.items():
+            count = stats.get('open', 0) + stats.get('nodsa', 0)
+            if release in release_ai:
+                ai = release_ai[release]
+                if count == 0:
+                    to_drop.append(ai)
+                else:
+                    self.update_action_item(stats, ai)
+                    to_update.append(ai)
+            elif count > 0:
+                new_ai = ActionItem(item_type=self.action_item_type(release),
+                                    package=pkgdata.package,
+                                    extra_data={'release': release})
+                self.update_action_item(stats, new_ai)
+                to_add.append(new_ai)
+        return to_add, to_update, to_drop
 
     def execute(self):
-        stats = self.get_issues_stats()
+        # Fetch all debian-security PackageExtractedInfo
+        all_pkgdata = PackageExtractedInfo.objects.select_related(
+            'package').filter(key='debian-security').only(
+                'package__name', 'value')
 
-        ActionItem.objects.delete_obsolete_items(
-            item_types=[self.action_item_type],
-            non_obsolete_packages=stats.keys())
-
-        packages = PackageName.objects.filter(name__in=stats.keys())
-        packages = packages.prefetch_related('action_items')
-
-        for package in packages:
-            self.update_action_item(package, stats[package.name])
+        all_data = {}
+        packages = {}
+        for pkgdata in all_pkgdata:
+            all_data[pkgdata.package.name] = pkgdata
+            packages[pkgdata.package.name] = pkgdata.package
+        # Fetch all debian-security ActionItems
+        pkg_action_items = collections.defaultdict(lambda: [])
+        all_action_items = ActionItem.objects.select_related(
+            'package__name').filter(
+                item_type__type_name__startswith='debian-security-issue-in-')
+        for action_item in all_action_items:
+            pkg_action_items[action_item.package.name].append(action_item)
+        # Scan the security tracker data
+        content = self._get_issues_content()
+        to_add = []
+        to_update = []
+        for pkgname, issues in six.iteritems(content):
+            if pkgname in all_data:
+                # Check if we need to update the existing data
+                checksum = self.get_data_checksum(issues)
+                if all_data[pkgname].value.get('checksum', '') == checksum:
+                    continue
+                # Update the data
+                pkgdata = all_data[pkgname]
+                pkgdata.value = self.generate_package_data(issues)
+                to_update.append(pkgdata)
+            else:
+                # Add data for a new package
+                package, _ = PackageName.objects.get_or_create(name=pkgname)
+                to_add.append(
+                    PackageExtractedInfo(
+                        package=package,
+                        key='debian-security',
+                        value=self.generate_package_data(issues)
+                    )
+                )
+        # Process action items
+        ai_to_add = []
+        ai_to_update = []
+        ai_to_drop = []
+        for pkgdata in itertools.chain(to_add, to_update):
+            add, update, drop = self.process_pkg_action_items(
+                pkgdata, pkg_action_items[pkgdata.package.name])
+            ai_to_add.extend(add)
+            ai_to_update.extend(update)
+            ai_to_drop.extend(drop)
+        # Sync in database
+        with transaction.atomic():
+            # Delete obsolete data
+            PackageExtractedInfo.objects.filter(
+                key='debian-security').exclude(
+                package__name__in=content.keys()).delete()
+            ActionItem.objects.filter(
+                item_type__type_name__startswith='debian-security-issue-in-'
+                ).exclude(
+                package__name__in=content.keys()).delete()
+            ActionItem.objects.filter(
+                item_type__type_name__startswith='debian-security-issue-in-',
+                id__in=[ai.id for ai in ai_to_drop]).delete()
+            # Add new entries
+            PackageExtractedInfo.objects.bulk_create(to_add)
+            ActionItem.objects.bulk_create(ai_to_add)
+            # Update existing entries
+            for pkgdata in to_update:
+                pkgdata.save()
+            for ai in ai_to_update:
+                ai.save()
 
 
 class UpdatePiuPartsTask(BaseTask):

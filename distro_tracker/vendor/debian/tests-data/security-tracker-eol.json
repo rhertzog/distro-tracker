@@ -1,0 +1,22 @@
+{
+ "dummy-package": {
+  "CVE-2015-0233": {
+   "releases": {
+    "jessie": {
+     "repositories": {
+      "jessie": "1.1.35-2"
+     }, 
+     "status": "open", 
+     "urgency": "end-of-life"
+    }, 
+    "sid": {
+     "repositories": {
+      "sid": "1.1.38-2"
+     }, 
+     "status": "open", 
+     "urgency": "low"
+    }
+   }
+  }
+ }
+}
