@@ -186,6 +186,25 @@ class DebtagsLink(LinksPanel.ItemProvider):
         ]
 
 
+class SecurityTrackerLink(LinksPanel.ItemProvider):
+    """
+    Add a link to the security tracker.
+    """
+    URL_TEMPLATE = \
+        'https://security-tracker.debian.org/tracker/source-package/{package}'
+
+    def get_panel_items(self):
+        if self.package.packageextractedinfo_set.filter(
+                key='debian-security').count() == 0:
+            return
+        return [
+            LinksPanel.SimpleLinkItem(
+                'security tracker',
+                self.URL_TEMPLATE.format(package=self.package.name)
+            )
+        ]
+
+
 class ScreenshotsLink(LinksPanel.ItemProvider):
     """
     Add a link to screenshots.debian.net
