@@ -387,7 +387,7 @@ class AccountMergeConfirmView(LoginRequiredMixin, View):
         }))
 
 
-class AccountMergeFinalize(LoginRequiredMixin, View):
+class AccountMergeFinalize(View):
     template_name = 'accounts/account-merge-finalize.html'
     success_url = reverse_lazy('accounts-merge-finalized')
 
@@ -417,15 +417,16 @@ class AccountMergeFinalize(LoginRequiredMixin, View):
 
         confirmation.delete()
 
-        # The current user is no longer valid
-        logout(request)
+        if request.user == confirmation.merge_with:
+            logout(request)
+
         # The account is now obsolete and should be removed
         merge_with.delete()
 
         return redirect(self.success_url)
 
 
-class AccountMergeConfirmedView(LoginRequiredMixin, TemplateView):
+class AccountMergeConfirmedView(TemplateView):
     template_name = 'accounts/accounts-merge-confirmed.html'
 
     def get_context_data(self, **kwargs):
