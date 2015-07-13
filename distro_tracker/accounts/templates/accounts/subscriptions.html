@@ -88,7 +88,7 @@
         <div class="accordion-heading">
         <div class="accordion-toggle" data-toggle="collapse" data-parent="#{{ accordion_id }}" data-target="#{{ details_id }}">
             <div class="row-fluid">
-            <div class="span10">
+            <div class="span7">
             <span class='subscription-package'>
                 {% if subscription.package.get_absolute_url %}
                 <a href="{{ subscription.package.get_absolute_url }}">{{ subscription.package }}</a>
@@ -102,8 +102,10 @@
             {% endif %}
             </div>
 
-            <div class="span2">
-            <form style="margin-bottom: 0px;" action="{% url 'dtracker-api-accounts-unsubscribe' %}" method="POST">{% csrf_token %}
+            <div class="pull-right">
+            <a href="{% url 'dtracker-accounts-profile-keywords' %}?package={{ subscription.package }}&email={{ email }}">
+                <div class="btn btn-small modify-subscription-keywords" data-email="{{ email }}" data-package="{{ subscription.package }}">Modify</div></a>
+            <form style="margin-bottom: 0px;display:inline;" action="{% url 'dtracker-api-accounts-unsubscribe' %}" method="POST">{% csrf_token %}
             <input type="hidden" name="package" value="{{ subscription.package }}">
             <input type="hidden" name="email" value="{{ email }}">
             <input type="hidden" name="next" value="{% url 'dtracker-accounts-subscriptions' %}">
@@ -123,9 +125,6 @@
                 <li class='keyword'>{{ keyword }}</li>
                 {% endfor %}
             </ul>
-            <a href="{% url 'dtracker-accounts-profile-keywords' %}?package={{ subscription.package }}&email={{ email }}">
-                <div class="btn btn-small modify-subscription-keywords" data-email="{{ email }}" data-package="{{ subscription.package }}">Modify</div>
-            </a>
             </div>
         </div>
     </div>
