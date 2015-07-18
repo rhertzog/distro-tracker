@@ -49,8 +49,6 @@ To create the database you must run the following commands::
 
 $ ./manage.py migrate
 
-This is because some of the apps' models are managed by South.
-
 See also the Debian package's README.Debian for some details about the setup.
 
 .. _localsettings_setup:
