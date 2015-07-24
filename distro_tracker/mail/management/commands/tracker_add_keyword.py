@@ -15,6 +15,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from distro_tracker.core.models import Keyword, EmailSettings, Subscription
+from distro_tracker.core.models import UserEmail
 from distro_tracker.core.utils import get_or_none
 from optparse import make_option
 
@@ -99,7 +100,8 @@ class Command(BaseCommand):
 
         self.add_keyword_to_user_defaults(
             new_keyword,
-            EmailSettings.objects.filter(default_keywords=existing_keyword)
+            UserEmail.objects.filter(
+                emailsettings__default_keywords=existing_keyword)
         )
         for subscription in Subscription.objects.all():
             if existing_keyword in subscription.keywords.all():
@@ -130,8 +132,10 @@ class Command(BaseCommand):
             return
 
         if default:
-            self.add_keyword_to_user_defaults(keyword,
-                                              EmailSettings.objects.all())
+            self.add_keyword_to_user_defaults(
+                keyword,
+                UserEmail.objects.exclude(emailsettings__isnull=True)
+            )
 
         if len(args) > 1:
             # Add the new keyword to all subscribers and subscriptions which
