@@ -53,7 +53,7 @@ def package_page(request, package_name):
     package = get_web_package(package_name)
     if not package:
         raise Http404
-    if package.get_absolute_url() != urlquote(request.path):
+    if package.get_absolute_url() not in (urlquote(request.path), request.path):
         return redirect(package)
 
     is_subscribed = False
