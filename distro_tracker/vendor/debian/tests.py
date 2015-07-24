@@ -4729,7 +4729,7 @@ class DebianSsoLoginTests(TestCase):
         })
 
     def assert_user_logged_in(self, user):
-        self.assertEqual(self.client.session['_auth_user_id'], user.pk)
+        self.assertEqual(int(self.client.session['_auth_user_id']), user.pk)
 
     def assert_no_user_logged_in(self):
         self.assertNotIn('_auth_user_id', self.client.session)
