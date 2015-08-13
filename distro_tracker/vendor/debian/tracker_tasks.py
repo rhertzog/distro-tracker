@@ -470,13 +470,12 @@ class UpdatePackageBugStats(BaseTask):
         except:
             logger.exception("Could not get bugs tagged help")
 
-        # Add in gift bugs from the BTS SOAP interface
+        # Add in newcomer bugs from the BTS SOAP interface
         try:
-            gift_bugs = self._get_tagged_bug_stats('gift',
-                                                   'debian-qa@lists.debian.org')
-            self._extend_bug_stats(bug_stats, gift_bugs, 'gift')
+            newcomer_bugs = self._get_tagged_bug_stats('newcomer')
+            self._extend_bug_stats(bug_stats, newcomer_bugs, 'newcomer')
         except:
-            logger.exception("Could not get bugs tagged gift")
+            logger.exception("Could not get bugs tagged newcomer")
 
         with transaction.atomic():
             # Clear previous stats

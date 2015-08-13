@@ -385,9 +385,11 @@ def get_bug_tracker_url(package_name, package_type, category_name):
             ('pend-exc', 'fixed'),
             ('pend-exc', 'done'),
         ),
-        'gift': (
-            ('users', 'debian-qa@lists.debian.org'),
-            ('tag', 'gift'),
+        'newcomer': (
+            ('tag', 'newcomer'),
+            ('pend-exc', 'pending-fixed'),
+            ('pend-exc', 'fixed'),
+            ('pend-exc', 'done'),
         ),
         'all-merged': (
             ('repeatmerged', 'yes'),
@@ -496,12 +498,14 @@ def get_bug_panel_stats(package_name):
             'display_name': 'F&P',
             'description': 'Fixed and Pending',
         },
-        'gift': {
-            'display_name': 'gift',
+        'newcomer': {
+            'display_name': 'newcomer',
+            'description': 'newcomer',
+            'link': 'https://wiki.debian.org/qa.debian.org/GiftTag',
         }
     }
     # Some bug categories should not be included in the count.
-    exclude_from_count = ('gift',)
+    exclude_from_count = ('newcomer',)
 
     stats = bug_stats.stats
     categories = []

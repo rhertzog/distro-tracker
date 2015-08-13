@@ -1325,11 +1325,11 @@ class DebianBugActionItemsTests(TestCase):
     based on Debian bug stats.
     """
     @staticmethod
-    def stub_tagged_bugs(tag, user=None, help_bugs=None, gift_bugs=None):
+    def stub_tagged_bugs(tag, user=None, help_bugs=None, newcomer_bugs=None):
         if tag == 'help':
             return help_bugs
-        elif tag == 'gift':
-            return gift_bugs
+        elif tag == 'newcomer':
+            return newcomer_bugs
 
     def setUp(self):
         self.package_name = SourcePackageName.objects.create(
@@ -1340,7 +1340,7 @@ class DebianBugActionItemsTests(TestCase):
         self.task = UpdatePackageBugStats()
         self.udd_bugs = {}
         self.help_bugs = {}
-        self.gift_bugs = {}
+        self.newcomer_bugs = {}
         # Stub the data providing methods
         self.task._get_udd_bug_stats = mock.MagicMock(
             return_value=self.udd_bugs)
@@ -1348,7 +1348,7 @@ class DebianBugActionItemsTests(TestCase):
             side_effect=curry(
                 DebianBugActionItemsTests.stub_tagged_bugs,
                 help_bugs=self.help_bugs,
-                gift_bugs=self.gift_bugs))
+                newcomer_bugs=self.newcomer_bugs))
         # Ignore binary package bugs for action item tests.
         self.task.update_binary_bugs = mock.MagicMock()
 
