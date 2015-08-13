@@ -22,7 +22,13 @@ and any details that might be helpful in troubleshooting.
 If you are proposing a feature, please explain in detail how it would work,
 and keep the scope as narrow as possible, to make it easier to implement.
 
-Remember that this is a volunteer-driven project, and that contributions are
+If you do not know where to start, we have `a list of tasks suitable for
+newcomers
+<https://bugs.debian.org/cgi-bin/pkgreport.cgi?dist=unstable;package=tracker.debian.org;tag=newcomer>`_,
+mentors will review your changes with special care when you try to tackle
+those.
+
+Please remember this is a volunteer-driven project, and that contributions are
 welcome.
 
 Contribute
