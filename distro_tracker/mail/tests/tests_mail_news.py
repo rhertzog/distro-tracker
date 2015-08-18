@@ -146,5 +146,5 @@ class MailNewsManagementCommandTest(SimpleTestCase):
     def test_calls_process(self, mock_process):
         cmd = MailNewsCommand()
         cmd.input_file = mock.create_autospec(six.BytesIO)
-
-        mock_process.assert_called()
+        cmd.handle()
+        self.assertTrue(mock_process.called)
