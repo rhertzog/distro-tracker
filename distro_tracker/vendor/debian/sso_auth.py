@@ -98,7 +98,7 @@ class DebianSsoUserBackend(RemoteUserBackend):
                 kwargs.update(names)
             user = User.objects.create_user(main_email=email, **kwargs)
         else:
-            user = user_email.user
+            user = User.objects.get(pk=user_email.user.id)
 
         return user
 

@@ -81,6 +81,7 @@ from distro_tracker.vendor.debian.management.commands\
 from distro_tracker.vendor.debian.management.commands\
     .tracker_import_old_tags_dump \
     import Command as ImportOldTagsCommand
+from distro_tracker.vendor.debian.sso_auth import DebianSsoUserBackend
 from distro_tracker.mail.mail_news import process
 
 from email.message import Message
@@ -4849,6 +4850,18 @@ class DebianSsoLoginTests(TestCase):
         self.client.get('/')
 
         self.assert_no_user_logged_in()
+
+    def test_authenticate_returns_correct_class(self, get_user_details):
+        auth_backend = DebianSsoUserBackend()
+        user = auth_backend.authenticate('user@debian.org')
+        self.assertIsInstance(user, User)  # from distro_tracker.accounts.models
+
+    def test_authenticate_returns_correct_class_with_existing_user(
+            self, get_user_details):
+        User.objects.create_user(main_email='user@debian.org')
+        auth_backend = DebianSsoUserBackend()
+        user = auth_backend.authenticate('user@debian.org')
+        self.assertIsInstance(user, User)  # from distro_tracker.accounts.models
 
 
 @mock.patch('distro_tracker.core.utils.http.requests')
