@@ -132,10 +132,10 @@ class SourceCodeSearchLinks(LinksPanel.ItemProvider):
     SOURCES_URL_TEMPLATE = 'https://sources.debian.net/src/{package}/{suite}/'
     SEARCH_FORM_TEMPLATE = (
         '<form class="code-search-form"'
-        ' action="https://packages.qa.debian.org/cgi-bin/codesearch.cgi"'
+        ' action="/codesearch/"'
         ' method="get" target="_blank">'
         '<input type="hidden" name="package" value="{package}">'
-        '<input type="text" name="q" placeholder="search source code">'
+        '<input type="text" name="query" placeholder="search source code">'
         '</form>')
 
     def get_panel_items(self):

@@ -24,6 +24,7 @@ from django.utils import six
 from django.utils.six.moves import mock
 from django.utils.encoding import force_bytes
 from django.utils.functional import curry
+from django.utils.http import urlencode
 from distro_tracker.mail.tests.tests_dispatch \
     import DispatchTestHelperMixin, DispatchBaseTest
 from distro_tracker.accounts.models import User
@@ -2712,6 +2713,41 @@ class CodeSearchLinksTest(TestCase):
         response_content = response.content.decode('utf-8')
         self.assertFalse(self.browse_link_in_content(response_content))
         self.assertFalse(self.search_form_in_content(response_content))
+
+    def test_code_search_view(self):
+        """
+        Tests that both required parameters are present and not empty and that
+        urlencode works properly.
+        """
+        # missing query paramter
+        response = self.client.get(reverse('dtracker-code-search'),
+                                   {'package': self.package.name})
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Both package and query are required parameters',
+                      response.content.decode('utf-8'))
+        # missing package parameter
+        response = self.client.get(reverse('dtracker-code-search'),
+                                   {'query': 'def'})
+        self.assertEqual(response.status_code, 400)
+        # empty query
+        response = self.client.get(reverse('dtracker-code-search'),
+                                   {'package': self.package.name,
+                                    'query': ''})
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Empty query is not allowed',
+                      response.content.decode('utf-8'))
+        # redirection to codesearch
+        response = self.client.get(reverse('dtracker-code-search'),
+                                   {'package': self.package.name,
+                                    'query': 'def'})
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('codesearch.debian', response['Location'])
+        # verify url encoding
+        cs = 'https://codesearch.debian.net/search?'
+        search = 'def' + ' package:' + self.package.name
+        url = cs + urlencode({'q': search})
+        self.assertEqual('https://codesearch.debian.net/search?q=def+package%3A'
+                         'dummy', url)
 
 
 class PopconLinkTest(TestCase):
