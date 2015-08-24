@@ -24,7 +24,6 @@ from django.utils import six
 from django.utils.six.moves import mock
 from django.utils.encoding import force_bytes
 from django.utils.functional import curry
-from django.utils.http import urlencode
 from distro_tracker.mail.tests.tests_dispatch \
     import DispatchTestHelperMixin, DispatchBaseTest
 from distro_tracker.accounts.models import User
@@ -83,6 +82,7 @@ from distro_tracker.vendor.debian.management.commands\
     .tracker_import_old_tags_dump \
     import Command as ImportOldTagsCommand
 from distro_tracker.vendor.debian.sso_auth import DebianSsoUserBackend
+from distro_tracker.vendor.debian.views import CodeSearchView
 from distro_tracker.mail.mail_news import process
 
 from email.message import Message
@@ -2714,40 +2714,45 @@ class CodeSearchLinksTest(TestCase):
         self.assertFalse(self.browse_link_in_content(response_content))
         self.assertFalse(self.search_form_in_content(response_content))
 
-    def test_code_search_view(self):
-        """
-        Tests that both required parameters are present and not empty and that
-        urlencode works properly.
-        """
+    def test_code_search_view_missing_query_parameter(self):
+        """Test codesearch view with missing query parameter"""
         # missing query paramter
         response = self.client.get(reverse('dtracker-code-search'),
                                    {'package': self.package.name})
         self.assertEqual(response.status_code, 400)
         self.assertIn('Both package and query are required parameters',
                       response.content.decode('utf-8'))
-        # missing package parameter
+
+    def test_code_search_view_missing_package_parameter(self):
+        """Test codesearch view with missing package parameter"""
         response = self.client.get(reverse('dtracker-code-search'),
                                    {'query': 'def'})
         self.assertEqual(response.status_code, 400)
-        # empty query
+
+    def test_code_search_view_empty_query(self):
+        """Test codesearch view with empty query"""
         response = self.client.get(reverse('dtracker-code-search'),
                                    {'package': self.package.name,
                                     'query': ''})
         self.assertEqual(response.status_code, 400)
         self.assertIn('Empty query is not allowed',
                       response.content.decode('utf-8'))
-        # redirection to codesearch
+
+    def test_code_search_view_redirect_simple(self):
+        """Test codesearch view redirects properly"""
         response = self.client.get(reverse('dtracker-code-search'),
                                    {'package': self.package.name,
                                     'query': 'def'})
         self.assertEqual(response.status_code, 302)
-        self.assertIn('codesearch.debian', response['Location'])
-        # verify url encoding
-        cs = 'https://codesearch.debian.net/search?'
-        search = 'def' + ' package:' + self.package.name
-        url = cs + urlencode({'q': search})
-        self.assertEqual('https://codesearch.debian.net/search?q=def+package%3A'
-                         'dummy', url)
+        self.assertIn(CodeSearchView.BASE_URL, response['Location'])
+
+    def test_code_search_view_urlencode_where_needed(self):
+        """Test codesearch view urlencode stuff"""
+        response = self.client.get(reverse('dtracker-code-search'),
+                                   {'package': 'g++',
+                                    'query': 'bépo'})
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("q=b%C3%A9po+package%3Ag%2B%2B", response['Location'])
 
 
 class PopconLinkTest(TestCase):

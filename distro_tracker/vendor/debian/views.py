@@ -7,7 +7,7 @@
 # distribution and at http://deb.li/DTLicense. No part of Distro Tracker,
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
-"""Views for the :mod:`distro_tracker.vendor` app."""
+"""Views for the :mod:`distro_tracker.vendor.debian` app."""
 from __future__ import unicode_literals
 
 from django.utils.http import urlencode
@@ -18,16 +18,16 @@ from django.shortcuts import redirect
 
 class CodeSearchView(View):
 
+    BASE_URL = 'https://codesearch.debian.net/search'
+
     def get(self, request):
         if 'query' not in request.GET or 'package' not in request.GET:
             return HttpResponseBadRequest('Both package and query are required '
                                           'parameters')
-        if request.GET.get('query') == "":
-            return HttpResponseBadRequest('Empty query is not allowed')
         q = request.GET.get('query')
+        if q == "":
+            return HttpResponseBadRequest('Empty query is not allowed')
         package = request.GET.get('package')
-        cs = 'https://codesearch.debian.net/search?'
         search = q + ' package:' + package
-
-        url = cs + urlencode({'q': search})
+        url = self.BASE_URL + '?' + urlencode({'q': search})
         return redirect(url)

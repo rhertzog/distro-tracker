@@ -11,9 +11,12 @@
 # except according to the terms contained in the LICENSE file.
 
 from __future__ import unicode_literals
+
+from django.core.urlresolvers import reverse
 from django.utils.safestring import mark_safe
 from django.utils.functional import cached_property
 from django.utils.http import urlencode, urlquote
+
 from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.models import Repository
 from distro_tracker.core.models import SourcePackageName
@@ -132,7 +135,7 @@ class SourceCodeSearchLinks(LinksPanel.ItemProvider):
     SOURCES_URL_TEMPLATE = 'https://sources.debian.net/src/{package}/{suite}/'
     SEARCH_FORM_TEMPLATE = (
         '<form class="code-search-form"'
-        ' action="/codesearch/"'
+        ' action="' + reverse('dtracker-code-search') + '"'
         ' method="get" target="_blank">'
         '<input type="hidden" name="package" value="{package}">'
         '<input type="text" name="query" placeholder="search source code">'
