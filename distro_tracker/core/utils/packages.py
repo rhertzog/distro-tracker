@@ -258,6 +258,7 @@ class AptCache(object):
             for architecture in Architecture.objects.all():
                 conf_file.write('"{arch}"; '.format(arch=architecture))
             conf_file.write('};\n')
+            conf_file.write('Acquire::CompressionTypes::Order:: "xz";\n')
             conf_file.write('Dir "{}/";\n'.format(self.cache_root_dir))
             conf_file.write('Dir::State "state/";\n')
             conf_file.write('Dir::State::status "dpkg-status";\n')
