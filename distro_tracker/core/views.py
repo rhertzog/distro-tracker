@@ -94,7 +94,7 @@ class PackageSearchView(View):
     def get(self, request):
         if 'package_name' not in self.request.GET:
             raise Http404
-        package_name = self.request.GET.get('package_name')
+        package_name = self.request.GET.get('package_name').lower()
 
         package = get_web_package(package_name)
         if package is not None:

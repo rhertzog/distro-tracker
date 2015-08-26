@@ -264,6 +264,15 @@ class PackageSearchViewTest(TestCase):
         self.assertIn('package_name', response.context)
         self.assertEqual(response.context['package_name'], 'no-exist')
 
+    def test_case_insensitive_package_search(self):
+        """
+        Tests that package search is case insensitive
+        """
+        response = self.client.get(reverse('dtracker-package-search'), {
+            'package_name': 'DuMmy-PACKAGE'
+        })
+        self.assertRedirects(response, self.source_package.get_absolute_url())
+
 
 class OpenSearchDescriptionTest(TestCase):
     """
