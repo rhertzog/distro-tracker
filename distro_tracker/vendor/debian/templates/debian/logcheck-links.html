@@ -5,8 +5,6 @@
 <span>,</span>
 <span><a title="experimental build logs" href="https://buildd.debian.org/status/package.php?{{ query_string }}&suite=experimental">exp</a></span>
 {% endif %}
-<span>,</span>
-<span><a title="build logs for unofficial ports" href="http://buildd.debian-ports.org/status/package.php?{{ query_string }}">ports</a></span>
 {% if item.context.has_checks %}
 <span>,</span>
 <span><a title="report about issues spotted in buildd logs" href="{{ item.context.logcheck_url }}">checks</a></span>
