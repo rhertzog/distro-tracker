@@ -12,6 +12,8 @@ from __future__ import unicode_literals
 from django.contrib.auth.middleware import RemoteUserMiddleware
 from django.contrib.auth.backends import RemoteUserBackend
 from django.contrib import auth
+from django.core.exceptions import ImproperlyConfigured
+
 from distro_tracker.accounts.models import UserEmail
 from distro_tracker.accounts.models import User
 
@@ -24,15 +26,19 @@ except ImportError:
 class DebianSsoUserMiddleware(RemoteUserMiddleware):
     """
     Middleware that initiates user authentication based on the REMOTE_USER
-    field provided by Debian's SSO system.
+    field provided by Debian's SSO system, or based on the SSL_CLIENT_S_DN_CN
+    field provided by the validation of the SSL client certificate generated
+    by sso.debian.org.
 
     If the currently logged in user is a DD (as identified by having a
     @debian.org address), he is forcefully logged out if the header is no longer
     found or is invalid.
     """
-    header = 'REMOTE_USER'
+    dacs_header = 'REMOTE_USER'
+    cert_header = 'SSL_CLIENT_S_DN_CN'
 
-    def extract_email(self, username):
+    @staticmethod
+    def dacs_user_to_email(username):
         parts = [part for part in username.split(':') if part]
         federation, jurisdiction = parts[:2]
         if (federation, jurisdiction) != ('DEBIANORG', 'DEBIAN'):
@@ -42,37 +48,49 @@ class DebianSsoUserMiddleware(RemoteUserMiddleware):
             return username  # Full email already
         return username + '@debian.org'
 
-    def is_debian_member(self, user):
+    @staticmethod
+    def is_debian_member(user):
         return any(
             email.email.endswith('@debian.org')
             for email in user.emails.all()
         )
 
-    def log_out_user(self, request):
-        if request.user.is_authenticated():
-            if self.is_debian_member(request.user):
-                auth.logout(request)
-
     def process_request(self, request):
-        if self.header not in request.META:
-            # If a user is logged in via Debian SSO, sign him out
-            self.log_out_user(request)
-            return
+        # AuthenticationMiddleware is required so that request.user exists.
+        if not hasattr(request, 'user'):
+            raise ImproperlyConfigured(
+                "The Django remote user auth middleware requires the"
+                " authentication middleware to be installed.  Edit your"
+                " MIDDLEWARE_CLASSES setting to insert"
+                " 'django.contrib.auth.middleware.AuthenticationMiddleware'"
+                " before the DebianSsoUserMiddleware class.")
 
-        username = request.META[self.header]
-        if not username:
-            self.log_out_user(request)
+        dacs_user = request.META.get(self.dacs_header)
+        cert_user = request.META.get(self.cert_header)
+        if cert_user is not None:
+            remote_user = cert_user
+        elif dacs_user is not None:
+            remote_user = self.dacs_user_to_email(dacs_user)
+        else:
+            # Debian developers can only authenticate via SSO/SSL certs
+            # so log them out now if they no longer have the proper META
+            # variable
+            if request.user.is_authenticated():
+                if self.is_debian_member(request.user):
+                    auth.logout(request)
             return
-        email = self.extract_email(username)
 
         if request.user.is_authenticated():
-            if request.user.emails.filter(email=email).exists():
+            if request.user.emails.filter(email=remote_user).exists():
                 # The currently logged in user matches the one given by the
                 # headers.
                 return
 
-        user = auth.authenticate(remote_user=email)
+        # This will create the user if it doesn't exist
+        user = auth.authenticate(remote_user=remote_user)
         if user:
+            # User is valid. Set request.user and persist user in the session
+            # by logging the user in.
             request.user = user
             auth.login(request, user)
 
@@ -102,7 +120,8 @@ class DebianSsoUserBackend(RemoteUserBackend):
 
         return user
 
-    def get_uid(self, remote_user):
+    @staticmethod
+    def get_uid(remote_user):
         # Strips off the @debian.org part of the email leaving the uid
         if remote_user.endswith('@debian.org'):
             return remote_user[:-11]
@@ -134,9 +153,3 @@ class DebianSsoUserBackend(RemoteUserBackend):
             'first_name': result[1]['cn'][0].decode('utf-8'),
             'last_name': result[1]['sn'][0].decode('utf-8'),
         }
-
-    def get_user(self, user_id):
-        try:
-            return User.objects.get(pk=user_id)
-        except User.DoesNotExist:
-            return None

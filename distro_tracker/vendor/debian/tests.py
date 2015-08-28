@@ -4760,10 +4760,16 @@ class ImportTagsTests(TestCase):
     'django_email_accounts.auth.UserEmailBackend',
 ))
 class DebianSsoLoginTests(TestCase):
-
     """
     Tests relating to logging in via the sso.debian.org
+    via DACS (which sets REMOTE_USER).
     """
+
+    DD_USER = 'DEBIANORG::DEBIAN:user'
+    DD_EMAIL = 'user@debian.org'
+    ALIOTH_USER = 'DEBIANORG::DEBIAN:foo-guest@users.alioth.debian.org'
+    ALIOTH_EMAIL = 'foo-guest@users.alioth.debian.org'
+    INVALID_USER = 'FEDERATION::JURISDICTION:user'
 
     def get_page(self, remote_user=None):
         self.client.get(reverse('dtracker-index'), **{
@@ -4787,13 +4793,13 @@ class DebianSsoLoginTests(TestCase):
             'last_name': last_name,
         }
 
-        self.get_page('DEBIANORG::DEBIAN:user')
+        self.get_page(self.DD_USER)
 
         self.assertEqual(1, User.objects.count())
         user = User.objects.all()[0]
         self.assertEqual(first_name, user.first_name)
         self.assertEqual(last_name, user.last_name)
-        self.assertEqual('user@debian.org', user.main_email)
+        self.assertEqual(self.DD_EMAIL, user.main_email)
         self.assert_user_logged_in(user)
 
     def test_first_log_in_via_alioth(self, get_user_details):
@@ -4803,11 +4809,11 @@ class DebianSsoLoginTests(TestCase):
         """
         get_user_details.return_value = None
 
-        self.get_page('DEBIANORG::DEBIAN:foo-guest@users.alioth.debian.org')
+        self.get_page(self.ALIOTH_USER)
 
         self.assertEqual(1, User.objects.count())
         user = User.objects.all()[0]
-        self.assertEqual('foo-guest@users.alioth.debian.org', user.main_email)
+        self.assertEqual(self.ALIOTH_EMAIL, user.main_email)
         self.assert_user_logged_in(user)
 
     def test_no_log_in_invalid_username(self, get_user_details):
@@ -4815,7 +4821,7 @@ class DebianSsoLoginTests(TestCase):
         Tests that no user is logged in when the federation or jurisdiction are
         incorrect.
         """
-        self.get_page('FEDERATION::JURISDICTION:user')
+        self.get_page(self.INVALID_USER)
 
         self.assertEqual(0, User.objects.count())
         self.assert_no_user_logged_in()
@@ -4827,18 +4833,19 @@ class DebianSsoLoginTests(TestCase):
         """
         old_name = 'Oldname'
         user = User.objects.create_user(
-            main_email='user@debian.org',
+            main_email=self.DD_EMAIL,
             first_name=old_name)
 
-        self.get_page('DEBIANORG::DEBIAN:user')
+        self.get_page(self.DD_USER)
 
         self.assertEqual(1, User.objects.count())
         user = User.objects.all()[0]
         self.assertEqual(old_name, user.first_name)
+        self.assert_user_logged_in(user)
 
     def test_first_log_in_preexisting_associated(self, get_user_details):
         """
-        Tests that an already existing user thta has an associated
+        Tests that an already existing user that has an associated
         (not main_email) @debian.org address is logged in without modifying the
         account fields.
         """
@@ -4847,18 +4854,19 @@ class DebianSsoLoginTests(TestCase):
             main_email='user@domain.com',
             first_name=old_name)
         # The @debian.org address is an associated email
-        user.emails.create(email='user@debian.org')
+        user.emails.create(email=self.DD_EMAIL)
 
-        self.get_page('DEBIANORG::DEBIAN:user')
+        self.get_page(self.DD_USER)
 
         self.assertEqual(1, User.objects.count())
         user = User.objects.all()[0]
         self.assertEqual(old_name, user.first_name)
+        self.assert_user_logged_in(user)
 
     def test_first_log_in_preexisting_useremail(self, get_user_details):
-        UserEmail.objects.create(email='user@debian.org')
+        UserEmail.objects.create(email=self.DD_EMAIL)
 
-        self.get_page('DEBIANORG::DEBIAN:user')
+        self.get_page(self.DD_USER)
 
         self.assertEqual(1, User.objects.count())
         self.assertTrue(get_user_details.called)
@@ -4869,7 +4877,7 @@ class DebianSsoLoginTests(TestCase):
         invalid.
         """
         user = User.objects.create_user(
-            main_email='user@debian.org')
+            main_email=self.DD_EMAIL)
         self.client.login(remote_user=user.main_email)
         # Sanity check: the user is logged in
         self.assert_user_logged_in(user)
@@ -4883,7 +4891,7 @@ class DebianSsoLoginTests(TestCase):
         Tests that Distro Tracker logs out the user if the SSO headers are gone.
         """
         user = User.objects.create_user(
-            main_email='user@debian.org')
+            main_email=self.DD_EMAIL)
         self.client.login(remote_user=user.main_email)
         # Sanity check: the user is logged in
         self.assert_user_logged_in(user)
@@ -4894,15 +4902,38 @@ class DebianSsoLoginTests(TestCase):
 
     def test_authenticate_returns_correct_class(self, get_user_details):
         auth_backend = DebianSsoUserBackend()
-        user = auth_backend.authenticate('user@debian.org')
+        user = auth_backend.authenticate(self.DD_EMAIL)
         self.assertIsInstance(user, User)  # from distro_tracker.accounts.models
 
     def test_authenticate_returns_correct_class_with_existing_user(
             self, get_user_details):
-        User.objects.create_user(main_email='user@debian.org')
+        User.objects.create_user(main_email=self.DD_EMAIL)
         auth_backend = DebianSsoUserBackend()
-        user = auth_backend.authenticate('user@debian.org')
+        user = auth_backend.authenticate(self.DD_EMAIL)
         self.assertIsInstance(user, User)  # from distro_tracker.accounts.models
+
+
+class DebianSsoLoginWithSSLClientCertificateTests(DebianSsoLoginTests):
+    """
+    Tests relating to logging in with a SSL client certificate
+    generated on sso.debian.org.
+    See https://wiki.debian.org/DebianSingleSignOn
+    """
+
+    DD_USER = 'user@debian.org'
+    DD_EMAIL = 'user@debian.org'
+    ALIOTH_USER = 'foo-guest@users.alioth.debian.org'
+    ALIOTH_EMAIL = 'foo-guest@users.alioth.debian.org'
+
+    def get_page(self, remote_user=None):
+        self.client.get(reverse('dtracker-index'), **{
+            'SSL_CLIENT_S_DN_CN': remote_user,
+        })
+
+    def test_no_log_in_invalid_username(self):
+        # This test does not make sense here, there are no invalid
+        # values
+        pass
 
 
 @mock.patch('distro_tracker.core.utils.http.requests')

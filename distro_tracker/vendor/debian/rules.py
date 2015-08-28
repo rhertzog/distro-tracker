@@ -13,7 +13,6 @@ import re
 import urllib
 import requests
 from django import forms
-from django.core.urlresolvers import reverse
 from django.utils.http import urlencode, urlquote
 from django.utils.safestring import mark_safe
 from django.conf import settings
@@ -733,13 +732,10 @@ def pre_login(form):
     if any(email.endswith('@debian.org') for email in emails):
         raise forms.ValidationError(mark_safe(
             "Your account has a @debian.org email address associated. "
-            "To log in to the package tracker, you must do so "
-            "on <a href='https://sso.debian.org/sso/login?url="
-            "https://{}{}&site=TRACKER'>"
-            "sso.debian.org</a> (click on the link!).".format(
-                settings.DISTRO_TRACKER_FQDN,
-                reverse('dtracker-accounts-profile')
-            )))
+            "To log in to the package tracker, you must use a SSL client "
+            "certificate generated on "
+            "<a href='https://sso.debian.org/spkac/enroll/'>"
+            "sso.debian.org</a> (click on the link!)."))
 
 
 def post_logout(request, user, next_url=None):
