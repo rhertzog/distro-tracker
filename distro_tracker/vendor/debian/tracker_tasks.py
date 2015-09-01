@@ -1947,7 +1947,7 @@ class UpdateWnppStatsTask(BaseTask):
     """
     ACTION_ITEM_TYPE_NAME = 'debian-wnpp-issue'
     ACTION_ITEM_TEMPLATE = 'debian/wnpp-action-item.html'
-    ITEM_DESCRIPTION = '<a href="{url}">{wnpp_type}</a>'
+    ITEM_DESCRIPTION = '<a href="{url}">{wnpp_type}: {wnpp_msg}</a>'
 
     def __init__(self, force_update=False, *args, **kwargs):
         super(UpdateWnppStatsTask, self).__init__(*args, **kwargs)
@@ -2024,9 +2024,26 @@ class UpdateWnppStatsTask(BaseTask):
                 package.main_entry.repository.codename
         except:
             release = None
+
+        msgs = {
+            'O': "This package has been orphaned and needs a maintainer.",
+            'ITA': "Someone intends to adopt this package.",
+            'RFA': "The maintainer is looking for someone adopt this package.",
+            'RFH': "The maintainer is looking for help with this package.",
+            'ITP': "Someone is planning to reintroduce this package.",
+            'RFP': "There is a request to reintroduced this package.",
+            'RM': "This package has been requested to be removed.",
+            '?': "The WNPP database contains an entry for this package."
+        }
+        wnpp_type = stats['wnpp_type']
+        try:
+            wnpp_msg = msgs[wnpp_type]
+        except KeyError:
+            wnpp_msg = msgs['?']
+
         action_item.short_description = self.ITEM_DESCRIPTION.format(
             url='https://bugs.debian.org/{}'.format(stats['bug_id']),
-            wnpp_type=stats['wnpp_type'])
+            wnpp_type=wnpp_type, wnpp_msg=wnpp_msg)
         action_item.extra_data = {
             'wnpp_info': stats,
             'release': release,

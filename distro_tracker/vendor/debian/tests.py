@@ -4034,6 +4034,47 @@ class UpdateWnppStatsTaskTests(TestCase):
             'bug_id': bug_id,
         }
         self.assertEqual(expected_data, item.extra_data['wnpp_info'])
+        # Test that the short description is correctly set.
+        dsc = ('<a href="https://bugs.debian.org/12345">O: This package has'
+               ' been orphaned and needs a maintainer.</a>')
+        self.assertEqual(dsc, item.short_description)
+
+    def test_action_item_created_unknown_type(self):
+        """
+        Tests that an :class:`ActionItem
+        <distro_tracker.core.models.ActionItem>` instance is created when the
+        package has a WNPP bug of an unknown type.
+        """
+        wnpp_type, bug_id = 'RFC', 12345
+        self.set_wnpp_content([(
+            self.package.name, [{
+                'wnpp_type': wnpp_type,
+                'bug_id': bug_id,
+            }]
+        )])
+
+        self.run_task()
+
+        # An action item has been created
+        self.assertEqual(1, ActionItem.objects.count())
+        # The item has the correct type and template
+        item = ActionItem.objects.all()[0]
+        self.assertEqual(
+            UpdateWnppStatsTask.ACTION_ITEM_TYPE_NAME,
+            item.item_type.type_name)
+        self.assertEqual(
+            UpdateWnppStatsTask.ACTION_ITEM_TEMPLATE,
+            item.full_description_template)
+        # The extra data is correctly set?
+        expected_data = {
+            'wnpp_type': wnpp_type,
+            'bug_id': bug_id,
+        }
+        self.assertEqual(expected_data, item.extra_data['wnpp_info'])
+        # Test that the short description is correctly set.
+        dsc = ('<a href="https://bugs.debian.org/12345">RFC: The WNPP database'
+               ' contains an entry for this package.</a>')
+        self.assertEqual(dsc, item.short_description)
 
     def test_action_item_updated(self):
         """
