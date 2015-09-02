@@ -176,6 +176,34 @@ def news_page(request, news_id):
     })
 
 
+class PackageNews(ListView):
+    """
+    A view which lists all the news of a package.
+    """
+    _DEFAULT_NEWS_LIMIT = 30
+    NEWS_LIMIT = getattr(
+        settings,
+        'DISTRO_TRACKER_NEWS_PANEL_LIMIT',
+        _DEFAULT_NEWS_LIMIT)
+
+    paginate_by = NEWS_LIMIT
+    template_name = 'core/package_news.html'
+    context_object_name = 'news'
+
+    def get(self, request, package_name):
+        self.package = get_object_or_404(PackageName, name=package_name)
+        return super(PackageNews, self).get(request, package_name)
+
+    def get_queryset(self):
+        news = self.package.news_set.prefetch_related('signed_by')
+        return news.order_by('-datetime_created')
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(PackageNews, self).get_context_data(*args, **kwargs)
+        context['package'] = self.package
+        return context
+
+
 class ActionItemJsonView(View):
     """
     View renders a :class:`distro_tracker.core.models.ActionItem` in a JSON

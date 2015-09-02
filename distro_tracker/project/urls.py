@@ -39,6 +39,7 @@ from distro_tracker.core.views import SetMuteTeamView
 from distro_tracker.core.views import SetMembershipKeywords
 from distro_tracker.core.views import EditMembershipView
 from distro_tracker.core.views import IndexView
+from distro_tracker.core.views import PackageNews
 from distro_tracker.core.news_feed import PackageNewsFeed
 from distro_tracker.accounts.views import ConfirmAddAccountEmail
 from distro_tracker.accounts.views import LoginView
@@ -213,6 +214,9 @@ urlpatterns = patterns(
     url(r'^teams/(?P<slug>.+?)/$', TeamDetailsView.as_view(),
         name='dtracker-team-page'),
 
+    # Package  news page
+    url(r'^pkg/(?P<package_name>.+)/news/', PackageNews.as_view(),
+        name='dtracker-package-news'),
 
     # Dedicated package page
     url(r'^pkg/(?P<package_name>[^/]+)/?$',

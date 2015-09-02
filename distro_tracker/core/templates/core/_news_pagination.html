@@ -1,0 +1,34 @@
+<ul class="list-group list-group-flush">
+    {% for news_item in news %}
+    <li class="list-group-item">
+        [<span class="news-date">{{ news_item.datetime_created|date:"Y-m-d" }}</span>]
+        <a href="{% url 'dtracker-news-page' news_item.pk %}">
+            <span class="news-title">{{ news_item.title }}</span>
+        </a>
+        {% if news_item.created_by %}(<span class="news-creator">{{ news_item.created_by }}</span>){% endif %}
+        {% with signers=news_item.signed_by.all %}
+        {% if signers and signers.0.name != news_item.created_by %}
+        {% spaceless %}
+            <span>(signed by: </span>
+            {% for signer in signers %}
+            <span class="news-signer">{{ signer.name }}</span>
+            {% if not forloop.last %}<span>, </span>{% endif %}
+            {% endfor %}
+            <span>)</span>
+        {% endspaceless %}
+        {% endif %}
+        {% endwith %}
+    </li>
+    {% endfor %}
+</ul>
+{% if is_paginated %}
+<div class="text-center">
+<div class="pagination">
+<ul>
+    {% for page in page_obj.paginator.page_range %}
+    <li {% if page_obj.number == page %}class="active"{% endif %}><a href="?page={{ page }}">{{ page }}</a></li>
+    {% endfor %}
+</ul>
+</div>
+</div>
+{% endif %}

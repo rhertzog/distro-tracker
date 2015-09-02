@@ -25,6 +25,7 @@ import json
 
 from django.core.urlresolvers import reverse
 from django.conf import settings
+from bs4 import BeautifulSoup as soup
 
 import os
 
@@ -477,3 +478,52 @@ class ActionItemJsonViewTest(TestCase):
         }))
 
         self.assertEqual(response.status_code, 404)
+
+
+class NewsViewTest(TestCase):
+    """
+    Tests for the :class:`distro_tracker.core.views.PackageNews`.
+    """
+    def setUp(self):
+        self.package = SourcePackageName.objects.create(name='dummy-package')
+        self.src_pkg = SourcePackage.objects.create(
+            source_package_name=self.package, version='1.0.0')
+        self.src_pkg.save()
+        # add some news
+        for i in range(61):
+            self.package.news_set.create(title="News {}".format(i),
+                                         created_by="Author {}".format(i))
+
+    def get_package_news(self, url, page=None):
+        if not page:
+            return self.client.get(url)
+        else:
+            return self.client.get('%s?page=%s' % (url, page))
+
+    def find_link_in_content(self, content, link):
+        """Helper method to parse response and verify link exists"""
+        html = soup(content)
+        for a_tag in html.findAll('a', {'href': True}):
+            if a_tag['href'] == link:
+                return True
+        return False
+
+    def test_news_page(self):
+        """ Tests that the second news page is what we expect"""
+        url = reverse('dtracker-package-news', kwargs={
+            'package_name': self.package.name})
+        response = self.get_package_news(url)
+        # verify we can return to package page
+        package_url = reverse('dtracker-package-page', kwargs={
+            'package_name': self.package.name,
+        })
+        self.assertTrue(self.find_link_in_content(response.content,
+                                                  package_url))
+        # verify we only supply valid link pages
+        self.assertTrue(self.find_link_in_content(response.content,
+                                                  '?page=2'))
+        self.assertFalse(self.find_link_in_content(response.content,
+                                                   '?page=4'))
+        response = self.get_package_news(url, 2)
+        self.assertTrue(self.find_link_in_content(response.content,
+                                                  '?page=1'))

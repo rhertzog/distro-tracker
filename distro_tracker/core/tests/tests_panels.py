@@ -219,3 +219,46 @@ class DeadPackageWarningPanelTests(TestCase):
         SourcePackageRepositoryEntry.objects.create(
             source_package=self.srcpkg, repository=self.repo1)
         self.assertFalse(self.panel.context['disappeared'])
+
+
+class NewsPanelTests(TestCase):
+    def setUp(self):
+        self.package = SourcePackageName.objects.create(name='dummy-package')
+        self.src_pkg = SourcePackage.objects.create(
+            source_package_name=self.package, version='1.0.0')
+        self.src_pkg.save()
+        # add some news
+        for i in range(29):
+            self.package.news_set.create(title="News {}".format(i),
+                                         created_by="Author {}".format(i))
+
+    def get_package_page_response(self):
+        url = reverse('dtracker-package-page', kwargs={
+            'package_name': self.package.name,
+        })
+        return self.client.get(url)
+
+    def find_link_in_content(self, content, link):
+        """Helper method to parse response and verify link exists"""
+        html = soup(content)
+        for a_tag in html.findAll('a', {'href': True}):
+            if a_tag['href'] == link:
+                return True
+        return False
+
+    def test_news_links(self):
+        """Tests the links in the news panel"""
+        response = self.get_package_page_response()
+        news_link = reverse('dtracker-package-news', kwargs={
+            'package_name': self.package.name})
+        # verify news-link is present
+        self.assertTrue(self.find_link_in_content(response.content, news_link))
+        # verify ?page=2 not present
+        self.assertFalse(self.find_link_in_content(response.content,
+                                                   news_link + "?page=2"))
+        self.package.news_set.create(title="News {}".format(30),
+                                     created_by="Author {}".format(30))
+        # refresh package page to include new news item
+        response = self.get_package_page_response()
+        self.assertTrue(self.find_link_in_content(response.content,
+                                                  news_link + "?page=2"))

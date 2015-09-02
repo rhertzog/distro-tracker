@@ -805,9 +805,11 @@ class NewsPanel(BasePanel):
     def context(self):
         news = News.objects.prefetch_related('signed_by')
         news = news.filter(package=self.package).order_by('-datetime_created')
-        news = news[:self.NEWS_LIMIT]
+        news = list(news[:self.NEWS_LIMIT])
+        more_pages = len(news) == self.NEWS_LIMIT
         return {
-            'news': news
+            'news': news,
+            'has_more': more_pages
         }
 
     @property

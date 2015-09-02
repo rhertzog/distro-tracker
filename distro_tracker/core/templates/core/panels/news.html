@@ -3,7 +3,7 @@
 {% block panel-header %}
 <div class="row-fluid">
 <div class="pull-left">
-    <span>{{ panel.title }}</span>
+    <span>{{ panel.title }} <a href="{% url 'dtracker-package-news' package.name %}"><i class='icon-share'></i></a></span>
 </div>
 <div class="pull-right">
     <a title="rss feed" href="{% url 'dtracker-package-rss-news-feed' package.name %}">
@@ -14,27 +14,10 @@
 {% endblock %}
 
 {% block panel-body %}
-<ul class="list-group list-group-flush">
-    {% for news_item in panel.context.news %}
-    <li class="list-group-item">
-        [<span class="news-date">{{ news_item.datetime_created|date:"Y-m-d" }}</span>]
-        <a href="{% url 'dtracker-news-page' news_item.pk %}">
-            <span class="news-title">{{ news_item.title }}</span>
-        </a>
-        {% if news_item.created_by %}(<span class="news-creator">{{ news_item.created_by }}</span>){% endif %}
-        {% with signers=news_item.signed_by.all %}
-        {% if signers and signers.0.name != news_item.created_by %}
-        {% spaceless %}
-            <span>(signed by: </span>
-            {% for signer in signers %}
-            <span class="news-signer">{{ signer.name }}</span>
-            {% if not forloop.last %}<span>, </span>{% endif %}
-            {% endfor %}
-            <span>)</span>
-        {% endspaceless %}
-        {% endif %}
-        {% endwith %}
-    </li>
-    {% endfor %}
-</ul>
+{% with news=panel.context.news %}
+    {% include "core/_news_pagination.html" %}
+{% endwith %}
+{% if panel.context.has_more %}
+<div class="pagination">Page <a href="{% url 'dtracker-package-news' package.name %}?page=2">2</a></div>
+{% endif %}
 {% endblock %}
