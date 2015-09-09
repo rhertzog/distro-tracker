@@ -1068,7 +1068,7 @@ class SourcePackage(models.Model):
     source_package_name = models.ForeignKey(
         SourcePackageName,
         related_name='source_package_versions')
-    version = models.CharField(max_length=50)
+    version = models.CharField(max_length=100)
 
     standards_version = models.CharField(max_length=550, blank=True)
     architectures = models.ManyToManyField(Architecture, blank=True)
@@ -1193,7 +1193,7 @@ class BinaryPackage(models.Model):
         BinaryPackageName,
         related_name='binary_package_versions'
     )
-    version = models.CharField(max_length=50, null=True)
+    version = models.CharField(max_length=100)
     source_package = models.ForeignKey(SourcePackage)
 
     short_description = models.CharField(max_length=300, blank=True)
