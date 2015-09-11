@@ -46,8 +46,9 @@ class Command(BaseCommand):
         sent_to = os.environ.get('LOCAL_PART')
         if sent_to:
             # Exim
-            sent_to = '{local_part}@{domain}'.format(
+            sent_to = '{local_part}{suffix}@{domain}'.format(
                 local_part=sent_to,
+                suffix=os.environ.get('LOCAL_PART_SUFFIX', ''),
                 domain=os.environ.get('DOMAIN'))
         else:
             # Try Postfix
