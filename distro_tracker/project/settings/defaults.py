@@ -438,10 +438,14 @@ def compute_default_settings(target):
             target['DISTRO_TRACKER_LOG_DIRECTORY'], handler['filename'])
     # Update DATABASES with full paths
     dbconf = target['DATABASES']['default']
-    if dbconf['ENGINE'] == 'django.db.backends.sqlite3' and \
-       '/' not in dbconf['NAME']:
-        dbconf['NAME'] = os.path.join(target['DISTRO_TRACKER_DATA_PATH'],
-                                      dbconf['NAME'])
+    if dbconf['ENGINE'] == 'django.db.backends.sqlite3':
+        if '/' not in dbconf['NAME']:
+            dbconf['NAME'] = os.path.join(target['DISTRO_TRACKER_DATA_PATH'],
+                                          dbconf['NAME'])
+        if ('TEST' in dbconf and 'NAME' in dbconf['TEST'] and
+                '/' not in dbconf['TEST']['NAME']):
+            dbconf['TEST']['NAME'] = os.path.join(
+                target['DISTRO_TRACKER_DATA_PATH'], dbconf['TEST']['NAME'])
 
 
 def GET_INSTANCE_NAME():
