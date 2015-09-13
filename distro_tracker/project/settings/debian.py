@@ -43,6 +43,9 @@ DISTRO_TRACKER_DEVEL_REPOSITORIES = ['unstable', 'experimental']
 #: URL for CVE tracker
 DISTRO_TRACKER_CVE_URL = 'https://security-tracker.debian.org/tracker/'
 
+# For backwards compatibility with the old PTS
+DISTRO_TRACKER_ACCEPT_UNQUALIFIED_EMAILS = True
+
 # Various settings for sso.debian.org support
 _index_auth = MIDDLEWARE_CLASSES.index(
     'django.contrib.auth.middleware.AuthenticationMiddleware') + 1
