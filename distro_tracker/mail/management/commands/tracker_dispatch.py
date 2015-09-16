@@ -12,10 +12,10 @@ Implements the management command which invokes the dispatch functionality.
 """
 from django.core.management.base import BaseCommand
 
-from distro_tracker.mail import dispatch
+from distro_tracker.mail.processor import MailProcessor
+from distro_tracker.core.utils.email_messages import message_from_bytes
 
 import io
-import os
 import sys
 
 
@@ -33,28 +33,6 @@ class Command(BaseCommand):
             self.input_file = self.input_file.detach()
         except io.UnsupportedOperation:
             pass
-        input_data = self.input_file.read()
-        sent_to = self._get_to_address()
-
-        dispatch.process(input_data, sent_to)
-
-    def _get_to_address(self):
-        """
-        Gets the envelope To address. The To address in the message cannot be
-        used to determine to which package the mail was sent.
-
-        This method tries to get the address from environment variables set by
-        the MTA. Both Postfix and Exim are supported.
-        """
-        sent_to = os.environ.get('LOCAL_PART')
-        if sent_to:
-            # Exim
-            sent_to = '{local_part}{suffix}@{domain}'.format(
-                local_part=sent_to,
-                suffix=os.environ.get('LOCAL_PART_SUFFIX', ''),
-                domain=os.environ.get('DOMAIN'))
-        else:
-            # Try Postfix
-            sent_to = os.environ.get('ORIGINAL_RECIPIENT')
-
-        return sent_to
+        msg = message_from_bytes(self.input_file.read())
+        handler = MailProcessor(msg)
+        handler.process()

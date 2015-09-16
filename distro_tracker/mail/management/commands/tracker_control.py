@@ -1,4 +1,4 @@
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2015 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -13,7 +13,8 @@ messages.
 """
 from django.core.management.base import BaseCommand
 
-from distro_tracker.mail import control
+from distro_tracker.mail.processor import MailProcessor
+from distro_tracker.core.utils.email_messages import message_from_bytes
 
 import io
 import sys
@@ -34,5 +35,6 @@ class Command(BaseCommand):
             self.input_file = self.input_file.detach()
         except io.UnsupportedOperation:
             pass
-        input_data = self.input_file.read()
-        control.process(input_data)
+        msg = message_from_bytes(self.input_file.read())
+        handler = MailProcessor(msg)
+        handler.process()
