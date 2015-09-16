@@ -11,7 +11,7 @@
 Tests the management command of the :mod:`distro_tracker.mail` app.
 """
 from __future__ import unicode_literals
-from distro_tracker.test import TestCase, TransactionTestCase
+from distro_tracker.test import TestCase
 from distro_tracker.mail.management.commands.tracker_unsubscribe_all import (
     Command as UnsubscribeCommand)
 from distro_tracker.mail.management.commands.tracker_dump_subscribers import (
@@ -314,7 +314,7 @@ class StatsCommandTest(TestCase):
         self.assertDictEqual(expected, output)
 
 
-class AddKeywordManagementCommandTest(TransactionTestCase):
+class AddKeywordManagementCommandTest(TestCase):
     def test_simple_add(self):
         """
         Tests the management command when it is only supposed to create a new
