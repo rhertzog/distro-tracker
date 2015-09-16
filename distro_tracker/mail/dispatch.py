@@ -72,6 +72,10 @@ def process(message, sent_to_address=None):
     if sent_to_address.startswith('bounces+'):
         return handle_bounces(sent_to_address)
 
+    # Drop dispatch prefix to support new-style address too
+    if sent_to_address.startswith('dispatch+'):
+        sent_to_address = sent_to_address[9:]
+
     local_part = sent_to_address.split('@')[0]
 
     # Extract package name
