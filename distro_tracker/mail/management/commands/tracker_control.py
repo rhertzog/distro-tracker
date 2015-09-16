@@ -12,10 +12,10 @@ Implements a management command used to invoke the processing of control
 messages.
 """
 from django.core.management.base import BaseCommand
-from django.utils import six
 
 from distro_tracker.mail import control
 
+import io
 import sys
 
 
@@ -29,7 +29,10 @@ class Command(BaseCommand):
     input_file = sys.stdin
 
     def handle(self, *args, **kwargs):
-        if six.PY3:
+        # Get the binary buffer behind the textual one
+        try:
             self.input_file = self.input_file.detach()
+        except io.UnsupportedOperation:
+            pass
         input_data = self.input_file.read()
         control.process(input_data)

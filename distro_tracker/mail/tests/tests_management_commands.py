@@ -1,4 +1,4 @@
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2015 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -18,6 +18,10 @@ from distro_tracker.mail.management.commands.tracker_dump_subscribers import (
     Command as DumpCommand)
 from distro_tracker.mail.management.commands.tracker_stats import (
     Command as StatsCommand)
+from distro_tracker.mail.management.commands.tracker_control import (
+    Command as ControlCommand)
+from distro_tracker.mail.management.commands.tracker_dispatch import (
+    Command as DispatchCommand)
 from django.core.management import call_command
 from django.core.management.base import CommandError
 
@@ -25,9 +29,79 @@ from distro_tracker.core.models import PackageName, UserEmail, EmailSettings
 from distro_tracker.core.models import Subscription, Keyword
 from distro_tracker.core.models import SourcePackageName, PseudoPackageName
 
+from django.conf import settings
+from django.core import mail
 from django.utils import six
 from django.utils import timezone
+from django.utils.encoding import force_bytes
+from django.utils.six.moves import mock
+
+from email.message import Message
+import io
 import json
+
+
+class CommandWithInputTestCase(TestCase):
+    @staticmethod
+    def build_input_message(text, target):
+        msg = Message()
+        msg['From'] = 'user@example.net'
+        msg['To'] = '{}@{}'.format(target, settings.DISTRO_TRACKER_FQDN)
+        msg['Delivered-To'] = msg['To']
+        msg['Subject'] = 'Test message'
+        msg.set_payload(text)
+        return force_bytes(msg.as_string(), 'utf-8')
+
+    def call_command(self, input_data, *args, **kwargs):
+        cmd = self.command_class()
+        cmd.input_file = io.BytesIO(input_data)
+        cmd.handle(*args, **kwargs)
+
+
+class ControlManagementCommand(CommandWithInputTestCase):
+    command_class = ControlCommand
+
+    @mock.patch('distro_tracker.mail.control.process')
+    def test_control_command_calls_process(self, mock_process):
+        data = self.build_input_message('help\n', 'control')
+        self.call_command(data)
+        mock_process.assert_called_with(data)
+
+    def test_control_command_does_something(self):
+        data = self.build_input_message('help\n', 'control')
+        self.call_command(data)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('The package tracker supports the following commands:',
+                      mail.outbox[0].message().get_payload())
+
+
+class DispatchManagementCommand(CommandWithInputTestCase):
+    command_class = DispatchCommand
+
+    @mock.patch('distro_tracker.mail.dispatch.process')
+    def test_dispatch_command_with_normal_message(self, mock_process):
+        msg = self.build_input_message('hello\n', 'dispatch+dummy')
+        self.call_command(msg)
+        mock_process.assert_called_with(msg, mock.ANY)
+
+    def test_dispatch_command_forwards_something(self):
+        PackageName.objects.create(name='dummy')
+        Subscription.objects.create_for(
+            package_name='dummy',
+            email='user@example.net',
+            active=True)
+        msg = self.build_input_message('hello\n', 'dispatch+dummy_contact')
+        self.call_command(msg)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].message()['X-Distro-Tracker-Package'],
+                         'dummy')
+
+    @mock.patch('distro_tracker.mail.dispatch.handle_bounces')
+    def test_dispatch_command_with_bounces(self, mock_handle_bounces):
+        msg = self.build_input_message('hello\n', 'bounces+verpdata')
+        self.call_command(msg)
+        mock_handle_bounces.assert_called_with(
+            'bounces+verpdata@{}'.format(settings.DISTRO_TRACKER_FQDN))
 
 
 class UnsubscribeAllManagementCommand(TestCase):
