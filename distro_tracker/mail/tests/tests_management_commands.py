@@ -91,7 +91,8 @@ class DispatchManagementCommand(CommandWithInputTestCase):
     def test_dispatch_command_with_normal_message(self, mock_process):
         msg = self.build_input_message('hello\n', 'dispatch+dummy')
         self.call_command(msg)
-        mock_process.assert_called_with(msg, mock.ANY)
+        mock_process.assert_called_with(mock.ANY, package='dummy', keyword=None)
+        self.assert_is_input_message(mock_process.call_args[0][0])
 
     def test_dispatch_command_forwards_something(self):
         PackageName.objects.create(name='dummy')

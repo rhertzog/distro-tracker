@@ -17,7 +17,6 @@ from django.utils import six
 from django.utils import timezone
 from django.core.mail import EmailMessage
 
-from distro_tracker.core.utils import message_from_bytes
 from datetime import datetime
 
 from distro_tracker.core.utils import extract_email_address_from_header
@@ -26,6 +25,8 @@ from distro_tracker.core.utils import distro_tracker_render_to_string
 from distro_tracker.core.utils import verp
 
 from distro_tracker.core.utils.email_messages import CustomEmailMessage
+from distro_tracker.core.utils.email_messages import (
+    patch_message_for_django_compat)
 from distro_tracker.mail.models import UserEmailBounceStats
 
 from distro_tracker.core.models import PackageName
@@ -44,50 +45,37 @@ logger = logging.getLogger(__name__)
 from distro_tracker import vendor
 
 
-def process(message, sent_to_address=None):
+def process(msg, package=None, keyword=None):
     """
     Handles the dispatching of received messages.
 
-    :param message: The received message
-    :type message: ``bytes``
+    :param msg: The received message
+    :type msg: :py:class:`email.message.Message`
 
-    :param sent_to_address: The address to which the message was sent.
-        Necessary in order to determine which package it was sent to.
+    :param package: The package to which the message was sent.
+
+    :param keyword: The keyword under which the message must be dispatched.
     """
-    assert isinstance(message, six.binary_type), \
-        'Message must be given as bytes'
-    msg = message_from_bytes(message)
-
     logdata = {
         'from': extract_email_address_from_header(msg.get('From', '')),
         'msgid': msg.get('Message-ID', 'no-msgid-present@localhost'),
-        'to': sent_to_address or '',
+        'package': package or '<unknown>',
+        'keyword': keyword or '<unknown>',
     }
-    logger.info("dispatch <= %(from)s for %(to)s %(msgid)s", logdata)
-    if sent_to_address is None:
-        # No MTA was recognized, the last resort is to try and use the message
-        # To header.
-        sent_to_address = extract_email_address_from_header(msg['To'])
+    logger.info("dispatch <= %(from)s for %(package)s/%(keyword)s %(msgid)s",
+                logdata)
 
-    # Drop dispatch prefix to support new-style address too
-    if sent_to_address.startswith('dispatch+'):
-        sent_to_address = sent_to_address[9:]
-
-    local_part = sent_to_address.split('@')[0]
-
-    # Extract package name
-    package_name = get_package_name(local_part)
     # Check loop
     package_email = '{package}@{distro_tracker_fqdn}'.format(
-        package=package_name, distro_tracker_fqdn=DISTRO_TRACKER_FQDN)
+        package=package, distro_tracker_fqdn=DISTRO_TRACKER_FQDN)
     if package_email in msg.get_all('X-Loop', ()):
         # Bad X-Loop, discard the message
         logger.info('dispatch :: discarded %(msgid)s due to X-Loop', logdata)
         return
 
     # Extract keyword
-    keyword = get_keyword(local_part, msg)
-    logger.info('dispatch :: %s %s', package_name, keyword)
+    keyword = get_keyword(keyword, msg)
+    logger.info('dispatch :: %s %s', package, keyword)
     # Default keywords require special approvement
     if keyword == 'default' and not approved_default(msg):
         logger.info('dispatch :: discarded non-approved message %(msgid)s',
@@ -95,34 +83,12 @@ def process(message, sent_to_address=None):
         return
 
     # Now send the message to subscribers
-    add_new_headers(msg, package_name, keyword)
-    send_to_subscribers(msg, package_name, keyword)
-    send_to_teams(msg, package_name, keyword)
+    add_new_headers(msg, package, keyword)
+    send_to_subscribers(msg, package, keyword)
+    send_to_teams(msg, package, keyword)
 
 
-def get_package_name(local_part):
-    """
-    Extracts the name of the package from the local part of the email address
-    to which the email was sent.
-
-    The local part has two valid forms:
-    - <package_name>_<keyword>
-    - <package_name>
-
-    In both cases, only the package name is returned.
-
-    :param local_part: The local part of an email address
-    :type local_part: string
-    """
-    split = re.split(r'(\S+)_(\S+)', local_part)
-    if len(split) > 1:
-        package_name = split[1]
-    else:
-        package_name = local_part
-    return package_name
-
-
-def get_keyword(local_part, msg):
+def get_keyword(suggested_keyword, msg):
     """
     Extracts the keywoword from the given message.
 
@@ -130,14 +96,13 @@ def get_keyword(local_part, msg):
     :func:`get_keyword <distro_tracker.vendor.skeleton.rules.get_keyword>`.
 
     If the vendor did not implement this function or does not return a keyword
-    for the given message, the function tries extracting the keyword from the
-    ``local_part`` of the address (using :func:`get_keyword_from_address`).
+    for the given message, the function fallbacks to the suggested keyword.
 
     If this also does not yield a keyword, ``default`` is returned.
 
-    :param local_part: The local part of the email address to which the message
-        was sent.
-    :type local_part: string
+    :param suggested_keyword: The suggested keyword parsed from the target
+        address. Can be None.
+    :type suggested_keyword: string
     :param msg: The received package message
     :type msg: :py:class:`email.message.Message` or an equivalent interface
         object
@@ -146,35 +111,16 @@ def get_keyword(local_part, msg):
     :rtype: string
     """
     # Use a vendor-provided function to try and classify the message.
-    keyword, _ = vendor.call('get_keyword', local_part, msg)
+    keyword, _ = vendor.call('get_keyword', suggested_keyword, msg)
     if keyword:
         return keyword
 
     # Otherwise try getting the keyword from the address
-    keyword = get_keyword_from_address(local_part)
-    if keyword:
-        return keyword
+    if suggested_keyword:
+        return suggested_keyword
 
     # If we still do not have the keyword
     return 'default'
-
-
-def get_keyword_from_address(local_part):
-    """
-    Tries to extract the keyword from the local part of the email address where
-    the email was received.
-
-    If the local part is in the form:
-    <package_name>_<keyword>
-    the keyword is returned.
-
-    :returns: The extracted keyword
-    :rtype: string or ``None``
-    """
-    split = re.split(r'(\S+)_(\S+)', local_part)
-    if len(split) > 1:
-        # Keyword found in the address
-        return split[2]
 
 
 def approved_default(msg):
@@ -396,7 +342,7 @@ def prepare_message(received_message, to_email, date):
         date=date.strftime('%Y%m%d'),
         distro_tracker_fqdn=DISTRO_TRACKER_FQDN)
     message = CustomEmailMessage(
-        msg=received_message,
+        msg=patch_message_for_django_compat(received_message),
         from_email=verp.encode(bounce_address, to_email),
         to=[to_email])
     return message

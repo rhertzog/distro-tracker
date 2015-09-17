@@ -1,4 +1,4 @@
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2015 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -23,7 +23,6 @@ from distro_tracker.core.models import SourcePackageName
 from distro_tracker.core.models import BinaryPackageBugStats
 from distro_tracker.core.models import PackageExtractedInfo
 from distro_tracker.core.models import UserEmail
-from distro_tracker.mail.dispatch import get_keyword_from_address
 from distro_tracker.core.utils import get_decoded_message_payload
 from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.utils.http import HttpCache
@@ -33,7 +32,7 @@ from distro_tracker.vendor.common import PluginProcessingError
 from distro_tracker.vendor.debian.tracker_tasks import UpdateNewQueuePackages
 
 
-def get_keyword(local_part, msg):
+def get_keyword(suggested_keyword, msg):
     """
     The function should return a keyword which matches the message or ``None``
     if it does not match any keyword or the vendor does not provide any custom
@@ -68,9 +67,8 @@ def get_keyword(local_part, msg):
         'ddtp': 'translation',
         'cvs': 'vcs',
     }
-    keyword_in_address = get_keyword_from_address(local_part)
-    if keyword_in_address in legacy_mapping:
-        return legacy_mapping[keyword_in_address]
+    if suggested_keyword in legacy_mapping:
+        return legacy_mapping[suggested_keyword]
 
     re_accepted_installed = re.compile('^Accepted|INSTALLED|ACCEPTED')
     re_comments_regarding = re.compile(r'^Comments regarding .*\.changes$')

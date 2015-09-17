@@ -1,4 +1,4 @@
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2015 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -13,15 +13,15 @@ A skeleton of all vendor-specific function that can be implemented.
 from __future__ import unicode_literals
 
 
-def get_keyword(local_part, msg):
+def get_keyword(suggested_keyword, msg):
     """
     The function should return a keyword which matches the message or ``None``
     if it does not match any keyword or the vendor does not provide any custom
     keyword matching.
 
-    :param local_part: The local part of the email address to which the message
-        was sent
-    :type local_part: string
+    :param suggested_keyword: The local part of the email address to which the
+        message was sent
+    :type suggested_keyword: string
 
     :param msg: The original received package message
     :type msg: :py:class:`Message <email.message.Message>`

@@ -17,7 +17,6 @@ from __future__ import unicode_literals
 from distro_tracker.test import TestCase
 from django.core import mail
 from django.utils import timezone
-from django.utils.encoding import force_bytes
 
 from email.message import Message
 from datetime import timedelta
@@ -28,6 +27,8 @@ from distro_tracker.accounts.models import User
 from distro_tracker.core.utils import verp
 from distro_tracker.core.utils import get_decoded_message_payload
 from distro_tracker.core.utils import distro_tracker_render_to_string
+from distro_tracker.core.utils.email_messages import (
+    patch_message_for_django_compat)
 from distro_tracker.mail import dispatch
 from distro_tracker.accounts.models import UserEmail
 
@@ -51,6 +52,7 @@ class DispatchTestHelperMixin(object):
         Clears the test message being built.
         """
         self.message = Message()
+        patch_message_for_django_compat(self.message)
         self.headers = []
 
     def set_package_name(self, package_name):
@@ -94,13 +96,14 @@ class DispatchTestHelperMixin(object):
             del self.message[header_name]
         self.add_header(header_name, header_value)
 
-    def run_dispatch(self, sent_to_address=None):
+    def run_dispatch(self, package=None, keyword=None):
         """
         Starts the dispatch process.
         """
         dispatch.process(
-            force_bytes(self.message.as_string(), 'utf-8'),
-            sent_to_address
+            self.message,
+            package=package or self.package_name,
+            keyword=keyword,
         )
 
     def subscribe_user_with_keyword(self, email, keyword):
@@ -121,15 +124,6 @@ class DispatchTestHelperMixin(object):
             package_name=package,
             email=user_email,
             active=active)
-
-    def make_address_with_keyword(self, package, keyword):
-        """
-        Returns the address for the package which corresponds to the given
-        keyword.
-        """
-        return '{package}_{keyword}@{distro_tracker_fqdn}'.format(
-            package=package, keyword=keyword,
-            distro_tracker_fqdn=DISTRO_TRACKER_FQDN)
 
     def assert_message_forwarded_to(self, email):
         """
@@ -198,8 +192,9 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         msg = mail.outbox[0]
         # No exception thrown trying to get the entire message as bytes
         content = msg.message().as_string()
+        # self.assertIs(msg.message(), self.message)
         # The content is actually bytes
-        self.assertTrue(isinstance(content, bytes))
+        self.assertIsInstance(content, bytes)
 
     def test_dispatch_to_subscribers(self):
         """
@@ -307,22 +302,6 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
 
         self.assertEqual(len(mail.outbox), 0)
 
-    def test_dispatch_package_email_in_environment(self):
-        """
-        Tests the dispatch functionality when the envelope to address differs
-        from the message to header address.
-        """
-        self.set_header('To', 'Someone <someone@domain.com>')
-        address = '{package}@{distro_tracker_fqdn}'.format(
-            package=self.package_name, distro_tracker_fqdn=DISTRO_TRACKER_FQDN)
-        self.add_header('Cc', address)
-        # Make sure there is a user to forward the message to
-        self.subscribe_user_to_package('user@domain.com', self.package_name)
-
-        self.run_dispatch(address)
-
-        self.assert_message_forwarded_to('user@domain.com')
-
     def test_utf8_message_dispatch(self):
         """
         Tests that a message is properly dispatched if it was utf-8 encoded.
@@ -369,18 +348,16 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         given in the address the message was sent to (srcpackage_keyword)
         """
         self.subscribe_user_with_keyword('user@domain.com', 'vcs')
-        address = self.make_address_with_keyword(self.package_name, 'vcs')
 
-        self.run_dispatch(address)
+        self.run_dispatch(keyword='vcs')
 
         self.assert_message_forwarded_to('user@domain.com')
         self.assert_header_equal('X-Distro-Tracker-Keyword', 'vcs')
 
     def test_unknown_keyword(self):
         self.subscribe_user_to_package('user@domain.com', self.package_name)
-        address = self.make_address_with_keyword(self.package_name, 'unknown')
 
-        self.run_dispatch(address)
+        self.run_dispatch(keyword='unknown')
 
         self.assertEqual(len(mail.outbox), 0)
 

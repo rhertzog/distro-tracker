@@ -14,7 +14,6 @@ from __future__ import unicode_literals
 from itertools import chain
 
 from django.conf import settings
-from django.utils.encoding import force_bytes
 
 import distro_tracker.mail.control
 import distro_tracker.mail.dispatch
@@ -140,9 +139,5 @@ class MailProcessor(object):
         distro_tracker.mail.dispatch.handle_bounces(sent_to_addr)
 
     def handle_dispatch(self, package=None, keyword=None):
-        details = package
-        if package and keyword:
-            details += '_' + keyword
-        sent_to_addr = self.build_delivery_address('dispatch', details)
-        msg_content = force_bytes(self.message.as_string(), 'utf-8')
-        distro_tracker.mail.dispatch.process(msg_content, sent_to_addr)
+        distro_tracker.mail.dispatch.process(self.message, package=package,
+                                             keyword=keyword)
