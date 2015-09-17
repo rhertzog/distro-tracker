@@ -1,4 +1,4 @@
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2015 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -68,9 +68,6 @@ def process(message, sent_to_address=None):
         # No MTA was recognized, the last resort is to try and use the message
         # To header.
         sent_to_address = extract_email_address_from_header(msg['To'])
-
-    if sent_to_address.startswith('bounces+'):
-        return handle_bounces(sent_to_address)
 
     # Drop dispatch prefix to support new-style address too
     if sent_to_address.startswith('dispatch+'):

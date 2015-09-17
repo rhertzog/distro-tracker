@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2015 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -427,7 +427,7 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         # Make sure the user has no prior bounce stats
         self.assertEqual(self.user.bouncestats_set.count(), 0)
 
-        self.run_dispatch(self.create_bounce_address(self.user.email))
+        dispatch.handle_bounces(self.create_bounce_address(self.user.email))
 
         bounce_stats = self.user.bouncestats_set.all()
         self.assertEqual(bounce_stats.count(), 1)
@@ -455,7 +455,7 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         self.assertTrue(len(packages_subscribed_to) > 0)
 
         # Receive a bounce message.
-        self.run_dispatch(self.create_bounce_address(self.user.email))
+        dispatch.handle_bounces(self.create_bounce_address(self.user.email))
 
         # Assert that the user's subscriptions have been dropped.
         self.assertEqual(self.user.emailsettings.subscription_set.count(), 0)
