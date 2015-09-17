@@ -133,8 +133,7 @@ class MailProcessor(object):
         return '{}@{}'.format(local_part, settings.DISTRO_TRACKER_FQDN)
 
     def handle_control(self):
-        msg_content = force_bytes(self.message.as_string(), 'utf-8')
-        distro_tracker.mail.control.process(msg_content)
+        distro_tracker.mail.control.process(self.message)
 
     def handle_bounces(self, details):
         sent_to_addr = self.build_delivery_address('bounces', details)

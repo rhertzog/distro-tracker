@@ -14,10 +14,8 @@ from __future__ import unicode_literals
 from email.iterators import typed_subpart_iterator
 
 from django.core.mail import EmailMessage
-from django.utils import six
 from django.template.loader import render_to_string
 from distro_tracker.core.utils import distro_tracker_render_to_string
-from distro_tracker.core.utils import message_from_bytes
 from distro_tracker.core.utils import extract_email_address_from_header
 from distro_tracker.core.utils import get_decoded_message_payload
 
@@ -160,16 +158,13 @@ class ConfirmationSet(object):
         return self.commands.keys()
 
 
-def process(message):
+def process(msg):
     """
     The function which actually processes a received command email message.
 
-    :param message: The received command email message.
-    :type message: ``bytes``
+    :param msg: The received command email message.
+    :type msg: ``email.message.Message``
     """
-    assert isinstance(message, six.binary_type), \
-        'Message must be given as bytes'
-    msg = message_from_bytes(message)
     email = extract_email_address_from_header(msg.get('From', ''))
     logdata = {
         'from': email,

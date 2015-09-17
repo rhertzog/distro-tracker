@@ -16,7 +16,6 @@ from __future__ import unicode_literals
 from django.conf import settings
 from distro_tracker.test import TestCase
 from django.core import mail
-from django.utils.encoding import force_bytes
 
 from distro_tracker.mail import control
 from distro_tracker.core.utils import distro_tracker_render_to_string
@@ -55,7 +54,7 @@ class EmailControlTest(TestCase):
         Helper method. Passes the constructed control message to the control
         processor.
         """
-        control.process(force_bytes(self.message.as_string(), 'utf-8'))
+        control.process(self.message)
 
     def setUp(self):
         self.reset_message()
@@ -359,6 +358,7 @@ class ControlBotBasic(EmailControlTest):
         """
         self.set_input_lines(["thanks"])
         self.set_header('Subject', '')
+        self.set_input_lines(['help'])
 
         self.control_process()
 
@@ -416,6 +416,8 @@ class ControlBotBasic(EmailControlTest):
         """
         Tests that there is no response to an empty message.
         """
+        self.set_input_lines([])
+
         self.control_process()
 
         self.assert_response_not_sent()
@@ -515,6 +517,7 @@ class ControlBotBasic(EmailControlTest):
         Tests that a command given in the subject of the message is executed.
         """
         self.set_header('Subject', 'help')
+        self.set_input_lines([])
 
         self.control_process()
 

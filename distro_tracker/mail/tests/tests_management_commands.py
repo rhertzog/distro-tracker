@@ -42,20 +42,28 @@ import json
 
 
 class CommandWithInputTestCase(TestCase):
-    @staticmethod
-    def build_input_message(text, target):
+    def build_input_message(self, text, target):
         msg = Message()
         msg['From'] = 'user@example.net'
         msg['To'] = '{}@{}'.format(target, settings.DISTRO_TRACKER_FQDN)
         msg['Delivered-To'] = msg['To']
         msg['Subject'] = 'Test message'
         msg.set_payload(text)
+        self.input_message = msg
         return force_bytes(msg.as_string(), 'utf-8')
 
     def call_command(self, input_data, *args, **kwargs):
         cmd = self.command_class()
         cmd.input_file = io.BytesIO(input_data)
         cmd.handle(*args, **kwargs)
+
+    def assert_is_input_message(self, msg):
+        """
+        Ensure passed message is the same as the message we have fed to the
+        command
+        """
+        self.assertEqual(force_bytes(self.input_message.as_string(), 'utf-8'),
+                         force_bytes(msg.as_string(), 'utf-8'))
 
 
 class ControlManagementCommand(CommandWithInputTestCase):
@@ -65,7 +73,8 @@ class ControlManagementCommand(CommandWithInputTestCase):
     def test_control_command_calls_process(self, mock_process):
         data = self.build_input_message('help\n', 'control')
         self.call_command(data)
-        mock_process.assert_called_with(data)
+        self.assertTrue(mock_process.called)
+        self.assert_is_input_message(mock_process.call_args[0][0])
 
     def test_control_command_does_something(self):
         data = self.build_input_message('help\n', 'control')
