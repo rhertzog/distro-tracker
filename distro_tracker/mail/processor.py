@@ -11,10 +11,16 @@
 Module implementing the processing of incoming email messages.
 """
 from __future__ import unicode_literals
+from datetime import datetime
+from datetime import timedelta
+import email
 from itertools import chain
+from multiprocessing import Pool
+import os
 
 from django.conf import settings
 
+from distro_tracker.core.utils import message_from_bytes
 import distro_tracker.mail.control
 import distro_tracker.mail.dispatch
 
@@ -57,8 +63,20 @@ class MailProcessor(object):
     the target address.
     """
 
-    def __init__(self, message):
-        self.message = message
+    def __init__(self, message_or_filename):
+        if isinstance(message_or_filename, email.message.Message):
+            self.message = message_or_filename
+        else:
+            self.load_mail_from_file(message_or_filename)
+
+    def load_mail_from_file(self, filename):
+        """
+        Load the mail to process from a file.
+
+        :param str filename: Path of the file to parse as mail.
+        """
+        with open(filename, 'rb') as f:
+            self.message = message_from_bytes(f.read())
 
     @staticmethod
     def find_delivery_address(message):
@@ -93,6 +111,10 @@ class MailProcessor(object):
             return local_part.split('+', 1)
         else:
             return (local_part, None)
+
+    @staticmethod
+    def do_nothing(self):
+        """Just used by unit tests to disable process()"""
 
     def process(self):
         """
@@ -141,3 +163,239 @@ class MailProcessor(object):
     def handle_dispatch(self, package=None, keyword=None):
         distro_tracker.mail.dispatch.process(self.message, package=package,
                                              keyword=keyword)
+
+
+def run_mail_processor(mail_path):
+    processor = MailProcessor(mail_path)
+    processor.process()
+
+
+class MailQueue(object):
+    """
+    A queue of mails to process. The mails are identified by their filename
+    within `DISTRO_TRACKER_MAILDIR_DIRECTORY`.
+    """
+
+    #: The maximum number of sub-process used to process the mail queue
+    MAX_WORKERS = 4
+
+    def __init__(self):
+        self.queue = []
+        self.entries = {}
+
+    def add(self, identifier):
+        """
+        Add a new mail in the queue.
+
+        :param str identifiername: Filename identifying the mail.
+        """
+        if identifier in self.entries:
+            return
+
+        entry = MailQueueEntry(self, identifier)
+        self.queue.append(entry)
+        self.entries[identifier] = entry
+        return entry
+
+    def remove(self, identifier):
+        """
+        Remove a mail from the queue. This does not unlink the file.
+
+        :param str identifier: Filename identifying the mail.
+        """
+        if identifier not in self.entries:
+            return
+        self.queue.remove(self.entries[identifier])
+        self.entries.pop(identifier)
+
+    @staticmethod
+    def _get_maildir(subfolder=None):
+        if subfolder:
+            return os.path.join(settings.DISTRO_TRACKER_MAILDIR_DIRECTORY,
+                                subfolder, 'new')
+        return os.path.join(settings.DISTRO_TRACKER_MAILDIR_DIRECTORY, 'new')
+
+    @classmethod
+    def _get_mail_path(cls, entry, subfolder=None):
+        return os.path.join(cls._get_maildir(subfolder), entry)
+
+    def initialize(self):
+        """Scan the Maildir and fill the queue with the mails in it."""
+        for mail in os.listdir(self._get_maildir()):
+            self.add(mail)
+
+    @property
+    def pool(self):
+        if getattr(self, '_pool', None):
+            return self._pool
+        self._pool = Pool(self.MAX_WORKERS, maxtasksperchild=100)
+        return self._pool
+
+    def close_pool(self):
+        """Wait until all worker processes are finished and destroy the pool"""
+        if getattr(self, '_pool', None) is None:
+            return
+        self._pool.close()
+        self._pool.join()
+        self._pool = None
+
+    def process_queue(self):
+        """
+        Iterate over messages in the queue and do whateever is appropriate.
+        """
+        # Work on a snapshot of the queue as it will be modified each time
+        # a task is finished
+        queue = [item for item in self.queue]
+        for entry in queue:
+            if not entry.processing_task_started():
+                entry.start_processing_task()
+            if entry.processing_task_finished():
+                entry.handle_processing_task_result()
+
+
+class MailQueueEntry(object):
+    """
+    An entry in a :py:class:MailQueue.
+
+    Contains the following public attributes:
+
+    .. :py:attr: queue
+
+    The parent :py:class:MailQueue.
+
+    .. :py:attr: identifier
+
+    The entry identifier, it's the name of the file within the directory
+    of the MailQueue. Used to uniquely identify the entry in the MailQueue.
+
+    .. :py:attr: path
+
+    The full path to the mail file.
+    """
+
+    def __init__(self, queue, identifier):
+        self.queue = queue
+        self.identifier = identifier
+        self.path = os.path.join(self.queue._get_maildir(), self.identifier)
+        self.data = {
+            'creation_time': self.now(),
+        }
+
+    @staticmethod
+    def now():
+        # The main purpose of this function is to be mocked out for tests
+        return datetime.now()
+
+    def set_data(self, key, value):
+        self.data[key] = value
+
+    def get_data(self, key):
+        return self.data.get(key)
+
+    def move_to_subfolder(self, folder):
+        """
+        Move an entry from the mailqueue to the given subfolder.
+        """
+        new_maildir = self.queue._get_maildir(folder)
+        if not os.path.exists(new_maildir):
+            os.makedirs(new_maildir)
+        os.rename(self.path, os.path.join(new_maildir, self.identifier))
+
+    def _processed_cb(self, _):
+        """Callback executed when a worker completes successfully"""
+        self.queue.remove(self.identifier)
+        if os.path.exists(self.path):
+            os.unlink(self.path)
+
+    def start_processing_task(self):
+        """
+        Create a MailProcessor and schedule its execution in the worker pool.
+        """
+        next_try_time = self.get_data('next_try_time')
+        if next_try_time and next_try_time > self.now():
+            return
+
+        result = self.queue.pool.apply_async(run_mail_processor,
+                                             (self.path, ),
+                                             callback=self._processed_cb)
+        self.set_data('task_result', result)
+
+    def processing_task_started(self):
+        """
+        Returns True when the entry has been fed to workers doing mail
+        processing. Returns False otherwise.
+
+        :return: an indication whether the mail processing is on-going.
+        :rtype: bool
+        """
+        return self.get_data('task_result') is not None
+
+    def processing_task_finished(self):
+        """
+        Returns True when the worker processing the mail has finished its work.
+        Returns False otherwise, notably when the entry has not been fed to
+        any worker yet.
+
+        :return: an indication whether the mail processing has finished.
+        :rtype: bool
+        """
+        if not self.processing_task_started():
+            return False
+        return self.get_data('task_result').ready()
+
+    def handle_processing_task_result(self):
+        """
+        Called with mails that have been pushed to workers but that are
+        still in the queue. The task likely failed and we need to handle
+        the failure smartly.
+
+        Mails whose task raised an exception derived from
+        :py:class:MailProcessorException are directly moved to a "broken"
+        subfolder and the corresponding entry is dropped from the queue.
+
+        Mails whose task raised other exceptions are kept around for
+        multiple retries and after some time they are moved to a "failed"
+        subfolder and the corresponding entry is dropped from the queue.
+        """
+        task_result = self.get_data('task_result')
+        if task_result is None:
+            return
+        try:
+            task_result.get()
+            self._processed_cb(task_result)
+        except MailProcessorException:
+            self.move_to_subfolder('failed')
+            self.queue.remove(self.identifier)
+        except Exception:
+            if not self.schedule_next_try():
+                self.move_to_subfolder('broken')
+                self.queue.remove(self.identifier)
+
+    def schedule_next_try(self):
+        """
+        When the mail processing failed, schedule a new try for later.
+        Progressively increase the delay between two tries. After 5 tries,
+        refuse to schedule a new try and return False.
+
+        :return: True if a new try has been scheduled, False otherwise.
+        """
+        count = self.get_data('tries') or 0
+        delays = [
+            timedelta(seconds=150),
+            timedelta(seconds=300),
+            timedelta(seconds=600),
+            timedelta(seconds=1800),
+            timedelta(seconds=3600),
+            timedelta(seconds=7200),
+        ]
+
+        try:
+            delay = delays[count]
+        except IndexError:
+            return False
+
+        self.set_data('next_try_time', self.now() + delay)
+        self.set_data('tries', count + 1)
+        self.set_data('task_result', None)
+
+        return True

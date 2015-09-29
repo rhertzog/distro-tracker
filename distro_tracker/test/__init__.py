@@ -39,6 +39,7 @@ class TempDirsMixin(object):
         'DISTRO_TRACKER_KEYRING_DIRECTORY': 'keyring',
         'DISTRO_TRACKER_TEMPLATE_DIRECTORY': 'templates',
         'DISTRO_TRACKER_LOG_DIRECTORY': 'logs',
+        'DISTRO_TRACKER_MAILDIR_DIRECTORY': 'maildir',
     }
 
     def _backup_settings(self, name):
@@ -57,7 +58,7 @@ class TempDirsMixin(object):
         self._settings_copy = {}
         self.addCleanup(self._restore_settings)
         self._backup_settings('DISTRO_TRACKER_DATA_PATH')
-        tempdir = tempfile.mkdtemp()
+        tempdir = tempfile.mkdtemp(prefix='distro-tracker-tests-')
         self.addCleanup(shutil.rmtree, tempdir)
         setattr(settings, 'DISTRO_TRACKER_DATA_PATH', tempdir)
         for name, dirname in self.DISTRO_TRACKER_PATH_SETTINGS.items():
