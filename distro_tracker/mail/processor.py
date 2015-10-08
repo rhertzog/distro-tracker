@@ -11,6 +11,7 @@
 Module implementing the processing of incoming email messages.
 """
 from __future__ import unicode_literals
+import asyncore
 from datetime import datetime
 from datetime import timedelta
 import email
@@ -19,6 +20,7 @@ from multiprocessing import Pool
 import os
 
 from django.conf import settings
+import pyinotify
 
 from distro_tracker.core.utils import message_from_bytes
 import distro_tracker.mail.control
@@ -399,3 +401,34 @@ class MailQueueEntry(object):
         self.set_data('task_result', None)
 
         return True
+
+
+class MailQueueWatcher(object):
+    """Watch a mail queue and add entries as they appear on the filesystem"""
+
+    class EventHandler(pyinotify.ProcessEvent):
+        def my_init(self, queue=None):
+            self.queue = queue
+
+        def process_IN_CLOSE_WRITE(self, event):
+            self.queue.add(event.name)
+
+    def __init__(self, queue):
+        self.queue = queue
+
+    def start(self):
+        """Start watching the directory of the mail queue."""
+        path = self.queue._get_maildir()
+        self.wm = pyinotify.WatchManager()
+        event_handler = self.EventHandler(queue=self.queue)
+        pyinotify.AsyncNotifier(self.wm, event_handler)
+        self.wm.add_watch(path, pyinotify.IN_CLOSE_WRITE, quiet=False)
+
+    def process_events(self, timeout=0, count=1):
+        """
+        Process all pending events since last call of the function.
+
+        :param float timeout: Maximum time to wait for an event to happen.
+        :param int count: Number of processing loops to do.
+        """
+        asyncore.loop(timeout=timeout, count=count)

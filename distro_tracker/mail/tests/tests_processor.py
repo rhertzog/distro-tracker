@@ -25,12 +25,14 @@ from django.test.utils import override_settings
 from django.utils import six
 from django.utils.encoding import force_bytes
 from django.utils.six.moves import mock
+import pyinotify
 
 from distro_tracker.test import TestCase
 from distro_tracker.core.utils.email_messages import message_from_bytes
 from distro_tracker.mail.processor import MailProcessor
 from distro_tracker.mail.processor import MailQueue
 from distro_tracker.mail.processor import MailQueueEntry
+from distro_tracker.mail.processor import MailQueueWatcher
 from distro_tracker.mail.processor import ConflictingDeliveryAddresses
 from distro_tracker.mail.processor import InvalidDeliveryAddress
 from distro_tracker.mail.processor import MissingDeliveryAddress
@@ -596,3 +598,36 @@ class MailQueueEntryTest(TestCase, QueueHelperMixin):
         self.entry.schedule_next_try()
 
         self.assertFalse(self.entry.processing_task_started())
+
+
+class MailQueueWatcherTest(TestCase, QueueHelperMixin):
+    def setUp(self):
+        self.queue = MailQueue()
+        self.watcher = MailQueueWatcher(self.queue)
+        self.mkdir(self.queue._get_maildir())
+
+    def test_process_events(self):
+        self.watcher.start()
+        self.assertQueueIsEmpty()
+
+        self.create_mail('a')
+        self.watcher.process_events()
+
+        self.assertEqual(len(self.queue.queue), 1)
+        self.assertEqual(self.queue.queue[0].identifier, 'a')
+
+    def test_process_events_does_not_block(self):
+        self.watcher.start()
+
+        before = datetime.now()
+        self.watcher.process_events()
+        after = datetime.now()
+
+        delta = after - before
+        self.assertLess(delta.total_seconds(), 1)
+
+    def test_start_fails_when_dir_does_not_exist(self):
+        os.rmdir(self.queue._get_maildir())
+
+        with self.assertRaises(pyinotify.WatchManagerError):
+            self.watcher.start()
