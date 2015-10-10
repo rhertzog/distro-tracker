@@ -26,6 +26,7 @@ from distro_tracker.test.utils import make_temp_directory
 from distro_tracker.core.models import Repository
 from distro_tracker.core.utils import verp
 from distro_tracker.core.utils import message_from_bytes
+from distro_tracker.core.utils import now
 from distro_tracker.core.utils import SpaceDelimitedTextField
 from distro_tracker.core.utils import PrettyPrintList
 from distro_tracker.core.utils import verify_signature
@@ -54,6 +55,7 @@ from debian import deb822
 import os
 import time
 import tempfile
+import datetime
 
 
 class VerpModuleTest(SimpleTestCase):
@@ -1507,3 +1509,9 @@ class LinkifyTests(TestCase):
                 expected += after + '\n'
         linkify_output = linkify(text)
         self.assertEqual(linkify_output, expected)
+
+
+class UtilsTests(TestCase):
+    def test_now(self):
+        """Ensure distro_tracker.core.utils.now() exists"""
+        self.assertIsInstance(now(), datetime.datetime)

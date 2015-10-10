@@ -20,6 +20,7 @@ import lzma
 import gpgme
 import tarfile
 import contextlib
+import datetime
 
 # Re-export some functions
 from .email_messages import extract_email_address_from_header  # noqa
@@ -268,3 +269,11 @@ def extract_tar_archive(archive_path, destination_directory):
     # In all other cases, tarfile handles compression automatically
     with tarfile.open(archive_path) as archive_file:
         archive_file.extractall(destination_directory)
+
+
+def now():
+    """
+    Returns datetime.datetime.now() and can be easily mocked out
+    for tests.
+    """
+    return datetime.datetime.now()
