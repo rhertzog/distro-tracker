@@ -70,6 +70,20 @@ class HelperMixin(object):
             self.addCleanup(patcher.stop)
         return mock_objects
 
+    def patch_now(self):
+        """
+        Replace distro_tracker.core.utils.now() with a mocked version returning
+        self.current_datetime
+        """
+        def get_datetime(*args, **kwargs):
+            return self.current_datetime
+        if not hasattr(self, 'current_datetime'):
+            self.current_datetime = datetime.now()
+        patcher = mock.patch('distro_tracker.core.utils.now')
+        now = patcher.start()
+        now.side_effect = get_datetime
+        self.addCleanup(patcher.stop)
+
 
 @override_settings(DISTRO_TRACKER_FQDN='tracker.debian.org')
 class MailProcessorTest(TestCase, HelperMixin):
@@ -386,25 +400,6 @@ class MailQueueEntryTest(TestCase, QueueHelperMixin):
         self.queue = MailQueue()
         self.identifier = 'mail-abc'
         self.entry = self.queue.add(self.identifier)
-        self.current_datetime = datetime.now()
-
-    def patch_now(self, target=None):
-        """
-        Replace self.queue.now() with a mocked version returning
-        self.current_datetime
-        """
-        def get_datetime(*args, **kwargs):
-            return self.current_datetime
-        if target is None:
-            target = self.entry
-        patcher = mock.patch.object(target, 'now')
-        now = patcher.start()
-        now.side_effect = get_datetime
-        self.addCleanup(patcher.stop)
-
-    def test_now(self):
-        """entry.now() returns the current timestamp and can be mocked out"""
-        self.assertIsInstance(self.entry.now(), datetime)
 
     def test_attributes(self):
         maildir = self.queue._get_maildir()
@@ -416,7 +411,7 @@ class MailQueueEntryTest(TestCase, QueueHelperMixin):
         self.assertIsInstance(self.entry.data, dict)
 
     def test_entry_has_creation_time(self):
-        self.patch_now(target=MailQueueEntry)
+        self.patch_now()
         entry = MailQueueEntry(self.queue, self.identifier)
         self.assertEqual(entry.get_data('creation_time'), self.current_datetime)
 

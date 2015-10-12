@@ -12,7 +12,6 @@ Module implementing the processing of incoming email messages.
 """
 from __future__ import unicode_literals
 import asyncore
-from datetime import datetime
 from datetime import timedelta
 import email
 from itertools import chain
@@ -280,13 +279,8 @@ class MailQueueEntry(object):
         self.identifier = identifier
         self.path = os.path.join(self.queue._get_maildir(), self.identifier)
         self.data = {
-            'creation_time': self.now(),
+            'creation_time': distro_tracker.core.utils.now(),
         }
-
-    @staticmethod
-    def now():
-        # The main purpose of this function is to be mocked out for tests
-        return datetime.now()
 
     def set_data(self, key, value):
         self.data[key] = value
@@ -314,7 +308,8 @@ class MailQueueEntry(object):
         Create a MailProcessor and schedule its execution in the worker pool.
         """
         next_try_time = self.get_data('next_try_time')
-        if next_try_time and next_try_time > self.now():
+        now = distro_tracker.core.utils.now()
+        if next_try_time and next_try_time > now:
             return
 
         result = self.queue.pool.apply_async(run_mail_processor,
@@ -396,7 +391,8 @@ class MailQueueEntry(object):
         except IndexError:
             return False
 
-        self.set_data('next_try_time', self.now() + delay)
+        now = distro_tracker.core.utils.now()
+        self.set_data('next_try_time', now + delay)
         self.set_data('tries', count + 1)
         self.set_data('task_result', None)
 
