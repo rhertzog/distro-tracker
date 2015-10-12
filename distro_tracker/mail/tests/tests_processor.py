@@ -393,6 +393,69 @@ class MailQueueTest(TestCase, QueueHelperMixin):
 
         self.assertEqual(self.queue._count_mock_calls, len(queue))
 
+    def test_sleep_timeout_mailqueue_empty(self):
+        self.assertEqual(self.queue.sleep_timeout(),
+                         self.queue.SLEEP_TIMEOUT_EMPTY)
+
+    def _add_entry_task_running(self, name):
+        entry = self.add_mails_to_queue(name)[0]
+        self.patch_methods(entry, processing_task_started=True,
+                           processing_task_finished=False)
+        return entry
+
+    def test_sleep_timeout_task_started_not_finished(self):
+        self._add_entry_task_running('a')
+        self.assertEqual(self.queue.sleep_timeout(),
+                         self.queue.SLEEP_TIMEOUT_TASK_RUNNING)
+
+    def _add_entry_task_finished(self, name):
+        entry = self.add_mails_to_queue(name)[0]
+        self.patch_methods(entry, processing_task_started=True,
+                           processing_task_finished=True)
+        return entry
+
+    def test_sleep_timeout_task_finished(self):
+        self._add_entry_task_finished('a')
+        self.assertEqual(self.queue.sleep_timeout(),
+                         self.queue.SLEEP_TIMEOUT_TASK_FINISHED)
+
+    def _add_entry_task_waiting_next_try(self, name):
+        entry = self.add_mails_to_queue(name)[0]
+        entry.schedule_next_try()
+        return entry
+
+    def _get_wait_time(self, entry):
+        wait_time = entry.get_data('next_try_time') - self.current_datetime
+        return wait_time.total_seconds()
+
+    def test_sleep_timeout_task_waiting_next_try(self):
+        self.patch_now()
+        entry = self._add_entry_task_waiting_next_try('a')
+        wait_time = self._get_wait_time(entry)
+        self.assertEqual(self.queue.sleep_timeout(), wait_time)
+
+    def _add_entry_task_runnable(self, name):
+        entry = self.add_mails_to_queue(name)[0]
+        return entry
+
+    def test_sleep_timeout_task_runnable(self):
+        self._add_entry_task_runnable('a')
+        self.assertEqual(self.queue.sleep_timeout(),
+                         self.queue.SLEEP_TIMEOUT_TASK_RUNNABLE)
+
+    def test_sleep_timeout_picks_the_shorter_wait_time(self):
+        self.patch_now()
+        self._add_entry_task_running('a')
+        self._add_entry_task_runnable('b')
+        self._add_entry_task_finished('c')
+        entry_d = self._add_entry_task_waiting_next_try('d')
+        wait_time = self._get_wait_time(entry_d)
+        self.assertEqual(self.queue.sleep_timeout(),
+                         min(self.queue.SLEEP_TIMEOUT_TASK_RUNNING,
+                             self.queue.SLEEP_TIMEOUT_TASK_RUNNABLE,
+                             self.queue.SLEEP_TIMEOUT_TASK_FINISHED,
+                             wait_time))
+
 
 class MailQueueEntryTest(TestCase, QueueHelperMixin):
 

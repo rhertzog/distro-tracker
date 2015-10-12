@@ -180,6 +180,11 @@ class MailQueue(object):
     #: The maximum number of sub-process used to process the mail queue
     MAX_WORKERS = 4
 
+    SLEEP_TIMEOUT_EMPTY = 30.0
+    SLEEP_TIMEOUT_TASK_RUNNING = 0.010
+    SLEEP_TIMEOUT_TASK_FINISHED = 0.0
+    SLEEP_TIMEOUT_TASK_RUNNABLE = 0.0
+
     def __init__(self):
         self.queue = []
         self.entries = {}
@@ -252,6 +257,36 @@ class MailQueue(object):
                 entry.start_processing_task()
             if entry.processing_task_finished():
                 entry.handle_processing_task_result()
+
+    def sleep_timeout(self):
+        """
+        Return the maximum delay we can sleep before we process the queue
+        again.
+        """
+        timeout = 86400.0
+        for entry in self.queue:
+            next_try_time = entry.get_data('next_try_time')
+            if entry.processing_task_finished():
+                timeout = min(timeout, self.SLEEP_TIMEOUT_TASK_FINISHED)
+            elif entry.processing_task_started():
+                timeout = min(timeout, self.SLEEP_TIMEOUT_TASK_RUNNING)
+            elif next_try_time is not None:
+                wait_time = next_try_time - distro_tracker.core.utils.now()
+                timeout = min(timeout, wait_time.total_seconds())
+            else:
+                timeout = min(timeout, self.SLEEP_TIMEOUT_TASK_RUNNABLE)
+        timeout = self.SLEEP_TIMEOUT_EMPTY if not len(self.queue) else timeout
+        return timeout
+
+    def process_loop(self, stop_after=None):
+        """
+        Process all messages as they are delivered. Also processes pre-existing
+        messages. This method never returns.
+
+        :param int stop_after: Stop the loop after having processed the given
+            number of messages. Used mainly by unit tests.
+        """
+        raise NotImplemented
 
 
 class MailQueueEntry(object):
