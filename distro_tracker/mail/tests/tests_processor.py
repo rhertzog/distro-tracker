@@ -233,8 +233,9 @@ class QueueHelperMixin(HelperMixin):
         Creates a mail and stores it in the maildir.
         """
         self.mkdir(self.queue._get_maildir())
-        super(QueueHelperMixin, self).create_mail(self.get_mail_path(filename),
-                                                  **kwargs)
+        path = self.get_mail_path(filename)
+        super(QueueHelperMixin, self).create_mail(path, **kwargs)
+        return path
 
     def get_mail_path(self, filename):
         maildir = self.queue._get_maildir()
@@ -267,6 +268,7 @@ class MailQueueTest(TestCase, QueueHelperMixin):
         """The needed attributes are there"""
         self.assertIsInstance(self.queue.queue, list)
         self.assertIsInstance(self.queue.entries, dict)
+        self.assertEqual(self.queue.processed_count, 0)
 
     def test_add_returns_mail_queue_entry(self):
         identifier = 'a'
@@ -286,6 +288,13 @@ class MailQueueTest(TestCase, QueueHelperMixin):
         self.queue.remove('a')
         self.assertQueueIsEmpty()
         self.assertEqual(len(self.queue.entries), 0)
+
+    def test_remove_increases_processed_count(self):
+        """remove() counts the number of processed mails"""
+        self.queue.add('a')
+        self.assertEqual(self.queue.processed_count, 0)
+        self.queue.remove('a')
+        self.assertEqual(self.queue.processed_count, 1)
 
     def test_remove_non_existing(self):
         """remove() is a no-op for a non-existing entry"""
@@ -455,6 +464,59 @@ class MailQueueTest(TestCase, QueueHelperMixin):
                              self.queue.SLEEP_TIMEOUT_TASK_RUNNABLE,
                              self.queue.SLEEP_TIMEOUT_TASK_FINISHED,
                              wait_time))
+
+    def start_process_loop(self, stop_after=None):
+        """
+        Start process_loop() in a dedicated process and ensure it's
+        ready to proocess new files before returning
+        """
+        self.mkdir(self.queue._get_maildir())
+        lock = multiprocessing.Lock()
+        lock.acquire()
+
+        def process_loop(lock):
+            def release_lock():
+                lock.release()
+            queue = MailQueue()
+            queue.process_loop(stop_after=stop_after, ready_cb=release_lock)
+        process = multiprocessing.Process(target=process_loop, args=(lock,))
+        process.start()
+        lock.acquire()
+        return process
+
+    def test_process_loop_processes_one_mail(self):
+        self.patch_mail_processor()
+        process = self.start_process_loop(stop_after=1)
+        # The mail is created after process_loop() is ready
+        path = self.create_mail('a')
+        # We wait the end of the task for max 1 second
+        process.join(1)
+        # Process finished succesfully (and we're not here due to timeout)
+        if process.is_alive():
+            process.terminate()
+            self.fail("process_loop did not terminate")
+        self.assertFalse(process.is_alive())
+        self.assertEqual(process.exitcode, 0)
+        # And it did its job by handling the mail
+        self.assertFalse(os.path.exists(path))
+
+    @mock.patch('distro_tracker.mail.processor.MailQueueWatcher')
+    def test_process_loop_calls_sleep_timeout(self, mock_watcher):
+        """Ensure we feed the sleep timeout to watcher.process_events"""
+        self.mkdir(self.queue._get_maildir())
+        self.patch_methods(self.queue, sleep_timeout=mock.sentinel.DELAY)
+        self.queue.process_loop(stop_after=0)
+        mock_watcher.return_value.process_events.assert_called_with(
+            timeout=mock.sentinel.DELAY)
+
+    @mock.patch('distro_tracker.mail.processor.MailQueueWatcher')
+    def test_process_loop_calls_initialize(self, mock_watcher):
+        """Ensure we call the initialize method before announcing readyness"""
+        self.patch_methods(self.queue, initialize=None)
+
+        def check_when_ready():
+            self.queue.initialize.assert_called_with()
+        self.queue.process_loop(stop_after=0, ready_cb=check_when_ready)
 
 
 class MailQueueEntryTest(TestCase, QueueHelperMixin):

@@ -188,6 +188,7 @@ class MailQueue(object):
     def __init__(self):
         self.queue = []
         self.entries = {}
+        self.processed_count = 0
 
     def add(self, identifier):
         """
@@ -213,6 +214,7 @@ class MailQueue(object):
             return
         self.queue.remove(self.entries[identifier])
         self.entries.pop(identifier)
+        self.processed_count += 1
 
     @staticmethod
     def _get_maildir(subfolder=None):
@@ -278,15 +280,27 @@ class MailQueue(object):
         timeout = self.SLEEP_TIMEOUT_EMPTY if not len(self.queue) else timeout
         return timeout
 
-    def process_loop(self, stop_after=None):
+    def process_loop(self, stop_after=None, ready_cb=None):
         """
         Process all messages as they are delivered. Also processes pre-existing
         messages. This method never returns.
 
         :param int stop_after: Stop the loop after having processed the given
             number of messages. Used mainly by unit tests.
+        :param ready_cb: a callback executed after setup of filesystem
+            monitoring and initial scan of the mail queue, but before the
+            start of the loop.
         """
-        raise NotImplemented
+        watcher = MailQueueWatcher(self)
+        watcher.start()
+        self.initialize()
+        if ready_cb:
+            ready_cb()
+        while True:
+            watcher.process_events(timeout=self.sleep_timeout())
+            self.process_queue()
+            if stop_after is not None and self.processed_count >= stop_after:
+                break
 
 
 class MailQueueEntry(object):
