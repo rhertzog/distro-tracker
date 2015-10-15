@@ -22,6 +22,8 @@ from distro_tracker.mail.management.commands.tracker_control import (
     Command as ControlCommand)
 from distro_tracker.mail.management.commands.tracker_dispatch import (
     Command as DispatchCommand)
+from distro_tracker.mail.management.commands.tracker_process_mail import (
+    Command as ProcessMailCommand)
 from django.core.management import call_command
 from django.core.management.base import CommandError
 
@@ -584,3 +586,16 @@ class AddKeywordManagementCommandTest(TestCase):
         sub = Subscription.objects.get(email_settings=email_settings2,
                                        package=p)
         self.assertNotIn(new_keyword, sub.keywords.all())
+
+
+class ProcessMailTests(TestCase):
+    """Tests for the tracker_process_mail management command"""
+
+    @mock.patch('distro_tracker.mail.management.commands.tracker_process_mail.'
+                'MailQueue')
+    def test_process_mail_command(self, mock_queue):
+        """command is a simple wrapper around MailQueue.process_loop()"""
+        cmd = ProcessMailCommand()
+        cmd.handle()
+        mock_queue.assert_called_with()
+        mock_queue.return_value.process_loop.assert_called_with()
