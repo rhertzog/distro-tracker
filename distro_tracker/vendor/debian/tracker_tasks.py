@@ -424,8 +424,8 @@ class UpdatePackageBugStats(BaseTask):
                     src, package_name, bug_counts = line.split(':', 2)
                 else:
                     package_name, bug_counts = line.split(':', 1)
-                # Merged counts are in parentheses so remove those before splitting
-                # the numbers
+                # Merged counts are in parentheses so remove those before
+                # splitting the numbers
                 bug_counts = re.sub(r'[()]', ' ', bug_counts).split()
                 bug_counts = [int(count) for count in bug_counts]
             except ValueError:
