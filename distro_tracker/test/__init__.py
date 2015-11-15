@@ -125,7 +125,7 @@ class TemplateTestsMixin(object):
 
     @staticmethod
     def html_contains_link(text, link):
-        html = soup(text, 'lxml')
+        html = soup(text, 'html.parser')
         for a_tag in html.findAll('a', {'href': True}):
             if a_tag['href'] == link:
                 return True
