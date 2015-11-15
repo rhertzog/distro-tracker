@@ -492,16 +492,18 @@ class NewsViewTest(TestCase):
         self.src_pkg = SourcePackage.objects.create(
             source_package_name=self.package, version='1.0.0')
         self.src_pkg.save()
+        self.news_url = reverse('dtracker-package-news',
+                                kwargs={'package_name': self.package.name})
         # add some news
         for i in range(2 * self.NEWS_LIMIT + 1):
             self.package.news_set.create(title="News {}".format(i),
                                          created_by="Author {}".format(i))
 
-    def get_package_news(self, url, page=None):
+    def get_package_news(self, page=None):
         if not page:
-            return self.client.get(url)
+            return self.client.get(self.news_url)
         else:
-            return self.client.get('%s?page=%s' % (url, page))
+            return self.client.get('%s?page=%s' % (self.news_url, page))
 
     def find_link_in_content(self, content, link):
         """Helper method to parse response and verify link exists"""
@@ -511,22 +513,25 @@ class NewsViewTest(TestCase):
                 return True
         return False
 
-    def test_news_page(self):
-        """ Tests that the second news page is what we expect"""
-        url = reverse('dtracker-package-news', kwargs={
-            'package_name': self.package.name})
-        response = self.get_package_news(url)
-        # verify we can return to package page
+    def test_news_page_has_link_to_package_page(self):
+        response = self.get_package_news()
         package_url = reverse('dtracker-package-page', kwargs={
             'package_name': self.package.name,
         })
         self.assertTrue(self.find_link_in_content(response.content,
                                                   package_url))
-        # verify we only supply valid link pages
+
+    def test_news_page_has_paginated_link_to_page_2(self):
+        response = self.get_package_news()
         self.assertTrue(self.find_link_in_content(response.content,
                                                   '?page=2'))
+
+    def test_news_page_has_no_invalid_paginated_link(self):
+        response = self.get_package_news()
         self.assertFalse(self.find_link_in_content(response.content,
                                                    '?page=4'))
-        response = self.get_package_news(url, 2)
+
+    def test_page_2_of_news_page_has_link_to_page_1(self):
+        response = self.get_package_news(page=2)
         self.assertTrue(self.find_link_in_content(response.content,
                                                   '?page=1'))

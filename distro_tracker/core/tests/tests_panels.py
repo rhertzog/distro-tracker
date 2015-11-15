@@ -230,6 +230,8 @@ class NewsPanelTests(TestCase):
         self.src_pkg = SourcePackage.objects.create(
             source_package_name=self.package, version='1.0.0')
         self.src_pkg.save()
+        self.news_link = reverse('dtracker-package-news',
+                                 kwargs={'package_name': self.package.name})
         # add some news
         for i in range(self.NEWS_LIMIT - 1):
             self.package.news_set.create(title="News {}".format(i),
@@ -249,20 +251,20 @@ class NewsPanelTests(TestCase):
                 return True
         return False
 
-    def test_news_links(self):
-        """Tests the links in the news panel"""
+    def test_panel_links_to_news_page(self):
         response = self.get_package_page_response()
-        news_link = reverse('dtracker-package-news', kwargs={
-            'package_name': self.package.name})
-        # verify news-link is present
-        self.assertTrue(self.find_link_in_content(response.content, news_link))
-        # verify ?page=2 not present
+        self.assertTrue(self.find_link_in_content(response.content,
+                                                  self.news_link))
+
+    def test_panel_has_no_paginated_news_link_when_not_necessary(self):
+        response = self.get_package_page_response()
         self.assertFalse(self.find_link_in_content(response.content,
-                                                   news_link + "?page=2"))
+                                                   self.news_link + "?page=2"))
+
+    def test_panel_has_paginated_news_link_when_useful(self):
         self.package.news_set.create(
             title="News {}".format(self.NEWS_LIMIT),
             created_by="Author {}".format(self.NEWS_LIMIT))
-        # refresh package page to include new news item
         response = self.get_package_page_response()
         self.assertTrue(self.find_link_in_content(response.content,
-                                                  news_link + "?page=2"))
+                                                  self.news_link + "?page=2"))
