@@ -15,6 +15,7 @@ Tests for the Distro Tracker core panels.
 """
 from __future__ import unicode_literals
 from django.core.urlresolvers import reverse
+from django.conf import settings
 from bs4 import BeautifulSoup as soup
 
 from distro_tracker.test import TestCase
@@ -222,13 +223,15 @@ class DeadPackageWarningPanelTests(TestCase):
 
 
 class NewsPanelTests(TestCase):
+    NEWS_LIMIT = settings.DISTRO_TRACKER_NEWS_PANEL_LIMIT
+
     def setUp(self):
         self.package = SourcePackageName.objects.create(name='dummy-package')
         self.src_pkg = SourcePackage.objects.create(
             source_package_name=self.package, version='1.0.0')
         self.src_pkg.save()
         # add some news
-        for i in range(29):
+        for i in range(self.NEWS_LIMIT - 1):
             self.package.news_set.create(title="News {}".format(i),
                                          created_by="Author {}".format(i))
 
@@ -256,8 +259,9 @@ class NewsPanelTests(TestCase):
         # verify ?page=2 not present
         self.assertFalse(self.find_link_in_content(response.content,
                                                    news_link + "?page=2"))
-        self.package.news_set.create(title="News {}".format(30),
-                                     created_by="Author {}".format(30))
+        self.package.news_set.create(
+            title="News {}".format(self.NEWS_LIMIT),
+            created_by="Author {}".format(self.NEWS_LIMIT))
         # refresh package page to include new news item
         response = self.get_package_page_response()
         self.assertTrue(self.find_link_in_content(response.content,

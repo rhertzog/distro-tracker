@@ -484,13 +484,16 @@ class NewsViewTest(TestCase):
     """
     Tests for the :class:`distro_tracker.core.views.PackageNews`.
     """
+
+    NEWS_LIMIT = settings.DISTRO_TRACKER_NEWS_PANEL_LIMIT
+
     def setUp(self):
         self.package = SourcePackageName.objects.create(name='dummy-package')
         self.src_pkg = SourcePackage.objects.create(
             source_package_name=self.package, version='1.0.0')
         self.src_pkg.save()
         # add some news
-        for i in range(61):
+        for i in range(2 * self.NEWS_LIMIT + 1):
             self.package.news_set.create(title="News {}".format(i),
                                          created_by="Author {}".format(i))
 
