@@ -23,6 +23,7 @@ import inspect
 from django.conf import settings
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 import django.test
+from bs4 import BeautifulSoup as soup
 
 
 class TempDirsMixin(object):
@@ -117,3 +118,21 @@ class TransactionTestCase(TempDirsMixin, TestCaseHelpersMixin,
 class LiveServerTestCase(TempDirsMixin, TestCaseHelpersMixin,
                          StaticLiveServerTestCase):
     pass
+
+
+class TemplateTestsMixin(object):
+    """Helper methods to tests templates"""
+
+    @staticmethod
+    def html_contains_link(text, link):
+        html = soup(text, 'lxml')
+        for a_tag in html.findAll('a', {'href': True}):
+            if a_tag['href'] == link:
+                return True
+        return False
+
+    def assertLinkIsInResponse(self, response, link):
+        self.assertTrue(self.html_contains_link(response.content, link))
+
+    def assertLinkIsNotInResponse(self, response, link):
+        self.assertFalse(self.html_contains_link(response.content, link))

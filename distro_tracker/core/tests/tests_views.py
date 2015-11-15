@@ -14,7 +14,7 @@
 Tests for the Distro Tracker core views.
 """
 from __future__ import unicode_literals
-from distro_tracker.test import TestCase
+from distro_tracker.test import TestCase, TemplateTestsMixin
 from django.test.utils import override_settings
 from distro_tracker.core.models import BinaryPackage, BinaryPackageName
 from distro_tracker.core.models import SourcePackageName, SourcePackage
@@ -25,7 +25,6 @@ import json
 
 from django.core.urlresolvers import reverse
 from django.conf import settings
-from bs4 import BeautifulSoup as soup
 
 import os
 
@@ -480,7 +479,7 @@ class ActionItemJsonViewTest(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
-class NewsViewTest(TestCase):
+class NewsViewTest(TestCase, TemplateTestsMixin):
     """
     Tests for the :class:`distro_tracker.core.views.PackageNews`.
     """
@@ -505,33 +504,21 @@ class NewsViewTest(TestCase):
         else:
             return self.client.get('%s?page=%s' % (self.news_url, page))
 
-    def find_link_in_content(self, content, link):
-        """Helper method to parse response and verify link exists"""
-        html = soup(content)
-        for a_tag in html.findAll('a', {'href': True}):
-            if a_tag['href'] == link:
-                return True
-        return False
-
     def test_news_page_has_link_to_package_page(self):
         response = self.get_package_news()
         package_url = reverse('dtracker-package-page', kwargs={
             'package_name': self.package.name,
         })
-        self.assertTrue(self.find_link_in_content(response.content,
-                                                  package_url))
+        self.assertLinkIsInResponse(response, package_url)
 
     def test_news_page_has_paginated_link_to_page_2(self):
         response = self.get_package_news()
-        self.assertTrue(self.find_link_in_content(response.content,
-                                                  '?page=2'))
+        self.assertLinkIsInResponse(response, '?page=2')
 
     def test_news_page_has_no_invalid_paginated_link(self):
         response = self.get_package_news()
-        self.assertFalse(self.find_link_in_content(response.content,
-                                                   '?page=4'))
+        self.assertLinkIsNotInResponse(response, '?page=4')
 
     def test_page_2_of_news_page_has_link_to_page_1(self):
         response = self.get_package_news(page=2)
-        self.assertTrue(self.find_link_in_content(response.content,
-                                                  '?page=1'))
+        self.assertLinkIsInResponse(response, '?page=1')

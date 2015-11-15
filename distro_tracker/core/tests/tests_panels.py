@@ -18,7 +18,7 @@ from django.core.urlresolvers import reverse
 from django.conf import settings
 from bs4 import BeautifulSoup as soup
 
-from distro_tracker.test import TestCase
+from distro_tracker.test import TestCase, TemplateTestsMixin
 from distro_tracker.core.models import SourcePackageName
 from distro_tracker.core.models import PseudoPackageName
 from distro_tracker.core.models import PackageName
@@ -117,7 +117,7 @@ class VersionedLinksPanelTests(TestCase):
         self.assertEqual(len(context), 1)
 
 
-class GeneralInfoLinkPanelItemsTests(TestCase):
+class GeneralInfoLinkPanelItemsTests(TestCase, TemplateTestsMixin):
     def setUp(self):
         self.package_name = SourcePackageName.objects.create(
             name='dummy-package')
@@ -145,16 +145,11 @@ class GeneralInfoLinkPanelItemsTests(TestCase):
                 return panel
         return False
 
-    def homepage_is_in_linkspanel(self, response):
+    def assert_homepage_is_in_linkspanel(self, response):
         """
         Checks whether the homepage link is displayed
         """
-        html = soup(response.content)
-        links = html.findAll("a")
-        for l in links:
-            if self.homepage in l['href']:
-                return True
-        return False
+        self.assertLinkIsInResponse(response, self.homepage)
 
     def test_panel_displayed(self):
         """
@@ -163,7 +158,7 @@ class GeneralInfoLinkPanelItemsTests(TestCase):
         """
         response = self.get_package_page_response()
         self.assertTrue(self.get_general_info_link_panel(response))
-        self.assertTrue(self.homepage_is_in_linkspanel(response))
+        self.assert_homepage_is_in_linkspanel(response)
 
 
 class DeadPackageWarningPanelTests(TestCase):
@@ -222,7 +217,7 @@ class DeadPackageWarningPanelTests(TestCase):
         self.assertFalse(self.panel.context['disappeared'])
 
 
-class NewsPanelTests(TestCase):
+class NewsPanelTests(TestCase, TemplateTestsMixin):
     NEWS_LIMIT = settings.DISTRO_TRACKER_NEWS_PANEL_LIMIT
 
     def setUp(self):
@@ -243,28 +238,17 @@ class NewsPanelTests(TestCase):
         })
         return self.client.get(url)
 
-    def find_link_in_content(self, content, link):
-        """Helper method to parse response and verify link exists"""
-        html = soup(content)
-        for a_tag in html.findAll('a', {'href': True}):
-            if a_tag['href'] == link:
-                return True
-        return False
-
     def test_panel_links_to_news_page(self):
         response = self.get_package_page_response()
-        self.assertTrue(self.find_link_in_content(response.content,
-                                                  self.news_link))
+        self.assertLinkIsInResponse(response, self.news_link)
 
     def test_panel_has_no_paginated_news_link_when_not_necessary(self):
         response = self.get_package_page_response()
-        self.assertFalse(self.find_link_in_content(response.content,
-                                                   self.news_link + "?page=2"))
+        self.assertLinkIsNotInResponse(response, self.news_link + "?page=2")
 
     def test_panel_has_paginated_news_link_when_useful(self):
         self.package.news_set.create(
             title="News {}".format(self.NEWS_LIMIT),
             created_by="Author {}".format(self.NEWS_LIMIT))
         response = self.get_package_page_response()
-        self.assertTrue(self.find_link_in_content(response.content,
-                                                  self.news_link + "?page=2"))
+        self.assertLinkIsInResponse(response, self.news_link + "?page=2")
