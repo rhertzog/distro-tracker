@@ -3,6 +3,6 @@
 {% block content %}
 <h1 class="text-center">News for package <a href="{% url 'dtracker-package-page' package %}">{{ package }}</a></h1>
 <div class="row-fluid">
-{% include "core/_news_pagination.html" %}
+{% include "core/news_list.html" %}
 </div>
 {% endblock %}

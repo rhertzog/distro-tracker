@@ -15,7 +15,7 @@
 
 {% block panel-body %}
 {% with news=panel.context.news %}
-    {% include "core/_news_pagination.html" %}
+    {% include "core/news_list.html" %}
 {% endwith %}
 {% if panel.context.has_more %}
 <div class="pagination">Page <a href="{% url 'dtracker-package-news' package.name %}?page=2">2</a></div>
