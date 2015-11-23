@@ -2228,7 +2228,7 @@ class UpdateDebciStatusTask(BaseTask):
             self.force_update = parameters['force_update']
 
     def get_debci_status(self):
-        url = 'http://ci.debian.net/data/status/unstable/amd64/packages.json'
+        url = 'https://ci.debian.net/data/status/unstable/amd64/packages.json'
         cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         response, updated = cache.update(url, force=self.force_update)
         response.raise_for_status()
@@ -2260,9 +2260,9 @@ class UpdateDebciStatusTask(BaseTask):
             log_dir = package_name[:4]
         else:
             log_dir = package_name[:1]
-        url = 'http://ci.debian.net/packages/' + log_dir + '/' + \
+        url = 'https://ci.debian.net/packages/' + log_dir + '/' + \
             package_name + '/'
-        log = 'http://ci.debian.net/data/packages/unstable/amd64/' + \
+        log = 'https://ci.debian.net/data/packages/unstable/amd64/' + \
             log_dir + "/" + package_name + '/latest-autopkgtest/log'
         debci_action_item.short_description = self.ITEM_DESCRIPTION.format(
             debci_url=url,
