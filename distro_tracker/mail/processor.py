@@ -20,10 +20,13 @@ import os
 
 from django.conf import settings
 import pyinotify
+import logging
 
 from distro_tracker.core.utils import message_from_bytes
 import distro_tracker.mail.control
 import distro_tracker.mail.dispatch
+
+logger = logging.getLogger(__name__)
 
 
 class MailProcessorException(Exception):
@@ -411,12 +414,18 @@ class MailQueueEntry(object):
             task_result.get()
             self._processed_cb(task_result)
         except MailProcessorException:
+            logger.exception('Failed processing %s', self.identifier)
             self.move_to_subfolder('failed')
             self.queue.remove(self.identifier)
         except Exception:
             if not self.schedule_next_try():
+                logger.exception('Failed processing %s (and stop retrying)',
+                                 self.identifier)
                 self.move_to_subfolder('broken')
                 self.queue.remove(self.identifier)
+            else:
+                logger.exception('Failed processing %s (but will retry later)',
+                                 self.identifier)
 
     def schedule_next_try(self):
         """
