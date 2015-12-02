@@ -94,7 +94,8 @@ class MailProcessor(object):
                            message.get_all('X-Original-To', []),
                            message.get_all('X-Envelope-To', [])):
             if field.endswith('@' + settings.DISTRO_TRACKER_FQDN):
-                addresses.append(field)
+                if field not in addresses:
+                    addresses.append(field)
         if len(addresses) > 1:
             raise ConflictingDeliveryAddresses()
         elif len(addresses) == 1:

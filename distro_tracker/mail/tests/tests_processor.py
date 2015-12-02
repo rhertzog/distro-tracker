@@ -143,6 +143,14 @@ class MailProcessorTest(TestCase, HelperMixin):
         with self.assertRaises(ConflictingDeliveryAddresses):
             self.processor.find_delivery_address(self.msg)
 
+    def test_find_addr_duplicate_non_conflicting(self):
+        """Does not fail when encountering same address in different headers"""
+        to_addr = 'foo@{}'.format(self.DOMAIN)
+        self.msg.add_header('Delivered-To', to_addr)
+        self.msg.add_header('X-Original-To', to_addr)
+        addr = self.processor.find_delivery_address(self.msg)
+        self.assertEqual(to_addr, addr)
+
     def test_identify_service_without_details(self):
         """identify_service(foo@bar) returns (foo, None)"""
         (service, details) = self.processor.identify_service('foo@bar')
