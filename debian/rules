@@ -3,7 +3,7 @@
 NAME=distro-tracker
 
 %:
-	dh $@ --with python2,sphinxdoc --buildsystem=pybuild
+	dh $@ --with python2,sphinxdoc,systemd --buildsystem=pybuild
 
 override_dh_auto_build:
 	dh_auto_build
@@ -31,3 +31,6 @@ override_dh_auto_test:
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 	./manage.py test django_email_accounts/ distro_tracker/
 endif
+
+override_dh_systemd_enable:
+	dh_systemd_enable --name=distro-tracker-mail

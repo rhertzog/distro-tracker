@@ -1,0 +1,13 @@
+[Unit]
+Description=Distro Tracker Mail Processing Daemon
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/distro-tracker tracker_process_mail
+Restart=always
+RestartSec=2
+User=distro-tracker
+Group=distro-tracker
