@@ -41,7 +41,7 @@ from distro_tracker.mail.processor import MailProcessorException
 
 class HelperMixin(object):
     @staticmethod
-    def create_mail(filename, subject='A subject'):
+    def create_mail(filename, subject='A subject', **kwargs):
         with open(filename, 'wb') as msg:
             msg.write(b'Subject: ' + force_bytes(subject) + b'\n\nBody')
 
@@ -240,9 +240,18 @@ class QueueHelperMixin(HelperMixin):
         """
         Creates a mail and stores it in the maildir.
         """
-        self.mkdir(self.queue._get_maildir())
-        path = self.get_mail_path(filename)
-        super(QueueHelperMixin, self).create_mail(path, **kwargs)
+        hardlink_from_tmp = kwargs.get('hardlink_from_tmp', False)
+        maildir_new = self.queue._get_maildir()
+        self.mkdir(maildir_new)
+        tmp_path = path = self.get_mail_path(filename)
+        if hardlink_from_tmp:
+            maildir_tmp = os.path.join(maildir_new, '..', 'tmp')
+            self.mkdir(maildir_tmp)
+            tmp_path = os.path.join(maildir_tmp, filename)
+        super(QueueHelperMixin, self).create_mail(tmp_path, **kwargs)
+        if hardlink_from_tmp:
+            os.link(tmp_path, path)
+            os.unlink(tmp_path)
         return path
 
     def get_mail_path(self, filename):
@@ -739,6 +748,16 @@ class MailQueueWatcherTest(TestCase, QueueHelperMixin):
         self.assertQueueIsEmpty()
 
         self.create_mail('a')
+        self.watcher.process_events()
+
+        self.assertEqual(len(self.queue.queue), 1)
+        self.assertEqual(self.queue.queue[0].identifier, 'a')
+
+    def test_process_events_when_hardlinked_into_maildir(self):
+        self.watcher.start()
+        self.assertQueueIsEmpty()
+
+        self.create_mail('a', hardlink_from_tmp=True)
         self.watcher.process_events()
 
         self.assertEqual(len(self.queue.queue), 1)

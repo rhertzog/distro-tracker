@@ -465,7 +465,10 @@ class MailQueueWatcher(object):
         def my_init(self, queue=None):
             self.queue = queue
 
-        def process_IN_CLOSE_WRITE(self, event):
+        def process_IN_CREATE(self, event):
+            self.queue.add(event.name)
+
+        def process_IN_MOVED_TO(self, event):
             self.queue.add(event.name)
 
     def __init__(self, queue):
@@ -477,7 +480,8 @@ class MailQueueWatcher(object):
         self.wm = pyinotify.WatchManager()
         event_handler = self.EventHandler(queue=self.queue)
         pyinotify.AsyncNotifier(self.wm, event_handler)
-        self.wm.add_watch(path, pyinotify.IN_CLOSE_WRITE, quiet=False)
+        self.wm.add_watch(path, pyinotify.IN_CREATE | pyinotify.IN_MOVED_TO,
+                          quiet=False)
 
     def process_events(self, timeout=0, count=1):
         """
