@@ -20,6 +20,7 @@ Build-Depends: debhelper (>= 9),
     python-requests (>= 2),
     python-soappy,
     python-yaml,
+    python-pyinotify,
 Standards-Version: 3.9.5
 Homepage: https://wiki.debian.org/qa.debian.org/distro-tracker
 Vcs-Git: git://anonscm.debian.org/qa/distro-tracker.git
@@ -65,6 +66,7 @@ Depends: ${python:Depends},
     python-requests (>= 2),
     python-soappy,
     python-yaml,
+    python-pyinotify,
     ${misc:Depends}
 Recommends: python-ldap
 Description: Python libraries of Distro Tracker
