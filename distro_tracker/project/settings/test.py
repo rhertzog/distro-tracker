@@ -10,11 +10,12 @@ PASSWORD_HASHERS = (
 SOUTH_TESTS_MIGRATE = False
 
 from .defaults import INSTALLED_APPS
-# When running the test suite, lets all apps be tested
+# When running the test suite, enable all apps so that we have all the models
 INSTALLED_APPS += (
-    'distro_tracker.stdver_warnings',
     'distro_tracker.auto_news',
+    'distro_tracker.derivative',
     'distro_tracker.extract_source_files',
+    'distro_tracker.stdver_warnings',
     'distro_tracker.vendor',
     'distro_tracker.vendor.debian',
 )
