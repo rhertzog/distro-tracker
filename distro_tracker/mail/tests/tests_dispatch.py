@@ -113,7 +113,7 @@ class DispatchTestHelperMixin(object):
         dispatch.forward(
             self.message,
             package=package or self.package_name,
-            keyword=keyword,
+            keyword=keyword or "default",
         )
 
     def subscribe_user_with_keyword(self, email, keyword):

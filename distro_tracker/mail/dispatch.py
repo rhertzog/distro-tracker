@@ -56,7 +56,8 @@ def _get_logdata(msg, package, keyword):
 
 def process(msg, package=None, keyword=None):
     """
-    Handles the dispatching of received messages.
+    Dispatches received messages by identifying where they should
+    be sent and then by forwarding them.
 
     :param msg: The received message
     :type msg: :py:class:`email.message.Message`
@@ -68,10 +69,11 @@ def process(msg, package=None, keyword=None):
     logdata = _get_logdata(msg, package, keyword)
     logger.info("dispatch :: received from %(from)s :: %(msgid)s",
                 logdata)
-    forward(msg, package=package, keyword=keyword)
+    keyword = get_keyword(keyword, msg)
+    forward(msg, package, keyword)
 
 
-def forward(msg, package=None, keyword=None):
+def forward(msg, package, keyword):
     """
     Forwards a received message to the various subscribers of the
     given package/keyword combination.
@@ -85,7 +87,7 @@ def forward(msg, package=None, keyword=None):
     """
     logdata = _get_logdata(msg, package, keyword)
 
-    logger.info("dispatch :: forward to %(package)s/%(keyword)s :: %(msgid)s",
+    logger.info("dispatch :: forward to %(package)s %(keyword)s :: %(msgid)s",
                 logdata)
     # Check loop
     package_email = '{package}@{distro_tracker_fqdn}'.format(
@@ -95,9 +97,6 @@ def forward(msg, package=None, keyword=None):
         logger.info('dispatch :: discarded %(msgid)s due to X-Loop', logdata)
         return
 
-    # Extract keyword
-    keyword = get_keyword(keyword, msg)
-    logger.info('dispatch :: %s %s', package, keyword)
     # Default keywords require special approvement
     if keyword == 'default' and not approved_default(msg):
         logger.info('dispatch :: discarded non-approved message %(msgid)s',
