@@ -62,14 +62,18 @@ def process(msg, package=None, keyword=None):
     :param msg: The received message
     :type msg: :py:class:`email.message.Message`
 
-    :param package: The package to which the message was sent.
+    :param str package: The package to which the message was sent.
 
-    :param keyword: The keyword under which the message must be dispatched.
+    :param str keyword: The keyword under which the message must be dispatched.
     """
     logdata = _get_logdata(msg, package, keyword)
     logger.info("dispatch :: received from %(from)s :: %(msgid)s",
                 logdata)
-    keyword = get_keyword(keyword, msg)
+    package, keyword = classify_message(msg, package, keyword)
+    if package is None:
+        logger.warning('dispatch :: no package identified for %(msgid)s',
+                       logdata)
+        return
     forward(msg, package, keyword)
 
 
@@ -81,9 +85,9 @@ def forward(msg, package, keyword):
     :param msg: The received message
     :type msg: :py:class:`email.message.Message`
 
-    :param package: The package name.
+    :param str package: The package name.
 
-    :param keyword: The keyword under which the message must be forwarded.
+    :param str keyword: The keyword under which the message must be forwarded.
     """
     logdata = _get_logdata(msg, package, keyword)
 
@@ -109,39 +113,27 @@ def forward(msg, package, keyword):
     send_to_teams(msg, package, keyword)
 
 
-def get_keyword(suggested_keyword, msg):
+def classify_message(msg, package=None, keyword=None):
     """
-    Extracts the keywoword from the given message.
+    Analyzes a message to identify what package it is about and
+    what keyword is appropriate.
 
-    The function first tries using a vendor-provided function
-    :func:`get_keyword <distro_tracker.vendor.skeleton.rules.get_keyword>`.
+    :param msg: The received message
+    :type msg: :py:class:`email.message.Message`
 
-    If the vendor did not implement this function or does not return a keyword
-    for the given message, the function fallbacks to the suggested keyword.
+    :param str package: The suggested package name.
 
-    If this also does not yield a keyword, ``default`` is returned.
+    :param str keyword: The suggested keyword under which the message can be
+        forwarded.
 
-    :param suggested_keyword: The suggested keyword parsed from the target
-        address. Can be None.
-    :type suggested_keyword: string
-    :param msg: The received package message
-    :type msg: :py:class:`email.message.Message` or an equivalent interface
-        object
-
-    :returns: The name of the keyword.
-    :rtype: string
     """
-    # Use a vendor-provided function to try and classify the message.
-    keyword, _ = vendor.call('get_keyword', suggested_keyword, msg)
-    if keyword:
-        return keyword
-
-    # Otherwise try getting the keyword from the address
-    if suggested_keyword:
-        return suggested_keyword
-
-    # If we still do not have the keyword
-    return 'default'
+    result, implemented = vendor.call('classify_message', msg,
+                                      package=package, keyword=keyword)
+    if implemented:
+        package, keyword = result
+    if package and keyword is None:
+        keyword = 'default'
+    return (package, keyword)
 
 
 def approved_default(msg):

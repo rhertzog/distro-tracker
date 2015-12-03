@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2015 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -48,6 +48,7 @@ from distro_tracker.vendor.debian.rules import get_package_information_site_url
 from distro_tracker.vendor.debian.rules import get_maintainer_extra
 from distro_tracker.vendor.debian.rules import get_uploader_extra
 from distro_tracker.vendor.debian.rules import get_developer_information_url
+from distro_tracker.vendor.debian.rules import classify_message
 from distro_tracker.vendor.debian.tracker_tasks import UpdateNewQueuePackages
 from distro_tracker.vendor.debian.tracker_tasks import UpdateWnppStatsTask
 from distro_tracker.vendor.debian.tracker_tasks import UpdateUbuntuStatsTask
@@ -91,8 +92,9 @@ from bs4 import BeautifulSoup as soup
 import os
 import yaml
 import json
+import logging
 
-__all__ = ('DispatchDebianSpecificTest', 'DispatchBaseDebianSettingsTest')
+logging.disable(logging.CRITICAL)
 
 
 @override_settings(
@@ -158,6 +160,7 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
     def test_dispatch_upload_source(self):
         self.set_header('Subject', 'Accepted 0.1 in unstable')
         self.set_header('X-DAK', 'DAK')
+        self.set_header('X-Debian', 'DAK')
         self.add_header('From', 'Real Name <{from_email}>'.format(
             from_email=self.from_email))
         self.set_message_content('Files\nchecksum lib.dsc\ncheck lib2.dsc')
@@ -171,6 +174,7 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
     def test_dispatch_upload_binary(self):
         self.set_header('Subject', 'Accepted 0.1 in unstable')
         self.set_header('X-DAK', 'DAK')
+        self.set_header('X-Debian', 'DAK')
         self.add_header('From', 'Real Name <{from_email}>'.format(
             from_email=self.from_email))
         self.set_message_content('afgdfgdrterfg')
@@ -184,6 +188,7 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
     def test_dispatch_archive(self):
         self.set_header('Subject', 'Comments regarding some changes')
         self.set_header('X-DAK', 'DAK')
+        self.set_header('X-Debian', 'DAK')
         self.add_header('From', 'Real Name <{from_email}>'.format(
             from_email=self.from_email))
         self.set_message_content('afgdfgdrterfg')
@@ -235,12 +240,10 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
         Tests that keywords used by the old PTS which have been replaced are
         properly mapped to their new values by the Debian-specific module.
         """
-        address = '{name}_{keyword}'.format(
-            name=self.package_name, keyword='cvs')
         # Subscribed to the new keyword
         self.subscribe_user_with_keyword('user@domain.com', 'vcs')
 
-        self.run_dispatch(address)
+        self.run_dispatch(keyword='cvs')
 
         self.assert_header_equal('X-Distro-Tracker-Keyword', 'vcs')
 
@@ -249,14 +252,105 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
         Tests that keywords used by the old PTS which have been replaced are
         properly mapped to their new values by the Debian-specific module.
         """
-        address = '{name}_{keyword}'.format(
-            name=self.package_name, keyword='ddtp')
         # Subscribed to the new keyword
         self.subscribe_user_with_keyword('user@domain.com', 'translation')
 
-        self.run_dispatch(address)
+        self.run_dispatch(keyword='ddtp')
 
         self.assert_header_equal('X-Distro-Tracker-Keyword', 'translation')
+
+    def run_classify(self, package=None, keyword=None):
+        return classify_message(self.message, package, keyword)
+
+    def _test_classify_converts_legacy_keyword(self, keyword, expected):
+        package, new_keyword = self.run_classify('foo', keyword)
+        self.assertEqual(new_keyword, expected)
+
+    def test_classify_converts_legacy_keyword(self):
+        conversions = {
+            'cvs': 'vcs',
+            'ddtp': 'translation',
+            'buildd': 'build',
+            'katie-other': 'archive',
+        }
+        for old, new in conversions.items():
+            self._test_classify_converts_legacy_keyword(old, new)
+
+    def define_bts_mail(self, package, message='report 12345', source=None):
+        self.set_header('X-Loop', 'owner@bugs.debian.org')
+        self.set_header('X-Debian-PR-Message', message)
+        self.set_header('X-Debian-PR-Package', package)
+        if source:
+            self.set_header('X-Debian-PR-Source', source)
+
+    def test_classify_bts_mail_traffic_of_normal_package(self):
+        self.define_bts_mail('pkg-binary', source='pkg-source')
+        pkg, _ = self.run_classify()
+        self.assertEqual(pkg, 'pkg-source')
+
+    def test_classify_bts_mail_traffic_of_pseudo_package(self):
+        self.define_bts_mail('pkg-pseudo', source=None)
+        pkg, _ = self.run_classify()
+        self.assertEqual(pkg, 'pkg-pseudo')
+
+    def test_classify_bts_mail_traffic_with_correct_keyword(self):
+        self.define_bts_mail('foo', message='followup 12345')
+        pkg, keyword = self.run_classify()
+        self.assertEqual(keyword, 'bts')
+
+    def test_classify_bts_control_traffic_with_correct_keyword(self):
+        self.define_bts_mail('foo', message='transcript')
+        pkg, keyword = self.run_classify()
+        self.assertEqual(keyword, 'bts-control')
+
+    def test_classify_bts_mail_on_multiple_packages_with_suggestion(self):
+        """
+        Suggested package takes precedence when the mail header
+        mentions multiple packages.
+        """
+        self.define_bts_mail('pkg-binary', source='a b c d')
+        pkg, keyword = self.run_classify('pkg-source')
+        self.assertEqual(pkg, 'pkg-source')
+
+    def test_classify_bts_mail_on_multiple_packages_without_suggestion(self):
+        """
+        Since we have no suggested package, we assume all packages need
+        to be informed and we return a list
+        """
+        self.define_bts_mail('pkg-binary', source=' a b c d ')
+        pkg, keyword = self.run_classify()
+        self.assertListEqual(pkg, ['a', 'b', 'c', 'd'])
+
+    def define_dak_mail(self, package='foo', subject=None):
+        self.set_header('X-DAK', 'dak process-upload')
+        self.set_header('X-Debian', 'DAK')
+        self.set_header('X-Debian-Package', package)
+        if subject:
+            self.set_header('Subject', subject)
+
+    def test_classify_identifies_package_in_dak_mails(self):
+        self.define_dak_mail(package='pkg-a')
+        pkg, _ = self.run_classify()
+        self.assertEqual(pkg, 'pkg-a')
+
+    def test_classify_binary_upload_mails(self):
+        subject = 'foo_1.0-1_amd64.changes ACCEPTED into unstable'
+        self.define_dak_mail(subject=subject)
+        _, keyword = self.run_classify()
+        self.assertEqual(keyword, 'upload-binary')
+
+    def test_classify_source_upload_mails(self):
+        subject = 'foo_1.0-1_amd64.changes ACCEPTED into unstable'
+        self.define_dak_mail(subject=subject)
+        self.set_message_content('' + 'a' * 40 + ' 1234 foo_1.0-1.dsc\n')
+        _, keyword = self.run_classify()
+        self.assertEqual(keyword, 'upload-source')
+
+    def test_classify_other_archive_mails(self):
+        subject = 'Comments regarding foo_1.0-1_amd64.changes'
+        self.define_dak_mail(subject=subject)
+        _, keyword = self.run_classify()
+        self.assertEqual(keyword, 'archive')
 
 
 class GetPseudoPackageListTest(TestCase):

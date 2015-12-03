@@ -13,20 +13,19 @@ A skeleton of all vendor-specific function that can be implemented.
 from __future__ import unicode_literals
 
 
-def get_keyword(suggested_keyword, msg):
+def classify_message(msg, package=None, keyword=None):
     """
-    The function should return a keyword which matches the message or ``None``
-    if it does not match any keyword or the vendor does not provide any custom
-    keyword matching.
+    The function should analyze the message and decides which package
+    is affected and the keyword to use when relaying the message to
+    subscribers.
 
-    :param suggested_keyword: The local part of the email address to which the
-        message was sent
-    :type suggested_keyword: string
+    :param msg: The message to analyze
+    :type msg: :py:class:`email.message.Message`
 
-    :param msg: The original received package message
-    :type msg: :py:class:`Message <email.message.Message>`
+    :param str package: A suggested package. May be ``None``.
+    :param str keyword: A suggested keyword. May be ``None``.
     """
-    pass
+    return (package, keyword)
 
 
 def add_new_headers(received_message, package_name, keyword):

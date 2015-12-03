@@ -32,66 +32,51 @@ from distro_tracker.vendor.common import PluginProcessingError
 from distro_tracker.vendor.debian.tracker_tasks import UpdateNewQueuePackages
 
 
-def get_keyword(suggested_keyword, msg):
-    """
-    The function should return a keyword which matches the message or ``None``
-    if it does not match any keyword or the vendor does not provide any custom
-    keyword matching.
+def classify_message(msg, package, keyword):
+    xloop = msg.get_all('X-Loop', ())
+    xdebian = msg.get_all('X-Debian', ())
 
-    Debian provides matching for the following keywords:
+    bts_match = 'owner@bugs.debian.org' in xloop
+    dak_match = 'DAK' in xdebian
 
-     - bts-control
-     - bts
-     - upload-source
-     - upload-binary
-     - archive
+    if bts_match:  # This is a mail of the Debian bug tracking system
+        bts_package = msg.get('X-Debian-PR-Source',
+                              msg.get('X-Debian-PR-Package', ''))
+        pkglist = re.split(r'\s+', bts_package.strip())
+        if len(pkglist) == 1 and pkglist[0]:
+            package = pkglist[0]
+        elif len(pkglist) > 1 and package is None:
+            package = pkglist
+        debian_pr_message = msg.get('X-Debian-PR-Message', '')
+        if debian_pr_message.startswith('transcript'):
+            keyword = 'bts-control'
+        else:
+            keyword = 'bts'
+    elif dak_match:
+        subject = msg.get('Subject', '')
+        body = _get_message_body(msg)
+        re_accepted_installed = re.compile(r'^Accepted|INSTALLED|ACCEPTED')
 
-    It also automatically maps the following legacy keywords to their new names,
-    if the keyword is given in the local part of the message:
+        package = msg.get('X-Debian-Package', package)
 
-    - katie-other - archive
-    - buildd - build
-    - ddtp - translation
-    - cvs - vcs
+        if re_accepted_installed.search(subject):
+            if re.search(r'\.dsc\s*$', body, flags=re.MULTILINE):
+                keyword = 'upload-source'
+            else:
+                keyword = 'upload-binary'
+        else:
+            keyword = 'archive'
 
-    :param local_part: The local part of the email address to which the message
-        was sent
-    :type local_part: string
-
-    :param msg: The original received package message
-    :type msg: :py:class:`Message <email.message.Message>`
-    """
+    # Converts old PTS keywords into new ones
     legacy_mapping = {
         'katie-other': 'archive',
         'buildd': 'build',
         'ddtp': 'translation',
         'cvs': 'vcs',
     }
-    if suggested_keyword in legacy_mapping:
-        return legacy_mapping[suggested_keyword]
-
-    re_accepted_installed = re.compile('^Accepted|INSTALLED|ACCEPTED')
-    re_comments_regarding = re.compile(r'^Comments regarding .*\.changes$')
-
-    body = _get_message_body(msg)
-    xloop = msg.get_all('X-Loop', ())
-    subject = msg.get('Subject', '')
-    xdak = msg.get_all('X-DAK', '')
-    debian_pr_message = msg.get('X-Debian-PR-Message', '')
-
-    owner_match = 'owner@bugs.debian.org' in xloop
-
-    if owner_match and debian_pr_message.startswith('transcript'):
-        return 'bts-control'
-    elif owner_match and debian_pr_message:
-        return 'bts'
-    elif xdak and re_accepted_installed.match(subject):
-        if re.search(r'\.dsc\s*$', body, flags=re.MULTILINE):
-            return 'upload-source'
-        else:
-            return 'upload-binary'
-    elif xdak or re_comments_regarding.match(subject):
-        return 'archive'
+    if keyword in legacy_mapping:
+        keyword = legacy_mapping[keyword]
+    return (package, keyword)
 
 
 def add_new_headers(received_message, package_name, keyword):

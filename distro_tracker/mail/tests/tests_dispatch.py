@@ -17,6 +17,7 @@ from __future__ import unicode_literals
 from distro_tracker.test import TestCase
 from django.core import mail
 from django.utils import timezone
+from django.utils.six.moves import mock
 
 from email.message import Message
 from datetime import timedelta
@@ -169,6 +170,8 @@ class DispatchTestHelperMixin(object):
         """
         Asserts that the header's value is equal to the given value.
         """
+        # Ensure we have some messages to check against
+        self.assertTrue(len(mail.outbox) > 0)
         for msg in mail.outbox:
             msg = msg.message()
             self.assertEqual(msg[header_name], header_value)
@@ -370,6 +373,64 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         self.run_forward(keyword='unknown')
 
         self.assertEqual(len(mail.outbox), 0)
+
+    def patch_forward(self):
+        patcher = mock.patch('distro_tracker.mail.dispatch.forward')
+        mocked = patcher.start()
+        self.addCleanup(patcher.stop)
+        return mocked
+
+    def test_dispatch_calls_forward(self):
+        mock_forward = self.patch_forward()
+        self.run_dispatch('foo', 'bts')
+        mock_forward.assert_called_with(self.message, 'foo', 'bts')
+
+    def test_dispatch_does_not_call_forward_when_package_not_identified(self):
+        mock_forward = self.patch_forward()
+        self.package_name = None
+        self.run_dispatch(None, None)
+        self.assertFalse(mock_forward.called)
+
+
+class ClassifyMessageTests(TestCase):
+
+    def setUp(self):
+        self.message = Message()
+
+    def run_classify(self, package=None, keyword=None):
+        return dispatch.classify_message(self.message, package=package,
+                                         keyword=keyword)
+
+    def patch_vendor_call(self, return_value=None):
+        patcher = mock.patch('distro_tracker.vendor.call')
+        mocked = patcher.start()
+        mocked.return_value = (return_value, return_value is not None)
+        self.addCleanup(patcher.stop)
+        return mocked
+
+    def test_classify_calls_vendor_classify_message(self):
+        mock_vendor_call = self.patch_vendor_call()
+        self.run_classify()
+        mock_vendor_call.assert_called_with('classify_message', self.message,
+                                            package=None, keyword=None)
+
+    def test_classify_returns_default_values_without_vendor_classify(self):
+        self.patch_vendor_call()
+        package, keyword = self.run_classify(package='abc', keyword='vcs')
+        self.assertEqual(package, 'abc')
+        self.assertEqual(keyword, 'vcs')
+
+    def test_classify_return_vendor_values_when_available(self):
+        self.patch_vendor_call(('vendorpkg', 'bugs'))
+        package, keyword = self.run_classify(package='abc', keyword='vcs')
+        self.assertEqual(package, 'vendorpkg')
+        self.assertEqual(keyword, 'bugs')
+
+    def test_classify_uses_default_keyword_when_unknown(self):
+        self.patch_vendor_call(('vendorpkg', None))
+        package, keyword = self.run_classify()
+        self.assertEqual(package, 'vendorpkg')
+        self.assertEqual(keyword, 'default')
 
 
 class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
