@@ -45,6 +45,15 @@ logger = logging.getLogger(__name__)
 from distro_tracker import vendor
 
 
+def _get_logdata(msg, package, keyword):
+    return {
+        'from': extract_email_address_from_header(msg.get('From', '')),
+        'msgid': msg.get('Message-ID', 'no-msgid-present@localhost'),
+        'package': package or '<unknown>',
+        'keyword': keyword or '<unknown>',
+    }
+
+
 def process(msg, package=None, keyword=None):
     """
     Handles the dispatching of received messages.
@@ -56,15 +65,28 @@ def process(msg, package=None, keyword=None):
 
     :param keyword: The keyword under which the message must be dispatched.
     """
-    logdata = {
-        'from': extract_email_address_from_header(msg.get('From', '')),
-        'msgid': msg.get('Message-ID', 'no-msgid-present@localhost'),
-        'package': package or '<unknown>',
-        'keyword': keyword or '<unknown>',
-    }
-    logger.info("dispatch <= %(from)s for %(package)s/%(keyword)s %(msgid)s",
+    logdata = _get_logdata(msg, package, keyword)
+    logger.info("dispatch :: received from %(from)s :: %(msgid)s",
                 logdata)
+    forward(msg, package=package, keyword=keyword)
 
+
+def forward(msg, package=None, keyword=None):
+    """
+    Forwards a received message to the various subscribers of the
+    given package/keyword combination.
+
+    :param msg: The received message
+    :type msg: :py:class:`email.message.Message`
+
+    :param package: The package name.
+
+    :param keyword: The keyword under which the message must be forwarded.
+    """
+    logdata = _get_logdata(msg, package, keyword)
+
+    logger.info("dispatch :: forward to %(package)s/%(keyword)s :: %(msgid)s",
+                logdata)
     # Check loop
     package_email = '{package}@{distro_tracker_fqdn}'.format(
         package=package, distro_tracker_fqdn=DISTRO_TRACKER_FQDN)

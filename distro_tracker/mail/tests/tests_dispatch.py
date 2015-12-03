@@ -106,6 +106,16 @@ class DispatchTestHelperMixin(object):
             keyword=keyword,
         )
 
+    def run_forward(self, package=None, keyword=None):
+        """
+        Starts the forward process.
+        """
+        dispatch.forward(
+            self.message,
+            package=package or self.package_name,
+            keyword=keyword,
+        )
+
     def subscribe_user_with_keyword(self, email, keyword):
         """
         Creates a user subscribed to the package with the given keyword.
@@ -178,7 +188,7 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
 
         self.package = PackageName.objects.create(name=self.package_name)
 
-    def test_dispatched_mail_to_bytes(self):
+    def test_forward_mail_serialize_to_bytes(self):
         """
         Tests that the message instance to be sent to subscribers can be
         serialized to bytes with no errors when the body contains utf-8
@@ -187,7 +197,7 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         self.set_message_content('üößšđžčć한글')
         self.message.set_charset('utf-8')
 
-        self.run_dispatch()
+        self.run_forward()
 
         msg = mail.outbox[0]
         # No exception thrown trying to get the entire message as bytes
@@ -196,26 +206,26 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         # The content is actually bytes
         self.assertIsInstance(content, bytes)
 
-    def test_dispatch_to_subscribers(self):
+    def test_forward_to_subscribers(self):
         """
-        Tests the dispatch functionality when there users subscribed to it.
+        Tests the forward functionality when there users subscribed to it.
         """
         self.subscribe_user_to_package('user@domain.com', self.package_name)
         self.subscribe_user_to_package('user2@domain.com', self.package_name)
 
-        self.run_dispatch()
+        self.run_forward()
 
         self.assert_message_forwarded_to('user@domain.com')
         self.assert_message_forwarded_to('user2@domain.com')
 
-    def test_dispatch_all_old_headers(self):
+    def test_forward_all_old_headers(self):
         """
-        Tests the dispatch functionality to check if all old headers are found
+        Tests the forward functionality to check if all old headers are found
         in the forwarded message in the correct order.
         """
         self.subscribe_user_to_package('user@domain.com', self.package_name)
 
-        self.run_dispatch()
+        self.run_forward()
 
         for old_header, fwd_header in zip(self.message.items(),
                                           mail.outbox[0].message().items()):
@@ -228,7 +238,7 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         """
         self.subscribe_user_to_package('user@domain.com', self.package_name)
 
-        self.run_dispatch()
+        self.run_forward()
 
         msg = mail.outbox[0]
         bounce_address, user_address = verp.decode(msg.from_email)
@@ -243,13 +253,13 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         original = 'Content of the message'
         self.set_message_content(original)
 
-        self.run_dispatch()
+        self.run_forward()
 
         self.assert_forward_content_equal(original)
 
-    def test_dispatch_all_new_headers(self):
+    def test_forward_all_new_headers(self):
         """
-        Tests the dispatch functionality to check if all required new headers
+        Tests the forward functionality to check if all required new headers
         are found in the forwarded message.
         """
         headers = [
@@ -266,51 +276,51 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         ]
         self.subscribe_user_to_package('user@domain.com', self.package_name)
 
-        self.run_dispatch()
+        self.run_forward()
 
         self.assert_all_headers_found(headers)
 
-    def test_dispatch_package_doesnt_exist(self):
+    def test_forward_package_doesnt_exist(self):
         """
-        Tests the dispatch functionality when the given package does not
+        Tests the forward functionality when the given package does not
         exist.
         """
         self.set_package_name('non-existent-package')
 
-        self.run_dispatch()
+        self.run_forward()
 
         self.assertEqual(len(mail.outbox), 0)
 
-    def test_dispatch_package_no_subscribers(self):
+    def test_forward_package_no_subscribers(self):
         """
-        Tests the dispatch functionality when the given package does not have
+        Tests the forward functionality when the given package does not have
         any subscribers.
         """
-        self.run_dispatch()
+        self.run_forward()
 
         self.assertEqual(len(mail.outbox), 0)
 
-    def test_dispatch_inactive_subscription(self):
+    def test_forward_inactive_subscription(self):
         """
-        Tests the dispatch functionality when the subscriber's subscription
+        Tests the forward functionality when the subscriber's subscription
         is inactive.
         """
         self.subscribe_user_to_package('user@domain.com', self.package_name,
                                        active=False)
 
-        self.run_dispatch()
+        self.run_forward()
 
         self.assertEqual(len(mail.outbox), 0)
 
-    def test_utf8_message_dispatch(self):
+    def test_utf8_message_forward(self):
         """
-        Tests that a message is properly dispatched if it was utf-8 encoded.
+        Tests that a message is properly forwarded if it was utf-8 encoded.
         """
         self.subscribe_user_to_package('user@domain.com', self.package_name)
         self.set_message_content('üößšđžčć한글')
         self.message.set_charset('utf-8')
 
-        self.run_dispatch()
+        self.run_forward()
 
         self.assert_forward_content_equal('üößšđžčć한글')
 
@@ -322,7 +332,7 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         self.subscribe_user_to_package('user@domain.com', self.package_name)
         user = UserEmailBounceStats.objects.get(email='user@domain.com')
 
-        self.run_dispatch()
+        self.run_forward()
 
         bounce_stats = user.bouncestats_set.all()
         self.assertEqual(bounce_stats.count(), 1)
@@ -338,18 +348,18 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         self.set_header('X-Loop', self.package_name + '@' + DISTRO_TRACKER_FQDN)
         self.subscribe_user_to_package('user@domain.com', self.package_name)
 
-        self.run_dispatch()
+        self.run_forward()
 
         self.assertEqual(len(mail.outbox), 0)
 
-    def test_dispatch_keyword_in_address(self):
+    def test_forward_keyword_in_address(self):
         """
-        Tests the dispatch functionality when the keyword of the message is
+        Tests the forward functionality when the keyword of the message is
         given in the address the message was sent to (srcpackage_keyword)
         """
         self.subscribe_user_with_keyword('user@domain.com', 'vcs')
 
-        self.run_dispatch(keyword='vcs')
+        self.run_forward(keyword='vcs')
 
         self.assert_message_forwarded_to('user@domain.com')
         self.assert_header_equal('X-Distro-Tracker-Keyword', 'vcs')
@@ -357,7 +367,7 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
     def test_unknown_keyword(self):
         self.subscribe_user_to_package('user@domain.com', self.package_name)
 
-        self.run_dispatch(keyword='unknown')
+        self.run_forward(keyword='unknown')
 
         self.assertEqual(len(mail.outbox), 0)
 
@@ -465,7 +475,7 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         self.assertTrue(subscription_count > 0)
 
         # Receive a bounce message.
-        self.run_dispatch(self.create_bounce_address(self.user.email))
+        dispatch.handle_bounces(self.create_bounce_address(self.user.email))
 
         # Assert that the user's subscriptions have not been dropped.
         self.assertEqual(self.user.emailsettings.subscription_set.count(),
@@ -488,7 +498,7 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         self.assertTrue(subscription_count > 0)
 
         # Receive a bounce message.
-        self.run_dispatch(self.create_bounce_address(self.user.email))
+        dispatch.handle_bounces(self.create_bounce_address(self.user.email))
 
         # Assert that the user's subscriptions have not been dropped.
         self.assertEqual(self.user.emailsettings.subscription_set.count(),
@@ -591,7 +601,7 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
         membership.muted = True
         membership.save()
 
-        self.run_dispatch()
+        self.run_forward()
 
         self.assertEqual(0, len(mail.outbox))
 
@@ -604,7 +614,7 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
         membership = self.team.team_membership_set.get(user_email__email=email)
         membership.set_keywords(self.package, ['default'])
 
-        self.run_dispatch()
+        self.run_forward()
 
         self.assert_message_forwarded_to(email)
 
@@ -619,25 +629,25 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
             self.package,
             [k.name for k in Keyword.objects.exclude(name='default')])
 
-        self.run_dispatch()
+        self.run_forward()
 
         self.assertEqual(0, len(mail.outbox))
 
-    def test_dispatched_message_correct_headers(self):
+    def test_forwarded_message_correct_headers(self):
         """
-        Tests that the headers of the dispatched message are correctly set.
+        Tests that the headers of the forwarded message are correctly set.
         """
         email = self.user.main_email
         membership = self.team.team_membership_set.get(user_email__email=email)
         membership.set_keywords(self.package, ['default'])
 
-        self.run_dispatch()
+        self.run_forward()
 
         self.assert_header_equal('X-Distro-Tracker-Keyword', 'default')
         self.assert_header_equal('X-Distro-Tracker-Team', self.team.slug)
         self.assert_header_equal('X-Distro-Tracker-Package', self.package.name)
 
-    def test_dispatch_multiple_teams(self):
+    def test_forward_multiple_teams(self):
         """
         Tests that a user gets the same message multiple times when he is a
         member of two teams that both have the same package.
@@ -647,7 +657,7 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
         new_team.packages.add(self.package)
         new_team.add_members([self.user.emails.all()[0]])
 
-        self.run_dispatch()
+        self.run_forward()
 
         self.assertEqual(2, len(mail.outbox))
         for message, team in zip(mail.outbox, Team.objects.all()):
@@ -664,6 +674,6 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
         membership.set_keywords(self.package, ['default'])
         membership.mute_package(self.package)
 
-        self.run_dispatch()
+        self.run_forward()
 
         self.assertEqual(0, len(mail.outbox))
