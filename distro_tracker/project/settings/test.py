@@ -7,8 +7,6 @@ PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.SHA1PasswordHasher',
 )
 
-SOUTH_TESTS_MIGRATE = False
-
 from .defaults import INSTALLED_APPS
 # When running the test suite, enable all apps so that we have all the models
 INSTALLED_APPS += (
