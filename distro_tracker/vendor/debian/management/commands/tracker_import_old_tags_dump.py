@@ -8,6 +8,7 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 from __future__ import unicode_literals
+from django.db import transaction
 from django.core.management.base import BaseCommand
 
 from distro_tracker.core.models import Subscription
@@ -29,6 +30,7 @@ class Command(BaseCommand):
         if self.verbose:
             self.stdout.write(message)
 
+    @transaction.atomic
     def handle(self, *args, **kwargs):
         self.verbose = int(kwargs.get('verbosity', 1)) > 1
 
