@@ -391,6 +391,15 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         self.run_dispatch(None, None)
         self.assertFalse(mock_forward.called)
 
+    def test_dispatch_calls_forward_with_multiple_packages(self):
+        mock_forward = self.patch_forward()
+        self.run_dispatch(['foo', 'bar', 'baz'], 'bts')
+        mock_forward.assert_has_calls([
+            mock.call(self.message, 'foo', 'bts'),
+            mock.call(self.message, 'bar', 'bts'),
+            mock.call(self.message, 'baz', 'bts')
+        ])
+
 
 class ClassifyMessageTests(TestCase):
 

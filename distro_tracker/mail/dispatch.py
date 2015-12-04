@@ -74,7 +74,11 @@ def process(msg, package=None, keyword=None):
         logger.warning('dispatch :: no package identified for %(msgid)s',
                        logdata)
         return
-    forward(msg, package, keyword)
+    if isinstance(package, (list, set)):
+        for pkg in package:
+            forward(msg, pkg, keyword)
+    else:
+        forward(msg, package, keyword)
 
 
 def forward(msg, package, keyword):
