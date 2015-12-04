@@ -34,11 +34,13 @@ def create_news(message, package):
     :param message: A message which should be turned into a news item.
     :type message: :class:`email.message.Message`
     :param package: The package for which this news item should be created.
-    :type package: :class:`distro_tracker.core.models.PackageName`
+    :type package: :class:`distro_tracker.core.models.PackageName` or a string.
 
     :returns: The created news item
     :rtype: :class:`distro_tracker.core.models.News`
     """
+    if not isinstance(package, PackageName):
+        package = get_or_none(PackageName, name=package)
     return EmailNews.objects.create_email_news(message, package)
 
 
