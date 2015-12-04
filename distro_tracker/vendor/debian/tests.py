@@ -146,7 +146,7 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
         """
         expected_headers = [
             ('X-Debian-Package', self.package_name),
-            ('X-Debian', 'PTS'),
+            ('X-Debian', 'tracker.debian.org'),
         ]
         self.subscribe_user_to_package('user@domain.com', self.package_name)
 
