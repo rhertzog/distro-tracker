@@ -14,7 +14,7 @@
 Tests for the Distro Tracker core's tasks framework.
 """
 from __future__ import unicode_literals
-from distro_tracker.test import SimpleTestCase, TestCase
+from distro_tracker.test import TestCase
 from django.utils.six.moves import mock
 from distro_tracker.core.models import RunningJob
 from distro_tracker.core.tasks import BaseTask
@@ -28,7 +28,7 @@ logging.disable(logging.CRITICAL)
 
 # Don't let any other module's tests be loaded.
 @mock.patch('distro_tracker.core.tasks.import_all_tasks')
-class JobTests(SimpleTestCase):
+class JobTests(TestCase):
     def create_task_class(self, produces, depends_on, raises, fail=False):
         """
         Helper method creates and returns a new BaseTask subclass.
