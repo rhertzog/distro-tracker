@@ -52,12 +52,10 @@ def _classify_bts_message(msg, package, keyword):
 def _classify_dak_message(msg, package, keyword):
     package = msg.get('X-Debian-Package', package)
     subject = msg.get('Subject', '')
-    if re.search(r'^Accepted', subject):
-        if re.search(r'\(.*source.*\)', subject):
-            mail_news.create_news(msg, package)
-        raise dispatch.SkipMessage('DAK announce stored, not forwarded')
-    elif re.search(r'ACCEPTED', subject):
+    if re.search(r'^Accepted|ACCEPTED', subject):
         body = _get_message_body(msg)
+        if re.search(r'^Accepted.*\(.*source.*\)', subject):
+            mail_news.create_news(msg, package)
         if re.search(r'\.dsc\s*$', body, flags=re.MULTILINE):
             keyword = 'upload-source'
         else:
