@@ -27,9 +27,44 @@ from distro_tracker.core.utils import get_decoded_message_payload
 from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.utils.http import HttpCache
 from distro_tracker.core.utils.packages import package_hashdir
+from distro_tracker.mail import dispatch, mail_news
 from .models import DebianContributor
 from distro_tracker.vendor.common import PluginProcessingError
 from distro_tracker.vendor.debian.tracker_tasks import UpdateNewQueuePackages
+
+
+def _classify_bts_message(msg, package, keyword):
+    bts_package = msg.get('X-Debian-PR-Source',
+                          msg.get('X-Debian-PR-Package', ''))
+    pkglist = re.split(r'\s+', bts_package.strip())
+    if len(pkglist) == 1 and pkglist[0]:
+        package = pkglist[0]
+    elif len(pkglist) > 1 and package is None:
+        package = pkglist
+    debian_pr_message = msg.get('X-Debian-PR-Message', '')
+    if debian_pr_message.startswith('transcript'):
+        keyword = 'bts-control'
+    else:
+        keyword = 'bts'
+    return (package, keyword)
+
+
+def _classify_dak_message(msg, package, keyword):
+    package = msg.get('X-Debian-Package', package)
+    subject = msg.get('Subject', '')
+    if re.search(r'^Accepted', subject):
+        if re.search(r'\(.*source.*\)', subject):
+            mail_news.create_news(msg, package)
+        raise dispatch.SkipMessage('DAK announce stored, not forwarded')
+    elif re.search(r'ACCEPTED', subject):
+        body = _get_message_body(msg)
+        if re.search(r'\.dsc\s*$', body, flags=re.MULTILINE):
+            keyword = 'upload-source'
+        else:
+            keyword = 'upload-binary'
+    else:
+        keyword = 'archive'
+    return (package, keyword)
 
 
 def classify_message(msg, package, keyword):
@@ -40,32 +75,9 @@ def classify_message(msg, package, keyword):
     dak_match = 'DAK' in xdebian
 
     if bts_match:  # This is a mail of the Debian bug tracking system
-        bts_package = msg.get('X-Debian-PR-Source',
-                              msg.get('X-Debian-PR-Package', ''))
-        pkglist = re.split(r'\s+', bts_package.strip())
-        if len(pkglist) == 1 and pkglist[0]:
-            package = pkglist[0]
-        elif len(pkglist) > 1 and package is None:
-            package = pkglist
-        debian_pr_message = msg.get('X-Debian-PR-Message', '')
-        if debian_pr_message.startswith('transcript'):
-            keyword = 'bts-control'
-        else:
-            keyword = 'bts'
+        package, keyword = _classify_bts_message(msg, package, keyword)
     elif dak_match:
-        subject = msg.get('Subject', '')
-        body = _get_message_body(msg)
-        re_accepted_installed = re.compile(r'^Accepted|INSTALLED|ACCEPTED')
-
-        package = msg.get('X-Debian-Package', package)
-
-        if re_accepted_installed.search(subject):
-            if re.search(r'\.dsc\s*$', body, flags=re.MULTILINE):
-                keyword = 'upload-source'
-            else:
-                keyword = 'upload-binary'
-        else:
-            keyword = 'archive'
+        package, keyword = _classify_dak_message(msg, package, keyword)
 
     # Converts old PTS keywords into new ones
     legacy_mapping = {

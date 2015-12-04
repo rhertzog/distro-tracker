@@ -25,7 +25,7 @@ from django.utils.six.moves import mock
 from django.utils.encoding import force_bytes
 from django.utils.functional import curry
 from distro_tracker.mail.tests.tests_dispatch \
-    import DispatchTestHelperMixin, DispatchBaseTest
+    import DispatchTestHelperMixin
 from distro_tracker.accounts.models import User
 from distro_tracker.accounts.models import UserEmail
 from distro_tracker.test.utils import make_temp_directory
@@ -85,6 +85,7 @@ from distro_tracker.vendor.debian.management.commands\
 from distro_tracker.vendor.debian.sso_auth import DebianSsoUserBackend
 from distro_tracker.vendor.debian.views import CodeSearchView
 from distro_tracker.mail.mail_news import process
+from distro_tracker.mail import dispatch
 
 from email.message import Message
 from bs4 import BeautifulSoup as soup
@@ -246,6 +247,23 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
         self.define_dak_mail(subject=subject)
         _, keyword = self.run_classify()
         self.assertEqual(keyword, 'archive')
+
+    @mock.patch('distro_tracker.mail.mail_news.create_news')
+    def test_classify_stores_announces_as_news(self, mock_create_news):
+        subject = 'Accepted libosmium 2.5.3-1~exp2 (source) into experimental'
+        self.define_dak_mail(package='pkg-a', subject=subject)
+        with self.assertRaises(dispatch.SkipMessage):
+            self.run_classify()
+        mock_create_news.assert_called_with(self.message, 'pkg-a')
+
+    @mock.patch('distro_tracker.mail.mail_news.create_news')
+    def test_classify_does_not_store_binary_announce_as_news(self,
+                                                             mock_create_news):
+        subject = 'Accepted libosmium 2.5.3-1~exp2 (i386 all) into experimental'
+        self.define_dak_mail(package='pkg-a', subject=subject)
+        with self.assertRaises(dispatch.SkipMessage):
+            self.run_classify()
+        self.assertFalse(mock_create_news.called)
 
 
 class GetPseudoPackageListTest(TestCase):

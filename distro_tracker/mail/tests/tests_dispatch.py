@@ -391,6 +391,14 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         self.run_dispatch(None, None)
         self.assertFalse(mock_forward.called)
 
+    @mock.patch('distro_tracker.mail.dispatch.classify_message')
+    def test_dispatch_does_not_call_forward_when_classify_raises_exception(
+            self, mock_classify):
+        mock_forward = self.patch_forward()
+        mock_classify.side_effect = dispatch.SkipMessage
+        self.run_dispatch('foo', 'bts')
+        self.assertFalse(mock_forward.called)
+
     def test_dispatch_calls_forward_with_multiple_packages(self):
         mock_forward = self.patch_forward()
         self.run_dispatch(['foo', 'bar', 'baz'], 'bts')

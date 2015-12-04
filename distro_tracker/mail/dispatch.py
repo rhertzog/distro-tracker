@@ -45,6 +45,12 @@ logger = logging.getLogger(__name__)
 from distro_tracker import vendor
 
 
+class SkipMessage(Exception):
+    """This exception can be raised by the vendor provided classify_message()
+    to tell the dispatch code to skip processing this message being processed.
+    The mail is then silently dropped."""
+
+
 def _get_logdata(msg, package, keyword):
     return {
         'from': extract_email_address_from_header(msg.get('From', '')),
@@ -69,11 +75,17 @@ def process(msg, package=None, keyword=None):
     logdata = _get_logdata(msg, package, keyword)
     logger.info("dispatch :: received from %(from)s :: %(msgid)s",
                 logdata)
-    package, keyword = classify_message(msg, package, keyword)
+    try:
+        package, keyword = classify_message(msg, package, keyword)
+    except SkipMessage:
+        logger.info('dispatch :: skipping %(msgid)s', logdata)
+        return
+
     if package is None:
         logger.warning('dispatch :: no package identified for %(msgid)s',
                        logdata)
         return
+
     if isinstance(package, (list, set)):
         for pkg in package:
             forward(msg, pkg, keyword)
