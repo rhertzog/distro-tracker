@@ -99,19 +99,6 @@ logging.disable(logging.CRITICAL)
 
 @override_settings(
     DISTRO_TRACKER_VENDOR_RULES='distro_tracker.vendor.debian.rules')
-class DispatchBaseDebianSettingsTest(DispatchBaseTest):
-
-    """
-    This test class makes sure that base tests pass when
-    :py:data:`DISTRO_TRACKER_VENDOR_RULES
-    <distro_tracker.project.settings.DISTRO_TRACKER_VENDOR_RULES>` is set to use
-    debian.
-    """
-    pass
-
-
-@override_settings(
-    DISTRO_TRACKER_VENDOR_RULES='distro_tracker.vendor.debian.rules')
 class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
 
     """
@@ -130,74 +117,6 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
         self.package = PackageName.objects.create(
             source=True,
             name=self.package_name)
-
-    def test_dispatch_bts_control(self):
-        """
-        Tests that the dispatch properly tags a message as bts-control
-        """
-        self.set_header('X-Debian-PR-Message', 'transcript of something')
-        self.set_header('X-Loop', 'owner@bugs.debian.org')
-        self.subscribe_user_with_keyword('user@domain.com', 'bts-control')
-
-        self.run_dispatch()
-
-        self.assert_message_forwarded_to('user@domain.com')
-        self.assert_header_equal('X-Distro-Tracker-Keyword', 'bts-control')
-
-    def test_dispatch_bts(self):
-        """
-        Tests that the dispatch properly tags a message as bts
-        """
-        self.set_header('X-Debian-PR-Message', '1')
-        self.set_header('X-Loop', 'owner@bugs.debian.org')
-        self.subscribe_user_with_keyword('user@domain.com', 'bts')
-
-        self.run_dispatch()
-
-        self.assert_message_forwarded_to('user@domain.com')
-        self.assert_header_equal('X-Distro-Tracker-Keyword', 'bts')
-
-    def test_dispatch_upload_source(self):
-        self.set_header('Subject', 'Accepted 0.1 in unstable')
-        self.set_header('X-DAK', 'DAK')
-        self.set_header('X-Debian', 'DAK')
-        self.add_header('From', 'Real Name <{from_email}>'.format(
-            from_email=self.from_email))
-        self.set_message_content('Files\nchecksum lib.dsc\ncheck lib2.dsc')
-        self.subscribe_user_with_keyword('user@domain.com', 'upload-source')
-
-        self.run_dispatch()
-
-        self.assert_message_forwarded_to('user@domain.com')
-        self.assert_header_equal('X-Distro-Tracker-Keyword', 'upload-source')
-
-    def test_dispatch_upload_binary(self):
-        self.set_header('Subject', 'Accepted 0.1 in unstable')
-        self.set_header('X-DAK', 'DAK')
-        self.set_header('X-Debian', 'DAK')
-        self.add_header('From', 'Real Name <{from_email}>'.format(
-            from_email=self.from_email))
-        self.set_message_content('afgdfgdrterfg')
-        self.subscribe_user_with_keyword('user@domain.com', 'upload-binary')
-
-        self.run_dispatch()
-
-        self.assert_message_forwarded_to('user@domain.com')
-        self.assert_header_equal('X-Distro-Tracker-Keyword', 'upload-binary')
-
-    def test_dispatch_archive(self):
-        self.set_header('Subject', 'Comments regarding some changes')
-        self.set_header('X-DAK', 'DAK')
-        self.set_header('X-Debian', 'DAK')
-        self.add_header('From', 'Real Name <{from_email}>'.format(
-            from_email=self.from_email))
-        self.set_message_content('afgdfgdrterfg')
-        self.subscribe_user_with_keyword('user@domain.com', 'archive')
-
-        self.run_dispatch()
-
-        self.assert_message_forwarded_to('user@domain.com')
-        self.assert_header_equal('X-Distro-Tracker-Keyword', 'archive')
 
     def test_default_not_trusted(self):
         """
@@ -234,30 +153,6 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
         self.run_dispatch()
 
         self.assert_all_headers_found(expected_headers)
-
-    def test_legacy_keyword_override_cvs(self):
-        """
-        Tests that keywords used by the old PTS which have been replaced are
-        properly mapped to their new values by the Debian-specific module.
-        """
-        # Subscribed to the new keyword
-        self.subscribe_user_with_keyword('user@domain.com', 'vcs')
-
-        self.run_dispatch(keyword='cvs')
-
-        self.assert_header_equal('X-Distro-Tracker-Keyword', 'vcs')
-
-    def test_legacy_keyword_override_ddtp(self):
-        """
-        Tests that keywords used by the old PTS which have been replaced are
-        properly mapped to their new values by the Debian-specific module.
-        """
-        # Subscribed to the new keyword
-        self.subscribe_user_with_keyword('user@domain.com', 'translation')
-
-        self.run_dispatch(keyword='ddtp')
-
-        self.assert_header_equal('X-Distro-Tracker-Keyword', 'translation')
 
     def run_classify(self, package=None, keyword=None):
         return classify_message(self.message, package, keyword)
