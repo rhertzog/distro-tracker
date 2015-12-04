@@ -27,20 +27,33 @@ from distro_tracker.core.utils import get_decoded_message_payload
 from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.utils.http import HttpCache
 from distro_tracker.core.utils.packages import package_hashdir
-from distro_tracker.mail import dispatch, mail_news
+from distro_tracker.mail import mail_news
 from .models import DebianContributor
 from distro_tracker.vendor.common import PluginProcessingError
 from distro_tracker.vendor.debian.tracker_tasks import UpdateNewQueuePackages
+
+
+def _simplify_pkglist(pkglist, multi_allowed=True, default=None):
+    """Replace a single-list item by its sole item. A longer list is left
+    as-is (provided multi_allowed is True). An empty list returns the default
+    value."""
+    if len(pkglist) == 1 and pkglist[0]:
+        return pkglist[0]
+    elif len(pkglist) > 1 and multi_allowed:
+        return pkglist
+    return default
 
 
 def _classify_bts_message(msg, package, keyword):
     bts_package = msg.get('X-Debian-PR-Source',
                           msg.get('X-Debian-PR-Package', ''))
     pkglist = re.split(r'\s+', bts_package.strip())
-    if len(pkglist) == 1 and pkglist[0]:
-        package = pkglist[0]
-    elif len(pkglist) > 1 and package is None:
-        package = pkglist
+    # Don't override default package assignation when we find multiple package
+    # associated to the mail, otherwise we will send multiple copies of a mail
+    # that we already receive multiple times
+    multi_allowed = package is None
+    package = _simplify_pkglist(pkglist, multi_allowed=multi_allowed,
+                                default=package)
     debian_pr_message = msg.get('X-Debian-PR-Message', '')
     if debian_pr_message.startswith('transcript'):
         keyword = 'bts-control'
@@ -52,22 +65,34 @@ def _classify_bts_message(msg, package, keyword):
 def _classify_dak_message(msg, package, keyword):
     package = msg.get('X-Debian-Package', package)
     subject = msg.get('Subject', '')
+    xdak = msg.get('X-DAK', '')
+    body = _get_message_body(msg)
     if re.search(r'^Accepted|ACCEPTED', subject):
-        body = _get_message_body(msg)
         if re.search(r'^Accepted.*\(.*source.*\)', subject):
-            mail_news.create_news(msg, package)
+            mail_news.create_news(msg, package, create_package=True)
         if re.search(r'\.dsc\s*$', body, flags=re.MULTILINE):
             keyword = 'upload-source'
         else:
             keyword = 'upload-binary'
     else:
         keyword = 'archive'
+    if xdak == 'dak rm':
+        # Find all lines giving information about removed source packages
+        re_rmline = re.compile(r"^\s*(\S+)\s*\|\s*(\S+)\s*\|.*source", re.M)
+        source_removals = re_rmline.findall(body)
+        pkglist = []
+        for pkgname, version in source_removals:
+            pkglist.append(pkgname)
+            create_dak_rm_news(msg, pkgname, version=version, body=body)
+        package = _simplify_pkglist(pkglist, default=package)
+
     return (package, keyword)
 
 
 def classify_message(msg, package, keyword):
     xloop = msg.get_all('X-Loop', ())
     xdebian = msg.get_all('X-Debian', ())
+    testing_watch = msg.get('X-Testing-Watch-Package')
 
     bts_match = 'owner@bugs.debian.org' in xloop
     dak_match = 'DAK' in xdebian
@@ -76,6 +101,10 @@ def classify_message(msg, package, keyword):
         package, keyword = _classify_bts_message(msg, package, keyword)
     elif dak_match:
         package, keyword = _classify_dak_message(msg, package, keyword)
+    elif testing_watch:
+        package = testing_watch
+        keyword = 'summary'
+        mail_news.create_news(msg, package)
 
     # Converts old PTS keywords into new ones
     legacy_mapping = {
@@ -613,6 +642,14 @@ def get_binary_package_bug_stats(binary_name):
     ]
 
 
+def create_dak_rm_news(message, package, body=None, version=''):
+    if not body:
+        body = get_decoded_message_payload(message)
+    suite = re.search(r"have been removed from (\S+):", body).group(1)
+    title = "Removed {ver} from {suite}".format(ver=version, suite=suite)
+    return mail_news.create_news(message, package, title=title)
+
+
 def _create_news_from_dak_email(message):
     x_dak = message['X-DAK']
     katie = x_dak.split()[1]
@@ -628,24 +665,13 @@ def _create_news_from_dak_email(message):
     # Find all lines giving information about removed source packages
     re_rmline = re.compile(r"^\s*(\S+)\s*\|\s*(\S+)\s*\|.*source", re.M)
     source_removals = re_rmline.findall(body)
-    # Find the suite from which the packages have been removed
-    suite = re.search(r"have been removed from (\S+):", body).group(1)
-    news_from = message.get('Sender', '')
     # Add a news item for each source removal.
     created_news = []
     for removal in source_removals:
         package_name, version = removal
-        package = get_or_none(SourcePackageName, name=package_name)
-        if not package:
-            # This package is not tracked
-            continue
-        title = "Removed {ver} from {suite}".format(ver=version,
-                                                    suite=suite)
-        created_news.append(EmailNews.objects.create_email_news(
-            title=title,
-            message=message,
-            package=package,
-            created_by=news_from))
+        created_news.append(
+            create_dak_rm_news(message, package_name, body=body,
+                               version=version))
     return created_news
 
 

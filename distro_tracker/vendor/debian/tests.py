@@ -85,7 +85,6 @@ from distro_tracker.vendor.debian.management.commands\
 from distro_tracker.vendor.debian.sso_auth import DebianSsoUserBackend
 from distro_tracker.vendor.debian.views import CodeSearchView
 from distro_tracker.mail.mail_news import process
-from distro_tracker.mail import dispatch
 
 from email.message import Message
 from bs4 import BeautifulSoup as soup
@@ -217,10 +216,12 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
         pkg, keyword = self.run_classify()
         self.assertListEqual(pkg, ['a', 'b', 'c', 'd'])
 
-    def define_dak_mail(self, package='foo', subject=None):
-        self.set_header('X-DAK', 'dak process-upload')
+    def define_dak_mail(self, package='foo', subject=None,
+                        dak_cmd='dak process-upload'):
+        self.set_header('X-DAK', dak_cmd)
         self.set_header('X-Debian', 'DAK')
-        self.set_header('X-Debian-Package', package)
+        if package:
+            self.set_header('X-Debian-Package', package)
         if subject:
             self.set_header('Subject', subject)
 
@@ -249,19 +250,70 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
         self.assertEqual(keyword, 'archive')
 
     @mock.patch('distro_tracker.mail.mail_news.create_news')
-    def test_classify_stores_announces_as_news(self, mock_create_news):
+    def test_classify_stores_dak_source_accepted_as_news(self,
+                                                         mock_create_news):
         subject = 'Accepted libosmium 2.5.3-1~exp2 (source) into experimental'
         self.define_dak_mail(package='pkg-a', subject=subject)
         self.run_classify()
-        mock_create_news.assert_called_with(self.message, 'pkg-a')
+        mock_create_news.assert_called_with(self.message, 'pkg-a',
+                                            create_package=True)
+
+    def test_classify_creates_package_name_on_first_accepted_mail(self):
+        subject = 'Accepted libosmium 2.5.3-1~exp2 (source) into experimental'
+        self.define_dak_mail(package='pkg-a', subject=subject)
+        self.run_classify()
+        self.assertIsNotNone(PackageName.objects.get(name='pkg-a'))
 
     @mock.patch('distro_tracker.mail.mail_news.create_news')
-    def test_classify_does_not_store_binary_announce_as_news(self,
-                                                             mock_create_news):
+    def test_classify_does_not_store_dak_binary_accepted_as_news(
+            self, mock_create_news):
         subject = 'Accepted libosmium 2.5.3-1~exp2 (i386 all) into experimental'
         self.define_dak_mail(package='pkg-a', subject=subject)
         self.run_classify()
         self.assertFalse(mock_create_news.called)
+
+    def define_dak_rm_mail(self, **kwargs):
+        subject = 'Bug#123: Removed package(s) from unstable'
+        packages = kwargs.pop('packages', [self.package_name])
+        self.define_dak_mail(dak_cmd='dak rm', subject=subject, package=None,
+                             **kwargs)
+        content = (
+            'We believe that the bug you reported is now fixed; the following\n'
+            'package(s) have been removed from unstable:\n\n'
+        )
+        for pkg in packages:
+            content += '{pkg} |  1.2-1 | source, amd64\n'.format(pkg=pkg)
+        self.set_message_content(content)
+
+    def test_classify_dak_rm_mail(self):
+        self.define_dak_rm_mail(packages=['pkg-a'])
+        pkg, keyword = self.run_classify()
+        self.assertEqual(pkg, 'pkg-a')
+        self.assertEqual(keyword, 'archive')
+
+    def test_classify_dak_rm_mail_multiple_sources(self):
+        self.define_dak_rm_mail(packages=['pkg-a', 'pkg-b'])
+        pkg, keyword = self.run_classify()
+        self.assertEqual(pkg, ['pkg-a', 'pkg-b'])
+        self.assertEqual(keyword, 'archive')
+
+    def test_classify_generates_news_with_dak_rm_mail(self):
+        self.define_dak_rm_mail()
+        self.assertEqual(self.package.news_set.count(), 0)
+        pkg, keyword = self.run_classify()
+        self.assertEqual(self.package.news_set.count(), 1)
+
+    def test_classify_testing_watch_mail(self):
+        self.add_header('X-Testing-Watch-Package', 'pkg-a')
+        pkg, keyword = self.run_classify()
+        self.assertEqual(pkg, 'pkg-a')
+        self.assertEqual(keyword, 'summary')
+
+    def test_classify_generates_news_with_testing_watch_mail(self):
+        self.add_header('X-Testing-Watch-Package', self.package_name)
+        self.assertEqual(self.package.news_set.count(), 0)
+        pkg, keyword = self.run_classify()
+        self.assertEqual(self.package.news_set.count(), 1)
 
 
 class GetPseudoPackageListTest(TestCase):
@@ -775,7 +827,6 @@ class DebianNewsFromEmailTest(TestCase):
         self.assertEqual(news.package.name, self.package.name)
         self.assertEqual(news.title, 'Removed {ver} from unstable'.format(
             ver=self.package.version))
-        self.assertEqual(news.created_by, sender)
 
     def test_dak_rm_no_package(self):
         """

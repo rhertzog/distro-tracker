@@ -21,7 +21,7 @@ from distro_tracker.core.models import PackageName
 from distro_tracker import vendor
 
 
-def create_news(message, package):
+def create_news(message, package, create_package=False, **kwargs):
     """
     Create a news item from the given message.
 
@@ -40,8 +40,13 @@ def create_news(message, package):
     :rtype: :class:`distro_tracker.core.models.News`
     """
     if not isinstance(package, PackageName):
-        package = get_or_none(PackageName, name=package)
-    return EmailNews.objects.create_email_news(message, package)
+        if create_package:
+            package, _ = PackageName.objects.get_or_create(name=package)
+        else:
+            package = get_or_none(PackageName, name=package)
+    if package is None:  # Don't record news for non-existing packages
+        return
+    return EmailNews.objects.create_email_news(message, package, **kwargs)
 
 
 def process(message):
