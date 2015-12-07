@@ -9,6 +9,7 @@
 # except according to the terms contained in the LICENSE file.
 from __future__ import unicode_literals
 from django import forms
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django_email_accounts.models import UserEmail
 from django.contrib.auth.forms \
@@ -35,6 +36,12 @@ class UserCreationForm(forms.ModelForm):
     The created user has no privileges and its account is inactive until
     a confirmation link is followed.
     """
+
+    # Optional captcha
+    if getattr(settings, 'DJANGO_EMAIL_ACCOUNTS_USE_CAPTCHA', False):
+        import captcha.fields
+        captcha = captcha.fields.CaptchaField()
+
     class Meta:
         model = User
         fields = (

@@ -14,6 +14,7 @@ Build-Depends: debhelper (>= 9),
     python-debian,
     python-django (>= 1.7),
     python-django-jsonfield,
+    python-django-captcha,
     python-gpgme,
     python-ldap,
     python-lzma,
@@ -83,6 +84,7 @@ Architecture: all
 Depends: ${python:Depends},
     python-django (>= 1.7),
     ${misc:Depends}
+Recommends: python-django-captcha
 Description: User management Django application relying on email to identify users
  The django-email-accounts module can be used in Django web applications to
  manage user accounts where the user identify themselves with their email and a

@@ -250,6 +250,13 @@ urlpatterns += patterns(
         name='dtracker-package-page-redirect'),
 )
 
+if settings.DJANGO_EMAIL_ACCOUNTS_USE_CAPTCHA:
+    import captcha.urls
+    urlpatterns += patterns(
+        '',
+        url(r'^captcha/', include(captcha.urls)),
+    )
+
 if settings.DEBUG:
     import django.views.static
     urlpatterns = patterns(

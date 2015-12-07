@@ -42,4 +42,7 @@ INSTALLED_APPS += (
 
     # Extract common files from the source package
     # 'distro_tracker.extract_source_files',
+
+    # Must be added if you set DJANGO_EMAIL_ACCOUNTS_USE_CAPTCHA to True
+    # 'captcha',
 )

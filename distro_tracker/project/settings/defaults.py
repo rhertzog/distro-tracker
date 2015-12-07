@@ -393,6 +393,9 @@ DISTRO_TRACKER_ACCEPT_UNQUALIFIED_EMAILS = False
 DJANGO_EMAIL_ACCOUNTS_POST_MERGE_HOOK = \
     'distro_tracker.accounts.hooks.post_merge'
 
+#: Whether we include a captcha check on the new user registration form
+DJANGO_EMAIL_ACCOUNTS_USE_CAPTCHA = False
+
 # The lambda functions are evaluated at the end of the settings import
 # logic. They provide default values to settings which have not yet been
 # set (neither above nor in local.py).
