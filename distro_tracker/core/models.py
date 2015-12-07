@@ -1396,7 +1396,7 @@ class PackageExtractedInfo(models.Model):
     Web pages.
     """
     package = models.ForeignKey(PackageName)
-    key = models.CharField(max_length='50')
+    key = models.CharField(max_length=50)
     value = JSONField()
 
     def __str__(self):
