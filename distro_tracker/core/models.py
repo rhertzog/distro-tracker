@@ -733,7 +733,7 @@ class Repository(models.Model):
     name = models.CharField(max_length=50, unique=True)
     shorthand = models.CharField(max_length=10, unique=True)
 
-    uri = models.URLField(max_length=200, verbose_name='URI')
+    uri = models.CharField(max_length=200, verbose_name='URI')
     public_uri = models.URLField(
         max_length=200,
         blank=True,
