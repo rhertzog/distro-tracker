@@ -18,6 +18,11 @@ from django.conf import settings
 from django.shortcuts import redirect
 from django.views.generic import TemplateView
 
+from distro_tracker.core.views import legacy_package_url_redirect
+from distro_tracker.core.views import legacy_rss_redirect
+from distro_tracker.core.views import news_page
+from distro_tracker.core.views import package_page
+from distro_tracker.core.views import package_page_redirect
 from distro_tracker.core.views import PackageSearchView, PackageAutocompleteView
 from distro_tracker.core.views import OpenSearchDescription
 from distro_tracker.core.views import ActionItemJsonView, ActionItemView
@@ -70,12 +75,12 @@ urlpatterns = patterns(
     '',
     # Redirects for the old PTS package page URLs
     url(r'^(?P<package_hash>(lib)?.)/(?P<package_name>(\1).+)\.html$',
-        'distro_tracker.core.views.legacy_package_url_redirect'),
+        legacy_package_url_redirect),
 
     # Permanent redirect for the old RSS URL
     url(r'^(?P<package_hash>(lib)?.)/(?P<package_name>(\1).+)'
         '/news\.rss20\.xml$',
-        'distro_tracker.core.views.legacy_rss_redirect'),
+        legacy_rss_redirect),
 
     url(r'^search$', PackageSearchView.as_view(),
         name='dtracker-package-search'),
@@ -94,7 +99,7 @@ urlpatterns = patterns(
 
     url(r'^admin/', include(admin.site.urls)),
 
-    url(r'^news/(?P<news_id>\d+)$', 'distro_tracker.core.views.news_page',
+    url(r'^news/(?P<news_id>\d+)$', news_page,
         name='dtracker-news-page'),
     url(r'^action-items/(?P<item_pk>\d+)$', ActionItemView.as_view(),
         name='dtracker-action-item'),
@@ -219,8 +224,7 @@ urlpatterns = patterns(
         name='dtracker-package-news'),
 
     # Dedicated package page
-    url(r'^pkg/(?P<package_name>[^/]+)/?$',
-        'distro_tracker.core.views.package_page',
+    url(r'^pkg/(?P<package_name>[^/]+)/?$', package_page,
         name='dtracker-package-page'),
     # RSS news feed
     url(r'^pkg/(?P<package_name>.+)/rss$', PackageNewsFeed(),
@@ -242,21 +246,21 @@ urlpatterns += patterns(
     '',
     # The package page view catch all. It must be listed *after* the admin
     # URL so that the admin URL is not interpreted as a package named "admin".
-    url(r'^(?P<package_name>[^/]+)/?$',
-        'distro_tracker.core.views.package_page_redirect',
+    url(r'^(?P<package_name>[^/]+)/?$', package_page_redirect,
         name='dtracker-package-page-redirect'),
 )
 
 if settings.DEBUG:
+    import django.views.static
     urlpatterns = patterns(
         '',
         (r'^media/(?P<path>.*)$',
-         'django.views.static.serve',
+         django.views.static.serve,
          {
              'document_root': settings.MEDIA_ROOT
          }),
         (r'^static/(?P<path>.*)$',
-         'django.views.static.serve',
+         django.views.static.serve,
          {
              'document_root': settings.STATIC_ROOT,
          }),
