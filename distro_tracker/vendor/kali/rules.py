@@ -12,6 +12,15 @@ Kali specific rules
 """
 from __future__ import unicode_literals
 
+from distro_tracker.mail import mail_news
+
+
+def classify_message(msg, package, keyword):
+    # Store some messages as news
+    if msg.get('X-Distro-Tracker-News', 'no') == 'yes' and package:
+        mail_news.create_news(msg, package)
+    return (package, keyword)
+
 
 def approve_default_message(msg):
     """
