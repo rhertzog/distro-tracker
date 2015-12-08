@@ -4,9 +4,6 @@ from .defaults import INSTALLED_APPS
 from .db_postgresql import DATABASES  # noqa
 
 INSTALLED_APPS += (
-    # Generate news when packages are uploaded/removed/migrated
-    'distro_tracker.auto_news',
-
     # Extract common files from the source package
     'distro_tracker.extract_source_files',
 
