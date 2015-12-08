@@ -449,6 +449,14 @@ class ClassifyMessageTests(TestCase):
         self.assertEqual(package, 'vendorpkg')
         self.assertEqual(keyword, 'default')
 
+    def test_classify_uses_values_supplied_in_headers(self):
+        self.message['X-Distro-Tracker-Package'] = 'headerpkg'
+        self.message['X-Distro-Tracker-Keyword'] = 'bugs'
+        self.patch_vendor_call()
+        package, keyword = self.run_classify()
+        self.assertEqual(package, 'headerpkg')
+        self.assertEqual(keyword, 'bugs')
+
 
 class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
     """

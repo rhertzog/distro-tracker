@@ -143,6 +143,11 @@ def classify_message(msg, package=None, keyword=None):
         forwarded.
 
     """
+    if package is None:
+        package = msg.get('X-Distro-Tracker-Package')
+    if keyword is None:
+        keyword = msg.get('X-Distro-Tracker-Keyword')
+
     result, implemented = vendor.call('classify_message', msg,
                                       package=package, keyword=keyword)
     if implemented:
