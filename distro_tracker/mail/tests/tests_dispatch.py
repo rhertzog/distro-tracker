@@ -266,8 +266,7 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         are found in the forwarded message.
         """
         headers = [
-            ('X-Loop', '{package}@{distro_tracker_fqdn}'.format(
-                package=self.package_name,
+            ('X-Loop', 'dispatch@{distro_tracker_fqdn}'.format(
                 distro_tracker_fqdn=DISTRO_TRACKER_FQDN)),
             ('X-Distro-Tracker-Package', self.package_name),
             ('X-Distro-Tracker-Keyword', 'default'),
@@ -348,7 +347,7 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         set.
         """
         self.set_header('X-Loop', 'somevalue')
-        self.set_header('X-Loop', self.package_name + '@' + DISTRO_TRACKER_FQDN)
+        self.set_header('X-Loop', 'dispatch@' + DISTRO_TRACKER_FQDN)
         self.subscribe_user_to_package('user@domain.com', self.package_name)
 
         self.run_forward()

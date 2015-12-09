@@ -110,9 +110,8 @@ def forward(msg, package, keyword):
     logger.info("dispatch :: forward to %(package)s %(keyword)s :: %(msgid)s",
                 logdata)
     # Check loop
-    package_email = '{package}@{distro_tracker_fqdn}'.format(
-        package=package, distro_tracker_fqdn=DISTRO_TRACKER_FQDN)
-    if package_email in msg.get_all('X-Loop', ()):
+    dispatch_email = 'dispatch@{}'.format(DISTRO_TRACKER_FQDN)
+    if dispatch_email in msg.get_all('X-Loop', ()):
         # Bad X-Loop, discard the message
         logger.info('dispatch :: discarded %(msgid)s due to X-Loop', logdata)
         return
@@ -197,9 +196,7 @@ def add_new_headers(received_message, package_name, keyword):
     :type keyword: string
     """
     new_headers = [
-        ('X-Loop', '{package}@{distro_tracker_fqdn}'.format(
-            package=package_name,
-            distro_tracker_fqdn=DISTRO_TRACKER_FQDN)),
+        ('X-Loop', 'dispatch@{}'.format(DISTRO_TRACKER_FQDN)),
         ('X-Distro-Tracker-Package', package_name),
         ('X-Distro-Tracker-Keyword', keyword),
     ]
