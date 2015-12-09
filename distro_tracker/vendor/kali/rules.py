@@ -12,10 +12,22 @@ Kali specific rules
 """
 from __future__ import unicode_literals
 
+import os.path
+
 from distro_tracker.mail import mail_news
 
 
 def classify_message(msg, package, keyword):
+    # Default values for git commit notifications
+    xgitrepo = msg.get('X-Git-Repo')
+    if xgitrepo:
+        if not package:
+            if xgitrepo.endswith('.git'):
+                xgitrepo = xgitrepo[:-4]
+            package = os.path.basename(xgitrepo)
+        if not keyword:
+            keyword = 'vcs'
+
     # Store some messages as news
     if msg.get('X-Distro-Tracker-News', 'no') == 'yes' and package:
         mail_news.create_news(msg, package)
