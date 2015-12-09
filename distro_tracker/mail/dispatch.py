@@ -199,6 +199,7 @@ def add_new_headers(received_message, package_name, keyword):
         ('X-Loop', 'dispatch@{}'.format(DISTRO_TRACKER_FQDN)),
         ('X-Distro-Tracker-Package', package_name),
         ('X-Distro-Tracker-Keyword', keyword),
+        ('List-Id', '<{}.{}>'.format(package_name, DISTRO_TRACKER_FQDN)),
     ]
 
     extra_vendor_headers, implemented = vendor.call(

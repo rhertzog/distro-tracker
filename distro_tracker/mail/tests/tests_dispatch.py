@@ -266,11 +266,12 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         are found in the forwarded message.
         """
         headers = [
-            ('X-Loop', 'dispatch@{distro_tracker_fqdn}'.format(
-                distro_tracker_fqdn=DISTRO_TRACKER_FQDN)),
+            ('X-Loop', 'dispatch@{}'.format(DISTRO_TRACKER_FQDN)),
             ('X-Distro-Tracker-Package', self.package_name),
             ('X-Distro-Tracker-Keyword', 'default'),
             ('Precedence', 'list'),
+            ('List-Id', '<{}.{}>'.format(self.package_name,
+                                         DISTRO_TRACKER_FQDN)),
             ('List-Unsubscribe',
                 '<mailto:{control_email}?body=unsubscribe%20{package}>'.format(
                     control_email=DISTRO_TRACKER_CONTROL_EMAIL,
