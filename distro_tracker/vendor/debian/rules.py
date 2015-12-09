@@ -9,13 +9,17 @@
 # except according to the terms contained in the LICENSE file.
 
 from __future__ import unicode_literals
+
+import os.path
 import re
 import urllib
 import requests
+
 from django import forms
 from django.utils.http import urlencode, urlquote
 from django.utils.safestring import mark_safe
 from django.conf import settings
+
 from distro_tracker.core.models import PackageBugStats
 from distro_tracker.core.models import EmailNews
 from distro_tracker.core.models import PackageName
@@ -90,6 +94,16 @@ def _classify_dak_message(msg, package, keyword):
 
 
 def classify_message(msg, package, keyword):
+    # Default values for git commit notifications
+    xgitrepo = msg.get('X-Git-Repo')
+    if xgitrepo:
+        if not package:
+            if xgitrepo.endswith('.git'):
+                xgitrepo = xgitrepo[:-4]
+            package = os.path.basename(xgitrepo)
+        if not keyword:
+            keyword = 'vcs'
+
     xloop = msg.get_all('X-Loop', ())
     xdebian = msg.get_all('X-Debian', ())
     testing_watch = msg.get('X-Testing-Watch-Package')

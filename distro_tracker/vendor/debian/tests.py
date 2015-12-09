@@ -315,6 +315,24 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
         pkg, keyword = self.run_classify()
         self.assertEqual(self.package.news_set.count(), 1)
 
+    def test_classify_git_mail(self):
+        self.add_header('X-Git-Repo', self.package_name)
+        pkg, keyword = self.run_classify()
+        self.assertEqual(pkg, self.package_name)
+        self.assertEqual(keyword, 'vcs')
+
+    def test_classify_git_mail_drops_git_suffix_from_repo_name(self):
+        self.add_header('X-Git-Repo', self.package_name + '.git')
+        pkg, keyword = self.run_classify()
+        self.assertEqual(pkg, self.package_name)
+        self.assertEqual(keyword, 'vcs')
+
+    def test_classify_git_mail_keeps_basename_only(self):
+        self.add_header('X-Git-Repo', 'packages/unstable/' + self.package_name)
+        pkg, keyword = self.run_classify()
+        self.assertEqual(pkg, self.package_name)
+        self.assertEqual(keyword, 'vcs')
+
 
 class GetPseudoPackageListTest(TestCase):
 
