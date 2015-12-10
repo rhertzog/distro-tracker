@@ -147,6 +147,9 @@ class UserTests(TestCase):
         self.assertTrue(self.user.is_subscribed_to(self.package))
         self.assertTrue(self.user.is_subscribed_to('dummy-package'))
 
+    def test_is_subscribed_to_on_non_existing_package(self):
+        self.assertFalse(self.user.is_subscribed_to('does-not-exist'))
+
     def test_unsubscribe_all(self):
         """
         Test the :meth:`unsubscribe_all
@@ -333,6 +336,27 @@ class SubscribeUserToPackageViewTests(TestCase):
         }
         self.assertDictEqual(expected,
                              json.loads(response.content.decode('utf-8')))
+
+    def test_subscribe_user_invalid_package_name_ajax(self):
+        self.log_in_user()
+
+        bad_pkgname = '/../ '
+        response = self.post_to_view(bad_pkgname, self.user.main_email)
+
+        self.assertFalse(self.user.is_subscribed_to(bad_pkgname))
+        json_data = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(json_data.get('status'), 'failed')
+        self.assertTrue(json_data.get('error'))
+
+    def test_subscribe_user_invalid_package_name(self):
+        self.log_in_user()
+
+        bad_pkgname = '/../ '
+        response = self.post_to_view(bad_pkgname, self.user.main_email,
+                                     ajax=False)
+
+        self.assertFalse(self.user.is_subscribed_to(bad_pkgname))
+        self.assertEqual(response.status_code, 400)
 
     def test_subscribe_not_logged_in(self):
         """

@@ -1779,6 +1779,11 @@ class SubscribeToPackageTest(EmailControlTest):
 
         self.assert_error_in_response('Confirmation failed')
 
+    def test_subscribe_to_invalid_package_name(self):
+        self.set_input_lines(['subscribe /..abc'])
+        self.control_process()
+        self.assert_warning_in_response('Invalid package name: /..abc')
+
 
 class UnsubscribeFromPackageTest(EmailControlTest):
     """

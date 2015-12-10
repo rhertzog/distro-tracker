@@ -274,6 +274,14 @@ class UserEmailTest(TestCase):
         self.assertFalse(
             self.user_email.emailsettings.is_subscribed_to(self.package))
 
+    def test_is_subscribed_to_false_on_non_existing_package(self):
+        """
+        Tests that the ``is_subscribed_to`` method returns False when we
+        query about a non-existing package.
+        """
+        self.assertFalse(
+            self.user_email.emailsettings.is_subscribed_to('does-not-exist'))
+
     def test_new_user_has_default_keywords(self):
         """
         Tests that newly created users always have all the default keywords.
@@ -344,6 +352,10 @@ class PackageManagerTest(TestCase):
         self.package = PackageName.objects.create(
             source=True,
             name='dummy-package')
+
+    def test_package_create_fails_on_bad_package_name(self):
+        with self.assertRaises(ValidationError):
+            PackageName.objects.create(name='/../ b')
 
     def test_package_exists(self):
         self.assertTrue(PackageName.objects.exists_with_name(self.package.name))

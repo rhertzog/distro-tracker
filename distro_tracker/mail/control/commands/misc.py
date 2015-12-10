@@ -20,6 +20,7 @@ from distro_tracker.core.models import SourcePackageName, PseudoPackageName
 from distro_tracker.mail.control.commands.confirmation import needs_confirmation
 from distro_tracker.mail.control.commands.base import Command
 
+from django.core.exceptions import ValidationError
 from django.conf import settings
 DISTRO_TRACKER_FQDN = settings.DISTRO_TRACKER_FQDN
 
@@ -92,10 +93,14 @@ class SubscribeCommand(Command):
                     self.warn('Package {package} is not even a pseudo '
                               'package.'.format(package=self.package))
 
-        Subscription.objects.create_for(
-            email=self.user_email,
-            package_name=self.package,
-            active=False)
+        try:
+            Subscription.objects.create_for(
+                email=self.user_email,
+                package_name=self.package,
+                active=False)
+        except ValidationError as e:
+            self.warn(e.message)
+            return False
 
         self.reply('A confirmation mail has been sent to ' + self.user_email)
         return True

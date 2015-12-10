@@ -40,7 +40,10 @@ class User(EmailAccountsUser):
         """
         from distro_tracker.core.models import PackageName
         if not isinstance(package, PackageName):
-            package = PackageName.objects.get(name=package)
+            try:
+                package = PackageName.objects.get(name=package)
+            except PackageName.DoesNotExist:
+                return False
         qs = package.subscriptions.filter(user_email__in=self.emails.all())
         return qs.exists()
 

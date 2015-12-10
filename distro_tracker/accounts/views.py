@@ -1,4 +1,4 @@
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2015 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -14,9 +14,12 @@ from django.core.urlresolvers import reverse_lazy
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render
 from django.shortcuts import redirect
+from django.http import HttpResponseBadRequest
 from django.http import HttpResponseForbidden
 from django.http import Http404
 from django.conf import settings
+from django.core.exceptions import ValidationError
+
 from distro_tracker.accounts.models import UserEmail
 from distro_tracker.core.utils import distro_tracker_render_to_string
 from distro_tracker.core.utils import render_to_json_response
@@ -181,16 +184,21 @@ class SubscribeUserToPackageView(LoginRequiredMixin, View):
                 return HttpResponseForbidden()
 
         # Create the subscriptions
-        for email in emails:
-            Subscription.objects.create_for(
-                package_name=package,
-                email=email)
+        json_result = {'status': 'ok'}
+        try:
+            for email in emails:
+                Subscription.objects.create_for(
+                    package_name=package,
+                    email=email)
+        except ValidationError as e:
+            json_result['status'] = 'failed'
+            json_result['error'] = e.message
 
         if request.is_ajax():
-            return render_to_json_response({
-                'status': 'ok',
-            })
+            return render_to_json_response(json_result)
         else:
+            if 'error' in json_result:
+                return HttpResponseBadRequest(json_result['error'])
             next = request.POST.get('next', None)
             if not next:
                 return redirect('dtracker-package-page', package_name=package)

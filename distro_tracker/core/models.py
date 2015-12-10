@@ -44,6 +44,7 @@ import os
 import hashlib
 import string
 import random
+import re
 
 DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS = \
     settings.DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS
@@ -306,6 +307,11 @@ class PackageName(models.Model):
             self.save()
         else:
             super(self, PackageName).delete(*args, **kwargs)
+
+    def save(self, *args, **kwargs):
+        if not re.match('[0-9a-z][-+.0-9a-z]+$', self.name):
+            raise ValidationError('Invalid package name: {}'.format(self.name))
+        models.Model.save(self, *args, **kwargs)
 
 
 class PseudoPackageName(PackageName):
