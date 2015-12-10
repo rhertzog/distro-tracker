@@ -838,19 +838,20 @@ class UpdatePackageGeneralInformation(PackageUpdateTask):
         self.packages.add(event.arguments['name'])
 
     def _get_info_from_entry(self, entry):
+        srcpkg = entry.source_package
         general_information = {
-            'name': entry.source_package.name,
+            'name': srcpkg.name,
             'priority': entry.priority,
             'section': entry.section,
             'version': entry.source_package.version,
-            'maintainer': entry.source_package.maintainer.to_dict(),
+            'maintainer': srcpkg.maintainer.to_dict(),
             'uploaders': [
                 uploader.to_dict()
-                for uploader in entry.source_package.uploaders.all()
+                for uploader in srcpkg.uploaders.all()
             ],
-            'architectures': map(str, entry.source_package.architectures.all()),
-            'standards_version': entry.source_package.standards_version,
-            'vcs': entry.source_package.vcs,
+            'architectures': map(str, srcpkg.architectures.order_by('name')),
+            'standards_version': srcpkg.standards_version,
+            'vcs': srcpkg.vcs,
         }
 
         return general_information
