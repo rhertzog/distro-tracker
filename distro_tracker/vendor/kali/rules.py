@@ -13,6 +13,7 @@ Kali specific rules
 from __future__ import unicode_literals
 
 import os.path
+import re
 
 from distro_tracker.mail import mail_news
 
@@ -27,6 +28,13 @@ def classify_message(msg, package, keyword):
             package = os.path.basename(xgitrepo)
         if not keyword:
             keyword = 'vcs'
+
+    # Recognize build logs
+    if msg.get('X-Rebuildd-Host'):
+        match = re.search('build of (\S+)_', msg.get('Subject'))
+        if match:
+            keyword = 'build'
+            package = match.group(1)
 
     # Store some messages as news
     if msg.get('X-Distro-Tracker-News', 'no') == 'yes' and package:
