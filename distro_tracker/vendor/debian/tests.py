@@ -216,6 +216,17 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
         pkg, keyword = self.run_classify()
         self.assertListEqual(pkg, ['a', 'b', 'c', 'd'])
 
+    def test_classify_bts_mail_does_not_override_suggestion(self):
+        """
+        This case ensures that we can send a X-Debbugs-Cc copy of a bug report
+        to another maintainer via pkg-foo@packages.debian.org and still get the
+        bug forwarded to the pkg-foo subscribers under the contact keyword.
+        """
+        self.define_bts_mail('release.debian.org', source=None)
+        pkg, keyword = self.run_classify('pkg-foo', 'contact')
+        self.assertEqual(pkg, 'pkg-foo')
+        self.assertEqual(keyword, 'contact')
+
     def define_dak_mail(self, package='foo', subject=None,
                         dak_cmd='dak process-upload'):
         self.set_header('X-DAK', dak_cmd)

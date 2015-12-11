@@ -56,13 +56,25 @@ def _classify_bts_message(msg, package, keyword):
     # associated to the mail, otherwise we will send multiple copies of a mail
     # that we already receive multiple times
     multi_allowed = package is None
-    package = _simplify_pkglist(pkglist, multi_allowed=multi_allowed,
-                                default=package)
-    debian_pr_message = msg.get('X-Debian-PR-Message', '')
-    if debian_pr_message.startswith('transcript'):
-        keyword = 'bts-control'
-    else:
-        keyword = 'bts'
+    pkg_result = _simplify_pkglist(pkglist, multi_allowed=multi_allowed,
+                                   default=package)
+
+    # We override the package/keyword only...
+    if package is None:  # When needed, because we don't have a suggestion
+        override_suggestion = True
+    else:  # Or when package suggestion matches the one found in the header
+        override_suggestion = package == pkg_result
+
+    if override_suggestion:
+        package = pkg_result
+
+    if override_suggestion or keyword is None:
+        debian_pr_message = msg.get('X-Debian-PR-Message', '')
+        if debian_pr_message.startswith('transcript'):
+            keyword = 'bts-control'
+        else:
+            keyword = 'bts'
+
     return (package, keyword)
 
 
