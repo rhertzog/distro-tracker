@@ -1,4 +1,4 @@
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2015 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -63,9 +63,8 @@ class SubscribeCommand(Command):
         Implementation of a hook method which is executed instead of
         :py:meth:`handle` when the command is not confirmed.
         """
-        user = get_or_none(UserEmail, email=self.user_email)
-        emailsettings = get_or_none(EmailSettings, user_email=user)
-        if user and emailsettings.is_subscribed_to(self.package):
+        settings = get_or_none(EmailSettings, user_email__email=self.user_email)
+        if settings and settings.is_subscribed_to(self.package):
             self.warn('{email} is already subscribed to {package}'.format(
                 email=self.user_email,
                 package=self.package))
@@ -183,9 +182,8 @@ class UnsubscribeCommand(Command):
                     '{package} is neither a source package '
                     'nor a binary package.'.format(package=self.package))
                 return False
-        user = get_or_none(UserEmail, email=self.user_email)
-        emailsettings = get_or_none(EmailSettings, user_email=user)
-        if not user or not emailsettings.is_subscribed_to(self.package):
+        settings = get_or_none(EmailSettings, user_email__email=self.user_email)
+        if not settings or not settings.is_subscribed_to(self.package):
             self.error(
                 "{email} is not subscribed, you can't unsubscribe.".format(
                     email=self.user_email)
@@ -373,10 +371,8 @@ class UnsubscribeallCommand(Command):
         Implementation of a hook method which is executed instead of
         :py:meth:`handle` when the command is not confirmed.
         """
-        user = get_or_none(UserEmail, email=self.user_email)
-        email_settings = get_or_none(EmailSettings, user_email=user)
-        if not user or not email_settings or \
-                email_settings.subscription_set.count() == 0:
+        settings = get_or_none(EmailSettings, user_email__email=self.user_email)
+        if not settings or settings.subscription_set.count() == 0:
             self.warn('User {email} is not subscribed to any packages'.format(
                 email=self.user_email))
             return False

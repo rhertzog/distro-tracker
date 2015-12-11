@@ -1793,6 +1793,19 @@ class SubscribeToPackageTest(EmailControlTest):
         self.control_process()
         self.assert_warning_in_response('Invalid package name: /..abc')
 
+    def test_bug_user_without_emailsettings(self):
+        """
+        Non-regression test for a failure when UserEmail has no associated
+        EmailSettings object.
+        """
+        user, _ = UserEmail.objects.get_or_create(email=self.user_email_address)
+        with self.assertRaisesRegexp(Exception,
+                                     'UserEmail has no emailsettings'):
+            user.emailsettings
+        self.add_subscribe_command(self.package.name, self.user_email_address)
+
+        self.control_process()  # Must not raise anything
+
 
 class UnsubscribeFromPackageTest(EmailControlTest):
     """
