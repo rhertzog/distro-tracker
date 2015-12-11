@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2015 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -524,6 +524,15 @@ class ControlBotBasic(EmailControlTest):
         self.assert_response_sent()
         self.assert_command_echo_in_response('# Message subject')
         self.assert_command_echo_in_response('help')
+
+    def test_ensure_no_failure_with_multiline_subject(self):
+        """Non-regression test for a failure with multi-line subjects"""
+        self.set_header('Subject', '=?utf-8?B?UkU66L2m6Ze05Li75Lu75LiO54+t6ZW'
+                        '/5Yiw5bqV5piv5LiN5piv55yf5q2j55qE6aKG5a+8?=\n\t'
+                        '=?utf-8?B?Ow==?=')
+        self.set_input_lines(['help'])
+
+        self.control_process()
 
     def test_end_processing_on_signature_delimiter(self):
         """

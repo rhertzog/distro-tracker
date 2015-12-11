@@ -219,7 +219,7 @@ def decode_header(header, default_encoding='utf-8'):
     insufficient.
     """
     if header is None:
-        return ''
+        return None
     decoded_header = email.header.decode_header(header)
     # Join all the different parts of the header into a single unicode string
     result = ''

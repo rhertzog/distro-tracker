@@ -18,6 +18,7 @@ from django.template.loader import render_to_string
 from distro_tracker.core.utils import distro_tracker_render_to_string
 from distro_tracker.core.utils import extract_email_address_from_header
 from distro_tracker.core.utils import get_decoded_message_payload
+from distro_tracker.core.utils.email_messages import decode_header
 
 from distro_tracker.mail.control.commands import CommandFactory
 from distro_tracker.mail.control.commands import CommandProcessor
@@ -47,7 +48,7 @@ def send_response(original_message, message_text, recipient_email, cc=None):
         response.
     :param cc: A list of emails which should receive a CC of the response.
     """
-    subject = original_message.get('Subject')
+    subject = decode_header(original_message.get('Subject'))
     if not subject:
         subject = 'Your mail'
     message = EmailMessage(
@@ -210,10 +211,8 @@ def extract_command_from_subject(message):
     :type message: :py:class:`email.message.Message` or an object with
         an equivalent interface
     """
-    subject = message['Subject']
+    subject = decode_header(message.get('Subject'))
     if not subject:
         return []
-    match = re.match(r'(?:Re\s*:\s*)?(.*)$',
-                     message.get('Subject', ''),
-                     re.IGNORECASE)
-    return ['# Message subject', match.group(1)]
+    match = re.match(r'(?:Re\s*:\s*)?(.*)$', subject, re.IGNORECASE)
+    return ['# Message subject', match.group(1) if match else subject]

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2015 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -1164,6 +1164,9 @@ class DecodeHeaderTest(SimpleTestCase):
         h.append(b' M\xc3\xbcnchen', 'utf-8')
         header_text = decode_header(h)
         self.assertEqual('München München', header_text)
+
+    def test_decode_header_none(self):
+        self.assertIsNone(decode_header(None))
 
 
 class AptCacheTests(TestCase):
