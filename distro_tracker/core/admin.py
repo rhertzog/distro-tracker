@@ -195,7 +195,7 @@ class RepositoryAdmin(admin.ModelAdmin):
         drag-and-drop repository position modification.
         """
         js = (
-            'js/jquery-2.0.3.min.js',
+            'js/jquery.min.js',
             'js/jquery-ui.min.js',
             'js/admin-list-reorder.js',
         )
