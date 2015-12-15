@@ -11,6 +11,7 @@
 from __future__ import unicode_literals
 import importlib
 from django.conf import settings
+from django.db.models import Q
 from django.shortcuts import render, redirect
 from django.shortcuts import get_object_or_404
 from django.http import Http404
@@ -138,19 +139,18 @@ class PackageAutocompleteView(View):
         MANAGERS = {
             'pseudo': PseudoPackageName.objects,
             'source': SourcePackageName.objects,
-            'binary': BinaryPackageName.objects,
+            'binary': BinaryPackageName.objects.exclude(source=True),
         }
         # When no package type is given include both pseudo and source packages
         filtered = MANAGERS.get(
             package_type,
-            PackageName.objects.exclude(
-                source=False, binary=False, pseudo=False)
+            PackageName.objects.filter(Q(source=True) | Q(pseudo=True))
         )
-        filtered = filtered.filter(name__istartswith=query_string)
+        filtered = filtered.filter(name__icontains=query_string)
         # Extract only the name of the package.
         filtered = filtered.values('name')
         # Limit the number of packages returned from the autocomplete
-        AUTOCOMPLETE_ITEMS_LIMIT = 10
+        AUTOCOMPLETE_ITEMS_LIMIT = 100
         filtered = filtered[:AUTOCOMPLETE_ITEMS_LIMIT]
         return render_to_json_response([query_string,
                                         [package['name']
