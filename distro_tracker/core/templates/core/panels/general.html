@@ -5,111 +5,95 @@
 <ul class="list-group list-group-flush">
     {% if ctx.name %}
     <li class="list-group-item">
-        <div class="list-item-key"><b>source:</b></div>
-        <div class="list-item-value">
-            {% with url=ctx.url|default:"#" %}
-            <a href="{{ url }}">{{ ctx.name }}</a>
-            {% endwith %}
-            {% if ctx.priority %}
-            (<span title="priority">{{ ctx.priority }}</span>, <span title="section">{{ ctx.section }}</span>)
-            {% endif %}
-        </div>
-        <div class="clear"></div>
+        <span class="list-item-key"><b>source:</b></span>
+	{% with url=ctx.url|default:"#" %}
+	<a href="{{ url }}">{{ ctx.name }}</a>
+	{% endwith %}
+	{% if ctx.priority %}
+	(<span title="priority">{{ ctx.priority }}</span>, <span title="section">{{ ctx.section }}</span>)
+	{% endif %}
     </li>
     {% endif %}
 
     {% if ctx.version %}
     <li class="list-group-item">
-        <div class="list-item-key"><b>version:</b></div>
-        <div class="list-item-value">{{ ctx.version }}</div>
-        <div class="clear"></div>
+        <span class="list-item-key"><b>version:</b></span>
+        {{ ctx.version }}
     </li>
     {% endif %}
 
     {% if ctx.maintainer %}
     <li class="list-group-item">
-        <div class="list-item-key"><b>maintainer:</b></div>
-        <div class="list-item-value">
-            {% with mailto="mailto:"|add:ctx.maintainer.email %}
-            {% with url=ctx.maintainer.developer_info_url|default:mailto %}
-            <a href="{{ url }}">{{ ctx.maintainer.name }}</a>
-            {% endwith %}{% endwith %}
-            {% with developer=ctx.maintainer %}
-                {% if developer.archive_url %}
-                    <small>
-                        (<a href="{{ developer.archive_url }}" title="Archives for the {{ developer.name }} list">archive</a>)
-                    </small>
-                {% endif %}
-                {% for extra in developer.extra %}
-                    <small>
-                    [<a href="{{ extra.link }}" title="{{ extra.description }}">{{ extra.display }}</a>]
-                    </small>
-                {% endfor %}
-            {% endwith %}
-        </div>
-        <div class="clear"></div>
+        <span class="list-item-key"><b>maintainer:</b></span>
+	{% with mailto="mailto:"|add:ctx.maintainer.email %}
+	{% with url=ctx.maintainer.developer_info_url|default:mailto %}
+	<a href="{{ url }}">{{ ctx.maintainer.name }}</a>
+	{% endwith %}{% endwith %}
+	{% with developer=ctx.maintainer %}
+	    {% if developer.archive_url %}
+		<small>
+		    (<a href="{{ developer.archive_url }}" title="Archives for the {{ developer.name }} list">archive</a>)
+		</small>
+	    {% endif %}
+	    {% for extra in developer.extra %}
+		<small>
+		[<a href="{{ extra.link }}" title="{{ extra.description }}">{{ extra.display }}</a>]
+		</small>
+	    {% endfor %}
+	{% endwith %}
     </li>
     {% endif %}
 
     {% if ctx.uploaders %}
     <li class="list-group-item">
-        <div class="list-item-key"><b>uploaders:</b></div>
-        <div class="list-item-value">
-        <ul class="inline">
-            {% for uploader in ctx.uploaders %}
-            <li>
-                {% with mailto="mailto:"|add:uploader.email %}
-                {% with url=uploader.developer_info_url|default:mailto %}
-                <a href="{{ url }}">{{ uploader.name }}</a>
-                {% endwith %}{% endwith %}
-                {% with developer=uploader %}
-                {% if developer.archive_url %}
-                    <small>
-                        (<a href="{{ developer.archive_url }}" title="Archives for the {{ developer.name }} list">archive</a>)
-                    </small>
-                {% endif %}
-                {% for extra in developer.extra %}
-                    <small>
-                    [<a href="{{ extra.link }}" title="{{ extra.description }}">{{ extra.display }}</a>]
-                    </small>
-                {% endfor %}
-                {% endwith %}
-            </li>
-            {% endfor %}
-        </ul>
-        </div>
-        <div class="clear"></div>
+        <span class="list-item-key"><b>uploaders:</b></span>
+	{% for uploader in ctx.uploaders %}
+	    {% with mailto="mailto:"|add:uploader.email %}
+	    {% with url=uploader.developer_info_url|default:mailto %}
+	    <a href="{{ url }}">{{ uploader.name }}</a>
+	    {% endwith %}{% endwith %}
+	    {% with developer=uploader %}
+	    {% if developer.archive_url %}
+		<small>
+		    (<a href="{{ developer.archive_url }}" title="Archives for the {{ developer.name }} list">archive</a>)
+		</small>
+	    {% endif %}
+	    {% for extra in developer.extra %}
+		<small>
+		[<a href="{{ extra.link }}" title="{{ extra.description }}">{{ extra.display }}</a>]
+		</small>
+	    {% endfor %}
+	    {% endwith %}
+	    {% if not forloop.last %}
+	    –
+	    {% endif %}
+	{% endfor %}
     </li>
     {% endif %}
 
     {% if ctx.architectures %}
     <li class="list-group-item">
-        <div class="list-item-key"><b>arch:</b></div>
-        <div class="list-item-value">{% for arch in ctx.architectures %}{{ arch }} {% endfor %}</div>
-        <div class="clear"></div>
+        <span class="list-item-key"><b>arch:</b></span>
+        {% for arch in ctx.architectures %}{{ arch }} {% endfor %}
     </li>
     {% endif %}
 
     {% if ctx.standards_version %}
     <li class="list-group-item">
-        <div class="list-item-key"><b>std-ver:</b></div>
-        <div class="list-item-value">{{ ctx.standards_version }}</div>
-        <div class="clear"></div>
+        <span class="list-item-key"><b>std-ver:</b></span>
+        {{ ctx.standards_version }}
     </li>
     {% endif %}
 
     {% if ctx.vcs %}
     <li class="list-group-item">
-        <div class="list-item-key"><b>VCS:</b></div>
-        <div class="list-item-value">
-            {% with vcs=ctx.vcs.full_name|default:ctx.vcs.type %}
-            <a href="{{ ctx.vcs.url }}">{{ vcs }}</a>
-            {% if ctx.vcs.browser %}
-            (<a href="{{ ctx.vcs.browser }}">Browse</a>)
-            {% endif %}
-            {% endwith %}
-        </div>
-        <div class="clear"></div>
+        <span class="list-item-key"><b>VCS:</b></span>
+	{% with vcs=ctx.vcs.full_name|default:ctx.vcs.type %}
+	<a href="{{ ctx.vcs.url }}">{{ vcs }}</a>
+	{% if ctx.vcs.browser %}
+	(<a href="{{ ctx.vcs.browser }}">Browse</a>)
+	{% endif %}
+	{% endwith %}
     </li>
     {% endif %}
 </ul>

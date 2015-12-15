@@ -3,10 +3,10 @@
 {% block title %}{{ block.super }} - Search{% endblock %}
 
 {% block content %}
-<div class="row-fluid">
+<div class="row">
     <div class="alert alert-block">Package {{ package_name }} does not exist.</div>
 </div>
-<div class="row-fluid">
+<div class="row">
     {% include 'core/package-search-form.html' with search_form_use_label=1 %}
 </div>
 {% endblock %}

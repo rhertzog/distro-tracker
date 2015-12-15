@@ -1,12 +1,4 @@
 $(function() {
-    /**
-     * Any links found in the accordion header (package subscription list)
-     * should work as links, not as a details toggle.
-     */
-     $('.accordion-toggle a').click(function(evt) {
-        evt.stopPropagation();
-     });
-
      var unsubscribe_url = $('#unsubscribe-url').html();
      var unsubscribe_all_url = $('#unsubscribe-all-url').html();
 
@@ -74,9 +66,9 @@ $(function() {
                     ' checked ' :
                     '');
                 html += (
-                    '<label class="checkbox">' +
+                    '<div class="checkbox"><label>' +
                       '<input class="keyword-choice" type="checkbox" ' + checked + 'value="' + keyword + '"> ' + keyword +
-                    '</label>');
+                    '</label></div>');
             });
             $('#choose-keywords-list').html(html);
 

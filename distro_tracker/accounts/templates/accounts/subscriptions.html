@@ -12,50 +12,25 @@
 
 {% block content %}
 
-{% spaceless %}
-<div id="choose-keywords-modal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-  <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-    <h3>Choose keywords</h3>
-  </div>
-  <div class="modal-body">
-        <form id="choose-keywords-form">
-                <div id="choose-keywords-list">
-                </div>
-        </form>
-
-  </div>
-  <div class="modal-footer">
-    <button class="btn" id="cancel-choose-email" data-dismiss="modal" aria-hidden="true">Cancel</button>
-    <button class="btn btn-primary" id="save-keywords">Save changes</a>
-  </div>
-</div>
-{% endspaceless %}
-
-
+{% include 'accounts/_choose-keywords-modal.html' %}
 {% include 'accounts/profile-navbar.html' with active_element='subscriptions' %}
-
-{% if subscriptions|length != 1 %}
-<div class="accordion" id="accordion-emails">
-{% endif %}
 
 {% for email, email_subscriptions in subscriptions.items %}
 
-{% if subscriptions|length != 1 %}
 {# Group the subscriptions by email, if the account has multiple emails #}
-<div class="accordion-group">
-<div class="accordion-heading">
-<div class="accordion-toggle" data-toggle="collapse" data-target="#emails-{{ forloop.counter }}">
-    <b>{{ email }}</b>
+<div class="accordion-group row">
+<div class="accordion-heading col-xs-12 m-y-1">
+    <b>Subscriptions for {{ email }}</b>
+    <button class="btn btn-sm btn-default" data-toggle="collapse" data-target="#emails-{{ forloop.counter }}"><span class="octicon octicon-chevron-down" title="Toggle details"></span></button>
     {% if email_subscriptions.subscriptions %}
-<form style="display: inline-block; margin-bottom: 0px;" action="{% url 'dtracker-api-accounts-unsubscribe-all' %}" method="POST">{% csrf_token %}
-<input type="hidden" name="email" value="{{ email }}">
-<input type="hidden" name="next" value="{% url 'dtracker-accounts-subscriptions' %}">
-<button class='btn btn-mini btn-danger unsubscribe-all' class="btn btn-mini btn-danger" data-email="{{ email }}">Unsubscribe all</button>
-</form>
+    <form style="display: inline-block; margin-bottom: 0px;" action="{% url 'dtracker-api-accounts-unsubscribe-all' %}" method="POST">{% csrf_token %}
+    <input type="hidden" name="email" value="{{ email }}">
+    <input type="hidden" name="next" value="{% url 'dtracker-accounts-subscriptions' %}">
+    <button class='btn btn-sm btn-danger unsubscribe-all' data-email="{{ email }}">Unsubscribe all</button>
+    </form>
     {% endif %}
     <a href="{% url 'dtracker-accounts-profile-keywords' %}?email={{ email }}">
-        <button class="btn btn-mini modify-default-keywords" data-email="{{ email }}">Modify keywords</button>
+        <button class="btn btn-sm btn-primary modify-default-keywords" data-email="{{ email }}">Modify keywords</button>
     </a>
     <div class="default-keywords" style="display: none;" id="default-keywords-{{ forloop.counter }}">
         <ul>
@@ -64,12 +39,10 @@
             {% endfor %}
         </ul>
     </div>
-
 </div>
 </div>
-<div class="accordion-body collapse in" id="emails-{{ forloop.counter }}">
-<div class="accordion-inner">
-{% endif %}
+<div class="accordion-body collapse in row" id="emails-{{ forloop.counter }}">
+<div class="accordion-inner col-xs-12">
 
 {% if not email_subscriptions.subscriptions and not email_subscriptions.team_memberships %}
     {# This email has no subscriptions #}
@@ -78,53 +51,50 @@
 
 {% with email_number=forloop.counter|stringformat:"s" %}
 {% with accordion_id="subscriptions-accordion-"|add:email_number %}
-<div class="accordion" id="{{ accordion_id }}">
+<div class="list-group" id="{{ accordion_id }}">
 
 {% for subscription in email_subscriptions.subscriptions %}
 {# Display each subscription in a list, with the details being hidden in a toggleable tray #}
     {% with subscription_number=forloop.counter|stringformat:"s" %}
     {% with details_id=accordion_id|add:"-details-"|add:subscription_number %}
-    <div class="accordion-group subscription-group">
+    <div class="panel list-group-item accordion-group subscription-group">
         <div class="accordion-heading">
-        <div class="accordion-toggle" data-toggle="collapse" data-parent="#{{ accordion_id }}" data-target="#{{ details_id }}">
-            <div class="row-fluid">
-            <div class="span7">
-            <span class='subscription-package'>
-                {% if subscription.package.get_absolute_url %}
-                <a href="{{ subscription.package.get_absolute_url }}">{{ subscription.package }}</a>
-                {% else %}
-                {{ subscription.package }}
-                {% endif %}
-            </span>
-            <span class='subscription-package-type label'>{{ subscription.package.get_package_type_display }}</span>
-            {% if not subscription.active %}
-            <span><i class='icon-exclamation-sign' title='Subscription has not been confirmed'></i></span>
-            {% endif %}
-            </div>
-
-            <div class="pull-right">
-            <a href="{% url 'dtracker-accounts-profile-keywords' %}?package={{ subscription.package }}&email={{ email }}">
-                <div class="btn btn-small modify-subscription-keywords" data-email="{{ email }}" data-package="{{ subscription.package }}">Modify keywords</div></a>
-            <form style="margin-bottom: 0px;display:inline;" action="{% url 'dtracker-api-accounts-unsubscribe' %}" method="POST">{% csrf_token %}
-            <input type="hidden" name="package" value="{{ subscription.package }}">
-            <input type="hidden" name="email" value="{{ email }}">
-            <input type="hidden" name="next" value="{% url 'dtracker-accounts-subscriptions' %}">
-            <button class="btn btn-danger unsubscribe-package" data-email="{{ email }}" data-package="{{ subscription.package }}">Unsubscribe</button>
-            </form>
-            <div class="clear"></div>
-            </div>
-            </div>
-        </div>
+            <div class="row">
+		<div class="col-md-6">
+		    <button class="btn btn-sm btn-default" data-toggle="collapse" data-parent="#{{ accordion_id }}" data-target="#{{ details_id }}"><span class="octicon octicon-chevron-down"></span></button>
+		    <span class='subscription-package'>
+		    {% if subscription.package.get_absolute_url %}
+		    <a href="{{ subscription.package.get_absolute_url }}">{{ subscription.package }}</a>
+		    {% else %}
+		    {{ subscription.package }}
+		    {% endif %}
+		    </span>
+		    <span class='subscription-package-type label label-default'>{{ subscription.package.get_package_type_display }}</span>
+		    {% if not subscription.active %}
+		    <span class='label label-danger' title='Subscription has not been confirmed'>unconfirmed</span>
+		    {% endif %}
+		</div>
+		<div class="col-md-6">
+		    <div class="pull-xs-right">
+			<a href="{% url 'dtracker-accounts-profile-keywords' %}?package={{ subscription.package }}&email={{ email }}">
+			<div class="btn btn-sm btn-primary modify-subscription-keywords" data-email="{{ email }}" data-package="{{ subscription.package }}">Modify keywords</div></a>
+			<form style="margin-bottom: 0px;display:inline;" action="{% url 'dtracker-api-accounts-unsubscribe' %}" method="POST">{% csrf_token %}
+			<input type="hidden" name="package" value="{{ subscription.package }}">
+			<input type="hidden" name="email" value="{{ email }}">
+			<input type="hidden" name="next" value="{% url 'dtracker-accounts-subscriptions' %}">
+			<button class="btn btn-sm btn-danger unsubscribe-package" data-email="{{ email }}" data-package="{{ subscription.package }}">Unsubscribe</button>
+			</form>
+		    </div>
+		</div> 
+            </div> 
         </div>
 
         <div class="accordion-body collapse" id="{{ details_id }}">
             <div class="accordion-inner">
-            <div><b>Subscription keywords:</b></div>
-            <ul class="inline">
+		<b>Subscription keywords:</b>
                 {% for keyword in subscription.keywords.all %}
-                <li class='keyword'>{{ keyword }}</li>
+		    <span class='keyword label label-primary m-l-1'>{{ keyword }}</span>
                 {% endfor %}
-            </ul>
             </div>
         </div>
     </div>
@@ -135,49 +105,48 @@
 {# Display each team that the email is a part of #}
     {% with subscription_number=forloop.counter|stringformat:"s" %}
     {% with details_id=accordion_id|add:"-team-details-"|add:subscription_number %}
-    <div class="accordion-group team-group">
+    <div class="panel list-group-item accordion-group team-group">
         <div class="accordion-heading">
-        <div class="accordion-toggle" data-toggle="collapse" data-parent="#{{ accordion_id }}" data-target="#{{ details_id }}">
-            <div class="row-fluid"><div class="span6">
-            <span class='team-membership'>
-                <a href="{{ membership.team.get_absolute_url }}">{{ membership.team }}</a>
-            </span>
-            <span class='label label-info'>Team</span>
-            {% if membership.muted %}
-            <span><i class='icon-exclamation-sign mute-warning' title='The team is muted'></i></span>
-            {% endif %}
-            </div>
+            <div class="row">
+		<div class="col-md-6">
+		    <button class="btn btn-sm btn-default" data-toggle="collapse" data-parent="#{{ accordion_id }}" data-target="#{{ details_id }}"><span class="octicon octicon-chevron-down"></span></button>
+		    <span class='team-membership'>
+		    <a href="{{ membership.team.get_absolute_url }}">{{ membership.team }}</a>
+		    </span>
+		    <span class='label label-info'>Team</span>
+		    {% if membership.muted %}
+		    <span><i class='icon-exclamation-sign mute-warning' title='The team is muted'></i></span>
+		{% endif %}
+		</div>
 
-            <div class="pull-right">
-                <div class="btn btn-small modify-membership-keywords" data-email="{{ email }}" data-href="{% url 'dtracker-team-set-keywords' membership.team.slug %}">Modify keywords</div>
-                <a class="btn btn-small" href="{% url 'dtracker-team-manage-membership' membership.team.slug %}?email={{ email }}">Manage subscriptions</a>
-                {% if membership.muted %}
-            <form style="margin-bottom: 0px;display:inline;" action="{% url 'dtracker-team-unmute' membership.team.slug %}" method="POST">{% csrf_token %}
-                {% else %}
-            <form style="margin-bottom: 0px;display:inline;" action="{% url 'dtracker-team-mute' membership.team.slug %}" method="POST">{% csrf_token %}
-                {% endif %}
-            <input type="hidden" name="email" value="{{ email }}">
-            <input type="hidden" name="next" value="{% url 'dtracker-accounts-subscriptions' %}">
-                {% if membership.muted %}
-            <button class="btn btn-danger toggle-team-mute" data-email="{{ email }}">Unmute</button>
-                {% else %}
-            <button class="btn btn-danger toggle-team-mute" data-email="{{ email }}">Mute</button>
-                {% endif %}
-            </form>
-            <div class="clear"></div>
+		<div class="col-md-6">
+		    <div class="pull-xs-right">
+			<div class="btn btn-sm btn-primary modify-membership-keywords" data-email="{{ email }}" data-href="{% url 'dtracker-team-set-keywords' membership.team.slug %}">Modify keywords</div>
+			<a class="btn btn-sm btn-primary" href="{% url 'dtracker-team-manage-membership' membership.team.slug %}?email={{ email }}">Manage subscriptions</a>
+			{% if membership.muted %}
+			<form style="margin-bottom: 0px;display:inline;" action="{% url 'dtracker-team-unmute' membership.team.slug %}" method="POST">{% csrf_token %}
+			{% else %}
+			<form style="margin-bottom: 0px;display:inline;" action="{% url 'dtracker-team-mute' membership.team.slug %}" method="POST">{% csrf_token %}
+			{% endif %}
+			    <input type="hidden" name="email" value="{{ email }}">
+			    <input type="hidden" name="next" value="{% url 'dtracker-accounts-subscriptions' %}">
+			    {% if membership.muted %}
+			    <button class="btn btn-sm btn-danger toggle-team-mute" data-email="{{ email }}">Unmute</button>
+			    {% else %}
+			    <button class="btn btn-sm btn-danger toggle-team-mute" data-email="{{ email }}">Mute</button>
+			    {% endif %}
+			</form>
+		    </div>
+		</div>
             </div>
-            </div>
-        </div>
         </div>
 
         <div class="accordion-body collapse" id="{{ details_id }}">
             <div class="accordion-inner">
-            <div><b>Team-specific keywords:</b></div>
-            <ul class="inline">
+		<b>Team-specific keywords:</b>
                 {% for keyword in membership.default_keywords.all %}
-                <li class='keyword'>{{ keyword }}</li>
+                <span class='keyword label label-primary m-l-1'>{{ keyword }}</span>
                 {% endfor %}
-            </ul>
             </div>
         </div>
     </div>
@@ -187,39 +156,48 @@
 </div>
 
 {% endwith %}{% endwith %}
-{% endif %}
+{% endif %}{# / has subscriptions #}
 
-{% if subscriptions|length != 1 %}
-{# Close the group of subscriptions associated with one of the emails #}
-</div></div></div>
-{% endif %}
+</div></div>
 
 {% endfor %}
 
-{% if subscriptions|length != 1 %}
-{# Close the accordion grouping emails #}
+<div class="row">
+<div class="col-xs-12 m-t-1">
+<h3>Add new subscription</h3>
 </div>
-{% endif %}
-
-<h3>Subscribe</h3>
-        <form class="form-search" id="package-subscribe-form" action="{% url 'dtracker-api-accounts-subscribe' %}" method="POST">{% csrf_token %}
-            <div id="subscription-email-list" class="row-fluid span4" style="margin-bottom: 10px;">
-                <div>Emails which should be subscribed: </div>
-            {% for email in request.user.emails.all %}
-            <label class="checkbox inline">
-              <input type="checkbox" name="email" value="{{ email }}"
-              {% if email.email in selected_emails %}checked="True"{%endif %}> {{ email }}
-            </label>
-            {% endfor %}
+</div>
+<div class="row">
+<div class="col-xs-12">
+        <form class="form-horizontal" id="package-subscribe-form" action="{% url 'dtracker-api-accounts-subscribe' %}" method="POST">{% csrf_token %}
+	    <div class="form-group row">
+		<div class="col-sm-3 col-lg-2">
+		    <label class="form-label">Emails to subscribe:</label>
+		</div>
+		<div class="col-sm-9">
+		    {% for email in request.user.emails.all %}
+			<label class="checkbox-inline">
+			<input type="checkbox" name="email" value="{{ email }}"
+			{% if email.email in selected_emails %}checked="True"{%endif %}> {{ email }}
+			</label>
+		    {% endfor %}
+		</div>
             </div>
-            <div class="clear"></div>
-            <div class="span4 col col-lg-4">
-            <label>Enter a {{ DISTRO_TRACKER_VENDOR_NAME }} package name</label>
+	    <div class="form-group row">
+		<div class="col-sm-3 col-lg-2">
+		    <label for="package-search-input">{{ DISTRO_TRACKER_VENDOR_NAME }} package name:</label>
+		</div>
+		<div class="col-sm-9">
+		    <input type="hidden" value="{% url 'dtracker-accounts-subscriptions' %}" name="next">
+		    <input class="form-control" type="text" name="package" id='package-search-input' placeholder="Choose package...">
+		</div>
             </div>
-            <input type="hidden" value="{% url 'dtracker-accounts-subscriptions' %}" name="next">
-            <input type="text" name="package" id='package-search-input' placeholder="Choose package...">
-            <button type="submit" class="btn">Subscribe</button>
-
+	    <div class="form-group row">
+		<div class="col-sm-offset-3 col-lg-offset-2 col-sm-9">
+		    <button type="submit" class="btn btn-primary">Subscribe</button>
+		</div>
+            </div>
         </form>
-
+</div>
+</div>
 {% endblock %}

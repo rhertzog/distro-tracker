@@ -23,3 +23,8 @@ Misc possible enhancements:
   "anonymous=1" parameter that will force render the web page as if
   the user was not authenticated. This requires writing a dedicated
   Middleware.
+
+Bootstrap 4 port
+----------------
+* document python-bootstrapform requirement
+* replace panel by card

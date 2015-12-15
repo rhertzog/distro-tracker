@@ -1,23 +1,21 @@
 {% spaceless %}
-<div class="navbar">
-  <div class="navbar-inner">
-    <ul class="nav">
-      <li class="{% if active_element == 'profile' %}active{% endif %}">
-        <a href="{% url 'dtracker-accounts-profile' %}">Profile</a>
+<nav class="navbar navbar-light bg-faded">
+    <ul class="nav navbar-nav">
+      <li class="nav-item {% if active_element == 'profile' %}active{% endif %}">
+        <a class="nav-link" href="{% url 'dtracker-accounts-profile' %}">Profile</a>
       </li>
-      <li class="{% if active_element == 'subscriptions' %}active{% endif %}">
-        <a href="{% url 'dtracker-accounts-subscriptions' %}">Subscriptions</a>
+      <li class="nav-item {% if active_element == 'subscriptions' %}active{% endif %}">
+        <a class="nav-link" href="{% url 'dtracker-accounts-subscriptions' %}">Subscriptions</a>
       </li>
-      <li class="{% if active_element == 'change-profile' %}active{% endif %}">
-        <a href="{% url 'dtracker-accounts-profile-modify' %}">Personal Information</a>
+      <li class="nav-item {% if active_element == 'change-profile' %}active{% endif %}">
+        <a class="nav-link" href="{% url 'dtracker-accounts-profile-modify' %}">Personal Information</a>
       </li>
-      <li class="{% if active_element == 'change-password' %}active{% endif %}">
-        <a href="{% url 'dtracker-accounts-profile-password-change' %}">Change Password</a>
+      <li class="nav-item {% if active_element == 'change-password' %}active{% endif %}">
+        <a class="nav-link" href="{% url 'dtracker-accounts-profile-password-change' %}">Change Password</a>
       </li>
-      <li class="{% if active_element == 'manage-emails' %}active{% endif %}">
-        <a href="{% url 'dtracker-accounts-manage-emails' %}">Account Emails</a>
+      <li class="nav-item {% if active_element == 'manage-emails' %}active{% endif %}">
+        <a class="nav-link" href="{% url 'dtracker-accounts-manage-emails' %}">Account Emails</a>
       </li>
     </ul>
-  </div>
-</div>
+</nav>
 {% endspaceless %}

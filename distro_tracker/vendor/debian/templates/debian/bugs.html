@@ -3,45 +3,27 @@
 {# Add the bug history graph to the panel's heading #}
 {% block panel-header %}
 {{ block.super }}
-<span><a href="{{ panel.context.graph_url }}"><i class="icon-picture has-tooltip" data-title="bug history graph" data-toggle="tooltip"></i></a></span>
+<a class="m-l-1" href="{{ panel.context.graph_url }}"><span class="octicon octicon-graph" title="bug history graph"></span></a>
 {% endblock %}
 
 {% block bugs-list %}
     {% for category in panel.context.categories %}
     <li class="list-group-item">
-        <div class="list-item-key">
-            {% if category.display_name == "newcomer" %}
+        <span class="list-item-key">
+            {% if category.link %}
             <a href="{{ category.link }}">
             {% endif %}
-            <b><span class="has-tooltip" data-title="{{ category.description }}" data-toggle="tooltip">{{ category.display_name }}:</span></b>
-            {% if category.display_name == "newcomer" %}
+            <b><span title="{{ category.description }}">{{ category.display_name }}:</span></b>
+            {% if category.link %}
             </a>
             {% endif %}
-        </div>
-        <div class="list-item-value">
-            <span>
-            {% if category.url %}
-            <a href="{{ category.url }}">{{ category.bug_count }}</a>
-            {% else %}
-            {{ category.bug_count }}
-            {% endif %}
-            </span>
-            {# Add merged bug count if it was given #}
-            {% spaceless %}
-            {% if category.merged %}
-            <span>(</span>
-            {% if category.merged.url %}
-            <a href="{{ category.merged.url }}">
-            {% endif %}
-            <span>{{ category.merged.bug_count }}</span>
-            {% if category.url %}
-            </a>
-            {% endif %}
-            <span>)</span>
-            {% endif %}
-            {% endspaceless %}
-        </div>
-        <div class="clear"></div>
+        </span>
+        <a class="label label-primary label-pill pull-xs-right m-l-1"
+	title="Number of bugs" href="{{ category.url }}">{{ category.bug_count }}</a>
+	{# Add merged bug count if it was given #}
+	{% if category.merged %}
+	<a class="label label-default label-pill pull-xs-right" title="Number of bugs, including all merged bugs" href="{{ category.merged.url }}">{{ category.merged.bug_count }}</a>
+        {% endif %}
     </li>
     {% endfor %}
 {% endblock %}

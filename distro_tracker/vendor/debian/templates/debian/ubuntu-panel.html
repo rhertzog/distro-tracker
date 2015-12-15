@@ -2,9 +2,9 @@
 {% load staticfiles %}
 
 {% block panel-header %}
-<span>{{ block.super }}</span>
-<img style="margin-top: -9px; width: 14px; height: 14px" src="{% static 'img/ubuntu.png' %}" alt="Ubuntu logo">
-<span><a href="https://wiki.ubuntu.com/Ubuntu/ForDebianDevelopers" title="Information about Ubuntu for Debian Developers"><i class="icon-share"></i></a></span>
+{{ block.super }}
+<img class="m-l-1" style="width: 14px; height: 14px" src="{% static 'img/ubuntu.png' %}" alt="Ubuntu logo">
+<a class="pull-xs-right" href="https://wiki.ubuntu.com/Ubuntu/ForDebianDevelopers" title="Information about Ubuntu for Debian Developers"><span class="octicon octicon-info"></span></a>
 {% endblock %}
 
 {% block panel-body %}
@@ -13,16 +13,13 @@
 <ul class="list-group list-group-flush">
     {# Package Ubuntu version #}
     <li class="list-group-item">
-      <div class="list-item-key"><b>version:</b></div>
-      <div class="list-item-value">
-        <a href="https://launchpad.net/ubuntu/+source/{{ ubuntu_package.package.name }}">{{ ubuntu_package.version }}</a>
-      </div>
-      <div class="clear"></div>
+	<span class="list-item-key"><b>version:</b></span>
+	<a href="https://launchpad.net/ubuntu/+source/{{ ubuntu_package.package.name }}">{{ ubuntu_package.version }}</a>
     </li>
     {# Package Ubuntu bug stats #}
     {% if ubuntu_package.bugs %}
     <li class="list-group-item">
-      <a href="https://bugs.launchpad.net/ubuntu/+source/{{ ubuntu_package.package.name }}">
+	<a href="https://bugs.launchpad.net/ubuntu/+source/{{ ubuntu_package.package.name }}">
         <span>{{ ubuntu_package.bugs.bug_count }} bug{% if ubuntu_package.bugs.bug_count > 1 %}s{% endif %}</span>
       </a>
       {% if ubuntu_package.bugs.patch_count %}

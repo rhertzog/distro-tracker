@@ -2020,6 +2020,11 @@ class ActionItem(models.Model):
             'severity': {
                 'name': self.get_severity_display(),
                 'level': self.severity,
+                'label_type': {
+                    0: 'info',
+                    3: 'warning',
+                    4: 'danger',
+                }.get(self.severity, 'default')
             },
             'created': self.created_timestamp.strftime('%Y-%m-%d'),
             'updated': self.last_updated_timestamp.strftime('%Y-%m-%d'),

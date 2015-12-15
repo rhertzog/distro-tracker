@@ -6,12 +6,9 @@
     {% for category in panel.context %}{% if category.category_name %}
     <li class="list-group-item">
         {% with name=category.display_name|default:category.category_name %}
-        <div class="list-item-key"><b><span title="{{ category.description }}">{{ category.category_name }}:</span></b></div>
+	<span class="list-item-key" title="{{ category.description }}"><b>{{ category.category_name }}:</b></span>
         {% endwith %}
-        <div class="list-item-value">
-            <span>{{ category.bug_count }}</span>
-        </div>
-        <div class="clear"></div>
+	<span class="label label-default label-pill pull-xs-right">{{ category.bug_count }}</span>
     </li>
     {% endif %}{% endfor %}
     {% endblock %}

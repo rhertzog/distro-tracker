@@ -1,43 +1,16 @@
 {% extends 'core/base.html' %}
+{% load bootstrap %}
+
 {% with team=object %}
 
 {% block content %}
-<form id="update-team-form" class="form-horizontal" action="{% url 'dtracker-team-update' team.slug %}" method="POST">{% csrf_token %}
-{% if form.errors %}
-    {% for error in form.non_field_errors %}
-    <div class="alert alert-error">
-    {{ error }}
+<form id="update-team-form" class="form-horizontal col-md-8 col-md-offset-2" action="{% url 'dtracker-team-update' team.slug %}" method="POST">{% csrf_token %}
+    {{form|bootstrap_horizontal}}
+<div class="form-group row">
+    <div class="col-sm-offset-2 col-sm-10">
+	<button type="submit" class="btn btn-primary">Update</button>
     </div>
-    {% endfor %}
-{% endif %}
-<fieldset>
-    {% for field in form %}
-    {% if field.errors %}
-    <div class="control-group error">
-    {% elif form.errors %}
-    <div class="control-group success">
-    {% else %}
-    <div class="control-group">
-    {% endif %}
-        <label class="control-label" for="{{ field.auto_id }}">{{ field.label }}</label>
-        <div class="controls">
-            {{ field }}
-        {% if field.errors %}
-            {% for error in field.errors %}
-            <span class="help-inline">{{ error }}</span>
-            {% endfor %}
-            {% else %}
-            {% if field.help_text %}
-            <span class="help-inline">{{ field.help_text }}</span>
-            {% endif %}
-        {% endif %}
-        </div>
-    </div>
-    {% endfor %}
-</fieldset>
-<div class="control-group"><div class="controls">
-<button type="submit" class="btn">Update</button>
-</div></div>
+</div>
 </form>
 {% endblock %}
 

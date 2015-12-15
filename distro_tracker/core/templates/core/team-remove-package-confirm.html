@@ -3,7 +3,7 @@
 {% with team=object %}
 
 {% block content %}
-<div class="text-center">
+<div class="text-xs-center">
 <h3>
     <span>Are you sure you want to remove </span>
     {% if package.get_absolute_url %}
@@ -15,7 +15,7 @@
 </h3>
 <form action="{% url 'dtracker-team-remove-package' team.slug %}" method="POST" id="confirm-team-delete-form">{% csrf_token %}
     <input type="hidden" name="package" value="{{ package }}">
-    <a href="{{ team.get_absolute_url }}"><button type="button" class="btn">Cancel</button></a>
+    <a href="{{ team.get_absolute_url }}"><button type="button" class="btn btn-default">Cancel</button></a>
     <button class="btn btn-danger">Remove!</button>
 </form>
 </div>

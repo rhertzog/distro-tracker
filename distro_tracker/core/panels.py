@@ -474,8 +474,8 @@ class VersionedLinks(BasePanel):
 class DscLinkProvider(VersionedLinks.LinkProvider):
     icons = [
         mark_safe(
-            '<i title=".dsc, use dget on this link to retrieve source package"'
-            '   class="icon-download-alt"></i>'),
+            '<span title=".dsc, use dget on this link to retrieve source '
+            'package" class="octicon octicon-desktop-download"></span>'),
     ]
 
     def get_link_for_icon(self, package, index):

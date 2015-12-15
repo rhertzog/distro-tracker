@@ -245,6 +245,7 @@ INSTALLED_APPS = (
     'distro_tracker.core',
     'distro_tracker.accounts',
     'distro_tracker.mail',
+    'bootstrapform',
 )
 
 # See http://docs.djangoproject.com/en/dev/topics/logging for

@@ -1,8 +1,8 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
-<div class="row-fluid" style="margin-bottom: 5px;">
-    <div class="text-center"><a href="{% url 'dtracker-teams-create' %}"<button class="btn">Create a new team</button></a></div>
+<div class="row" style="margin-bottom: 5px;">
+    <div class="text-xs-center"><a href="{% url 'dtracker-teams-create' %}"<button class="btn btn-default">Create a new team</button></a></div>
 </div>
 <ul class="list-group">
 {% for team in team_list %}
@@ -14,7 +14,7 @@
 {% endfor %}
 </ul>
 {% if is_paginated %}
-<div class="text-center">
+<div class="text-xs-center">
 <div class="pagination">
 <ul>
     {% for page in page_obj.paginator.page_range %}

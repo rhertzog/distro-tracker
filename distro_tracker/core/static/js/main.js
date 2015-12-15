@@ -12,90 +12,64 @@ $(function() {
         }
     });
 
-    $('#package-search-input, .package-search-input').typeahead([
-        {
-            name: 'source-packages',
-            remote: {
-                url: '/api/package/search/autocomplete?q=%QUERY&package_type=source',
-                filter: function(r) { return r[1]; }
-            },
-            header: '<h5 class="text-center typeahead-package-title">Source packages</h5>',
-            // Use a slightly larger delay between requests than the default
-            rateLimitWait: 500
-        },
-        {
-            name: 'binary-packages',
-            remote: {
-                url: '/api/package/search/autocomplete?q=%QUERY&package_type=binary',
-                filter: function(r) { return r[1]; }
-            },
-            header: '<h5 class="text-center typeahead-package-title">Binary packages</h5>',
-            // Use a slightly larger delay between requests than the default
-            rateLimitWait: 500
-        },
-        {
-            name: 'pseudo-packages',
-            remote: {
-                url: '/api/package/search/autocomplete?q=%QUERY&package_type=pseudo',
-                filter: function(r) { return r[1]; }
-            },
-            header: '<h5 class="text-center typeahead-package-title">Pseudo Packages</h5>',
-            // Use a slightly larger delay between requests than the default
-            rateLimitWait: 500
-        }
-    ]);
-
-    $('.has-tooltip').tooltip({
-        'delay': {
-            'show': 500,
-            'hide': 50
-        }
+    var sourcePackages = new Bloodhound({
+	datumTokenizer: Bloodhound.tokenizers.obj.whitespace('value'),
+	queryTokenizer: Bloodhound.tokenizers.whitespace,
+	remote: {
+	    url: '/api/package/search/autocomplete?q=%QUERY&package_type=source',
+	    wildcard: '%QUERY',
+	    rateLimitWait: 500,
+	    transform: function(r) { return r[1]; }
+	}
+    });
+    var binaryPackages = new Bloodhound({
+	datumTokenizer: Bloodhound.tokenizers.obj.whitespace('value'),
+	queryTokenizer: Bloodhound.tokenizers.whitespace,
+	remote: {
+	    url: '/api/package/search/autocomplete?q=%QUERY&package_type=binary',
+	    wildcard: '%QUERY',
+	    rateLimitWait: 500,
+	    transform: function(r) { return r[1]; }
+	}
+    });
+    var pseudoPackages = new Bloodhound({
+	datumTokenizer: Bloodhound.tokenizers.obj.whitespace('value'),
+	queryTokenizer: Bloodhound.tokenizers.whitespace,
+	remote: {
+	    url: '/api/package/search/autocomplete?q=%QUERY&package_type=pseudo',
+	    wildcard: '%QUERY',
+	    rateLimitWait: 500,
+	    transform: function(r) { return r[1]; }
+	}
     });
 
-    /**
-     * Activate popovers for action needed items. They show the full
-     * description of the item.
-     */
-    $('.has-popover.action-needed-details').popover({
-        html: true
-    });
-    /**
-     * Asynchronously retrieve full descriptions of action needed items.
-     */
-    $('.has-popover.action-needed-details').click(function(evt) {
-        evt.preventDefault();
-        var $this = $(this);
-        // Retrieve the content only if it hasn't already been retrieved
-        if ($this.attr('data-content') !== undefined) {
-            return;
-        }
-        // The url is given in the href data attribute.
-        var href = $this.attr('data-href');
-        if (href === undefined) {
-            return;
-        }
-        $.get(href, function(data) {
-            // Build the meta data based on the response
-            var meta_data = "<div>Severity: " + data.severity.name + "</div>";
-            meta_data += "<div>Created: " + data.created + "</div>";
-            meta_data += "<div>Last Updated: " + data.updated + "</div>";
-            // Meta data goes into the title
-            $this.attr('data-original-title', meta_data);
-            // The content is the description
-            $this.attr('data-content', data.full_description);
-            $this.popover('show');
-        })
-    });
-    /**
-     * Dismiss popovers when a user clicks anywhere outside of them.
-     */
-    $('body').on('click', function (e) {
-        $('.has-popover').each(function () {
-            if (!$(this).is(e.target) && $(this).has(e.target).length === 0 && $('.popover').has(e.target).length === 0) {
-                $(this).popover('hide');
-            }
-        });
-    });
+    $('#package-search-input, .package-search-input').typeahead({
+	hint: false,
+	highlight: true,
+	minLength: 2
+    },
+    {
+	name: 'source-packages',
+	source: sourcePackages,
+	templates: {
+	    header: '<h5 class="text-center typeahead-package-title">Source packages</h5>'
+	}
+    },
+    {
+	name: 'binary-packages',
+	source: binaryPackages,
+	templates: {
+	    header: '<h5 class="text-center typeahead-package-title">Binary packages</h5>'
+	}
+    },
+    {
+	name: 'pseudo-packages',
+	source: pseudoPackages,
+	templates: {
+	    header: '<h5 class="text-center typeahead-package-title">Pseudo Packages</h5>'
+	}
+    }
+    );
 
     var subscribe_url = $('#subscribe-button').data('url');
     var unsubscribe_url = $('#unsubscribe-button').data('url')
@@ -147,7 +121,7 @@ $(function() {
                 for (var i = 0; i < data.length; ++i) {
                     var email = data[i]
                     html += (
-                        '<button class="btn subscribe-select-email" id="choose-email-' + i + '"' +
+                        '<button class="btn btn-primary m-r-1 subscribe-select-email" id="choose-email-' + i + '"' +
                         ' data-email="' + email + '" data-package="' + package_name + '">' + email +
                         '</button>'
                     );

@@ -23,10 +23,13 @@ class SourceFilesLinkProvider(VersionedLinks.LinkProvider):
     :class:`distro_tracker.core.panels.VersionedLinks` panel.
     """
     icons = [
-        mark_safe('<i class="icon-plus-sign" title="changelog"></i>'),
-        mark_safe('<i class="icon-pencil" title="copyright"></i>'),
-        mark_safe('<i class="icon-cog" title="rules"></i>'),
-        mark_safe('<i class="icon-info-sign" title="control"></i>'),
+        mark_safe('<span class="octicon octicon-tasklist" '
+                  'title="changelog"></span>'),
+        mark_safe('<span class="octicon octicon-law" '
+                  'title="copyright"></span>'),
+        mark_safe('<span class="octicon octicon-tools" title="rules"></span>'),
+        mark_safe('<span class="octicon octicon-package" '
+                  'title="control"></span>'),
     ]
 
     _file_names = [

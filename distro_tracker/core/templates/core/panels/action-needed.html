@@ -1,19 +1,37 @@
 {% extends 'core/panels/panel.html' %}
+{% load 
 
 {% block panel-body %}
-<ul class="list-group list-group-flush">
+<div class="list-group list-group-flush" id="action-needed-list">
     {% for item in panel.context.items %}
-    <li class="list-group-item">
-        {# The short description is allowed to contain some HTML markup #}
-        <span>{{ item.short_description|safe }}</span>
-        {% if item.full_description_template %}
-        <span title="details">
-        <a href="{% url 'dtracker-action-item' item.pk %}" class="has-popover action-needed-details" data-href="{% url 'dtracker-api-action-item' item.pk %}">
-            <i class="icon-question-sign"></i>
-        </a>
-        </span>
-        {% endif %}
-    </li>
+    <div class="card list-group-item">
+	<div class="card-block p-a-0 action-needed-heading">
+	    <span data-toggle="collapse"
+		  data-parent="#action-needed-list"
+		  data-target="#action-needed-details-{{ forloop.counter }}"
+		  style="padding-left: 5px; padding-right: 5px;"
+		  title="Click to toggle more details">
+		<span class="octicon octicon-chevron-down"></span>
+	    </span>
+	    {# The short description is allowed to contain some HTML markup #}
+	    {{ item.short_description|safe }}
+	    {% with severity=item.to_dict.severity %}
+	    <div class="label label-{{ severity.label_type }} pull-xs-right">{{ severity.name }}</div>
+	    {% endwith %}
+	</div>
+	<div id="action-needed-details-{{ forloop.counter }}" class="collapse">
+	    <div class="card-block">
+	    {{ item.full_description }}
+	    </div>
+	    <div class="small card-footer text-muted">
+	    Created: {{ item.created_timestamp|date:"Y-m-d" }}
+	    <span class="pull-xs-right">
+	    Last update: {{ item.last_updated_timestamp|date:"Y-m-d" }}
+		         {{  item.last_updated_timestamp|time:"H:i" }}
+	    </span>
+	    </div>
+        </div>
+    </div>
     {% endfor %}
-</ul>
+</div>
 {% endblock %}

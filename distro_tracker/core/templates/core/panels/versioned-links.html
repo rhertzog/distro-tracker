@@ -4,17 +4,14 @@
 <ul class="list-group list-group-flush">
     {% for version in panel.context %}
     <li class="list-group-item">
-        <div class="list-item-key versioned-links-version"><b>{{ version.number }}:</b></div>
-        <div class="list-item-value versioned-links-icons">
-            {% for link in version.links %}
-                {% if not link.url %}
-                <span class="versioned-links-icon versioned-links-icon-inactive">{{ link.icon_html }}</span>
-                {% else %}
-                <span class="versioned-links-icon"><a href="{{ link.url }}">{{ link.icon_html }}</a></span>
-                {% endif %}
-            {% endfor %}
-        </div>
-        <div class="clear"></div>
+        <span class="list-item-key versioned-links-version"><b>{{ version.number }}:</b></span>
+	{% for link in version.links %}
+	    {% if not link.url %}
+	    <span class="versioned-links-icon versioned-links-icon-inactive">{{ link.icon_html }}</span>
+	    {% else %}
+	    <span class="versioned-links-icon"><a href="{{ link.url }}">{{ link.icon_html }}</a></span>
+	    {% endif %}
+	{% endfor %}
     </li>
     {% endfor %}
 </ul>

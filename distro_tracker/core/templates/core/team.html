@@ -7,14 +7,14 @@
 {% block page-header %}
     <header class="page-header" id="package-page-header">
         <div class="container-fluid">
-            <div class="row-fluid">
-                <div class="span3 col col-lg-3 text-center">
+            <div class="row">
+                <div class="col-md-3 text-xs-center">
                     {% include 'core/logo.html' %}
                 </div>
-                <div class="span6 col col-lg-6 text-center">
+                <div class="col-md-6 text-xs-center">
                     <h1>{{ team }}</h1>
                 </div>
-                <div class="span3 col col-lg-3">
+                <div class="col-md-3">
                     {% include 'core/package-search-form.html' %}
                     {% include 'accounts/user-widget.html' with logout_redirect=request.path %}
 
@@ -24,8 +24,8 @@
                   <form class="unstyled-form" action="{% url 'dtracker-team-delete' team.slug %}" method="GET">
                   <button class="btn btn-danger" id="delete-team-button">Delete</button>
                   </form>
-                  <a href="{% url 'dtracker-team-update' team.slug %}"><button class="btn" id="update-team-button">Update</button></a>
-                  <a href="{% url 'dtracker-team-manage' team.slug %}"><button class="btn" id="manage-team-button">Member management</button></a>
+                  <a href="{% url 'dtracker-team-update' team.slug %}"><button class="btn btn-default" id="update-team-button">Update</button></a>
+                  <a href="{% url 'dtracker-team-manage' team.slug %}"><button class="btn btn-default" id="manage-team-button">Member management</button></a>
                   {% else %}
                   {% if user_member_of_team %}
                   {# Team meber options #}
@@ -41,10 +41,10 @@
                           {% if request.user.emails.all|length == 1 %}
                           <form class="unstyled-form" action="{% url 'dtracker-team-join' team.slug %}" method="POST">{% csrf_token %}
                           <input type="hidden" name="email" value="{{ request.user.emails.all.0 }}">
-                          <button id="join-team-button" class="btn">Join</button>
+                          <button id="join-team-button" class="btn btn-default">Join</button>
                           </form>
                           {% else %}
-                          <a href="{% url 'dtracker-team-join' team.slug %}"><button id="join-team-button" class="btn">Join</button></a>
+                          <a href="{% url 'dtracker-team-join' team.slug %}"><button id="join-team-button" class="btn btn-default">Join</button></a>
                           {% endif %}
                       {% else %}
                       <span>| </span><a title="Since the team is private, you need to contact the owner and ask to be included" href="mailto:{{ team.owner.main_email }}">Contact the owner</a>
@@ -61,6 +61,8 @@
 {# A hidden modal which asks for confirmation before deleting the team. #}
 {% spaceless %}
 <div id="confirm-team-delete-modal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+  <div class="modal-content">
   <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
     <h3>Are you sure you want to delete the team?</h3>
@@ -69,110 +71,110 @@
     <div>This action is final and permanent. Once the team is deleted it will not be possible to restore it.</div>
   </div>
   <div class="modal-footer">
-    <button class="btn" id="team-delete-cancel-button" data-dismiss="modal" aria-hidden="true">Cancel</button>
+    <button class="btn btn-default" id="team-delete-cancel-button" data-dismiss="modal" aria-hidden="true">Cancel</button>
     <form class="unstyled-form" action="{% url 'dtracker-team-delete' team.slug %}" method="POST">{% csrf_token %}
     <button class="btn btn-danger" id='confirm-team-delete-button' aria-hidden="true">Delete</button>
     </form>
+  </div>
+  </div>
   </div>
 </div>
 {% endspaceless %}
 {# A hidden modal which asks for confirmation before removing a package from the team. #}
 {% spaceless %}
 <div id="confirm-package-remove-modal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+  <div class="modal-content">
   <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-    <h3 class="text-center">Are you sure you want to remove this package from the team?</h3>
+    <h3 class="text-xs-center">Are you sure you want to remove this package from the team?</h3>
   </div>
   <div class="modal-footer">
-    <button class="btn" id="remove-package-cancel-button" data-dismiss="modal" aria-hidden="true">Cancel</button>
+    <button class="btn btn-default" id="remove-package-cancel-button" data-dismiss="modal" aria-hidden="true">Cancel</button>
     <form class="unstyled-form" action="{% url 'dtracker-team-remove-package' team.slug %}" method="POST">{% csrf_token %}
         <input id="remove-package-name" type="hidden" name="package" value="">
         <button class="btn btn-danger" id='confirm-remove-package-button' aria-hidden="true">Remove</button>
     </form>
   </div>
+  </div>
+  </div>
 </div>
 {% endspaceless %}
 
 
-<div class="row-fluid">
-    <div class="span3 col col-lg-3" id="dtracker-package-left">
+<div class="row">
+    <div class="col-md-3 col" id="dtracker-package-left">
         {% if team.public or user_member_of_team %}{# Should display? #}
         {% if team.packages.all %}{# Anything to display? #}
         <div class="panel">
             <div class="panel-heading">team packages</div>
             <div class="panel-body">
                 <ul class="list-group list-group-flush">
-                    <div class="scrollable">
                     {% with packages=team.packages.all|dictsort:'name' %}
                     {% for package in packages %}
-                    <div class="row-fluid">
                     <li class="list-group-item">
-                        <div class="span10">
+			<div class="row">
+                        <div class="col-xs-12">
                             {% if package.get_absolute_url %}
                             <span><a href="{% url 'dtracker-package-page' package %}">{{ package }}</a></span>
                             {% else %}
                             <span>{{ package }}</span>
                             {% endif %}
-                        </div>
-                        {% if user_member_of_team %}
-                        <div class="span2">
-                            <a href="{% url 'dtracker-team-remove-package' team.slug %}?package={{ package }}"><i data-package="{{ package }}" class="remove-package-from-team-button icon-remove"></i></a>
-                        </div>
-                        {% endif %}
-                    </div>
+			    {% if user_member_of_team %}
+			    <div class="pull-xs-right">
+				<a href="{% url 'dtracker-team-remove-package' team.slug %}?package={{ package }}"><span data-package="{{ package }}" class="remove-package-from-team-button octicon octicon-trashcan"></span></a>
+			    </div>
+			    {% endif %}
+			</div>
+			</div>
                     </li>
                     {% endfor %}
                     {% endwith %}
-                    </div>
                 </ul>
             </div>
         </div>
         {% endif %}
         {% endif %}
     </div>
-    <div class="span6 col col-lg-6" id="dtracker-package-center">
+    <div class="col-md-6" id="dtracker-package-center">
         <div class="panel">
             <div class="panel-heading">team info</div>
             <div class="panel-body">
                 <ul class="list-group list-group-flush">
                     <li class="list-group-item">
-                        <div class="list-item-key"><b>name:</b></div>
-                        <div class="list-item-value">{{ team.name }}</div>
-                        <div class="clear"></div>
+                        <span class="list-item-key"><b>name:</b></span>
+                        {{ team.name }}
                     </li>
                     {% if team.maintainer_email %}
                     <li class="list-group-item">
-                        <div class="list-item-key"><b>maintainer email:</b></div>
-                        <div class="list-item-value">{{ team.maintainer_email }}</div>
-                        <div class="clear"></div>
+                        <span class="list-item-key"><b>maintainer email:</b></span>
+                        {{ team.maintainer_email }}
                     </li>
                     {% endif %}
                     {% if team.url %}
                     <li class="list-group-item">
-                        <div class="list-item-key"><b>url:</b></div>
-                        <div class="list-item-value"><a href="{{ team.url }}">{{ team.url }}</a></div>
-                        <div class="clear"></div>
+                        <span class="list-item-key"><b>url:</b></span>
+                        <a href="{{ team.url }}">{{ team.url }}</a>
                     </li>
                     {% endif %}
                     {% if team.description %}
                     <li class="list-group-item">
-                        <div class="list-item-key"><b>description:</b></div>
-                        <div class="list-item-value">{{ team.description }}</div>
-                        <div class="clear"></div>
+                        <span class="list-item-key"><b>description:</b></span>
+                        {{ team.description }}
                     </li>
                     {% endif %}
                 </ul>
             </div>
         </div>
     </div>
-    <div class="span3 col col-lg-3" id="dtracker-package-right">
+    <div class="col-md-3" id="dtracker-package-right">
         {% if user_member_of_team %}
         <div class="panel">
             <div class="panel-heading">add packages</div>
             <div class="panel-body" style="padding-top: 10px;">
-                <form class="form-search unstyled-form" id="add-team-package-form" action="{% url 'dtracker-team-add-package' team.slug %}" method="POST">{% csrf_token %}
-                    <input type="text" id="id_package_name" name="package" class='package-search-input' placeholder="Choose package...">
-                    <button class="btn">Add</button>
+                <form class="form-inline" id="add-team-package-form" action="{% url 'dtracker-team-add-package' team.slug %}" method="POST">{% csrf_token %}
+                    <input class="form-control" type="text" id="id_package_name" name="package" class='package-search-input' placeholder="Choose package...">
+                    <button class="btn btn-primary">Add</button>
                 </form>
             </div>
         </div>

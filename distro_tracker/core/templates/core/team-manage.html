@@ -1,12 +1,13 @@
 {% extends 'core/base.html' %}
+{% load bootstrap %}
 
 {% block content %}
-<h1 class="text-center">Member management for team <a href="{{ team.get_absolute_url }}">{{ team }}</a></h1>
+<h1 class="text-xs-center">Member management for team <a href="{{ team.get_absolute_url }}">{{ team }}</a></h1>
 <div>
     <h3>Add user to team</h3>
-<form class="form-search" id="team-add-user-form" action="{% url 'dtracker-team-add-member' team.slug %}" method="POST">{% csrf_token %}
-    {{ form }}
-    <button class="btn">Add member</button>
+<form class="form-inline" id="team-add-user-form" action="{% url 'dtracker-team-add-member' team.slug %}" method="POST">{% csrf_token %}
+    {{ form|bootstrap_inline }}
+    <button class="btn btn-default">Add member</button>
 </form>
 </div>
 <div>
@@ -14,12 +15,12 @@
 <ul class="list-group">
 {% for member in members_list %}
 <li class="list-group-item">
-    <div class="row-fluid">
-    <div class="span10">{{ member }}</div>
-    <div class="span2">
+    <div class="row">
+    <div class="col-md-10">{{ member }}</div>
+    <div class="col-md-2">
         <form class="unstyled-form" action="{% url 'dtracker-team-remove-member' team.slug %}" method="POST">{% csrf_token %}
         <input type="hidden" name="email" value="{{ member }}">
-        <button class="btn btn-mini btn-danger remove-user-button">Remove</button>
+        <button class="btn btn-xs btn-danger remove-user-button">Remove</button>
         </form>
     </div>
     </div>
@@ -27,7 +28,7 @@
 {% endfor %}
 </ul>
 {% if is_paginated %}
-<div class="text-center">
+<div class="text-xs-center">
 <div class="pagination">
 <ul>
     {% for page in page_obj.paginator.page_range %}

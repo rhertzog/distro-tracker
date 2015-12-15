@@ -1,24 +1,24 @@
 {% extends 'core/panels/panel.html' %}
 
 {% block panel-header %}
-<div class="row-fluid">
-<div class="pull-left">
-    <span>{{ panel.title }}</span>
+<div class="row">
+<div class="col-xs-12">
+    {{ panel.title }}
     {% if panel.context.external_resources %}
     {% for external in panel.context.external_resources %}
-    <a href="{{ external.url }}" title="{{ external.description }}">
-        <i class="icon-share"></i>
+    <a class="m-l-1" href="{{ external.url }}" title="{{ external.description }}">
+        <span class="octicon octicon-link-external"></i>
     </a>
     {% endfor %}
     {% endif %}
+    {% with versions=panel.context.version_info %}
+    <div class="pull-xs-right">
+	{% if versions.default_pool_url %}
+	<a href="{{ versions.default_pool_url }}" title="pool directory"><span class="octicon octicon-file-directory"></span></a>
+	{% endif %}
+    </div>
+    {% endwith %}
 </div>
-{% with versions=panel.context.version_info %}
-<div class="pull-right">
-    {% if versions.default_pool_url %}
-    <a href="{{ versions.default_pool_url }}" title="pool directory"><i class="icon-folder-open"></i></a>
-    {% endif %}
-</div>
-{% endwith %}
 </div>
 {% endblock %}
 {% block panel-body %}
@@ -26,13 +26,12 @@
 {% with versions=panel.context.version_info %}
     {% for item in versions.version_list %}
     <li class="list-group-item">
-        <div class="list-item-key versions-repository"><b><span title="{{ item.repository.name }}">{{ item.repository.shorthand }}:</span></b></div>
-        <div class="list-item-value">
-            {% with url=item.url|default:"#" %}
-            <a href="{{ url }}">{{ item.version }}</a>
-            {% endwith %}
-        </div>
-        <div class="clear"></div>
+	<span class="list-item-key versions-repository" title="{{ item.repository.name }}">
+	    <b>{{ item.repository.shorthand }}:</b>
+	</span>
+	{% with url=item.url|default:"#" %}
+	<a href="{{ url }}">{{ item.version }}</a>
+	{% endwith %}
     </li>
     {% endfor %}
 {% endwith %}
@@ -40,17 +39,14 @@
     {# Add any vendor provided versions #}
     {% for item in panel.context.vendor_versions %}
     <li class="list-group-item">
-        <div class="list-item-key versions-repository">
+        <span class="list-item-key versions-repository">
             {% if item.repository_link %}<a href="{{ item.repository_link }}">{% endif %}
             <span title="waiting in the NEW queue for FTP master review"><b>{{ item.repository_shorthand }}:</b></span>
             {% if item.repository_link %}</a>{% endif %}
-        </div>
-        <div class="list-item-value">
-            {% if item.version_link %}<a href="{{ item.version_link }}">{% endif %}
-            <span>{{ item.version }}</span>
-            {% if item.version_link %}</a> {% endif %}
-        </div>
-        <div class="clear"></div>
+        </span>
+	{% if item.version_link %}<a href="{{ item.version_link }}">{% endif %}
+	<span>{{ item.version }}</span>
+	{% if item.version_link %}</a> {% endif %}
     </li>
     {% endfor %}
 </ul>

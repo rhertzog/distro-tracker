@@ -2,11 +2,11 @@
 {% block title %}Merge Accounts | {{ block.super }}{% endblock %}
 
 {% block content %}
-<div class="text-center">
+<div class="text-xs-center">
     <p>You are about to confirm the merge of two accounts.</p>
     <p>All emails currently associated with the account with email address <i>{{ confirmation.merge_with.main_email }}</i> will be moved to the account with the email address <i>{{ confirmation.initial_user.main_email }}</i>. After this, if you wish to log in using any of the emails from the former account you will have to use the password of the latter account. Additionally, please be aware that this account's account-specific settings (first name, last name) will be lost.</p>
 </div>
-<div class="text-center">
+<div class="text-xs-center">
     <h4>Are you sure you want to finalize the accounts merge?</h4>
     <form action="" method="POST" id="confirm-account-merge-finalize-form">{% csrf_token %}
         <input type="hidden" name="email" value="{{ user_email }}">

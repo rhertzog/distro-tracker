@@ -1,7 +1,7 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
-<h1 class="text-center">{{ item.short_description|safe }}</h1>
+<h1 class="text-xs-center">{{ item.short_description|safe }}</h1>
 <div>
 <dl class="dl-horizontal">
     <dt>package:</dt>
@@ -15,7 +15,7 @@
 </ul>
 </div>
 <hr>
-<div class="row-fluid">
+<div class="row">
     {% include item.full_description_template %}
 </div>
 {% endblock %}
