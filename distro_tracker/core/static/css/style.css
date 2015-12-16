@@ -11,9 +11,7 @@
 }
 
 .page-header {
-    border-bottom: 1px solid #D70751;
-    margin: .5rem 0 1rem;
-    padding-bottom: 0.5rem;
+    padding: 0.5rem 0;
 }
 
 .separator {
