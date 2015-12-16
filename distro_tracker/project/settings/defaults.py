@@ -242,10 +242,10 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.admin',
     'django_email_accounts',
+    'distro_tracker.html',
     'distro_tracker.core',
     'distro_tracker.accounts',
     'distro_tracker.mail',
-    'bootstrapform',
 )
 
 # See http://docs.djangoproject.com/en/dev/topics/logging for
