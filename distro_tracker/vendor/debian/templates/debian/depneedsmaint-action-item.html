@@ -1,10 +1,11 @@
 <div>The packages that {{ item.package }} depends on which need a new maintainer are:</div>
 <ul>
-{% for package, all_dependencies in item.extra_data.items %}
+{% for package, pkgdata in item.extra_data.items %}
 <li>
 <a href="{% url 'dtracker-package-page' package %}">{{ package }}</a>
+(<a href="https://bugs.debian.org/{{ pkgdata.bug }}">#{{ pkgdata.bug }}</a>)
 <ul>
-{% for dependency_type, dependencies in all_dependencies.items %}
+{% for dependency_type, dependencies in pkgdata.details.items %}
 <li>{{ dependency_type }}:
 {% for dependency in dependencies %}
 {{ dependency.binary }}
@@ -15,5 +16,4 @@
 </span>
 </li>
 {% endfor %}
-
 </ul>

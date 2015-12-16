@@ -2051,7 +2051,7 @@ class UpdateWnppStatsTask(BaseTask):
         }
         action_item.save()
 
-    def update_depneedsmaint_action_item(self, package_needs_maintainer):
+    def update_depneedsmaint_action_item(self, package_needs_maintainer, stats):
         short_description_template = (
             'The package depends on source packages which need '
             'a new maintainer.'
@@ -2071,16 +2071,22 @@ class UpdateWnppStatsTask(BaseTask):
                     item_type=action_item_type,
                     extra_data={})
 
-            if package_needs_maintainer.name in action_item.extra_data:
-                if action_item.extra_data == dependency.details:
-                    # Nothing has changed
-                    continue
+            pkgdata = {
+                'bug': stats['bug_id'],
+                'details': dependency.details,
+            }
+
+            if (action_item.extra_data.get(package_needs_maintainer.name, {}) ==
+                    pkgdata):
+                # Nothing has changed
+                continue
+
             action_item.short_description = short_description_template
-            action_item.extra_data[package_needs_maintainer.name] = \
-                dependency.details
+            action_item.extra_data[package_needs_maintainer.name] = pkgdata
 
             action_item.save()
 
+    @transaction.atomic
     def execute(self):
         wnpp_stats = self.get_wnpp_stats()
         if wnpp_stats is None:
@@ -2107,15 +2113,22 @@ class UpdateWnppStatsTask(BaseTask):
             ],
             non_obsolete_packages=packages_depneeds_maint)
 
+        # Drop all reverse references
+        for ai in ActionItem.objects.filter(
+                item_type__type_name='debian-depneedsmaint'):
+            ai.extra_data = {}
+            ai.save()
+
         packages = SourcePackageName.objects.filter(name__in=wnpp_stats.keys())
         packages = packages.prefetch_related('action_items')
 
         for package in packages:
-            self.update_action_item(package, wnpp_stats[package.name])
+            stats = wnpp_stats[package.name]
+            self.update_action_item(package, stats)
             # Update action items for packages which depend on this one to
             # indicate that a dependency needs a new maintainer.
             if package.name in packages_need_maintainer:
-                self.update_depneedsmaint_action_item(package)
+                self.update_depneedsmaint_action_item(package, stats)
 
 
 class UpdateNewQueuePackages(BaseTask):
