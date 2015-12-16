@@ -1,15 +1,23 @@
 {% extends 'core/base.html' %}
 
-{% block content %}
-<h3>Lookup package information</h3>
-<div class="row">
-    {% include 'core/package-search-form.html' with search_form_use_label=1 autofocus=1 %}
+{% block introduction %}
+<div class="introduction">
+    <div class="container">
+        <p class="lead">Tracker let you follow the evolution of a Debian-based distribution both with email updates and a comprehensive web interface.</p>
+    </div>
 </div>
 
-<h3>Other useful pages</h3>
-<ul>
-{% for link_url, link_text in application_links %}
-<li><a href="{{ link_url }}">{{ link_text }}</a></li>
-{% endfor %}
-</ul>
+<div class="container">
+    <h3>Lookup package information</h3>
+    <div class="row">
+        {% include 'core/package-search-form.html' with search_form_use_label=1 autofocus=1 %}
+    </div>
+    <br/>
+    <h3>Other useful pages</h3>
+    <ul>
+    {% for link_url, link_text in application_links %}
+      <li><a href="{{ link_url }}">{{ link_text }}</a></li>
+    {% endfor %}
+    </ul>
+</div>
 {% endblock %}
