@@ -19,12 +19,19 @@
         <header class="page-header">
             <div class="container-fluid">
                 {% block page-header-content %}
-                <div>
-                <div class="pull-xs-right" style="float: right;">{% include 'accounts/user-widget.html' %}</div>
-                <div class="text-xs-center" style="margin-left: auto; margin-right: auto;">{% include 'core/logo.html' %}</div>
-                <div class="clear"></div>
-                </div>
-                <div class="row text-xs-center"><div id="header-pts"><h4>{{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracker</h4></div></div>
+		<div class="row">
+		<div class="col-xs-12 text-xs-center">
+		    <div class="pull-xs-left">{% include 'core/logo.html' %}</div>
+		    <div class="pull-xs-right">
+		    {% block page-header-right %}
+		    {% include 'accounts/user-widget.html' %}
+		    {% endblock %}
+		    </div>
+		    {% block page-header-title %}
+		    <span class="h1">{{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracker</span>
+		    {% endblock %}
+		</div>
+		</div>
                 {% endblock %}
             </div>
         </header>
@@ -36,7 +43,7 @@
         </div>
 
         <hr>
-        <footer id="footer" class="footer">
+        <footer id="footer">
             <div class="container-fluid">
                 <div class="text-xs-center">
                     {% block footer %}
