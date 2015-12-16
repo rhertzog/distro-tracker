@@ -1,8 +1,9 @@
 {% extends 'core/base.html' %}
 
-{% block content %}
+{% block page-header-title %}
 <h1 class="text-xs-center">News for package <a href="{% url 'dtracker-package-page' package %}">{{ package }}</a></h1>
-<div class="row">
+{% endblock %}
+
+{% block content %}
 {% include "core/news_list.html" %}
-</div>
 {% endblock %}
