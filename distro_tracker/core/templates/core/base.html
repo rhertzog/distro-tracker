@@ -37,13 +37,12 @@
         </header>
         {% endblock %}
 
-        {% block introduction %}
-        {% endblock %}
-
-        <div class="container-fluid">
+	{% block page-content %}
+        <div class="container">
             {% block content %}
             {% endblock %}
         </div>
+	{% endblock %}
 
         <hr>
         <footer id="footer">

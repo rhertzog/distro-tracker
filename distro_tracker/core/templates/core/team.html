@@ -45,7 +45,7 @@
     {% endif %}
 {% endblock %}
 
-{% block content %}
+{% block page-content %}
 {# A hidden modal which asks for confirmation before deleting the team. #}
 {% spaceless %}
 <div id="confirm-team-delete-modal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
@@ -90,6 +90,7 @@
 {% endspaceless %}
 
 
+<div class="container-fluid">
 <div class="row">
     <div class="col-md-3 col" id="dtracker-package-left">
         {% if team.public or user_member_of_team %}{# Should display? #}
@@ -169,7 +170,7 @@
         {% endif %}
     </div>
 </div>
-
+</div>
 {% endblock %}
 
 {% endwith %}
