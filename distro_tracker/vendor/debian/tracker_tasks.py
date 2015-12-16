@@ -2052,10 +2052,8 @@ class UpdateWnppStatsTask(BaseTask):
         action_item.save()
 
     def update_depneedsmaint_action_item(self, package_needs_maintainer, stats):
-        short_description_template = (
-            'The package depends on source packages which need '
-            'a new maintainer.'
-        )
+        short_description_template = \
+            'Depends on packages which need a new maintainer'
         package_needs_maintainer.get_absolute_url()
         action_item_type = ActionItemType.objects.create_or_update(
             type_name='debian-depneedsmaint',
