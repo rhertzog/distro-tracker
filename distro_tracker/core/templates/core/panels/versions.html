@@ -26,7 +26,7 @@
 {% with versions=panel.context.version_info %}
     {% for item in versions.version_list %}
     <li class="list-group-item">
-	<span class="list-item-key versions-repository" title="{{ item.repository.name }} ({{item.repository.codename }})">
+	<span class="list-item-key versions-repository" title="{{ item.repository.name }} ({{item.repository.codename }}{% if item.repository.suite != item.repository.codename %} / {{ item.repository.suite }}{% endif %})">
 	    <b>{{ item.repository.shorthand }}:</b>
 	</span>
 	{% with url=item.url|default:"#" %}
