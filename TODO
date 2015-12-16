@@ -2,9 +2,6 @@ Bugs and new features:
 ----------------------
 See http://bugs.debian.org/tracker.debian.org for almost everything.
 
-* Implement backwards compatibility with X-PTS- fields in the debian
-  vendor.
-
 Refactoring:
 ------------
 * Create a generic task downloading data from an URL and transforming it
