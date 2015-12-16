@@ -26,7 +26,7 @@
 {% with versions=panel.context.version_info %}
     {% for item in versions.version_list %}
     <li class="list-group-item">
-	<span class="list-item-key versions-repository" title="{{ item.repository.name }}">
+	<span class="list-item-key versions-repository" title="{{ item.repository.name }} ({{item.repository.codename }})">
 	    <b>{{ item.repository.shorthand }}:</b>
 	</span>
 	{% with url=item.url|default:"#" %}
