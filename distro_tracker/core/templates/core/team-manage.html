@@ -29,13 +29,11 @@
 </ul>
 {% if is_paginated %}
 <div class="text-xs-center">
-<div class="pagination">
-<ul>
+<ul class="pagination">
     {% for page in page_obj.paginator.page_range %}
-    <li {% if page_obj.number == page %}class="active"{% endif %}><a href="?page={{ page }}">{{ page }}</a></li>
+    <li class="page-item{% if page_obj.number == page %} active{% endif %}"><a class="page-link" href="?page={{ page }}">{{ page }}</a></li>
     {% endfor %}
 </ul>
-</div>
 </div>
 </div>
 {% endif %}

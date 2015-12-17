@@ -19,8 +19,7 @@
 {% endwith %}
 {% if panel.context.has_more %}
 <div class="text-xs-center" style="margin-bottom: -1rem">
-<div class="pagination m-b-0 p-l-0">
-    <ul class="list-inline">
+    <ul class="pagination m-b-0">
 	<li class="page-item">
 	    <a class="page-link" href="{% url 'dtracker-package-news' package.name %}">1</a>
 	</li>
@@ -28,7 +27,6 @@
 	    <a class="page-link" href="{% url 'dtracker-package-news' package.name %}?page=2">2</a>
 	</li>
     </ul>
-</div>
 </div>
 {% endif %}
 {% endblock %}

@@ -9,6 +9,7 @@ Refactoring:
 * Handle octicons through a template tag which ensures we have proper
   fallback for screen readers and text-mode (non CSS-aware) browsers.
   cf #753800
+* Template tag for bootstrap pagination widget.
 
 Misc possible enhancements:
 ---------------------------
