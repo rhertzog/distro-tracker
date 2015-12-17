@@ -1,7 +1,7 @@
 {% spaceless %}
         <form class="form-inline" id="package-search-form" action="{% url 'dtracker-package-search' %}" method="GET">
             {% if search_form_use_label %}
-            <div class="col col-md-4">
+            <div class="col-md-4">
             <label for="package-search-input">Enter a {{ DISTRO_TRACKER_VENDOR_NAME }} source or pseudo package name</label>
             </div>
             {% endif %}
