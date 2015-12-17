@@ -174,7 +174,7 @@
 		<div class="col-sm-3 col-lg-2">
 		    <label class="form-label">Emails to subscribe:</label>
 		</div>
-		<div class="col-sm-9">
+		<div class="col-sm-9" id="dt-subscription-email-list">
 		    {% for email in request.user.emails.all %}
 			<label class="checkbox-inline">
 			<input type="checkbox" name="email" value="{{ email }}"
@@ -189,7 +189,7 @@
 		</div>
 		<div class="col-sm-9">
 		    <input type="hidden" value="{% url 'dtracker-accounts-subscriptions' %}" name="next">
-		    <input class="form-control package-completion" type="text" name="package" id="package-search-input" placeholder="Choose package...">
+		    <input class="form-control package-completion" type="text" name="package" placeholder="Choose package...">
 		</div>
             </div>
 	    <div class="form-group row">
