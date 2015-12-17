@@ -89,7 +89,11 @@
     <li class="list-group-item">
         <span class="list-item-key"><b>VCS:</b></span>
 	{% with vcs=ctx.vcs.full_name|default:ctx.vcs.type %}
+	{% if vcs|lower == "cvs" %}
+	<span title="{{ ctx.vcs.url }}">{{ vcs }}</span>
+	{% else %}
 	<a href="{{ ctx.vcs.url }}">{{ vcs }}</a>
+	{% endif %}
 	{% if ctx.vcs.browser %}
 	(<a href="{{ ctx.vcs.browser }}">Browse</a>)
 	{% endif %}
