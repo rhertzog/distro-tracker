@@ -43,7 +43,7 @@ $(function() {
 	}
     });
 
-    $('#package-search-input, .package-search-input').typeahead({
+    $('.package-completion').typeahead({
 	hint: false,
 	highlight: true,
 	minLength: 2
