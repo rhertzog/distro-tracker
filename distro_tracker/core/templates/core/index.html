@@ -3,7 +3,7 @@
 {% block page-content %}
 <div class="introduction">
     <div class="container">
-	<p class="lead m-b-0">This services lets you follow the evolution
+	<p class="lead m-b-0">This service lets you follow the evolution
 	of {{ DISTRO_TRACKER_VENDOR_NAME }} both with email updates and a
 	comprehensive web interface.</p>
     </div>
@@ -11,15 +11,16 @@
 
 <div class="container">
     <h3>Lookup package information</h3>
-    <div class="row">
+    <p>
         {% include 'core/package-search-form.html' with search_form_use_label=1 autofocus=1 %}
-    </div>
-    <br/>
+    </p>
     <h3>Other useful pages</h3>
+    <p>
     <ul>
     {% for link_url, link_text in application_links %}
       <li><a href="{{ link_url }}">{{ link_text }}</a></li>
     {% endfor %}
     </ul>
+    </p>
 </div>
 {% endblock %}
