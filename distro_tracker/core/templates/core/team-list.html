@@ -1,10 +1,20 @@
 {% extends 'core/base.html' %}
 
-{% block content %}
-<div class="row" style="margin-bottom: 5px;">
-    <div class="text-xs-center"><a href="{% url 'dtracker-teams-create' %}"<button class="btn btn-default">Create a new team</button></a></div>
+{% block title %}Teams | {{ block.super }}{% endblock %}
+
+{% block page-header-title %}
+<h1>List of teams</h1>
+{% endblock %}
+
+{% block page-header-right %}
+<div class="m-b-1">
+{% include 'accounts/user-widget.html' with logout_redirect=request.path %}
 </div>
-<ul class="list-group">
+<a href="{% url 'dtracker-teams-create' %}" class="btn btn-primary">Create a new team</a>
+{% endblock %}
+
+{% block content %}
+<ul class="list-group m-t-1">
 {% for team in team_list %}
 <li class="list-group-item">
     <span><a href="{{ team.get_absolute_url }}">{{ team }}</a></span>
