@@ -317,8 +317,9 @@ class AptCache(object):
         for entry in sources_list.list:
             for index_file in entry.index_files:
                 if os.path.basename(sources_file) in index_file.describe:
-                    split_description = index_file.describe.split()
-                    component_url = split_description[0] + split_description[1]
+                    base_url, component, _ = index_file.describe.split(None, 2)
+                    base_url = base_url.rstrip('/')
+                    component_url = base_url + '/' + component
                     break
         for repository in Repository.objects.all():
             if component_url in repository.component_urls:
