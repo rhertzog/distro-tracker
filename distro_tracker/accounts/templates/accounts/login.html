@@ -2,12 +2,14 @@
 {% block title %}Log in | {{ block.super }}{% endblock %}
 
 {% block content %}
-{% include 'accounts/post-form.html' with form_id='form-login' %}
-<div class="row">
-    {# The offset here should match the one in the include above #}
-    <div class="col-sm-offset-2 col-sm-10 m-t-1">
-	<a id="forgot-password-link" href="{% url 'dtracker-accounts-forgot-password' %}">Forgot your password?</a>
+<div id="login-form-container">
+    {% include 'accounts/post-form.html' with form_id='form-login' %}
+    <div class="row">
+	{# The offset here should match the one in the include above #}
+	<div class="col-sm-offset-2 col-sm-10 m-t-1">
+	    <a id="forgot-password-link" href="{% url 'dtracker-accounts-forgot-password' %}">Forgot your password?</a>
+	</div>
     </div>
+    {% include 'accounts/login-extra.html' %}
 </div>
-{% include 'accounts/login-extra.html' %}
 {% endblock %}
