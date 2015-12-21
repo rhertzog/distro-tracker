@@ -363,14 +363,14 @@ class ModifyKeywordsView(LoginRequiredMixin, View):
         email = request.GET['email']
 
         try:
-            user_email = request.user.useremail.get(email=email)
+            user_email = request.user.emails.get(email=email)
         except UserEmail.DoesNotExist:
             return HttpResponseForbidden()
 
         if 'package' in request.GET:
             package = request.GET['package']
             subscription = get_object_or_404(
-                Subscription, email_settings__user_emailr=user_email,
+                Subscription, email_settings__user_email=user_email,
                 package__name=package)
             context = {
                 'post': {
