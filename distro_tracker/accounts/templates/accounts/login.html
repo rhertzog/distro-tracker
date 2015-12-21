@@ -4,7 +4,10 @@
 {% block content %}
 {% include 'accounts/post-form.html' with form_id='form-login' %}
 <div class="row">
-    <h4 style="margin-left: 180px;"><a href="{% url 'dtracker-accounts-forgot-password' %}">Forgot your password?</a></h4>
+    {# The offset here should match the one in the include above #}
+    <div class="col-sm-offset-2 col-sm-10 m-t-1">
+	<a id="forgot-password-link" href="{% url 'dtracker-accounts-forgot-password' %}">Forgot your password?</a>
+    </div>
 </div>
 {% include 'accounts/login-extra.html' %}
 {% endblock %}
