@@ -8,7 +8,7 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.shortcuts import get_list_or_404, get_object_or_404
 
 from distro_tracker.core.models import RepositoryRelation
@@ -18,8 +18,8 @@ from .utils import compare_repositories, CATEGORIES_VERSION_COMPARISON
 
 def index(request):
     list_derivatives = get_list_or_404(RepositoryRelation, name='derivative')
-    return render_to_response('derivative/index.html',
-                              {'list_derivatives': list_derivatives})
+    return render(request, 'derivative/index.html',
+                  {'list_derivatives': list_derivatives})
 
 
 def comparison(request, distribution):
@@ -32,4 +32,4 @@ def comparison(request, distribution):
         'repository': repository,
         'target_repository': relation.target_repository,
     }
-    return render_to_response('derivative/comparison.html', context)
+    return render(request, 'derivative/comparison.html', context)
