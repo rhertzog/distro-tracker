@@ -2801,7 +2801,7 @@ class CodeSearchLinksTest(TestCase):
 
     def test_code_search_view_missing_query_parameter(self):
         """Test codesearch view with missing query parameter"""
-        # missing query paramter
+        # missing query parameter
         response = self.client.get(reverse('dtracker-code-search'),
                                    {'package': self.package.name})
         self.assertEqual(response.status_code, 400)

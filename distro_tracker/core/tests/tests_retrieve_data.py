@@ -200,7 +200,7 @@ class RetrievePseudoPackagesTest(TestCase):
         self.populate_packages(self.packages)
         old_packages = self.packages
         self.packages = []
-        # Sanity check: there were no subscription-only packages originaly
+        # Sanity check: there were no subscription-only packages originally
         self.assertEqual(
             PackageName.objects.filter(source=False, binary=False,
                                        pseudo=False).count(),
@@ -396,7 +396,7 @@ class RetrieveSourcesInformationTest(TestCase):
 
     def assert_events_raised(self, events):
         """
-        Asserts that the update task emited all the given events.
+        Asserts that the update task emitted all the given events.
         """
         raised_event_names = [
             event.name

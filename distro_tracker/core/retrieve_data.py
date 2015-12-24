@@ -801,7 +801,7 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                                                 default_repository)
 
         # Create all the model instances in one transaction
-        self.log("Commiting SourcePackagesDeps to database")
+        self.log("Committing SourcePackagesDeps to database")
         SourcePackageDeps.objects.all().delete()
         SourcePackageDeps.objects.bulk_create(dependency_instances)
 

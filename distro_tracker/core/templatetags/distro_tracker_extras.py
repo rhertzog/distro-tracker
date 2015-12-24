@@ -65,7 +65,7 @@ def lookup(dictionary, key):
     """
     A filter to retrieve values from dictionaries.
 
-    The lookup filter can access dictionnary entries by their key, where the
+    The lookup filter can access dictionary entries by their key, where the
     key can be a variable and not only a literal value. It can be used
     like this "dictionary|lookup:key" where both "dictionary" and "key"
     are variables.

@@ -64,7 +64,7 @@ class BaseTask(six.with_metaclass(PluginRegistry)):
         this classmethod.
 
         If none of those is done, the default value is the name of the class,
-        i.e. the ``__name__`` atribute of the class.
+        i.e. the ``__name__`` attribute of the class.
         """
         if hasattr(cls, 'NAME'):
             return cls.NAME

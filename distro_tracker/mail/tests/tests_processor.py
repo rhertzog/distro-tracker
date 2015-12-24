@@ -508,7 +508,7 @@ class MailQueueTest(TestCase, QueueHelperMixin):
         path = self.create_mail('a')
         # We wait the end of the task for max 1 second
         process.join(1)
-        # Process finished succesfully (and we're not here due to timeout)
+        # Process finished successfully (and we're not here due to timeout)
         if process.is_alive():
             process.terminate()
             self.fail("process_loop did not terminate")

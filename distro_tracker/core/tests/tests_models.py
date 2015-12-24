@@ -1271,7 +1271,7 @@ class BinaryPackageTests(TestCase):
 
     def test_binary_package_name_to_source_name_default_repository(self):
         """
-        Tests retrieving a source package name from a bianry package name when
+        Tests retrieving a source package name from a binary package name when
         the resulting source package name should be the one from the default
         repository.
         """

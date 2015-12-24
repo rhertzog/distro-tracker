@@ -958,7 +958,7 @@ class Repository(models.Model):
         """Returns a boolean indicating whether the repository is used for
         development.
 
-        A developement repository is a repository where new
+        A development repository is a repository where new
         versions of packages tend to be uploaded. The list of development
         repositories can be provided in the list
         DISTRO_TRACKER_DEVEL_REPOSITORIES (it should contain codenames and/or
