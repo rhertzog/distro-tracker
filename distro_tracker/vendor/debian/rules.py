@@ -12,7 +12,6 @@ from __future__ import unicode_literals
 
 import os.path
 import re
-import urllib
 import requests
 
 from django import forms
@@ -501,7 +500,7 @@ def get_bug_tracker_url(package_name, package_type, category_name):
     return (
         domain +
         'cgi-bin/pkgreport.cgi?' +
-        urllib.urlencode(query_parameters)
+        urlencode(query_parameters)
     )
 
 
