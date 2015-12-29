@@ -285,3 +285,7 @@ ul.inline > li {
   padding-left: 0;
   padding-right: 10px;
 }
+
+label {
+  cursor: pointer;
+}
