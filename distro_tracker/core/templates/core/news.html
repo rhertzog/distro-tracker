@@ -1,10 +1,11 @@
 {% extends 'core/base.html' %}
 
+{% block page-header-title %}
+    <h1>{{ news.title }}</h1>
+{% endblock %}
+
 {% block content %}
-<h1 class="text-xs-center">{{ news.title }}</h1>
-<div class="row">
-    <h4 class="text-xs-center">News for package <a href="{% url 'dtracker-package-page' news.package %}">{{ news.package }}</a></h4>
-</div>
+<h4 class="text-xs-center">News for package <a href="{% url 'dtracker-package-page' news.package %}">{{ news.package }}</a></h4>
 <div class="row">
     {% if news_renderer.template_name %}
     {% include news_renderer.template_name with ctx=news_renderer.context %}
