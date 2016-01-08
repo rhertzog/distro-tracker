@@ -2374,7 +2374,7 @@ class UpdateAutoRemovalsStatsTask(BaseTask):
             'bugs_dependencies': ', '.join(
                 link.format(bug, bug) for bug in bugs_dependencies),
             'buggy_dependencies': ' and '.join(
-                ['<a href="/pkg/{}">{}</a>'.format(
+                ['<a href="{}">{}</a>'.format(
                     reverse(
                         'dtracker-package-page',
                         kwargs={'package_name': p}),
