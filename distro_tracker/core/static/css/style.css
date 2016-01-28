@@ -289,3 +289,10 @@ ul.inline > li {
 label {
   cursor: pointer;
 }
+
+.chevron {
+  padding-left: 5px;
+  padding-right: 5px;
+  cursor: pointer;
+  color: #0275D8;
+}
