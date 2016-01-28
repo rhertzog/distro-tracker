@@ -164,9 +164,7 @@ class UnsubscribeCommand(Command):
         Implementation of a hook method which is executed instead of
         :py:meth:`handle` when the command is not confirmed.
         """
-        nonbinary_pkgname = \
-            PackageName.objects.exclude(binary=True).filter(name=self.package)
-        if not nonbinary_pkgname.exists():
+        if not SourcePackageName.objects.exists_with_name(self.package):
             if BinaryPackageName.objects.exists_with_name(self.package):
                 binary_package = \
                     BinaryPackageName.objects.get_by_name(self.package)
@@ -181,7 +179,6 @@ class UnsubscribeCommand(Command):
                 self.warn(
                     '{package} is neither a source package '
                     'nor a binary package.'.format(package=self.package))
-                return False
         settings = get_or_none(EmailSettings, user_email__email=self.user_email)
         if not settings or not settings.is_subscribed_to(self.package):
             self.error(
