@@ -5074,7 +5074,7 @@ class UpdateDebciStatusTaskTest(TestCase):
         action_item = self.other_package.action_items.all()[0]
         url = "https://ci.debian.net/packages/o/other-package/"
         log = "https://ci.debian.net/data/packages/unstable/amd64/o/" + \
-            "other-package/latest-autopkgtest/log"
+            "other-package/latest-autopkgtest/log.gz"
         self.assertIn(url, action_item.short_description)
         self.assertIn(log, action_item.short_description)
         self.assertEqual(action_item.extra_data['duration'], "0h 8m 8s")
@@ -5150,7 +5150,7 @@ class UpdateDebciStatusTaskTest(TestCase):
         action_item = libpackage.action_items.all()[0]
         action_item_log_url = action_item.extra_data['log']
         log_url = "https://ci.debian.net/data/packages/unstable/amd64/libp/" + \
-            "libpackage/latest-autopkgtest/log"
+            "libpackage/latest-autopkgtest/log.gz"
 
         self.assertEqual(action_item_log_url, log_url)
 

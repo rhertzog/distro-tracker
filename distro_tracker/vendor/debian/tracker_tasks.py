@@ -2214,7 +2214,7 @@ class UpdateDebciStatusTask(BaseTask):
         url = 'https://ci.debian.net/packages/' + log_dir + '/' + \
             package_name + '/'
         log = 'https://ci.debian.net/data/packages/unstable/amd64/' + \
-            log_dir + "/" + package_name + '/latest-autopkgtest/log'
+            log_dir + "/" + package_name + '/latest-autopkgtest/log.gz'
         debci_action_item.short_description = self.ITEM_DESCRIPTION.format(
             debci_url=url,
             log_url=log)
