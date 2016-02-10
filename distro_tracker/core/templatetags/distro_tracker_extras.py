@@ -9,7 +9,9 @@
 # except according to the terms contained in the LICENSE file.
 """Additional distro-tracker specific template tags."""
 from __future__ import unicode_literals
+
 from django import template
+from django.template.loader import render_to_string
 
 register = template.Library()
 
@@ -49,20 +51,26 @@ def repeat(parser, token):
     return RepeatNode(nodelist, count)
 
 
-@register.inclusion_tag('core/octicon.html')
-def octicon(name, text):
+@register.simple_tag()
+def octicon(name, title='', content=None):
     """
     Renders an octicon with alternate text.
     """
-    return { 'name':name, 'text':text }
+    if content is None:
+        content = "[{}]".format(title)
+
+    return render_to_string(
+        'core/octicon.html',
+        {'name': name, 'title': title, 'content': content}
+    )
 
 
-@register.inclusion_tag('core/toggle-chevron.html')
-def toggle_chevron():
+@register.simple_tag()
+def toggle_chevron(title='Toggle details', content=None):
     """
     Renders a chevron to toggle details.
     """
-    return {}
+    return octicon('chevron-down', title, content)
 
 
 @register.filter(name='zip')

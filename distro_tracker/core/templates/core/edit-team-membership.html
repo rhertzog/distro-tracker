@@ -22,7 +22,8 @@
         <div class="accordion-heading">
             <div class="row">
             <div class="col-md-10">
-	    <button class="btn btn-sm btn-default" data-toggle="collapse" data-parent="#{{ accordion_id }}" data-target="#{{ accordion_id }}-details-{{ forloop.counter }}">{% toggle-chevron %}</button>
+	    <button class="btn btn-sm btn-default" data-toggle="collapse"
+		data-parent="#{{ accordion_id }}" data-target="#{{ accordion_id }}-details-{{ forloop.counter }}">{% toggle_chevron %}</button>
             {% if pkg.get_absolute_url %}
             <a href="{{ pkg.get_absolute_url }}">{{ pkg }}</a>
             {% else %}
