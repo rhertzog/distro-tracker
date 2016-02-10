@@ -49,6 +49,22 @@ def repeat(parser, token):
     return RepeatNode(nodelist, count)
 
 
+@register.inclusion_tag('core/octicon.html')
+def octicon(name, text):
+    """
+    Renders an octicon with alternate text.
+    """
+    return { 'name':name, 'text':text }
+
+
+@register.inclusion_tag('core/toggle-chevron.html')
+def toggle_chevron():
+    """
+    Renders a chevron to toggle details.
+    """
+    return {}
+
+
 @register.filter(name='zip')
 def zip_iterables(first, second):
     """

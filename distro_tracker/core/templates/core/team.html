@@ -1,5 +1,6 @@
 {% extends "core/base.html" %}
 {% load staticfiles %}
+{% load distro_tracker_extras %}
 {% with team=object %}
 
 {% block title %}{{ block.super }} - {{ team }}{% endblock %}
@@ -111,7 +112,7 @@
                             {% endif %}
 			    {% if user_member_of_team %}
 			    <div class="pull-xs-right">
-				<a href="{% url 'dtracker-team-remove-package' team.slug %}?package={{ package }}"><span data-package="{{ package }}" class="remove-package-from-team-button octicon octicon-trashcan"></span></a>
+				<a href="{% url 'dtracker-team-remove-package' team.slug %}?package={{ package }}"><span data-package="{{ package }}" class="remove-package-from-team-button">{% octicon 'trashcan' 'remove package from team' %}</span></a>
 			    </div>
 			    {% endif %}
 			</div>

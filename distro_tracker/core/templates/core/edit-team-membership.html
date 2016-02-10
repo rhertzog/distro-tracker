@@ -1,5 +1,6 @@
 {% extends 'core/base.html' %}
 {% load staticfiles %}
+{% load distro_tracker_extras %}
 
 {% block extra-js %}
 <script src="{% static 'accounts/js/profile.js' %}"></script>
@@ -21,8 +22,7 @@
         <div class="accordion-heading">
             <div class="row">
             <div class="col-md-10">
-	    <button class="btn btn-sm btn-default" data-toggle="collapse" data-parent="#{{ accordion_id }}" data-target="#{{ accordion_id }}-details-{{ forloop.counter }}"><span class="octicon
-		octicon-chevron-down"></span></button>
+	    <button class="btn btn-sm btn-default" data-toggle="collapse" data-parent="#{{ accordion_id }}" data-target="#{{ accordion_id }}-details-{{ forloop.counter }}">{% toggle-chevron %}</button>
             {% if pkg.get_absolute_url %}
             <a href="{{ pkg.get_absolute_url }}">{{ pkg }}</a>
             {% else %}

@@ -14,7 +14,7 @@ files in the :class:`distro_tracker.core.panels.VersionedLinks` panel.
 from __future__ import unicode_literals
 from distro_tracker.core.panels import VersionedLinks
 from distro_tracker.core.models import ExtractedSourceFile
-from django.utils.safestring import mark_safe
+from distro_tracker.core.templatetags.distro_tracker_extras import octicon
 
 
 class SourceFilesLinkProvider(VersionedLinks.LinkProvider):
@@ -23,13 +23,10 @@ class SourceFilesLinkProvider(VersionedLinks.LinkProvider):
     :class:`distro_tracker.core.panels.VersionedLinks` panel.
     """
     icons = [
-        mark_safe('<span class="octicon octicon-tasklist" '
-                  'title="changelog"></span>'),
-        mark_safe('<span class="octicon octicon-law" '
-                  'title="copyright"></span>'),
-        mark_safe('<span class="octicon octicon-tools" title="rules"></span>'),
-        mark_safe('<span class="octicon octicon-package" '
-                  'title="control"></span>'),
+        octicon('tasklist', 'changelog'),
+        octicon('law', 'copyright'),
+        octicon('tools', 'rules'),
+        octicon('package', 'control'),
     ]
 
     _file_names = [

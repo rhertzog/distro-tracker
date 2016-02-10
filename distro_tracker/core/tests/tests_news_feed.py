@@ -357,5 +357,5 @@ class NewsFeedTests(TestCase):
 
         response = self.client.get(pkg_url)
 
-        self.assertIn('<a title="rss feed" href="{}">'.format(rss_url),
+        self.assertIn('<a href="{}">'.format(rss_url),
                       response.content.decode('utf8'))

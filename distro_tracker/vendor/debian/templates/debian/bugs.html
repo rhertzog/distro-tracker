@@ -1,9 +1,10 @@
 {% extends 'core/panels/bugs.html' %}
+{% load distro_tracker_extras %}
 
 {# Add the bug history graph to the panel's heading #}
 {% block panel-header %}
 {{ block.super }}
-<a class="m-l-1" href="{{ panel.context.graph_url }}"><span class="octicon octicon-graph" title="bug history graph"></span></a>
+<a class="m-l-1" href="{{ panel.context.graph_url }}">{% octicon 'graph' 'bug history graph' %}</a>
 {% endblock %}
 
 {% block bugs-list %}

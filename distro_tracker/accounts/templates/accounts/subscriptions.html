@@ -1,5 +1,6 @@
 {% extends 'core/base.html' %}
 {% load staticfiles %}
+{% load distro_tracker_extras %}
 {% block title %}Subscriptions | {{ block.super }}{% endblock %}
 
 {% block extra-js %}
@@ -21,7 +22,7 @@
 <div class="accordion-group row">
 <div class="accordion-heading col-xs-12 m-y-1">
     <b>Subscriptions for {{ email }}</b>
-    <button class="btn btn-sm btn-default" data-toggle="collapse" data-target="#emails-{{ forloop.counter }}"><span class="octicon octicon-chevron-down" title="Toggle details"></span></button>
+    <button class="btn btn-sm btn-default" data-toggle="collapse" data-target="#emails-{{ forloop.counter }}">{% toggle_chevron %}</button>
     {% if email_subscriptions.subscriptions %}
     <form style="display: inline-block; margin-bottom: 0px;" action="{% url 'dtracker-api-accounts-unsubscribe-all' %}" method="POST">{% csrf_token %}
     <input type="hidden" name="email" value="{{ email }}">
@@ -61,7 +62,7 @@
         <div class="accordion-heading">
             <div class="row">
 		<div class="col-md-6">
-		    <button class="btn btn-sm btn-default" data-toggle="collapse" data-parent="#{{ accordion_id }}" data-target="#{{ details_id }}"><span class="octicon octicon-chevron-down"></span></button>
+		    <button class="btn btn-sm btn-default" data-toggle="collapse" data-parent="#{{ accordion_id }}" data-target="#{{ details_id }}">{% toggle_chevron %}</button>
 		    <span class='subscription-package'>
 		    {% if subscription.package.get_absolute_url %}
 		    <a href="{{ subscription.package.get_absolute_url }}">{{ subscription.package }}</a>
@@ -109,7 +110,7 @@
         <div class="accordion-heading">
             <div class="row">
 		<div class="col-md-6">
-		    <button class="btn btn-sm btn-default" data-toggle="collapse" data-parent="#{{ accordion_id }}" data-target="#{{ details_id }}"><span class="octicon octicon-chevron-down"></span></button>
+		    <button class="btn btn-sm btn-default" data-toggle="collapse" data-parent="#{{ accordion_id }}" data-target="#{{ details_id }}">{% toggle_chevron %}</button>
 		    <span class='team-membership'>
 		    <a href="{{ membership.team.get_absolute_url }}">{{ membership.team }}</a>
 		    </span>

@@ -25,6 +25,7 @@ from distro_tracker.core.models import PackageExtractedInfo
 from distro_tracker.core.models import MailingList
 from distro_tracker.core.models import News
 from distro_tracker.core.models import BinaryPackageBugStats
+from distro_tracker.core.templatetags.distro_tracker_extras import octicon
 from debian.debian_support import AptPkgVersion
 from collections import defaultdict
 
@@ -473,9 +474,8 @@ class VersionedLinks(BasePanel):
 
 class DscLinkProvider(VersionedLinks.LinkProvider):
     icons = [
-        mark_safe(
-            '<span title=".dsc, use dget on this link to retrieve source '
-            'package" class="octicon octicon-desktop-download"></span>'),
+        octicon('desktop-download',
+                '.dsc, use dget on this link to retrieve source package'),
     ]
 
     def get_link_for_icon(self, package, index):

@@ -1,12 +1,13 @@
 {% extends 'core/panels/panel.html' %}
+{% load distro_tracker_extras %}
 
 {% block panel-header %}
 <div class="row">
     <div class="col-xs-12">
 	<a href="{% url 'dtracker-package-news' package.name %}">{{ panel.title }}</a>
 	<div class="pull-xs-right">
-	    <a title="rss feed" href="{% url 'dtracker-package-rss-news-feed' package.name %}">
-	    <span class="octicon octicon-rss"></span>
+	    <a href="{% url 'dtracker-package-rss-news-feed' package.name %}">
+	    {% octicon 'rss' 'rss feed' %}
 	    </a>
 	</div>
     </div>

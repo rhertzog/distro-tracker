@@ -1,4 +1,5 @@
 {% extends 'core/panels/panel.html' %}
+{% load distro_tracker_extras %}
 
 {% block panel-header %}
 <div class="row">
@@ -6,15 +7,15 @@
     {{ panel.title }}
     {% if panel.context.external_resources %}
     {% for external in panel.context.external_resources %}
-    <a class="m-l-1" href="{{ external.url }}" title="{{ external.description }}">
-        <span class="octicon octicon-link-external"></span>
+    <a class="m-l-1" href="{{ external.url }}">
+        {% octicon 'link-external' external.description %}
     </a>
     {% endfor %}
     {% endif %}
     {% with versions=panel.context.version_info %}
     <div class="pull-xs-right">
 	{% if versions.default_pool_url %}
-	<a href="{{ versions.default_pool_url }}" title="pool directory"><span class="octicon octicon-file-directory"></span></a>
+	<a href="{{ versions.default_pool_url }}">{% octicon 'file-directory' 'pool directory' %}</a>
 	{% endif %}
     </div>
     {% endwith %}

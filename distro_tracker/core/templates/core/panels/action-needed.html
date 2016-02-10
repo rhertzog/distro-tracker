@@ -1,5 +1,6 @@
 {% extends 'core/panels/panel.html' %}
 {% load 
+{% load distro_tracker_extras %}
 
 {% block panel-body %}
 <div class="list-group list-group-flush" id="action-needed-list">
@@ -9,9 +10,8 @@
 	    <span data-toggle="collapse"
 		  data-parent="#action-needed-list"
 		  data-target="#action-needed-details-{{ forloop.counter }}"
-		  class="chevron"
-		  title="Click to toggle more details">
-		<span class="octicon octicon-chevron-down"></span>
+		  class="chevron">
+		{% toggle-chevron %}
 	    </span>
 	    {# The short description is allowed to contain some HTML markup #}
 	    {{ item.short_description|safe }}
