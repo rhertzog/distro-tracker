@@ -718,6 +718,18 @@ class MailQueueEntryTest(TestCase, QueueHelperMixin):
             if count > 50:
                 self.fail("schedule_next_try doesn't want to fail")
 
+    def test_schedule_next_try_sets_log_failure_on_first_try(self):
+        '''Should not log failure on first try'''
+        self.entry.set_data('log_failure', True)
+        self.entry.schedule_next_try()
+        self.assertFalse(self.entry.get_data('log_failure'))
+
+    def test_schedule_next_try_does_log_failure_on_last_try_only(self):
+        '''Should log failure on last try'''
+        while not self.entry.get_data('log_failure'):
+            self.assertTrue(self.entry.schedule_next_try())
+        self.assertFalse(self.entry.schedule_next_try())
+
     def test_schedule_next_try_sets_next_try_time(self):
         '''The scheduling is done via next_try_time data entry'''
         self.patch_now()

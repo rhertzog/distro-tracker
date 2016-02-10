@@ -341,12 +341,12 @@ LOGGING = {
             'level': 'DEBUG',
         },
         'distro_tracker.mail': {
-            'handlers': ['mail.log'],
+            'handlers': ['mail.log', 'mail_admins'],
             'level': 'DEBUG',
             'propagate': True,
         },
         'distro_tracker.tasks': {
-            'handlers': ['tasks.log'],
+            'handlers': ['tasks.log', 'mail_admins'],
             'level': 'DEBUG',
             'propagate': True,
         },

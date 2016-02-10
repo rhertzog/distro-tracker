@@ -170,9 +170,14 @@ class MailProcessor(object):
                                              keyword=keyword)
 
 
-def run_mail_processor(mail_path):
-    processor = MailProcessor(mail_path)
-    processor.process()
+def run_mail_processor(mail_path, log_failure=False):
+    try:
+        processor = MailProcessor(mail_path)
+        processor.process()
+    except Exception:
+        if log_failure:
+            logger.exception("Failed to process incoming mail %s", mail_path)
+        raise
 
 
 class MailQueue(object):
@@ -361,12 +366,13 @@ class MailQueueEntry(object):
         Create a MailProcessor and schedule its execution in the worker pool.
         """
         next_try_time = self.get_data('next_try_time')
+        log_failure = self.get_data('log_failure')
         now = distro_tracker.core.utils.now()
         if next_try_time and next_try_time > now:
             return
 
         result = self.queue.pool.apply_async(run_mail_processor,
-                                             (self.path, ),
+                                             (self.path, log_failure),
                                              callback=self._processed_cb)
         self.set_data('task_result', result)
 
@@ -414,18 +420,18 @@ class MailQueueEntry(object):
             task_result.get()
             self._processed_cb(task_result)
         except MailProcessorException:
-            logger.exception('Failed processing %s', self.identifier)
+            logger.warning('Failed processing %s', self.identifier)
             self.move_to_subfolder('failed')
             self.queue.remove(self.identifier)
         except Exception:
             if not self.schedule_next_try():
-                logger.exception('Failed processing %s (and stop retrying)',
-                                 self.identifier)
+                logger.warning('Failed processing %s (and stop retrying)',
+                               self.identifier)
                 self.move_to_subfolder('broken')
                 self.queue.remove(self.identifier)
             else:
-                logger.exception('Failed processing %s (but will retry later)',
-                                 self.identifier)
+                logger.warning('Failed processing %s (but will retry later)',
+                               self.identifier)
 
     def schedule_next_try(self):
         """
@@ -454,6 +460,7 @@ class MailQueueEntry(object):
         self.set_data('next_try_time', now + delay)
         self.set_data('tries', count + 1)
         self.set_data('task_result', None)
+        self.set_data('log_failure', count + 1 == len(delays))
 
         return True
 
