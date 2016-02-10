@@ -80,7 +80,8 @@ class LintianStats(models.Model):
         report = 'full' if full else 'maintainer'
 
         return (
-            'http://lintian.debian.org/{report}/{maintainer}.html#{pkg}'.format(
+            'https://lintian.debian.org/{report}/'
+            '{maintainer}.html#{pkg}'.format(
                 report=report,
                 maintainer=lintian_maintainer_email,
                 pkg=self.package)

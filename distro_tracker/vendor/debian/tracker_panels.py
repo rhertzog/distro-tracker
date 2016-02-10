@@ -170,7 +170,7 @@ class DebtagsLink(LinksPanel.ItemProvider):
     Add a link to debtags editor.
     """
     SOURCES_URL_TEMPLATE = \
-        'http://debtags.debian.net/rep/todo/maint/{maint}#{package}'
+        'https://debtags.debian.org/rep/todo/maint/{maint}#{package}'
 
     def get_panel_items(self):
         if not isinstance(self.package, SourcePackageName):
@@ -213,7 +213,7 @@ class ScreenshotsLink(LinksPanel.ItemProvider):
     Add a link to screenshots.debian.net
     """
     SOURCES_URL_TEMPLATE = \
-        'http://screenshots.debian.net/package/{package}'
+        'https://screenshots.debian.net/package/{package}'
 
     def get_panel_items(self):
         if not isinstance(self.package, SourcePackageName):

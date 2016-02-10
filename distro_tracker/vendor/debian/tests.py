@@ -5240,7 +5240,7 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
             "packages": [{
                 "maintainer": "Jane Doe",
                 "name": "dummy",
-                "url": "http://screenshots.debian.net/package/dummy",
+                "url": "https://screenshots.debian.net/package/dummy",
                 "section": "universe/games",
                 "maintainer_email": "jane@example.com",
                 "homepage": "http://example.com/packages/dummy",
@@ -5261,7 +5261,7 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
             "packages": [{
                 "maintainer": "John Doe",
                 "name": "other",
-                "url": "http://screenshots.debian.net/package/other",
+                "url": "https://screenshots.debian.net/package/other",
                 "section": "universe/games",
                 "maintainer_email": "john@example.com",
                 "homepage": "http://example.com/packages/other",
@@ -5297,7 +5297,7 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
             "packages": [{
                 "maintainer": "John Doe",
                 "name": "other",
-                "url": "http://screenshots.debian.net/package/other",
+                "url": "https://screenshots.debian.net/package/other",
                 "section": "universe/games",
                 "maintainer_email": "john@example.com",
                 "homepage": "http://example.com/packages/other",
