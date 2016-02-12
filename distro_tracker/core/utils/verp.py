@@ -128,6 +128,7 @@ def _decode_chars(address):
     """
     for char in _CHARACTERS:
         address = address.replace(_ENCODE_MAPPINGS[char], char)
+        address = address.replace(_ENCODE_MAPPINGS[char].lower(), char)
     return address
 
 

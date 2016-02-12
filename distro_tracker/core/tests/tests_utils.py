@@ -103,6 +103,13 @@ class VerpModuleTest(SimpleTestCase):
                 'bounce-user+2B+21+25+2D+3A+40+5B+5D+2B=other.com@dom.com'),
             ('bounce@dom.com', 'user+!%-:@[]+@other.com'))
 
+    def test_decode_lowercase_code(self):
+        """Encoding of special characters with lowercase should work"""
+        self.assertEqual(
+            verp.decode(
+                'bounce-user+2b+2d+3a=other.com@dom.com'),
+            ('bounce@dom.com', 'user+-:@other.com'))
+
     def test_invariant_encode_decode(self):
         """
         Tests that decoding an encoded address returns the original pair.
