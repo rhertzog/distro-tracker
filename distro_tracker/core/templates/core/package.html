@@ -3,6 +3,10 @@
 
 {% block title %}{{ block.super }} - {{ package }}{% endblock %}
 
+{% block extra-css %}
+<link href="{% static 'css/dense.css' %}" rel="stylesheet" media="screen">
+{% endblock %}
+
 {% block extra-head %}
 <link rel="alternate" type="application/rss+xml" title="RSS" href="{% url 'dtracker-package-rss-news-feed' package.name %}">
 {% endblock %}

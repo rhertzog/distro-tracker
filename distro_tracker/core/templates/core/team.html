@@ -5,6 +5,10 @@
 
 {% block title %}{{ block.super }} - {{ team }}{% endblock %}
 
+{% block extra-css %}
+<link href="{% static 'css/dense.css' %}" rel="stylesheet" media="screen">
+{% endblock %}
+
 {% block page-header-title %}
 <h1>{{ team }}</h1>
 {% endblock %}
