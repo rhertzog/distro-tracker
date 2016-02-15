@@ -98,7 +98,7 @@
             {% endif %}
             {% endfor %}
         </div>
-        <div class="col-md-6" id="dtracker-package-center">
+        <div class="col-md-6 col-xl-7" id="dtracker-package-center">
             {% for panel in panels.center %}
             {% if panel.template_name %}
                 {% include panel.template_name %}
@@ -107,7 +107,7 @@
             {% endif %}
             {% endfor %}
         </div>
-        <div class="col-md-3" id="dtracker-package-right">
+        <div class="col-md-3 col-xl-2" id="dtracker-package-right">
             {% for panel in panels.right %}
             {% if panel.template_name %}
                 {% include panel.template_name %}
