@@ -76,7 +76,7 @@ class UserEmailBounceStatsManager(models.Manager):
         :param date: The date of the required stats
         :type date: :py:class:`datetime.datetime`
         """
-        user = self.get(email=email)
+        user = self.get(email__iexact=email)
         bounce_stats, created = user.bouncestats_set.get_or_create(date=date)
         if created:
             self.limit_bounce_information(email)
@@ -121,7 +121,7 @@ class UserEmailBounceStatsManager(models.Manager):
         Makes sure not to keep more records than the number of days set by
         DISTRO_TRACKER_MAX_DAYS_TOLERATE_BOUNCE
         """
-        user = self.get(email=email)
+        user = self.get(email__iexact=email)
         days = settings.DISTRO_TRACKER_MAX_DAYS_TOLERATE_BOUNCE
         for info in user.bouncestats_set.all()[days:]:
             info.delete()

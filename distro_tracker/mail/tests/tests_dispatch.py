@@ -590,6 +590,25 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         self.assertEqual(self.user.emailsettings.subscription_set.count(),
                          subscription_count)
 
+    def test_bounce_recorded_with_differing_case(self):
+        self.subscribe_user_to_package('SomeOne@domain.com', 'dummy-package')
+        self.user = UserEmailBounceStats.objects.get(email='SomeOne@domain.com')
+
+        self.assertEqual(self.user.bouncestats_set.count(), 0)
+
+        dispatch.handle_bounces(
+            self.create_bounce_address('someone@domain.com'))
+
+        bounce_stats = self.user.bouncestats_set.all()
+        self.assertEqual(bounce_stats.count(), 1)
+        self.assertEqual(bounce_stats[0].date, timezone.now().date())
+        self.assertEqual(bounce_stats[0].mails_bounced, 1)
+
+    def test_bounce_handler_with_unknown_user_email(self):
+        # This should just not generate any exception...
+        dispatch.handle_bounces(
+            self.create_bounce_address('unknown-user@domain.com'))
+
 
 class BounceStatsTest(TestCase):
     """

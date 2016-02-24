@@ -398,11 +398,17 @@ def handle_bounces(sent_to_address):
     except ValueError:
         logger.warning('bounces :: invalid date in address %s', bounce_email)
         return
+
+    logger.info('bounces :: received one for %s/%s', user_email, date)
+    try:
+        user = UserEmailBounceStats.objects.get(email__iexact=user_email)
+    except UserEmailBounceStats.DoesNotExist:
+        logger.warning('bounces :: unknown user email %s', user_email)
+        return
+
     UserEmailBounceStats.objects.add_bounce_for_user(email=user_email,
                                                      date=date)
 
-    logger.info('bounces :: received one for %s/%s', user_email, date)
-    user = UserEmailBounceStats.objects.get(email=user_email)
     if user.has_too_many_bounces():
         logger.info('bounces => %s has too many bounces', user_email)
 
