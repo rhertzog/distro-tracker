@@ -769,6 +769,8 @@ def pre_login(form):
     directly through local authentication.
     """
     username = form.cleaned_data.get('username')
+    if not username:
+        return
     user_email = get_or_none(UserEmail, email=username)
     emails = [username]
     if user_email and user_email.user:
