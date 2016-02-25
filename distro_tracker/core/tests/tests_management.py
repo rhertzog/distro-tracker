@@ -14,14 +14,20 @@
 Tests for the Distro Tracker core management commands.
 """
 from __future__ import unicode_literals
-from distro_tracker.test import SimpleTestCase
-from distro_tracker.test import TestCase
+
 from django.utils.six.moves import mock
 from django.core.management import call_command
-from distro_tracker.core.models import SourcePackageName
+
+from distro_tracker.accounts.models import User
+from distro_tracker.accounts.models import UserEmail
 from distro_tracker.core.models import EmailNews
+from distro_tracker.core.models import EmailSettings
 from distro_tracker.core.models import News
+from distro_tracker.core.models import SourcePackageName
+from distro_tracker.core.models import Subscription
 from distro_tracker.core.utils import message_from_bytes
+from distro_tracker.test import SimpleTestCase
+from distro_tracker.test import TestCase
 
 
 class RunTaskManagementCommandTest(SimpleTestCase):
@@ -157,3 +163,63 @@ class UpdateNewsSignaturesCommandTest(TestCase):
         # The unsigned messages still do not have any signature info
         for unsigned in unsigned_news:
             self.assertEqual(0, unsigned.signed_by.count())
+
+
+class FixDatabaseCommandTests(TestCase):
+
+    def setUp(self):
+        self.email = 'user@example.net'
+        self.alt_email = self.email.capitalize()
+        self.user_email = UserEmail.objects.create(email=self.email)
+        self.alt_user_email = UserEmail.objects.create(email=self.alt_email)
+        self.subscribe(self.user_email, 'pkg-1')
+        self.subscribe(self.alt_user_email, 'pkg-2')
+
+    def subscribe(self, email, package):
+        # Special subscribe method which avoids the case insensitive lookup
+        pkg, _ = SourcePackageName.objects.get_or_create(name=package)
+        user_email, _ = UserEmail.objects.get_or_create(
+            email__exact=email,
+            defaults={'email': email}
+        )
+        es, _ = EmailSettings.objects.get_or_create(user_email=user_email)
+        Subscription.objects.create(package=pkg, email_settings=es)
+
+    def test_management_command_drop_duplicates(self):
+        call_command('tracker_fix_database')
+        self.assertEqual(UserEmail.objects.filter(email=self.alt_email).count(),
+                         0)
+
+    def test_management_command_merges_users(self):
+        user = User(main_email=self.alt_email)
+        user.save()
+        user.emails.add(self.alt_user_email)
+
+        self.alt_user_email.refresh_from_db()
+        self.assertIsNotNone(self.alt_user_email.user)
+        self.user_email.refresh_from_db()
+        self.assertIsNone(self.user_email.user)
+
+        call_command('tracker_fix_database')
+
+        self.user_email.refresh_from_db()
+        self.assertEqual(self.user_email.user.pk, user.pk)
+
+    def test_management_command_merges_subscriptions(self):
+        call_command('tracker_fix_database')
+
+        subscriptions = self.user_email.emailsettings.subscription_set
+        self.assertEqual(subscriptions.filter(package__name='pkg-1').count(), 1)
+        self.assertEqual(subscriptions.filter(package__name='pkg-2').count(), 1)
+
+    def test_management_command_merges_subscriptions_ignores_existing(self):
+        """
+        Ensure that the subscription merge handles properly the case where
+        the same subscription is present on both UserEmail
+        """
+        self.subscribe(self.user_email, 'pkg-2')
+
+        call_command('tracker_fix_database')
+
+        subscriptions = self.user_email.emailsettings.subscription_set
+        self.assertEqual(subscriptions.filter(package__name='pkg-2').count(), 1)
