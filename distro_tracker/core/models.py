@@ -571,7 +571,7 @@ class SubscriptionManager(models.Manager):
             did not even exist.
         """
         package = get_or_none(PackageName, name=package_name)
-        user_email = get_or_none(UserEmail, email=email)
+        user_email = get_or_none(UserEmail, email__iexact=email)
         email_settings = get_or_none(EmailSettings, user_email=user_email)
         if not package or not user_email or not email_settings:
             return False
@@ -596,7 +596,7 @@ class SubscriptionManager(models.Manager):
            clients should not count on chaining additional filters to the
            result.
         """
-        user_email = get_or_none(UserEmail, email=email)
+        user_email = get_or_none(UserEmail, email__iexact=email)
         email_settings = get_or_none(EmailSettings, user_email=user_email)
         if not user_email or not email_settings:
             return []

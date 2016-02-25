@@ -294,7 +294,8 @@ def get_maintainer_extra(developer_email, package_name=None):
      - Whether the maintainer agrees with lowthreshold NMU
      - Whether the maintainer is a Debian Maintainer
     """
-    developer = get_or_none(DebianContributor, email__email=developer_email)
+    developer = get_or_none(DebianContributor,
+                            email__email__iexact=developer_email)
     if not developer:
         # Debian does not have any extra information to include in this case.
         return None
@@ -323,7 +324,8 @@ def get_uploader_extra(developer_email, package_name=None):
     if package_name is None:
         return
 
-    developer = get_or_none(DebianContributor, email__email=developer_email)
+    developer = get_or_none(DebianContributor,
+                            email__email__iexact=developer_email)
     if not developer:
         return
 
@@ -771,7 +773,7 @@ def pre_login(form):
     username = form.cleaned_data.get('username')
     if not username:
         return
-    user_email = get_or_none(UserEmail, email=username)
+    user_email = get_or_none(UserEmail, email__iexact=username)
     emails = [username]
     if user_email and user_email.user:
         emails += [x.email for x in user_email.user.emails.all()]

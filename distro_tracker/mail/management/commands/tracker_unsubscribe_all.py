@@ -45,7 +45,7 @@ class Command(BaseCommand):
         :returns: A message explaining the result of the operation.
         :rtype: string
         """
-        user = get_or_none(UserEmail, email=email)
+        user = get_or_none(UserEmail, email__iexact=email)
         if not user:
             return ('Email {email} is not subscribed to any packages. '
                     'Bad email?'.format(email=email))

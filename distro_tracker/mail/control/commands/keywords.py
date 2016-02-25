@@ -59,7 +59,7 @@ class KeywordCommandMixin(object):
         :param email: The email of the user.
         :param package_name: The name of the package.
         """
-        user_email = get_or_none(UserEmail, email=email)
+        user_email = get_or_none(UserEmail, email__iexact=email)
         email_settings = get_or_none(EmailSettings, user_email=user_email)
         if not user_email or not email_settings:
             self.error_not_subscribed(email, package_name)

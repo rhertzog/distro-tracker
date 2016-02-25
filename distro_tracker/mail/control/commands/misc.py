@@ -63,7 +63,8 @@ class SubscribeCommand(Command):
         Implementation of a hook method which is executed instead of
         :py:meth:`handle` when the command is not confirmed.
         """
-        settings = get_or_none(EmailSettings, user_email__email=self.user_email)
+        settings = get_or_none(EmailSettings,
+                               user_email__email__iexact=self.user_email)
         if settings and settings.is_subscribed_to(self.package):
             self.warn('{email} is already subscribed to {package}'.format(
                 email=self.user_email,
@@ -179,7 +180,8 @@ class UnsubscribeCommand(Command):
                 self.warn(
                     '{package} is neither a source package '
                     'nor a binary package.'.format(package=self.package))
-        settings = get_or_none(EmailSettings, user_email__email=self.user_email)
+        settings = get_or_none(EmailSettings,
+                               user_email__email__iexact=self.user_email)
         if not settings or not settings.is_subscribed_to(self.package):
             self.error(
                 "{email} is not subscribed, you can't unsubscribe.".format(
@@ -368,7 +370,8 @@ class UnsubscribeallCommand(Command):
         Implementation of a hook method which is executed instead of
         :py:meth:`handle` when the command is not confirmed.
         """
-        settings = get_or_none(EmailSettings, user_email__email=self.user_email)
+        settings = get_or_none(EmailSettings,
+                               user_email__email__iexact=self.user_email)
         if not settings or settings.subscription_set.count() == 0:
             self.warn('User {email} is not subscribed to any packages'.format(
                 email=self.user_email))
@@ -379,7 +382,7 @@ class UnsubscribeallCommand(Command):
         return True
 
     def handle(self):
-        user = get_or_none(UserEmail, email=self.user_email)
+        user = get_or_none(UserEmail, email__iexact=self.user_email)
         email_settings = get_or_none(EmailSettings, user_email=user)
         if user is None or email_settings is None:
             return
