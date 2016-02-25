@@ -270,7 +270,7 @@ class UpdateRepositoriesTask(PackageUpdateTask):
             uploaders = []
             for email, name in zip(uploader_emails, uploader_names):
                 if email not in existing_contributor_emails:
-                    contributor_email = UserEmail.objects.create(
+                    contributor_email, _ = UserEmail.objects.get_or_create(
                         email=email)
                     existing_contributor_emails[email] = contributor_email
                 else:

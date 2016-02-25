@@ -14,6 +14,7 @@ from __future__ import unicode_literals
 from django.db import models
 from django.conf import settings
 from django.utils.encoding import python_2_unicode_compatible
+from django_email_accounts.models import UserEmailManager
 from distro_tracker.core.models import UserEmail
 from distro_tracker.core.models import Confirmation, ConfirmationManager
 
@@ -58,7 +59,7 @@ class CommandConfirmation(Confirmation):
         return self.commands.splitlines()
 
 
-class UserEmailBounceStatsManager(models.Manager):
+class UserEmailBounceStatsManager(UserEmailManager):
     """
     A custom :py:class:`Manager <django.db.models.Manager>` for the
     :py:class:`UserEmailBounceStats` model.

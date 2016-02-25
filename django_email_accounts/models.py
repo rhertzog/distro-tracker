@@ -180,10 +180,29 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.get_full_name()
 
 
+class UserEmailManager(models.Manager):
+
+    def get_or_create(self, *args, **kwargs):
+        """
+        Replaces the default get_or_create() with one that matches
+        the email case-insensitively.
+        """
+        defaults = kwargs.get('defaults', {})
+        if 'email' in kwargs:
+            kwargs['email__iexact'] = kwargs['email']
+            defaults['email'] = kwargs['email']
+            del kwargs['email']
+        kwargs['defaults'] = defaults
+        return UserEmail.default_manager.get_or_create(*args, **kwargs)
+
+
 @python_2_unicode_compatible
 class UserEmail(models.Model):
     email = models.EmailField(max_length=244, unique=True)
     user = models.ForeignKey(User, related_name='emails', null=True)
+
+    objects = UserEmailManager()
+    default_manager = models.Manager()
 
     def __str__(self):
         return self.email
