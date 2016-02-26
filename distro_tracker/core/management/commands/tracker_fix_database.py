@@ -14,9 +14,10 @@ from __future__ import unicode_literals
 
 from django.db.models import Count
 from django.db.models.functions import Lower
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand
 
-from distro_tracker.core.models import UserEmail
+from distro_tracker.core.models import UserEmail, EmailSettings
 
 
 class Command(BaseCommand):
@@ -46,21 +47,30 @@ class Command(BaseCommand):
             for source in all_user_emails[1:]:
                 self.write("Merging UserEmail {} into {}...".format(
                     source.email, target.email))
-                if target.user is None:
+                if target.user is None and source.user:
+                    self.write(" Associating user")
                     target.user = source.user
-                if target.emailsettings is None:
-                    target.emailsettings = source.emailsettings
-                target.save()
+                    target.save()
+                try:
+                    target.emailsettings
+                except ObjectDoesNotExist:
+                    self.write(" Adding EmailSettings")
+                    EmailSettings.objects.create(user_email=target).save()
+                    target.refresh_from_db()
                 self.merge_subscriptions(target, source)
                 source.delete()
 
     def merge_subscriptions(self, target, source):
-        if source.emailsettings is None:
+        try:
+            source.emailsettings
+        except ObjectDoesNotExist:
+            self.write(" {} has no EmailSettings".format(source.email))
             return
+        self.write(" Moving subscriptions")
         target_sub = target.emailsettings.subscription_set
         for sub in source.emailsettings.subscription_set.all():
             if target_sub.filter(package__name=sub.package.name).count() == 0:
-                self.write(" Moving {} package subscription"
+                self.write("  Moving {} package subscription "
                            "from {} to {}".format(sub.package.name,
                                                   source.email, target.email))
                 target.emailsettings.subscription_set.add(sub)

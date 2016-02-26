@@ -223,3 +223,32 @@ class FixDatabaseCommandTests(TestCase):
 
         subscriptions = self.user_email.emailsettings.subscription_set
         self.assertEqual(subscriptions.filter(package__name='pkg-2').count(), 1)
+
+    def test_management_command_no_email_settings_on_main_email(self):
+        # Drop the EmailSettings on the main UserEmail
+        self.user_email.emailsettings.delete()
+        self.user_email = UserEmail.objects.get(email=self.email)
+        with self.assertRaises(Exception):
+            self.user_email.emailsettings
+
+        call_command('tracker_fix_database')
+
+        # Ensure migrations happened
+        self.user_email = UserEmail.objects.get(email=self.email)
+        self.assertIsNotNone(self.user_email.emailsettings)
+        subscriptions = self.user_email.emailsettings.subscription_set
+        self.assertEqual(subscriptions.filter(package__name='pkg-2').count(), 1)
+
+    def test_management_command_no_email_settings_on_alt_email(self):
+        # Drop the EmailSettings on the main UserEmail
+        self.alt_user_email.emailsettings.delete()
+        self.alt_user_email = UserEmail.objects.get(email=self.alt_email)
+        with self.assertRaises(Exception):
+            self.alt_user_email.emailsettings
+
+        call_command('tracker_fix_database')
+
+    def test_management_command_no_email_settings_at_all(self):
+        self.user_email.emailsettings.delete()
+        self.alt_user_email.emailsettings.delete()
+        call_command('tracker_fix_database')
