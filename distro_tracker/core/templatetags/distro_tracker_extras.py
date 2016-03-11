@@ -12,6 +12,7 @@ from __future__ import unicode_literals
 
 from django import template
 from django.template.loader import render_to_string
+from django.utils.safestring import mark_safe
 
 register = template.Library()
 
@@ -59,10 +60,10 @@ def octicon(name, title='', content=None):
     if content is None:
         content = "[{}]".format(title)
 
-    return render_to_string(
+    return mark_safe(render_to_string(
         'core/octicon.html',
         {'name': name, 'title': title, 'content': content}
-    )
+    ).rstrip())
 
 
 @register.simple_tag()
