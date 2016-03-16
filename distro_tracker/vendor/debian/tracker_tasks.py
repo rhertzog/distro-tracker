@@ -1175,7 +1175,8 @@ class DebianWatchFileScannerUpdate(BaseTask):
         all_new_versions, all_failures = [], []
         for entry in dehs_data:
             package_name = entry['package']
-            if 'status' in entry and 'Newer version' in entry['status']:
+            if 'status' in entry and ('Newer version' in entry['status'] or
+                                      'newer package' in entry['status']):
                 stats.setdefault(package_name, {})
                 stats[package_name]['new-upstream-version'] = {
                     'upstream_version': entry['upstream-version'],
