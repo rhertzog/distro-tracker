@@ -426,6 +426,9 @@ class RetrieveSourcesInformationTest(TestCase):
             'chromium-browser',
             [pkg.name for pkg in SourcePackageName.objects.all()]
         )
+        srcpkg = SourcePackage.objects.first()
+        self.assertEqual(srcpkg.dsc_file_name,
+                         'chromium-browser_27.0.1453.110-1~deb7u1.dsc')
         self.assertEqual(BinaryPackageName.objects.count(), 8)
         self.assert_events_raised([
             'new-source-package',
@@ -433,6 +436,24 @@ class RetrieveSourcesInformationTest(TestCase):
             'new-source-package-version',
             'new-source-package-version-in-repository',
         ] + ['new-binary-package'] * 8)
+
+    @mock.patch(
+        'distro_tracker.core.retrieve_data.AptCache.update_repositories')
+    def test_update_repositories_without_files_field(self,
+                                                     mock_update_repositories):
+        """
+        Tests that a new source package is created when a sources file is
+        updated.
+        """
+        self.set_mock_sources(mock_update_repositories,
+                              'Sources-without-Files-field')
+
+        self.run_update()
+
+        self.assertEqual(SourcePackageName.objects.count(), 1)
+        srcpkg = SourcePackage.objects.first()
+        self.assertEqual(srcpkg.dsc_file_name,
+                         'chromium-browser_27.0.1453.110-1~deb7u1.dsc')
 
     @mock.patch(
         'distro_tracker.core.retrieve_data.AptCache.update_repositories')

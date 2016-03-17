@@ -79,9 +79,10 @@ def extract_dsc_file_name(stanza):
     :type stanza: dict
 
     """
-    for file in stanza.get('files', []):
-        if file.get('name', '').endswith('.dsc'):
-            return file['name']
+    for field in ('checksums-sha256', 'checksums-sha1', 'files'):
+        for entry in stanza.get(field, []):
+            if entry.get('name', '').endswith('.dsc'):
+                return entry['name']
 
     return None
 
