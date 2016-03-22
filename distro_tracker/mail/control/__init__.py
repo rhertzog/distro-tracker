@@ -51,6 +51,10 @@ def send_response(original_message, message_text, recipient_email, cc=None):
     subject = decode_header(original_message.get('Subject'))
     if not subject:
         subject = 'Your mail'
+    references = original_message.get('References', '').replace("\n\t", " ")
+    if references:
+        references += ' '
+    references += original_message.get('Message-ID', '')
     message = EmailMessage(
         subject='Re: ' + subject,
         to=[original_message['From']],
@@ -59,8 +63,7 @@ def send_response(original_message, message_text, recipient_email, cc=None):
         headers={
             'From': DISTRO_TRACKER_CONTACT_EMAIL,
             'X-Loop': DISTRO_TRACKER_CONTROL_EMAIL,
-            'References': ' '.join((original_message.get('References', ''),
-                                    original_message.get('Message-ID', ''))),
+            'References': references,
             'In-Reply-To': original_message.get('Message-ID', ''),
         },
         body=message_text,

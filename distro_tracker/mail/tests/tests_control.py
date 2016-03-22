@@ -345,11 +345,20 @@ class ControlBotBasic(EmailControlTest):
         self.assert_header_equal('To', self.message['From'])
         self.assert_header_equal('From', DISTRO_TRACKER_CONTACT_EMAIL)
         self.assert_header_equal('In-Reply-To', self.message['Message-ID'])
-        self.assert_header_equal(
-            'References',
-            ' '.join((self.message.get('References', ''),
-                      self.message['Message-ID']))
-        )
+        references = self.message['Message-ID']
+        if 'References' in self.message:
+            references = " " + self.message['References'] + references
+        self.assert_header_equal('References', references)
+
+    def test_response_when_references_has_two_lines(self):
+        """
+        Tests that we don't fail when the References field contain
+        multiple lines.
+        """
+        self.set_header('References', "<foo@bar>\n\t<foo2@bar2>")
+        self.set_input_lines(['help'])
+
+        self.control_process()
 
     def test_response_when_no_subject(self):
         """
