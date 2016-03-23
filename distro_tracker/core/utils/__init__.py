@@ -129,8 +129,7 @@ class PrettyPrintList(object):
         return self._list == other
 
 
-class SpaceDelimitedTextField(six.with_metaclass(models.SubfieldBase,
-                                                 models.TextField)):
+class SpaceDelimitedTextField(models.TextField):
     """
     A custom Django model field which stores a list of strings.
 
@@ -140,6 +139,9 @@ class SpaceDelimitedTextField(six.with_metaclass(models.SubfieldBase,
     """
 
     description = "Stores a space delimited list of strings"
+
+    def from_db_value(self, value, expression, connection, context):
+        return self.to_python(value)
 
     def to_python(self, value):
         if value is None:
