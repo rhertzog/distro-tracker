@@ -15,7 +15,6 @@ Tests for the Distro Tracker core views.
 """
 from __future__ import unicode_literals
 from distro_tracker.test import TestCase, TemplateTestsMixin
-from django.test.utils import override_settings
 from distro_tracker.core.models import BinaryPackage, BinaryPackageName
 from distro_tracker.core.models import SourcePackageName, SourcePackage
 from distro_tracker.core.models import PackageName, PseudoPackageName
@@ -25,8 +24,6 @@ import json
 
 from django.core.urlresolvers import reverse
 from django.conf import settings
-
-import os
 
 
 class PackageViewTest(TestCase):
@@ -426,9 +423,6 @@ class PackageAutocompleteViewTest(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
-@override_settings(TEMPLATE_DIRS=(os.path.join(
-    os.path.dirname(__file__),
-    'tests-data/tests-templates'),))
 class ActionItemJsonViewTest(TestCase):
     """
     Tests for the :class:`distro_tracker.core.views.ActionItemJsonView`.
@@ -438,6 +432,7 @@ class ActionItemJsonViewTest(TestCase):
         self.action_type = ActionItemType.objects.create(
             type_name='test',
             full_description_template='action-item-test.html')
+        self.add_test_template_dir()
 
     def test_item_exists(self):
         """

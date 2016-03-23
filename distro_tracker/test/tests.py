@@ -72,6 +72,16 @@ class TestCaseHelpersTests(object):
                          os.path.join(os.path.dirname(__file__),
                                       'tests-data', 'myfile'))
 
+    def test_add_test_template_dir(self):
+        template_dir = self.get_test_data_path('tests-templates')
+        self.assertNotIn(template_dir, settings.TEMPLATES[0]['DIRS'])
+
+        self.add_test_template_dir()
+
+        self.assertIn(template_dir, settings.TEMPLATES[0]['DIRS'])
+        self.doCleanups()  # Ensure a cleanup function is added
+        self.assertNotIn(template_dir, settings.TEMPLATES[0]['DIRS'])
+
 
 class TempDirsOnSimpleTestCase(TempDirsTests, TestCaseHelpersTests,
                                SimpleTestCase):

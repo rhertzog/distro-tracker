@@ -131,7 +131,6 @@ six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
 
 # Django's debug mode, never enable this in production
 DEBUG = False
-TEMPLATE_DEBUG = DEBUG
 
 BASE_DIR = dirname(dirname(dirname(dirname(__file__))))
 DISTRO_TRACKER_DATA_PATH = os.path.join(BASE_DIR, 'data')
@@ -188,13 +187,33 @@ try:
 except IOError:
     SECRET_KEY = 'etu2#5lv=!0(g9l31mw=cpwhioy!egg60lb5o3_67d83#(wu-u'
 
-# List of callables that know how to import templates from various sources.
-TEMPLATE_LOADERS = (
-    ('django.template.loaders.cached.Loader', (
-        'django.template.loaders.filesystem.Loader',
-        'django.template.loaders.app_directories.Loader'
-    )),
-)
+# Templating rules
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'APP_DIRS': True,
+        'DIRS': [],
+        'OPTIONS': {
+            'context_processors': [
+                'django.contrib.auth.context_processors.auth',
+                'django.core.context_processors.debug',
+                'django.core.context_processors.i18n',
+                'django.core.context_processors.media',
+                'django.core.context_processors.static',
+                'django.core.context_processors.tz',
+                'django.contrib.messages.context_processors.messages',
+                'django.core.context_processors.request',
+                'distro_tracker.core.context_processors.extras',
+            ],
+            'loaders': [
+                ('django.template.loaders.cached.Loader', [
+                    'django.template.loaders.filesystem.Loader',
+                    'django.template.loaders.app_directories.Loader',
+                ]),
+            ],
+        }
+    },
+]
 
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
@@ -216,23 +235,6 @@ ROOT_URLCONF = 'distro_tracker.project.urls'
 
 # Python dotted path to the WSGI application used by Django's runserver.
 WSGI_APPLICATION = 'distro_tracker.project.wsgi.application'
-
-TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-)
-TEMPLATE_CONTEXT_PROCESSORS = (
-    'django.contrib.auth.context_processors.auth',
-    'django.core.context_processors.debug',
-    'django.core.context_processors.i18n',
-    'django.core.context_processors.media',
-    'django.core.context_processors.static',
-    'django.core.context_processors.tz',
-    'django.contrib.messages.context_processors.messages',
-    'django.core.context_processors.request',
-    'distro_tracker.core.context_processors.extras',
-)
 
 INSTALLED_APPS = (
     'django.contrib.auth',
@@ -444,7 +446,8 @@ def compute_default_settings(target):
             continue  # Settings is already defined
         target[setting] = value(target)
     # Extend TEMPLATE_DIRS with our directory
-    target['TEMPLATE_DIRS'] += (target['DISTRO_TRACKER_TEMPLATE_DIRECTORY'],)
+    target['TEMPLATES'][0]['DIRS'].append(
+        target['DISTRO_TRACKER_TEMPLATE_DIRECTORY'])
     # Update LOGGING with full paths
     for handler in target['LOGGING']['handlers'].values():
         if 'filename' not in handler or "/" in handler['filename']:

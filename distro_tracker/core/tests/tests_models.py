@@ -47,7 +47,6 @@ from distro_tracker.core.utils.email_messages import get_decoded_message_payload
 from distro_tracker.accounts.models import User, UserEmail
 from distro_tracker.test.utils import create_source_package
 
-import os
 import email
 import itertools
 
@@ -1628,9 +1627,6 @@ class NewsTests(TestCase):
                       renderer.context['parts'][0])
 
 
-@override_settings(TEMPLATE_DIRS=(os.path.join(
-    os.path.dirname(__file__),
-    'tests-data/tests-templates'),))
 class ActionItemTests(TestCase):
     """
     Tests for the :class:`distro_tracker.core.models.ActionItem` model.
@@ -1638,6 +1634,7 @@ class ActionItemTests(TestCase):
     def setUp(self):
         self.package = PackageName.objects.create(name='dummy-package')
         self.action_type = ActionItemType.objects.create(type_name='test-type')
+        self.add_test_template_dir()
 
     def set_action_type_template(self, template_name):
         """

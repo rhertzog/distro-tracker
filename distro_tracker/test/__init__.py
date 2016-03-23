@@ -23,6 +23,7 @@ import inspect
 from django.conf import settings
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 import django.test
+from django.test.signals import setting_changed
 from bs4 import BeautifulSoup as soup
 
 
@@ -81,6 +82,19 @@ class TestCaseHelpersMixin(object):
         """
         return os.path.join(os.path.dirname(inspect.getabsfile(self.__class__)),
                             'tests-data', name)
+
+    def add_test_template_dir(self, name='tests-templates'):
+        template_dir = self.get_test_data_path(name)
+        settings.TEMPLATES[0]['DIRS'].append(template_dir)
+        setting_changed.send(sender=self.__class__, setting='TEMPLATES',
+                             value=settings.TEMPLATES, enter=True)
+
+        def cleanup_test_template_dir():
+            settings.TEMPLATES[0]['DIRS'].remove(template_dir)
+            setting_changed.send(sender=self.__class__, setting='TEMPLATES',
+                                 value=settings.TEMPLATES, enter=False)
+
+        self.addCleanup(cleanup_test_template_dir)
 
     def import_key_into_keyring(self, filename):
         """
