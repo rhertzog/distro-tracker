@@ -51,7 +51,8 @@ def send_response(original_message, message_text, recipient_email, cc=None):
     subject = decode_header(original_message.get('Subject'))
     if not subject:
         subject = 'Your mail'
-    references = original_message.get('References', '').replace("\n\t", " ")
+    references = original_message.get('References', '')
+    references = re.sub(r"\r?\n\s", " ", references, 0, re.MULTILINE)
     if references:
         references += ' '
     references += original_message.get('Message-ID', '')

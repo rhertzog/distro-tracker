@@ -355,10 +355,11 @@ class ControlBotBasic(EmailControlTest):
         Tests that we don't fail when the References field contain
         multiple lines.
         """
-        self.set_header('References', "<foo@bar>\n\t<foo2@bar2>")
-        self.set_input_lines(['help'])
+        for sep in ["\n\t", "\n ", "\r\n "]:
+            self.set_header('References', "<foo@bar>" + sep + "<foo2@bar2>")
+            self.set_input_lines(['help'])
 
-        self.control_process()
+            self.control_process()
 
     def test_response_when_no_subject(self):
         """
