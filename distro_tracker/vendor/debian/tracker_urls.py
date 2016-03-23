@@ -1,4 +1,4 @@
-# Copyright 2015 The Distro Tracker Developers
+# Copyright 2015-2016 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -10,14 +10,13 @@
 """The URL routes for the vendor.debian app."""
 from __future__ import unicode_literals
 
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 
 from distro_tracker.vendor.debian.views import CodeSearchView
 
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
     # code search
     url(r'^codesearch/$', CodeSearchView.as_view(),
         name='dtracker-code-search'),
-)
+]

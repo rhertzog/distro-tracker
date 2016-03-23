@@ -1,4 +1,4 @@
-# Copyright 2014 The Distro Tracker Developers
+# Copyright 2014-2016 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -10,16 +10,15 @@
 
 from __future__ import unicode_literals
 
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 
 from .views import index, comparison
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
     url('^derivative/$', index, name='dtracker-derivative-index'),
     url('^derivative/(?P<distribution>[^/]+)/$', comparison,
         name='dtracker-derivative-comparison'),
-)
+]
 
 frontpagelinks = [
     ('dtracker-derivative-index', 'Data about this Debian derivative'),

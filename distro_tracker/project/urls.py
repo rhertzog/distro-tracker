@@ -13,7 +13,7 @@ from __future__ import unicode_literals
 
 import importlib
 
-from django.conf.urls import patterns, include, url
+from django.conf.urls import include, url
 from django.conf import settings
 from django.shortcuts import redirect
 from django.views.generic import TemplateView
@@ -71,8 +71,7 @@ from distro_tracker.accounts.views import AccountMergeConfirmedView
 from django.contrib import admin
 admin.autodiscover()
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
     # Redirects for the old PTS package page URLs
     url(r'^(?P<package_hash>(lib)?.)/(?P<package_name>(\1).+)\.html$',
         legacy_package_url_redirect),
@@ -232,7 +231,7 @@ urlpatterns = patterns(
 
     # Uncomment the admin/doc line below to enable admin documentation:
     # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
-)
+]
 
 for app in settings.INSTALLED_APPS:
     try:
@@ -242,33 +241,24 @@ for app in settings.INSTALLED_APPS:
     except ImportError:
         pass
 
-urlpatterns += patterns(
-    '',
+urlpatterns += [
     # The package page view catch all. It must be listed *after* the admin
     # URL so that the admin URL is not interpreted as a package named "admin".
     url(r'^(?P<package_name>[^/]+)/?$', package_page_redirect,
         name='dtracker-package-page-redirect'),
-)
+]
 
 if settings.DJANGO_EMAIL_ACCOUNTS_USE_CAPTCHA:
     import captcha.urls
-    urlpatterns += patterns(
-        '',
+    urlpatterns += [
         url(r'^captcha/', include(captcha.urls)),
-    )
+    ]
 
 if settings.DEBUG:
     import django.views.static
-    urlpatterns = patterns(
-        '',
-        (r'^media/(?P<path>.*)$',
-         django.views.static.serve,
-         {
-             'document_root': settings.MEDIA_ROOT
-         }),
-        (r'^static/(?P<path>.*)$',
-         django.views.static.serve,
-         {
-             'document_root': settings.STATIC_ROOT,
-         }),
-    ) + urlpatterns
+    urlpatterns = [
+        url(r'^media/(?P<path>.*)$', django.views.static.serve,
+            {'document_root': settings.MEDIA_ROOT}),
+        url(r'^static/(?P<path>.*)$', django.views.static.serve,
+            {'document_root': settings.STATIC_ROOT}),
+    ] + urlpatterns
