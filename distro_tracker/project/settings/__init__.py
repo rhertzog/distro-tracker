@@ -1,4 +1,4 @@
-# Copyright 2013-2014 The Distro Tracker Developers
+# Copyright 2013-2016 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -30,4 +30,4 @@ else:
     except ImportError:
         from .selected import *  # noqa
 
-compute_default_settings(globals())
+compute_default_settings(globals())  # noqa

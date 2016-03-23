@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2013-2015 The Distro Tracker Developers
+# Copyright 2013-2016 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -14,33 +14,31 @@ This module contains the tests for the dispatch functionality
 (:py:mod:`distro_tracker.mail.dispatch` module) of distro-tracker.
 """
 from __future__ import unicode_literals
-from distro_tracker.test import TestCase
+from email.message import Message
+from datetime import timedelta
+import logging
+
 from django.core import mail
+from django.conf import settings
 from django.utils import timezone
 from django.utils.six.moves import mock
 
-from email.message import Message
-from datetime import timedelta
-
+from distro_tracker.accounts.models import UserEmail
+from distro_tracker.accounts.models import User
 from distro_tracker.core.models import PackageName, Subscription, Keyword
 from distro_tracker.core.models import Team
-from distro_tracker.accounts.models import User
 from distro_tracker.core.utils import verp
 from distro_tracker.core.utils import get_decoded_message_payload
 from distro_tracker.core.utils import distro_tracker_render_to_string
 from distro_tracker.core.utils.email_messages import (
     patch_message_for_django_compat)
 from distro_tracker.mail import dispatch
-from distro_tracker.accounts.models import UserEmail
-
 from distro_tracker.mail.models import UserEmailBounceStats
+from distro_tracker.test import TestCase
 
-
-from django.conf import settings
 DISTRO_TRACKER_CONTROL_EMAIL = settings.DISTRO_TRACKER_CONTROL_EMAIL
 DISTRO_TRACKER_FQDN = settings.DISTRO_TRACKER_FQDN
 
-import logging
 logging.disable(logging.CRITICAL)
 
 

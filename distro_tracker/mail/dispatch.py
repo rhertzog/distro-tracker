@@ -1,4 +1,4 @@
-# Copyright 2013-2015 The Distro Tracker Developers
+# Copyright 2013-2016 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -12,37 +12,34 @@ Implements the processing of received package messages in order to dispatch
 them to subscribers.
 """
 from __future__ import unicode_literals
+from copy import deepcopy
+from datetime import datetime
+import logging
+import re
+
 from django.core.mail import get_connection
 from django.utils import six
 from django.utils import timezone
 from django.core.mail import EmailMessage
+from django.conf import settings
 
-from datetime import datetime
-
+from distro_tracker import vendor
+from distro_tracker.core.models import PackageName
+from distro_tracker.core.models import Keyword
+from distro_tracker.core.models import Team
 from distro_tracker.core.utils import extract_email_address_from_header
 from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.utils import distro_tracker_render_to_string
 from distro_tracker.core.utils import verp
-
 from distro_tracker.core.utils.email_messages import CustomEmailMessage
 from distro_tracker.core.utils.email_messages import (
     patch_message_for_django_compat)
 from distro_tracker.mail.models import UserEmailBounceStats
 
-from distro_tracker.core.models import PackageName
-from distro_tracker.core.models import Keyword
-from distro_tracker.core.models import Team
-from django.conf import settings
 DISTRO_TRACKER_CONTROL_EMAIL = settings.DISTRO_TRACKER_CONTROL_EMAIL
 DISTRO_TRACKER_FQDN = settings.DISTRO_TRACKER_FQDN
 
-from copy import deepcopy
-import re
-import logging
-
 logger = logging.getLogger(__name__)
-
-from distro_tracker import vendor
 
 
 class SkipMessage(Exception):

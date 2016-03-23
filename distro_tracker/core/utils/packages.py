@@ -356,7 +356,8 @@ class AptCache(object):
         """
         if filter_function is None:
             # Include all files if the filter function is not provided
-            filter_function = lambda x: True  # noqa
+            def filter_function(x):
+                return True
 
         return [
             file_name

@@ -1,4 +1,4 @@
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2016 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -9,6 +9,19 @@
 # except according to the terms contained in the LICENSE file.
 """Models for the :mod:`distro_tracker.core` app."""
 from __future__ import unicode_literals
+from email.utils import getaddresses
+from email.utils import parseaddr
+from email.iterators import typed_subpart_iterator
+from jsonfield import JSONField
+import os
+import hashlib
+import string
+import random
+import re
+
+from debian.debian_support import AptPkgVersion
+from debian import changelog as debian_changelog
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.utils import IntegrityError
 from django.utils import six
@@ -33,18 +46,6 @@ from distro_tracker.core.utils.email_messages import get_decoded_message_payload
 from distro_tracker.core.utils.email_messages import message_from_bytes
 from distro_tracker.core.utils.packages import package_hashdir
 from distro_tracker.core.utils.linkify import linkify
-
-from debian.debian_support import AptPkgVersion
-from debian import changelog as debian_changelog
-from email.utils import getaddresses
-from email.utils import parseaddr
-from email.iterators import typed_subpart_iterator
-
-import os
-import hashlib
-import string
-import random
-import re
 
 DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS = \
     settings.DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS
@@ -698,10 +699,6 @@ class Subscription(models.Model):
 
     def __str__(self):
         return str(self.email_settings.user_email) + ' ' + str(self.package)
-
-
-from jsonfield import JSONField
-from django.core.exceptions import ValidationError
 
 
 @python_2_unicode_compatible

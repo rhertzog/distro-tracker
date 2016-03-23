@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2013-2015 The Distro Tracker Developers
+# Copyright 2013-2016 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -14,15 +14,23 @@
 Tests for the Distro Tracker core utils.
 """
 from __future__ import unicode_literals
-from distro_tracker.test import TestCase, SimpleTestCase
-from django.test.utils import override_settings
+import datetime
+from email import encoders
+from email.header import Header
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+import os
+import time
+import tempfile
+
+from debian import deb822
 from django.core import mail
+from django.test.utils import override_settings
 from django.utils import six
 from django.utils.http import http_date
 from django.utils.functional import curry
 from django.utils.six.moves import mock
-from distro_tracker.test.utils import set_mock_response
-from distro_tracker.test.utils import make_temp_directory
+
 from distro_tracker.core.models import Repository
 from distro_tracker.core.utils import verp
 from distro_tracker.core.utils import message_from_bytes
@@ -37,6 +45,9 @@ from distro_tracker.core.utils.packages import package_hashdir
 from distro_tracker.core.utils.datastructures import DAG, InvalidDAGException
 from distro_tracker.core.utils.email_messages import CustomEmailMessage
 from distro_tracker.core.utils.email_messages import decode_header
+from distro_tracker.core.utils.email_messages import (
+    name_and_address_from_string,
+    names_and_addresses_from_string)
 from distro_tracker.core.utils.linkify import linkify
 from distro_tracker.core.utils.linkify import LinkifyDebianBugLinks
 from distro_tracker.core.utils.linkify import LinkifyUbuntuBugLinks
@@ -44,18 +55,9 @@ from distro_tracker.core.utils.linkify import LinkifyHttpLinks
 from distro_tracker.core.utils.linkify import LinkifyCVELinks
 from distro_tracker.core.utils.http import HttpCache
 from distro_tracker.core.utils.http import get_resource_content
-
-from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email.header import Header
-from email import encoders
-
-
-from debian import deb822
-import os
-import time
-import tempfile
-import datetime
+from distro_tracker.test import TestCase, SimpleTestCase
+from distro_tracker.test.utils import set_mock_response
+from distro_tracker.test.utils import make_temp_directory
 
 
 class VerpModuleTest(SimpleTestCase):
@@ -193,11 +195,6 @@ Content-Transfer-Encoding: 8bit
         self.assertEqual(
             mock_connection.sendmail.call_args[0][2].replace(b"\r\n", b"\n"),
             message.as_string())
-
-
-from distro_tracker.core.utils.email_messages import (
-    name_and_address_from_string,
-    names_and_addresses_from_string)
 
 
 class EmailUtilsTest(SimpleTestCase):
