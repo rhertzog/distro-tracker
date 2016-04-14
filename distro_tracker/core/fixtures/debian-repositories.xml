@@ -65,9 +65,9 @@
         <field type="CharField" name="shorthand">old-sec</field>
         <field type="CharField" name="uri">http://security.debian.org</field>
         <field type="CharField" name="public_uri">http://security.debian.org/</field>
-        <field type="CharField" name="suite">oldstable</field>
-        <field type="CharField" name="codename">wheezy</field>
-        <field type="TextField" name="components">updates/main updates/contrib updates/non-free</field>
+        <field type="CharField" name="suite">oldstable/updates</field>
+        <field type="CharField" name="codename">wheezy/updates</field>
+        <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">True</field>
         <field type="BooleanField" name="binary">False</field>
@@ -80,9 +80,9 @@
         <field type="CharField" name="shorthand">stable-sec</field>
         <field type="CharField" name="uri">http://security.debian.org</field>
         <field type="CharField" name="public_uri">http://security.debian.org/</field>
-        <field type="CharField" name="suite">stable</field>
-        <field type="CharField" name="codename">jessie</field>
-        <field type="TextField" name="components">updates/main updates/contrib updates/non-free</field>
+        <field type="CharField" name="suite">stable/updates</field>
+        <field type="CharField" name="codename">jessie/updates</field>
+        <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">False</field>
         <field type="BooleanField" name="binary">False</field>
@@ -110,9 +110,9 @@
         <field type="CharField" name="shorthand">test-sec</field>
         <field type="CharField" name="uri">http://security.debian.org</field>
         <field type="CharField" name="public_uri">http://security.debian.org/</field>
-        <field type="CharField" name="suite">testing</field>
-        <field type="CharField" name="codename">stretch</field>
-        <field type="TextField" name="components">updates/main updates/contrib updates/non-free</field>
+        <field type="CharField" name="suite">testing/updates</field>
+        <field type="CharField" name="codename">stretch/updates</field>
+        <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">False</field>
         <field type="BooleanField" name="binary">False</field>
@@ -195,21 +195,6 @@
         <field type="IntegerField" name="position">21</field>
         <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="5"></object></field>
     </object>
-    <object pk="14" model="core.repository">
-        <field type="CharField" name="name">Debian Squeeze LTS</field>
-        <field type="CharField" name="shorthand">o-o-lts</field>
-        <field type="CharField" name="uri">http://httpredir.debian.org/debian</field>
-        <field type="CharField" name="public_uri">http://httpredir.debian.org/debian</field>
-        <field type="CharField" name="suite">squeeze-lts</field>
-        <field type="CharField" name="codename">squeeze-lts</field>
-        <field type="TextField" name="components">main contrib non-free</field>
-        <field type="BooleanField" name="default">False</field>
-        <field type="BooleanField" name="optional">True</field>
-        <field type="BooleanField" name="binary">False</field>
-        <field type="BooleanField" name="source">True</field>
-        <field type="IntegerField" name="position">3</field>
-        <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="5"></object></field>
-    </object>
     <object pk="15" model="core.repository">
         <field type="CharField" name="name">Debian Oldstable Updates</field>
         <field type="CharField" name="shorthand">old-upd</field>
@@ -253,96 +238,6 @@
         <field type="BooleanField" name="binary">False</field>
         <field type="BooleanField" name="source">True</field>
         <field type="IntegerField" name="position">11</field>
-        <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="5"></object></field>
-    </object>
-    <object pk="18" model="core.repository">
-        <field type="CharField" name="name">Debian Oldoldstable</field>
-        <field type="CharField" name="shorthand">o-o-stable</field>
-        <field type="CharField" name="uri">http://httpredir.debian.org/debian</field>
-        <field type="CharField" name="public_uri">http://httpredir.debian.org/debian</field>
-        <field type="CharField" name="suite">oldoldstable</field>
-        <field type="CharField" name="codename">squeeze</field>
-        <field type="TextField" name="components">main contrib non-free</field>
-        <field type="BooleanField" name="default">False</field>
-        <field type="BooleanField" name="optional">True</field>
-        <field type="BooleanField" name="binary">False</field>
-        <field type="BooleanField" name="source">True</field>
-        <field type="IntegerField" name="position">1</field>
-        <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="5"></object></field>
-    </object>
-    <object pk="19" model="core.repository">
-        <field type="CharField" name="name">Debian Oldoldstable Security</field>
-        <field type="CharField" name="shorthand">o-o-sec</field>
-        <field type="CharField" name="uri">http://security.debian.org</field>
-        <field type="CharField" name="public_uri">http://security.debian.org</field>
-        <field type="CharField" name="suite">oldoldstable</field>
-        <field type="CharField" name="codename">squeeze</field>
-        <field type="TextField" name="components">updates/main updates/contrib updates/non-free</field>
-        <field type="BooleanField" name="default">False</field>
-        <field type="BooleanField" name="optional">True</field>
-        <field type="BooleanField" name="binary">False</field>
-        <field type="BooleanField" name="source">True</field>
-        <field type="IntegerField" name="position">2</field>
-        <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="5"></object></field>
-    </object>
-    <object pk="20" model="core.repository">
-        <field type="CharField" name="name">Debian Oldoldstable Backports</field>
-        <field type="CharField" name="shorthand">o-o-bpo</field>
-        <field type="CharField" name="uri">http://httpredir.debian.org/debian-backports</field>
-        <field type="CharField" name="public_uri">http://httpredir.debian.org/debian-backports</field>
-        <field type="CharField" name="suite">squeeze-backports</field>
-        <field type="CharField" name="codename">squeeze-backports</field>
-        <field type="TextField" name="components">main contrib non-free</field>
-        <field type="BooleanField" name="default">False</field>
-        <field type="BooleanField" name="optional">True</field>
-        <field type="BooleanField" name="binary">False</field>
-        <field type="BooleanField" name="source">True</field>
-        <field type="IntegerField" name="position">4</field>
-        <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="5"></object></field>
-    </object>
-    <object pk="21" model="core.repository">
-        <field type="CharField" name="name">Debian Oldoldstable Backports Sloppy</field>
-        <field type="CharField" name="shorthand">o-o-bpo-sl</field>
-        <field type="CharField" name="uri">http://httpredir.debian.org/debian-backports</field>
-        <field type="CharField" name="public_uri">http://httpredir.debian.org/debian-backports</field>
-        <field type="CharField" name="suite">squeeze-backports-sloppy</field>
-        <field type="CharField" name="codename">squeeze-backports-sloppy</field>
-        <field type="TextField" name="components">main contrib non-free</field>
-        <field type="BooleanField" name="default">False</field>
-        <field type="BooleanField" name="optional">True</field>
-        <field type="BooleanField" name="binary">False</field>
-        <field type="BooleanField" name="source">True</field>
-        <field type="IntegerField" name="position">5</field>
-        <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="5"></object></field>
-    </object>
-    <object pk="22" model="core.repository">
-        <field type="CharField" name="name">Debian Oldoldstable Updates</field>
-        <field type="CharField" name="shorthand">o-o-upd</field>
-        <field type="CharField" name="uri">http://httpredir.debian.org/debian</field>
-        <field type="CharField" name="public_uri">http://httpredir.debian.org/debian</field>
-        <field type="CharField" name="suite">oldoldstable-updates</field>
-        <field type="CharField" name="codename">squeeze-updates</field>
-        <field type="TextField" name="components">main contrib non-free</field>
-        <field type="BooleanField" name="default">False</field>
-        <field type="BooleanField" name="optional">True</field>
-        <field type="BooleanField" name="binary">False</field>
-        <field type="BooleanField" name="source">True</field>
-        <field type="IntegerField" name="position">6</field>
-        <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="5"></object></field>
-    </object>
-    <object pk="23" model="core.repository">
-        <field type="CharField" name="name">Debian Oldoldstable Proposed Updates</field>
-        <field type="CharField" name="shorthand">o-o-pu</field>
-        <field type="CharField" name="uri">http://httpredir.debian.org/debian</field>
-        <field type="CharField" name="public_uri">http://httpredir.debian.org/debian</field>
-        <field type="CharField" name="suite">oldoldstable-proposed-updates</field>
-        <field type="CharField" name="codename">squeeze-proposed-updates</field>
-        <field type="TextField" name="components">main contrib non-free</field>
-        <field type="BooleanField" name="default">False</field>
-        <field type="BooleanField" name="optional">True</field>
-        <field type="BooleanField" name="binary">False</field>
-        <field type="BooleanField" name="source">True</field>
-        <field type="IntegerField" name="position">7</field>
         <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="5"></object></field>
     </object>
 </django-objects>
