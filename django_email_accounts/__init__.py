@@ -23,15 +23,15 @@ def run_hook(name, *args, **kwargs):
     the appropriate one and run it with the given arguments and keyword
     arguments.
     """
-    NAME_TO_SETTING = {
+    name_to_setting = {
         'post-merge': 'DJANGO_EMAIL_ACCOUNTS_POST_MERGE_HOOK',
         'pre-login': 'DJANGO_EMAIL_ACCOUNTS_PRE_LOGIN_HOOK',
         'post-logout-redirect': 'DJANGO_EMAIL_ACCOUNTS_POST_LOGOUT_REDIRECT',
     }
-    if name not in NAME_TO_SETTING:
+    if name not in name_to_setting:
         return
 
-    settings_name = NAME_TO_SETTING[name]
+    settings_name = name_to_setting[name]
     function_name = getattr(settings, settings_name, None)
     if not function_name:
         return

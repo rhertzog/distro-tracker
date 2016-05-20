@@ -546,7 +546,7 @@ class BinariesInformationPanel(BasePanel):
                 category['bug_count'] for category in bug_stats),
             'all_bugs_url': all_bugs_url,
             'categories': bug_stats,
-            }
+        }
 
     @cached_property
     def context(self):
@@ -671,7 +671,7 @@ class ListPanelMeta(PluginRegistry):
     A meta class for the :class:`ListPanel`. Makes sure that each subclass of
     :class:`ListPanel` has a new :class:`PanelItemProvider` subclass.
     """
-    def __init__(cls, name, bases, attrs):
+    def __init__(cls, name, bases, attrs):  # noqa
         super(ListPanelMeta, cls).__init__(name, bases, attrs)
         if name != 'NewBase':
             cls.ItemProvider = type(

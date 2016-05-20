@@ -34,6 +34,9 @@ class ConfirmationManager(models.Manager):
     """
     A custom manager for the :py:class:`Confirmation` model.
     """
+
+    MAX_TRIES = 10
+
     def generate_key(self, identifier):
         """
         Generates a random key for the given identifier.
@@ -57,9 +60,8 @@ class ConfirmationManager(models.Manager):
         :raises pts.mail.models.ConfirmationException: If it is unable to
             generate a unique key.
         """
-        MAX_TRIES = 10
         errors = 0
-        while errors < MAX_TRIES:
+        while errors < self.MAX_TRIES:
             confirmation_key = self.generate_key(identifier)
             try:
                 return self.create(confirmation_key=confirmation_key, **kwargs)

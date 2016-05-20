@@ -1317,13 +1317,13 @@ class UpdateSecurityIssuesTask(BaseTask):
         return result
 
     @classmethod
-    def get_issues_stats(self, content):
+    def get_issues_stats(cls, content):
         """
         Gets package issue stats from Debian's security tracker.
         """
         stats = {}
         for pkg, issues in six.iteritems(content):
-            stats[pkg] = self.get_issues_summary(issues)
+            stats[pkg] = cls.get_issues_summary(issues)
         return stats
 
     @staticmethod
@@ -1366,11 +1366,11 @@ class UpdateSecurityIssuesTask(BaseTask):
                 self._get_short_description('none', action_item)
 
     @classmethod
-    def generate_package_data(self, issues):
+    def generate_package_data(cls, issues):
         return {
             'details': issues,
-            'stats': self.get_issues_summary(issues),
-            'checksum': self.get_data_checksum(issues)
+            'stats': cls.get_issues_summary(issues),
+            'checksum': cls.get_data_checksum(issues)
         }
 
     def process_pkg_action_items(self, pkgdata, existing_action_items):
@@ -1461,8 +1461,7 @@ class UpdateSecurityIssuesTask(BaseTask):
                 package__name__in=content.keys()).delete()
             ActionItem.objects.filter(
                 item_type__type_name__startswith='debian-security-issue-in-'
-                ).exclude(
-                package__name__in=content.keys()).delete()
+            ).exclude(package__name__in=content.keys()).delete()
             ActionItem.objects.filter(
                 item_type__type_name__startswith='debian-security-issue-in-',
                 id__in=[ai.id for ai in ai_to_drop]).delete()

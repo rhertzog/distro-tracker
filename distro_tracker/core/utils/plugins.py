@@ -23,7 +23,7 @@ class PluginRegistry(type):
     This metaclass also adds an :meth:`unregister_plugin` classmethod to all
     concrete classes which removes the class from the list of plugins.
     """
-    def __init__(cls, name, bases, attrs):
+    def __init__(cls, name, bases, attrs):  # noqa
         if not hasattr(cls, 'plugins'):
             cls.plugins = []
         else:

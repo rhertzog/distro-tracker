@@ -920,8 +920,8 @@ class Repository(models.Model):
             **kwargs
         )
 
-    @classmethod
-    def release_file_url(cls, base_url, suite):
+    @staticmethod
+    def release_file_url(base_url, suite):
         """
         Returns the URL of the Release file for a repository with the given
         base URL and suite name.
@@ -1669,8 +1669,8 @@ class EmailNews(News):
         msg = message_from_bytes(self.content)
         return get_decoded_message_payload(msg)
 
-    @classmethod
-    def get_email_news_parameters(self, message):
+    @staticmethod
+    def get_email_news_parameters(message):
         """
         Returns a dict representing default values for some :class:`EmailNews`
         fields based on the given email message.

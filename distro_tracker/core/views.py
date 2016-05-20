@@ -378,7 +378,7 @@ class RemovePackageFromTeamView(LoginRequiredMixin, View):
         return redirect(team)
 
 
-class JoinTeamView(LoginRequiredMixin,  View):
+class JoinTeamView(LoginRequiredMixin, View):
     """
     Lets logged in users join a public team.
     After a user has been added to the team, he is redirected back to the team

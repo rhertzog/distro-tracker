@@ -1378,21 +1378,21 @@ class LinkifyTests(TestCase):
     sample_url = "http://www.example.com/foo/"
     https_url = "https://www.example.com.foo/"
 
-    @classmethod
-    def link(self, url):
+    @staticmethod
+    def link(url):
         return '<a href="{url}">{url}</a>'.format(url=url)
 
-    @classmethod
-    def debian_bug(self, bug, baseurl='https://bugs.debian.org/'):
+    @staticmethod
+    def debian_bug(bug, baseurl='https://bugs.debian.org/'):
         bugno = bug[1:] if bug[0] == '#' else bug
         return '<a href="{}{}">{}</a>'.format(baseurl, bugno, bug)
 
     @classmethod
-    def lp_bug(self, bug):
-        return self.debian_bug(bug, 'https://bugs.launchpad.net/bugs/')
+    def lp_bug(cls, bug):
+        return cls.debian_bug(bug, 'https://bugs.launchpad.net/bugs/')
 
-    @classmethod
-    def cve_link(self, cve,
+    @staticmethod
+    def cve_link(cve,
                  baseurl='https://cve.mitre.org/cgi-bin/cvename.cgi?name='):
         return '<a href="{}{}">{}</a>'.format(baseurl, cve, cve)
 

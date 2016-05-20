@@ -79,7 +79,7 @@ class CategorizeVersionComparisonTest(TestCase):
         b = '2.1.0-1'
         self.assertEqual('equal', categorize_version_comparison(a, b))
 
-    def test_first_version_is_None(self):
+    def test_first_version_is_none(self):
         a = None
         b = '2.1.0-1'
         self.assertEqual('missing_pkg', categorize_version_comparison(a, b))

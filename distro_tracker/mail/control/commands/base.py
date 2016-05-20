@@ -29,7 +29,7 @@ class MetaCommand(type):
     :py:class:`Command` subclass, it is not necessary to include a separate
     regex for each command alias or a long one listing every option.
     """
-    def __init__(cls, name, bases, dct):
+    def __init__(cls, name, bases, dct):  # noqa
         if not getattr(cls, 'META', None):
             return
         joined_aliases = '|'.join(

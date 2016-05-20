@@ -86,8 +86,8 @@ def send_plain_text_warning(original_message, logdata):
     :type original_message: :py:class:`email.message.Message` or an object with
         an equivalent interface
     """
-    WARNING_MESSAGE = render_to_string('control/email-plaintext-warning.txt')
-    send_response(original_message, WARNING_MESSAGE,
+    warning_message = render_to_string('control/email-plaintext-warning.txt')
+    send_response(original_message, warning_message,
                   recipient_email=logdata['from'])
     logger.info("control :: no plain text found in %(msgid)s", logdata)
 

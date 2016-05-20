@@ -29,8 +29,8 @@ class Linkify(six.with_metaclass(PluginRegistry)):
     method.
     """
 
-    @classmethod
-    def linkify(self, text):
+    @staticmethod
+    def linkify(text):
         """
         :param text: the text where we should inject HTML links
         :type param: str
@@ -46,8 +46,8 @@ class LinkifyHttpLinks(Linkify):
     links.
     """
 
-    @classmethod
-    def linkify(self, text):
+    @staticmethod
+    def linkify(text):
         return re.sub(r'(?:^|(?<=\s))(https?://[^\s]*)',
                       r'<a href="\1">\1</a>',
                       text)
@@ -65,17 +65,17 @@ class LinkifyDebianBugLinks(Linkify):
     bug_url = 'https://bugs.debian.org/'
 
     @classmethod
-    def _linkify_field(self, text):
-        if not self.close_field:
+    def _linkify_field(cls, text):
+        if not cls.close_field:
             return text
         split_text = re.split(
-            '(^' + self.close_field + r'(?: \d+)+\s*$)',
+            '(^' + cls.close_field + r'(?: \d+)+\s*$)',
             text, flags=re.IGNORECASE | re.MULTILINE)
         generated_link = ''
         for i, txt in enumerate(split_text):
             if i % 2:
                 new_txt = re.sub(
-                    r'(\d+)', r'<a href="{}\1">\1</a>'.format(self.bug_url),
+                    r'(\d+)', r'<a href="{}\1">\1</a>'.format(cls.bug_url),
                     txt, flags=re.IGNORECASE)
                 generated_link += new_txt
             else:
@@ -83,9 +83,9 @@ class LinkifyDebianBugLinks(Linkify):
         return generated_link
 
     @classmethod
-    def _linkify_changelog_entry(self, text):
+    def _linkify_changelog_entry(cls, text):
         split_text = re.split(
-            '(' + self.close_prefix +
+            '(' + cls.close_prefix +
             r'\s*(?:bug)?(?:#)?\d+(?:\s*,\s*(?:bug)?(?:#)?\d+)*)',
             text, flags=re.IGNORECASE)
         generated_link = ''
@@ -93,7 +93,7 @@ class LinkifyDebianBugLinks(Linkify):
             if i % 2:
                 new_txt = re.sub(
                     r'((?:#)?(\d+))',
-                    r'<a href="{}\2">\1</a>'.format(self.bug_url),
+                    r'<a href="{}\2">\1</a>'.format(cls.bug_url),
                     txt, flags=re.IGNORECASE)
                 generated_link += new_txt
             else:
@@ -101,8 +101,8 @@ class LinkifyDebianBugLinks(Linkify):
         return generated_link
 
     @classmethod
-    def linkify(self, text):
-        return self._linkify_changelog_entry(self._linkify_field(text))
+    def linkify(cls, text):
+        return cls._linkify_changelog_entry(cls._linkify_field(text))
 
 
 class LinkifyUbuntuBugLinks(LinkifyDebianBugLinks):
@@ -124,8 +124,8 @@ class LinkifyCVELinks(Linkify):
     the URL to a custom tracker.
     """
 
-    @classmethod
-    def linkify(self, text):
+    @staticmethod
+    def linkify(text):
         address = getattr(settings, 'DISTRO_TRACKER_CVE_URL',
                           'https://cve.mitre.org/cgi-bin/cvename.cgi?name=')
         return re.sub(r'(?:(?<=\s)|\A)((CVE)-(\d){4}-(\d){4,})',
