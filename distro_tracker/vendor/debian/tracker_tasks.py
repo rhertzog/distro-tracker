@@ -2309,9 +2309,12 @@ class UpdateAutoRemovalsStatsTask(BaseTask):
             removal_date=removal_date,
             bugs=', '.join(link.format(bug, bug) for bug in all_bugs))
 
+        if hasattr(stats['removal_date'], 'strftime'):
+            stats['removal_date'] = stats['removal_date'].strftime(
+                '%a %d %b %Y')
         action_item.extra_data = {
             'stats': stats,
-            'removal_date': stats['removal_date'].strftime('%a %d %b %Y'),
+            'removal_date': stats['removal_date'],
             'bugs': ', '.join(link.format(bug, bug) for bug in stats['bugs']),
             'bugs_dependencies': ', '.join(
                 link.format(bug, bug) for bug in bugs_dependencies),
