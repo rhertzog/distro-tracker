@@ -349,8 +349,8 @@ class RetrieveSourcesInformationTest(TestCase):
         return os.path.join(os.path.dirname(__file__), 'tests-data', file_name)
         self.intercept_events_task.unregister_plugin()
 
-    def run_update(self):
-        run_task(UpdateRepositoriesTask)
+    def run_update(self, **kwargs):
+        run_task(UpdateRepositoriesTask, parameters=kwargs)
 
     def create_task_class(self, produces, depends_on, raises):
         """
@@ -499,6 +499,28 @@ class RetrieveSourcesInformationTest(TestCase):
 
         self.assertEqual(SourcePackageName.objects.count(), 1)
         # No events emitted since nothing was done.
+        self.assertEqual(len(self.caught_events), 0)
+
+    @mock.patch(
+        'distro_tracker.core.retrieve_data.AptCache.update_repositories')
+    def test_update_repositories_force_changes(self, mock_update_repositories):
+        """
+        Tests that force_update=True will overwrite bad data even when
+        the version did not change.
+        """
+        self.set_mock_sources(mock_update_repositories, 'Sources')
+        self.run_update()
+        src = SourcePackage.objects.first()
+        src.architectures.clear()
+        self.assertEqual(len(src.architectures.all()), 0)
+
+        # Run it again.
+        self.clear_events()
+        self.run_update(force_update=True)
+        src = SourcePackage.objects.first()
+        self.assertNotEqual(len(src.architectures.all()), 0)
+
+        # No events emitted since there are no new packages
         self.assertEqual(len(self.caught_events), 0)
 
     @mock.patch(

@@ -309,13 +309,14 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                 source_package_name=src_pkg_name,
                 version=stanza['version']
             )
-            if created_new_version:
-                self.raise_event('new-source-package-version', {
-                    'name': src_pkg.name,
-                    'version': src_pkg.version,
-                    'pk': src_pkg.pk,
-                })
-                # Since it's a new version, extract package data from Sources
+            if created_new_version or self.force_update:
+                if created_new_version:
+                    self.raise_event('new-source-package-version', {
+                        'name': src_pkg.name,
+                        'version': src_pkg.version,
+                        'pk': src_pkg.pk,
+                    })
+                # Extract package data from Sources
                 entry = self._extract_information_from_sources_entry(
                     src_pkg, stanza)
                 # Update the source package information based on the newly
