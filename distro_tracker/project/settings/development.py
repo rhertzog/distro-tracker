@@ -21,7 +21,10 @@ CACHES = {
     }
 }
 
-del TEMPLATES[0]['OPTIONS']['loaders']
+TEMPLATES[0]['OPTIONS']['loaders'] = [
+    'django.template.loaders.filesystem.Loader',
+    'django.template.loaders.app_directories.Loader',
+]
 
 XHR_SIMULATED_DELAY = 0.5
 
