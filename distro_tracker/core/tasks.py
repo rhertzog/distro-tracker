@@ -81,9 +81,12 @@ class BaseTask(six.with_metaclass(PluginRegistry)):
 
     def is_initial_task(self):
         """
-        :returns True: If the task is the first task in a job.
+        :returns True: If the task is the first task in a job (or if it's not
+            part of a job).
         :returns False: If the task is not the first task in a job.
         """
+        if self.job is None:
+            return True
         return len(self.job.job_state.processed_tasks) == 0
 
     def execute(self):
