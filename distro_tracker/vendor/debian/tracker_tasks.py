@@ -2401,7 +2401,7 @@ class UpdatePackageScreenshotsTask(BaseTask):
 
 
 class UpdateBuildReproducibilityTask(BaseTask):
-    BASE_URL = 'https://reproducible.debian.net'
+    BASE_URL = 'https://tests.reproducible-builds.org'
     ACTION_ITEM_TYPE_NAME = 'debian-build-reproducibility'
     ACTION_ITEM_TEMPLATE = 'debian/build-reproducibility-action-item.html'
     ITEM_DESCRIPTION = {
@@ -2428,7 +2428,7 @@ class UpdateBuildReproducibilityTask(BaseTask):
             self.force_update = parameters['force_update']
 
     def get_build_reproducibility(self):
-        url = '{}/reproducible-tracker.json'.format(self.BASE_URL)
+        url = '{}/debian/reproducible-tracker.json'.format(self.BASE_URL)
         cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         if not self.force_update and not cache.is_expired(url):
             return
@@ -2461,7 +2461,7 @@ class UpdateBuildReproducibilityTask(BaseTask):
                 item_type=self.action_item_type,
                 severity=ActionItem.SEVERITY_NORMAL)
 
-        url = "{}/rb-pkg/{}.html".format(self.BASE_URL, package.name)
+        url = "{}/debian/rb-pkg/{}.html".format(self.BASE_URL, package.name)
         action_item.short_description = description.format(url=url)
         action_item.save()
         return True
