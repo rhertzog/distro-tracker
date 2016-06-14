@@ -88,7 +88,8 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
         except PackageExtractedInfo.DoesNotExist:
             has_reproducibility = False
             reproducibility_status = None
-        reproducibility_url = "https://reproducible.debian.net/rb-pkg/{}.html"
+        reproducibility_url = \
+            "https://tests.reproducible-builds.org/debian/rb-pkg/{}.html"
         reproducibility_url = reproducibility_url.format(self.package.name)
 
         return [
