@@ -1,4 +1,4 @@
-# Copyright 2015 The Distro Tracker Developers
+# Copyright 2015-2016 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -40,7 +40,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from django import forms
-from django.template import Context
 from django.template.loader import get_template
 from django import template
 
@@ -108,7 +107,7 @@ def render(element, markup_classes):
     if element_type == 'boundfield':
         add_input_classes(element)
         template = get_template("html/bootstrap-field.html")
-        context = Context({'field': element, 'classes': markup_classes})
+        context = {'field': element, 'classes': markup_classes}
     else:
         has_management = getattr(element, 'management_form', None)
         if has_management:
@@ -117,13 +116,13 @@ def render(element, markup_classes):
                     add_input_classes(field)
 
             template = get_template("html/bootstrap-formset.html")
-            context = Context({'formset': element, 'classes': markup_classes})
+            context = {'formset': element, 'classes': markup_classes}
         else:
             for field in element.visible_fields():
                 add_input_classes(field)
 
             template = get_template("html/bootstrap-form.html")
-            context = Context({'form': element, 'classes': markup_classes})
+            context = {'form': element, 'classes': markup_classes}
 
     return template.render(context)
 
