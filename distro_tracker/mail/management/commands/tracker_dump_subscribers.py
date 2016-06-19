@@ -1,4 +1,4 @@
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2016 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -12,7 +12,6 @@ Implements the command which outputs all subscribers for given packages.
 """
 from __future__ import unicode_literals
 from django.core.management.base import BaseCommand
-from optparse import make_option
 
 import json
 
@@ -26,28 +25,32 @@ class Command(BaseCommand):
     packages or for all packages, depending on the input parameters.
     emails.
     """
-    args = '[package ...]'
-
-    option_list = BaseCommand.option_list + (
-        make_option('--inactive',
-                    action='store_true',
-                    dest='inactive',
-                    default=False,
-                    help='Show inactive (non-confirmed) subscriptions'),
-        make_option('--json',
-                    action='store_true',
-                    dest='json',
-                    default=False,
-                    help='Output the result encoded as a JSON object'),
-        make_option('--udd-format',
-                    action='store_true',
-                    dest='udd_format',
-                    default=False,
-                    help='Output the result in a UDD compatible format'),
-    )
-
     help = ("Get the subscribers for the given packages.\n"
             "Outputs subscribers to all packges if no arguments are given")
+
+    def add_arguments(self, parser):
+        parser.add_argument('packages', nargs='*')
+        parser.add_argument(
+            '--inactive',
+            action='store_true',
+            dest='inactive',
+            default=False,
+            help='Show inactive (non-confirmed) subscriptions'
+        )
+        parser.add_argument(
+            '--json',
+            action='store_true',
+            dest='json',
+            default=False,
+            help='Output the result encoded as a JSON object'
+        )
+        parser.add_argument(
+            '--udd-format',
+            action='store_true',
+            dest='udd_format',
+            default=False,
+            help='Output the result in a UDD compatible format'
+        )
 
     def warn(self, message):
         if self.verbose:
@@ -57,11 +60,11 @@ class Command(BaseCommand):
         self.verbose = int(kwargs.get('verbosity', 1)) > 1
         inactive = kwargs['inactive']
         self.out_packages = {}
-        if len(args) == 0:
+        if len(kwargs['packages']) == 0:
             for package in PackageName.objects.all():
                 self.output_package(package, inactive)
         else:
-            for package_name in args:
+            for package_name in kwargs['packages']:
                 package = get_or_none(PackageName, name=package_name)
                 if package:
                     self.output_package(package, inactive)

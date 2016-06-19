@@ -1,4 +1,4 @@
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2016 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -17,7 +17,6 @@ from django.db import transaction
 from distro_tracker.core.models import Keyword, EmailSettings, Subscription
 from distro_tracker.core.models import UserEmail
 from distro_tracker.core.utils import get_or_none
-from optparse import make_option
 
 
 class Command(BaseCommand):
@@ -28,21 +27,22 @@ class Command(BaseCommand):
     their subscriptions or to automatically add it to users' lists that
     already contain a different keyword (given as a parameter to the command).
     """
-    args = 'keyword [existing-keyword]'
-
-    option_list = BaseCommand.option_list + (
-        make_option('--set-default',
-                    action='store_true',
-                    dest='is_default_keyword',
-                    default=False,
-                    help='Make the new keyword a default one'),
-    )
-
     help = ("Add a new keyword.\n."
             "The command supports simply adding a new keyword and allowing"
             " users to add it to their subscriptions or to automatically add"
             " it to users' lists that already contain a different keyword"
             " (given as a parameter to the command).")
+
+    def add_arguments(self, parser):
+        parser.add_argument('keyword')
+        parser.add_argument('existing_keyword', nargs='?', default=None)
+        parser.add_argument(
+            '--set-default',
+            action='store_true',
+            dest='is_default_keyword',
+            default=False,
+            help='Make the new keyword a default one'
+        )
 
     def warn(self, text):
         if self.verbose > 1:
@@ -115,9 +115,9 @@ class Command(BaseCommand):
     @transaction.atomic
     def handle(self, *args, **kwargs):
         self.verbose = int(kwargs.get('verbosity', 1)) > 1
-        if len(args) < 1:
+        keyword = kwargs['keyword']
+        if not keyword:
             raise CommandError("The name of the new keyword must be given")
-        keyword = args[0]
 
         default = kwargs['is_default_keyword']
         keyword, created = Keyword.objects.get_or_create(
@@ -137,10 +137,10 @@ class Command(BaseCommand):
                 UserEmail.objects.exclude(emailsettings__isnull=True)
             )
 
-        if len(args) > 1:
+        if kwargs['existing_keyword'] is not None:
             # Add the new keyword to all subscribers and subscriptions which
             # contain the parameter keyword
-            other_keyword = args[1]
+            other_keyword = kwargs['existing_keyword']
             self.add_keyword_to_subscriptions(keyword, other_keyword)
 
         if self.verbose:

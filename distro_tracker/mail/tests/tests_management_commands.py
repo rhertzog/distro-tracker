@@ -12,18 +12,10 @@ Tests the management command of the :mod:`distro_tracker.mail` app.
 """
 from __future__ import unicode_literals
 from distro_tracker.test import TestCase
-from distro_tracker.mail.management.commands.tracker_unsubscribe_all import (
-    Command as UnsubscribeCommand)
-from distro_tracker.mail.management.commands.tracker_dump_subscribers import (
-    Command as DumpCommand)
-from distro_tracker.mail.management.commands.tracker_stats import (
-    Command as StatsCommand)
 from distro_tracker.mail.management.commands.tracker_control import (
     Command as ControlCommand)
 from distro_tracker.mail.management.commands.tracker_dispatch import (
     Command as DispatchCommand)
-from distro_tracker.mail.management.commands.tracker_process_mail import (
-    Command as ProcessMailCommand)
 from django.core.management import call_command
 from django.core.management.base import CommandError
 
@@ -66,6 +58,19 @@ class CommandWithInputTestCase(TestCase):
         """
         self.assertEqual(force_bytes(self.input_message.as_string(), 'utf-8'),
                          force_bytes(msg.as_string(), 'utf-8'))
+
+
+class CommandWithOutputTestCase(TestCase):
+    def call_command(self, *args, **kwargs):
+        stdout = six.StringIO()
+        stderr = six.StringIO()
+        kwargs['stdout'] = stdout
+        kwargs['stderr'] = stderr
+
+        call_command(self.command_name, *args, **kwargs)
+
+        self.out = stdout.getvalue()
+        self.err_out = stderr.getvalue()
 
 
 class ControlManagementCommand(CommandWithInputTestCase):
@@ -116,7 +121,9 @@ class DispatchManagementCommand(CommandWithInputTestCase):
             'bounces+verpdata@{}'.format(settings.DISTRO_TRACKER_FQDN))
 
 
-class UnsubscribeAllManagementCommand(TestCase):
+class UnsubscribeAllManagementCommand(CommandWithOutputTestCase):
+    command_name = 'tracker_unsubscribe_all'
+
     def setUp(self):
         self.packages = [
             PackageName.objects.create(name='dummy-package'),
@@ -129,12 +136,6 @@ class UnsubscribeAllManagementCommand(TestCase):
                                         email_settings=self.email_settings)
 
         self.nosub_user = UserEmail.objects.create(email='nosub@dom.com')
-
-    def call_command(self, *args, **kwargs):
-        cmd = UnsubscribeCommand()
-        cmd.stdout = six.StringIO()
-        cmd.handle(*args, **kwargs)
-        self.out = cmd.stdout.getvalue()
 
     def assert_unsubscribed_user_response(self):
         for package in self.packages:
@@ -180,7 +181,7 @@ class UnsubscribeAllManagementCommand(TestCase):
         Tests the management command ``distro_tracker_unsubscribe_all`` when
         the given user is not subscribed to any packages.
         """
-        self.call_command(self.nosub_user)
+        self.call_command(self.nosub_user.email)
 
         self.assert_no_subscriptions_response()
 
@@ -198,7 +199,9 @@ class UnsubscribeAllManagementCommand(TestCase):
         self.assert_no_subscriptions_response()
 
 
-class DumpSubscribersManagementCommandTest(TestCase):
+class DumpSubscribersManagementCommandTest(CommandWithOutputTestCase):
+    command_name = 'tracker_dump_subscribers'
+
     def setUp(self):
         self.packages = [
             PackageName.objects.create(name='package' + str(i))
@@ -218,25 +221,6 @@ class DumpSubscribersManagementCommandTest(TestCase):
     def assert_user_list_in_output(self, users):
         self.assertIn('[ ' + ' '.join(str(user) for user in users) + ' ]',
                       self.out)
-
-    def call_command(self, *args, **kwargs):
-        kwargs.setdefault('inactive', False)
-        kwargs.setdefault('json', False)
-        cmd = DumpCommand()
-        cmd.stdout = six.StringIO()
-        # The management command stdout oject's write method automatically
-        # inserts new lines, so we do the same.
-        real_write = cmd.stdout.write
-
-        def write_stdout(value):
-            real_write(value + '\n')
-
-        cmd.stdout.write = write_stdout
-
-        cmd.stderr = six.StringIO()
-        cmd.handle(*args, **kwargs)
-        self.out = cmd.stdout.getvalue()
-        self.err_out = cmd.stderr.getvalue()
 
     def test_dump_one_package(self):
         user = self.users[0]
@@ -350,7 +334,9 @@ class DumpSubscribersManagementCommandTest(TestCase):
         self.assert_warning_in_output('does-not-exist does not exist')
 
 
-class StatsCommandTest(TestCase):
+class StatsCommandTest(CommandWithOutputTestCase):
+    command_name = 'tracker_stats'
+
     def setUp(self):
         self.package_count = 5
         for i in range(self.package_count):
@@ -367,13 +353,6 @@ class StatsCommandTest(TestCase):
             for package in SourcePackageName.objects.all():
                 Subscription.objects.create(email_settings=email_settings,
                                             package=package)
-
-    def call_command(self, *args, **kwargs):
-        kwargs.setdefault('json', False)
-        cmd = StatsCommand()
-        cmd.stdout = six.StringIO()
-        cmd.handle(*args, **kwargs)
-        self.out = cmd.stdout.getvalue()
 
     def test_legacy_output(self):
         self.call_command()
@@ -422,9 +401,8 @@ class AddKeywordManagementCommandTest(TestCase):
         # Sanity check - the keyword we are about to add does not already exist
         self.assertEqual(Keyword.objects.filter(name='new-keyword').count(), 0)
 
-        call_command('tracker_add_keyword', 'new-keyword', **{
-            'is_default_keyword': True
-        })
+        call_command('tracker_add_keyword', 'new-keyword',
+                     is_default_keyword=True)
 
         qs = Keyword.objects.filter(name='new-keyword', default=True)
         self.assertEqual(qs.count(), 1)
@@ -595,7 +573,6 @@ class ProcessMailTests(TestCase):
                 'MailQueue')
     def test_process_mail_command(self, mock_queue):
         """command is a simple wrapper around MailQueue.process_loop()"""
-        cmd = ProcessMailCommand()
-        cmd.handle()
+        call_command('tracker_process_mail')
         mock_queue.assert_called_with()
         mock_queue.return_value.process_loop.assert_called_with()

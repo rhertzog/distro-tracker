@@ -14,7 +14,6 @@ from __future__ import unicode_literals
 from __future__ import print_function
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from optparse import make_option
 
 import json
 
@@ -26,13 +25,6 @@ class Command(BaseCommand):
     """
     A Django management command which outputs some statistics.
     """
-    option_list = BaseCommand.option_list + (
-        make_option('--json',
-                    action='store_true',
-                    dest='json',
-                    default=False,
-                    help='Output the result encoded as a JSON object'),
-    )
 
     help = (
         "Get some statistics about the package tracker:\n"
@@ -40,6 +32,14 @@ class Command(BaseCommand):
         "- Total number of subscriptions\n"
         "- Total number of unique emails\n"
     )
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--json',
+            action='store_true',
+            default=False,
+            help='Output the result encoded as a JSON object'
+        )
 
     def handle(self, *args, **kwargs):
 

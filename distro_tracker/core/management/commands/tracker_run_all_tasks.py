@@ -1,4 +1,4 @@
-# Copyright 2013-2014 The Distro Tracker Developers
+# Copyright 2013-2016 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -13,7 +13,6 @@ A task is a subclass of :class:`distro_tracker.core.tasks.BaseTask`.
 """
 from __future__ import unicode_literals
 from django.core.management.base import BaseCommand
-from optparse import make_option
 from distro_tracker.core.tasks import run_all_tasks
 import logging
 
@@ -25,16 +24,18 @@ class Command(BaseCommand):
     A management command which starts all independent Distro Tracker tasks.
     """
     help = "Start all independent Distro Tracker tasks."
-    option_list = BaseCommand.option_list + (
-        make_option('--force',
-                    action='store_true',
-                    dest='force',
-                    default=False,
-                    help=(
-                        'Force the update. '
-                        'This clears any caches and makes a full update'
-                    )),
-    )
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--force',
+            action='store_true',
+            dest='force',
+            default=False,
+            help=(
+                'Force the update. '
+                'This clears any caches and makes a full update'
+            )
+        )
 
     def handle(self, *args, **kwargs):
         additional_arguments = None
