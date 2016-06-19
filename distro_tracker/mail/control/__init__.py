@@ -19,6 +19,7 @@ from distro_tracker.core.utils import distro_tracker_render_to_string
 from distro_tracker.core.utils import extract_email_address_from_header
 from distro_tracker.core.utils import get_decoded_message_payload
 from distro_tracker.core.utils.email_messages import decode_header
+from distro_tracker.core.utils.email_messages import unfold_header
 
 from distro_tracker.mail.control.commands import CommandFactory
 from distro_tracker.mail.control.commands import CommandProcessor
@@ -48,24 +49,24 @@ def send_response(original_message, message_text, recipient_email, cc=None):
         response.
     :param cc: A list of emails which should receive a CC of the response.
     """
-    subject = decode_header(original_message.get('Subject'))
+    subject = unfold_header(decode_header(original_message.get('Subject')))
     if not subject:
         subject = 'Your mail'
-    references = original_message.get('References', '')
-    references = re.sub(r"\r?\n\s", " ", references, 0, re.MULTILINE)
+    message_id = unfold_header(original_message.get('Message-ID', ''))
+    references = unfold_header(original_message.get('References', ''))
     if references:
         references += ' '
-    references += original_message.get('Message-ID', '')
+    references += message_id
     message = EmailMessage(
         subject='Re: ' + subject,
-        to=[original_message['From']],
+        to=[unfold_header(original_message['From'])],
         cc=cc,
         from_email=DISTRO_TRACKER_BOUNCES_EMAIL,
         headers={
             'From': DISTRO_TRACKER_CONTACT_EMAIL,
             'X-Loop': DISTRO_TRACKER_CONTROL_EMAIL,
             'References': references,
-            'In-Reply-To': original_message.get('Message-ID', ''),
+            'In-Reply-To': message_id,
         },
         body=message_text,
     )

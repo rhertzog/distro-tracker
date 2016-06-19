@@ -350,13 +350,15 @@ class ControlBotBasic(EmailControlTest):
             references = " " + self.message['References'] + references
         self.assert_header_equal('References', references)
 
-    def test_response_when_references_has_two_lines(self):
+    def test_response_when_headers_have_two_lines(self):
         """
-        Tests that we don't fail when the References field contain
-        multiple lines.
+        Tests that we don't fail when header fields (References, From, Subject)
+        contain multiple lines.
         """
         for sep in ["\n\t", "\n ", "\r\n "]:
             self.set_header('References', "<foo@bar>" + sep + "<foo2@bar2>")
+            self.set_header('From', "This is long" + sep + "<foo@bar.baz>")
+            self.set_header('Subject', "This is a long" + sep + " subject")
             self.set_input_lines(['help'])
 
             self.control_process()
