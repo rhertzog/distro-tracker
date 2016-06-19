@@ -48,6 +48,7 @@ from distro_tracker.core.utils.email_messages import decode_header
 from distro_tracker.core.utils.email_messages import (
     name_and_address_from_string,
     names_and_addresses_from_string)
+from distro_tracker.core.utils.email_messages import unfold_header
 from distro_tracker.core.utils.linkify import linkify
 from distro_tracker.core.utils.linkify import LinkifyDebianBugLinks
 from distro_tracker.core.utils.linkify import LinkifyUbuntuBugLinks
@@ -247,6 +248,17 @@ class EmailUtilsTest(SimpleTestCase):
         )
 
         self.assertSequenceEqual(names_and_addresses_from_string(''), [])
+
+    def test_unfold_header(self):
+        test_values = {
+            'a\n b': 'a b',
+            'a\r\n b': 'a b',
+            'a\n\tb': 'a\tb',
+            'a\r\n\tb\n c\n\td': 'a\tb c\td',
+            'a\n\t bc\n  d': 'a\t bc  d',
+        }
+        for folded, unfolded in test_values.items():
+            self.assertEqual(unfold_header(folded), unfolded)
 
 
 class CustomEmailMessageTest(TestCase):

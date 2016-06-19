@@ -237,3 +237,21 @@ def decode_header(header, default_encoding='utf-8'):
         else:
             result += part
     return result
+
+
+def unfold_header(header):
+    """
+    Unfolding is the process to remove the line wrapping added by mail agents.
+    An header is a single logical line and they are not allowed to be multi-line
+    values.
+
+    We need to unfold their values in particular when we want to reuse the
+    values to compose a reply message as Python's email API chokes on those
+    newline characters.
+
+    :param:header: the header value to unfold
+    :type param: str
+    :returns: the unfolded version of the header.
+    :rtype: str
+    """
+    return re.sub(r'\r?\n(\s)', r'\1', header, 0, re.MULTILINE)
