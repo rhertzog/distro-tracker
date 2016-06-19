@@ -1,4 +1,4 @@
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2016 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -104,10 +104,8 @@ class Command(BaseCommand):
 
         # Hack to be able to set the date created field to something else
         # than now.
-        EmailNews._meta.get_field_by_name('datetime_created')[0]\
-            .auto_now_add = False
+        EmailNews._meta.get_field('datetime_created').auto_now_add = False
 
         self.import_all_news(args[0])
 
-        EmailNews._meta.get_field_by_name('datetime_created')[0]\
-            .auto_now_add = True
+        EmailNews._meta.get_field('datetime_created').auto_now_add = True
