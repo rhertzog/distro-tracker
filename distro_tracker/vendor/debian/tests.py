@@ -2576,14 +2576,14 @@ class CodeSearchLinksTest(TestCase):
         return self.client.get(package_page_url)
 
     def browse_link_in_content(self, content):
-        html = soup(content)
+        html = soup(content, 'html.parser')
         for a_tag in html.findAll('a', {'href': True}):
             if a_tag['href'].startswith('https://sources.debian.net'):
                 return True
         return False
 
     def search_form_in_content(self, content):
-        html = soup(content)
+        html = soup(content, 'html.parser')
         return bool(html.find('form', {'class': 'code-search-form'}))
 
     def test_package_in_stable(self):
@@ -3806,7 +3806,7 @@ class UbuntuPanelTests(TestCase):
         return self.client.get(package_page_url)
 
     def ubuntu_panel_in_content(self, content):
-        html = soup(content)
+        html = soup(content, 'html.parser')
         for panel in html.findAll('div', {'class': 'panel-heading'}):
             if 'ubuntu' in str(panel):
                 return True

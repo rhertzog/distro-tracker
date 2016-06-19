@@ -57,7 +57,7 @@ class VersionedLinksPanelTests(TestCase):
         Checks whether the versioned links panel is found in the rendered HTML
         response.
         """
-        html = soup(response.content)
+        html = soup(response.content, 'html.parser')
         panels = html.findAll("div", {'class': 'panel-heading'})
         for panel in panels:
             if 'versioned links' in str(panel):
@@ -138,7 +138,7 @@ class GeneralInfoLinkPanelItemsTests(TestCase, TemplateTestsMixin):
         Checks whether the links panel is found in the rendered HTML
         response.
         """
-        html = soup(response.content)
+        html = soup(response.content, 'html.parser')
         panels = html.findAll("div", {'class': 'panel-heading'})
         for panel in panels:
             if 'links' in str(panel) and 'versioned links' not in str(panel):

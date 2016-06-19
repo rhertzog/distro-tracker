@@ -809,7 +809,7 @@ class UpdateExcusesTask(BaseTask):
         Tracker package pages. Return the original text unmodified, otherwise.
         """
         re_anchor_href = re.compile(r'^#(.*)$')
-        html = soup(excuse)
+        html = soup(excuse, 'html.parser')
         for a_tag in html.findAll('a', {'href': True}):
             href = a_tag['href']
             match = re_anchor_href.match(href)
