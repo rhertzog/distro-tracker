@@ -12,7 +12,7 @@ Distro Tracker currently depends on the following Debian packages:
 
 - python-django (>= 1.8)
 - python-requests
-- python-django-jsonfield
+- python-django-jsonfield (>= 1.0.0)
 - python-django-debug-toolbar (in development mode only)
 - python-django-captcha (optional)
 - python-debian
