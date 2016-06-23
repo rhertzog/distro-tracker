@@ -31,10 +31,12 @@ from distro_tracker.core.models import Repository
 from distro_tracker.core.models import RepositoryFlag
 from distro_tracker.core.models import Architecture
 from distro_tracker.core.models import Team
+from distro_tracker.core.models import PackageExtractedInfo
 from distro_tracker.core.retrieve_data import UpdateRepositoriesTask
 from distro_tracker.core.retrieve_data import UpdateTeamPackagesTask
 from distro_tracker.core.retrieve_data import retrieve_repository_info
 from distro_tracker.core.retrieve_data import UpdateVersionInformation
+from distro_tracker.core.retrieve_data import UpdatePackageGeneralInformation
 from distro_tracker.test.utils import create_source_package
 from distro_tracker.test.utils import set_mock_response
 from distro_tracker.accounts.models import User, UserEmail
@@ -1226,3 +1228,38 @@ class UpdateTeamPackagesTaskTests(TestCase):
         all_packages = [p.name for p in self.team.packages.all()]
         for source_package in team_maintainer_packages:
             self.assertIn(source_package.source_package_name.name, all_packages)
+
+
+class UpdatePackageGeneralInformationTest(TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.retrieve_data.UpdatePackageGeneralInformation`
+    task.
+    """
+
+    def setUp(self):
+        self.srcpkg = create_source_package({
+            'name': 'dummy-package',
+            'version': '1.0.0',
+            'maintainer': {
+                'name': 'John Doe',
+                'email': 'jdoe@debian.org'
+            },
+            'architectures': ['i386', 'amd64'],
+        })
+        self.repo1 = Repository.objects.create(name='repo1', shorthand='repo1')
+        SourcePackageRepositoryEntry.objects.create(
+            source_package=self.srcpkg, repository=self.repo1)
+
+    def test_UpdatePackageGeneralInformation_task(self):
+
+        # execute the task
+        task = UpdatePackageGeneralInformation(force_update=True)
+        task.execute()
+
+        # check that the task worked as expected
+        pkgdata = PackageExtractedInfo.objects.get(
+            package=self.srcpkg.source_package_name, key='general').value
+        self.assertEqual(pkgdata['name'], self.srcpkg.name)
+        self.assertEqual(pkgdata['version'], self.srcpkg.version)
+        self.assertListEqual(pkgdata['architectures'], ['amd64', 'i386'])

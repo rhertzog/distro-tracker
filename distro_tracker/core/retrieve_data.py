@@ -850,7 +850,8 @@ class UpdatePackageGeneralInformation(PackageUpdateTask):
                 uploader.to_dict()
                 for uploader in srcpkg.uploaders.all()
             ],
-            'architectures': map(str, srcpkg.architectures.order_by('name')),
+            'architectures': list(
+                map(str, srcpkg.architectures.order_by('name'))),
             'standards_version': srcpkg.standards_version,
             'vcs': srcpkg.vcs,
         }
