@@ -364,13 +364,24 @@ class ControlBotBasic(EmailControlTest):
 
             self.control_process()
 
+    def test_response_when_empty_subject(self):
+        """
+        Tests that the subject of the response when there is no subject set in
+        the request is correct.
+        """
+        self.set_header('Subject', '')
+        self.set_input_lines(['help'])
+
+        self.control_process()
+
+        self.assert_header_equal('Subject', 'Re: Your mail')
+
     def test_response_when_no_subject(self):
         """
         Tests that the subject of the response when there is no subject set in
         the request is correct.
         """
-        self.set_input_lines(["thanks"])
-        self.set_header('Subject', '')
+        del self.message['Subject']
         self.set_input_lines(['help'])
 
         self.control_process()

@@ -49,7 +49,7 @@ def send_response(original_message, message_text, recipient_email, cc=None):
         response.
     :param cc: A list of emails which should receive a CC of the response.
     """
-    subject = unfold_header(decode_header(original_message.get('Subject')))
+    subject = unfold_header(decode_header(original_message.get('Subject', '')))
     if not subject:
         subject = 'Your mail'
     message_id = unfold_header(original_message.get('Message-ID', ''))

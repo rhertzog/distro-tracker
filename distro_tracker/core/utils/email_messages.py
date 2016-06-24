@@ -249,9 +249,13 @@ def unfold_header(header):
     values to compose a reply message as Python's email API chokes on those
     newline characters.
 
+    If header is None, the return value is None as well.
+
     :param:header: the header value to unfold
     :type param: str
     :returns: the unfolded version of the header.
     :rtype: str
     """
+    if header is None:
+        return None
     return re.sub(r'\r?\n(\s)', r'\1', header, 0, re.MULTILINE)

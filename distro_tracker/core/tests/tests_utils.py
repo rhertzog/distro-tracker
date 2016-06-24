@@ -260,6 +260,9 @@ class EmailUtilsTest(SimpleTestCase):
         for folded, unfolded in test_values.items():
             self.assertEqual(unfold_header(folded), unfolded)
 
+    def test_unfold_header_with_none_value(self):
+        self.assertIsNone(unfold_header(None))
+
 
 class CustomEmailMessageTest(TestCase):
     """
