@@ -1,4 +1,4 @@
-# Copyright 2013-2014 The Distro Tracker Developers
+# Copyright 2013-2016 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -71,6 +71,8 @@ def toggle_chevron(title='Toggle details', content=None):
     """
     Renders a chevron to toggle details.
     """
+    if content is None:
+        content = mark_safe('<a href="#">[{}]</a>'.format(title))
     return octicon('chevron-down', title, content)
 
 
