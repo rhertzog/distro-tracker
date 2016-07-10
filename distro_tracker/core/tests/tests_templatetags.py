@@ -39,10 +39,10 @@ class TemplateTagsTests(SimpleTestCase):
         html = self.parse_toggle_chevron()
         link = html.find(name='a')
         self.assertIsNotNone(link)
-        self.assertEqual(link.get_text(), "[Toggle details]")
+        self.assertIn(link.get_text(), "[Toggle details]")
 
     def test_toggle_chevron_generates_a_custom_link(self):
         html = self.parse_toggle_chevron('title="abc"')
         link = html.find(name='a')
         self.assertIsNotNone(link)
-        self.assertEqual(link.get_text(), "[abc]")
+        self.assertIn(link.get_text(), "[abc]")

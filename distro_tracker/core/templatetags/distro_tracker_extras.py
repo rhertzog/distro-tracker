@@ -53,27 +53,27 @@ def repeat(parser, token):
 
 
 @register.simple_tag()
-def octicon(name, title='', content=None):
+def octicon(name, title='', content=None, role="img"):
     """
     Renders an octicon with alternate text.
     """
     if content is None:
-        content = "[{}]".format(title)
+        content = mark_safe('<span class="sr-only">[{}]</span>'.format(title))
 
     return mark_safe(render_to_string(
         'core/octicon.html',
-        {'name': name, 'title': title, 'content': content}
+        {'name': name, 'title': title, 'content': content, 'role': role}
     ).rstrip())
 
 
 @register.simple_tag()
-def toggle_chevron(title='Toggle details', content=None):
+def toggle_chevron(title='Toggle details'):
     """
     Renders a chevron to toggle details.
     """
-    if content is None:
-        content = mark_safe('<a href="#">[{}]</a>'.format(title))
-    return octicon('chevron-down', title, content)
+    chevron = '<a role="button" aria-label="{}" tabindex="0">{}</a>'.format(
+        title, octicon('chevron-down', title=title, content=''))
+    return mark_safe(chevron)
 
 
 @register.filter(name='zip')
