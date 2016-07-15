@@ -926,12 +926,10 @@ class UpdateExcusesTask(BaseTask):
 
         action_item.short_description = self.ITEM_DESCRIPTION
         if package.main_entry:
-            section = package.main_entry.section
-            if section not in ('contrib', 'non-free'):
-                query_string = urlencode({'package': package.name})
-                extra_data['check_why_url'] = (
-                    'https://release.debian.org/migration/testing.pl'
-                    '?{query_string}'.format(query_string=query_string))
+            query_string = urlencode({'package': package.name})
+            extra_data['check_why_url'] = (
+                'https://qa.debian.org/excuses.php'
+                '?{query_string}'.format(query_string=query_string))
 
         action_item.extra_data = extra_data
         action_item.save()
