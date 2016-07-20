@@ -2246,6 +2246,8 @@ class UpdatePackageScreenshotsTask(BaseTask):
 
     def execute(self):
         content = self._get_screenshots()
+        if content is None:
+            return
 
         packages_with_screenshots = []
         for item in content['packages']:
