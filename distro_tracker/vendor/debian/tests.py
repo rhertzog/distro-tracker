@@ -89,7 +89,6 @@ from email.message import Message
 from bs4 import BeautifulSoup as soup
 
 import os
-import yaml
 import json
 import logging
 
