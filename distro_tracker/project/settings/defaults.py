@@ -1,4 +1,4 @@
-# Copyright 2013-2014 The Distro Tracker Developers
+# Copyright 2013-2016 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at http://deb.li/DTAuthors
 #
@@ -121,11 +121,16 @@ of those settings.
 More settings:
 """
 from __future__ import unicode_literals
+import django
+from django.core.exceptions import ImproperlyConfigured
 from django.utils import six
 from os.path import dirname
 
 import socket
 import os.path
+
+if django.VERSION < (1, 8):
+    raise ImproperlyConfigured("Distro Tracker needs Django >= 1.8")
 
 six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
 
