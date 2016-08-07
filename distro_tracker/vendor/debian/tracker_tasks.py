@@ -2371,3 +2371,81 @@ class UpdateBuildReproducibilityTask(BaseTask):
             ActionItem.objects.delete_obsolete_items([self.action_item_type],
                                                      packages)
             PackageExtractedInfo.objects.bulk_create(extracted_info)
+
+
+class MultiArchHintsTask(BaseTask):
+    ACTIONS_WEB = 'https://wiki.debian.org/MultiArch/Hints'
+    ACTIONS_URL = 'https://dedup.debian.net/static/multiarch-hints.yaml'
+    ACTION_ITEM_TYPE_NAME = 'debian-multiarch-hints'
+    ACTION_ITEM_TEMPLATE = 'debian/multiarch-hints.html'
+    ACTION_ITEM_DESCRIPTION = \
+        '<a href="{link}">Multiarch hinter</a> reports {count} issue(s)'
+
+    def __init__(self, force_update=False, *args, **kwargs):
+        super(MultiArchHintsTask, self).__init__(*args, **kwargs)
+        self.force_update = force_update
+        self.action_item_type = ActionItemType.objects.create_or_update(
+            type_name=self.ACTION_ITEM_TYPE_NAME,
+            full_description_template=self.ACTION_ITEM_TEMPLATE)
+        self.SEVERITIES = {}
+        for value, name in ActionItem.SEVERITIES:
+            self.SEVERITIES[name] = value
+
+    def set_parameters(self, parameters):
+        if 'force_update' in parameters:
+            self.force_update = parameters['force_update']
+
+    def get_data(self):
+        data = get_resource_content(self.ACTIONS_URL)
+        data = yaml.safe_load(data)
+        return data
+
+    def get_packages(self):
+        data = self.get_data()
+        if data['format'] != 'multiarch-hints-1.0':
+            return None
+        data = data['hints']
+        packages = collections.defaultdict(dict)
+        for item in data:
+            if 'source' not in item:
+                continue
+            package = item['source']
+            wishlist = ActionItem.SEVERITY_WISHLIST
+            severity = self.SEVERITIES.get(item['severity'], wishlist)
+            pkg_severity = packages[package].get('severity', wishlist)
+            packages[package]['severity'] = max(severity, pkg_severity)
+            packages[package].setdefault('hints', []).append(
+                (item['description'], item['link']))
+        return packages
+
+    def update_action_item(self, package, severity, description, extra_data):
+        action_item = package.get_action_item_for_type(
+            self.action_item_type.type_name)
+        if action_item is None:
+            action_item = ActionItem(
+                package=package,
+                item_type=self.action_item_type)
+        action_item.severity = severity
+        action_item.short_description = description
+        action_item.extra_data = extra_data
+        action_item.save()
+
+    def execute(self):
+        packages = self.get_packages()
+        if not packages:
+            return
+
+        with transaction.atomic():
+            for name, data in packages.items():
+                try:
+                    package = SourcePackageName.objects.get(name=name)
+                except SourcePackageName.DoesNotExist:
+                    continue
+
+                description = self.ACTION_ITEM_DESCRIPTION.format(
+                    count=len(data['hints']), link=self.ACTIONS_WEB)
+                self.update_action_item(package, data['severity'], description,
+                                        data['hints'])
+
+            ActionItem.objects.delete_obsolete_items([self.action_item_type],
+                                                     packages.keys())
