@@ -16,6 +16,10 @@ INSTALLED_APPS += (
 
 # Official service name
 DISTRO_TRACKER_FQDN = "tracker.debian.org"
+ALLOWED_HOSTS = [
+    DISTRO_TRACKER_FQDN,
+    "2qlvvvnhqyda2ahd.onion",
+]
 
 # Custom data path (used only if it exists, so that we can reuse
 # those settings in a development environment too).
