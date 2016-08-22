@@ -3,9 +3,9 @@
 {% load distro_tracker_extras %}
 
 {% block panel-body %}
-<div class="list-group list-group-flush" id="action-needed-list">
+<div class="list-group list-group-flush" id="action-needed-list" role="list">
     {% for item in panel.context.items %}
-    <div class="card list-group-item">
+    <div class="card list-group-item" role="listitem">
 	<div class="card-block p-a-0 action-needed-heading">
 	    <span data-toggle="collapse"
 		  data-parent="#action-needed-list"
