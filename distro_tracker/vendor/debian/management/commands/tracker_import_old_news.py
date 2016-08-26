@@ -26,7 +26,6 @@ class Command(BaseCommand):
 
     The imported news' signature information is not automatically extracted.
     """
-    args = 'root-dir'
 
     def add_arguments(self, parser):
         parser.add_argument('rootdir')

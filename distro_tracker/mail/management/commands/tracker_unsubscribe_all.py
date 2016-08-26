@@ -22,8 +22,6 @@ class Command(BaseCommand):
     A Django management command which removes all subscriptions for the given
     emails.
     """
-    args = 'email [email ...]'
-
     help = "Removes all package subscriptions for the given emails."
 
     def add_arguments(self, parser):
