@@ -90,7 +90,7 @@ def get_decoded_message_payload(message, default_charset='utf-8'):
     charset = message.get_content_charset(default_charset)
     try:
         return payload.decode(charset)
-    except UnicodeDecodeError:
+    except (UnicodeDecodeError, LookupError):
         # If we did not get the charset right, assume it's latin1 and make
         # sure to not fail furter
         return payload.decode('latin1', 'replace')
