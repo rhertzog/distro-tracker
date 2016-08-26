@@ -296,21 +296,15 @@ def get_maintainer_extra(developer_email, package_name=None):
     """
     developer = get_or_none(DebianContributor,
                             email__email__iexact=developer_email)
-    if not developer:
-        # Debian does not have any extra information to include in this case.
-        return None
     extra = []
-    if developer.agree_with_low_threshold_nmu:
+    _add_dmd_entry(extra, developer_email)
+    if developer and developer.agree_with_low_threshold_nmu:
         extra.append({
             'display': 'LowNMU',
             'description': 'maintainer agrees with Low Threshold NMU',
             'link': 'https://wiki.debian.org/LowThresholdNmu',
         })
-    if package_name and developer.is_debian_maintainer:
-        if package_name in developer.allowed_packages:
-            extra.append({
-                'display': 'dm',
-            })
+    _add_dm_entry(extra, developer, package_name)
     return extra
 
 
@@ -321,19 +315,29 @@ def get_uploader_extra(developer_email, package_name=None):
 
      - Whether the uploader is a DebianMaintainer
     """
-    if package_name is None:
-        return
-
     developer = get_or_none(DebianContributor,
                             email__email__iexact=developer_email)
-    if not developer:
-        return
 
-    if developer.is_debian_maintainer:
+    extra = []
+    _add_dmd_entry(extra, developer_email)
+    _add_dm_entry(extra, developer, package_name)
+    return extra
+
+
+def _add_dmd_entry(extra, email):
+    extra.append({
+        'display': 'DMD',
+        'description': 'UDD\'s Debian Maintainer Dashboard',
+        'link': 'https://udd.debian.org/dmd/?{email}#todo'.format(
+            email=urlquote(email)
+        )
+    })
+
+
+def _add_dm_entry(extra, developer, package_name):
+    if package_name and developer and developer.is_debian_maintainer:
         if package_name in developer.allowed_packages:
-            return [{
-                'display': 'dm',
-            }]
+            extra.append({'display': 'dm'})
 
 
 def allow_package(stanza):

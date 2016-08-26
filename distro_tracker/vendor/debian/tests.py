@@ -638,37 +638,32 @@ class DebianContributorExtraTest(TestCase):
         d = DebianContributor.objects.create(email=email,
                                              agree_with_low_threshold_nmu=True)
 
-        # Only in NMU list
-        self.assertSequenceEqual(
-            [{
+        expected = [
+            {
+                'display': 'DMD',
+                'description': 'UDD\'s Debian Maintainer Dashboard',
+                'link': 'https://udd.debian.org/dmd/?dummy%40debian.org#todo',
+            },
+            {
                 'display': 'LowNMU',
                 'description': 'maintainer agrees with Low Threshold NMU',
                 'link': 'https://wiki.debian.org/LowThresholdNmu',
-            }],
-            get_maintainer_extra('dummy@debian.org')
-        )
+            }
+        ]
+        # Only in NMU list
+        self.assertSequenceEqual(expected,
+                                 get_maintainer_extra('dummy@debian.org'))
         # The developer is now in the DM list
         d.is_debian_maintainer = True
         d.allowed_packages = ['package-name']
         d.save()
         # When not providing a package name, the response is the same
-        self.assertSequenceEqual(
-            [{
-                'display': 'LowNMU',
-                'description': 'maintainer agrees with Low Threshold NMU',
-                'link': 'https://wiki.debian.org/LowThresholdNmu',
-            }],
-            get_maintainer_extra('dummy@debian.org')
-        )
+        self.assertSequenceEqual(expected,
+                                 get_maintainer_extra('dummy@debian.org'))
         # With a package name an extra item is in the response.
-        self.assertSequenceEqual([
-            {
-                'display': 'LowNMU',
-                'description': 'maintainer agrees with Low Threshold NMU',
-                'link': 'https://wiki.debian.org/LowThresholdNmu',
-            },
-            {'display': 'dm'}
-        ],
+        expected.append({'display': 'dm'})
+        self.assertSequenceEqual(
+            expected,
             get_maintainer_extra('dummy@debian.org', 'package-name')
         )
 
@@ -676,20 +671,28 @@ class DebianContributorExtraTest(TestCase):
         email = UserEmail.objects.create(email='dummy@debian.org')
         d = DebianContributor.objects.create(email=email,
                                              agree_with_low_threshold_nmu=True)
-
+        expected = [
+            {
+                'display': 'DMD',
+                'description': 'UDD\'s Debian Maintainer Dashboard',
+                'link': 'https://udd.debian.org/dmd/?dummy%40debian.org#todo',
+            },
+        ]
         # Only in NMU list - no extra data when the developer in displayed as
         # an uploader.
-        self.assertIsNone(get_uploader_extra('dummy@debian.org'))
+        self.assertSequenceEqual(expected,
+                                 get_uploader_extra('dummy@debian.org'))
         # The developer is now in the DM list
         d.is_debian_maintainer = True
         d.allowed_packages = ['package-name']
         d.save()
         # When not providing a package name, the response is the same
-        self.assertIsNone(get_uploader_extra('dummy@debian.org'))
+        self.assertSequenceEqual(expected,
+                                 get_uploader_extra('dummy@debian.org'))
         # With a package name an extra item is in the response.
-        self.assertSequenceEqual([
-            {'display': 'dm'}
-        ],
+        expected.append({'display': 'dm'})
+        self.assertSequenceEqual(
+            expected,
             get_uploader_extra('dummy@debian.org', 'package-name')
         )
 
