@@ -28,6 +28,9 @@ class Command(BaseCommand):
     """
     args = 'root-dir'
 
+    def add_arguments(self, parser):
+        parser.add_argument('rootdir')
+
     def get_directories(self, root_directory):
         return [
             os.path.join(root_directory, d)
@@ -98,7 +101,7 @@ class Command(BaseCommand):
                 self.import_package_news(package_directory)
 
     def handle(self, *args, **kwargs):
-        if len(args) != 1:
+        if 'rootdir' not in kwargs or not kwargs['rootdir']:
             raise CommandError("Root directory of old news not provided")
         self.verbose = int(kwargs.get('verbosity', 1)) > 1
 
@@ -106,6 +109,6 @@ class Command(BaseCommand):
         # than now.
         EmailNews._meta.get_field('datetime_created').auto_now_add = False
 
-        self.import_all_news(args[0])
+        self.import_all_news(kwargs['rootdir'])
 
         EmailNews._meta.get_field('datetime_created').auto_now_add = True
