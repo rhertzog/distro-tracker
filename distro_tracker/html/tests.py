@@ -67,6 +67,7 @@ class BootstrapTemplateTagTests(TestCase):
     def setUp(self):
         self.maxDiff = None
         self.form = ExampleForm()
+        self.form.use_required_attribute = False
 
     def render_template(self, content):
         return Template(content).render(Context({'form': self.form}))
@@ -82,7 +83,7 @@ class BootstrapTemplateTagTests(TestCase):
         template_content = "{% load bootstrap %}{{ form|bootstrap }}"
         html = self.render_template(template_content)
 
-        self.assertHTMLEqual(html, expected)
+        self.assertHTMLEqual(expected, html)
 
     def test_inline_form(self):
         expected = self.load_test_data('bootstrap-form-inline.html')
@@ -90,7 +91,7 @@ class BootstrapTemplateTagTests(TestCase):
         template_content = "{% load bootstrap %}{{ form|bootstrap_inline }}"
         html = self.render_template(template_content)
 
-        self.assertHTMLEqual(html, expected)
+        self.assertHTMLEqual(expected, html)
 
     def test_horizontal_form(self):
         expected = self.load_test_data('bootstrap-form-horizontal.html')
@@ -98,4 +99,4 @@ class BootstrapTemplateTagTests(TestCase):
         template_content = "{% load bootstrap %}{{ form|bootstrap_horizontal }}"
         html = self.render_template(template_content)
 
-        self.assertHTMLEqual(html, expected)
+        self.assertHTMLEqual(expected, html)
