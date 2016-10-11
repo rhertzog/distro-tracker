@@ -80,8 +80,8 @@ def send_response(original_message, message_text, recipient_email, cc=None):
 
 def send_plain_text_warning(original_message, logdata):
     """
-    Sends an email warning the user that his control message could not be
-    decoded due to not being a text/plain message.
+    Sends an email warning the user that the control message could not
+    be decoded due to not being a text/plain message.
 
     :param original_message: The received control message.
     :type original_message: :py:class:`email.message.Message` or an object with

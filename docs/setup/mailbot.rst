@@ -50,7 +50,7 @@ Mails received to ``DISTRO_TRACKER_CONTROL_EMAIL`` address should be piped to th
 ``control_process`` command. A way to set this up in Exim would be to create a
 new alias for the local part of the control email address and set it to point
 to the user who owns the Distro Tracker application. That user should have a ``.forward``
-file in his home directory which includes the directive to pipe incoming email
+file in their home directory which includes the directive to pipe incoming email
 to the command.
 
 For example, if the ``DISTRO_TRACKER_CONTROL_EMAIL`` is set to ``control@distro_tracker.debian.net``

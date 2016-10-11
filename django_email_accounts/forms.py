@@ -100,7 +100,8 @@ class ResetPasswordForm(forms.Form):
 
 class ChangePersonalInfoForm(forms.ModelForm):
     """
-    A form providing a way for the user to change his account's personal info.
+    A form providing a way for the user to change their account's
+    personal info.
     """
     class Meta:
         model = User

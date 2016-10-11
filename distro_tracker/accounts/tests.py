@@ -103,8 +103,8 @@ class UserTests(TestCase):
         Tests the
         :meth:`is_subscribed_to
         <distro_tracker.accounts.models.User.is_subscribed_to>`
-        method when the user is subscribed to the package with his main email
-        only.
+        method when the user is subscribed to the package with their
+        main email only.
         """
         email = self.user.emails.all()[0]
         Subscription.objects.create_for(
@@ -119,8 +119,8 @@ class UserTests(TestCase):
         Tests the
         :meth:`is_subscribed_to
         <distro_tracker.accounts.models.User.is_subscribed_to>`
-        method when the user is subscribed to the package with one of his
-        associated emails.
+        method when the user is subscribed to the package with one of
+        their associated emails.
         """
         email = self.user.emails.create(email='other-email@domain.com')
         Subscription.objects.create_for(
@@ -135,8 +135,8 @@ class UserTests(TestCase):
         Tests the
         :meth:`is_subscribed_to
         <distro_tracker.accounts.models.User.is_subscribed_to>`
-        method when the user is subscribed to the package with all of his
-        associated emails.
+        method when the user is subscribed to the package with all of
+        their associated emails.
         """
         self.user.emails.create(email='other-email@domain.com')
         for email in self.user.emails.all():
@@ -203,8 +203,8 @@ class SubscriptionsViewTests(TestCase):
 
     def test_one_email(self):
         """
-        Tests the scenario where the user only has one email associated with
-        his account.
+        Tests the scenario where the user's account only has one
+        associated email address.
         """
         self.subscribe_email_to_package(self.user.main_email, self.package_name)
 
@@ -225,8 +225,8 @@ class SubscriptionsViewTests(TestCase):
 
     def test_multiple_emails(self):
         """
-        Tests the scenario where the user has multiple emails associated with
-        his account.
+        Tests the scenario where the user's account has multiple
+        associated email addresses.
         """
         self.user.emails.create(email='other-email@domain.com')
         packages = [

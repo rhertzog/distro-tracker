@@ -100,8 +100,8 @@ def get_package_information_site_url(package_name,
 
 def get_developer_information_url(developer_email):
     """
-    The function should return a URL which displays extra information about a
-    developer, given his email.
+    The function should return a URL to extra information about a
+    developer, by email address.
 
     The function should return ``None`` if the vendor does not provide
     additional developer information or if it does not have the information for

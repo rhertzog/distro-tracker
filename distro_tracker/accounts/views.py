@@ -291,7 +291,7 @@ class ChooseSubscriptionEmailView(LoginRequiredMixin, View):
 
 class ModifyKeywordsView(LoginRequiredMixin, View):
     """
-    Lets the logged in user modify his default keywords or
+    Lets the logged-in user modify their default keywords or
     subscription-specific keywords.
     """
     def get_keywords(self, keywords):

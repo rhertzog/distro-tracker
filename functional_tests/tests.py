@@ -222,7 +222,7 @@ class PackagePageTest(SeleniumTestCase):
         # The user tries to visit a package's page.
         self.get_page(self.get_package_url(self.package.name))
 
-        # He has reached the package's page which is indicated in the tab's
+        # The browser shows the package's page, indicated in the page
         # title.
         self.assertIn(self.package.name, self.browser.title)
         # It is displayed in the content, as well.
@@ -246,14 +246,14 @@ class PackagePageTest(SeleniumTestCase):
             self.absolute_url(self.get_package_url('second-package')))
 
         # The user would like to see the source package page for a binary
-        # package that he types in the search form.
+        # package. The user types the package name in the search form.
         self.send_text_to_package_search_form('binary-package')
         self.assertEqual(
             self.browser.current_url,
             self.absolute_url(self.get_package_url(self.package.name)))
 
         # However, when the user tries a package name which does not exist,
-        # he expects to see a page informing him of this
+        # they expects the response page to state this.
         self.send_text_to_package_search_form('no-exist')
         self.assert_in_page_body('Package no-exist does not exist')
 
@@ -265,15 +265,15 @@ class PackagePageTest(SeleniumTestCase):
         # The user opens the start page
         self.get_page('/')
 
-        # He sees it is the index page
+        # The page title should show the index page of the site.
         self.assertIn('Package Tracker', self.browser.title)
 
-        # There is a form which he can use for access to pacakges.
+        # There is a form to use for access to packages.
         self.assert_element_with_id_in_page('package-search-form')
 
-        # He types in a name of a known source package...
+        # The user types in a name of a known source package...
         self.send_text_to_package_search_form(self.package.name)
-        # ...and expects to see the package page open.
+        # ...and expects the response to show the package page.
         self.assertEqual(
             self.browser.current_url,
             self.absolute_url(self.package.get_absolute_url()))
@@ -347,14 +347,15 @@ class RepositoryAdminTest(SeleniumTestCase):
         """
         Tests that an admin user is able to add a new repository.
         """
-        # The user first logs in to the admin panel.
+        # The user first logs in to the admin panel with their credentials.
         self.login_to_admin()
 
-        # He expects to be able to successfully access it with his credentials.
+        # They expect the log in to succeed, responsing with the
+        # administration page.
         self.assertIn('Site administration', self.browser.title)
 
-        # He now wants to go to the repositories management page.
-        # The necessary link can be found in the page.
+        # The user now wants to go to the repositories management
+        # page. The necessary link can be found in the page.
         try:
             self.browser.find_element_by_link_text("Repositories")
         except NoSuchElementException:
@@ -367,7 +368,7 @@ class RepositoryAdminTest(SeleniumTestCase):
             self.browser.find_element_by_class_name('breadcrumbs').text
         )
 
-        # He now wants to create a new repository...
+        # The user now wants to create a new repository.
         self.click_link("Add repository")
         self.assert_in_page_body("Add repository")
         try:
@@ -378,13 +379,13 @@ class RepositoryAdminTest(SeleniumTestCase):
 
         # The user tries clicking the save button immediately
         save_button.click()
-        # But this causes an error since there are some required fields...
+        # But this causes an error since there are some required fields.
         self.assert_in_page_body('Please correct the errors below')
 
-        # He enters a name and shorthand for the repository
+        # The user enters a name and shorthand for the repository.
         self.input_to_element('id_name', 'stable')
         self.input_to_element('id_shorthand', 'stable')
-        # He wants to create the repository by using a sources.list entry
+        # They want to create the repository by using a sources.list entry.
         self.input_to_element(
             'id_sources_list_entry',
             'deb http://ftp.bad.debian.org/debian stable'
@@ -403,9 +404,9 @@ class RepositoryAdminTest(SeleniumTestCase):
         self.set_mock_http_response(mock_requests2, 'OK')
         # The user decides to save by hitting the enter key
         self.send_enter('id_sources_list_entry')
-        # The user sees a message telling him the repository has been added.
+        # The response page shows confirmation the repository has been added.
         self.assert_in_page_body("added successfully")
-        # He also sees the information of the newly added repository
+        # The page also shows the information of the newly added repository.
         self.assert_in_page_body('Codename')
         self.assert_in_page_body('wheezy')
         self.assert_in_page_body('Components')
@@ -413,7 +414,7 @@ class RepositoryAdminTest(SeleniumTestCase):
 
         # The user now wants to add another repository
         self.click_link("Add repository")
-        # This time, he wants to enter all the necessary data manually.
+        # This time, they want to enter all the necessary data manually.
         self.input_to_element('id_name', 'testing')
         self.input_to_element('id_shorthand', 'testing')
         self.input_to_element('id_uri', 'http://ftp.bad.debian.org/debian')
@@ -426,9 +427,9 @@ class RepositoryAdminTest(SeleniumTestCase):
         # Finally the user clicks the save button
         self.browser.find_element_by_css_selector('input.default').click()
 
-        # He sees that the new repository has also been created.
+        # The response page confirms that the new repository has been created.
         self.assert_in_page_body("added successfully")
-        # He also sees the information of the newly added repository
+        # The page also shows the information of the newly added repository.
         self.assert_in_page_body('jessie')
         self.assert_in_page_body('main non-free')
 
@@ -521,7 +522,7 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
         # === Start of the test. ===
         # The user opens the front page
         self.get_page('/')
-        # He can see a link to a registration page
+        # The page shows a link to a registration page
         try:
             self.browser.find_element_by_link_text("Register")
         except NoSuchElementException:
@@ -531,7 +532,7 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
         self.click_link("Register")
         self.assert_current_url_equal(self.get_registration_url())
 
-        # He can see a registration form
+        # The page shows a registration form
         self.assert_element_with_id_in_page('form-register')
 
         # The user inputs only the email address
@@ -556,7 +557,7 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
             })
         self.get_page(confirmation_url)
 
-        # The user is asked to enter his password
+        # The response page shows a password entry form.
         self.assert_element_with_id_in_page(password_form_id)
 
         # However, the user first goes back to the index...
@@ -569,10 +570,10 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
         self.input_to_element('id_password2', password)
         self.send_enter('id_password2')
 
-        # The user is now successfully logged in with his profile page open
+        # The user is now successfully logged in with their profile page open.
         self.assert_current_url_equal(profile_url)
 
-        # A message is provided telling the user that he has been registered
+        # A message confirms that the user is now registered.
         self.assert_in_page_body('You have successfully registered to the')
 
         # When the user tries opening the confirmation page for the same key
@@ -584,23 +585,23 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
         self.assertEqual(0, UserRegistrationConfirmation.objects.count())
 
         # The user goes back to the profile page and this time there is no
-        # message saying he has been registered.
+        # message confirming their registration.
         self.get_page(profile_url)
         self.assert_not_in_page_body('You have successfully registered to the')
 
         # The user now wishes to log out
         self.assert_in_page_body('Log out')
         self.click_link('Log out')
-        # The user is redirected back to the index page since he was found on
-        # a private page prior to logging out.
+        # Because the session was on a private page, the user is now
+        # redirected back to the index page.
         self.assert_current_url_equal('/')
 
-        # From there, he tries logging in with his new account
+        # From there, the user tries logging in with their new account.
         self.click_link('Log in')
         self.input_to_element('id_username', user_email)
         self.input_to_element('id_password', password)
         self.send_enter('id_password')
-        # He is now back at the profile page
+        # The response is the user's profile page.
         self.assert_current_url_equal(self.get_profile_url())
 
     def test_register_email_already_has_subscriptions(self):
@@ -627,7 +628,7 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
         self.assertEqual(
             [email.email],
             [e.email for e in user.emails.all()])
-        # ...a notification is displayed informing him of that
+        # A message confirms that the user's registration is successful.
         self.assert_in_page_body(
             'Congratulations, the registration is almost over.')
 
@@ -651,23 +652,25 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
         self.input_to_element('id_main_email', user_email)
         self.send_enter('id_main_email')
 
-        # He stays on the same page and receives an error message
+        # The response is the same page...
         self.assert_current_url_equal(self.get_registration_url())
+        # ... and shows an error message for the duplicate email address.
         self.assert_in_page_body('email address is already in use')
 
-        # The user now tries using the other email associated with the already
-        # existing user account.
+        # The user now tries using another email address associated
+        # with the existing user account.
         self.clear_element_text('id_main_email')
         self.input_to_element('id_main_email', associated_email)
         self.send_enter('id_main_email')
 
-        # He stays on the same page and receives an error message
+        # The response is that same page...
         self.assert_current_url_equal(self.get_registration_url())
+        # ... and shows an error message for the duplicate email address.
         self.assert_in_page_body('email address is already in use')
 
     def test_login(self):
         """
-        Tests that a user can log in when he already has an existing account.
+        Tests that a user can log in when they already have an account.
         """
         # === Set up an account ===
         user_email = 'user@domain.com'
@@ -682,21 +685,21 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
         # The user is now found in the log in page
         self.assert_current_url_equal(self.get_login_url())
 
-        # There he can see a log in form
+        # The page shows a log in form.
         self.assert_element_with_id_in_page('form-login')
 
-        # He enters the correct email, but an incorrect password
+        # The user enters the correct email address, but incorrect password.
         self.input_to_element('id_username', user_email)
         self.input_to_element('id_password', 'fdsa')
         self.send_enter('id_password')
-        # He is met with an error message
+        # The response shows an error message for incorrect credentials.
         self.assert_in_page_body('Please enter a correct email and password')
 
-        # Now the user correctly enters the password. The email should not
-        # need to be entered again.
+        # Now the user correctly enters the password. The email
+        # address should not need to be entered again.
         self.input_to_element('id_password', password)
         self.send_enter('id_password')
-        # The user is redirected to his profile page
+        # The user is redirected to their profile page.
         self.assert_current_url_equal(self.get_profile_url())
 
     def test_login_associated_email(self):
@@ -711,21 +714,21 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
 
         # The user goes to the log in page
         self.get_page(self.get_login_url())
-        # There he can see a log in form
+        # The page shows a log in form.
         self.assert_element_with_id_in_page('form-login')
 
-        # He enters the associated email and account password
+        # The user enters the associated email address and password.
         self.input_to_element('id_username', associated_emails[0])
         self.input_to_element('id_password', password)
         self.send_enter('id_password')
 
-        # The user is redirected to his profile page
+        # The user is redirected to their profile page.
         self.assert_current_url_equal(self.get_profile_url())
 
     def test_logout_from_package_page(self):
         """
-        If a user logs out when on the package page, he should not be
-        redirected to the index.
+        If a user logs out when on the package page, the response
+        should not redirect to the index.
         """
         # === Set up an account ===
         user_email = 'user@domain.com'
@@ -744,17 +747,18 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
 
         # The user goes to the package page
         self.get_page('/' + package_name)
-        # From there he can log out...
+        # The page shows a link to log out.
         self.assert_in_page_body('Log out')
+        # The user selects the link to log out.
         self.click_link('Log out')
         # The user is still at the package page, but no longer logged in
         self.assert_current_url_equal(self.get_package_url(package_name))
         self.assert_not_in_page_body('Log out')
         self.assert_in_page_body('Log in')
-        # The user tries going to his profile page, but he is definitely
-        # logged out...
+        # The user tries going to their profile page, but is
+        # definitely logged out...
         self.get_page(self.get_profile_url())
-        # ...which means he is redirected to the log in page
+        # ... which means the response redirects to the log in page.
         self.assert_current_url_equal(
             self.get_login_url() + '?next=' + self.get_profile_url())
 
@@ -776,9 +780,9 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
         # The user opens a package page
         self.get_page('/' + self.package.name)
 
-        # There he sees a button allowing him to subscribe to the package
+        # The page shows a button allowing them to subscribe to the package.
         self.assert_element_with_id_in_page('subscribe-button')
-        # So he clicks it.
+        # So they click it.
         button = self.get_element_by_id('subscribe-button')
         button.click()
 
@@ -799,8 +803,9 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
 
     def test_subscribe_not_logged_in(self):
         """
-        Tests that when a user is not logged in, he is redirected to the log in
-        page instead of being subscribed to the package.
+        Tests that when a user is not logged in, the response
+        redirects to the log in page instead of subscribing to the
+        package.
         """
         # The user opens the package page
         self.get_page('/' + self.package.name)
@@ -811,8 +816,9 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
 
     def test_subscribe_multiple_associated_emails(self):
         """
-        Tests that a user is offered a choice which email to use to subscribe
-        to a package when he has multiple associated emails.
+        Tests that a user with multiple associated email addresses is
+        offered a choice which address to use to subscribe to a
+        package.
         """
         # === Set up such a user ===
         other_email = 'other-email@domain.com'
@@ -825,7 +831,7 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
         self.get_element_by_id('subscribe-button').click()
         self.wait_response(1)
 
-        # The user is presented with a choice of his emails
+        # The user is presented with a choice of their email addresses.
         for email in self.user.emails.all():
             self.assert_in_page_body(email.email)
         # The user decides to cancel the subscription by dismissing the popup
@@ -837,7 +843,7 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
         # The user clicks the subscribe button again
         self.get_element_by_id('subscribe-button').click()
         self.wait_response(1)
-        # ...and chooses to subscribe using his associated email
+        # ... and chooses to subscribe using their associated email address.
         self.assert_element_with_id_in_page('choose-email-1')
         self.get_element_by_id('choose-email-1').click()
         self.wait_response(1)
@@ -867,7 +873,7 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
         # The user logs in and opens the package page
         self.log_in()
         self.get_page('/' + self.package.name)
-        # There he sees a button allowing him to unsubscribe from the package
+        # The page shows a button to unsubscribe from the package.
         self.assert_in_page_body('Unsubscribe')
         self.assert_element_with_id_in_page('unsubscribe-button')
         # The user decides to unsubscribe and clicks the button...
@@ -890,7 +896,7 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
         """
         # Initially the user is not subscribed to the package
         self.assertFalse(self.user.is_subscribed_to(self.package))
-        # The user logs in and goes to his subscriptions page
+        # The user logs in and goes to their subscriptions page
         self.log_in()
         self.get_page(self.get_subscriptions_url())
         # To ensure the subscription page is fully charged
@@ -920,7 +926,7 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
         """
         # Initially the user is not subscribed to the package
         self.assertFalse(self.user.is_subscribed_to(self.package))
-        # The user logs in and goes to his subscriptions page
+        # The user logs in and goes to their subscriptions page
         self.log_in()
         self.get_page(self.get_subscriptions_url())
         # To ensure the subscription page is fully charged
@@ -932,15 +938,15 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
         for checkbox in available_mails:
             if checkbox.is_selected():
                 checkbox.click()
-        # Filling the package search field
+        # The user specifies the package name...
         self.assert_element_with_id_in_page('package-search-input')
         self.input_to_element('package-search-input', self.package.name)
-        # Subscribing to the package
+        # ... then submits the form to subscribe to the package.
         self.send_enter('package-search-input')
         self.wait_response(1)
-        # He gets a message informing him that the field is required
+        # The page shows a message stating that the field is required.
         self.assert_in_page_body('You need to select at least an email')
-        # The scubscription should not have been done!
+        # The user should still not be subscribed to the package.
         self.assertFalse(self.user.is_subscribed_to(self.package))
 
     def test_package_subscription_no_package_from_subscription_tab_fails(self):
@@ -950,7 +956,7 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
         """
         # Initially the user is not subscribed to the package
         self.assertFalse(self.user.is_subscribed_to(self.package))
-        # The user logs in and goes to his subscriptions page
+        # The user logs in and goes to their subscriptions page.
         self.log_in()
         self.get_page(self.get_subscriptions_url())
         # To ensure the subscription page is fully charged
@@ -965,32 +971,31 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
                 is_there_checked_emails = True
                 break
         self.assertTrue(is_there_checked_emails)
-        # Filling the package search field
+        # The user specifies an empty package name...
         self.assert_element_with_id_in_page('package-search-input')
         self.input_to_element('package-search-input', '')
-        # Subscribing to the package
+        # ... then submits the form to subscribe to the package.
         self.send_enter('package-search-input')
         self.wait_response(1)
-        # He gets a message informing him that the field is required
+        # The page shows a message stating that the field is required.
         self.assert_in_page_body('This field is required')
-        # The scubscription should not have been done!
+        # The user should still not be subscribed to the package.
         self.assertFalse(self.user.is_subscribed_to(self.package))
 
 
 class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
     def test_modify_personal_info(self):
         """
-        Tests that the user is able to change his personal info upon logging
-        in.
+        Tests that the user is able to change their personal info upon
+        logging in.
         """
         # The user logs in
         self.log_in()
-        # He can see a link for a page letting him modify his personal info
+        # The response page shows a link to modify personal information.
         self.assert_in_page_body('Personal Information')
         self.click_link('Personal Information')
 
-        # In the page there is a form allowing him to change his first/last
-        # name.
+        # The page shows a form to change the user's name.
         self.assert_element_with_id_in_page('form-change-profile')
 
         # The user decides to input a new name
@@ -1008,7 +1013,7 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         # === But the last name has not ===
         self.assertEqual(old_last_name, self.user.last_name)
 
-        # The user now wants to update both his first and last name
+        # The user now wants to update both their first and last name.
         self.clear_element_text('id_first_name')
         new_first_name, new_last_name = 'Name', 'Last Name'
         # The user fills in the form
@@ -1017,7 +1022,7 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         # ...and submits it.
         self.send_enter('id_last_name')
 
-        # He is faced with another notification of success
+        # The response shows a confirmation of success.
         self.assert_in_page_body('Successfully changed your information')
         # === The information has actually been updated ===
         self.refresh_user_object()
@@ -1040,15 +1045,16 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
 
     def test_change_password(self):
         """
-        Tests that the user can change his password upon logging in.
+        Tests that the user can change their password upon logging in.
         """
         # The user logs in
         self.log_in()
-        # He can see a link for a page letting him change his password
+        # The response page shows a link to change their password...
         self.assert_in_page_body('Change Password')
+        # ... and clicks it.
         self.click_link('Change Password')
 
-        # He can see the form which is used to enter the new password
+        # The response page shows a form to enter the new password.
         self.assert_element_with_id_in_page('form-change-password')
         # The user first enters a wrong current password
         new_password = 'new-password'
@@ -1056,15 +1062,15 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         self.input_to_element('id_new_password1', new_password)
         self.input_to_element('id_new_password2', new_password)
         self.send_enter('id_new_password2')
-        # The user is met with an error saying his current password was
+        # The response shows an error saying the current password was
         # incorrect.
         self.assert_in_page_body('Your old password was entered incorrectly')
 
-        # The user enters his current password correctly, but forgets the new
-        # password.
+        # The user enters their current password correctly, but
+        # forgets the new password.
         self.input_to_element('id_old_password', self.password)
         self.send_enter('id_old_password')
-        # He gets a message informing him that the field is required
+        # The response shows a message that the field is required.
         self.assert_in_page_body('This field is required')
 
         # This time, the user enters both the old password and fills in the new
@@ -1073,7 +1079,7 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         self.input_to_element('id_new_password1', new_password)
         self.input_to_element('id_new_password2', new_password + '-miss-match')
         self.send_enter('id_new_password2')
-        # He gets a message informing him that the password change failed once
+        # The response shows a message that the password change failed
         # again.
         self.assert_in_page_body("The two password fields didn't match")
 
@@ -1082,89 +1088,91 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         self.input_to_element('id_new_password1', new_password)
         self.input_to_element('id_new_password2', new_password)
         self.send_enter('id_new_password2')
-        # He gets a message informing him of a successful change
+        # The response shows a message confirming that the password
+        # was changed.
         self.assert_in_page_body('Successfully updated your password')
 
-        # The user logs out in order to try using his new password
+        # The user logs out in order to try using their new password.
         self.click_link('Log out')
-        # The user tries logging in using his old account password
+        # The user tries logging in using their old account password.
         self.log_in()
-        # He is met with an error
+        # The response shows an error message for incorrect credentials.
         self.assert_in_page_body('Please enter a correct email and password')
-        # Now he tries with his new password
+        # Now they try with their new password.
         self.password = new_password
         self.log_in()
-        # The user is finally logged in using his new account details
+        # The user is finally logged in using their new account details.
         self.assert_current_url_equal(self.get_profile_url())
 
     def test_reset_password(self):
         """
-        Tests that a user is able to reset his password if he forgot it.
+        Tests that a user is able to reset their password if they forgot it.
         """
         # The user goes to the login page
         self.get_page(self.get_login_url())
-        # There he sees a convenient link letting him get to a page where he
-        # can reset his password.
+        # The page shows a link to reset their password.
         self.assert_in_page_body('Forgot your password?')
+        # The user has forgotten their password, so clicks the link.
         self.click_link('Forgot your password?')
-        # The user sees a form which lets him reset his password
+        # The user sees a form to reset their password.
         self.assert_element_with_id_in_page('form-reset-password')
-        # First he enters an invalid email: one not associated with any account
+        # First they enter an email address not associated with any account.
         self.input_to_element('id_email', 'this-does-not-exist@domain.com')
         self.send_enter('id_email')
-        # The user still stays in the same page with a warning that no user
-        # with the email exists.
+        # The response is the same page, with a warning that there is
+        # no user with that email address.
         self.assert_in_page_body('No user with the given email is registered')
-        # The user now correctly enters his own email
+        # The user now correctly enters their own email address.
         self.clear_element_text('id_email')
         self.input_to_element('id_email', self.user.main_email)
         self.send_enter('id_email')
-        # The user is taken to another page where he is informed that he must
-        # check his email for a confirmation email
+        # The response is another page, with a message that they must
+        # check their email for a confirmation message.
         self.assert_in_page_body('Please check your email inbox for details')
         # === A confirmation email is actually sent? ===
         self.assertEqual(1, len(mail.outbox))
         confirmation = ResetPasswordConfirmation.objects.all()[0]
-        # The user goes to the confirmation URL!
+        # The user goes to the confirmation URL.
         self.get_page(reverse('dtracker-accounts-reset-password', kwargs={
             'confirmation_key': confirmation.confirmation_key,
         }))
-        # There, he is asked to enter a new password...
+        # The response page asks them to enter a new password...
         self.assert_in_page_body('please enter a new password for your account')
-        # ...so he does
+        # ...so they do.
         new_password = self.password + '-new'
         self.input_to_element('id_password1', new_password)
         self.input_to_element('id_password2', new_password)
         self.send_enter('id_password2')
-        # He is redirected back to the profile page with a message that his
-        # password has been reset.
+        # The response page redirects to the profile page, with a
+        # message that their password has been reset.
         self.assert_current_url_equal(self.get_profile_url())
         self.assert_in_page_body('You have successfully reset your password')
 
-        # The user decides to log out and try logging back in with his new
-        # password
+        # The user logs out and tries logging back in with their new
+        # password.
         self.click_link('Log out')
         self.password = new_password
         self.log_in()
-        # The user has successfully logged in using his new password
+        # The user has successfully logged in.
         self.assert_current_url_equal(self.get_profile_url())
 
     def test_manage_account_emails(self):
         """
-        Tests that users are able to manage which emails are associated with
-        their accounts.
+        Tests that the user can manage which email addresses are
+        associated with their account.
         """
         # The user logs in and goes to the account email management page
         self.log_in()
         self.click_link('Account Emails')
-        # There he sees a form letting him add new emails to his account
+        # The response page shows a form to add new email addresses to
+        # their account.
         self.assert_element_with_id_in_page('form-add-account-email')
-        # He decides to add a new email.
+        # The user adds a new email address.
         new_email = 'completely-new-email@domain.com'
         self.input_to_element('id_email', new_email)
         self.send_enter('id_email')
         # The user is notified that in order to activate the email association
-        # he must confirm the ownership of the email address.
+        # they must demonstrate ownership of the email address.
         self.assert_in_page_body('you must follow the confirmation link')
         self.assert_not_in_page_body(new_email)
         # === The confirmation email sent? ===
@@ -1174,25 +1182,26 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         self.assertEqual(1, AddEmailConfirmation.objects.count())
         confirmation = AddEmailConfirmation.objects.all()[0]
 
-        # The user now visits he confirmation URL
+        # The user now visits the confirmation URL...
         self.get_page(reverse('dtracker-accounts-confirm-add-email', kwargs={
             'confirmation_key': confirmation.confirmation_key,
         }))
-        # And is notified that the address is associated with an account
+        # The response page shows a confirmation message that the
+        # address is associated with their account.
         self.assert_in_page_body('now associated with your account')
 
-        # The user goes back to his profile page to check if the email can be
-        # found there
+        # The user goes back to their profile page.
         self.click_link('Profile')
         self.click_link('Account Emails')
-        # The new email is now in the list of all emails
+        # The new email address is now in the list of email addresses
+        # for the account.
         self.assert_in_page_body(new_email)
 
-        # The user tries adding an email he is already associated with again
+        # The user tries adding an email already associated with their account.
         self.input_to_element('id_email', new_email)
         self.send_enter('id_email')
-        # He gets a warning telling him his account is already associated with
-        # the given email.
+        # The response shows a warning that the account is already
+        # associated with the given email address.
         self.assert_in_page_body(
             'This email is already associated with your account')
 
@@ -1201,18 +1210,19 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         password = 'other-password'
         other_email = 'other@domain.com'
         other_user = self.create_user(other_email, password)
-        # A user logs in and goes to the form to add an additional account
+        # The user logs in, then goes to the form to add an email address.
         self.log_in()
         self.click_link('Account Emails')
-        # He inputs the email of a user that is already registered
+        # They input an address already associated with a different user.
         self.input_to_element('id_email', other_email)
         self.send_enter('id_email')
-        # The user is taken to a confirmation page
+        # The response page requests confirmation to merge the accounts.
         self.assert_in_page_body('Are you sure you want to merge the accounts')
-        # There is a button letting him confirm the merge
+        # The user clicks the button to confirm the merge.
         self.assert_element_with_id_in_page('confirm-merge-button')
         self.get_element_by_id('confirm-merge-button').click()
-        # The user is notified that the merge is ineffective until confirmed
+        # The response notifies the user the merge is ineffective
+        # until the confirmation link is visited.
         self.assert_in_page_body('you must follow a confirmation link')
         # A confirmation mail is sent
         self.assertEqual(1, len(mail.outbox))
@@ -1234,8 +1244,9 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
 
         # The user now logs in with the other account
         self.log_in(other_user, password)
+        # The user visits the URL from the confirmation email message.
         self.get_page(confirmation_url)
-        # He accesses the page which asks for a final confirmation
+        # The response page asks for a final confirmation.
         self.assert_in_page_body(
             'Are you sure you want to finalize the accounts merge')
         self.assert_element_with_id_in_page('finalize-merge-button')
@@ -1247,16 +1258,17 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
             'The two accounts have been successfully merged')
         # === User accounts are really changed? ===
         self.assertEqual(1, User.objects.count())
-        # He tries logging in with the merged account's password
+        # The user tries logging in with the merged account's password...
         self.log_in(password=password)
-        # ...which fails
+        # ...which fails.
         self.assert_in_page_body('Please enter a correct email and password')
-        # He logs in with the original account details
+        # They log in with the original account details...
         self.log_in()
-        # ...which works
+        # ...which works.
         self.assert_current_url_equal(self.get_profile_url())
 
-        # He goes to check that his associated emails contain all the emails
+        # Both the email addresses are shown as associated with the
+        # user's account.
         self.click_link('Account Emails')
         self.assert_in_page_body(self.user.main_email)
         self.assert_in_page_body(other_email)
@@ -1331,17 +1343,17 @@ class TeamTests(SeleniumTestCase):
         """
         # The user tries going to the page to create a new team
         self.get_page(self.get_create_team_url())
-        # However, he is not signed in so he is redirected to the login
+        # However, the browser is not signed in so the response
+        # redirects to the login page.
         self.assertIn(self.get_login_url(), self.browser.current_url)
         self.wait_response(1)
         # The user then logs in
         self.log_in()
         # ...and tries again
         self.get_page(self.get_create_team_url())
-        # This time he is presented with a page that has a form allowing him to
-        # create a new team.
+        # This time the response page has a form to create a new team.
         self.assert_element_with_id_in_page('create-team-form')
-        # The user forgets to input the team name, initialy.
+        # The user forgets to input the team name, initially.
         self.send_enter('id_name')
         # Since a name is required, an error is returned
         self.assert_in_page_body('This field is required')
@@ -1359,7 +1371,7 @@ class TeamTests(SeleniumTestCase):
         self.assertEqual(self.user, team.owner)
         # The user goes back to the team creation page now
         self.get_page(self.get_create_team_url())
-        # He tries creating a new team with the same name
+        # They try creating a new team with the same name
         self.input_to_element('id_name', team_name)
         self.send_enter('id_name')
         # This time, the team creation process fails because the team name is
@@ -1395,7 +1407,7 @@ class TeamTests(SeleniumTestCase):
         self.log_in()
         self.get_page(self.get_create_team_url())
 
-        # He inputs both the team name and the maintaner name.
+        # They input both the team name and the maintaner name.
         team_name = 'Team name'
         self.input_to_element('id_name', team_name)
         self.input_to_element('id_maintainer_email', maintainer_email)
@@ -1429,7 +1441,7 @@ class TeamTests(SeleniumTestCase):
         self.send_enter('id_maintainer_email')
         self.wait_response(1)
 
-        # The user is directed back to the team page where he can see all the
+        # The user is directed back to the team page which shows all the
         # packages previously associated with the team, as well as the ones
         # associated to the new maintainer.
         self.assert_in_page_body(new_package_name)
@@ -1450,14 +1462,14 @@ class TeamTests(SeleniumTestCase):
 
         # Before logging in the user opens the team page
         self.get_page(self.get_team_url(team_name))
-        # He does not see the delete button
+        # The page does not show the delete button.
         self.assert_not_in_page_body("Delete")
-        # He goes directly to the deletion URL
+        # The user goes directly to the deletion URL.
         self.get_page(self.get_delete_team_url(team_name))
         # But permission is denied to the user
         self.assert_not_in_page_body(team_name)
 
-        # He now logs in
+        # The user now logs in.
         self.log_in()
         self.get_page(self.get_team_url(team_name))
         # The delete button is now offered to the user
@@ -1465,7 +1477,7 @@ class TeamTests(SeleniumTestCase):
         # So the user decides to click it.
         self.get_element_by_id('delete-team-button').click()
         self.wait_response(1)
-        # He is now faced with a popup asking him to confirm the team deletion
+        # The response shows a popup asking to confirm the team deletion.
         cancel_button = self.get_element_by_id('team-delete-cancel-button')
         confirm_button = self.get_element_by_id('confirm-team-delete-button')
         self.assertTrue(confirm_button.is_displayed())
@@ -1473,18 +1485,18 @@ class TeamTests(SeleniumTestCase):
         # The user decides to cancel the deletion
         cancel_button.click()
         self.wait_response(1)
-        # He is still found in the team page and the team has not been deleted
+        # The response is the team page and the team has not been deleted.
         self.assert_current_url_equal(self.get_team_url(team_name))
         # === The team is still here ===
         self.assertEqual(1, Team.objects.count())
-        # The user now decides he really wants to delete the team
+        # The user now deletes the team.
         self.get_element_by_id('delete-team-button').click()
         self.wait_response(1)
         self.get_element_by_id('confirm-team-delete-button').click()
         self.wait_response(1)
 
-        # He is now taken to a page informing him the team has been
-        # successfully deleted.
+        # The response page confirms the team has been successfully
+        # deleted.
         self.assert_current_url_equal(self.get_team_deleted_url())
         # === The team is also really deleted? ===
         self.assertEqual(0, Team.objects.count())
@@ -1499,9 +1511,9 @@ class TeamTests(SeleniumTestCase):
 
         # Before logging in the user opens the team page
         self.get_page(self.get_team_url(team_name))
-        # He does not see the update button
+        # The page does not show the update button.
         self.assert_not_in_page_body("Update")
-        # He goes directly to the update URL
+        # The user goes directly to the update URL.
         self.get_page(self.get_update_team_url(team_name))
         # But permission is denied to the user
         self.assert_not_in_page_body(team_name)
@@ -1509,13 +1521,14 @@ class TeamTests(SeleniumTestCase):
         # The user now logs in
         self.log_in()
         self.get_page(self.get_team_url(team_name))
-        # He can now see the update button
+        # The page now shows the update button
         self.assert_element_with_id_in_page('update-team-button')
+        # The user clocks the link to update the team information.
         self.get_element_by_id('update-team-button').click()
 
-        # He is found on the update page now
+        # The response page is the update page now...
         self.assert_current_url_equal(self.get_update_team_url(team_name))
-        # ...with a form that lets him update the team's info
+        # ... with a form to update the team's info.
         self.assert_element_with_id_in_page('update-team-form')
         # The user modifies the team's description
         new_description = "This is a new description"
@@ -1581,26 +1594,26 @@ class TeamTests(SeleniumTestCase):
 
         # The user opens the team page without logging in
         self.get_page(self.get_team_url(team_name))
-        # He cannot see the form to add a package
+        # The page does not show the form to add a package.
         form = self.get_element_by_id('add-team-package-form')
         self.assertIsNone(form)
         # The user logs in and opens the team page
         self.log_in()
         self.get_page(self.get_team_url(team_name))
-        # He can see the form to add packages now
+        # The response page shows the form to add packages now.
         self.assert_element_with_id_in_page('add-team-package-form')
-        # He types the name of the package he wants to add
+        # The user enters the name of the package to add...
         self.input_to_element('id_package_name', package_names[0])
-        # ...and submits the form
+        # ...and submits the form.
         self.send_enter('id_package_name')
         self.wait_response(1)
 
         # The user is still in the team page
         self.assert_current_url_equal(self.get_team_url(team_name))
-        # He can now see the package he added in the list of packages
+        # The page now shows the package they added in the list of packages.
         self.assert_in_page_body(package_names[0])
 
-        # He tries adding a new package: one that does not exist
+        # The user tries adding a new package: one that does not exist.
         self.input_to_element('id_package_name', 'this-does-not-exist')
         self.send_enter('id_package_name')
         self.wait_response(1)
@@ -1608,9 +1621,9 @@ class TeamTests(SeleniumTestCase):
         # comes to the list of packages.
         self.assert_not_in_page_body('this-does-not-exist')
 
-        # The user now wants to remove the package from the team
-        # He can see a button next to the team's name
+        # The user now wants to remove the package from the team.
 
+        # They click the button to remove the package from the team.
         remove_button = self.browser.find_element_by_css_selector(
             '.remove-package-from-team-button')
         remove_button.click()
@@ -1619,7 +1632,7 @@ class TeamTests(SeleniumTestCase):
         # The user decides to cancel the operation
         self.get_element_by_id('remove-package-cancel-button').click()
         self.wait_response(1)
-        # He is still found on the team page and the package is not removed
+        # The response is still the team page, and the package is not removed.
         self.assert_current_url_equal(self.get_team_url(team_name))
         # === The package is not removed? ===
         self.assertEqual(1, team.packages.count())
@@ -1653,26 +1666,26 @@ class TeamTests(SeleniumTestCase):
         # The user logs in and goes to the team page
         self.log_in(user)
         self.get_page(self.get_team_url(team_name))
-        # He can see a button allowing him to join the team.
+        # The page shows a button to join the team.
         self.assert_element_with_id_in_page('join-team-button')
-        # ...so he clicks it!
+        # ... so the user clicks it.
         self.get_element_by_id('join-team-button').click()
         self.wait_response(1)
 
-        # The user is still found in the team page, but now he is a member of
-        # the team.
+        # The response is still the team page, but now the user is a
+        # member of the team.
         self.assert_element_with_id_in_page('add-team-package-form')
         # === The user is really a member? ===
         self.assertTrue(team.user_is_member(user))
-        # Which means he can leave the team now.
+        # The page now has a button to leave the team.
         self.assert_element_with_id_in_page('leave-team-button')
-        # So he does that.
+        # So the user clicks that button.
         self.get_element_by_id('leave-team-button').click()
         self.wait_response(1)
 
         # The user is now again not a member of the team
         self.assert_element_with_id_in_page('join-team-button')
-        # === He really isn't a member any more. ===
+        # === The user really isn't a member any more. ===
         self.assertFalse(team.user_is_member(user))
 
         # The user now logs out
@@ -1680,7 +1693,7 @@ class TeamTests(SeleniumTestCase):
         # And tries clicking the join team button
         self.get_element_by_id('join-team-button').click()
         self.wait_response(1)
-        # But he is redirected to the login page
+        # But the response redirects to the login page.
         self.assert_element_with_id_in_page('form-login')
 
         # === The privacy of the team is switched to private. ===
@@ -1716,7 +1729,7 @@ class TeamTests(SeleniumTestCase):
         # === The membership is marked muted, though ===
         membership = TeamMembership.objects.all()[0]
         self.assertTrue(membership.muted)
-        # === Email was sent to the new member asking him to confirm it ===
+        # === Email was sent to the new member asking for confirmation ===
         self.assertEqual(1, len(mail.outbox))
         self.assertIn(new_team_member, mail.outbox[0].to)
 
@@ -1738,26 +1751,26 @@ class TeamTests(SeleniumTestCase):
         team = Team.objects.create_with_slug(owner=self.user, name=team_name)
         membership = team.add_members([self.user.emails.all()[0]])[0]
         # === -- ===
-        # The user logs in and goes to his subscriptions page
+        # The user logs in and goes to their subscriptions page.
         self.log_in()
         self.get_page(self.get_subscriptions_url())
-        # He can see a button offering him to mute the team membership
+        # The response page shows a button to mute the team membership.
         self.assert_in_page_body('Mute')
-        # So he clicks it!
+        # The user clicks the button.
         btn = self.get_element_by_class('toggle-team-mute')
         btn.click()
         self.wait_response(1)
-        # The user is still in he same page, but now he has a warning that his
-        # team membership is muted
+        # The response page is still the team page, and shows a
+        # warning that the user's team membership is muted.
         self.assert_element_with_class_in_page('mute-warning')
         # === The membership is actually muted? ===
         membership = TeamMembership.objects.get(pk=membership.pk)
         self.assertTrue(membership.muted)
 
         # The user now wants to revert this.
-        # He can see the unmute button
+        # The page shows the unmute button.
         self.assert_in_page_body('Unmute')
-        # He clicks it.
+        # The user clicks the button.
         btn = self.get_element_by_class('toggle-team-mute')
         btn.click()
         self.wait_response(1)

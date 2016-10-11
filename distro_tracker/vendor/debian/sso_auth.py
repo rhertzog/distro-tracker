@@ -31,8 +31,8 @@ class DebianSsoUserMiddleware(RemoteUserMiddleware):
     by sso.debian.org.
 
     If the currently logged in user is a DD (as identified by having a
-    @debian.org address), he is forcefully logged out if the header is no longer
-    found or is invalid.
+    @debian.org address), they are forcefully logged out if the header
+    is no longer found or is invalid.
     """
     dacs_header = 'REMOTE_USER'
     cert_header = 'SSL_CLIENT_S_DN_CN'
@@ -97,10 +97,11 @@ class DebianSsoUserMiddleware(RemoteUserMiddleware):
 
 class DebianSsoUserBackend(RemoteUserBackend):
     """
-    The authentication backend which authenticates the provided remote user
-    (identified by his @debian.org email) in Distro Tracker. If a matching User
-    model instance does not exist, one is automatically created. In that case
-    the DDs first and last name are pulled from Debian's LDAP.
+    The authentication backend which authenticates the provided remote
+    user (identified by their @debian.org email) in Distro Tracker. If
+    a matching User model instance does not exist, one is
+    automatically created. In that case the DDs first and last name
+    are pulled from Debian's LDAP.
     """
     def authenticate(self, remote_user):
         if not remote_user:

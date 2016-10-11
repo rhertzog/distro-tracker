@@ -260,8 +260,7 @@ def get_package_information_site_url(package_name, source_package=False,
 
 def get_developer_information_url(developer_email):
     """
-    The function returns a URL which displays extra information about a
-    developer, given his email.
+    Return a URL to extra information about a developer, by email address.
     """
     URL_TEMPLATE = 'https://qa.debian.org/developer.php?email={email}'
     return URL_TEMPLATE.format(email=urlquote(developer_email))
@@ -771,8 +770,8 @@ def get_extra_versions(package):
 
 def pre_login(form):
     """
-    If the user has a @debian.org email associated, don't let him log in
-    directly through local authentication.
+    If the user has a @debian.org email associated, don't let them log
+    in directly through local authentication.
     """
     username = form.cleaned_data.get('username')
     if not username:
@@ -792,7 +791,8 @@ def pre_login(form):
 
 def post_logout(request, user, next_url=None):
     """
-    If the user is authenticated via the SSO, sign him out at the SSO level too.
+    If the user is authenticated via the SSO, sign them out at the SSO
+    level too.
     """
     if request.META.get('REMOTE_USER'):
         if next_url is None:

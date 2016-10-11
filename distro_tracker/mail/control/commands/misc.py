@@ -28,8 +28,8 @@ DISTRO_TRACKER_FQDN = settings.DISTRO_TRACKER_FQDN
 @needs_confirmation
 class SubscribeCommand(Command):
     """
-    A command which subscribes a user to a package so that he receives that
-    package's email messages.
+    A command which subscribes a user to a package so that they
+    receive that package's email messages.
 
     .. note::
       This command requires confirmation.
@@ -133,8 +133,8 @@ class SubscribeCommand(Command):
 @needs_confirmation
 class UnsubscribeCommand(Command):
     """
-    Command which unsubscribes the user from a package so that he no longer
-    receives any email messages regarding this package.
+    Command which unsubscribes the user from a package so that they no
+    longer receive any email messages regarding this package.
 
     .. note::
        This command requires confirmation.
@@ -339,8 +339,8 @@ class QuitCommand(Command):
 @needs_confirmation
 class UnsubscribeallCommand(Command):
     """
-    Command which unsubscribes the user from all packages so that he no longer
-    receives any email messages regarding any packages.
+    Command which unsubscribes the user from all packages so that they
+    no longer receive any email messages regarding any packages.
 
     .. note::
        This command requires confirmation.

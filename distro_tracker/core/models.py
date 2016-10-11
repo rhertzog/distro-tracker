@@ -1029,8 +1029,8 @@ class ContributorName(models.Model):
     """
     Represents a contributor.
 
-    A single contributor, as identified by his email, may have different
-    written names in different contexts.
+    A single contributor, identified by email address, may have
+    different written names in different contexts.
     """
     contributor_email = models.ForeignKey(UserEmail)
     name = models.CharField(max_length=60, blank=True)

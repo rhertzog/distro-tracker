@@ -1653,8 +1653,8 @@ class SubscribeToPackageTest(EmailControlTest):
 
     def test_subscribe_when_user_already_subscribed(self):
         """
-        Tests the subscribe command in the case that the user is trying to
-        subscribe to a package he is already subscribed to.
+        Tests the subscribe command in the case that the user is
+        already subscribed to the package.
         """
         # Make sure the user is already subscribed.
         Subscription.objects.create_for(
@@ -2422,8 +2422,8 @@ class JoinTeamCommandsTests(TeamCommandsMixin, EmailControlTest):
 
     def test_join_team_already_member(self):
         """
-        Tests that a user gets a warning when trying to join a team he is
-        already a member of.
+        Tests that a user gets a warning when trying to join a team
+        they are already a member of.
         """
         self.team.add_members([self.user_email])
         self.set_input_lines([self.get_join_command(self.team.slug,
@@ -2457,8 +2457,8 @@ class LeaveTeamCommandTests(TeamCommandsMixin, EmailControlTest):
 
     def test_leave_team(self):
         """
-        Tests the normal situation where the user leaves a team he is a
-        member of.
+        Tests the normal situation where the user leaves a team they
+        are a member of.
         """
         self.set_input_lines([self.get_leave_command(self.team.slug)])
 
@@ -2481,7 +2481,7 @@ class LeaveTeamCommandTests(TeamCommandsMixin, EmailControlTest):
 
         self.control_process()
 
-        # The user notified that he has left the team
+        # The response notified the user they left the team.
         self.assert_in_response(self.get_left_team_message(self.team))
         # The user is no longer a member of the team
         self.assertNotIn(self.user_email, self.team.members.all())
@@ -2503,7 +2503,7 @@ class LeaveTeamCommandTests(TeamCommandsMixin, EmailControlTest):
     def test_leave_team_not_member(self):
         """
         Tests that a warning is returned when the user tries to leave a team
-        that he is not a member of.
+        that they are not a member of.
         """
         self.team.remove_members([self.user_email])
         self.set_input_lines([self.get_leave_command(self.team.slug)])

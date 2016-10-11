@@ -695,8 +695,8 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
 
     def test_team_muted(self):
         """
-        Tests that a message is not forwarded to the user when he has muted
-        the team.
+        Tests that a message is not forwarded to the user when they
+        have muted the team.
         """
         email = self.user.main_email
         membership = self.team.team_membership_set.get(user_email__email=email)
@@ -710,8 +710,8 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
 
     def test_message_forwarded(self):
         """
-        Tests that the message is forwarded to a team member when he has the
-        correct keyword.
+        Tests that the message is forwarded to a team member when they
+        have the correct keyword.
         """
         email = self.user.main_email
         membership = self.team.team_membership_set.get(user_email__email=email)
@@ -752,8 +752,9 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
 
     def test_forward_multiple_teams(self):
         """
-        Tests that a user gets the same message multiple times when he is a
-        member of two teams that both have the same package.
+        Tests that a user gets the same message multiple times when
+        they are a member of two teams that both have the same
+        package.
         """
         new_team = Team.objects.create_with_slug(
             owner=self.user, name="Other team")
