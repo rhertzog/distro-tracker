@@ -163,7 +163,7 @@ class MailProcessor(object):
 
     def handle_bounces(self, details):
         sent_to_addr = self.build_delivery_address('bounces', details)
-        distro_tracker.mail.dispatch.handle_bounces(sent_to_addr)
+        distro_tracker.mail.dispatch.handle_bounces(sent_to_addr, self.message)
 
     def handle_dispatch(self, package=None, keyword=None):
         distro_tracker.mail.dispatch.process(self.message, package=package,

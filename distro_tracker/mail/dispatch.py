@@ -377,7 +377,7 @@ def prepare_message(received_message, to_email, date):
     return message
 
 
-def handle_bounces(sent_to_address):
+def handle_bounces(sent_to_address, message):
     """
     Handles a received bounce message.
 

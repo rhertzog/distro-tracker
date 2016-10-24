@@ -118,7 +118,8 @@ class DispatchManagementCommand(CommandWithInputTestCase):
         msg = self.build_input_message('hello\n', 'bounces+verpdata')
         self.call_command(msg)
         mock_handle_bounces.assert_called_with(
-            'bounces+verpdata@{}'.format(settings.DISTRO_TRACKER_FQDN))
+            'bounces+verpdata@{}'.format(settings.DISTRO_TRACKER_FQDN),
+            mock.ANY)
 
 
 class UnsubscribeAllManagementCommand(CommandWithOutputTestCase):

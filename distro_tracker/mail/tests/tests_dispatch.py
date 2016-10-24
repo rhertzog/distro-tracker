@@ -498,7 +498,8 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         # Make sure the user has no prior bounce stats
         self.assertEqual(self.user.bouncestats_set.count(), 0)
 
-        dispatch.handle_bounces(self.create_bounce_address(self.user.email))
+        dispatch.handle_bounces(self.create_bounce_address(self.user.email),
+                                self.message)
 
         bounce_stats = self.user.bouncestats_set.all()
         self.assertEqual(bounce_stats.count(), 1)
@@ -526,7 +527,8 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         self.assertTrue(len(packages_subscribed_to) > 0)
 
         # Receive a bounce message.
-        dispatch.handle_bounces(self.create_bounce_address(self.user.email))
+        dispatch.handle_bounces(self.create_bounce_address(self.user.email),
+                                self.message)
 
         # Assert that the user's subscriptions have been dropped.
         self.assertEqual(self.user.emailsettings.subscription_set.count(), 0)
@@ -559,7 +561,8 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         self.assertTrue(subscription_count > 0)
 
         # Receive a bounce message.
-        dispatch.handle_bounces(self.create_bounce_address(self.user.email))
+        dispatch.handle_bounces(self.create_bounce_address(self.user.email),
+                                self.message)
 
         # Assert that the user's subscriptions have not been dropped.
         self.assertEqual(self.user.emailsettings.subscription_set.count(),
@@ -582,7 +585,8 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         self.assertTrue(subscription_count > 0)
 
         # Receive a bounce message.
-        dispatch.handle_bounces(self.create_bounce_address(self.user.email))
+        dispatch.handle_bounces(self.create_bounce_address(self.user.email),
+                                self.message)
 
         # Assert that the user's subscriptions have not been dropped.
         self.assertEqual(self.user.emailsettings.subscription_set.count(),
@@ -595,7 +599,8 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         self.assertEqual(self.user.bouncestats_set.count(), 0)
 
         dispatch.handle_bounces(
-            self.create_bounce_address('someone@domain.com'))
+            self.create_bounce_address('someone@domain.com'),
+            self.message)
 
         bounce_stats = self.user.bouncestats_set.all()
         self.assertEqual(bounce_stats.count(), 1)
@@ -605,7 +610,8 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
     def test_bounce_handler_with_unknown_user_email(self):
         # This should just not generate any exception...
         dispatch.handle_bounces(
-            self.create_bounce_address('unknown-user@domain.com'))
+            self.create_bounce_address('unknown-user@domain.com'),
+            self.message)
 
 
 class BounceStatsTest(TestCase):
