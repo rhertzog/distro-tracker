@@ -28,6 +28,7 @@ from distro_tracker.core.models import PackageName
 from distro_tracker.core.models import Keyword
 from distro_tracker.core.models import Team
 from distro_tracker.core.utils import extract_email_address_from_header
+from distro_tracker.core.utils import get_decoded_message_payload
 from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.utils import distro_tracker_render_to_string
 from distro_tracker.core.utils import verp
@@ -377,6 +378,34 @@ def prepare_message(received_message, to_email, date):
     return message
 
 
+def bounce_is_for_spam(message):
+    spam_bounce_re = [
+        # Google blocks executables files
+        # 552-5.7.0 This message was blocked because its content presents a[...]
+        # 552-5.7.0 security issue. Please visit
+        # 552-5.7.0  https://support.google.com/mail/?p=BlockedMessage to [...]
+        # 552 5.7.0 message content and attachment content guidelines. [...]
+        r"552-5.7.0 This message was blocked",
+        # host ...: 550 High probability of spam
+        r"55[0-9] .*spam",
+        # 550 Executable files are not allowed in compressed files.
+        r"55[0-9] .*[Ee]xecutable files",
+    ]
+    # XXX: Handle delivery report properly
+    for part in message.walk():
+        if not part or part.is_multipart():
+            continue
+        text = get_decoded_message_payload(part)
+        if text is None:
+            continue
+        for line in text.splitlines()[0:15]:
+            for rule in spam_bounce_re:
+                if re.search(rule, line):
+                    return True
+
+    return False
+
+
 def handle_bounces(sent_to_address, message):
     """
     Handles a received bounce message.
@@ -401,6 +430,11 @@ def handle_bounces(sent_to_address, message):
         user = UserEmailBounceStats.objects.get(email__iexact=user_email)
     except UserEmailBounceStats.DoesNotExist:
         logger.warning('bounces :: unknown user email %s', user_email)
+        return
+
+    if bounce_is_for_spam(message):
+        logger.info('bounces :: discarded spam bounce for %s/%s',
+                    user_email, date)
         return
 
     UserEmailBounceStats.objects.add_bounce_for_user(email=user_email,

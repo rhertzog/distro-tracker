@@ -507,6 +507,22 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         self.assertEqual(bounce_stats[0].mails_bounced, 1)
         self.assertEqual(self.user.emailsettings.subscription_set.count(), 1)
 
+    def test_spam_bounce_ignored(self):
+        self.assertEqual(self.user.bouncestats_set.count(), 0)
+        self.message.set_payload(
+            """
+  someone@example.net
+    SMTP error from remote mail server after end of data:
+    host aspmx.l.google.com [2607:f8b0:400e:c02::1a]:
+    552-5.7.0 This message was blocked because its content presents a potential
+    552-5.7.0 security issue. Please visit
+    552-5.7.0  https://support.google.com/mail/?p=BlockedMessage to review our
+    552 5.7.0 message content and attachment content guidelines.
+            """)
+        dispatch.handle_bounces(self.create_bounce_address(self.user.email),
+                                self.message)
+        self.assertEqual(self.user.bouncestats_set.count(), 0)
+
     def test_bounce_over_limit(self):
         """
         Tests that all the user's subscriptions are dropped when too many
