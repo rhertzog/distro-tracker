@@ -85,6 +85,8 @@ def get_decoded_message_payload(message, default_charset='utf-8'):
         return None
     # Decodes the message based on transfer encoding and returns bytes
     payload = message.get_payload(decode=True)
+    if payload is None:
+        return None
 
     # The charset defaults to ascii if none is given
     charset = message.get_content_charset(default_charset)
