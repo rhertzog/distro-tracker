@@ -26,7 +26,7 @@
       <a href="{% url 'dtracker-team-manage' team.slug %}"><button class="btn btn-default" id="manage-team-button">Member management</button></a>
       {% else %}
       {% if user_member_of_team %}
-      {# Team meber options #}
+      {# Team member options #}
 	  <form class="unstyled-form" action="{% url 'dtracker-team-leave' team.slug %}" method="POST">{% csrf_token %}
 	  <button id="leave-team-button" class="btn btn-danger">Leave</button>
 	  </form>

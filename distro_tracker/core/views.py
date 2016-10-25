@@ -317,7 +317,7 @@ class AddPackageToTeamView(LoginRequiredMixin, View):
         """
         team = get_object_or_404(Team, slug=slug)
         if not team.user_is_member(request.user):
-            # Only team mebers are allowed to modify the packages followed by
+            # Only team members are allowed to modify the packages followed by
             # the team.
             raise PermissionDenied
 
@@ -336,7 +336,7 @@ class RemovePackageFromTeamView(LoginRequiredMixin, View):
     def get_team(self, slug):
         team = get_object_or_404(Team, slug=slug)
         if not team.user_is_member(self.request.user):
-            # Only team mebers are allowed to modify the packages followed by
+            # Only team members are allowed to modify the packages followed by
             # the team.
             raise PermissionDenied
 
