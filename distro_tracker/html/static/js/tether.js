@@ -67,7 +67,7 @@ var zeroPosCache = {};
 var getOrigin = function getOrigin(doc) {
   // getBoundingClientRect is unfortunately too accurate.  It introduces a pixel or two of
   // jitter as the user scrolls that messes with our ability to detect if two positions
-  // are equivilant or not.  We place an element at the top left of the page that will
+  // are equivalent or not.  We place an element at the top left of the page that will
   // get the same jitter, so we can cancel the two out.
   var node = doc._tetherZeroElement;
   if (typeof node === 'undefined') {
