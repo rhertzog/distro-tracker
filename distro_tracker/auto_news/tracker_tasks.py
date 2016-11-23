@@ -49,7 +49,8 @@ class GenerateNewsFromRepositoryUpdates(BaseTask):
         # Add changelog entries since last update...
         changelog_content = package_version.get_changelog_entry()
         if changelog_content:
-            content = content + '\n<span id="changes">Changes:</span>\n' + changelog_content
+            content = content + '\n<span id="changes">Changes:</span>\n'
+            content = content + changelog_content
 
         return content
 

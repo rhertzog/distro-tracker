@@ -732,6 +732,7 @@ class ListPanel(six.with_metaclass(ListPanelMeta, BasePanel)):
     def has_content(self):
         return bool(self.context['items'])
 
+
 # This should be a sort of "abstract" panel which should never be rendered on
 # its own, so it is removed from the list of registered panels.
 ListPanel.unregister_plugin()
