@@ -13,9 +13,10 @@
 from __future__ import unicode_literals
 
 from django.core.urlresolvers import reverse
-from django.utils.safestring import mark_safe
+from django.utils.encoding import force_text
 from django.utils.functional import cached_property
 from django.utils.http import urlencode, urlquote
+from django.utils.safestring import mark_safe
 
 from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.models import Repository
@@ -301,4 +302,5 @@ class BackToOldPTS(BasePanel):
     @property
     def has_content(self):
         return "packages.qa.debian.org" in \
-            self.request.META.get('HTTP_REFERER', '')
+            force_text(self.request.META.get('HTTP_REFERER', ''),
+                       encoding='latin1', errors='replace')
