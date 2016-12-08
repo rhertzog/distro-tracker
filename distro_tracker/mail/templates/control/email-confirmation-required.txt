@@ -32,4 +32,4 @@ If you have any problem with this service, please contact
 Thanks,
 --
 {{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracker
-http://{{ DISTRO_TRACKER_SITE_DOMAIN }}
+https://{{ DISTRO_TRACKER_SITE_DOMAIN }}

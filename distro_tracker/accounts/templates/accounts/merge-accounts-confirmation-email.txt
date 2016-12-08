@@ -3,7 +3,7 @@ You have requested to merge your account with another
 
 In order to complete the operation please go to the following URL:
 
-http://{{ DISTRO_TRACKER_SITE_DOMAIN }}{% url 'dtracker-accounts-merge-finalize' confirmation.confirmation_key %}
+https://{{ DISTRO_TRACKER_SITE_DOMAIN }}{% url 'dtracker-accounts-merge-finalize' confirmation.confirmation_key %}
 
 The page will present you the information on consequences of merging the
 accounts and ask for another confirmation before finally committing the
@@ -18,4 +18,4 @@ If you have any problem with this service, please contact
 Thanks,
 --
 {{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracker
-http://{{ DISTRO_TRACKER_SITE_DOMAIN }}
+https://{{ DISTRO_TRACKER_SITE_DOMAIN }}

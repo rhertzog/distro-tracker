@@ -1,3 +1,3 @@
   You asked to be unsubscribed from the "mailing list" associated to
   the {{ DISTRO_TRACKER_VENDOR_NAME }} source package called {{ package }}.
-  http://{{ DISTRO_TRACKER_SITE_DOMAIN }}{% url 'dtracker-package-page' package %}
+  https://{{ DISTRO_TRACKER_SITE_DOMAIN }}{% url 'dtracker-package-page' package %}
