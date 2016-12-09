@@ -790,7 +790,7 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
         # The subscribe button is no longer found in the page
         button = self.get_element_by_id('subscribe-button')
         # === Give the page a chance to refresh ===
-        wait = ui.WebDriverWait(self.browser, 1)
+        wait = ui.WebDriverWait(self.browser, 2)
         wait.until(lambda browser: not button.is_displayed())
         self.assertFalse(button.is_displayed())
 
