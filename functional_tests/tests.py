@@ -46,9 +46,10 @@ class SeleniumTestCase(LiveServerTestCase):
     """
     def setUp(self):
         os.environ['NO_PROXY'] = 'localhost,127.0.0.1,127.0.1.1'
-        fp = webdriver.FirefoxProfile()
-        fp.set_preference('network.proxy.type', 0)
-        self.browser = webdriver.Firefox(firefox_profile=fp)
+
+        chromedriver = "/usr/lib/chromium/chromedriver"
+        os.environ["webdriver.chrome.driver"] = chromedriver
+        self.browser = webdriver.Chrome(chromedriver)
         self.browser.implicitly_wait(3)
         self.browser.set_page_load_timeout(3)
         self.browser.set_script_timeout(3)
