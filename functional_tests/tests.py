@@ -55,7 +55,7 @@ class SeleniumTestCase(LiveServerTestCase):
         self.browser.set_script_timeout(3)
 
     def tearDown(self):
-        self.browser.close()
+        self.browser.quit()
 
     def get_page(self, relative):
         """
