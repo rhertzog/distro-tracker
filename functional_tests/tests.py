@@ -1089,13 +1089,17 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         self.input_to_element('id_new_password1', new_password)
         self.input_to_element('id_new_password2', new_password)
         self.send_enter('id_new_password2')
+        old_password = self.password
+        self.password = new_password
+        self.log_in()
         # The response shows a message confirming that the password
         # was changed.
         self.assert_in_page_body('Successfully updated your password')
-
+        
         # The user logs out in order to try using their new password.
         self.click_link('Log out')
         # The user tries logging in using their old account password.
+        self.password = old_password
         self.log_in()
         # The response shows an error message for incorrect credentials.
         self.assert_in_page_body('Please enter a correct email and password')
