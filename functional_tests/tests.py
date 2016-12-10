@@ -324,6 +324,8 @@ User = get_user_model()
 
 
 class RepositoryAdminTest(SeleniumTestCase):
+    serialized_rollback = True  # Keep initial data, we need the architectures
+
     def setUp(self):
         super(RepositoryAdminTest, self).setUp()
         # Create a superuser which will be used for the tests
@@ -1095,7 +1097,7 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         # The response shows a message confirming that the password
         # was changed.
         self.assert_in_page_body('Successfully updated your password')
-        
+
         # The user logs out in order to try using their new password.
         self.click_link('Log out')
         # The user tries logging in using their old account password.
