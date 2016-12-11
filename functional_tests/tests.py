@@ -324,8 +324,6 @@ User = get_user_model()
 
 
 class RepositoryAdminTest(SeleniumTestCase):
-    serialized_rollback = True  # Keep initial data, we need the architectures
-
     def setUp(self):
         super(RepositoryAdminTest, self).setUp()
         # Create a superuser which will be used for the tests
@@ -424,9 +422,6 @@ class RepositoryAdminTest(SeleniumTestCase):
         self.input_to_element('id_suite', 'testing')
         self.input_to_element('id_codename', 'jessie')
         self.input_to_element('id_components', 'main non-free')
-        architecture_option = self.browser.find_element_by_css_selector(
-            '.field-architectures select option[value="1"]')
-        architecture_option.click()
         # Finally the user clicks the save button
         self.browser.find_element_by_css_selector('input.default').click()
 
