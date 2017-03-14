@@ -785,7 +785,7 @@ def pre_login(form):
             "Your account has a @debian.org email address associated. "
             "To log in to the package tracker, you must use a SSL client "
             "certificate generated on "
-            "<a href='https://sso.debian.org/spkac/enroll/'>"
+            "<a href='https://sso.debian.org/'>"
             "sso.debian.org</a> (click on the link!)."))
 
 
