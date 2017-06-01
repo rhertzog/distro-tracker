@@ -1,4 +1,5 @@
 {% with query_string=item.context.package_query_string %}
+{% spaceless %}
 <span>buildd: </span>
 <span><a title="buildd.debian.org build logs" href="https://buildd.debian.org/status/package.php?{{ query_string }}">logs</a></span>
 {% if item.context.has_experimental %}
@@ -15,4 +16,5 @@
 <span>,</span>
 <span><a title="report about build reproducibility ({{ item.context.reproducibility_status }})" href="{{ item.context.reproducibility_url }}">reproducibility</a></span>
 {% endif %}
+{% endspaceless %}
 {% endwith %}
