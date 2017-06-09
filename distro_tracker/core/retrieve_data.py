@@ -336,8 +336,10 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                 kwargs = {
                     'priority': stanza.get('priority', ''),
                     'section': stanza.get('section', ''),
+                    'directory': stanza.get('directory', ''),
                 }
                 entry = repository.add_source_package(src_pkg, **kwargs)
+
                 self.raise_event('new-source-package-version-in-repository', {
                     'name': src_pkg.name,
                     'version': src_pkg.version,

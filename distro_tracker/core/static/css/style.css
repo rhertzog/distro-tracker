@@ -14,6 +14,11 @@ a, a:hover, a:focus {
     color: #0530D7;
 }
 
+/* Override bootstrap rule color:inherit to fix dark themes */
+button, input, optgroup, select, textarea {
+    color: initial;
+}
+
 .page-header {
     padding: 0.5rem 0;
 }
