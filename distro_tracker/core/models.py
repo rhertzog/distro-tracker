@@ -643,6 +643,9 @@ class Subscription(models.Model):
 
     objects = SubscriptionManager()
 
+    class Meta:
+        unique_together = ('email_settings', 'package')
+
     class KeywordsAdapter(object):
         """
         An adapter for accessing a :class:`Subscription`'s keywords.
