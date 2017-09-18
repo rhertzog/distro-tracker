@@ -25,14 +25,15 @@ The email interface forwards email messages regarding a package, to users
 who are subscribed to that package.
 
 Distro Tracker receives email messages for each package on a special address in the
-form of ``<package-name>@<distro-tracker-domain>``. If the local part of the email is a
-valid package name, the message is a valid package message. Messages to the
-package's address can be sent by either automated tools or users themselves.
+form of ``dispatch+<package-name>@<distro-tracker-domain>``. If the local
+part of the email is a valid package name, the message is a valid package
+message. Messages to the package's address can be sent by either automated
+tools or users themselves.
 
 Each package email is first tagged with one of the existing keywords and then
 forwarded only to the subscribers interested in that keyword. Users sending
 package messages to the tracker can tag their own messages with a keyword by using a
-local part of the address in the form of ``<package-name>_<keyword>``.
+local part of the address in the form of ``dispatch+<package-name>_<keyword>``.
 
 A user can choose which mails they are interested in, by selecting to either
 receive messages tagged with one of their "default" keywords or they can choose
