@@ -167,7 +167,7 @@
             <div class="panel-heading">add packages</div>
             <div class="panel-body" style="padding-top: 10px;">
                 <form class="form-inline" id="add-team-package-form" action="{% url 'dtracker-team-add-package' team.slug %}" method="POST">{% csrf_token %}
-                    <input class="form-control package-completion" type="text" id="id_package_name" name="package" placeholder="Choose package...">
+                    <input class="form-control package-completion" type="search" id="id_package_name" name="package" placeholder="Choose package...">
                     <button class="btn btn-primary">Add</button>
                 </form>
             </div>

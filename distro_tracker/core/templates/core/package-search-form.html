@@ -5,7 +5,7 @@
 	{% if search_form_use_label %}
 	<label class="m-r-1" for="package-search-input">Enter a {{ DISTRO_TRACKER_VENDOR_NAME }} package name: </label>
 	{% endif %}
-	<input type="text" class="form-control form-control-sm package-completion" name="package_name" id='package-search-input' placeholder="Jump to package..."{% if autofocus %} autofocus='autofocus'{% endif %}>
+	<input type="search" class="form-control form-control-sm package-completion" name="package_name" id='package-search-input' placeholder="Jump to package..."{% if autofocus %} autofocus='autofocus'{% endif %}>
 	</div>
 	<div class="form-group">
 	<button type="submit" class="btn btn-default btn-sm">Go</button>

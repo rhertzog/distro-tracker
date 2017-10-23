@@ -140,7 +140,7 @@ class SourceCodeSearchLinks(LinksPanel.ItemProvider):
         ' action="' + reverse('dtracker-code-search') + '"'
         ' method="get" target="_blank">'
         '<input type="hidden" name="package" value="{package}">'
-        '<input type="text" name="query" placeholder="search source code">'
+        '<input type="search" name="query" placeholder="search source code">'
         '</form>')
 
     def get_panel_items(self):
