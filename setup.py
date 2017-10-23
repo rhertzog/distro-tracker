@@ -34,7 +34,7 @@ def find_package_data(basedir):
 
 
 with open('debian/changelog') as f:
-    res = re.search('\((\d.*)\)', f.readline())
+    res = re.search(r'\((\d.*)\)', f.readline())
     version = res.group(1)
 
 setup(name='DistroTracker',

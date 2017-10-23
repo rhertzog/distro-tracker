@@ -277,7 +277,7 @@ class SetDefaultKeywordsCommand(Command, KeywordCommandMixin):
             self.keywords)
 
     def handle(self):
-        keywords = re.split('[,\s]+', self.keywords)
+        keywords = re.split(r'[,\s]+', self.keywords)
         user_email, _ = UserEmail.objects.get_or_create(email=self.email)
         email_settings, _ = \
             EmailSettings.objects.get_or_create(user_email=user_email)
@@ -333,7 +333,7 @@ class SetPackageKeywordsCommand(Command, KeywordCommandMixin):
         Actual implementation of the keyword command version which handles
         subscription specific keywords.
         """
-        keywords = re.split('[,\s]+', self.keywords)
+        keywords = re.split(r'[,\s]+', self.keywords)
         subscription = self.get_subscription(self.email, self.package)
         if not subscription:
             return

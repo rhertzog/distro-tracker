@@ -65,7 +65,7 @@ def names_and_addresses_from_string(content):
     """
     all_parts = [
         name_and_address_from_string(part)
-        for part in re.split('(?<=>)\s*,\s*', content)
+        for part in re.split(r'(?<=>)\s*,\s*', content)
     ]
     return [
         part
