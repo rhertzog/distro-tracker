@@ -1621,7 +1621,7 @@ class SubscribeToPackageTest(EmailControlTest):
 
     def test_subscribe_and_confirm_normal(self):
         """
-        Tests that the user is subscribed to the pacakge after running
+        Tests that the user is subscribed to the package after running
         subscribe and confirm.
         """
         package_name = self.package.name
@@ -1917,7 +1917,7 @@ class UnsubscribeFromPackageTest(EmailControlTest):
 
     def test_unsubscribe_and_confirm_normal(self):
         """
-        Tests that the user is unsubscribed from the pacakge after running
+        Tests that the user is unsubscribed from the package after running
         unsubscribe and confirm.
         """
         package_name = self.package.name

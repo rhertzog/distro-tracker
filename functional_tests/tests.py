@@ -351,7 +351,7 @@ class RepositoryAdminTest(SeleniumTestCase):
         # The user first logs in to the admin panel with their credentials.
         self.login_to_admin()
 
-        # They expect the log in to succeed, responsing with the
+        # They expect the log in to succeed, responding with the
         # administration page.
         self.assertIn('Site administration', self.browser.title)
 

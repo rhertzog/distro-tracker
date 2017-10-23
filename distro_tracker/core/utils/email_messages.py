@@ -244,7 +244,7 @@ def decode_header(header, default_encoding='utf-8'):
 def unfold_header(header):
     """
     Unfolding is the process to remove the line wrapping added by mail agents.
-    An header is a single logical line and they are not allowed to be multi-line
+    A header is a single logical line and they are not allowed to be multi-line
     values.
 
     We need to unfold their values in particular when we want to reuse the

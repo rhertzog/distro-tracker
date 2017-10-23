@@ -481,7 +481,7 @@ class PackageManagerTest(TestCase):
 
     def test_pseudo_package_create(self):
         """
-        Tests that the pseudo packages manager creates pseudo pacakges.
+        Tests that the pseudo packages manager creates pseudo packages.
         """
         p = PackageName.pseudo_packages.create(name='pseudo-package')
 

@@ -296,7 +296,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
 
     def test_multiple_new_versions_different_repos(self):
         """
-        Tests the case when there are mutliple new versions of a source package
+        Tests the case when there are multiple new versions of a source package
         each in a different repository.
         """
         source_package_name = 'dummy-package'

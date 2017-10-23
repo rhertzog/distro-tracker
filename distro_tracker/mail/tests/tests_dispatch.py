@@ -246,7 +246,7 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         self.assertTrue(bounce_address.startswith('bounces+'))
         self.assertEqual(user_address, msg.to[0])
 
-    def test_correct_foward_content(self):
+    def test_correct_forward_content(self):
         """
         Tests that the content of the forwarded message is unchanged.
         """

@@ -39,7 +39,7 @@ class TempDirsTests(object):
         return TempDirsMixin.DISTRO_TRACKER_PATH_SETTINGS.keys()
 
     def test_setup_has_same_settings(self):
-        """ Test that .setUp() already has the overriden settings. """
+        """ Test that .setUp() already has the overridden settings. """
         for name in self.get_settings_names():
             self.assertEqual(self._settings_during_setup[name],
                              getattr(settings, name))

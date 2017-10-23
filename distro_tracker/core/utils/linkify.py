@@ -119,7 +119,7 @@ class LinkifyUbuntuBugLinks(LinkifyDebianBugLinks):
 class LinkifyCVELinks(Linkify):
     """
     Detect "CVE-2014-1234" words and transform them into links to the
-    CVE tracker at cve.mitre.org. The exact URL can be overriden with a
+    CVE tracker at cve.mitre.org. The exact URL can be overridden with a
     ``DISTRO_TRACKER_CVE_URL`` configuration setting to redirect
     the URL to a custom tracker.
     """

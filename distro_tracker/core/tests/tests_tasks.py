@@ -78,7 +78,7 @@ class JobTests(TestCase):
     def assert_task_dependency_preserved(self, task, dependent_tasks):
         """
         Helper method which cheks whether the given dependent tasks were
-        executed after their dependency was satisifed.
+        executed after their dependency was satisfied.
         """
         task_index = self.execution_list.index(task)
         for task in dependent_tasks:

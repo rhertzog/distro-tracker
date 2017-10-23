@@ -3840,7 +3840,7 @@ class UpdateNewQueuePackagesTests(TestCase):
     def test_multiple_distributions(self):
         """
         Tests that the NEW queue information is correctly extracted when the
-        package has mutliple distributions in the NEW queue.
+        package has multiple distributions in the NEW queue.
         """
         distributions = ['sid', 'stable-security']
         versions = ['1.0.0', '2.0.0']

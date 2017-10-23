@@ -12,7 +12,7 @@
 
 Most settings are documented in this file and they are initialized to some
 reasonable default values when possible.  They will be extended (and
-possibly overriden) by settings from the other modules in this package
+possibly overridden) by settings from the other modules in this package
 depending on the setup selected by the administrator. You likely won't
 have to modify that file.
 
@@ -45,7 +45,7 @@ Here are the most important settings:
     Defaults to "/static/"
 
 Some settings have default values which are computed dynamically from
-other settings. Those settings can also be overriden. Here's the list
+other settings. Those settings can also be overridden. Here's the list
 of those settings.
 
 :py:data:`DISTRO_TRACKER_VENDOR_NAME`
