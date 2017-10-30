@@ -15,7 +15,7 @@ import re
 import requests
 
 from django import forms
-from django.utils.http import urlencode, urlquote
+from django.utils.http import urlencode, urlquote_plus
 from django.utils.safestring import mark_safe
 from django.conf import settings
 
@@ -263,7 +263,7 @@ def get_developer_information_url(developer_email):
     Return a URL to extra information about a developer, by email address.
     """
     URL_TEMPLATE = 'https://qa.debian.org/developer.php?email={email}'
-    return URL_TEMPLATE.format(email=urlquote(developer_email))
+    return URL_TEMPLATE.format(email=urlquote_plus(developer_email))
 
 
 def get_external_version_information_urls(package_name):
@@ -328,7 +328,7 @@ def _add_dmd_entry(extra, email):
         'display': 'DMD',
         'description': 'UDD\'s Debian Maintainer Dashboard',
         'link': 'https://udd.debian.org/dmd/?{email}#todo'.format(
-            email=urlquote(email)
+            email=urlquote_plus(email)
         )
     })
 
