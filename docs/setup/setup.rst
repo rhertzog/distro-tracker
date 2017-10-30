@@ -22,7 +22,6 @@ Distro Tracker currently depends on the following Debian packages:
 - python-bs4
 - python-pyinotify
 - python-soappy (optional)
-- python-ldap (optional)
 - python-tox (for development only)
 - python-selenium (for development only)
 - chromedriver (for development only)
@@ -35,7 +34,7 @@ For Python2.7, the following additional packages are required:
 
 Here is the list of required packages for development on Debian Jessie::
 
- $ sudo apt install python-django python-requests python-django-jsonfield python-django-debug-toolbar python-debian python-apt python-gpgme python-yaml python-bs4 python-soappy python-ldap python-pyinotify python-tox python-mock python-lzma python-selenium python3-django python3-requests python3-django-jsonfield python3-django-debug-toolbar python3-debian python3-apt python3-gpgme python3-yaml python3-bs4 python3-pyinotify python3-selenium chromium chromedriver
+ $ sudo apt install python-django python-requests python-django-jsonfield python-django-debug-toolbar python-debian python-apt python-gpgme python-yaml python-bs4 python-soappy python-pyinotify python-tox python-mock python-lzma python-selenium python3-django python3-requests python3-django-jsonfield python3-django-debug-toolbar python3-debian python3-apt python3-gpgme python3-yaml python3-bs4 python3-pyinotify python3-selenium chromium chromedriver
 
 .. _database_setup:
 

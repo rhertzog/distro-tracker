@@ -19,7 +19,6 @@ Misc possible enhancements:
 * Codebase is Python 3 compatible but some optional dependencies need to
   be ported:
   - python-soappy => switch to pysimplesoap
-  - python-ldap => replace LDAP access with nm.d.o REST api, cf #797223
 * Re-enable a smarter clickjacking protection: only activate it when the
   page is rendered for a logged in user and allow callers to pass a
   "anonymous=1" parameter that will force render the web page as if

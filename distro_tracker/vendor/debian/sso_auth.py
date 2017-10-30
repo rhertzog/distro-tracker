@@ -9,18 +9,16 @@
 # except according to the terms contained in the LICENSE file.
 
 from __future__ import unicode_literals
+import json
 from django.contrib.auth.middleware import RemoteUserMiddleware
 from django.contrib.auth.backends import RemoteUserBackend
 from django.contrib import auth
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.http import urlencode
 
 from distro_tracker.accounts.models import UserEmail
 from distro_tracker.accounts.models import User
-
-try:
-    import ldap
-except ImportError:
-    ldap = None
+from distro_tracker.core.utils.http import get_resource_content
 
 
 class DebianSsoUserMiddleware(RemoteUserMiddleware):
@@ -101,7 +99,7 @@ class DebianSsoUserBackend(RemoteUserBackend):
     user (identified by their @debian.org email) in Distro Tracker. If
     a matching User model instance does not exist, one is
     automatically created. In that case the DDs first and last name
-    are pulled from Debian's LDAP.
+    are pulled from Debian's NM REST API.
     """
     def authenticate(self, remote_user):
         if not remote_user:
@@ -130,27 +128,22 @@ class DebianSsoUserBackend(RemoteUserBackend):
 
     def get_user_details(self, remote_user):
         """
-        Gets the details of the given user from the Debian LDAP.
+        Gets the details of the given user from the Debian NM REST API.
         :return: Dict with the keys ``first_name``, ``last_name``
-            ``None`` if the LDAP lookup did not return anything.
+            ``None`` if the API lookup did not return anything.
         """
-        if ldap is None:
-            return None
         if not remote_user.endswith('@debian.org'):
-            # We only know how to extract data for DD via LDAP
+            # We only know how to extract data for DD via NM API
             return None
 
-        l = ldap.initialize('ldap://db.debian.org')
-        result_set = l.search_s(
-            'dc=debian,dc=org',
-            ldap.SCOPE_SUBTREE,
-            'uid={}'.format(self.get_uid(remote_user)),
-            None)
-        if not result_set:
-            return None
+        content = get_resource_content(
+            'https://nm.debian.org/api/people?' +
+            urlencode({'uid': self.get_uid(remote_user)}))
+        result = json.loads(content)['r']
 
-        result = result_set[0]
+        if not result:
+            return None
         return {
-            'first_name': result[1]['cn'][0].decode('utf-8'),
-            'last_name': result[1]['sn'][0].decode('utf-8'),
+            'first_name': result[0]['cn'],
+            'last_name': result[0]['sn'],
         }

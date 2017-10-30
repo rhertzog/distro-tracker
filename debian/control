@@ -16,7 +16,6 @@ Build-Depends: debhelper (>= 9),
     python-django-jsonfield,
     python-django-captcha,
     python-gpgme,
-    python-ldap,
     python-lzma,
     python-requests (>= 2),
     python-soappy,
@@ -69,7 +68,6 @@ Depends: ${python:Depends},
     python-yaml,
     python-pyinotify,
     ${misc:Depends}
-Recommends: python-ldap
 Description: Python libraries of Distro Tracker
  Distro Tracker offers a web interface to display an overview of each source
  package provided as well as an email interface to be notified of changes
