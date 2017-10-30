@@ -15,7 +15,7 @@ from __future__ import unicode_literals
 from django.core.urlresolvers import reverse
 from django.utils.encoding import force_text
 from django.utils.functional import cached_property
-from django.utils.http import urlencode, urlquote
+from django.utils.http import urlencode, urlquote, urlquote_plus
 from django.utils.safestring import mark_safe
 
 from distro_tracker.core.utils import get_or_none
@@ -80,7 +80,8 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
             has_checks = False
         logcheck_url = \
             "https://qa.debian.org/bls/packages/{hash}/{pkg}.html".format(
-                hash=self.package.name[0], pkg=self.package.name)
+                hash=urlquote(self.package.name[0], safe=""),
+                pkg=urlquote(self.package.name, safe=""))
         try:
             infos = self.package.packageextractedinfo_set.get(
                 key='reproducibility')
@@ -91,7 +92,8 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
             reproducibility_status = None
         reproducibility_url = \
             "https://tests.reproducible-builds.org/debian/rb-pkg/{}.html"
-        reproducibility_url = reproducibility_url.format(self.package.name)
+        reproducibility_url = reproducibility_url.format(
+            urlquote(self.package.name, safe=""))
 
         return [
             TemplatePanelItem('debian/logcheck-links.html', {
@@ -116,7 +118,8 @@ class PopconLink(LinksPanel.ItemProvider):
         return [
             LinksPanel.SimpleLinkItem(
                 'popcon',
-                self.POPCON_URL.format(package=self.package.name))
+                self.POPCON_URL.format(
+                    package=urlquote_plus(self.package.name)))
         ]
 
 
@@ -156,7 +159,8 @@ class SourceCodeSearchLinks(LinksPanel.ItemProvider):
                 links.append(LinksPanel.SimpleLinkItem(
                     'browse source code',
                     self.SOURCES_URL_TEMPLATE.format(
-                        package=self.package.name, suite=allowed_repo)))
+                        package=urlquote(self.package.name, safe=""),
+                        suite=urlquote(allowed_repo, safe=""))))
                 break
 
         if 'unstable' in repositories:
@@ -186,7 +190,8 @@ class DebtagsLink(LinksPanel.ItemProvider):
             LinksPanel.SimpleLinkItem(
                 'edit tags',
                 self.SOURCES_URL_TEMPLATE.format(
-                    package=self.package.name, maint=maintainer)
+                    package=urlquote(self.package.name, safe=""),
+                    maint=urlquote(maintainer, safe=""))
             )
         ]
 
@@ -228,7 +233,8 @@ class ScreenshotsLink(LinksPanel.ItemProvider):
             return [
                 LinksPanel.SimpleLinkItem(
                     'screenshots',
-                    self.SOURCES_URL_TEMPLATE.format(package=self.package.name)
+                    self.SOURCES_URL_TEMPLATE.format(
+                        package=urlquote(self.package.name, safe=""))
                 )
             ]
         else:

@@ -35,14 +35,14 @@
             <form style="margin-bottom: 0px;" action="{% url 'dtracker-team-unmute' team.slug %}" method="POST">{% csrf_token %}
                 <input type="hidden" name="package" value="{{ pkg }}">
                 <input type="hidden" name="email" value="{{ email }}">
-                <input type="hidden" name="next" value="{% url 'dtracker-team-manage-membership' team.slug %}?page={{ page_obj.number }}&email={{ email }}">
+                <input type="hidden" name="next" value="{% url 'dtracker-team-manage-membership' team.slug %}?page={{ page_obj.number|urlencode:'' }}&email={{ email|urlencode:'' }}">
                 <button class="btn btn-primary toggle-package-mute" data-email="{{ email }}" data-package="{{ subscription.package }}">Unmute</button>
             </form>
         {% else %}
             <form style="margin-bottom: 0px;" action="{% url 'dtracker-team-mute' team.slug %}" method="POST">{% csrf_token %}
                 <input type="hidden" name="package" value="{{ pkg }}">
                 <input type="hidden" name="email" value="{{ email }}">
-                <input type="hidden" name="next" value="{% url 'dtracker-team-manage-membership' team.slug %}?page={{ page_obj.number }}&email={{ email }}">
+                <input type="hidden" name="next" value="{% url 'dtracker-team-manage-membership' team.slug %}?page={{ page_obj.number|urlencode:'' }}&email={{ email|urlencode:'' }}">
                 <button class="btn btn-danger toggle-package-mute" data-email="{{ email }}" data-package="{{ subscription.package }}">Mute</button>
             </form>
         {% endif %}
@@ -70,7 +70,7 @@
 <div class="text-xs-center">
 <ul class="pagination">
     {% for page in page_obj.paginator.page_range %}
-    <li class="page-item{% if page_obj.number == page %} active{% endif %}"><a class="page-link" href="?page={{ page }}&email={{ membership.user_email.email }}">{{ page }}</a></li>
+    <li class="page-item{% if page_obj.number == page %} active{% endif %}"><a class="page-link" href="?page={{ page|urlencode:'' }}&email={{ membership.user_email.email|urlencode:'' }}">{{ page }}</a></li>
     {% endfor %}
 </ul>
 </div>

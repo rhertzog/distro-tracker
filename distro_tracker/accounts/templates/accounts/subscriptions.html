@@ -30,7 +30,7 @@
     <button class='btn btn-sm btn-danger unsubscribe-all' data-email="{{ email }}">Unsubscribe all</button>
     </form>
     {% endif %}
-    <a href="{% url 'dtracker-accounts-profile-keywords' %}?email={{ email }}">
+    <a href="{% url 'dtracker-accounts-profile-keywords' %}?email={{ email|urlencode:'' }}">
         <button class="btn btn-sm btn-primary modify-default-keywords" data-email="{{ email }}">Modify keywords</button>
     </a>
     <div class="default-keywords" style="display: none;" id="default-keywords-{{ forloop.counter }}">
@@ -77,7 +77,7 @@
 		</div>
 		<div class="col-md-6">
 		    <div class="pull-xs-right">
-			<a href="{% url 'dtracker-accounts-profile-keywords' %}?package={{ subscription.package }}&email={{ email }}">
+			<a href="{% url 'dtracker-accounts-profile-keywords' %}?package={{ subscription.package|urlencode:'' }}&email={{ email|urlencode:'' }}">
 			<div class="btn btn-sm btn-primary modify-subscription-keywords" data-email="{{ email }}" data-package="{{ subscription.package }}">Modify keywords</div></a>
 			<form style="margin-bottom: 0px;display:inline;" action="{% url 'dtracker-api-accounts-unsubscribe' %}" method="POST">{% csrf_token %}
 			<input type="hidden" name="package" value="{{ subscription.package }}">
@@ -123,7 +123,7 @@
 		<div class="col-md-6">
 		    <div class="pull-xs-right">
 			<div class="btn btn-sm btn-primary modify-membership-keywords" data-email="{{ email }}" data-href="{% url 'dtracker-team-set-keywords' membership.team.slug %}">Modify keywords</div>
-			<a class="btn btn-sm btn-primary" href="{% url 'dtracker-team-manage-membership' membership.team.slug %}?email={{ email }}">Manage subscriptions</a>
+			<a class="btn btn-sm btn-primary" href="{% url 'dtracker-team-manage-membership' membership.team.slug %}?email={{ email|urlencode:'' }}">Manage subscriptions</a>
 			{% if membership.muted %}
 			<form style="margin-bottom: 0px;display:inline;" action="{% url 'dtracker-team-unmute' membership.team.slug %}" method="POST">{% csrf_token %}
 			{% else %}

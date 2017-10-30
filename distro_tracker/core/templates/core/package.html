@@ -33,7 +33,7 @@
 		<input type="hidden" name="package" value="{{ package }}">
 		<input type="hidden" name="email" value="{{ request.user.emails.all.0 }}">
 	    {% else %}
-	    <a href="{% url 'dtracker-accounts-choose-email' %}?package={{ package }}">
+	    <a href="{% url 'dtracker-accounts-choose-email' %}?package={{ package|urlencode:'' }}">
 	    {% endif %}
 
 	  <button class="btn btn-default" id='subscribe-button' data-package="{{ package }}" data-get-emails="{% url 'dtracker-api-accounts-emails' %}" data-url="{% url 'dtracker-api-accounts-subscribe' %}">Subscribe</button>

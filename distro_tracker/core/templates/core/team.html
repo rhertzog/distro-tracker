@@ -116,7 +116,7 @@
                             {% endif %}
 			    {% if user_member_of_team %}
 			    <div class="pull-xs-right">
-				<a href="{% url 'dtracker-team-remove-package' team.slug %}?package={{ package }}"><span data-package="{{ package }}" class="remove-package-from-team-button">{% octicon 'trashcan' 'remove package from team' %}</span></a>
+				<a href="{% url 'dtracker-team-remove-package' team.slug %}?package={{ package|urlencode:'' }}"><span data-package="{{ package }}" class="remove-package-from-team-button">{% octicon 'trashcan' 'remove package from team' %}</span></a>
 			    </div>
 			    {% endif %}
 			</div>

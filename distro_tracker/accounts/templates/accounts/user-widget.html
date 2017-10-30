@@ -1,7 +1,7 @@
 {% if user.is_authenticated %}
     <span><a href="{% url 'dtracker-accounts-profile' %}">Profile</a></span>
     <span>|</span>
-    <span><a id="account-logout" href="{% url 'dtracker-accounts-logout' %}?next={{ logout_redirect }}">Log out</a></span>
+    <span><a id="account-logout" href="{% url 'dtracker-accounts-logout' %}?next={{ logout_redirect|urlencode:'' }}">Log out</a></span>
 {% else %}
     <span><a id="account-register" href="{% url 'dtracker-accounts-register' %}">Register</a></span>
     <span>|</span>
