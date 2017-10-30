@@ -258,7 +258,7 @@ class TransitionsPanel(BasePanel):
         return {
             'transitions': self.package.package_transitions.all(),
             'excuses': excuses,
-            'package_name': urlquote(self.package.name),
+            'package_name': self.package.name,
         }
 
     @property
