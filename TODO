@@ -16,9 +16,6 @@ Misc possible enhancements:
 * Add a subscriber count on each package page (and put
   subscription-related actions in the same panel).
 * Paul Wise's input: https://lists.debian.org/debian-qa/2014/07/msg00092.html
-* Codebase is Python 3 compatible but some optional dependencies need to
-  be ported:
-  - python-soappy => switch to pysimplesoap
 * Re-enable a smarter clickjacking protection: only activate it when the
   page is rendered for a logged in user and allow callers to pass a
   "anonymous=1" parameter that will force render the web page as if

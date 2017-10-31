@@ -56,7 +56,7 @@ from bs4 import BeautifulSoup as soup
 import yaml
 
 try:
-    import SOAPpy
+    import debianbts
 except ImportError:
     pass
 
@@ -222,7 +222,7 @@ class UpdatePackageBugStats(BaseTask):
 
     def _get_tagged_bug_stats(self, tag, user=None):
         """
-        Using the BTS SOAP interface, retrieves the statistics of bugs with a
+        Using the BTS interface, retrieves the statistics of bugs with a
         particular tag.
 
         :param tag: The tag for which the statistics are required.
@@ -237,29 +237,21 @@ class UpdatePackageBugStats(BaseTask):
         debian_ca_bundle = '/etc/ssl/ca-debian/ca-certificates.crt'
         if os.path.exists(debian_ca_bundle):
             os.environ['SSL_CERT_FILE'] = debian_ca_bundle
-        url = 'https://bugs.debian.org/cgi-bin/soap.cgi'
-        namespace = 'Debbugs/SOAP'
-        server = SOAPpy.SOAPProxy(url, namespace)
         if user:
-            bugs = server.get_usertag(user, tag)
-            bugs = bugs[0]
+            bug_numbers = debianbts.get_usertag(user, tag).values()
         else:
-            bugs = server.get_bugs('tag', tag)
+            bug_numbers = debianbts.get_bugs('tag', tag)
 
         # Match each retrieved bug ID to a package and then find the aggregate
         # count for each package.
         bug_stats = {}
-        statuses = server.get_status(bugs)
-        statuses = statuses[0]
-        for status in statuses:
-            status = status['value']
-            if status['done'] or status['fixed'] or \
-                    status['pending'] == 'fixed':
+        bugs = debianbts.get_status(*bug_numbers)
+        for bug in bugs:
+            if bug.done or bug.fixed_versions or bug.pending == 'fixed':
                 continue
 
-            package_name = status['package']
-            bug_stats.setdefault(package_name, 0)
-            bug_stats[package_name] += 1
+            bug_stats.setdefault(bug.package, 0)
+            bug_stats[bug.package] += 1
 
         return bug_stats
 
@@ -465,14 +457,14 @@ class UpdatePackageBugStats(BaseTask):
         if not bug_stats:
             bug_stats = {}
 
-        # Add in help bugs from the BTS SOAP interface
+        # Add in help bugs from the BTS interface
         try:
             help_bugs = self._get_tagged_bug_stats('help')
             self._extend_bug_stats(bug_stats, help_bugs, 'help')
         except:
             logger.exception("Could not get bugs tagged help")
 
-        # Add in newcomer bugs from the BTS SOAP interface
+        # Add in newcomer bugs from the BTS interface
         try:
             newcomer_bugs = self._get_tagged_bug_stats('newcomer')
             self._extend_bug_stats(bug_stats, newcomer_bugs, 'newcomer')
