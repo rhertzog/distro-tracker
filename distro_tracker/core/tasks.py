@@ -516,11 +516,10 @@ class Job(object):
                     # Inject additional parameters, if any
                     if parameters:
                         task.set_parameters(parameters)
-                    logger.info("Starting task {task}".format(
-                        task=task.task_name()))
+                    logger.info("Starting task %s", task.task_name())
                     task.execute()
-                    logger.info("Successfully executed task {task}".format(
-                        task=task.task_name()))
+                    logger.info("Successfully executed task %s",
+                                task.task_name())
                 except Exception:
                     logger.exception("Problem processing a task.")
                 # Update dependent tasks based on events raised.

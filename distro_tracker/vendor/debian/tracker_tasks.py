@@ -431,8 +431,8 @@ class UpdatePackageBugStats(BaseTask):
                 bug_counts = [int(count) for count in bug_counts]
             except ValueError:
                 logger.warning(
-                    'Failed to parse bug information for {pkg}: {cnts}'.format(
-                        pkg=package_name, cnts=bug_counts), exc_info=1)
+                    'Failed to parse bug information for %s: %s',
+                    package_name, bug_counts, exc_info=1)
                 continue
 
             # Match the extracted counts with category names
@@ -520,8 +520,8 @@ class UpdatePackageBugStats(BaseTask):
                 bug_counts = [int(count) for count in bug_counts]
             except ValueError:
                 logger.exception(
-                    'Failed to parse bug information for {pkg}: {cnts}'.format(
-                        pkg=package_name, cnts=bug_counts))
+                    'Failed to parse bug information for %s: %s',
+                    package_name, bug_counts)
                 continue
 
             bug_stats[package_name] = [
@@ -598,9 +598,8 @@ class UpdateLintianStatsTask(BaseTask):
                 }
             except ValueError:
                 logger.exception(
-                    'Failed to parse lintian information for {pkg}: '
-                    '{line}'.format(
-                        pkg=package, line=line))
+                    'Failed to parse lintian information for %s: %s',
+                    package, line)
                 continue
 
         return all_stats
@@ -1507,7 +1506,7 @@ class UpdatePiuPartsTask(BaseTask):
         for suite in suites:
             content = self._get_piuparts_content(suite)
             if content is None:
-                logger.info("There is no piuparts for suite: {}".format(suite))
+                logger.info("There is no piuparts for suite: %s", suite)
                 continue
 
             for line in content.splitlines():
