@@ -113,7 +113,9 @@ class UpdateStandardsVersionWarnings(BaseTask):
         action_item.short_description = self.ITEM_DESCRIPTION
         action_item.extra_data = {
             'lastsv': policy_version,
+            'lastsv_dashes': policy_version.replace('.', '-'),
             'standards_version': standards_version,
+            'standards_version_dashes': standards_version.replace('.', '-'),
             'severely_outdated': severely_outdated,
         }
         action_item.save()

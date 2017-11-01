@@ -1,11 +1,9 @@
-{% with lastsv=item.extra_data.lastsv %}
-{% with standards_version=item.extra_data.standards_version %}
 {% if item.extra_data.severely_outdated %}
 <span>The package is severely out of date with respect to the Debian Policy.</span>
 {% endif %}
 <span>The package should be updated to follow the last version of <a href="https://www.debian.org/doc/debian-policy/">Debian Policy</a>
-(Standards-Version <a href="https://www.debian.org/doc/debian-policy/upgrading-checklist.html#s-{{ lastsv }}.0">{{ lastsv }}</a> instead of
-<a href="https://www.debian.org/doc/debian-policy/upgrading-checklist.html#s-{{ standards_version }}.0">{{ standards_version }}</a>).
+(Standards-Version <a href="https://www.debian.org/doc/debian-policy/#version-{{ item.extra_data.lastsv_dashes|urlencode:'' }}">{{ item.extra_data.lastsv }}</a> instead of
+<a href="https://www.debian.org/doc/debian-policy/#version-{{ item.extra_data.standards_version_dashes|urlencode:'' }}">{{ item.extra_data.standards_version }}</a>).
 </span>
 {% endwith %}
 {% endwith %}
