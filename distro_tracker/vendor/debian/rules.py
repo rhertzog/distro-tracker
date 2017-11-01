@@ -274,7 +274,7 @@ def get_external_version_information_urls(package_name):
     return [
         {
             'url': 'https://qa.debian.org/madison.php?package={package}'.format(
-                package=package_name),
+                package=urlquote_plus(package_name)),
             'description': 'more versions can be listed by madison',
         },
         {
