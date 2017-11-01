@@ -47,7 +47,10 @@ class SeleniumTestCase(LiveServerTestCase):
     def setUp(self):
         os.environ['NO_PROXY'] = 'localhost,127.0.0.1,127.0.1.1'
 
-        chromedriver = "/usr/lib/chromium/chromedriver"
+        for path in "/usr/lib/chromium-browser", "/usr/lib/chromium":
+            chromedriver = os.path.join(path, "chromedriver")
+            if os.path.exists(chromedriver):
+                break
         os.environ["webdriver.chrome.driver"] = chromedriver
         self.browser = webdriver.Chrome(chromedriver)
         self.browser.implicitly_wait(3)
