@@ -247,7 +247,7 @@ class UpdatePackageBugStats(BaseTask):
         bug_stats = {}
         bugs = debianbts.get_status(*bug_numbers)
         for bug in bugs:
-            if bug.done or bug.fixed_versions or bug.pending == 'fixed':
+            if bug.done or bug.fixed_versions or bug.pending == 'done':
                 continue
 
             bug_stats.setdefault(bug.package, 0)
