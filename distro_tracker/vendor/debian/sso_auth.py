@@ -101,7 +101,7 @@ class DebianSsoUserBackend(RemoteUserBackend):
     automatically created. In that case the DDs first and last name
     are pulled from Debian's NM REST API.
     """
-    def authenticate(self, remote_user):
+    def authenticate(self, request=None, remote_user=None):
         if not remote_user:
             return
 

@@ -4461,14 +4461,14 @@ class DebianSsoLoginTests(TestCase):
 
     def test_authenticate_returns_correct_class(self, get_user_details):
         auth_backend = DebianSsoUserBackend()
-        user = auth_backend.authenticate(self.DD_EMAIL)
+        user = auth_backend.authenticate(remote_user=self.DD_EMAIL)
         self.assertIsInstance(user, User)  # from distro_tracker.accounts.models
 
     def test_authenticate_returns_correct_class_with_existing_user(
             self, get_user_details):
         User.objects.create_user(main_email=self.DD_EMAIL)
         auth_backend = DebianSsoUserBackend()
-        user = auth_backend.authenticate(self.DD_EMAIL)
+        user = auth_backend.authenticate(remote_user=self.DD_EMAIL)
         self.assertIsInstance(user, User)  # from distro_tracker.accounts.models
 
 

@@ -14,7 +14,7 @@ User = get_user_model()
 
 
 class UserEmailBackend(object):
-    def authenticate(self, username=None, password=None):
+    def authenticate(self, request=None, username=None, password=None):
         """
         Implements the custom authentication method.
 
