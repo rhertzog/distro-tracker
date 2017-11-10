@@ -64,14 +64,14 @@ def create_source_package(arguments):
     # Now add m2m fields
     if 'architectures' in arguments:
         architectures = arguments['architectures']
-        src_pkg.architectures = Architecture.objects.filter(
-            name__in=architectures)
+        src_pkg.architectures.set(
+            Architecture.objects.filter(name__in=architectures))
     if 'binary_packages' in arguments:
         binaries = []
         for binary in arguments['binary_packages']:
             binaries.append(
                 BinaryPackageName.objects.get_or_create(name=binary)[0])
-        src_pkg.binary_packages = binaries
+        src_pkg.binary_packages.set(binaries)
     if 'uploaders' in arguments:
         for uploader in arguments['uploaders']:
             contributor = ContributorName.objects.get_or_create(

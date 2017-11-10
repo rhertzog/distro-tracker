@@ -91,7 +91,7 @@ class EmailSettings(models.Model):
         new_object = not self.id
         models.Model.save(self, *args, **kwargs)
         if new_object:
-            self.default_keywords = Keyword.objects.filter(default=True)
+            self.default_keywords.set(Keyword.objects.filter(default=True))
 
     def is_subscribed_to(self, package):
         """
@@ -1205,7 +1205,11 @@ class SourcePackage(models.Model):
         """
         for key, value in kwargs.items():
             if hasattr(self, key):
-                setattr(self, key, value)
+                attr = getattr(self, key)
+                if hasattr(attr, 'set'):
+                    attr.set(value)
+                else:
+                    setattr(self, key, value)
 
 
 @python_2_unicode_compatible
@@ -1647,7 +1651,7 @@ class News(models.Model):
                 contributor_email=signer_email)
             signed_by.append(signer_name)
 
-        self.signed_by = signed_by
+        self.signed_by.set(signed_by)
 
     def get_signed_content(self):
         return self.content
@@ -2385,7 +2389,7 @@ class TeamMembership(models.Model):
         :type keywords: an ``iterable`` of keyword names - as strings
         """
         new_keywords = Keyword.objects.filter(name__in=keywords)
-        self.default_keywords = new_keywords
+        self.default_keywords.set(new_keywords)
         self.has_membership_keywords = True
         self.save()
 
@@ -2456,7 +2460,7 @@ class MembershipPackageSpecifics(models.Model):
             self.membership, self.package_name)
 
     def set_keywords(self, keywords):
-        self.keywords = keywords
+        self.keywords.set(keywords)
         self._has_keywords = True
         self.save()
 

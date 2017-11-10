@@ -42,7 +42,7 @@ class PackageViewTest(TestCase):
             binary_package_name=self.binary_package,
             source_package=self.src_pkg,
             short_description='a useful package')
-        self.src_pkg.binary_packages = [self.binary_package]
+        self.src_pkg.binary_packages.set([self.binary_package])
         self.src_pkg.save()
         self.bin_pkg.save()
 
@@ -213,7 +213,7 @@ class PackageSearchViewTest(TestCase):
             name='binary-package')
         src_pkg = SourcePackage.objects.create(
             source_package_name=self.source_package, version='1.0.0')
-        src_pkg.binary_packages = [self.binary_package]
+        src_pkg.binary_packages.set([self.binary_package])
         src_pkg.save()
 
     def test_package_search_source_package(self):

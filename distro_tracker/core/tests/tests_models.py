@@ -1883,7 +1883,7 @@ class SourcePackageNameTests(TestCase):
             binary_package_name=self.binary_package,
             source_package=self.src_pkg,
             short_description='a useful package')
-        self.src_pkg.binary_packages = [self.binary_package]
+        self.src_pkg.binary_packages.set([self.binary_package])
         self.src_pkg.save()
         self.bin_pkg.save()
 
@@ -1901,7 +1901,7 @@ class SourcePackageNameTests(TestCase):
             binary_package_name=binary_package,
             source_package=self.src_pkg,
             short_description='another useful package')
-        self.src_pkg.binary_packages = [self.binary_package, binary_package]
+        self.src_pkg.binary_packages.set([self.binary_package, binary_package])
         self.src_pkg.save()
 
         self.assertEqual(self.package.short_description(),

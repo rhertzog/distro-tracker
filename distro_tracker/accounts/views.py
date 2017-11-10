@@ -309,7 +309,7 @@ class ModifyKeywordsView(LoginRequiredMixin, View):
 
         email_settings, _ = \
             EmailSettings.objects.get_or_create(user_email=user_email)
-        email_settings.default_keywords = self.get_keywords(keywords)
+        email_settings.default_keywords.set(self.get_keywords(keywords))
 
         return self.render_response()
 

@@ -1599,7 +1599,7 @@ class SubscribeToPackageTest(EmailControlTest):
         src_pkg_name = SourcePackageName.objects.get(name=source_package.name)
         src_pkg, _ = SourcePackage.objects.get_or_create(
             source_package_name=src_pkg_name, version='1.0.0')
-        src_pkg.binary_packages = [binary_pkg]
+        src_pkg.binary_packages.set([binary_pkg])
         src_pkg.save()
 
     def add_subscribe_command(self, package, email=None):
@@ -1901,7 +1901,7 @@ class UnsubscribeFromPackageTest(EmailControlTest):
         src_pkg_name = SourcePackageName.objects.get(name=source_package.name)
         src_pkg, _ = SourcePackage.objects.get_or_create(
             source_package_name=src_pkg_name, version='1.0.0')
-        src_pkg.binary_packages = [binary_pkg]
+        src_pkg.binary_packages.set([binary_pkg])
         src_pkg.save()
 
     def add_unsubscribe_command(self, package, email=None):
