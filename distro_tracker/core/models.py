@@ -1599,7 +1599,7 @@ class News(models.Model):
         if self._db_content:
             return self._db_content
         elif self.news_file:
-            self.news_file.open('r')
+            self.news_file.open('rb')
             content = self.news_file.read()
             self.news_file.close()
             return content
