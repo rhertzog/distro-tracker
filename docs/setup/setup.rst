@@ -10,31 +10,26 @@ Requirements
 
 Distro Tracker currently depends on the following Debian packages:
 
-- python-django (>= 1.8)
-- python-requests
-- python-django-jsonfield (>= 1.0.0)
-- python-django-debug-toolbar (in development mode only)
-- python-django-captcha (optional)
-- python-debian
-- python-debianbts
-- python-apt
-- python-gpgme
-- python-yaml
-- python-bs4
-- python-pyinotify
-- python-tox (for development only)
-- python-selenium (for development only)
+- python3-django (>= 1.11)
+- python3-requests
+- python3-django-jsonfield (>= 1.0.0)
+- python3-django-debug-toolbar (in development mode only)
+- python3-django-captcha (optional)
+- python3-debian
+- python3-debianbts
+- python3-apt
+- python3-gpgme
+- python3-yaml
+- python3-bs4
+- python3-pyinotify
+- python3-tox (for development only)
+- python3-selenium (for development only)
 - chromedriver (for development only)
 - chromium (for development only)
 
-For Python2.7, the following additional packages are required:
+Here is the list of required packages for development on Debian Buster::
 
-- python-mock (for development only)
-- python-lzma
-
-Here is the list of required packages for development on Debian Jessie::
-
- $ sudo apt install python-django python-requests python-django-jsonfield python-django-debug-toolbar python-debian python-debianbts python-apt python-gpgme python-yaml python-bs4 python-pyinotify python-tox python-mock python-lzma python-selenium python3-django python3-requests python3-django-jsonfield python3-django-debug-toolbar python3-debian python3-debianbts python3-apt python3-gpgme python3-yaml python3-bs4 python3-pyinotify python3-selenium chromium chromedriver
+ $ sudo apt install python3-django python3-requests python3-django-jsonfield python3-django-debug-toolbar python3-debian python3-debianbts python3-apt python3-gpgme python3-yaml python3-bs4 python3-pyinotify python3-selenium chromium chromedriver
 
 .. _database_setup:
 

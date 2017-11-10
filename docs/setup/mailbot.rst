@@ -61,7 +61,7 @@ and the system user which owns the application is called ``dtracker`` the conten
 
 And the ``.forward`` file should be::
    
-   | python path/to/manage.py distro_tracker_control
+   | python3 path/to/manage.py distro_tracker_control
 
 Mails received at ``DISTRO_TRACKER_CONTACT_EMAIL`` should be saved or forwarded to the
 Distro Tracker administrators. This can be done by adding an additional alias to
@@ -86,7 +86,7 @@ are not recognized. Such router and transport could be::
 
   distro_tracker_dispatch_pipe:
     driver = pipe
-    command = python /path/to/manage.py distro_tracker_dispatch
+    command = python3 /path/to/manage.py distro_tracker_dispatch
     user = dtracker
     group = mail
     log_output
@@ -120,9 +120,9 @@ The file ``/etc/postfix/virtual`` would be::
 The ``/etc/aliases`` file should then include the following lines::
   
   dtracker-owner: some-admin-user
-  dtracker-control: "| python /path/to/manage.py distro_tracker_control"
-  dtracker-dispatch: "| python /path/to/manage.py distro_tracker_dispatch"
-  dtracker-news: "| python /path/to/manage.py distro_tracker_receive_news"
+  dtracker-control: "| python3 /path/to/manage.py distro_tracker_control"
+  dtracker-dispatch: "| python3 /path/to/manage.py distro_tracker_dispatch"
+  dtracker-news: "| python3 /path/to/manage.py distro_tracker_receive_news"
 
 Then, the ``main.cf`` file should be edited to include::
 
