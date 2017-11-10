@@ -69,7 +69,7 @@ class EmailSettings(models.Model):
     """
     Settings for an email
     """
-    user_email = models.OneToOneField(UserEmail)
+    user_email = models.OneToOneField(UserEmail, on_delete=models.CASCADE)
     default_keywords = models.ManyToManyField(Keyword)
 
     def __str__(self):
@@ -635,8 +635,8 @@ class Subscription(models.Model):
     A model describing a subscription of a single :class:`EmailSettings` to a
     single :class:`PackageName`.
     """
-    email_settings = models.ForeignKey(EmailSettings)
-    package = models.ForeignKey(PackageName)
+    email_settings = models.ForeignKey(EmailSettings, on_delete=models.CASCADE)
+    package = models.ForeignKey(PackageName, on_delete=models.CASCADE)
     active = models.BooleanField(default=True)
     _keywords = models.ManyToManyField(Keyword)
     _use_user_default_keywords = models.BooleanField(default=True)
@@ -1000,7 +1000,8 @@ class RepositoryFlag(models.Model):
         'hidden': False,
     }
 
-    repository = models.ForeignKey(Repository, related_name='flags')
+    repository = models.ForeignKey(Repository, related_name='flags',
+                                   on_delete=models.CASCADE)
     name = models.CharField(max_length=50, choices=FLAG_NAMES)
     value = models.BooleanField(default=False)
 
@@ -1018,10 +1019,11 @@ class RepositoryRelation(models.Model):
         ('overlay', 'Overlay of target repository'),
     )
 
-    repository = models.ForeignKey(Repository, related_name='relations')
+    repository = models.ForeignKey(Repository, related_name='relations',
+                                   on_delete=models.CASCADE)
     name = models.CharField(max_length=50, choices=RELATION_NAMES)
-    target_repository = models.ForeignKey(Repository,
-                                          related_name='reverse_relations')
+    target_repository = models.ForeignKey(
+        Repository, related_name='reverse_relations', on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ('repository', 'name')
@@ -1035,7 +1037,7 @@ class ContributorName(models.Model):
     A single contributor, identified by email address, may have
     different written names in different contexts.
     """
-    contributor_email = models.ForeignKey(UserEmail)
+    contributor_email = models.ForeignKey(UserEmail, on_delete=models.CASCADE)
     name = models.CharField(max_length=60, blank=True)
 
     class Meta:
@@ -1074,7 +1076,8 @@ class SourcePackage(models.Model):
     """
     source_package_name = models.ForeignKey(
         SourcePackageName,
-        related_name='source_package_versions')
+        related_name='source_package_versions',
+        on_delete=models.CASCADE)
     version = models.CharField(max_length=100)
 
     standards_version = models.CharField(max_length=550, blank=True)
@@ -1084,7 +1087,8 @@ class SourcePackage(models.Model):
     maintainer = models.ForeignKey(
         ContributorName,
         related_name='source_package',
-        null=True)
+        null=True,
+        on_delete=models.CASCADE)
     uploaders = models.ManyToManyField(
         ContributorName,
         related_name='source_packages_uploads_set'
@@ -1198,10 +1202,11 @@ class BinaryPackage(models.Model):
     """
     binary_package_name = models.ForeignKey(
         BinaryPackageName,
-        related_name='binary_package_versions'
+        related_name='binary_package_versions',
+        on_delete=models.CASCADE
     )
     version = models.CharField(max_length=100)
-    source_package = models.ForeignKey(SourcePackage)
+    source_package = models.ForeignKey(SourcePackage, on_delete=models.CASCADE)
 
     short_description = models.CharField(max_length=300, blank=True)
     long_description = models.TextField(blank=True)
@@ -1250,13 +1255,15 @@ class BinaryPackageRepositoryEntry(models.Model):
     """
     binary_package = models.ForeignKey(
         BinaryPackage,
-        related_name='repository_entries'
+        related_name='repository_entries',
+        on_delete=models.CASCADE,
     )
     repository = models.ForeignKey(
         Repository,
-        related_name='binary_entries'
+        related_name='binary_entries',
+        on_delete=models.CASCADE,
     )
-    architecture = models.ForeignKey(Architecture)
+    architecture = models.ForeignKey(Architecture, on_delete=models.CASCADE)
 
     priority = models.CharField(max_length=50, blank=True)
     section = models.CharField(max_length=50, blank=True)
@@ -1303,9 +1310,11 @@ class SourcePackageRepositoryEntry(models.Model):
     """
     source_package = models.ForeignKey(
         SourcePackage,
-        related_name='repository_entries'
+        related_name='repository_entries',
+        on_delete=models.CASCADE,
     )
-    repository = models.ForeignKey(Repository, related_name='source_entries')
+    repository = models.ForeignKey(Repository, related_name='source_entries',
+                                   on_delete=models.CASCADE)
 
     priority = models.CharField(max_length=50, blank=True)
     section = models.CharField(max_length=50, blank=True)
@@ -1381,7 +1390,8 @@ class ExtractedSourceFile(models.Model):
     """
     source_package = models.ForeignKey(
         SourcePackage,
-        related_name='extracted_source_files')
+        related_name='extracted_source_files',
+        on_delete=models.CASCADE)
     extracted_file = models.FileField(
         upload_to=_extracted_source_file_upload_path)
     name = models.CharField(max_length=100)
@@ -1402,7 +1412,7 @@ class PackageExtractedInfo(models.Model):
     extracted from other models in order to speed up its rendering on
     Web pages.
     """
-    package = models.ForeignKey(PackageName)
+    package = models.ForeignKey(PackageName, on_delete=models.CASCADE)
     key = models.CharField(max_length=50)
     value = JSONField()
 
@@ -1571,7 +1581,7 @@ class News(models.Model):
     """
     A model used to describe a news item regarding a package.
     """
-    package = models.ForeignKey(PackageName)
+    package = models.ForeignKey(PackageName, on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
     content_type = models.CharField(max_length=100, default='text/plain')
     _db_content = models.TextField(blank=True, null=True)
@@ -1860,7 +1870,8 @@ class PackageBugStats(models.Model):
     Model for bug statistics of source and pseudo packages (packages modelled
     by the :class:`PackageName` model).
     """
-    package = models.OneToOneField(PackageName, related_name='bug_stats')
+    package = models.OneToOneField(PackageName, related_name='bug_stats',
+                                   on_delete=models.CASCADE)
     stats = JSONField(blank=True)
 
     def __str__(self):
@@ -1874,7 +1885,8 @@ class BinaryPackageBugStats(models.Model):
     Model for bug statistics of binary packages (:class:`BinaryPackageName`).
     """
     package = models.OneToOneField(BinaryPackageName,
-                                   related_name='binary_bug_stats')
+                                   related_name='binary_bug_stats',
+                                   on_delete=models.CASCADE)
     stats = JSONField(blank=True)
 
     def __str__(self):
@@ -1970,8 +1982,10 @@ class ActionItem(models.Model):
         (SEVERITY_HIGH, 'high'),
         (SEVERITY_CRITICAL, 'critical'),
     )
-    package = models.ForeignKey(PackageName, related_name='action_items')
-    item_type = models.ForeignKey(ActionItemType, related_name='action_items')
+    package = models.ForeignKey(PackageName, related_name='action_items',
+                                on_delete=models.CASCADE)
+    item_type = models.ForeignKey(ActionItemType, related_name='action_items',
+                                  on_delete=models.CASCADE)
     short_description = models.TextField()
     severity = models.IntegerField(choices=SEVERITIES, default=SEVERITY_NORMAL)
     created_timestamp = models.DateTimeField(auto_now_add=True)
@@ -2129,10 +2143,12 @@ class Confirmation(models.Model):
 @python_2_unicode_compatible
 class SourcePackageDeps(models.Model):
     source = models.ForeignKey(SourcePackageName,
-                               related_name='source_dependencies')
+                               related_name='source_dependencies',
+                               on_delete=models.CASCADE)
     dependency = models.ForeignKey(SourcePackageName,
-                                   related_name='source_dependents')
-    repository = models.ForeignKey(Repository)
+                                   related_name='source_dependents',
+                                   on_delete=models.CASCADE)
+    repository = models.ForeignKey(Repository, on_delete=models.CASCADE)
     build_dep = models.BooleanField(default=False)
     binary_dep = models.BooleanField(default=False)
     details = JSONField()
@@ -2259,8 +2275,10 @@ class TeamMembership(models.Model):
     Represents the intermediary model for the many-to-many association of
     team members to a :class:`Team`.
     """
-    user_email = models.ForeignKey(UserEmail, related_name='membership_set')
-    team = models.ForeignKey(Team, related_name='team_membership_set')
+    user_email = models.ForeignKey(UserEmail, related_name='membership_set',
+                                   on_delete=models.CASCADE)
+    team = models.ForeignKey(Team, related_name='team_membership_set',
+                             on_delete=models.CASCADE)
 
     muted = models.BooleanField(default=False)
     default_keywords = models.ManyToManyField(Keyword)
@@ -2405,8 +2423,9 @@ class MembershipPackageSpecifics(models.Model):
     """
     membership = models.ForeignKey(
         TeamMembership,
-        related_name='membership_package_specifics')
-    package_name = models.ForeignKey(PackageName)
+        related_name='membership_package_specifics',
+        on_delete=models.CASCADE)
+    package_name = models.ForeignKey(PackageName, on_delete=models.CASCADE)
 
     keywords = models.ManyToManyField(Keyword)
     _has_keywords = models.BooleanField(default=False)
@@ -2428,7 +2447,7 @@ class MembershipPackageSpecifics(models.Model):
 
 @python_2_unicode_compatible
 class MembershipConfirmation(Confirmation):
-    membership = models.ForeignKey(TeamMembership)
+    membership = models.ForeignKey(TeamMembership, on_delete=models.CASCADE)
 
     def __str__(self):
         return "Confirmation for {}".format(self.membership)

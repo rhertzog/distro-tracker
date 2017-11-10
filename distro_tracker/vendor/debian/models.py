@@ -32,7 +32,8 @@ class DebianContributor(models.Model):
     """
     Model containing additional Debian-specific information about contributors.
     """
-    email = models.OneToOneField('django_email_accounts.UserEmail')
+    email = models.OneToOneField('django_email_accounts.UserEmail',
+                                 on_delete=models.CASCADE)
     agree_with_low_threshold_nmu = models.BooleanField(default=False)
     is_debian_maintainer = models.BooleanField(default=False)
     allowed_packages = SpaceDelimitedTextField(blank=True)
@@ -46,7 +47,8 @@ class LintianStats(models.Model):
     """
     Model for lintian stats of packages.
     """
-    package = models.OneToOneField(PackageName, related_name='lintian_stats')
+    package = models.OneToOneField(PackageName, related_name='lintian_stats',
+                                   on_delete=models.CASCADE)
     stats = JSONField()
 
     def __str__(self):
@@ -90,7 +92,8 @@ class LintianStats(models.Model):
 
 @python_2_unicode_compatible
 class PackageTransition(models.Model):
-    package = models.ForeignKey(PackageName, related_name='package_transitions')
+    package = models.ForeignKey(PackageName, related_name='package_transitions',
+                                on_delete=models.CASCADE)
     transition_name = models.CharField(max_length=50)
     status = models.CharField(max_length=50, blank=True, null=True)
     reject = models.BooleanField(default=False)
@@ -102,7 +105,8 @@ class PackageTransition(models.Model):
 
 @python_2_unicode_compatible
 class PackageExcuses(models.Model):
-    package = models.OneToOneField(PackageName, related_name='excuses')
+    package = models.OneToOneField(PackageName, related_name='excuses',
+                                   on_delete=models.CASCADE)
     excuses = JSONField()
 
     def __str__(self):
@@ -113,7 +117,8 @@ class PackageExcuses(models.Model):
 class BuildLogCheckStats(models.Model):
     package = models.OneToOneField(
         SourcePackageName,
-        related_name='build_logcheck_stats')
+        related_name='build_logcheck_stats',
+        on_delete=models.CASCADE)
     stats = JSONField()
 
     def __str__(self):
@@ -124,7 +129,8 @@ class BuildLogCheckStats(models.Model):
 class UbuntuPackage(models.Model):
     package = models.OneToOneField(
         PackageName,
-        related_name='ubuntu_package')
+        related_name='ubuntu_package',
+        on_delete=models.CASCADE)
     version = models.TextField(max_length=100)
     bugs = JSONField(null=True, blank=True)
     patch_diff = JSONField(null=True, blank=True)

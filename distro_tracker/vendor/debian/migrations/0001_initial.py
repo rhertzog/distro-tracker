@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('stats', jsonfield.fields.JSONField(default=dict)),
-                ('package', models.OneToOneField(related_name='build_logcheck_stats', to='core.SourcePackageName')),
+                ('package', models.OneToOneField(related_name='build_logcheck_stats', to='core.SourcePackageName', on_delete=models.CASCADE)),
             ],
             options={
             },
@@ -32,7 +32,7 @@ class Migration(migrations.Migration):
                 ('agree_with_low_threshold_nmu', models.BooleanField(default=False)),
                 ('is_debian_maintainer', models.BooleanField(default=False)),
                 ('allowed_packages', distro_tracker.core.utils.SpaceDelimitedTextField(blank=True)),
-                ('email', models.OneToOneField(to='django_email_accounts.UserEmail')),
+                ('email', models.OneToOneField(to='django_email_accounts.UserEmail', on_delete=models.CASCADE)),
             ],
             options={
             },
@@ -43,7 +43,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('stats', jsonfield.fields.JSONField(default=dict)),
-                ('package', models.OneToOneField(related_name='lintian_stats', to='core.PackageName')),
+                ('package', models.OneToOneField(related_name='lintian_stats', to='core.PackageName', on_delete=models.CASCADE)),
             ],
             options={
             },
@@ -54,7 +54,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('excuses', jsonfield.fields.JSONField(default=dict)),
-                ('package', models.OneToOneField(related_name='excuses', to='core.PackageName')),
+                ('package', models.OneToOneField(related_name='excuses', to='core.PackageName', on_delete=models.CASCADE)),
             ],
             options={
             },
@@ -67,7 +67,7 @@ class Migration(migrations.Migration):
                 ('transition_name', models.CharField(max_length=50)),
                 ('status', models.CharField(max_length=50, null=True, blank=True)),
                 ('reject', models.BooleanField(default=False)),
-                ('package', models.ForeignKey(related_name='package_transitions', to='core.PackageName')),
+                ('package', models.ForeignKey(related_name='package_transitions', to='core.PackageName', on_delete=models.CASCADE)),
             ],
             options={
             },
@@ -80,7 +80,7 @@ class Migration(migrations.Migration):
                 ('version', models.TextField(max_length=100)),
                 ('bugs', jsonfield.fields.JSONField(null=True, blank=True)),
                 ('patch_diff', jsonfield.fields.JSONField(null=True, blank=True)),
-                ('package', models.OneToOneField(related_name='ubuntu_package', to='core.PackageName')),
+                ('package', models.OneToOneField(related_name='ubuntu_package', to='core.PackageName', on_delete=models.CASCADE)),
             ],
             options={
             },

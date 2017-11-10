@@ -73,7 +73,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('email', models.EmailField(unique=True, max_length=244)),
-                ('user', models.ForeignKey(related_name='emails', to='django_email_accounts.User', null=True)),
+                ('user', models.ForeignKey(related_name='emails', to='django_email_accounts.User', null=True, on_delete=models.CASCADE)),
             ],
             options={
             },
@@ -85,7 +85,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('confirmation_key', models.CharField(unique=True, max_length=40)),
                 ('date_created', models.DateTimeField(auto_now_add=True)),
-                ('user', models.OneToOneField(related_name='confirmation', to='django_email_accounts.User')),
+                ('user', models.OneToOneField(related_name='confirmation', to='django_email_accounts.User', on_delete=models.CASCADE)),
             ],
             options={
                 'abstract': False,
@@ -95,31 +95,31 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='resetpasswordconfirmation',
             name='user',
-            field=models.ForeignKey(related_name='reset_password_confirmations', to='django_email_accounts.User'),
+            field=models.ForeignKey(related_name='reset_password_confirmations', to='django_email_accounts.User', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='mergeaccountconfirmation',
             name='initial_user',
-            field=models.ForeignKey(related_name='merge_account_initial_set', to='django_email_accounts.User'),
+            field=models.ForeignKey(related_name='merge_account_initial_set', to='django_email_accounts.User', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='mergeaccountconfirmation',
             name='merge_with',
-            field=models.ForeignKey(related_name='merge_account_with_set', to='django_email_accounts.User'),
+            field=models.ForeignKey(related_name='merge_account_with_set', to='django_email_accounts.User', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='addemailconfirmation',
             name='email',
-            field=models.ForeignKey(to='django_email_accounts.UserEmail'),
+            field=models.ForeignKey(to='django_email_accounts.UserEmail', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='addemailconfirmation',
             name='user',
-            field=models.ForeignKey(to='django_email_accounts.User'),
+            field=models.ForeignKey(to='django_email_accounts.User', on_delete=models.CASCADE),
             preserve_default=True,
         ),
     ]

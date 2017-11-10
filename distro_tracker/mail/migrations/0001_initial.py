@@ -49,7 +49,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='bouncestats',
             name='user_email',
-            field=models.ForeignKey(to='mail.UserEmailBounceStats'),
+            field=models.ForeignKey(to='mail.UserEmailBounceStats', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AlterUniqueTogether(

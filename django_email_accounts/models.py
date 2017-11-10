@@ -201,7 +201,8 @@ class UserEmailManager(models.Manager):
 @python_2_unicode_compatible
 class UserEmail(models.Model):
     email = models.EmailField(max_length=244, unique=True)
-    user = models.ForeignKey(User, related_name='emails', null=True)
+    user = models.ForeignKey(User, related_name='emails', null=True,
+                             on_delete=models.CASCADE)
 
     objects = UserEmailManager()
     default_manager = models.Manager()
@@ -214,7 +215,8 @@ class UserRegistrationConfirmation(Confirmation):
     """
     A model for user registration confirmations.
     """
-    user = models.OneToOneField(User, related_name='confirmation')
+    user = models.OneToOneField(User, related_name='confirmation',
+                                on_delete=models.CASCADE)
 
 
 class ResetPasswordConfirmation(Confirmation):
@@ -222,16 +224,18 @@ class ResetPasswordConfirmation(Confirmation):
     A model for account password reset confirmations.
     """
     user = models.ForeignKey(
-        User, related_name='reset_password_confirmations')
+        User, related_name='reset_password_confirmations',
+        on_delete=models.CASCADE)
 
 
 class AddEmailConfirmation(Confirmation):
-    user = models.ForeignKey(User)
-    email = models.ForeignKey('UserEmail')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    email = models.ForeignKey('UserEmail', on_delete=models.CASCADE)
 
 
 class MergeAccountConfirmation(Confirmation):
     initial_user = models.ForeignKey(
-        User, related_name='merge_account_initial_set')
+        User, related_name='merge_account_initial_set',
+        on_delete=models.CASCADE)
     merge_with = models.ForeignKey(
-        User, related_name='merge_account_with_set')
+        User, related_name='merge_account_with_set', on_delete=models.CASCADE)

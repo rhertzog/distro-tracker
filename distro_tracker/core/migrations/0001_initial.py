@@ -80,8 +80,8 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('priority', models.CharField(max_length=50, blank=True)),
                 ('section', models.CharField(max_length=50, blank=True)),
-                ('architecture', models.ForeignKey(to='core.Architecture')),
-                ('binary_package', models.ForeignKey(related_name='repository_entries', to='core.BinaryPackage')),
+                ('architecture', models.ForeignKey(to='core.Architecture', on_delete=models.CASCADE)),
+                ('binary_package', models.ForeignKey(related_name='repository_entries', to='core.BinaryPackage', on_delete=models.CASCADE)),
             ],
             options={
             },
@@ -92,7 +92,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('name', models.CharField(max_length=60, blank=True)),
-                ('contributor_email', models.ForeignKey(to='django_email_accounts.UserEmail')),
+                ('contributor_email', models.ForeignKey(to='django_email_accounts.UserEmail', on_delete=models.CASCADE)),
             ],
             options={
             },
@@ -245,7 +245,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('name', models.CharField(max_length=50, choices=[('hidden', 'Hidden repository')])),
                 ('value', models.BooleanField(default=False)),
-                ('repository', models.ForeignKey(related_name='flags', to='core.Repository')),
+                ('repository', models.ForeignKey(related_name='flags', to='core.Repository', on_delete=models.CASCADE)),
             ],
             options={
             },
@@ -256,8 +256,8 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('name', models.CharField(max_length=50, choices=[('derivative', 'Derivative repository (target=parent)'), ('overlay', 'Overlay of target repository')])),
-                ('repository', models.ForeignKey(related_name='relations', to='core.Repository')),
-                ('target_repository', models.ForeignKey(related_name='reverse_relations', to='core.Repository')),
+                ('repository', models.ForeignKey(related_name='relations', to='core.Repository', on_delete=models.CASCADE)),
+                ('target_repository', models.ForeignKey(related_name='reverse_relations', to='core.Repository', on_delete=models.CASCADE)),
             ],
             options={
             },
@@ -288,7 +288,7 @@ class Migration(migrations.Migration):
                 ('homepage', models.URLField(max_length=255, blank=True)),
                 ('vcs', jsonfield.fields.JSONField(default=dict)),
                 ('architectures', models.ManyToManyField(to='core.Architecture', blank=True)),
-                ('maintainer', models.ForeignKey(related_name='source_package', to='core.ContributorName', null=True)),
+                ('maintainer', models.ForeignKey(related_name='source_package', to='core.ContributorName', null=True, on_delete=models.CASCADE)),
                 ('uploaders', models.ManyToManyField(related_name='source_packages_uploads_set', to='core.ContributorName')),
             ],
             options={
@@ -302,7 +302,7 @@ class Migration(migrations.Migration):
                 ('build_dep', models.BooleanField(default=False)),
                 ('binary_dep', models.BooleanField(default=False)),
                 ('details', jsonfield.fields.JSONField(default=dict)),
-                ('repository', models.ForeignKey(to='core.Repository')),
+                ('repository', models.ForeignKey(to='core.Repository', on_delete=models.CASCADE)),
             ],
             options={
             },
@@ -314,8 +314,8 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('priority', models.CharField(max_length=50, blank=True)),
                 ('section', models.CharField(max_length=50, blank=True)),
-                ('repository', models.ForeignKey(related_name='source_entries', to='core.Repository')),
-                ('source_package', models.ForeignKey(related_name='repository_entries', to='core.SourcePackage')),
+                ('repository', models.ForeignKey(related_name='source_entries', to='core.Repository', on_delete=models.CASCADE)),
+                ('source_package', models.ForeignKey(related_name='repository_entries', to='core.SourcePackage', on_delete=models.CASCADE)),
             ],
             options={
             },
@@ -328,8 +328,8 @@ class Migration(migrations.Migration):
                 ('active', models.BooleanField(default=True)),
                 ('_use_user_default_keywords', models.BooleanField(default=True)),
                 ('_keywords', models.ManyToManyField(to='core.Keyword')),
-                ('email_settings', models.ForeignKey(to='core.EmailSettings')),
-                ('package', models.ForeignKey(to='core.PackageName')),
+                ('email_settings', models.ForeignKey(to='core.EmailSettings', on_delete=models.CASCADE)),
+                ('package', models.ForeignKey(to='core.PackageName', on_delete=models.CASCADE)),
             ],
             options={
             },
@@ -357,8 +357,8 @@ class Migration(migrations.Migration):
                 ('muted', models.BooleanField(default=False)),
                 ('has_membership_keywords', models.BooleanField(default=False)),
                 ('default_keywords', models.ManyToManyField(to='core.Keyword')),
-                ('team', models.ForeignKey(related_name='team_membership_set', to='core.Team')),
-                ('user_email', models.ForeignKey(related_name='membership_set', to='django_email_accounts.UserEmail')),
+                ('team', models.ForeignKey(related_name='team_membership_set', to='core.Team', on_delete=models.CASCADE)),
+                ('user_email', models.ForeignKey(related_name='membership_set', to='django_email_accounts.UserEmail', on_delete=models.CASCADE)),
             ],
             options={
             },
@@ -413,7 +413,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='packageextractedinfo',
             name='package',
-            field=models.ForeignKey(to='core.PackageName'),
+            field=models.ForeignKey(to='core.PackageName', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AlterUniqueTogether(
@@ -423,13 +423,13 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='packagebugstats',
             name='package',
-            field=models.OneToOneField(related_name='bug_stats', to='core.PackageName'),
+            field=models.OneToOneField(related_name='bug_stats', to='core.PackageName', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='news',
             name='package',
-            field=models.ForeignKey(to='core.PackageName'),
+            field=models.ForeignKey(to='core.PackageName', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
@@ -441,13 +441,13 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='membershippackagespecifics',
             name='membership',
-            field=models.ForeignKey(related_name='membership_package_specifics', to='core.TeamMembership'),
+            field=models.ForeignKey(related_name='membership_package_specifics', to='core.TeamMembership', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='membershippackagespecifics',
             name='package_name',
-            field=models.ForeignKey(to='core.PackageName'),
+            field=models.ForeignKey(to='core.PackageName', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AlterUniqueTogether(
@@ -457,13 +457,13 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='membershipconfirmation',
             name='membership',
-            field=models.ForeignKey(to='core.TeamMembership'),
+            field=models.ForeignKey(to='core.TeamMembership', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='extractedsourcefile',
             name='source_package',
-            field=models.ForeignKey(related_name='extracted_source_files', to='core.SourcePackage'),
+            field=models.ForeignKey(related_name='extracted_source_files', to='core.SourcePackage', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AlterUniqueTogether(
@@ -479,7 +479,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='emailsettings',
             name='user_email',
-            field=models.OneToOneField(to='django_email_accounts.UserEmail'),
+            field=models.OneToOneField(to='django_email_accounts.UserEmail', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AlterUniqueTogether(
@@ -489,7 +489,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='binarypackagerepositoryentry',
             name='repository',
-            field=models.ForeignKey(related_name='binary_entries', to='core.Repository'),
+            field=models.ForeignKey(related_name='binary_entries', to='core.Repository', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AlterUniqueTogether(
@@ -499,19 +499,19 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='binarypackage',
             name='source_package',
-            field=models.ForeignKey(to='core.SourcePackage'),
+            field=models.ForeignKey(to='core.SourcePackage', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='actionitem',
             name='item_type',
-            field=models.ForeignKey(related_name='action_items', to='core.ActionItemType'),
+            field=models.ForeignKey(related_name='action_items', to='core.ActionItemType', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='actionitem',
             name='package',
-            field=models.ForeignKey(related_name='action_items', to='core.PackageName'),
+            field=models.ForeignKey(related_name='action_items', to='core.PackageName', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AlterUniqueTogether(
@@ -530,7 +530,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='binarypackage',
             name='binary_package_name',
-            field=models.ForeignKey(related_name='binary_package_versions', to='core.BinaryPackageName'),
+            field=models.ForeignKey(related_name='binary_package_versions', to='core.BinaryPackageName', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AlterUniqueTogether(
@@ -540,7 +540,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='binarypackagebugstats',
             name='package',
-            field=models.OneToOneField(related_name='binary_bug_stats', to='core.BinaryPackageName'),
+            field=models.OneToOneField(related_name='binary_bug_stats', to='core.BinaryPackageName', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
@@ -579,7 +579,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='sourcepackage',
             name='source_package_name',
-            field=models.ForeignKey(related_name='source_package_versions', to='core.SourcePackageName'),
+            field=models.ForeignKey(related_name='source_package_versions', to='core.SourcePackageName', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AlterUniqueTogether(
@@ -589,13 +589,13 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='sourcepackagedeps',
             name='source',
-            field=models.ForeignKey(related_name='source_dependencies', to='core.SourcePackageName'),
+            field=models.ForeignKey(related_name='source_dependencies', to='core.SourcePackageName', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='sourcepackagedeps',
             name='dependency',
-            field=models.ForeignKey(related_name='source_dependents', to='core.SourcePackageName'),
+            field=models.ForeignKey(related_name='source_dependents', to='core.SourcePackageName', on_delete=models.CASCADE),
             preserve_default=True,
         ),
         migrations.AlterUniqueTogether(

@@ -163,7 +163,8 @@ class BounceStats(models.Model):
 
     It stores the number of sent and bounced mails for a particular date.
     """
-    user_email = models.ForeignKey(UserEmailBounceStats)
+    user_email = models.ForeignKey(UserEmailBounceStats,
+                                   on_delete=models.CASCADE)
     mails_sent = models.IntegerField(default=0)
     mails_bounced = models.IntegerField(default=0)
     date = models.DateField()
