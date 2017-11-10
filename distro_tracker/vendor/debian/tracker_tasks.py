@@ -54,11 +54,7 @@ from debian import debian_support
 from copy import deepcopy
 from bs4 import BeautifulSoup as soup
 import yaml
-
-try:
-    import debianbts
-except ImportError:
-    pass
+import debianbts
 
 import logging
 logger = logging.getLogger(__name__)
