@@ -58,7 +58,7 @@ def package_page(request, package_name):
         return redirect(package)
 
     is_subscribed = False
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         # Check if the user is subscribed to the package
         is_subscribed = request.user.is_subscribed_to(package)
 
@@ -265,7 +265,7 @@ class TeamDetailsView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(TeamDetailsView, self).get_context_data(**kwargs)
-        if self.request.user.is_authenticated():
+        if self.request.user.is_authenticated:
             context['user_member_of_team'] = self.object.user_is_member(
                 self.request.user)
 

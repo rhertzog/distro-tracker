@@ -73,12 +73,12 @@ class DebianSsoUserMiddleware(RemoteUserMiddleware):
             # Debian developers can only authenticate via SSO/SSL certs
             # so log them out now if they no longer have the proper META
             # variable
-            if request.user.is_authenticated():
+            if request.user.is_authenticated:
                 if self.is_debian_member(request.user):
                     auth.logout(request)
             return
 
-        if request.user.is_authenticated():
+        if request.user.is_authenticated:
             if request.user.emails.filter(email=remote_user).exists():
                 # The currently logged in user matches the one given by the
                 # headers.
