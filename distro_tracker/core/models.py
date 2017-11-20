@@ -503,14 +503,34 @@ def get_web_package(package_name):
     :param package_name: The name for which a package should be found.
     :type package_name: string
     """
-    if SourcePackageName.objects.exists_with_name(package_name):
+
+    (
+        package_name,
+        [
+            search_source,
+            search_pseudo,
+            search_binary,
+            search_pname,
+        ],
+    ) = __package_search_helper(package_name)
+
+    if (
+            search_source and
+            SourcePackageName.objects.exists_with_name(package_name)
+    ):
         return SourcePackageName.objects.get(name=package_name)
-    elif PseudoPackageName.objects.exists_with_name(package_name):
+    elif (
+            search_pseudo and
+            PseudoPackageName.objects.exists_with_name(package_name)
+    ):
         return PseudoPackageName.objects.get(name=package_name)
-    elif BinaryPackageName.objects.exists_with_name(package_name):
+    elif (
+            search_binary and
+            BinaryPackageName.objects.exists_with_name(package_name)
+    ):
         binary_package = BinaryPackageName.objects.get(name=package_name)
         return binary_package.main_source_package_name
-    elif PackageName.objects.exists_with_name(package_name):
+    elif search_pname and PackageName.objects.exists_with_name(package_name):
         pkg = PackageName.objects.get(name=package_name)
         # This is not a current source or binary package, but if it has
         # associated news, then it's likely a former source package where we can
@@ -519,6 +539,43 @@ def get_web_package(package_name):
             return pkg
 
     return None
+
+
+def __package_search_helper(package_name):
+    """
+    Utility function that helps to decide where the tracker should search
+    for `package_name`. If package_name starts with 'src:' or 'bin:',
+    then narrows the search to the specific representations. If not,
+    then searches everywhere. Returns a tuple with the stripped package
+    name and a list of places to search.
+
+    :rtype: `tuple`
+
+    :param package_name: The name for which a package should be found.
+    :type package_name: string
+    """
+
+    search_source = True
+    search_pseudo = True
+    search_binary = True
+    search_pname = True
+
+    if package_name.startswith("src:"):
+        package_name = package_name.replace("src:", "")
+        search_pseudo = search_binary = False
+    if package_name.startswith("bin:"):
+        package_name = package_name.replace("bin:", "")
+        search_source = search_pseudo = search_pname = False
+
+    return (
+        package_name,
+        [
+            search_source,
+            search_pseudo,
+            search_binary,
+            search_pname,
+        ]
+    )
 
 
 class SubscriptionManager(models.Manager):

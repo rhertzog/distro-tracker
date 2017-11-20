@@ -42,6 +42,7 @@ from distro_tracker.core.models import MailingList
 from distro_tracker.core.models import Team
 from distro_tracker.core.models import TeamMembership
 from distro_tracker.core.models import MembershipPackageSpecifics
+from distro_tracker.core.models import get_web_package
 from distro_tracker.core.utils import message_from_bytes
 from distro_tracker.core.utils.email_messages import get_decoded_message_payload
 from distro_tracker.accounts.models import User, UserEmail
@@ -1225,6 +1226,83 @@ class SourcePackageTests(TestCase):
         self.assertEqual(
             self.source_package.get_changelog_entry(),
             changelog_entry)
+
+
+class WebFunctionsPackageTests(TestCase):
+    """A class that tests web functions of models.py"""
+
+    def setUp(self):
+        self.source_package_name = \
+            SourcePackageName.objects.create(name='dummy-package')
+        self.source_package = SourcePackage.objects.create(
+            source_package_name=self.source_package_name, version='1.0.0')
+        self.binary_package = BinaryPackageName.objects.create(
+            name='binary-package')
+        self.source_package.binary_packages.add(self.binary_package)
+
+    def test_get_source_package_without_tag(self):
+        """Test retrieving self.source_package from the list.
+
+        """
+
+        package = get_web_package("dummy-package")
+
+        self.assertEqual(
+            self.source_package_name,
+            package,
+        )
+
+    def test_get_source_package_with_tag(self):
+        """Test retrieving self.source_package from the list
+        with a src:tag.
+
+        """
+
+        package = get_web_package("src:dummy-package")
+
+        self.assertEqual(
+            self.source_package_name,
+            package,
+        )
+
+    def fail_test_get_source_package_with_bin_tag(self):
+        """Test retrieving self.source_package from the list
+        via a binary search with the wrong name.
+
+        """
+
+        package = get_web_package("bin:dummy-package")
+
+        self.assertEqual(
+            package,
+            None,
+        )
+
+    def test_get_source_package_with_bin_tag(self):
+        """Test retrieving self.source_package from the list
+        via a binary search with the good name.
+
+        """
+
+        package = get_web_package("bin:binary-package")
+
+        self.assertEqual(
+            self.source_package_name,
+            package,
+        )
+
+    def test_get_source_package_from_bin_without_tag(self):
+        """Test retrieving self.source_package from the list
+        via a binary search with the good name.
+
+        """
+
+        package = get_web_package("binary-package")
+
+        self.assertEqual(
+            self.source_package_name,
+            package,
+        )
 
 
 class BinaryPackageTests(TestCase):
