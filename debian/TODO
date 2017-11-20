@@ -1,3 +1,2 @@
 - Add cron entries to update the data
 - Replace embedded javascript files with packaged files
-- Create python-django-email-accounts binary package
