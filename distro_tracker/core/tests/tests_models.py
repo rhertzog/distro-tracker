@@ -1241,68 +1241,51 @@ class WebFunctionsPackageTests(TestCase):
         self.source_package.binary_packages.add(self.binary_package)
 
     def test_get_source_package_without_tag(self):
-        """Test retrieving self.source_package from the list.
-
-        """
+        """Test retrieving self.source_package from the list."""
 
         package = get_web_package("dummy-package")
 
-        self.assertEqual(
-            self.source_package_name,
-            package,
-        )
+        self.assertEqual(self.source_package_name, package)
 
     def test_get_source_package_with_tag(self):
-        """Test retrieving self.source_package from the list
+        """
+        Test retrieving self.source_package from the list
         with a src:tag.
-
         """
 
         package = get_web_package("src:dummy-package")
 
-        self.assertEqual(
-            self.source_package_name,
-            package,
-        )
+        self.assertEqual(self.source_package_name, package)
 
-    def fail_test_get_source_package_with_bin_tag(self):
-        """Test retrieving self.source_package from the list
+    def test_get_source_package_with_non_existing_binary_package(self):
+        """
+        Test retrieving self.source_package from the list
         via a binary search with the wrong name.
-
         """
 
-        package = get_web_package("bin:dummy-package")
+        package = get_web_package("bin:non-existing-package")
 
-        self.assertEqual(
-            package,
-            None,
-        )
+        self.assertIsNone(package)
 
     def test_get_source_package_with_bin_tag(self):
-        """Test retrieving self.source_package from the list
+        """
+        Test retrieving self.source_package from the list
         via a binary search with the good name.
-
         """
 
         package = get_web_package("bin:binary-package")
 
-        self.assertEqual(
-            self.source_package_name,
-            package,
-        )
+        self.assertEqual(self.source_package_name, package)
 
     def test_get_source_package_from_bin_without_tag(self):
-        """Test retrieving self.source_package from the list
+        """
+        Test retrieving self.source_package from the list
         via a binary search with the good name.
-
         """
 
         package = get_web_package("binary-package")
 
-        self.assertEqual(
-            self.source_package_name,
-            package,
-        )
+        self.assertEqual(self.source_package_name, package)
 
 
 class BinaryPackageTests(TestCase):
