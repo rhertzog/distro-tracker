@@ -51,7 +51,7 @@ DISTRO_TRACKER_CVE_URL = 'https://security-tracker.debian.org/tracker/'
 _index_auth = MIDDLEWARE.index(
     'django.contrib.auth.middleware.AuthenticationMiddleware') + 1
 MIDDLEWARE = MIDDLEWARE[:_index_auth] + \
-    ('distro_tracker.vendor.debian.sso_auth.DebianSsoUserMiddleware',) + \
+    ['distro_tracker.vendor.debian.sso_auth.DebianSsoUserMiddleware'] + \
     MIDDLEWARE[_index_auth:]
 AUTHENTICATION_BACKENDS = \
     ('distro_tracker.vendor.debian.sso_auth.DebianSsoUserBackend',) + \
