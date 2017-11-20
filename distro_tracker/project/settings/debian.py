@@ -2,7 +2,7 @@
 
 import os.path
 from .defaults import (
-    INSTALLED_APPS, MIDDLEWARE_CLASSES, AUTHENTICATION_BACKENDS)
+    INSTALLED_APPS, MIDDLEWARE, AUTHENTICATION_BACKENDS)
 from .db_postgresql import DATABASES  # noqa
 
 INSTALLED_APPS += (
@@ -48,11 +48,11 @@ DISTRO_TRACKER_DEVEL_REPOSITORIES = ['unstable', 'experimental']
 DISTRO_TRACKER_CVE_URL = 'https://security-tracker.debian.org/tracker/'
 
 # Various settings for sso.debian.org support
-_index_auth = MIDDLEWARE_CLASSES.index(
+_index_auth = MIDDLEWARE.index(
     'django.contrib.auth.middleware.AuthenticationMiddleware') + 1
-MIDDLEWARE_CLASSES = MIDDLEWARE_CLASSES[:_index_auth] + \
+MIDDLEWARE = MIDDLEWARE[:_index_auth] + \
     ('distro_tracker.vendor.debian.sso_auth.DebianSsoUserMiddleware',) + \
-    MIDDLEWARE_CLASSES[_index_auth:]
+    MIDDLEWARE[_index_auth:]
 AUTHENTICATION_BACKENDS = \
     ('distro_tracker.vendor.debian.sso_auth.DebianSsoUserBackend',) + \
     AUTHENTICATION_BACKENDS

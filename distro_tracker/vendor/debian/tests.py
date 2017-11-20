@@ -4308,13 +4308,13 @@ class ImportTagsTests(TestCase):
 @mock.patch(
     'distro_tracker.vendor.debian.sso_auth.'
     'DebianSsoUserBackend.get_user_details')
-@override_settings(MIDDLEWARE_CLASSES=(
+@override_settings(MIDDLEWARE=[
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'distro_tracker.vendor.debian.sso_auth.DebianSsoUserMiddleware',
-), AUTHENTICATION_BACKENDS=(
+], AUTHENTICATION_BACKENDS=(
     'distro_tracker.vendor.debian.sso_auth.DebianSsoUserBackend',
     'django_email_accounts.auth.UserEmailBackend',
 ))

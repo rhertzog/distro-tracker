@@ -219,7 +219,7 @@ TEMPLATES = [
     },
 ]
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -228,7 +228,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     # Disabled to allow rendering in iframes
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
-)
+]
 
 AUTHENTICATION_BACKENDS = (
     'django_email_accounts.auth.UserEmailBackend',
