@@ -18,7 +18,7 @@ from django.conf import settings
 from django.utils import six
 from django.utils.encoding import force_str
 from django.utils.http import urlencode
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 from distro_tracker.core.tasks import BaseTask
 from distro_tracker.core.models import PackageExtractedInfo

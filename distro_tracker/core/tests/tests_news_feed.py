@@ -17,7 +17,7 @@ from __future__ import unicode_literals
 
 from datetime import datetime
 
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from xml.dom import minidom
 
 from distro_tracker.test import TestCase

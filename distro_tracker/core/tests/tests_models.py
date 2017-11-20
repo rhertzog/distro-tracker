@@ -18,7 +18,7 @@ from distro_tracker.test import TestCase
 from django.test.utils import override_settings
 from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db import IntegrityError
 from distro_tracker.core.models import Subscription, EmailSettings
 from distro_tracker.core.models import PackageName, BinaryPackageName

@@ -26,7 +26,7 @@ from django.views.generic import TemplateView
 from django.views.decorators.cache import cache_control
 from django.core.mail import send_mail
 from django.core.exceptions import PermissionDenied
-from django.core.urlresolvers import reverse, reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils.http import urlquote
 from distro_tracker.core.models import get_web_package
 from distro_tracker.core.forms import CreateTeamForm

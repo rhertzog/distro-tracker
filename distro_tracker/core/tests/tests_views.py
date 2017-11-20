@@ -22,7 +22,7 @@ from distro_tracker.core.models import News
 from distro_tracker.core.models import ActionItem, ActionItemType
 import json
 
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.conf import settings
 
 

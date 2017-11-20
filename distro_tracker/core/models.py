@@ -31,7 +31,7 @@ from django.utils.encoding import force_text
 from django.utils.html import escape
 from django.utils.functional import cached_property
 from django.utils.safestring import mark_safe
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.template.defaultfilters import slugify

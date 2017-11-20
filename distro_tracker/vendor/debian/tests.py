@@ -18,7 +18,7 @@ from __future__ import unicode_literals
 from distro_tracker.test import TestCase, SimpleTestCase
 from django.test.utils import override_settings
 from django.core import mail
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.management import call_command
 from django.utils import six
 from django.utils.six.moves import mock

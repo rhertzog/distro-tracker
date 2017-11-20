@@ -13,7 +13,7 @@ from __future__ import unicode_literals
 
 import importlib
 
-from django.conf.urls import include, url
+from django.conf.urls import url
 from django.conf import settings
 from django.shortcuts import redirect
 from django.views.generic import TemplateView
@@ -96,7 +96,7 @@ urlpatterns = [
     url(r'^api/keywords/$', KeywordsView.as_view(),
         name='dtracker-api-keywords'),
 
-    url(r'^admin/', include(admin.site.urls)),
+    url(r'^admin/', admin.site.urls),
 
     url(r'^news/(?P<news_id>\d+)$', news_page,
         name='dtracker-news-page'),
@@ -230,7 +230,7 @@ urlpatterns = [
         name='dtracker-package-rss-news-feed'),
 
     # Uncomment the admin/doc line below to enable admin documentation:
-    # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
+    # url(r'^admin/doc/', django.contrib.admindocs.urls),
 ]
 
 for app in settings.INSTALLED_APPS:
@@ -251,7 +251,7 @@ urlpatterns += [
 if settings.DJANGO_EMAIL_ACCOUNTS_USE_CAPTCHA:
     import captcha.urls
     urlpatterns += [
-        url(r'^captcha/', include(captcha.urls)),
+        url(r'^captcha/', captcha.urls),
     ]
 
 if settings.DEBUG:

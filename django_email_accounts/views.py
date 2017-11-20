@@ -25,7 +25,7 @@ from django.views.generic.edit import UpdateView
 from django.views.generic.edit import FormView
 from django.views.generic import TemplateView
 from django.utils.http import urlencode
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 from django.template.loader import render_to_string
 from django_email_accounts.models import User
 from django_email_accounts.models import UserEmail

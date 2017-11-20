@@ -18,7 +18,7 @@ from distro_tracker.core.models import EmailSettings
 from distro_tracker.core.models import PackageName
 from distro_tracker.core.models import Subscription
 from distro_tracker.core.models import Keyword
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 import json
 
