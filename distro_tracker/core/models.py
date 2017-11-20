@@ -1,4 +1,4 @@
-# Copyright 2013-2016 The Distro Tracker Developers
+# Copyright 2013-2017 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -496,7 +496,9 @@ def get_web_package(package_name):
     if it has associated :class:`News` since that proves that it used to be
     a former source package.
 
-    If that is not the case, then ``None`` is returned.
+    If that is not the case, then ``None`` is returned. You can use a "src:"
+    or "bin:" prefix to the package name to restrict the lookup among source
+    packages or binary packages, respectively.
 
     :rtype: :class:`PackageName` or ``None``
 
@@ -504,78 +506,35 @@ def get_web_package(package_name):
     :type package_name: string
     """
 
-    (
-        package_name,
-        [
-            search_source,
-            search_pseudo,
-            search_binary,
-            search_pname,
-        ],
-    ) = __package_search_helper(package_name)
-
-    if (
-            search_source and
-            SourcePackageName.objects.exists_with_name(package_name)
-    ):
-        return SourcePackageName.objects.get(name=package_name)
-    elif (
-            search_pseudo and
-            PseudoPackageName.objects.exists_with_name(package_name)
-    ):
-        return PseudoPackageName.objects.get(name=package_name)
-    elif (
-            search_binary and
-            BinaryPackageName.objects.exists_with_name(package_name)
-    ):
-        binary_package = BinaryPackageName.objects.get(name=package_name)
-        return binary_package.main_source_package_name
-    elif search_pname and PackageName.objects.exists_with_name(package_name):
-        pkg = PackageName.objects.get(name=package_name)
-        # This is not a current source or binary package, but if it has
-        # associated news, then it's likely a former source package where we can
-        # display something useful
-        if pkg.news_set.count():
-            return pkg
-
-    return None
-
-
-def __package_search_helper(package_name):
-    """
-    Utility function that helps to decide where the tracker should search
-    for `package_name`. If package_name starts with 'src:' or 'bin:',
-    then narrows the search to the specific representations. If not,
-    then searches everywhere. Returns a tuple with the stripped package
-    name and a list of places to search.
-
-    :rtype: `tuple`
-
-    :param package_name: The name for which a package should be found.
-    :type package_name: string
-    """
-
-    search_source = True
-    search_pseudo = True
-    search_binary = True
-    search_pname = True
+    search_among = (
+        SourcePackageName,
+        PseudoPackageName,
+        BinaryPackageName,
+        PackageName
+    )
 
     if package_name.startswith("src:"):
-        package_name = package_name.replace("src:", "")
-        search_pseudo = search_binary = False
-    if package_name.startswith("bin:"):
-        package_name = package_name.replace("bin:", "")
-        search_source = search_pseudo = search_pname = False
+        package_name = package_name[4:]
+        search_among = (SourcePackageName, PackageName)
+    elif package_name.startswith("bin:"):
+        package_name = package_name[4:]
+        search_among = (BinaryPackageName,)
 
-    return (
-        package_name,
-        [
-            search_source,
-            search_pseudo,
-            search_binary,
-            search_pname,
-        ]
-    )
+    for cls in search_among:
+        if cls.objects.exists_with_name(package_name):
+            pkg = cls.objects.get(name=package_name)
+            if cls is BinaryPackageName:
+                return pkg.main_source_package_name
+            elif cls is PackageName:
+                # This is not a current source or binary package, but if it has
+                # associated news, then it's likely a former source package
+                # where we can display something useful
+                if pkg.news_set.count():
+                    return pkg
+            else:
+                return pkg
+
+    return None
 
 
 class SubscriptionManager(models.Manager):
