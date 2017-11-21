@@ -996,7 +996,7 @@ class UpdateBuildLogCheckStats(BaseTask):
     def get_buildd_stats(self):
         content = self._get_buildd_content()
         stats = {}
-        for line in content.splitlines():
+        for line in content.decode('utf-8').splitlines():
             pkg, errors, warnings = line.split("|")[:3]
             try:
                 errors, warnings = int(errors), int(warnings)
