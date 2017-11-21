@@ -16,7 +16,6 @@ from __future__ import unicode_literals
 from django.db import transaction
 from django.conf import settings
 from django.utils import six
-from django.utils.encoding import force_str
 from django.utils.http import urlencode
 from django.urls import reverse
 
@@ -1153,7 +1152,7 @@ class DebianWatchFileScannerUpdate(BaseTask):
         content = self._get_upstream_status_content()
         dehs_data = None
         if content:
-            dehs_data = json.loads(force_str(content))
+            dehs_data = json.loads(content.decode('utf-8'))
         if not dehs_data:
             return [], []
 
@@ -1271,8 +1270,10 @@ class UpdateSecurityIssuesTask(BaseTask):
         if hasattr(self, '_content'):
             return self._content
         url = 'https://security-tracker.debian.org/tracker/data/json'
-        self._content = json.loads(get_resource_content(url))
-        return self._content
+        content = get_resource_content(url)
+        if content:
+            self._content = json.loads(content.decode('utf-8'))
+            return self._content
 
     @staticmethod
     def get_issues_summary(issues):
