@@ -1498,7 +1498,7 @@ class UpdatePiuPartsTask(BaseTask):
                 logger.info("There is no piuparts for suite: %s", suite)
                 continue
 
-            for line in content.splitlines():
+            for line in content.decode('utf-8').splitlines():
                 package_name, status = line.split(':', 1)
                 package_name, status = package_name.strip(), status.strip()
                 if status == 'fail':

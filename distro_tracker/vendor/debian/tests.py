@@ -2844,7 +2844,7 @@ class UpdatePiupartsTaskTests(TestCase):
         content = '\n'.join('{}: fail'.format(pkg) for pkg in fail_packages)
         content += '\n'.join('{}: pass'.format(pkg) for pkg in pass_packages)
 
-        self.return_content[suite] = content
+        self.return_content[suite] = content.encode('utf-8')
 
     def assert_get_piuparts_called_with(self, suites):
         """
