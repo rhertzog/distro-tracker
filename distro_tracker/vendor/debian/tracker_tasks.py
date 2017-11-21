@@ -1572,7 +1572,7 @@ class UpdateUbuntuStatsTask(BaseTask):
         content = self._get_versions_content()
 
         package_versions = {}
-        for line in content.splitlines():
+        for line in content.decode('utf-8').splitlines():
             package, version = line.split(' ', 1)
             version = version.strip()
             package_versions[package] = version
@@ -1593,7 +1593,7 @@ class UpdateUbuntuStatsTask(BaseTask):
         content = self._get_bug_stats_content()
 
         bug_stats = {}
-        for line in content.splitlines():
+        for line in content.decode('utf-8').splitlines():
             package_name, bug_count, patch_count = line.split("|", 2)
             try:
                 bug_count, patch_count = int(bug_count), int(patch_count)
@@ -1622,7 +1622,7 @@ class UpdateUbuntuStatsTask(BaseTask):
 
         patch_diffs = {}
         re_diff_version = re.compile(r'_(\S+)\.patch')
-        for line in content.splitlines():
+        for line in content.decode('utf-8').splitlines():
             package_name, diff_url = line.split(' ', 1)
             # Extract the version of the package from the diff url
             match = re_diff_version.search(diff_url)

@@ -3061,10 +3061,10 @@ class UpdateUbuntuStatsTaskTests(TestCase):
 
         self.task = UpdateUbuntuStatsTask()
         # Stub the data providing method
-        self.task._get_versions_content = mock.MagicMock(return_value='')
-        self.task._get_bug_stats_content = mock.MagicMock(return_value='')
+        self.task._get_versions_content = mock.MagicMock(return_value=b'')
+        self.task._get_bug_stats_content = mock.MagicMock(return_value=b'')
         self.task._get_ubuntu_patch_diff_content = mock.MagicMock(
-            return_value='')
+            return_value=b'')
 
     def set_versions_content(self, versions):
         """
@@ -3075,7 +3075,7 @@ class UpdateUbuntuStatsTaskTests(TestCase):
         """
         self.task._get_versions_content.return_value = '\n'.join(
             '{pkg} {ver}'.format(pkg=pkg, ver=ver)
-            for pkg, ver in versions)
+            for pkg, ver in versions).encode('utf-8')
 
     def set_bugs_content(self, bugs):
         """
@@ -3086,7 +3086,7 @@ class UpdateUbuntuStatsTaskTests(TestCase):
         """
         self.task._get_bug_stats_content.return_value = '\n'.join(
             '{pkg}|{cnt}|{merged}'.format(pkg=pkg, cnt=cnt, merged=merged)
-            for pkg, cnt, merged in bugs)
+            for pkg, cnt, merged in bugs).encode('utf-8')
 
     def set_diff_content(self, diffs):
         """
@@ -3097,7 +3097,7 @@ class UpdateUbuntuStatsTaskTests(TestCase):
         """
         self.task._get_ubuntu_patch_diff_content.return_value = '\n'.join(
             '{pkg} {url}'.format(pkg=pkg, url=url)
-            for pkg, url in diffs)
+            for pkg, url in diffs).encode('utf-8')
 
     def run_task(self):
         self.task.execute()
