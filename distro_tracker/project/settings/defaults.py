@@ -394,6 +394,10 @@ DISTRO_TRACKER_EMAIL_NEWS_HEADERS = (
 #: consume for all of its cached source files, given in bytes.
 DISTRO_TRACKER_APT_CACHE_MAX_SIZE = 5 * 1024 ** 3  # 5 GiB
 
+#: The path to the CA bundle used to verify TLS connections.
+#: Defaults to the system-wide CA bundle.
+DISTRO_TRACKER_CA_BUNDLE = None
+
 #: Whether we accept foo@domain.com as valid emails to dispatch to the foo
 #: package
 DISTRO_TRACKER_ACCEPT_UNQUALIFIED_EMAILS = False

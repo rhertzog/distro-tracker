@@ -32,6 +32,7 @@ from distro_tracker.accounts.models import UserEmail
 from django.utils.six import reraise
 from django.db import transaction
 from django.db import models
+from django.conf import settings
 
 from debian import deb822
 import re
@@ -96,10 +97,12 @@ def retrieve_repository_info(sources_list_entry):
         raise InvalidRepositoryException("Invalid sources.list entry")
 
     repository_type, url, distribution = entry_split[:3]
+    tls_verify = settings.DISTRO_TRACKER_CA_BUNDLE or True
 
     # Access the Release file
     try:
         response = requests.get(Repository.release_file_url(url, distribution),
+                                verify=tls_verify,
                                 allow_redirects=True)
     except requests.exceptions.RequestException as original:
         reraise(

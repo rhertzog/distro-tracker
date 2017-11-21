@@ -26,6 +26,9 @@ ALLOWED_HOSTS = [
 if os.path.isdir('/srv/tracker.debian.org/data'):
     DISTRO_TRACKER_DATA_PATH = '/srv/tracker.debian.org/data'
 
+if os.path.isfile('/etc/ssl/ca-global/ca-certificates.crt'):
+    DISTRO_TRACKER_CA_BUNDLE = '/etc/ssl/ca-global/ca-certificates.crt'
+
 #: A module implementing vendor-specific hooks for use by Distro Tracker.
 #: For more information see :py:mod:`distro_tracker.vendor`.
 DISTRO_TRACKER_VENDOR_RULES = 'distro_tracker.vendor.debian.rules'
