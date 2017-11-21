@@ -885,7 +885,7 @@ class HttpCacheTest(SimpleTestCase):
 
         self.assertFalse(updated)
         mock_requests.get.assert_called_with(
-            url, verify=False, allow_redirects=True,
+            url, verify=mock.ANY, allow_redirects=True,
             headers={'If-Modified-Since': last_modified})
         # The actual server's response is returned
         self.assertEqual(response.status_code, 304)
@@ -994,7 +994,7 @@ class HttpCacheTest(SimpleTestCase):
 
         self.assertFalse(updated)
         mock_requests.get.assert_called_with(
-            url, verify=False, allow_redirects=True,
+            url, verify=mock.ANY, allow_redirects=True,
             headers={'If-None-Match': etag, })
         # The actual server's response is returned
         self.assertEqual(response.status_code, 304)
@@ -1052,7 +1052,7 @@ class HttpCacheTest(SimpleTestCase):
 
         # Make sure that we ask for a non-cached version
         mock_requests.get.assert_called_with(
-            url, verify=False, allow_redirects=True,
+            url, verify=mock.ANY, allow_redirects=True,
             headers={'Cache-Control': 'no-cache'})
         self.assertTrue(updated)
 

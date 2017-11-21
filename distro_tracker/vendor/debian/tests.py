@@ -369,7 +369,7 @@ class GetPseudoPackageListTest(TestCase):
             'https://bugs.debian.org/pseudo-packages.maintainers',
             headers={},
             allow_redirects=True,
-            verify=False)
+            verify=mock.ANY)
         # Correct packages extracted?
         self.assertSequenceEqual(
             ['package1', 'package2'],
