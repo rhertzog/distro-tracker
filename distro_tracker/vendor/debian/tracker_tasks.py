@@ -576,7 +576,7 @@ class UpdateLintianStatsTask(BaseTask):
             'experimentals',
             'overriddens',
         )
-        for line in response.iter_lines():
+        for line in response.iter_lines(decode_unicode=True):
             package, stats = line.split(None, 1)
             stats = stats.split()
             try:
