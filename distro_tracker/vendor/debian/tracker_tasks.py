@@ -2171,9 +2171,11 @@ class UpdateAutoRemovalsStatsTask(BaseTask):
             removal_date=removal_date,
             bugs=', '.join(link.format(bug, bug) for bug in all_bugs))
 
-        if hasattr(stats['removal_date'], 'strftime'):
-            stats['removal_date'] = stats['removal_date'].strftime(
-                '%a %d %b %Y')
+        # datetime objects are not JSON-serializable, convert them ourselves
+        for key in stats.keys():
+            if hasattr(stats[key], 'strftime'):
+                stats[key] = stats[key].strftime('%a %d %b %Y')
+
         action_item.extra_data = {
             'stats': stats,
             'removal_date': stats['removal_date'],
