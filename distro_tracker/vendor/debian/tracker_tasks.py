@@ -146,7 +146,7 @@ class RetrieveLowThresholdNmuTask(BaseTask):
         devel_php_RE = re.compile(
             r'https?://qa\.debian\.org/developer\.php\?login=([^\s&|]+)')
         word_RE = re.compile(r'^\w+$')
-        for line in response.iter_lines():
+        for line in response.iter_lines(decode_unicode=True):
             match = devel_php_RE.search(line)
             while match:    # look for several matches on the same line
                 email = None
