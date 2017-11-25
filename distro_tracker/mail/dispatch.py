@@ -18,7 +18,6 @@ import logging
 import re
 
 from django.core.mail import get_connection
-from django.utils import six
 from django.utils import timezone
 from django.core.mail import EmailMessage
 from django.conf import settings
@@ -236,14 +235,10 @@ def add_team_membership_headers(received_message, package_name, keyword, team):
 
 def add_headers(message, new_headers):
     """
-    Adds the given headers to the given message in a safe way.
+    Adds the given headers to the given message. This used to
+    contain more code for Python 2 compat.
     """
     for header_name, header_value in new_headers:
-        # With Python 2, make sure we are adding bytes to the message
-        if six.PY2:
-            header_name, header_value = (
-                header_name.encode('utf-8'),
-                header_value.encode('utf-8'))
         message[header_name] = header_value
 
 

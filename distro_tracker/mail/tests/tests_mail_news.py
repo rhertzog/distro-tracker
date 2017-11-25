@@ -15,7 +15,6 @@ Tests for the :mod:`distro_tracker.mail.mail_news` app.
 
 from __future__ import unicode_literals
 from distro_tracker.test import TestCase, SimpleTestCase
-from django.utils import six
 from unittest import mock
 from django.utils.encoding import force_bytes
 from distro_tracker.core.models import SourcePackageName, SourcePackage
@@ -25,6 +24,7 @@ from distro_tracker.mail.management.commands.tracker_receive_news import (
     Command as MailNewsCommand)
 
 from email.message import Message
+import io
 
 
 class BasicNewsGeneration(TestCase):
@@ -145,6 +145,6 @@ class MailNewsManagementCommandTest(SimpleTestCase):
         'distro_tracker.mail.management.commands.tracker_receive_news.process')
     def test_calls_process(self, mock_process):
         cmd = MailNewsCommand()
-        cmd.input_file = mock.create_autospec(six.BytesIO)
+        cmd.input_file = mock.create_autospec(io.BytesIO)
         cmd.handle()
         self.assertTrue(mock_process.called)

@@ -22,7 +22,6 @@ import time
 
 from django.conf import settings
 from django.test.utils import override_settings
-from django.utils import six
 from django.utils.encoding import force_bytes
 from unittest import mock
 import pyinotify
@@ -350,11 +349,7 @@ class MailQueueTest(TestCase, QueueHelperMixin):
     def test_close_pool_really_closes_the_pool(self):
         pool = self.queue.pool
         self.queue.close_pool()
-        if six.PY2:
-            expected_exception = AssertionError  # assert self._state == RUN
-        else:
-            expected_exception = ValueError  # Pool not running exception
-        with self.assertRaises(expected_exception):
+        with self.assertRaises(ValueError):  # Pool not running exception
             pool.apply_async(time.sleep, 0)
 
     def test_process_queue_handles_preexisting_mails(self):

@@ -41,7 +41,6 @@ from email.utils import make_msgid
 from datetime import timedelta
 
 import re
-import six
 
 
 DISTRO_TRACKER_CONTACT_EMAIL = settings.DISTRO_TRACKER_CONTACT_EMAIL
@@ -1823,14 +1822,9 @@ class SubscribeToPackageTest(EmailControlTest):
         EmailSettings object.
         """
         user, _ = UserEmail.objects.get_or_create(email=self.user_email_address)
-        if six.PY3:
-            with self.assertRaisesRegex(Exception,
-                                        'UserEmail has no emailsettings'):
-                user.emailsettings
-        else:
-            with self.assertRaisesRegexp(Exception,
-                                         'UserEmail has no emailsettings'):
-                user.emailsettings
+        with self.assertRaisesRegex(Exception,
+                                    'UserEmail has no emailsettings'):
+            user.emailsettings
 
         self.add_subscribe_command(self.package.name, self.user_email_address)
 

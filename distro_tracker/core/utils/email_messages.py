@@ -20,6 +20,7 @@ import re
 import copy
 import email
 import types
+import io
 
 
 def extract_email_address_from_header(header):
@@ -113,17 +114,10 @@ def patch_message_for_django_compat(message):
         """
         Returns the payload of the message encoded as bytes.
         """
-        if six.PY3:
-            from email.generator import BytesGenerator as Generator
-        else:
-            from email.generator import Generator
-
-        fp = six.BytesIO()
+        from email.generator import BytesGenerator as Generator
+        fp = io.BytesIO()
         g = Generator(fp, mangle_from_=False, maxheaderlen=maxheaderlen)
-        if six.PY3:
-            g.flatten(self, unixfrom=unixfrom, linesep=linesep)
-        else:
-            g.flatten(self, unixfrom=unixfrom)
+        g.flatten(self, unixfrom=unixfrom, linesep=linesep)
         return force_bytes(fp.getvalue(), 'utf-8')
 
     message.as_string = types.MethodType(as_string, message)
@@ -145,10 +139,7 @@ def message_from_bytes(message_bytes):
     :class:`django.core.mail.SafeMIMEText` object but that we don't use
     in our :class:`CustomEmailMessage`).
     """
-    if six.PY3:
-        from email import message_from_bytes as email_message_from_bytes
-    else:
-        from email import message_from_string as email_message_from_bytes
+    from email import message_from_bytes as email_message_from_bytes
     message = email_message_from_bytes(message_bytes)
 
     return patch_message_for_django_compat(message)

@@ -41,6 +41,7 @@ from .models import DebianContributor
 from distro_tracker import vendor
 
 import collections
+import io
 import os
 import re
 import json
@@ -704,7 +705,7 @@ class UpdateTransitionsTask(BaseTask):
         object.
         """
         content = self.cache.get_content(url)
-        return yaml.safe_load(six.BytesIO(content))
+        return yaml.safe_load(io.BytesIO(content))
 
     def _add_reject_transitions(self, packages):
         """
@@ -2144,7 +2145,7 @@ class UpdateAutoRemovalsStatsTask(BaseTask):
         content = get_resource_content(
             'https://udd.debian.org/cgi-bin/autoremovals.yaml.cgi')
         if content:
-            return yaml.safe_load(six.BytesIO(content))
+            return yaml.safe_load(io.BytesIO(content))
 
     def update_action_item(self, package, stats):
         """

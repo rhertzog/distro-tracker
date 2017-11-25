@@ -14,7 +14,6 @@ potentially be turned into a news item.
 """
 
 from django.core.management.base import BaseCommand
-from django.utils import six
 
 from distro_tracker.mail.mail_news import process
 
@@ -30,9 +29,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         logger.info("Processing a received message")
         # Make sure to read binary data.
-        if six.PY3:
-            self.input_file = self.input_file.detach()
-        input_data = self.input_file.read()
+        input_data = self.input_file.detach().read()
 
         process(input_data)
 
