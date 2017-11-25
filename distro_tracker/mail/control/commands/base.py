@@ -13,8 +13,6 @@ commands.
 """
 from __future__ import unicode_literals
 
-from django.utils import six
-
 import re
 from django.conf import settings
 DISTRO_TRACKER_CONTROL_EMAIL = settings.DISTRO_TRACKER_CONTROL_EMAIL
@@ -42,7 +40,7 @@ class MetaCommand(type):
         )
 
 
-class Command(six.with_metaclass(MetaCommand)):
+class Command(metaclass=MetaCommand):
     """
     Base class for commands. Instances of this class can be used for no-op
     commands.

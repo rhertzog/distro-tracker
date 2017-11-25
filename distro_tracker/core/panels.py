@@ -12,7 +12,6 @@ from __future__ import unicode_literals
 from django.conf import settings
 from django.utils.functional import cached_property
 from django.core.exceptions import ObjectDoesNotExist
-from django.utils import six
 from django.utils.safestring import mark_safe
 from distro_tracker.core.utils.plugins import PluginRegistry
 from distro_tracker.core.utils import get_vcs_name
@@ -34,7 +33,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class BasePanel(six.with_metaclass(PluginRegistry)):
+class BasePanel(metaclass=PluginRegistry):
 
     """
     A base class representing panels which are displayed on a package page.
@@ -340,7 +339,7 @@ class VersionedLinks(BasePanel):
     title = 'versioned links'
     template_name = 'core/panels/versioned-links.html'
 
-    class LinkProvider(six.with_metaclass(PluginRegistry)):
+    class LinkProvider(metaclass=PluginRegistry):
 
         """
         A base class for classes which should provide a list of version
@@ -631,7 +630,7 @@ class HtmlPanelItem(PanelItem):
         return self._html
 
 
-class PanelItemProvider(six.with_metaclass(PluginRegistry)):
+class PanelItemProvider(metaclass=PluginRegistry):
 
     """
     A base class for classes which produce :class:`PanelItem` instances.
@@ -681,7 +680,7 @@ class ListPanelMeta(PluginRegistry):
             )
 
 
-class ListPanel(six.with_metaclass(ListPanelMeta, BasePanel)):
+class ListPanel(BasePanel, metaclass=ListPanelMeta):
 
     """
     The base class for panels which would like to present an extensible list of

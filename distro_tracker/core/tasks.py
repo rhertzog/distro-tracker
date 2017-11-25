@@ -28,7 +28,7 @@ import sys
 logger = logging.getLogger('distro_tracker.tasks')
 
 
-class BaseTask(six.with_metaclass(PluginRegistry)):
+class BaseTask(metaclass=PluginRegistry):
     """
     A class representing the base class for all data processing tasks of
     Distro Tracker.

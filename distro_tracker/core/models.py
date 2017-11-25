@@ -24,7 +24,6 @@ from debian import changelog as debian_changelog
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.utils import IntegrityError
-from django.utils import six
 from django.utils import timezone
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.encoding import force_text
@@ -1726,7 +1725,7 @@ class EmailNews(News):
         return kwargs
 
 
-class NewsRenderer(six.with_metaclass(PluginRegistry)):
+class NewsRenderer(metaclass=PluginRegistry):
     """
     Base class which is used to register subclasses to render a :class:`News`
     instance's contents into an HTML page.

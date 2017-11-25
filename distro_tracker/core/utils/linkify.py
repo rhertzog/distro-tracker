@@ -14,13 +14,12 @@ Module including some utility functions to inject links in plain text.
 from __future__ import unicode_literals
 import re
 
-from django.utils import six
 from django.conf import settings
 
 from distro_tracker.core.utils.plugins import PluginRegistry
 
 
-class Linkify(six.with_metaclass(PluginRegistry)):
+class Linkify(metaclass=PluginRegistry):
     """
     A base class representing ways to inject useful links in plain text data
 
