@@ -123,16 +123,13 @@ More settings:
 from __future__ import unicode_literals
 import django
 from django.core.exceptions import ImproperlyConfigured
-from django.utils import six
 from os.path import dirname
 
 import socket
 import os.path
 
-if django.VERSION < (1, 8):
-    raise ImproperlyConfigured("Distro Tracker needs Django >= 1.8")
-
-six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
+if django.VERSION < (1, 11):
+    raise ImproperlyConfigured("Distro Tracker needs Django >= 1.11")
 
 # Django's debug mode, never enable this in production
 DEBUG = False
