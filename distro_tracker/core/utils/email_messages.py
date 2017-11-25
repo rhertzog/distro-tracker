@@ -13,7 +13,6 @@ Module including some utility functions and classes for manipulating email.
 """
 from __future__ import unicode_literals
 from django.core.mail import EmailMessage
-from django.utils import six
 from django.utils.encoding import force_bytes
 from email.mime.base import MIMEBase
 import re
@@ -221,7 +220,7 @@ def decode_header(header, default_encoding='utf-8'):
             # Python 3 returns unknown-8bit instead of None when you have 8bit
             # characters without any encoding information
             encoding = 'iso-8859-1'
-        if isinstance(part, six.binary_type):
+        if isinstance(part, bytes):
             encoding = encoding if encoding else default_encoding
             try:
                 result += part.decode(encoding)

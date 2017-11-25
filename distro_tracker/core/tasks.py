@@ -17,7 +17,6 @@ from __future__ import unicode_literals
 from distro_tracker.core.utils.plugins import PluginRegistry
 from distro_tracker.core.utils.datastructures import DAG
 from distro_tracker.core.models import RunningJob
-from django.utils import six
 from django.conf import settings
 
 from collections import defaultdict
@@ -583,7 +582,7 @@ def run_task(initial_task, parameters=None):
     # Import tasks implemented by all installed apps
     import_all_tasks()
 
-    if isinstance(initial_task, six.text_type):
+    if isinstance(initial_task, str):
         task_name = initial_task
         initial_task = BaseTask.get_task_class_by_name(initial_task)
         if not initial_task:

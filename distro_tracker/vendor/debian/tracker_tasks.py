@@ -15,7 +15,6 @@ Debian-specific tasks.
 from __future__ import unicode_literals
 from django.db import transaction
 from django.conf import settings
-from django.utils import six
 from django.utils.http import urlencode
 from django.urls import reverse
 
@@ -855,7 +854,7 @@ class UpdateExcusesTask(BaseTask):
         problematic = {}
         excuses = []
         for line in content_lines:
-            if isinstance(line, six.binary_type):
+            if isinstance(line, bytes):
                 line = line.decode('utf-8')
             if '</ul>' in line:
                 # The inner list is closed -- all excuses for the package are
@@ -1315,9 +1314,7 @@ class UpdateSecurityIssuesTask(BaseTask):
 
     @staticmethod
     def get_data_checksum(data):
-        json_dump = json.dumps(data, sort_keys=True)
-        if json_dump is not six.binary_type:
-            json_dump = json_dump.encode('UTF-8')
+        json_dump = json.dumps(data, sort_keys=True).encode('utf-8')
         return hashlib.md5(json_dump).hexdigest()
 
     def _get_short_description(self, key, action_item):
@@ -2165,7 +2162,7 @@ class UpdateAutoRemovalsStatsTask(BaseTask):
         all_bugs = stats['bugs'] + bugs_dependencies
         link = '<a href="https://bugs.debian.org/{}">{}</a>'
         removal_date = stats['removal_date'].strftime('%d %B')
-        if removal_date is six.binary_type:
+        if isinstance(removal_date, bytes):
             removal_date = removal_date.decode('utf-8', 'ignore')
 
         action_item.short_description = self.ITEM_DESCRIPTION.format(

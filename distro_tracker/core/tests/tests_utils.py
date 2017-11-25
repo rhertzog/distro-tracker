@@ -26,7 +26,6 @@ import tempfile
 from debian import deb822
 from django.core import mail
 from django.test.utils import override_settings
-from django.utils import six
 from django.utils.http import http_date
 from django.utils.functional import curry
 from unittest import mock
@@ -152,7 +151,7 @@ Content-Transfer-Encoding: 8bit
         message = message_from_bytes(self.message_bytes)
 
         self.assertEqual(self.message_bytes, message.as_string())
-        self.assertTrue(isinstance(message.as_string(), six.binary_type))
+        self.assertTrue(isinstance(message.as_string(), bytes))
 
     def test_get_payload_decode_idempotent(self):
         """

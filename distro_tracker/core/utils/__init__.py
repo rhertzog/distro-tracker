@@ -12,7 +12,6 @@ from __future__ import unicode_literals
 from django.template.loader import render_to_string
 from django.http import HttpResponse
 from django.db import models
-from django.utils import six
 from django.conf import settings
 import os
 import json
@@ -212,7 +211,7 @@ def verify_signature(content):
         # The vendor has not provided a keyring
         return None
 
-    if isinstance(content, six.text_type):
+    if isinstance(content, str):
         content = content.encode('utf-8')
 
     os.environ['GNUPGHOME'] = keyring_directory
