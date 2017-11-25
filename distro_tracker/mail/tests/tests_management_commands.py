@@ -25,7 +25,6 @@ from distro_tracker.core.models import SourcePackageName, PseudoPackageName
 
 from django.conf import settings
 from django.core import mail
-from django.utils import six
 from django.utils import timezone
 from django.utils.encoding import force_bytes
 from unittest import mock
@@ -62,8 +61,8 @@ class CommandWithInputTestCase(TestCase):
 
 class CommandWithOutputTestCase(TestCase):
     def call_command(self, *args, **kwargs):
-        stdout = six.StringIO()
-        stderr = six.StringIO()
+        stdout = io.StringIO()
+        stderr = io.StringIO()
         kwargs['stdout'] = stdout
         kwargs['stderr'] = stderr
 

@@ -20,7 +20,6 @@ from django.test.utils import override_settings
 from django.core import mail
 from django.urls import reverse
 from django.core.management import call_command
-from django.utils import six
 from unittest import mock
 from django.utils.encoding import force_bytes
 from django.utils.functional import curry
@@ -88,6 +87,7 @@ from distro_tracker.mail.mail_news import process
 from email.message import Message
 from bs4 import BeautifulSoup as soup
 
+import io
 import os
 import json
 import logging
@@ -4130,7 +4130,7 @@ class ImportOldSubscribersTests(TestCase):
 
     def run_command(self):
         command = ImportOldSubscribersCommand()
-        command.stdin = six.StringIO(self.get_input())
+        command.stdin = io.StringIO(self.get_input())
         command.handle()
 
     def assert_subscribed_to_package(self, package, subscribers):
@@ -4230,7 +4230,7 @@ class ImportTagsTests(TestCase):
 
     def run_command(self):
         command = ImportOldTagsCommand()
-        command.stdin = six.StringIO(self.get_input())
+        command.stdin = io.StringIO(self.get_input())
         command.handle()
 
     def assert_keyword_sets_equal(self, set1, set2):
