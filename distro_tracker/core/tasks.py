@@ -23,7 +23,6 @@ from django.conf import settings
 from collections import defaultdict
 import importlib
 import logging
-import sys
 
 logger = logging.getLogger('distro_tracker.tasks')
 
@@ -547,7 +546,7 @@ def clear_all_events_on_exception(func):
             func(self)
         except Exception:
             self.clear_events()
-            six.reraise(*sys.exc_info())
+            raise
     return wrapper
 
 

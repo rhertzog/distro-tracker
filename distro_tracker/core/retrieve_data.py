@@ -29,14 +29,12 @@ from distro_tracker.core.tasks import BaseTask
 from distro_tracker.core.tasks import clear_all_events_on_exception
 from distro_tracker.core.models import SourcePackageName, Architecture
 from distro_tracker.accounts.models import UserEmail
-from django.utils.six import reraise
 from django.db import transaction
 from django.db import models
 from django.conf import settings
 
 from debian import deb822
 import re
-import sys
 import requests
 import itertools
 import logging
@@ -105,15 +103,8 @@ def retrieve_repository_info(sources_list_entry):
                                 verify=tls_verify,
                                 allow_redirects=True)
     except requests.exceptions.RequestException as original:
-        reraise(
-            InvalidRepositoryException,
-            InvalidRepositoryException(
-                "Could not connect to {url}\n{original}".format(
-                    url=url,
-                    original=original)
-            ),
-            sys.exc_info()[2]
-        )
+        raise InvalidRepositoryException(
+            "Could not connect to {url}".format(url=url)) from original
     if response.status_code != 200:
         raise InvalidRepositoryException(
             "No Release file found at the URL: {url}\n"
