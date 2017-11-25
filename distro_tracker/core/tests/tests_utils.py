@@ -29,7 +29,7 @@ from django.test.utils import override_settings
 from django.utils import six
 from django.utils.http import http_date
 from django.utils.functional import curry
-from django.utils.six.moves import mock
+from unittest import mock
 
 from distro_tracker.core.models import Repository
 from distro_tracker.core.utils import verp

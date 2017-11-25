@@ -21,7 +21,7 @@ import logging
 from django.core import mail
 from django.conf import settings
 from django.utils import timezone
-from django.utils.six.moves import mock
+from unittest import mock
 
 from distro_tracker.accounts.models import UserEmail
 from distro_tracker.accounts.models import User

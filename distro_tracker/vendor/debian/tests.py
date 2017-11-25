@@ -21,7 +21,7 @@ from django.core import mail
 from django.urls import reverse
 from django.core.management import call_command
 from django.utils import six
-from django.utils.six.moves import mock
+from unittest import mock
 from django.utils.encoding import force_bytes
 from django.utils.functional import curry
 from distro_tracker.mail.tests.tests_dispatch \

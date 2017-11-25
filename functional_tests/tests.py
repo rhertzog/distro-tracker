@@ -34,7 +34,7 @@ from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 import selenium.webdriver.support.ui as ui
 from selenium.webdriver.common.keys import Keys
-from django.utils.six.moves import mock
+from unitest import mock
 import os
 import time
 

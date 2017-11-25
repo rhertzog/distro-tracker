@@ -16,7 +16,7 @@ Tests for the Distro Tracker core data retrieval.
 from __future__ import unicode_literals
 from distro_tracker.test import TestCase
 from django.test.utils import override_settings
-from django.utils.six.moves import mock
+from unittest import mock
 from distro_tracker.core.tasks import run_task
 from distro_tracker.core.tasks import Job
 from distro_tracker.core.tasks import JobState

@@ -24,7 +24,7 @@ from django.conf import settings
 from django.test.utils import override_settings
 from django.utils import six
 from django.utils.encoding import force_bytes
-from django.utils.six.moves import mock
+from unittest import mock
 import pyinotify
 
 from distro_tracker.test import TestCase

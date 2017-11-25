@@ -22,7 +22,7 @@ from distro_tracker.core.tasks import JobState, Event, Job
 from distro_tracker.test.utils import make_temp_directory
 from distro_tracker.extract_source_files.tracker_tasks \
     import ExtractSourcePackageFiles
-from django.utils.six.moves import mock
+from unittest import mock
 
 import os
 
