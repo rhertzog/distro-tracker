@@ -139,7 +139,8 @@ class DebianSsoUserBackend(RemoteUserBackend):
         content = get_resource_content(
             'https://nm.debian.org/api/people?' +
             urlencode({'uid': self.get_uid(remote_user)}))
-        result = json.loads(content)['r']
+        if content:
+            result = json.loads(content.decode('utf-8'))['r']
 
         if not result:
             return None
