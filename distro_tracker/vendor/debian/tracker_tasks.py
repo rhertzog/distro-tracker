@@ -1279,8 +1279,8 @@ class UpdateSecurityIssuesTask(BaseTask):
     @staticmethod
     def get_issues_summary(issues):
         result = {}
-        for issue_id, issue_data in six.iteritems(issues):
-            for release, data in six.iteritems(issue_data['releases']):
+        for issue_id, issue_data in issues.items():
+            for release, data in issue_data['releases'].items():
                 stats = result.setdefault(release, {
                     'open': 0,
                     'open_details': {},
@@ -1309,7 +1309,7 @@ class UpdateSecurityIssuesTask(BaseTask):
         Gets package issue stats from Debian's security tracker.
         """
         stats = {}
-        for pkg, issues in six.iteritems(content):
+        for pkg, issues in content.items():
             stats[pkg] = cls.get_issues_summary(issues)
         return stats
 
@@ -1410,7 +1410,7 @@ class UpdateSecurityIssuesTask(BaseTask):
         content = self._get_issues_content()
         to_add = []
         to_update = []
-        for pkgname, issues in six.iteritems(content):
+        for pkgname, issues in content.items():
             if pkgname in all_data:
                 # Check if we need to update the existing data
                 checksum = self.get_data_checksum(issues)
