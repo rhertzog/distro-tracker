@@ -220,3 +220,22 @@ def get_resource_content(url, cache=None, compression="auto"):
         return cache.get_content(url, compression=compression)
     except:
         pass
+
+
+def get_resource_text(url, cache=None, compression="auto", encoding="utf-8"):
+    """
+    Clone of :py:func:`get_resource_content` which transparently decodes
+    the downloaded content into text. It supports the same parameters
+    and add the encoding parameter.
+
+    :param encoding: Specifies an encoding to decode the resource content.
+    :type encoding: str
+
+    :returns: The textual representation of the resource found at the given url.
+    :rtype: str
+    """
+
+    content = get_resource_content(url, cache=cache, compression=compression)
+
+    if content is not None:
+        return content.decode(encoding)
