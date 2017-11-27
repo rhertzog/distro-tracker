@@ -34,6 +34,7 @@ from distro_tracker.vendor.debian.models import PackageExcuses
 from distro_tracker.vendor.debian.models import UbuntuPackage
 from distro_tracker.core.utils.http import HttpCache
 from distro_tracker.core.utils.http import get_resource_content
+from distro_tracker.core.utils.misc import get_data_checksum
 from distro_tracker.core.utils.packages import package_hashdir
 from .models import DebianContributor
 from distro_tracker import vendor
@@ -43,7 +44,6 @@ import io
 import os
 import re
 import json
-import hashlib
 import itertools
 
 from debian import deb822
@@ -1312,11 +1312,6 @@ class UpdateSecurityIssuesTask(BaseTask):
             stats[pkg] = cls.get_issues_summary(issues)
         return stats
 
-    @staticmethod
-    def get_data_checksum(data):
-        json_dump = json.dumps(data, sort_keys=True).encode('utf-8')
-        return hashlib.md5(json_dump).hexdigest()
-
     def _get_short_description(self, key, action_item):
         count = action_item.extra_data['security_issues_count']
         url = 'https://security-tracker.debian.org/tracker/source-package/{}'
@@ -1354,7 +1349,7 @@ class UpdateSecurityIssuesTask(BaseTask):
         return {
             'details': issues,
             'stats': cls.get_issues_summary(issues),
-            'checksum': cls.get_data_checksum(issues)
+            'checksum': get_data_checksum(issues)
         }
 
     def process_pkg_action_items(self, pkgdata, existing_action_items):
@@ -1410,7 +1405,7 @@ class UpdateSecurityIssuesTask(BaseTask):
         for pkgname, issues in content.items():
             if pkgname in all_data:
                 # Check if we need to update the existing data
-                checksum = self.get_data_checksum(issues)
+                checksum = get_data_checksum(issues)
                 if all_data[pkgname].value.get('checksum', '') == checksum:
                     continue
                 # Update the data

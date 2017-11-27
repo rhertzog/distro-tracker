@@ -61,6 +61,7 @@ from distro_tracker.core.utils.http import get_resource_text
 from distro_tracker.test import TestCase, SimpleTestCase
 from distro_tracker.test.utils import set_mock_response
 from distro_tracker.test.utils import make_temp_directory
+from distro_tracker.core.utils.misc import get_data_checksum
 
 
 class VerpModuleTest(SimpleTestCase):
@@ -1586,6 +1587,17 @@ class UtilsTests(TestCase):
     def test_now(self):
         """Ensure distro_tracker.core.utils.now() exists"""
         self.assertIsInstance(now(), datetime.datetime)
+
+    def test_get_data_checksum(self):
+        """Ensures get_data_checksum behaves as expected."""
+        checksum = get_data_checksum({})
+        self.assertEqual(checksum, '99914b932bd37a50b983c5e7c90ae93b')
+
+    def test_get_data_checksum_ignores_checksum_key(self):
+        checksum = get_data_checksum({
+            'checksum': 'this key should be ignored for the checksum',
+        })
+        self.assertEqual(checksum, '99914b932bd37a50b983c5e7c90ae93b')
 
 
 class CompressionTests(TestCase):

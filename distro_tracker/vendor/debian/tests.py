@@ -2398,10 +2398,6 @@ class UpdateSecurityIssuesTaskTests(TestCase):
         self.assertTrue(stats['dummy-package']['jessie']['open'], 2)
         self.assertTrue(stats['dummy-package']['jessie']['nodsa'], 1)
 
-    def test_get_data_checksum(self):
-        checksum = self.task.get_data_checksum({})
-        self.assertEqual(checksum, '99914b932bd37a50b983c5e7c90ae93b')
-
     def test_execute_create_data(self):
         self.mock_json_data('open')
         self.run_task()
