@@ -2424,3 +2424,373 @@ class MultiArchHintsTask(BaseTask):
 
             ActionItem.objects.delete_obsolete_items([self.action_item_type],
                                                      packages.keys())
+
+
+class UpdateVcsWatchTask(BaseTask):
+    """
+    Updates packages' vcswatch stats.
+    """
+    ACTION_ITEM_TYPE_NAME = 'vcswatch-warnings-and-errors'
+    ITEM_DESCRIPTION = 'This package <a href="{url}">{report}</a>.'
+    ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/vcswatch-action-item.html'
+    VCSWATCH_URL = 'https://qa.debian.org/cgi-bin/vcswatch?package=%(package)s'
+    VCSWATCH_DATA_URL = 'https://qa.debian.org/data/vcswatch/vcswatch.json.gz'
+
+    VCSWATCH_STATUS_DICT = {
+        "NEW": {
+            "brief": "has a new version in the VCS",
+            "severity": ActionItem.SEVERITY_NORMAL,
+        },
+        "COMMITS": {
+            "brief": "has {commits} new commits in its VCS",
+            "severity": ActionItem.SEVERITY_NORMAL,
+        },
+        "OLD": {
+            "brief": "VCS is NOT up to date",
+            "severity": ActionItem.SEVERITY_HIGH,
+        },
+        "UNREL": {
+            "brief": "VCS has unreleased changelog",
+            "severity": ActionItem.SEVERITY_HIGH,
+        },
+        "ERROR": {
+            "brief": "VCS has an error",
+            "severity": ActionItem.SEVERITY_HIGH,
+        },
+        "DEFAULT": {
+            "brief": "\"Huh, this is weird\"",
+            "severity": ActionItem.SEVERITY_HIGH,
+        },
+    }
+
+    def __init__(self, force_update=False, *args, **kwargs):
+        super(UpdateVcsWatchTask, self).__init__(*args, **kwargs)
+        self.force_update = force_update
+        self.vcswatch_ai_type = ActionItemType.objects.create_or_update(
+            type_name=self.ACTION_ITEM_TYPE_NAME,
+            full_description_template=self.ITEM_FULL_DESCRIPTION_TEMPLATE
+        )
+
+    def set_parameters(self, parameters):
+        if 'force_update' in parameters:
+            self.force_update = parameters['force_update']
+
+    def get_vcswatch_data(self):
+        text = get_resource_text(self.VCSWATCH_DATA_URL, encoding="utf-8")
+
+        if text is None:
+            return
+
+        # There's some text, let's load!
+        data = json.loads(text)
+
+        out = {}
+        # This allows to save a lot of list search later.
+        for entry in data:
+            out[entry[u'package']] = entry
+
+        return out
+
+    def clean_package_info(self, package_infos_without_watch, todo):
+        """Takes a list of :class:`PackageExtractedInfo` which do not
+        have a watch entry and cleans it. Then schedule in todo what
+        to do with them.
+        """
+        for package_info in package_infos_without_watch:
+            if 'watch_url' in package_info.value:
+                package_info.value.pop('watch_url')
+                if (list(package_info.value.keys()) == ['checksum'] or
+                        not package_info.value.keys()):
+                    todo['drop']['package_infos'].append(package_info)
+                else:
+                    package_info.value['checksum'] = get_data_checksum(
+                        package_info.value
+                    )
+                    todo['update']['package_infos'].append(package_info)
+
+    def update_action_item(self, package, vcswatch_data, action_item, todo):
+        """
+        For a given :class:`ActionItem` and a given vcswatch data, updates
+        properly the todo dict if required.
+
+        Returns dependingly on what has been done. If something is to
+        be updated, returns True, if nothing is to be updated, returns
+        False. If the calling loop should `continue`, returns `None`.
+
+        :rtype: bool or `None`
+        """
+
+        package_status = vcswatch_data[u'status']
+
+        if package_status == "OK":
+            # Everything is fine, let's purge the action item. Not the
+            # package extracted info as its QA url is still relevant.
+            if action_item:
+                todo['drop']['action_items'].append(action_item)
+
+            # Nothing more to do!
+            return None
+
+        # NOT BEFORE "OK" check!!
+        if package_status not in self.VCSWATCH_STATUS_DICT:
+            package_status = "DEFAULT"
+
+        # If we are here, then something is not OK. Let's check if we
+        # already had some intel regarding the current package status.
+        if action_item is None:
+            action_item = ActionItem(
+                package=package,
+                item_type=self.vcswatch_ai_type)
+            todo['add']['action_items'].append(action_item)
+        else:
+            todo['update']['action_items'].append(action_item)
+
+        # Computes the watch URL
+        vcswatch_url = self.VCSWATCH_URL % {'package': package.name}
+
+        if action_item.extra_data:
+            extra_data = action_item.extra_data
+        else:
+            extra_data = {}
+
+        # Fetches the long description and severity from
+        # the VCSWATCH_STATUS_DICT dict.
+        action_item.severity = \
+            self.VCSWATCH_STATUS_DICT[package_status]['severity']
+
+        nb_commits = vcswatch_data["commits"]
+        if nb_commits is None:
+            nb_commits = 0
+        else:
+            nb_commits = int(nb_commits)
+
+        # The new data
+        new_extra_data = {
+            'name': package.name,
+            'status': package_status,
+            'error': vcswatch_data["error"],
+            'vcswatch_url': vcswatch_url,
+            'commits': nb_commits,
+        }
+
+        extra_data_match = all([
+            new_extra_data[key] == extra_data.get(key, None)
+            for key in new_extra_data
+        ])
+
+        # If everything is fine and we are not forcing the update
+        # then we proceed to the next package.
+        if extra_data_match and not self.force_update:
+            # Remove from the todolist
+            todo['update']['action_items'].remove(action_item)
+            return False
+        else:
+            action_item.extra_data = new_extra_data
+
+            # Report for short description of the :class:`ActionItem`
+            report = self.VCSWATCH_STATUS_DICT[package_status]['brief']
+
+            # If COMMITS, then string format the report.
+            if package_status == 'COMMITS':
+                report = report.format(commits=nb_commits)
+
+            action_item.short_description = self.ITEM_DESCRIPTION.format(
+                url=vcswatch_url,
+                report=report,
+            )
+            return True
+
+    def update_package_info(self, package, vcswatch_data, package_info, todo):
+        """
+        """
+
+        # Same thing with PackageExtractedInfo
+        if package_info is None:
+            package_info = PackageExtractedInfo(
+                package=package,
+                key='vcs',
+            )
+            todo['add']['package_infos'].append(package_info)
+        else:
+            todo['update']['package_infos'].append(package_info)
+
+        # Computes the watch URL
+        vcswatch_url = self.VCSWATCH_URL % {'package': package.name}
+
+        new_value = dict(package_info.value)
+        new_value['watch_url'] = vcswatch_url
+        new_value['checksum'] = get_data_checksum(new_value)
+
+        package_info_match = (
+            new_value['checksum'] == package_info.value.get(
+                'checksum',
+                None,
+            )
+        )
+
+        if package_info_match and not self.force_update:
+            todo['update']['package_infos'].remove(package_info)
+            return False
+        else:
+            package_info.value = new_value
+            return True
+
+    def update_packages_item(self, packages, vcswatch_datas):
+        """Generates the lists of :class:`ActionItem` to be added,
+        deleted or updated regarding the status of their packages.
+
+        Categories of statuses are:
+        {u'COMMITS', u'ERROR', u'NEW', u'OK', u'OLD', u'UNREL'}
+
+        Basically, it fetches all info from :class:`PackageExtractedInfo`
+        with key='vcs', the ones without data matching vcswatch_datas are
+        stored in one variable that's iterated through directly, and if
+        there was something before, it is purged. Then, all entries in
+        that queryset that have no relevant intel anymore are scheduled
+        to be deleted. The others are only updated.
+
+        All :class:`PackageExtractedInfo` matching vcswatch_datas
+        are stored in another variable. The same is done with the list of
+        :class:`ActionItem` that match this task type.
+
+        Then, it iterates on all vcswatch_datas' packages and it tries to
+        determine if there are any news, if so, it updates apopriately the
+        prospective :class:`ActionItem` and :class:`PackageExtractedInfo`,
+        and schedule them to be updated. If no data was existent, then
+        it creates them and schedule them to be added to the database.
+
+        At the end, this function returns a dict of all instances of
+        :class:`ActionItem` and :class:`PackageExtractedInfo` stored
+        in subdicts depending on their class and what is to be done
+        with them.
+
+        :rtype: dict
+
+        """
+
+        todo = {
+            'drop': {
+                'action_items': [],
+                'package_infos': [],
+            },
+            'update': {
+                'action_items': [],
+                'package_infos': [],
+            },
+            'add': {
+                'action_items': [],
+                'package_infos': [],
+            },
+        }
+
+        # Fetches all PackageExtractedInfo for packages having a vcswatch
+        # key. As the pair (package, key) is unique, there is a bijection
+        # between these data, and we fetch them classifying them by package
+        # name.
+        package_infos = {
+            package_info.package.name: package_info
+            for package_info in PackageExtractedInfo.objects.select_related(
+                'package'
+            ).filter(key='vcs').only('package__name', 'value')
+        }
+
+        # As :class:`PackageExtractedInfo` key=vcs is shared, we have to
+        # clean up those with vcs watch_url that aren't in vcs_data
+        package_infos_without_watch = PackageExtractedInfo.objects.filter(
+            key='vcs').exclude(
+            package__name__in=vcswatch_datas.keys()).only('value')
+
+        # Do the actual clean.
+        self.clean_package_info(package_infos_without_watch, todo)
+
+        # Fetches all :class:`ActionItem` for packages concerned by a vcswatch
+        # action.
+        action_items = {
+            action_item.package.name: action_item
+            for action_item in ActionItem.objects.select_related(
+                'package'
+            ).filter(item_type=self.vcswatch_ai_type)
+        }
+
+        for package in packages:
+            # Get the vcswatch_data from the whole vcswatch_datas
+            vcswatch_data = vcswatch_datas[package.name]
+
+            # Get the old action item for this warning, if it exists.
+            action_item = action_items.get(package.name, None)
+            package_info = package_infos.get(package.name, None)
+
+            # Updates the :class:`ActionItem`. If _continue is None,
+            # then there is nothing more to do with this package.
+            # If it is False, then no update is pending for the
+            # :class:`ActionItem`, else there is an update
+            # to do.
+            _ai_continue = self.update_action_item(
+                package,
+                vcswatch_data,
+                action_item,
+                todo)
+
+            if _ai_continue is None:
+                continue
+
+            _pi_continue = self.update_package_info(
+                package,
+                vcswatch_data,
+                package_info,
+                todo)
+
+            if not _ai_continue and not _pi_continue:
+                continue
+
+        return todo
+
+    def execute(self):
+        # Get the actual vcswatch json file from qa.debian.org
+        vcs_data = self.get_vcswatch_data()
+
+        # Only fetch the packages that are in the json dict.
+        packages = PackageName.objects.filter(name__in=vcs_data.keys())
+
+        # Faster than fetching the action items one by one in a loop
+        # when handling each package.
+        packages.prefetch_related('action_items')
+
+        # Determine wether something is to be kept or dropped.
+        todo = self.update_packages_item(packages, vcs_data)
+
+        with transaction.atomic():
+            # Delete the :class:`ActionItem` that are osbolete, and also
+            # the :class:`PackageExtractedInfo` of the same.
+            ActionItem.objects.delete_obsolete_items(
+                [self.vcswatch_ai_type],
+                vcs_data.keys())
+            PackageExtractedInfo.objects.filter(
+                key='vcs',
+                id__in=[
+                    package_info.id
+                    for package_info in todo['drop']['package_infos']
+                ]
+            ).delete()
+
+            # Then delete the :class:`ActionItem` that are to be deleted.
+            ActionItem.objects.filter(
+                item_type__type_name=self.vcswatch_ai_type.type_name,
+                id__in=[
+                    action_item.id
+                    for action_item in todo['drop']['action_items']
+                ]
+            ).delete()
+
+            # Then bulk_create the :class:`ActionItem` to add and the
+            # :class:`PackageExtractedInfo`
+            ActionItem.objects.bulk_create(todo['add']['action_items'])
+            PackageExtractedInfo.objects.bulk_create(
+                todo['add']['package_infos']
+            )
+
+            # Update existing entries
+            for action_item in todo['update']['action_items']:
+                action_item.save()
+            for package_info in todo['update']['package_infos']:
+                package_info.save()
