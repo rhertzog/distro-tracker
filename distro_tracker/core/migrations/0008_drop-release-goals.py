@@ -10,7 +10,7 @@ def drop_release_goals(apps, schema_editor):
     ActionItemType = apps.get_model('core', 'ActionItemType')
     db_alias = schema_editor.connection.alias
     ActionItemType.objects.using(db_alias).filter(
-		type_name='debian-release-goals-bugs').delete()
+        type_name='debian-release-goals-bugs').delete()
 
 
 class Migration(migrations.Migration):
