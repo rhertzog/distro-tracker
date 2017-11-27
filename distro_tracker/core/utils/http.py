@@ -21,6 +21,8 @@ import json
 from requests.structures import CaseInsensitiveDict
 import requests
 
+from .compression import guess_compression_method, get_uncompressed_stream
+
 
 def parse_cache_control_header(header):
     """
@@ -87,15 +89,28 @@ class HttpCache(object):
         # If there is no cache freshness date consider the item expired
         return True
 
-    def get_content(self, url):
+    def get_content(self, url, compression="auto"):
         """
         Returns the content of the cached response for the given URL.
 
+        If the file is compressed, then uncompress it, else, consider it
+        as plain file.
+
+        :param compression: Specifies the compression method used to generate
+            the resource, and thus the compression method one should use to
+            decompress it.
+        :type compression: str
+
         :rtype: :class:`bytes`
+
         """
         if url in self:
-            with open(self._content_cache_file_path(url), 'rb') as content_file:
-                return content_file.read()
+            if compression == "auto":
+                compression = guess_compression_method(url)
+
+            with open(self._content_cache_file_path(url), 'rb') as temp_file:
+                with get_uncompressed_stream(temp_file, compression) as f:
+                    return f.read()
 
     def get_headers(self, url):
         """
@@ -169,7 +184,7 @@ class HttpCache(object):
         return md5(url.encode('utf-8')).hexdigest()
 
 
-def get_resource_content(url, cache=None):
+def get_resource_content(url, cache=None, compression="auto"):
     """
     A helper function which returns the content of the resource found at the
     given URL.
@@ -187,6 +202,10 @@ def get_resource_content(url, cache=None):
         ``DISTRO_TRACKER_CACHE_DIRECTORY`` cache directory
         is used.
     :type cache: :class:`HttpCache` or an object with an equivalent interface
+    :param compression: Specifies the compression method used to generate the
+        resource, and thus the compression method one should use to decompress
+        it. If auto, then guess it from the url file extension.
+    :type compression: str
 
     :returns: The bytes representation of the resource found at the given url
     :rtype: bytes
@@ -198,6 +217,6 @@ def get_resource_content(url, cache=None):
     try:
         if cache.is_expired(url):
             cache.update(url)
-        return cache.get_content(url)
+        return cache.get_content(url, compression=compression)
     except:
         pass

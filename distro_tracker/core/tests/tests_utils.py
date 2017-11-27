@@ -1057,7 +1057,39 @@ class HttpCacheTest(SimpleTestCase):
             headers={'Cache-Control': 'no-cache'})
         self.assertTrue(updated)
 
-    def test_get_resource_content_utlity_function_cached(self):
+    @mock.patch('distro_tracker.core.utils.http.requests')
+    def test_get_content_detects_compression(self, mock_requests):
+        """
+        Ensures cache.get_content() detects compression out of the
+        file extension embedded in the URL.
+        """
+        self.set_mock_response(mock_requests)
+        mock_requests.get().content = (
+            b"\x1f\x8b\x08\x08\xca\xaa\x14Z\x00\x03helloworld\x00\xf3H"
+            b"\xcd\xc9\xc9W(\xcf/\xcaIQ\x04\x00\x95\x19\x85\x1b\x0c\x00"
+            b"\x00\x00"
+        )
+        cache = HttpCache(self.cache_directory)
+        url = "http://example.com/foo.gz"
+        cache.update(url)
+        content = cache.get_content(url)
+        self.assertEqual(content, b"Hello world!")
+
+    @mock.patch('distro_tracker.core.utils.http.requests')
+    def test_get_content_with_compression_parameter(self, mock_requests):
+        """
+        Ensures the compression parameter passed to cache.get_content()
+        is used and overrides whatever can be detected in the URL.
+        """
+        self.response_content = b"Hello world!"
+        self.set_mock_response(mock_requests)
+        cache = HttpCache(self.cache_directory)
+        url = "http://example.com/foo.gz"
+        cache.update(url)
+        content = cache.get_content(url, compression=None)
+        self.assertEqual(content, b"Hello world!")
+
+    def test_get_resource_content_utility_function_cached(self):
         """
         Tests the :func:`distro_tracker.core.utils.http.get_resource_content`
         utility function when the resource is cached in the given cache
@@ -1069,7 +1101,7 @@ class HttpCacheTest(SimpleTestCase):
         mock_cache.get_content.return_value = expected_content
         url = 'http://some.url.com'
 
-        content = get_resource_content(url, mock_cache)
+        content = get_resource_content(url, cache=mock_cache)
 
         # The expected content is retrieved
         self.assertEqual(content, expected_content)
