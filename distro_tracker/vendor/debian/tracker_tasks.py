@@ -1441,7 +1441,7 @@ class UpdateSecurityIssuesTask(BaseTask):
             # Delete obsolete data
             PackageExtractedInfo.objects.filter(
                 key='debian-security').exclude(
-                package__name__in=content.keys()).delete()
+                    package__name__in=content.keys()).delete()
             ActionItem.objects.filter(
                 item_type__type_name__startswith='debian-security-issue-in-'
             ).exclude(package__name__in=content.keys()).delete()
