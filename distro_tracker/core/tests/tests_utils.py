@@ -36,6 +36,8 @@ from distro_tracker.core.utils import now
 from distro_tracker.core.utils import SpaceDelimitedTextField
 from distro_tracker.core.utils import PrettyPrintList
 from distro_tracker.core.utils import verify_signature
+from distro_tracker.core.utils.compression import uncompress_content
+from distro_tracker.core.utils.compression import guess_compression_method
 from distro_tracker.core.utils.packages import AptCache
 from distro_tracker.core.utils.packages import extract_vcs_information
 from distro_tracker.core.utils.packages import extract_dsc_file_name
@@ -1537,3 +1539,98 @@ class UtilsTests(TestCase):
     def test_now(self):
         """Ensure distro_tracker.core.utils.now() exists"""
         self.assertIsInstance(now(), datetime.datetime)
+
+
+class CompressionTests(TestCase):
+    def setUp(self):
+        # Set up a cache directory to use in the tests
+        _handler, self.temporary_bzip2_file = tempfile.mkstemp(suffix='.bz2')
+        os.write(
+            _handler,
+            (
+                b'BZh91AY&SY\x03X\xf5w\x00\x00\x01\x15\x80`\x00\x00@\x06\x04'
+                b'\x90\x80 \x001\x06LA\x03L"\xe0\x8bb\xa3\x9e.\xe4\x8ap\xa1 '
+                b'\x06\xb1\xea\xee'
+            ),
+        )
+        os.close(_handler)
+        _handler, self.temporary_gzip_file = tempfile.mkstemp(suffix='.gz')
+        os.write(
+            _handler,
+            (
+                b"\x1f\x8b\x08\x08\xca\xaa\x14Z\x00\x03helloworld\x00\xf3H"
+                b"\xcd\xc9\xc9W(\xcf/\xcaIQ\x04\x00\x95\x19\x85\x1b\x0c\x00"
+                b"\x00\x00"
+            ),
+        )
+        os.close(_handler)
+        _handler, self.temporary_xz_file = tempfile.mkstemp(suffix='.xz')
+        os.write(
+            _handler,
+            (
+                b"\xfd7zXZ\x00\x00\x04\xe6\xd6\xb4F\x02\x00!\x01\x16\x00\x00"
+                b"\x00t/\xe5\xa3\x01\x00\x0bHello world!\x00\nc\xd6\xf3\xf6"
+                b"\x80[\xd3\x00\x01$\x0c\xa6\x18\xd8\xd8\x1f\xb6\xf3}\x01\x00"
+                b"\x00\x00\x00\x04YZ"
+            ),
+        )
+        os.close(_handler)
+        _handler, self.temporary_plain_file = tempfile.mkstemp()
+        os.write(_handler, b"Hello world!")
+        os.close(_handler)
+
+    def tearDown(self):
+        os.unlink(self.temporary_bzip2_file)
+        os.unlink(self.temporary_gzip_file)
+        os.unlink(self.temporary_xz_file)
+        os.unlink(self.temporary_plain_file)
+
+    def get_uncompressed_text(self, file_path, compression):
+        """Calls to the uncompress function and does the redundant jobs for
+        each subtest"""
+
+        handler = open(file_path, 'rb')
+        handler = uncompress_content(handler, compression)
+        return handler.read().decode('ascii')
+
+    def test_bzip2_file(self):
+        """Tests the decompression of a bzip2 file"""
+        output = self.get_uncompressed_text(
+            self.temporary_bzip2_file, compression="bzip2")
+        self.assertEqual(output, "Hello world!")
+
+    def test_gzip_file(self):
+        """Tests the decompression of a gzip file"""
+        output = self.get_uncompressed_text(
+            self.temporary_gzip_file, compression="gzip")
+        self.assertEqual(output, "Hello world!")
+
+    def test_xz_file(self):
+        """Tests the decompression of a lzma-xz file"""
+        output = self.get_uncompressed_text(
+            self.temporary_xz_file, compression="xzip")
+        self.assertEqual(output, "Hello world!")
+
+    def test_no_compression_file(self):
+        """Tests if a plain file is correctly decompressed."""
+        output = self.get_uncompressed_text(
+            self.temporary_plain_file, compression="plain")
+        self.assertEqual(output, "Hello world!")
+
+    def test_compression_guess(self):
+        """As the compression is given explicitely in the previous tests
+        because tempfiles have no extension, this test checks if the
+        guess_compression_method function in compression utils works fine.
+
+        """
+
+        for (ext, method) in [
+                ("gz", "gzip"),
+                ("bz2", "bzip2"),
+                ("xz", "xzip"),
+                ("txt", "plain"),
+        ]:
+            filename = "%s.%s" % ("test", ext)
+            self.assertEqual(
+                guess_compression_method(filename),
+                method)
