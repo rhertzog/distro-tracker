@@ -302,7 +302,7 @@ class PackageName(models.Model):
             setattr(self, self.__class__.objects.type, False)
             self.save()
         else:
-            super(self, PackageName).delete(*args, **kwargs)
+            super(PackageName, self).delete(*args, **kwargs)
 
     def save(self, *args, **kwargs):
         if not re.match('[0-9a-z][-+.0-9a-z]+$', self.name):
