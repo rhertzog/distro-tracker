@@ -13,7 +13,6 @@ Defines models specific for the :py:mod:`distro_tracker.mail` app.
 from __future__ import unicode_literals
 from django.db import models
 from django.conf import settings
-from django.utils.encoding import python_2_unicode_compatible
 from django_email_accounts.models import UserEmailManager
 from distro_tracker.core.models import UserEmail
 from distro_tracker.core.models import Confirmation, ConfirmationManager
@@ -38,7 +37,6 @@ class CommandConfirmationManager(ConfirmationManager):
         })
 
 
-@python_2_unicode_compatible
 class CommandConfirmation(Confirmation):
     """
     A model representing pending confirmations for email interface commands.
@@ -156,7 +154,6 @@ class UserEmailBounceStats(UserEmail):
         return count == days
 
 
-@python_2_unicode_compatible
 class BounceStats(models.Model):
     """
     A model representing a user's bounce statistics.

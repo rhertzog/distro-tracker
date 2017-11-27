@@ -25,7 +25,6 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.utils import IntegrityError
 from django.utils import timezone
-from django.utils.encoding import python_2_unicode_compatible
 from django.utils.encoding import force_text
 from django.utils.html import escape
 from django.utils.functional import cached_property
@@ -50,7 +49,6 @@ DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS = \
     settings.DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS
 
 
-@python_2_unicode_compatible
 class Keyword(models.Model):
     """
     Describes a keyword which can be used to tag package messages.
@@ -63,7 +61,6 @@ class Keyword(models.Model):
         return self.name
 
 
-@python_2_unicode_compatible
 class EmailSettings(models.Model):
     """
     Settings for an email
@@ -228,7 +225,6 @@ class PackageManager(models.Manager):
         return self.get(name=package_name)
 
 
-@python_2_unicode_compatible
 class PackageName(models.Model):
     """
     A model describing package names.
@@ -644,7 +640,6 @@ class SubscriptionManager(models.Manager):
         return actives
 
 
-@python_2_unicode_compatible
 class Subscription(models.Model):
     """
     A model describing a subscription of a single :class:`EmailSettings` to a
@@ -719,7 +714,6 @@ class Subscription(models.Model):
         return str(self.email_settings.user_email) + ' ' + str(self.package)
 
 
-@python_2_unicode_compatible
 class Architecture(models.Model):
     """
     A model describing a single architecture.
@@ -747,7 +741,6 @@ class RepositoryManager(models.Manager):
         return self.filter(default=True)
 
 
-@python_2_unicode_compatible
 class Repository(models.Model):
     """
     A model describing Debian repositories.
@@ -1044,7 +1037,6 @@ class RepositoryRelation(models.Model):
         unique_together = ('repository', 'name')
 
 
-@python_2_unicode_compatible
 class ContributorName(models.Model):
     """
     Represents a contributor.
@@ -1080,7 +1072,6 @@ class ContributorName(models.Model):
         }
 
 
-@python_2_unicode_compatible
 class SourcePackage(models.Model):
     """
     A model representing a single Debian source package.
@@ -1211,7 +1202,6 @@ class SourcePackage(models.Model):
                     setattr(self, key, value)
 
 
-@python_2_unicode_compatible
 class BinaryPackage(models.Model):
     """
     The method represents a particular binary package.
@@ -1263,7 +1253,6 @@ class BinaryPackageRepositoryEntryManager(models.Manager):
         return self.filter(binary_package__binary_package_name__name__in=names)
 
 
-@python_2_unicode_compatible
 class BinaryPackageRepositoryEntry(models.Model):
     """
     A model representing repository specific information for a given binary
@@ -1319,7 +1308,6 @@ class SourcePackageRepositoryEntryManager(models.Manager):
         return self.filter(source_package__source_package_name__name__in=names)
 
 
-@python_2_unicode_compatible
 class SourcePackageRepositoryEntry(models.Model):
     """
     A model representing source package data that is repository specific.
@@ -1402,7 +1390,6 @@ def _extracted_source_file_upload_path(instance, filename):
     ))
 
 
-@python_2_unicode_compatible
 class ExtractedSourceFile(models.Model):
     """
     Model representing a single file extracted from a source package archive.
@@ -1424,7 +1411,6 @@ class ExtractedSourceFile(models.Model):
             extracted_file=self.extracted_file, package=self.source_package)
 
 
-@python_2_unicode_compatible
 class PackageExtractedInfo(models.Model):
     """
     A model representing a quasi key-value store for package information
@@ -1477,7 +1463,6 @@ def validate_archive_url_template(value):
             "The archive URL template must have a {user} parameter")
 
 
-@python_2_unicode_compatible
 class MailingList(models.Model):
     """
     Describes a known mailing list.
@@ -1536,7 +1521,6 @@ class MailingList(models.Model):
         return self.archive_url(user)
 
 
-@python_2_unicode_compatible
 class RunningJob(models.Model):
     """
     A model used to serialize a running job state, i.e. instances of the
@@ -1595,7 +1579,6 @@ def news_upload_path(instance, filename):
     ))
 
 
-@python_2_unicode_compatible
 class News(models.Model):
     """
     A model used to describe a news item regarding a package.
@@ -1883,7 +1866,6 @@ class EmailNewsRenderer(NewsRenderer):
         }
 
 
-@python_2_unicode_compatible
 class PackageBugStats(models.Model):
     """
     Model for bug statistics of source and pseudo packages (packages modelled
@@ -1898,7 +1880,6 @@ class PackageBugStats(models.Model):
             package=self.package, stats=self.stats)
 
 
-@python_2_unicode_compatible
 class BinaryPackageBugStats(models.Model):
     """
     Model for bug statistics of binary packages (:class:`BinaryPackageName`).
@@ -1946,7 +1927,6 @@ class ActionItemTypeManager(models.Manager):
         return item_type
 
 
-@python_2_unicode_compatible
 class ActionItemType(models.Model):
     type_name = models.TextField(max_length=100, unique=True)
     full_description_template = models.CharField(
@@ -1983,7 +1963,6 @@ class ActionItemManager(models.Manager):
         qs.delete()
 
 
-@python_2_unicode_compatible
 class ActionItem(models.Model):
     """
     Model for entries of the "action needed" panel.
@@ -2133,7 +2112,6 @@ class ConfirmationManager(models.Manager):
         return instance if not instance.is_expired() else None
 
 
-@python_2_unicode_compatible
 class Confirmation(models.Model):
     """
     An abstract model allowing its subclasses to store and create confirmation
@@ -2159,7 +2137,6 @@ class Confirmation(models.Model):
         return delta.days >= DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS
 
 
-@python_2_unicode_compatible
 class SourcePackageDeps(models.Model):
     source = models.ForeignKey(SourcePackageName,
                                related_name='source_dependencies',
@@ -2199,7 +2176,6 @@ class TeamManager(models.Manager):
         return self.create(**kwargs)
 
 
-@python_2_unicode_compatible
 class Team(models.Model):
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(
@@ -2288,7 +2264,6 @@ class Team(models.Model):
         )
 
 
-@python_2_unicode_compatible
 class TeamMembership(models.Model):
     """
     Represents the intermediary model for the many-to-many association of
@@ -2434,7 +2409,6 @@ class TeamMembership(models.Model):
         return email_settings.default_keywords.all()
 
 
-@python_2_unicode_compatible
 class MembershipPackageSpecifics(models.Model):
     """
     Represents a model for keeping information regarding a pair of
@@ -2464,7 +2438,6 @@ class MembershipPackageSpecifics(models.Model):
         self.save()
 
 
-@python_2_unicode_compatible
 class MembershipConfirmation(Confirmation):
     membership = models.ForeignKey(TeamMembership, on_delete=models.CASCADE)
 

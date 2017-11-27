@@ -16,7 +16,6 @@ Debian-specific models.
 
 from __future__ import unicode_literals
 from django.db import models
-from django.utils.encoding import python_2_unicode_compatible
 
 from distro_tracker.core.utils import SpaceDelimitedTextField
 from distro_tracker.core.utils import get_or_none
@@ -27,7 +26,6 @@ from jsonfield import JSONField
 import re
 
 
-@python_2_unicode_compatible
 class DebianContributor(models.Model):
     """
     Model containing additional Debian-specific information about contributors.
@@ -42,7 +40,6 @@ class DebianContributor(models.Model):
         return 'Debian contributor <{email}>'.format(email=self.email)
 
 
-@python_2_unicode_compatible
 class LintianStats(models.Model):
     """
     Model for lintian stats of packages.
@@ -90,7 +87,6 @@ class LintianStats(models.Model):
         )
 
 
-@python_2_unicode_compatible
 class PackageTransition(models.Model):
     package = models.ForeignKey(PackageName, related_name='package_transitions',
                                 on_delete=models.CASCADE)
@@ -103,7 +99,6 @@ class PackageTransition(models.Model):
             name=self.transition_name, status=self.status, pkg=self.package)
 
 
-@python_2_unicode_compatible
 class PackageExcuses(models.Model):
     package = models.OneToOneField(PackageName, related_name='excuses',
                                    on_delete=models.CASCADE)
@@ -113,7 +108,6 @@ class PackageExcuses(models.Model):
         return "Excuses for the package {pkg}".format(pkg=self.package)
 
 
-@python_2_unicode_compatible
 class BuildLogCheckStats(models.Model):
     package = models.OneToOneField(
         SourcePackageName,
@@ -125,7 +119,6 @@ class BuildLogCheckStats(models.Model):
         return "Build logcheck stats for {pkg}".format(pkg=self.package)
 
 
-@python_2_unicode_compatible
 class UbuntuPackage(models.Model):
     package = models.OneToOneField(
         PackageName,

@@ -10,7 +10,6 @@
 from __future__ import unicode_literals
 from django.db import models
 from django.conf import settings
-from django.utils.encoding import python_2_unicode_compatible
 from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.auth.models import BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
@@ -92,7 +91,6 @@ class ConfirmationManager(models.Manager):
         return instance if not instance.is_expired() else None
 
 
-@python_2_unicode_compatible
 class Confirmation(models.Model):
     """
     An abstract model allowing its subclasses to store and create confirmation
@@ -198,7 +196,6 @@ class UserEmailManager(models.Manager):
         return UserEmail.default_manager.get_or_create(*args, **kwargs)
 
 
-@python_2_unicode_compatible
 class UserEmail(models.Model):
     email = models.EmailField(max_length=244, unique=True)
     user = models.ForeignKey(User, related_name='emails', null=True,
