@@ -13,7 +13,6 @@
 """
 Tests for the Distro Tracker core utils.
 """
-from __future__ import unicode_literals
 import datetime
 from email import encoders
 from email.header import Header

@@ -8,7 +8,6 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """Implements core data retrieval from various external resources."""
-from __future__ import unicode_literals
 from distro_tracker import vendor
 from distro_tracker.core.models import PseudoPackageName, PackageName
 from distro_tracker.core.models import Repository

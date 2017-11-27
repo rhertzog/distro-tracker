@@ -8,7 +8,6 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """Views for the :mod:`distro_tracker.accounts` app."""
-from __future__ import unicode_literals
 from django.views.generic.base import View
 from django.urls import reverse_lazy
 from django.shortcuts import get_object_or_404

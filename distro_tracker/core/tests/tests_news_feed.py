@@ -13,7 +13,6 @@
 """
 Tests for the :mod:`distro_tracker.core.news_feed` module.
 """
-from __future__ import unicode_literals
 
 from datetime import datetime
 

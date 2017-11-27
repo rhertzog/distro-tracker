@@ -11,7 +11,6 @@
 """
 Module including some utility functions and classes for manipulating email.
 """
-from __future__ import unicode_literals
 from django.core.mail import EmailMessage
 from django.utils.encoding import force_bytes
 from email.mime.base import MIMEBase

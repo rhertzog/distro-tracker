@@ -7,7 +7,6 @@
 # distribution and at https://deb.li/DTLicense. No part of Distro Tracker,
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
-from __future__ import unicode_literals
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 from django.core.files.base import ContentFile

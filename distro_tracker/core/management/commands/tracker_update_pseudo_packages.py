@@ -8,7 +8,6 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """Implements a command to update available pseudo packages."""
-from __future__ import unicode_literals
 from django.core.management.base import BaseCommand
 from distro_tracker.core.models import PseudoPackageName
 from distro_tracker.core.retrieve_data import update_pseudo_package_list

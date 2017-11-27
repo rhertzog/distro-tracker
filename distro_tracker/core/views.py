@@ -8,7 +8,6 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """Views for the :mod:`distro_tracker.core` app."""
-from __future__ import unicode_literals
 import importlib
 from django.conf import settings
 from django.db.models import Q

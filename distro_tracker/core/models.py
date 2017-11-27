@@ -8,7 +8,6 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """Models for the :mod:`distro_tracker.core` app."""
-from __future__ import unicode_literals
 from email.utils import getaddresses
 from email.utils import parseaddr
 from email.iterators import typed_subpart_iterator

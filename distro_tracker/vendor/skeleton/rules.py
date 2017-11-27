@@ -10,7 +10,6 @@
 """
 A skeleton of all vendor-specific function that can be implemented.
 """
-from __future__ import unicode_literals
 
 
 def classify_message(msg, package=None, keyword=None):

@@ -10,7 +10,6 @@
 """
 Implements all commands which deal with teams.
 """
-from __future__ import unicode_literals
 
 from distro_tracker.mail.control.commands.base import Command
 from distro_tracker.mail.control.commands.confirmation import needs_confirmation

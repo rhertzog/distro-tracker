@@ -9,7 +9,6 @@
 # except according to the terms contained in the LICENSE file.
 """Implements the RSS news feed."""
 
-from __future__ import unicode_literals
 from django.conf import settings
 from django.http import Http404
 from django.contrib.syndication.views import Feed

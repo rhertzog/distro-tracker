@@ -11,7 +11,6 @@
 Settings for the admin panel for the models defined in the
 :mod:`distro_tracker.core` app.
 """
-from __future__ import unicode_literals
 from django.contrib import admin
 from django import forms
 from .models import Repository

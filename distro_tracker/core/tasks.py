@@ -13,7 +13,6 @@ Implements a framework for implementing interdependent tasks.
 It provides a way to run all tasks dependent on the original task
 automatically.
 """
-from __future__ import unicode_literals
 from distro_tracker.core.utils.plugins import PluginRegistry
 from distro_tracker.core.utils.datastructures import DAG
 from distro_tracker.core.models import RunningJob

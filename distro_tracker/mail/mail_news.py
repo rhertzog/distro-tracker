@@ -11,7 +11,6 @@
 Module implementing the processing of received emails which could be turned
 into news items.
 """
-from __future__ import unicode_literals
 from django.utils.html import escape
 from distro_tracker.core.utils import message_from_bytes
 from distro_tracker.core.utils import get_or_none

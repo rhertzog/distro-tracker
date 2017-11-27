@@ -13,7 +13,6 @@
 """
 Tests for the Distro Tracker core views.
 """
-from __future__ import unicode_literals
 from distro_tracker.test import TestCase, TemplateTestsMixin
 from distro_tracker.core.models import BinaryPackage, BinaryPackageName
 from distro_tracker.core.models import SourcePackageName, SourcePackage

@@ -14,7 +14,6 @@
 Tests for Kali-specific modules/functionality of Distro Tracker.
 """
 
-from __future__ import unicode_literals
 
 import email.message
 

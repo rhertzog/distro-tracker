@@ -10,7 +10,6 @@
 """
 Implementation of miscellaneous commands.
 """
-from __future__ import unicode_literals
 
 from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.utils import distro_tracker_render_to_string

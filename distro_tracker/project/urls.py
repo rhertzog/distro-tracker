@@ -9,7 +9,6 @@
 # except according to the terms contained in the LICENSE file.
 """The URL routes for the Distro Tracker project."""
 
-from __future__ import unicode_literals
 
 import importlib
 

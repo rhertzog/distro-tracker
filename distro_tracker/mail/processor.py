@@ -10,7 +10,6 @@
 """
 Module implementing the processing of incoming email messages.
 """
-from __future__ import unicode_literals
 import asyncore
 from datetime import timedelta
 import email

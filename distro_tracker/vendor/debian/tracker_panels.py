@@ -10,7 +10,6 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 
-from __future__ import unicode_literals
 
 from django.urls import reverse
 from django.utils.encoding import force_text

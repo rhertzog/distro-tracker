@@ -12,7 +12,6 @@
 """
 Tests for :mod:`distro_tracker.mail.processor`.
 """
-from __future__ import unicode_literals
 from email.message import Message
 from datetime import datetime
 from datetime import timedelta

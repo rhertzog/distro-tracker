@@ -24,7 +24,6 @@ It is implemented following the recommendations laid out in
 >>> map(str, decode('itny-out-node42+21ann=old.example.com@domain.com'))
 ['itny-out@domain.com', 'node42!ann@old.example.com']
 """
-from __future__ import unicode_literals
 
 __all__ = ('encode', 'decode')
 

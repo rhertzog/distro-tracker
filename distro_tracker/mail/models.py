@@ -10,7 +10,6 @@
 """
 Defines models specific for the :py:mod:`distro_tracker.mail` app.
 """
-from __future__ import unicode_literals
 from django.db import models
 from django.conf import settings
 from django_email_accounts.models import UserEmailManager

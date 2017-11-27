@@ -10,7 +10,6 @@
 """
 Implements a command to perform various database fixups.
 """
-from __future__ import unicode_literals
 
 from django.db.models import Count
 from django.db.models.functions import Lower

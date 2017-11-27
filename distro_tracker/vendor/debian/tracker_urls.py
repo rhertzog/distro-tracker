@@ -8,7 +8,6 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """The URL routes for the vendor.debian app."""
-from __future__ import unicode_literals
 
 from django.conf.urls import url
 

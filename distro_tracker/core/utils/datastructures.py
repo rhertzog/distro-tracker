@@ -8,7 +8,6 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """Utility data structures for Distro Tracker."""
-from __future__ import unicode_literals
 from collections import deque
 from copy import deepcopy
 

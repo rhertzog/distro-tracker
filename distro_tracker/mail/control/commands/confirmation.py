@@ -11,7 +11,6 @@
 Implements classes and functions related to commands which require confirmation
 and confirming such commands.
 """
-from __future__ import unicode_literals
 
 from distro_tracker.core.utils import get_or_none
 from distro_tracker.mail.models import CommandConfirmation

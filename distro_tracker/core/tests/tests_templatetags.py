@@ -13,7 +13,6 @@
 """
 Tests for the Distro Tracker template tags.
 """
-from __future__ import unicode_literals
 
 from bs4 import BeautifulSoup as soup
 from django.template import Template, Context

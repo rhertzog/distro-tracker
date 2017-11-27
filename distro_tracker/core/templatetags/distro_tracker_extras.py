@@ -8,7 +8,6 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """Additional distro-tracker specific template tags."""
-from __future__ import unicode_literals
 
 from django import template
 from django.template.loader import render_to_string

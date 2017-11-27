@@ -8,7 +8,6 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """Various utilities for the distro-tracker project."""
-from __future__ import unicode_literals
 from django.template.loader import render_to_string
 from django.http import HttpResponse
 from django.db import models

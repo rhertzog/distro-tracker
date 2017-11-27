@@ -10,7 +10,6 @@
 """
 Implements all commands which deal with message keywords.
 """
-from __future__ import unicode_literals
 
 from distro_tracker.mail.control.commands.base import Command
 from distro_tracker.core.models import (

@@ -13,7 +13,6 @@
 """
 Tests for the Distro Tracker core data retrieval.
 """
-from __future__ import unicode_literals
 from distro_tracker.test import TestCase
 from django.test.utils import override_settings
 from unittest import mock

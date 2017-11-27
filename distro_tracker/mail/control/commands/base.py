@@ -11,7 +11,6 @@
 The module defining common functionality and base classes for all email control
 commands.
 """
-from __future__ import unicode_literals
 
 import re
 from django.conf import settings

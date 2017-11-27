@@ -13,7 +13,6 @@
 Tests for the :mod:`distro_tracker.stdver_warnings` app.
 """
 
-from __future__ import unicode_literals
 from distro_tracker.test import TestCase
 from unittest import mock
 from distro_tracker.stdver_warnings.tracker_tasks \

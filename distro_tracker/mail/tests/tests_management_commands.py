@@ -10,7 +10,6 @@
 """
 Tests the management command of the :mod:`distro_tracker.mail` app.
 """
-from __future__ import unicode_literals
 from distro_tracker.test import TestCase
 from distro_tracker.mail.management.commands.tracker_control import (
     Command as ControlCommand)

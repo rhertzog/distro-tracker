@@ -11,7 +11,6 @@
 Implements the Distro Tracker tasks necessary for interesting package source
 files.
 """
-from __future__ import unicode_literals
 from distro_tracker.core.tasks import BaseTask
 from distro_tracker.core.utils.packages import AptCache
 from distro_tracker.core.models import ExtractedSourceFile

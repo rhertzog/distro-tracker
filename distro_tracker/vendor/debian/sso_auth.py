@@ -8,7 +8,6 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 
-from __future__ import unicode_literals
 import json
 from django.contrib.auth.middleware import RemoteUserMiddleware
 from django.contrib.auth.backends import RemoteUserBackend

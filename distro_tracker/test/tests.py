@@ -14,7 +14,6 @@
 Tests for test functionalities of Distro Tracker.
 """
 
-from __future__ import unicode_literals
 from distro_tracker.test import SimpleTestCase, TestCase, TransactionTestCase
 from distro_tracker.test import TempDirsMixin
 from django.conf import settings

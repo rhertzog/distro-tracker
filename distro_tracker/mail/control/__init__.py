@@ -10,7 +10,6 @@
 """
 Module implementing the processing of email control messages.
 """
-from __future__ import unicode_literals
 from email.iterators import typed_subpart_iterator
 
 from django.core.mail import EmailMessage

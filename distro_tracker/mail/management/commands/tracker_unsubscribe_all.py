@@ -10,7 +10,6 @@
 """
 Implements the command which removes all subscriptions for a given email.
 """
-from __future__ import unicode_literals
 from django.core.management.base import BaseCommand, CommandError
 
 from distro_tracker.core.models import UserEmail, EmailSettings

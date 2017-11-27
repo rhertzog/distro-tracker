@@ -13,7 +13,6 @@
 This module contains the tests for the dispatch functionality
 (:py:mod:`distro_tracker.mail.dispatch` module) of distro-tracker.
 """
-from __future__ import unicode_literals
 from email.message import Message
 from datetime import timedelta
 import logging

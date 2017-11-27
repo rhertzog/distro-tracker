@@ -11,7 +11,6 @@
 This Django app implements a custom User authentication model which lets users
 log in using a set of different email addresses.
 """
-from __future__ import unicode_literals
 from django.conf import settings
 import importlib
 

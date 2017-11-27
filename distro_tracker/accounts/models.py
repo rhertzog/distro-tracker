@@ -8,7 +8,6 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """Models for the :mod:`distro_tracker.accounts` app."""
-from __future__ import unicode_literals
 from django_email_accounts.models import User as EmailAccountsUser
 
 # Re-export some objects of django_email_accounts

@@ -11,7 +11,6 @@
 """
 Defines and implements all Distro Tracker control commands.
 """
-from __future__ import unicode_literals
 
 from django.conf import settings
 

@@ -8,7 +8,6 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """Utilities for processing Debian package information."""
-from __future__ import unicode_literals
 from distro_tracker.core.utils.email_messages import (
     name_and_address_from_string as parse_address,
     names_and_addresses_from_string as parse_addresses

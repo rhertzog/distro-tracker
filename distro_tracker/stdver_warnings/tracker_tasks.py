@@ -13,7 +13,6 @@
 Distro Tracker tasks for the :mod:`distro_tracker.stdver_warnings` app.
 """
 
-from __future__ import unicode_literals
 from distro_tracker.core.tasks import BaseTask
 from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.models import SourcePackageName

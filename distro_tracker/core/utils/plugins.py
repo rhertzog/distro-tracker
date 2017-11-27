@@ -8,8 +8,6 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 
-from __future__ import unicode_literals
-
 
 class PluginRegistry(type):
     """

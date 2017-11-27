@@ -11,7 +11,6 @@
 Implements the processing of received package messages in order to dispatch
 them to subscribers.
 """
-from __future__ import unicode_literals
 from copy import deepcopy
 from datetime import datetime
 import logging

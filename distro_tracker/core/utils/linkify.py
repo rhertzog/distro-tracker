@@ -11,7 +11,6 @@
 """
 Module including some utility functions to inject links in plain text.
 """
-from __future__ import unicode_literals
 import re
 
 from django.conf import settings

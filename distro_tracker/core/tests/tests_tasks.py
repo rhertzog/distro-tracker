@@ -13,7 +13,6 @@
 """
 Tests for the Distro Tracker core's tasks framework.
 """
-from __future__ import unicode_literals
 from distro_tracker.test import TestCase
 from unittest import mock
 from distro_tracker.core.models import RunningJob

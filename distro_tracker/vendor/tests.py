@@ -15,7 +15,6 @@ The test suite automatically includes any tests available in a ``tests``
 module of all subpackages.
 """
 
-from __future__ import unicode_literals
 from distro_tracker.test import SimpleTestCase
 from django.test.utils import override_settings
 

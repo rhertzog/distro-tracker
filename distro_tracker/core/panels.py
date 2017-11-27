@@ -8,7 +8,6 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """Implements the core panels shown on package pages."""
-from __future__ import unicode_literals
 from django.conf import settings
 from django.utils.functional import cached_property
 from django.core.exceptions import ObjectDoesNotExist

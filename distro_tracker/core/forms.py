@@ -8,7 +8,6 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """Forms for the :mod:`distro_tracker.core` app."""
-from __future__ import unicode_literals
 from django import forms
 from django.template.defaultfilters import slugify
 from distro_tracker.core.models import Team

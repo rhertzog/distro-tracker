@@ -13,7 +13,6 @@
 Tests for the :mod:`distro_tracker.mail.mail_news` app.
 """
 
-from __future__ import unicode_literals
 from distro_tracker.test import TestCase, SimpleTestCase
 from unittest import mock
 from django.utils.encoding import force_bytes

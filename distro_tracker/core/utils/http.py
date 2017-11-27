@@ -11,7 +11,6 @@
 Utilities for handling HTTP resource access.
 """
 
-from __future__ import unicode_literals
 from hashlib import md5
 from django.utils import timezone
 from django.utils.http import parse_http_date
