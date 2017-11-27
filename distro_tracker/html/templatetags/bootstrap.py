@@ -61,7 +61,7 @@ def bootstrap_inline(element):
 
 
 @register.filter
-def bootstrap_horizontal(element, label_cols={}):
+def bootstrap_horizontal(element, label_cols=None):
     if not label_cols:
         label_cols = 'col-sm-2'
 
