@@ -1254,6 +1254,7 @@ class UpdateSecurityIssuesTask(BaseTask):
         super(UpdateSecurityIssuesTask, self).__init__(*args, **kwargs)
         self._action_item_type = {}
         self.force_update = force_update
+        self._content = None
 
     def action_item_type(self, release):
         return self._action_item_type.setdefault(
@@ -1266,7 +1267,7 @@ class UpdateSecurityIssuesTask(BaseTask):
             self.force_update = parameters['force_update']
 
     def _get_issues_content(self):
-        if hasattr(self, '_content'):
+        if self._content:
             return self._content
         url = 'https://security-tracker.debian.org/tracker/data/json'
         content = get_resource_content(url)
