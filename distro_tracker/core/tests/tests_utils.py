@@ -18,6 +18,7 @@ from email import encoders
 from email.header import Header
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
+import io
 import os
 import time
 import tempfile
@@ -1608,14 +1609,26 @@ class CompressionTests(TestCase):
     def test_xz_file(self):
         """Tests the decompression of a lzma-xz file"""
         output = self.get_uncompressed_text(
-            self.temporary_xz_file, compression="xzip")
+            self.temporary_xz_file, compression="xz")
         self.assertEqual(output, "Hello world!")
 
     def test_no_compression_file(self):
-        """Tests if a plain file is correctly decompressed."""
+        """Tests if a non-compressed file is correctly handled."""
         output = self.get_uncompressed_text(
-            self.temporary_plain_file, compression="plain")
+            self.temporary_plain_file, compression=None)
         self.assertEqual(output, "Hello world!")
+
+    def test_uncompress_with_unnamed_file(self):
+        """Ensure we can deal with file objects that have no name attribute"""
+        data = io.BytesIO(b"Hello world!")
+        output = uncompress_content(data, compression=None).read()
+        self.assertEqual(output, b"Hello world!")
+
+    def test_uncompress_with_unnamed_file_and_no_compression_specified(self):
+        """Ensure we raise an exception when we can't guess the compression"""
+        data = io.BytesIO(b"Hello world!")
+        with self.assertRaises(ValueError):
+            output = uncompress_content(data).read()
 
     def test_compression_guess(self):
         """As the compression is given explicitely in the previous tests
@@ -1627,10 +1640,13 @@ class CompressionTests(TestCase):
         for (ext, method) in [
                 ("gz", "gzip"),
                 ("bz2", "bzip2"),
-                ("xz", "xzip"),
-                ("txt", "plain"),
+                ("xz", "xz"),
+                ("txt", None),
         ]:
             filename = "%s.%s" % ("test", ext)
             self.assertEqual(
                 guess_compression_method(filename),
                 method)
+
+        # Ensure we check for ".gz" and not "gz" only
+        self.assertIsNone(guess_compression_method("bugz"))

@@ -1,4 +1,4 @@
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2018 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -20,20 +20,19 @@ def guess_compression_method(filepath):
     filepath = filepath.lower()
 
     extensions_to_method = {
-        "gz": "gzip",
-        "bz2": "bzip2",
-        "xz": "xzip",
-        "txt": "plain",
+        ".gz": "gzip",
+        ".bz2": "bzip2",
+        ".xz": "xz",
     }
 
     for (ext, method) in extensions_to_method.items():
         if filepath.endswith(ext):
             return method
 
-    return "plain"
+    return None
 
 
-def uncompress_content(file_handle, compression_method="auto"):
+def uncompress_content(file_handle, compression="auto"):
     """Receiving a file_handle, guess if it's compressed and then
     *CLOSES* it. Returns a new uncompressed handle.
 
@@ -44,34 +43,23 @@ def uncompress_content(file_handle, compression_method="auto"):
     """
 
     # A file_handle being provided, let's extract an absolute path.
-    file_path = os.path.abspath(file_handle.name)
-    if compression_method == "auto":
-        # Guess the compression method from file_path
-        compression_method = guess_compression_method(file_path)
-    elif compression_method is None:
-        compression_method = "plain"
-
-    _open = None
-
-    def _open(fobj, mode):
-        """Proxy open function depending on the compression method"""
-        if compression_method == "gzip":
-            import gzip
-            return gzip.open(filename=fobj, mode=mode)
-        elif compression_method == "bzip2":
-            import bz2
-            return bz2.open(filename=fobj, mode=mode)
-        elif compression_method == "xzip":
-            import lzma
-            return lzma.open(filename=fobj, mode=mode)
-        elif compression_method == "plain":
-            return fobj
+    if compression == "auto":
+        if hasattr(file_handle, 'name'):
+            compression = guess_compression_method(file_handle.name)
         else:
-            raise NotImplementedError(
-                (
-                    "The compression method %r is not known or not yet "
-                    "implemented."
-                ) % (compression_method,)
-            )
+            raise ValueError("Can't retrieve a name out of %r" % file_handle)
 
-    return _open(file_handle, "rb")
+    if compression == "gzip":
+        import gzip
+        return gzip.open(filename=file_handle, mode="rb")
+    elif compression == "bzip2":
+        import bz2
+        return bz2.open(filename=file_handle, mode="rb")
+    elif compression == "xz":
+        import lzma
+        return lzma.open(filename=file_handle, mode="rb")
+    elif compression is None:
+        return file_handle
+    else:
+        raise NotImplementedError(
+            "Unknown compression method: %r" % compression)
