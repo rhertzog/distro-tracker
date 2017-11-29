@@ -37,7 +37,7 @@ from distro_tracker.core.utils import now
 from distro_tracker.core.utils import SpaceDelimitedTextField
 from distro_tracker.core.utils import PrettyPrintList
 from distro_tracker.core.utils import verify_signature
-from distro_tracker.core.utils.compression import uncompress_content
+from distro_tracker.core.utils.compression import get_uncompressed_stream
 from distro_tracker.core.utils.compression import guess_compression_method
 from distro_tracker.core.utils.packages import AptCache
 from distro_tracker.core.utils.packages import extract_vcs_information
@@ -1591,7 +1591,7 @@ class CompressionTests(TestCase):
         each subtest"""
 
         handler = open(file_path, 'rb')
-        handler = uncompress_content(handler, compression)
+        handler = get_uncompressed_stream(handler, compression)
         return handler.read().decode('ascii')
 
     def test_bzip2_file(self):
@@ -1621,14 +1621,14 @@ class CompressionTests(TestCase):
     def test_uncompress_with_unnamed_file(self):
         """Ensure we can deal with file objects that have no name attribute"""
         data = io.BytesIO(b"Hello world!")
-        output = uncompress_content(data, compression=None).read()
+        output = get_uncompressed_stream(data, compression=None).read()
         self.assertEqual(output, b"Hello world!")
 
     def test_uncompress_with_unnamed_file_and_no_compression_specified(self):
         """Ensure we raise an exception when we can't guess the compression"""
         data = io.BytesIO(b"Hello world!")
         with self.assertRaises(ValueError):
-            output = uncompress_content(data).read()
+            output = get_uncompressed_stream(data).read()
 
     def test_compression_guess(self):
         """As the compression is given explicitely in the previous tests

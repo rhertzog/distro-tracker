@@ -32,34 +32,35 @@ def guess_compression_method(filepath):
     return None
 
 
-def uncompress_content(file_handle, compression="auto"):
-    """Receiving a file_handle, guess if it's compressed and then
-    *CLOSES* it. Returns a new uncompressed handle.
+def get_uncompressed_stream(input_stream, compression="auto"):
+    """
+    Returns a file-like object (aka stream) providing an uncompressed
+    version of the content read on the input stream provided.
 
-    :param compression: The compression type. If not `auto`, then
-    do not guess the compression and assume it's what referenced.
+    :param input_stream: The file-like object providing compressed data.
+    :param compression: The compression type. Specify "auto" to let the function
+    guess it out of the associated filename (the input_stream needs to have
+    a name attribute, otherwise a ValueError is raised).
     :type compression: str
-
     """
 
-    # A file_handle being provided, let's extract an absolute path.
-    if compression == "auto":
-        if hasattr(file_handle, 'name'):
-            compression = guess_compression_method(file_handle.name)
+    if compression == "auto":  # Try to guess compression method if possible
+        if hasattr(input_stream, 'name'):
+            compression = guess_compression_method(input_stream.name)
         else:
-            raise ValueError("Can't retrieve a name out of %r" % file_handle)
+            raise ValueError("Can't retrieve a name out of %r" % input_stream)
 
     if compression == "gzip":
         import gzip
-        return gzip.open(filename=file_handle, mode="rb")
+        return gzip.open(filename=input_stream, mode="rb")
     elif compression == "bzip2":
         import bz2
-        return bz2.open(filename=file_handle, mode="rb")
+        return bz2.open(filename=input_stream, mode="rb")
     elif compression == "xz":
         import lzma
-        return lzma.open(filename=file_handle, mode="rb")
+        return lzma.open(filename=input_stream, mode="rb")
     elif compression is None:
-        return file_handle
+        return input_stream
     else:
         raise NotImplementedError(
             "Unknown compression method: %r" % compression)
