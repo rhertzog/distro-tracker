@@ -1,4 +1,4 @@
-# Copyright 2018 The Distro Tracker Developers
+# Copyright 2017 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -10,8 +10,6 @@
 """
 Utilities for handling compression
 """
-
-import os
 
 
 def guess_compression_method(filepath):

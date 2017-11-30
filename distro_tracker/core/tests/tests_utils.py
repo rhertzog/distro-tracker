@@ -1590,9 +1590,10 @@ class CompressionTests(TestCase):
         """Calls to the uncompress function and does the redundant jobs for
         each subtest"""
 
-        handler = open(file_path, 'rb')
-        handler = get_uncompressed_stream(handler, compression)
-        return handler.read().decode('ascii')
+        with open(file_path, 'rb') as compressed_stream:
+            with get_uncompressed_stream(compressed_stream,
+                                         compression) as handler:
+                return handler.read().decode('ascii')
 
     def test_bzip2_file(self):
         """Tests the decompression of a bzip2 file"""
@@ -1628,7 +1629,7 @@ class CompressionTests(TestCase):
         """Ensure we raise an exception when we can't guess the compression"""
         data = io.BytesIO(b"Hello world!")
         with self.assertRaises(ValueError):
-            output = get_uncompressed_stream(data).read()
+            get_uncompressed_stream(data)
 
     def test_compression_guess(self):
         """As the compression is given explicitely in the previous tests
