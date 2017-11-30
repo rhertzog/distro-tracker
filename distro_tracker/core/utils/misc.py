@@ -17,11 +17,9 @@ import hashlib
 
 def get_data_checksum(data):
     """Checksums a dict, without its prospective 'checksum' key/value."""
-    to_hash = dict(data)
 
-    # Checksum has to be done without taking the checksum
-    # into account.
-    if 'checksum' in to_hash:
-        to_hash.pop('checksum')
+    to_hash = dict(data)
+    to_hash.pop('checksum', None)
+
     json_dump = json.dumps(to_hash, sort_keys=True)
     return hashlib.md5(json_dump.encode('utf-8', 'ignore')).hexdigest()
