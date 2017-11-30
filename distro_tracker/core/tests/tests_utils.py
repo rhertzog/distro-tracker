@@ -57,6 +57,7 @@ from distro_tracker.core.utils.linkify import LinkifyHttpLinks
 from distro_tracker.core.utils.linkify import LinkifyCVELinks
 from distro_tracker.core.utils.http import HttpCache
 from distro_tracker.core.utils.http import get_resource_content
+from distro_tracker.core.utils.http import get_resource_text
 from distro_tracker.test import TestCase, SimpleTestCase
 from distro_tracker.test.utils import set_mock_response
 from distro_tracker.test.utils import make_temp_directory
@@ -1125,6 +1126,19 @@ class HttpCacheTest(SimpleTestCase):
         self.assertEqual(content, expected_content)
         # The function updated the cache
         mock_cache.update.assert_called_once_with(url)
+
+    @mock.patch('distro_tracker.core.utils.http.get_resource_content')
+    def test_get_resource_text(self, mock_get_resource_content):
+        """
+        Tests the :func:`distro_tracker.core.utils.http.get_resource_text`
+        utility function.
+        """
+        mock_get_resource_content.return_value = b"Some content"
+
+        content = get_resource_text("http://some.url.com/")
+
+        # The expected content is now decoded in a string
+        self.assertEqual(content, "Some content")
 
 
 class VerifySignatureTest(SimpleTestCase):
