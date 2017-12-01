@@ -63,7 +63,11 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         # Make sure the source package name object exists
         src_pkg_name, _ = SourcePackageName.objects.get_or_create(name=name)
         src_pkg, _ = SourcePackage.objects.get_or_create(
-            source_package_name=src_pkg_name, version=version)
+            source_package_name=src_pkg_name,
+            version=version,
+            dsc_file_name='%s_%s.dsc' % (name, version),
+            directory='subdir',
+        )
         # Add all events for a newly created source package which the task will
         # receive.
         if events:
@@ -90,7 +94,8 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         repo, _ = Repository.objects.get_or_create(name=repository, defaults={
             'shorthand': repository[:10],
             'suite': 'suite',
-            'components': ['component']
+            'components': ['component'],
+            'uri': 'http://localhost/debian/',
         })
 
         source_package = SourcePackage.objects.get(
