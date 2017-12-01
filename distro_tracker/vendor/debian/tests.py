@@ -3477,6 +3477,7 @@ class UbuntuPanelTests(TestCase):
         self.assertIn(ubuntu_version, response_content)
 
 
+@mock.patch('distro_tracker.core.utils.http.requests')
 class UpdateWnppStatsTaskTests(TestCase):
 
     """
@@ -3502,7 +3503,7 @@ class UpdateWnppStatsTaskTests(TestCase):
         :param content: A list of (package_name, issues) pairs. ``issues`` is
             a list of dicts describing the WNPP bugs the package has.
         """
-        self.task._get_wnpp_content.return_value = '\n'.join(
+        return '\n'.join(
             '{pkg}: {issues}'.format(
                 pkg=pkg,
                 issues='|'.join(
@@ -3515,19 +3516,20 @@ class UpdateWnppStatsTaskTests(TestCase):
     def run_task(self):
         self.task.execute()
 
-    def test_action_item_created(self):
+    def test_action_item_created(self, mock_requests):
         """
         Tests that an :class:`ActionItem
         <distro_tracker.core.models.ActionItem>` instance is created when the
         package has a WNPP bug.
         """
         wnpp_type, bug_id = 'O', 12345
-        self.set_wnpp_content([(
+        content = self.set_wnpp_content([(
             self.package.name, [{
                 'wnpp_type': wnpp_type,
                 'bug_id': bug_id,
             }]
         )])
+        set_mock_response(mock_requests, text=content)
 
         self.run_task()
 
@@ -3552,19 +3554,20 @@ class UpdateWnppStatsTaskTests(TestCase):
                ' been orphaned and needs a maintainer.</a>')
         self.assertEqual(dsc, item.short_description)
 
-    def test_action_item_created_unknown_type(self):
+    def test_action_item_created_unknown_type(self, mock_requests):
         """
         Tests that an :class:`ActionItem
         <distro_tracker.core.models.ActionItem>` instance is created when the
         package has a WNPP bug of an unknown type.
         """
         wnpp_type, bug_id = 'RFC', 12345
-        self.set_wnpp_content([(
+        content = self.set_wnpp_content([(
             self.package.name, [{
                 'wnpp_type': wnpp_type,
                 'bug_id': bug_id,
             }]
         )])
+        set_mock_response(mock_requests, text=content)
 
         self.run_task()
 
@@ -3589,7 +3592,7 @@ class UpdateWnppStatsTaskTests(TestCase):
                ' contains an entry for this package.</a>')
         self.assertEqual(dsc, item.short_description)
 
-    def test_action_item_updated(self):
+    def test_action_item_updated(self, mock_requests):
         """
         Tests that an existing :class:`ActionItem
         <distro_tracker.core.models.ActionItem>` instance is updated when there
@@ -3609,12 +3612,13 @@ class UpdateWnppStatsTaskTests(TestCase):
         old_timestamp = old_item.last_updated_timestamp
         # Set new WNPP info
         wnpp_type, bug_id = 'O', 12345
-        self.set_wnpp_content([(
+        content = self.set_wnpp_content([(
             self.package.name, [{
                 'wnpp_type': wnpp_type,
                 'bug_id': bug_id,
             }]
         )])
+        set_mock_response(mock_requests, text=content)
 
         self.run_task()
 
@@ -3630,7 +3634,7 @@ class UpdateWnppStatsTaskTests(TestCase):
         }
         self.assertEqual(expected_data, item.extra_data['wnpp_info'])
 
-    def test_action_item_not_updated(self):
+    def test_action_item_not_updated(self, mock_requests):
         """
         Tests that an existing :class:`ActionItem
         <distro_tracker.core.models.ActionItem>` instance is not updated when
@@ -3649,12 +3653,13 @@ class UpdateWnppStatsTaskTests(TestCase):
             })
         old_timestamp = old_item.last_updated_timestamp
         # Set "new" WNPP info
-        self.set_wnpp_content([(
+        content = self.set_wnpp_content([(
             self.package.name, [{
                 'wnpp_type': wnpp_type,
                 'bug_id': bug_id,
             }]
         )])
+        set_mock_response(mock_requests, text=content)
 
         self.run_task()
 
@@ -3664,7 +3669,7 @@ class UpdateWnppStatsTaskTests(TestCase):
         item = ActionItem.objects.all()[0]
         self.assertEqual(old_timestamp, item.last_updated_timestamp)
 
-    def test_action_item_removed(self):
+    def test_action_item_removed(self, mock_requests):
         """
         Tests that an existing :class:`ActionItem
         <distro_tracker.core.models.ActionItem>` instance is removed when there
@@ -3682,6 +3687,7 @@ class UpdateWnppStatsTaskTests(TestCase):
                 },
             })
         # Set "new" WNPP info
+        set_mock_response(mock_requests, text="")
 
         self.run_task()
 
@@ -3689,26 +3695,27 @@ class UpdateWnppStatsTaskTests(TestCase):
         # No more actino items
         self.assertEqual(0, ActionItem.objects.count())
 
-    def test_action_item_not_created(self):
+    def test_action_item_not_created(self, mock_requests):
         """
         Tests that an :class:`ActionItem
         <distro_tracker.core.models.ActionItem>` instance is not created for non
         existing packages.
         """
         wnpp_type, bug_id = 'O', 12345
-        self.set_wnpp_content([(
+        content = self.set_wnpp_content([(
             'no-exist', [{
                 'wnpp_type': wnpp_type,
                 'bug_id': bug_id,
             }]
         )])
+        set_mock_response(mock_requests, text=content)
 
         self.run_task()
 
         # No action items
         self.assertEqual(0, ActionItem.objects.count())
 
-    def test_action_item_multiple_packages(self):
+    def test_action_item_multiple_packages(self, mock_requests):
         """
         Tests that an :class:`ActionItem
         <distro_tracker.core.models.ActionItem>` instance is created for
@@ -3728,10 +3735,11 @@ class UpdateWnppStatsTaskTests(TestCase):
             name='other-package',
             source=True)
         packages = [other_package, self.package]
-        self.set_wnpp_content([
+        content = self.set_wnpp_content([
             (package.name, [wnpp_item])
             for package, wnpp_item in zip(packages, wnpp)
         ])
+        set_mock_response(mock_requests, text=content)
 
         self.run_task()
 

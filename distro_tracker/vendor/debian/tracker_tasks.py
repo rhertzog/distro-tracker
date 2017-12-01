@@ -1759,16 +1759,6 @@ class UpdateWnppStatsTask(BaseTask):
         if 'force_update' in parameters:
             self.force_update = parameters['force_update']
 
-    def _get_wnpp_content(self):
-        url = 'https://qa.debian.org/data/bts/wnpp_rm'
-        cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
-        if not cache.is_expired(url):
-            return
-        response, updated = cache.update(url, force=self.force_update)
-        if not updated:
-            return
-        return response.content
-
     def get_wnpp_stats(self):
         """
         Retrieves and parses the wnpp stats for all packages. WNPP stats
