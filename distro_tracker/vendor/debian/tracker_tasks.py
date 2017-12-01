@@ -34,6 +34,7 @@ from distro_tracker.vendor.debian.models import PackageExcuses
 from distro_tracker.vendor.debian.models import UbuntuPackage
 from distro_tracker.core.utils.http import HttpCache
 from distro_tracker.core.utils.http import get_resource_content
+from distro_tracker.core.utils.http import get_resource_text
 from distro_tracker.core.utils.misc import get_data_checksum
 from distro_tracker.core.utils.packages import package_hashdir
 from .models import DebianContributor
@@ -1775,7 +1776,8 @@ class UpdateWnppStatsTask(BaseTask):
 
         :returns: A dict mapping package names to wnpp stats.
         """
-        content = self._get_wnpp_content()
+        url = 'https://qa.debian.org/data/bts/wnpp_rm'
+        content = get_resource_text(url, only_if_updated=True)
         if content is None:
             return
 
