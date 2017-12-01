@@ -1,4 +1,4 @@
-# Copyright 2013-2016 The Distro Tracker Developers
+# Copyright 2013-2017 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -311,7 +311,7 @@ LOGGING = {
             'backupCount': 52,
         },
         'errors.log': {
-            'level': 'ERROR',
+            'level': 'WARNING',
             'class': 'logging.handlers.TimedRotatingFileHandler',
             'filename': 'errors.log',
             'formatter': 'verbose',

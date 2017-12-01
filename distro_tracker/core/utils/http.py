@@ -223,8 +223,11 @@ def get_resource_content(url, cache=None, compression="auto",
         try:
             _, updated = cache.update(url)
         except:
-            # Ignore network errors
-            pass
+            # Ignore network errors but log them
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning("Failed to update cache with data from %s", url,
+                           exc_info=1)
 
     if not updated and only_if_updated:
         return
