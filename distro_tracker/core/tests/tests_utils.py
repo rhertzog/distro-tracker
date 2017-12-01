@@ -764,24 +764,42 @@ Section: libs
 
 
 class HttpCacheTest(SimpleTestCase):
+    """Tests for the HttpCache utility"""
+
+    #
+    # Tests constructors
+    #
+    def setUp(self):
+        self.cache_directory = tempfile.mkdtemp(suffix='test-cache')
+        self.response_content = 'Simple response'.encode('utf-8')
+        self.url = 'http://some.url.com'
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.cache_directory)
+
+    #
+    # Tests helper functions, to avoid code redundancy
+    #
     def set_mock_response(self, mock_requests, headers=None, status_code=200):
+        """Defines a mock response for the cases where http.requests is
+        patched via mock."""
         set_mock_response(
             mock_requests,
             text=self.response_content.decode('utf-8'),
             headers=headers,
             status_code=status_code)
 
-    def setUp(self):
-        # Set up a cache directory to use in the tests
-        self.cache_directory = tempfile.mkdtemp(suffix='test-cache')
-        # Set up a simple response content
-        self.response_content = 'Simple response'
-        self.response_content = self.response_content.encode('utf-8')
+    def get_mock_of_http_cache(self):
+        """
+        Common setup function for the get_resource function tests
+        to avoid code redundancy.
+        """
+        mock_cache = mock.create_autospec(HttpCache)
+        self.response_content = b"Some content"
+        mock_cache.get_content.return_value = self.response_content
 
-    def tearDown(self):
-        # Remove the test directory
-        import shutil
-        shutil.rmtree(self.cache_directory)
+        return mock_cache
 
     def test_parse_cache_control_header(self):
         """
@@ -1127,6 +1145,66 @@ class HttpCacheTest(SimpleTestCase):
         self.assertEqual(content, expected_content)
         # The function updated the cache
         mock_cache.update.assert_called_once_with(url)
+
+    def test_get_resource_content_with_only_arg_and_cache_expired(self):
+        """
+        Tests the :func:`distro_tracker.core.utils.http.get_resource_content`
+        utility function with the only_if_updated argument and an expired
+        cache.
+        """
+
+        mock_cache = self.get_mock_of_http_cache()
+
+        # Cache expired and update request returns new data
+        mock_cache.is_expired.return_value = True
+        mock_cache.update.return_value = (None, True)
+
+        content = get_resource_content(self.url, cache=mock_cache,
+                                       only_if_updated=True)
+
+        self.assertEqual(content, self.response_content)
+
+        # The function updated the cache
+        mock_cache.update.assert_called_once_with(self.url)
+
+    def test_get_resource_content_with_only_arg_and_cache_not_expired(self):
+        """
+        Tests the :func:`distro_tracker.core.utils.http.get_resource_content`
+        utility function with the only_if_updated argument and a not expired
+        cache.
+        """
+
+        mock_cache = self.get_mock_of_http_cache()
+
+        # The cache is not expired.
+        mock_cache.is_expired.return_value = False
+
+        content = get_resource_content(self.url, cache=mock_cache,
+                                       only_if_updated=True)
+
+        # We have valid data in the cache, no update request has been made
+        self.assertIsNone(content)
+        self.assertFalse(mock_cache.update.called)
+
+    def test_get_resource_content_with_only_arg_cache_expired_no_update(self):
+        """
+        Tests the :func:`distro_tracker.core.utils.http.get_resource_content`
+        utility function with the only_if_updated argument, an expired cache
+        but no real update done.
+        """
+
+        mock_cache = self.get_mock_of_http_cache()
+
+        # Cache expired but the update request does not provide new data
+        mock_cache.is_expired.return_value = True
+        mock_cache.update.return_value = (None, False)
+
+        content = get_resource_content(self.url, mock_cache,
+                                       only_if_updated=True)
+
+        # Nothing returned because the update request resulted in no new data
+        self.assertIsNone(content)
+        mock_cache.update.assert_called_once_with(self.url)
 
     @mock.patch('distro_tracker.core.utils.http.get_resource_content')
     def test_get_resource_text(self, mock_get_resource_content):

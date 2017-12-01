@@ -184,7 +184,8 @@ class HttpCache(object):
         return md5(url.encode('utf-8')).hexdigest()
 
 
-def get_resource_content(url, cache=None, compression="auto"):
+def get_resource_content(url, cache=None, compression="auto",
+                         only_if_updated=False):
     """
     A helper function which returns the content of the resource found at the
     given URL.
@@ -206,6 +207,9 @@ def get_resource_content(url, cache=None, compression="auto"):
         resource, and thus the compression method one should use to decompress
         it. If auto, then guess it from the url file extension.
     :type compression: str
+    :param only_if_updated: if set to `True` returns None when no update is
+        done. Otherwise, returns the content in any case.
+    :type only_if_updated: bool
 
     :returns: The bytes representation of the resource found at the given url
     :rtype: bytes
@@ -214,19 +218,26 @@ def get_resource_content(url, cache=None, compression="auto"):
         cache_directory_path = settings.DISTRO_TRACKER_CACHE_DIRECTORY
         cache = HttpCache(cache_directory_path)
 
-    try:
-        if cache.is_expired(url):
-            cache.update(url)
-        return cache.get_content(url, compression=compression)
-    except:
-        pass
+    updated = False
+    if cache.is_expired(url):
+        try:
+            _, updated = cache.update(url)
+        except:
+            # Ignore network errors
+            pass
+
+    if not updated and only_if_updated:
+        return
+
+    return cache.get_content(url, compression=compression)
 
 
-def get_resource_text(url, cache=None, compression="auto", encoding="utf-8"):
+def get_resource_text(url, cache=None, compression="auto",
+                      only_if_updated=False, encoding="utf-8"):
     """
     Clone of :py:func:`get_resource_content` which transparently decodes
     the downloaded content into text. It supports the same parameters
-    and add the encoding parameter.
+    and adds the encoding parameter.
 
     :param encoding: Specifies an encoding to decode the resource content.
     :type encoding: str
@@ -235,7 +246,8 @@ def get_resource_text(url, cache=None, compression="auto", encoding="utf-8"):
     :rtype: str
     """
 
-    content = get_resource_content(url, cache=cache, compression=compression)
+    content = get_resource_content(url, cache=cache, compression=compression,
+                                   only_if_updated=only_if_updated)
 
     if content is not None:
         return content.decode(encoding)
