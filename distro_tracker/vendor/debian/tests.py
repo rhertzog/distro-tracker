@@ -5092,19 +5092,31 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
         self.assertEqual(info.value['name'], 'dummy')
 
 
-@mock.patch('distro_tracker.core.utils.http.requests')
 class UpdateVcsWatchTaskTest(TestCase):
     """
     Tests for the:class:`distro_tracker.vendor.debian.tracker_tasks.
     UpdateVcsWatchTask` task.
     """
     def setUp(self):
-        self.json_data = """[{
- "commits": "46",
- "package": "dummy",
- "error": null,
- "status": "COMMITS"}]"""
-        self.other_json_data = """[]"""
+        # Patch get_resource_content() to return our vcswatch_data
+        def compute_json(*args, **kwargs):
+            return json.dumps(self.vcswatch_data).encode('utf-8')
+        patcher = mock.patch(
+            'distro_tracker.core.utils.http.get_resource_content')
+        get_resource_content = patcher.start()
+        get_resource_content.side_effect = compute_json
+        self.addCleanup(patcher.stop)
+
+        # Setup default data
+        self.vcswatch_data = [
+            {
+                "commits": 46,
+                "package": "dummy",
+                "error": None,
+                "status": "COMMITS",
+            },
+        ]
+
         self.dummy_package = SourcePackageName.objects.create(name='dummy')
         self.other_dummy_package = SourcePackageName.objects.create(
             name='other-dummy')
@@ -5122,48 +5134,34 @@ class UpdateVcsWatchTaskTest(TestCase):
         )
 
     def run_task(self):
-        """
-        Runs the build reproducibility status update task.
-        """
         task = UpdateVcsWatchTask()
-        # Hijacks the url to avoid messy decompression.
-        task.VCSWATCH_DATA_URL = (
-            'https://qa.debian.org/data/vcswatch/vcswatch.json'
-        )
         task.execute()
 
-    def test_extractedinfo_without_vcswatch(self, mock_requests):
+    def test_extractedinfo_without_vcswatch(self):
         """
-        Tests that packages without vcswatch info don't claim to have
-        them.
+        Tests that packages without vcswatch info don't claim to have them.
         """
-        set_mock_response(mock_requests, text=self.json_data)
-
         self.run_task()
 
         with self.assertRaises(PackageExtractedInfo.DoesNotExist):
             self.other_dummy_package.packageextractedinfo_set.get(key='vcs')
 
-    def test_no_extractedinfo_for_unknown_package(self, mock_requests):
+    def test_no_extractedinfo_for_unknown_package(self):
         """
-        Tests that BuildReproducibilityTask doesn't fail with an unknown
-        package.
+        Tests that the task doesn't fail with an unknown package.
         """
-        set_mock_response(mock_requests, text="[]")
+        self.vcswatch_data[0]['package'] = 'unknown'
 
         self.run_task()
 
-        count = PackageExtractedInfo.objects.filter(
-            key='vcs').count()
+        count = PackageExtractedInfo.objects.filter(key='vcs').count()
         self.assertEqual(0, count)
 
-    def test_extractedinfo_with_vcswatch(self, mock_requests):
+    def test_extractedinfo_with_vcswatch(self):
         """
         Tests that PackageExtractedInfo for a package with vcswatch info
         is correct.
         """
-        set_mock_response(mock_requests, text=self.json_data)
-
         self.run_task()
 
         theoretical_extra_data = {
@@ -5182,8 +5180,7 @@ class UpdateVcsWatchTaskTest(TestCase):
             ),
         }
 
-        info = self.dummy_package.packageextractedinfo_set.get(
-            key='vcs')
+        info = self.dummy_package.packageextractedinfo_set.get(key='vcs')
 
         for key in ['checksum', 'watch_url']:
             self.assertEqual(info.value[key], theoretical_package_info[key])
@@ -5192,22 +5189,17 @@ class UpdateVcsWatchTaskTest(TestCase):
         action_item = action_items.first()
         self.assertEqual(action_item.item_type.type_name,
                          UpdateVcsWatchTask.ACTION_ITEM_TYPE_NAME)
-        for key in ['name', 'status', 'error', 'commits', 'vcswatch_url']:
-            self.assertEqual(
-                action_item.extra_data[key],
-                theoretical_extra_data[key])
+        self.assertDictEqual(action_item.extra_data, theoretical_extra_data)
 
-    def test_extractedinfo_is_updated_if_needed(self, mock_requests):
+    def test_extractedinfo_is_updated_if_needed(self):
         """
         Tests that PackageExtractedInfo is updated if vcswatch_url changes.
         """
-        set_mock_response(mock_requests, text=self.json_data)
         self.run_task()
 
         # Alters the info so that it's not destroyed when we
         # remove vcswatch data.
-        dummy_pi = self.dummy_package.packageextractedinfo_set.get(
-            key='vcs')
+        dummy_pi = self.dummy_package.packageextractedinfo_set.get(key='vcs')
         dummy_pi.value['test_useless_entry'] = True
 
         # No need to change the checksum as we test a case where it's
@@ -5215,16 +5207,17 @@ class UpdateVcsWatchTaskTest(TestCase):
         dummy_pi.save()
 
         # Now it should be good.
-        set_mock_response(mock_requests, text=self.other_json_data)
+        initial_data = self.vcswatch_data
+        self.vcswatch_data = []
+
         self.run_task()
 
         # Normally, no watch_url in the package
-        dummy_pi = self.dummy_package.packageextractedinfo_set.get(
-            key='vcs')
+        dummy_pi = self.dummy_package.packageextractedinfo_set.get(key='vcs')
         self.assertEqual('watch_url' not in dummy_pi.value, True)
 
         # This part will test another part of the code.
-        set_mock_response(mock_requests, text=self.json_data)
+        self.vcswatch_data = initial_data
         self.run_task()
 
         dummy_pi = self.dummy_package.packageextractedinfo_set.get(
@@ -5234,69 +5227,56 @@ class UpdateVcsWatchTaskTest(TestCase):
             dummy_pi['watch_url'],
             'https://qa.debian.org/cgi-bin/vcswatch?package=dummy')
 
-    def test_extractedinfo_is_dropped_when_data_is_gone(self, mock_requests):
+    def test_extractedinfo_is_dropped_when_data_is_gone(self):
         """
         Tests that PackageExtractedInfo is dropped if vcswatch info
         goes away.
         """
-        set_mock_response(mock_requests, text=self.json_data)
         self.run_task()
 
-        set_mock_response(mock_requests, text=self.other_json_data)
+        self.vcswatch_data = []
         self.run_task()
 
         with self.assertRaises(PackageExtractedInfo.DoesNotExist):
             self.dummy_package.packageextractedinfo_set.get(
                 key='vcs')
 
-    def test_action_item_is_dropped_when_status_is_ok(self,
-                                                      mock_requests):
+    def test_action_item_is_dropped_when_status_is_ok(self):
         """
         Ensure the action item is dropped when status switches from
         not "OK" to "OK".
         """
-        set_mock_response(mock_requests, text=self.json_data)
         self.run_task()
         self.assertEqual(self.dummy_package.action_items.count(), 1)
-        json_data = """[{
- "commits": "46",
- "package": "dummy",
- "error": null,
- "status": "OK"}]"""
-        set_mock_response(mock_requests, text=json_data)
+
+        self.vcswatch_data[0]['status'] = 'OK'
         self.run_task()
 
         self.assertEqual(self.dummy_package.action_items.count(), 0)
 
-    def test_action_item_is_updated_when_extra_data_changes(self,
-                                                            mock_requests):
+    def test_action_item_is_updated_when_extra_data_changes(self):
         """
         Ensures that the action item is updated when extra_data changes.
         """
-        set_mock_response(mock_requests, text=self.json_data)
-        self.run_task()
-        self.assertEqual(self.dummy_package.action_items.count(), 1)
-        json_data = """[{
- "commits": "47",
- "package": "dummy",
- "error": null,
- "status": "COMMITS"}]"""
-        set_mock_response(mock_requests, text=json_data)
         self.run_task()
 
         ai = self.dummy_package.action_items.first()
-        extra_data = ai.extra_data
-        self.assertEqual(extra_data['commits'], 47)
+        self.assertEqual(ai.extra_data['commits'], 46)
 
-    def test_other_extractedinfo_keys_not_dropped(self, mock_requests):
+        self.vcswatch_data[0]['commits'] += 1
+        self.run_task()
+
+        ai = self.dummy_package.action_items.first()
+        self.assertEqual(ai.extra_data['commits'], 47)
+
+    def test_other_extractedinfo_keys_not_dropped(self):
         """
         Ensure that other PackageExtractedInfo keys are not dropped when
         deleting the vcs key.
         """
-        set_mock_response(mock_requests, text=self.json_data)
         self.run_task()
 
-        set_mock_response(mock_requests, text=self.other_json_data)
+        self.vcswatch_data = []
         self.run_task()
 
         info = self.dummy_package.packageextractedinfo_set.get(key='general')
