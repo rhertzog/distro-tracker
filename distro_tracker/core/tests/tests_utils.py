@@ -801,6 +801,9 @@ class HttpCacheTest(SimpleTestCase):
 
         return mock_cache
 
+    #
+    # Proper tests - Headers functionalities
+    #
     def test_parse_cache_control_header(self):
         """
         Tests the utility function for parsing a Cache-Control header into a
@@ -978,6 +981,9 @@ class HttpCacheTest(SimpleTestCase):
 
         self.assertTrue(cache.is_expired(url))
 
+    #
+    # Proper tests - Caching behaviour
+    #
     @mock.patch('distro_tracker.core.utils.http.requests')
     def test_cache_remove_url(self, mock_requests):
         """
@@ -994,6 +1000,9 @@ class HttpCacheTest(SimpleTestCase):
 
         self.assertFalse(url in cache)
 
+    #
+    # Proper tests - ETags
+    #
     @mock.patch('distro_tracker.core.utils.http.requests')
     def test_conditional_get_etag(self, mock_requests):
         """
@@ -1077,6 +1086,9 @@ class HttpCacheTest(SimpleTestCase):
             headers={'Cache-Control': 'no-cache'})
         self.assertTrue(updated)
 
+    #
+    # Proper tests - Compression utilities
+    #
     @mock.patch('distro_tracker.core.utils.http.requests')
     def test_get_content_detects_compression(self, mock_requests):
         """
@@ -1115,17 +1127,17 @@ class HttpCacheTest(SimpleTestCase):
         utility function when the resource is cached in the given cache
         instance.
         """
-        mock_cache = mock.create_autospec(HttpCache)
+
+        mock_cache = self.get_mock_of_http_cache()
+
+        # In this test, the cached data is still valid, thus is_expired()
+        # returns False.
         mock_cache.is_expired.return_value = False
-        expected_content = b"Some content"
-        mock_cache.get_content.return_value = expected_content
-        url = 'http://some.url.com'
 
-        content = get_resource_content(url, cache=mock_cache)
+        content = get_resource_content(self.url, cache=mock_cache)
 
-        # The expected content is retrieved
-        self.assertEqual(content, expected_content)
-        # The function did not update the cache
+        # The expected content is retrieved and no update request is made
+        self.assertEqual(content, self.response_content)
         self.assertFalse(mock_cache.update.called)
 
     def test_get_resource_content_utility_function_not_cached(self):
@@ -1134,17 +1146,19 @@ class HttpCacheTest(SimpleTestCase):
         utility function when the resource is not cached in the given cache
         instance.
         """
-        mock_cache = mock.create_autospec(HttpCache)
+
+        mock_cache = self.get_mock_of_http_cache()
+
+        # In this test, the cache is expired, and hence update has
+        # to be called.
         mock_cache.is_expired.return_value = True
-        expected_content = b"Some content"
-        mock_cache.get_content.return_value = expected_content
-        url = 'http://some.url.com'
+        mock_cache.update.return_value = (None, True)
 
-        content = get_resource_content(url, mock_cache)
+        content = get_resource_content(self.url, mock_cache)
 
-        self.assertEqual(content, expected_content)
-        # The function updated the cache
-        mock_cache.update.assert_called_once_with(url)
+        # The update request has been made and returned new data
+        mock_cache.update.assert_called_once_with(self.url)
+        self.assertEqual(content, self.response_content)
 
     def test_get_resource_content_with_only_arg_and_cache_expired(self):
         """
