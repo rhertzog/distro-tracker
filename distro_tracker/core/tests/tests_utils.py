@@ -790,13 +790,13 @@ class HttpCacheTest(SimpleTestCase):
             headers=headers,
             status_code=status_code)
 
-    def get_mock_of_http_cache(self):
+    def get_mock_of_http_cache(self, get_content=b"Some content"):
         """
         Common setup function for the get_resource function tests
         to avoid code redundancy.
         """
         mock_cache = mock.create_autospec(HttpCache)
-        self.response_content = b"Some content"
+        self.response_content = get_content
         mock_cache.get_content.return_value = self.response_content
 
         return mock_cache
@@ -1218,6 +1218,20 @@ class HttpCacheTest(SimpleTestCase):
 
         # The expected content is now decoded in a string
         self.assertEqual(content, "Some content")
+
+    def test_get_resource_text_with_encoding(self):
+        """
+        Tests the :func:`distro_tracker.core.utils.http.get_resource_text`
+        utility function with an explicit encoding argument.
+        """
+        content = "Raphaël".encode('latin1')
+        mock_cache = self.get_mock_of_http_cache(get_content=content)
+
+        content = get_resource_text("http://some.url.com/", cache=mock_cache,
+                                    encoding='latin1')
+
+        # The expected content is now decoded in a string
+        self.assertEqual(content, "Raphaël")
 
 
 class VerifySignatureTest(SimpleTestCase):

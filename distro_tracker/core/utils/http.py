@@ -232,8 +232,7 @@ def get_resource_content(url, cache=None, compression="auto",
     return cache.get_content(url, compression=compression)
 
 
-def get_resource_text(url, cache=None, compression="auto",
-                      only_if_updated=False, encoding="utf-8"):
+def get_resource_text(*args, **kwargs):
     """
     Clone of :py:func:`get_resource_content` which transparently decodes
     the downloaded content into text. It supports the same parameters
@@ -246,8 +245,8 @@ def get_resource_text(url, cache=None, compression="auto",
     :rtype: str
     """
 
-    content = get_resource_content(url, cache=cache, compression=compression,
-                                   only_if_updated=only_if_updated)
+    encoding = kwargs.pop('encoding', 'utf-8')
+    content = get_resource_content(*args, **kwargs)
 
     if content is not None:
         return content.decode(encoding)
