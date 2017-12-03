@@ -2431,34 +2431,45 @@ class UpdateVcsWatchTask(BaseTask):
     Updates packages' vcswatch stats.
     """
     ACTION_ITEM_TYPE_NAME = 'vcswatch-warnings-and-errors'
-    ITEM_DESCRIPTION = 'This package <a href="{url}">{report}</a>.'
     ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/vcswatch-action-item.html'
     VCSWATCH_URL = 'https://qa.debian.org/cgi-bin/vcswatch?package=%(package)s'
     VCSWATCH_DATA_URL = 'https://qa.debian.org/data/vcswatch/vcswatch.json.gz'
 
     VCSWATCH_STATUS_DICT = {
         "NEW": {
-            "brief": "has a new version in the VCS",
+            "description":
+                'A new version is <a href="{url}">available in the VCS</a>, '
+                'consider uploading it.',
             "severity": ActionItem.SEVERITY_NORMAL,
         },
         "COMMITS": {
-            "brief": "has {commits} new commits in its VCS",
+            "description":
+                '<a href="{url}">{commits} new commit</a> since last upload, '
+                'time to release an update?',
             "severity": ActionItem.SEVERITY_NORMAL,
         },
         "OLD": {
-            "brief": "VCS is NOT up to date",
+            'description':
+                'The <a href="{url}">VCS repository is NOT up to date</a>, '
+                'push the missing commits.',
             "severity": ActionItem.SEVERITY_HIGH,
         },
         "UNREL": {
-            "brief": "VCS has unreleased changelog",
+            "description":
+                'The <a href="{url}">VCS repository is NOT up to date</a>, '
+                'push the missing commits.',
             "severity": ActionItem.SEVERITY_HIGH,
         },
         "ERROR": {
-            "brief": "VCS has an error",
+            "description":
+                '<a href="{url}">Error while accessing the VCS repository</a>. '
+                'Please troubleshot and fix.',
             "severity": ActionItem.SEVERITY_HIGH,
         },
         "DEFAULT": {
-            "brief": "\"Huh, this is weird\"",
+            "description":
+                '<a href="{url}">Unexpected status</a> ({status}) reported by '
+                'VcsWatch.',
             "severity": ActionItem.SEVERITY_HIGH,
         },
     }
@@ -2476,7 +2487,7 @@ class UpdateVcsWatchTask(BaseTask):
             self.force_update = parameters['force_update']
 
     def get_vcswatch_data(self):
-        text = get_resource_text(self.VCSWATCH_DATA_URL, encoding="utf-8")
+        text = get_resource_text(self.VCSWATCH_DATA_URL)
 
         if text is None:
             return
@@ -2558,18 +2569,14 @@ class UpdateVcsWatchTask(BaseTask):
         action_item.severity = \
             self.VCSWATCH_STATUS_DICT[package_status]['severity']
 
-        nb_commits = vcswatch_data["commits"]
-        if nb_commits is None:
-            nb_commits = 0
-        else:
-            nb_commits = int(nb_commits)
+        nb_commits = int(vcswatch_data["commits"] or 0)
 
         # The new data
         new_extra_data = {
             'name': package.name,
             'status': package_status,
             'error': vcswatch_data["error"],
-            'vcswatch_url': vcswatch_url,
+            'url': vcswatch_url,
             'commits': nb_commits,
         }
 
@@ -2585,19 +2592,10 @@ class UpdateVcsWatchTask(BaseTask):
             todo['update']['action_items'].remove(action_item)
             return False
         else:
-            action_item.extra_data = new_extra_data
-
             # Report for short description of the :class:`ActionItem`
-            report = self.VCSWATCH_STATUS_DICT[package_status]['brief']
-
-            # If COMMITS, then string format the report.
-            if package_status == 'COMMITS':
-                report = report.format(commits=nb_commits)
-
-            action_item.short_description = self.ITEM_DESCRIPTION.format(
-                url=vcswatch_url,
-                report=report,
-            )
+            desc = self.VCSWATCH_STATUS_DICT[package_status]['description']
+            action_item.short_description = desc.format(**new_extra_data)
+            action_item.extra_data = new_extra_data
             return True
 
     def update_package_info(self, package, vcswatch_data, package_info, todo):

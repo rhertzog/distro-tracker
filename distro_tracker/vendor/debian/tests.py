@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2013-2015 The Distro Tracker Developers
+# Copyright 2013-2017 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -5168,7 +5168,7 @@ class UpdateVcsWatchTaskTest(TestCase):
             'name': 'dummy',
             'status': 'COMMITS',
             'error': None,
-            'vcswatch_url': (
+            'url': (
                 'https://qa.debian.org/cgi-bin/vcswatch?package=dummy'
             ),
             'commits': 46,

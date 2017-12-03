@@ -1,8 +1,6 @@
-{% with name=item.extra_data.name %}
-{% with status=item.extra_data.status %}
-{% with error=item.extra_data.error %}
+{% with name=item.extra_data.name status=item.extra_data.status error=item.extra_data.error %}
 
-<a href="{{item.extra_data.vcswatch_url}}">vcswatch</a> reports that
+<a href="{{item.extra_data.url}}">vcswatch</a> reports that
 {% if status == "NEW" %}
 this package has a new version ready in the VCS. You should consider uploading
 into the archive.
@@ -14,10 +12,13 @@ the current version of the package is NOT in its VCS. You should push your
 commits immediately.
 {% elif status == "UNREL" %}
 this package has been uploaded into the archive but the debian/changelog in the
-VCS is still UNRELEASED.  You should consider updating the VCS.
+VCS is still UNRELEASED.  You should consider pushing the missing commits
+or updating the VCS.
 {% elif status == "ERROR" %}
 there is an error with this package's VCS, or the debian/changelog file inside
-it. Either you should create the VCS or you should fix whatever issue there is.
+it. Please check the error shown below and try to fix it. You might have
+to update the VCS URL in the debian/control file to point to the correct
+repository.
 {% elif status == "DEFAULT" %}
 a new type of VCS status has been added. Please <a href="mailto:submit@bugs.debian.org?Subject=tracker.debian.org%3A%20{{name}}%3A%20new%20vcswatch%20status%3A%20{{status}}&Body=Package%3A%20tracker.debian.org%0AUser%3A%20tracker.debian.org@packages.debian.org%0AUsertags%3A%20vcswatch%0A%0AThe%20vcswatch%20status%20for%20{{name}}%20is%20{{status}}%20and%0Athis%20is%20not%20known%20by%20the%20tracker%20website%3A%0Ahttps%3A//tracker.debian.org/pkg/{{name}}">report</a> a bug about this so
 that the maintainers can describe it.
@@ -25,4 +26,4 @@ that the maintainers can describe it.
 {% if error %}
 <span>{{error}}</span>
 {% endif %}
-{% endwith %}{% endwith %}{% endwith %}
+{% endwith %}
