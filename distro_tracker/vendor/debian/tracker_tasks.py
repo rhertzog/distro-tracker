@@ -2540,7 +2540,7 @@ class UpdateVcsWatchTask(BaseTask):
                 todo['drop']['action_items'].append(action_item)
 
             # Nothing more to do!
-            return None
+            return False
 
         # NOT BEFORE "OK" check!!
         if package_status not in self.VCSWATCH_STATUS_DICT:
@@ -2725,9 +2725,6 @@ class UpdateVcsWatchTask(BaseTask):
                 vcswatch_data,
                 action_item,
                 todo)
-
-            if _ai_continue is None:
-                continue
 
             _pi_continue = self.update_package_info(
                 package,
