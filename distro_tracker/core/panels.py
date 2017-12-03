@@ -245,6 +245,19 @@ class GeneralInformationPanel(BasePanel):
         if 'vcs' in general and 'type' in general['vcs']:
             shorthand = general['vcs']['type']
             general['vcs']['full_name'] = get_vcs_name(shorthand)
+            # Add vcs extra links (including Vcs-Browser)
+            try:
+                vcs_extra_links = PackageExtractedInfo.objects.get(
+                    package=self.package, key='vcs_extra_links').value
+            except PackageExtractedInfo.DoesNotExist:
+                vcs_extra_links = {}
+            if 'browser' in general['vcs']:
+                vcs_extra_links['Browse'] = general['vcs']['browser']
+            vcs_extra_links.pop('checksum', None)
+            general['vcs']['extra_links'] = [
+                (key, vcs_extra_links[key])
+                for key in sorted(vcs_extra_links.keys())
+            ]
         # Add mailing list archive URLs
         self._add_archive_urls(general)
         # Add developer information links and any other vendor-specific extras

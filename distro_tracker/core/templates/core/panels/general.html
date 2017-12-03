@@ -94,8 +94,8 @@
 	{% else %}
 	<a href="{{ ctx.vcs.url }}">{{ vcs }}</a>
 	{% endif %}
-	{% if ctx.vcs.browser %}
-	(<a href="{{ ctx.vcs.browser }}">Browse</a>)
+	{% if ctx.vcs.extra_links %}
+	({% for name, url in ctx.vcs.extra_links %}<a href="{{ url }}">{{ name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %})
 	{% endif %}
 	{% endwith %}
     </li>
