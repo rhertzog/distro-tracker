@@ -5144,7 +5144,8 @@ class UpdateVcsWatchTaskTest(TestCase):
         self.run_task()
 
         with self.assertRaises(PackageExtractedInfo.DoesNotExist):
-            self.other_dummy_package.packageextractedinfo_set.get(key='vcs')
+            self.other_dummy_package.packageextractedinfo_set.get(
+                key='vcs_extra_links')
 
     def test_no_extractedinfo_for_unknown_package(self):
         """
@@ -5154,7 +5155,8 @@ class UpdateVcsWatchTaskTest(TestCase):
 
         self.run_task()
 
-        count = PackageExtractedInfo.objects.filter(key='vcs').count()
+        count = PackageExtractedInfo.objects.filter(
+            key='vcs_extra_links').count()
         self.assertEqual(0, count)
 
     def test_extractedinfo_with_vcswatch(self):
@@ -5174,16 +5176,14 @@ class UpdateVcsWatchTaskTest(TestCase):
             'commits': 46,
         }
         theoretical_package_info = {
-            "checksum": '1b2cab38521286a355f8394ff4a1adfc',
-            "watch_url": (
-                'https://qa.debian.org/cgi-bin/vcswatch?package=dummy'
-            ),
+            "checksum": 'bb2db81183608a0f02853a0d1087cfef',
+            "QA": 'https://qa.debian.org/cgi-bin/vcswatch?package=dummy',
         }
 
-        info = self.dummy_package.packageextractedinfo_set.get(key='vcs')
+        info = self.dummy_package.packageextractedinfo_set.get(
+            key='vcs_extra_links')
 
-        for key in ['checksum', 'watch_url']:
-            self.assertEqual(info.value[key], theoretical_package_info[key])
+        self.assertDictEqual(info.value, theoretical_package_info)
         action_items = self.dummy_package.action_items
         self.assertEqual(action_items.count(), 1)
         action_item = action_items.first()
@@ -5199,7 +5199,8 @@ class UpdateVcsWatchTaskTest(TestCase):
 
         # Alters the info so that it's not destroyed when we
         # remove vcswatch data.
-        dummy_pi = self.dummy_package.packageextractedinfo_set.get(key='vcs')
+        dummy_pi = self.dummy_package.packageextractedinfo_set.get(
+            key='vcs_extra_links')
         dummy_pi.value['test_useless_entry'] = True
 
         # No need to change the checksum as we test a case where it's
@@ -5213,19 +5214,19 @@ class UpdateVcsWatchTaskTest(TestCase):
         self.run_task()
 
         # Normally, no watch_url in the package
-        dummy_pi = self.dummy_package.packageextractedinfo_set.get(key='vcs')
-        self.assertEqual('watch_url' not in dummy_pi.value, True)
+        dummy_pi = self.dummy_package.packageextractedinfo_set.get(
+            key='vcs_extra_links')
+        self.assertEqual('QA' not in dummy_pi.value, True)
 
         # This part will test another part of the code.
         self.vcswatch_data = initial_data
         self.run_task()
 
         dummy_pi = self.dummy_package.packageextractedinfo_set.get(
-            key='vcs').value
-        self.assertEqual('watch_url' in dummy_pi, True)
-        self.assertEqual(
-            dummy_pi['watch_url'],
-            'https://qa.debian.org/cgi-bin/vcswatch?package=dummy')
+            key='vcs_extra_links').value
+        self.assertTrue('QA' in dummy_pi)
+        self.assertEqual(dummy_pi['QA'],
+                         'https://qa.debian.org/cgi-bin/vcswatch?package=dummy')
 
     def test_extractedinfo_is_dropped_when_data_is_gone(self):
         """
@@ -5239,7 +5240,7 @@ class UpdateVcsWatchTaskTest(TestCase):
 
         with self.assertRaises(PackageExtractedInfo.DoesNotExist):
             self.dummy_package.packageextractedinfo_set.get(
-                key='vcs')
+                key='vcs_extra_links')
 
     def test_action_item_is_dropped_when_status_is_ok(self):
         """

@@ -2508,8 +2508,8 @@ class UpdateVcsWatchTask(BaseTask):
         to do with them.
         """
         for package_info in package_infos_without_watch:
-            if 'watch_url' in package_info.value:
-                package_info.value.pop('watch_url')
+            if 'QA' in package_info.value:
+                package_info.value.pop('QA')
                 if (list(package_info.value.keys()) == ['checksum'] or
                         not package_info.value.keys()):
                     todo['drop']['package_infos'].append(package_info)
@@ -2606,7 +2606,7 @@ class UpdateVcsWatchTask(BaseTask):
         if package_info is None:
             package_info = PackageExtractedInfo(
                 package=package,
-                key='vcs',
+                key='vcs_extra_links',
             )
             todo['add']['package_infos'].append(package_info)
         else:
@@ -2616,14 +2616,11 @@ class UpdateVcsWatchTask(BaseTask):
         vcswatch_url = self.VCSWATCH_URL % {'package': package.name}
 
         new_value = dict(package_info.value)
-        new_value['watch_url'] = vcswatch_url
+        new_value['QA'] = vcswatch_url
         new_value['checksum'] = get_data_checksum(new_value)
 
         package_info_match = (
-            new_value['checksum'] == package_info.value.get(
-                'checksum',
-                None,
-            )
+            new_value['checksum'] == package_info.value.get('checksum', None)
         )
 
         if package_info_match and not self.force_update:
@@ -2689,13 +2686,13 @@ class UpdateVcsWatchTask(BaseTask):
             package_info.package.name: package_info
             for package_info in PackageExtractedInfo.objects.select_related(
                 'package'
-            ).filter(key='vcs').only('package__name', 'value')
+            ).filter(key='vcs_extra_links').only('package__name', 'value')
         }
 
-        # As :class:`PackageExtractedInfo` key=vcs is shared, we have to
-        # clean up those with vcs watch_url that aren't in vcs_data
+        # As :class:`PackageExtractedInfo` key=vcs_extra_links is shared, we
+        # have to clean up those with vcs watch_url that aren't in vcs_data
         package_infos_without_watch = PackageExtractedInfo.objects.filter(
-            key='vcs').exclude(
+            key='vcs_extra_links').exclude(
             package__name__in=vcswatch_datas.keys()).only('value')
 
         # Do the actual clean.
@@ -2764,7 +2761,7 @@ class UpdateVcsWatchTask(BaseTask):
                 [self.vcswatch_ai_type],
                 vcs_data.keys())
             PackageExtractedInfo.objects.filter(
-                key='vcs',
+                key='vcs_extra_links',
                 id__in=[
                     package_info.id
                     for package_info in todo['drop']['package_infos']
