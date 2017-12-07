@@ -551,7 +551,7 @@ def get_bug_panel_stats(package_name):
         'newcomer': {
             'display_name': 'NC',
             'description': 'newcomer',
-            'link': 'https://wiki.debian.org/qa.debian.org/GiftTag',
+            'link': 'https://wiki.debian.org/BTS/NewcomerTag',
         }
     }
     # Some bug categories should not be included in the count.
