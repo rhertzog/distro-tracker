@@ -127,7 +127,7 @@ class SourceCodeSearchLinks(LinksPanel.ItemProvider):
     Add links to sources.debian.org source code browser and the
     codesearch.debian.net code search (if the package is found in unstable).
     """
-    #: A list of repositories that cause the sources.debian.net link to be
+    #: A list of repositories that cause the sources.debian.org link to be
     #: displayed if the package is found in one of them.
     ALLOWED_REPOSITORIES = (
         'unstable',
