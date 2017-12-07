@@ -12,11 +12,9 @@
     <li class="list-group-item">
         <span class="list-item-key">
             {% if category.link %}
-            <a href="{{ category.link }}">
-            {% endif %}
+            <b><a href="{{ category.link }}" title="{{ category.description }}">{{ category.display_name }}</a>:</b>
+            {% else %}
             <b><span title="{{ category.description }}">{{ category.display_name }}:</span></b>
-            {% if category.link %}
-            </a>
             {% endif %}
         </span>
         <a class="label label-primary label-pill pull-xs-right m-l-1"
