@@ -549,7 +549,7 @@ def get_bug_panel_stats(package_name):
             'description': 'Fixed and Pending',
         },
         'newcomer': {
-            'display_name': 'newcomer',
+            'display_name': 'NC',
             'description': 'newcomer',
             'link': 'https://wiki.debian.org/qa.debian.org/GiftTag',
         }
