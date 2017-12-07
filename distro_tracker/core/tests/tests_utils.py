@@ -1488,7 +1488,7 @@ class AptCacheTests(TestCase):
                 repository = Repository.objects.create(
                     name='stable',
                     shorthand='stable',
-                    uri='http://httpredir.debian.org/debian/dists',
+                    uri='http://deb.debian.org/debian/dists',
                     suite='stable')
                 expected_source_files = [
                     'main_source_Sources',
@@ -1519,7 +1519,7 @@ class AptCacheTests(TestCase):
                 repository = Repository.objects.create(
                     name='stable',
                     shorthand='stable',
-                    uri='http://httpredir.debian.org/debian/dists',
+                    uri='http://deb.debian.org/debian/dists',
                     suite='stable')
                 expected_packages_files = [
                     'main_binary-amd64_Packages',

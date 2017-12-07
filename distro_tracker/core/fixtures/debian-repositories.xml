@@ -3,8 +3,8 @@
     <object pk="1" model="core.repository">
         <field type="CharField" name="name">Debian Oldstable</field>
         <field type="CharField" name="shorthand">oldstable</field>
-        <field type="CharField" name="uri">http://httpredir.debian.org/debian</field>
-        <field type="CharField" name="public_uri">http://httpredir.debian.org/debian</field>
+        <field type="CharField" name="uri">http://deb.debian.org/debian</field>
+        <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="suite">oldstable</field>
         <field type="CharField" name="codename">jessie</field>
         <field type="TextField" name="components">main contrib non-free</field>
@@ -18,8 +18,8 @@
     <object pk="2" model="core.repository">
         <field type="CharField" name="name">Debian Stable</field>
         <field type="CharField" name="shorthand">stable</field>
-        <field type="CharField" name="uri">http://httpredir.debian.org/debian</field>
-        <field type="CharField" name="public_uri">http://httpredir.debian.org/debian</field>
+        <field type="CharField" name="uri">http://deb.debian.org/debian</field>
+        <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="suite">stable</field>
         <field type="CharField" name="codename">stretch</field>
         <field type="TextField" name="components">main contrib non-free</field>
@@ -33,8 +33,8 @@
     <object pk="3" model="core.repository">
         <field type="CharField" name="name">Debian Unstable</field>
         <field type="CharField" name="shorthand">unstable</field>
-        <field type="CharField" name="uri">http://httpredir.debian.org/debian</field>
-        <field type="CharField" name="public_uri">http://httpredir.debian.org/debian</field>
+        <field type="CharField" name="uri">http://deb.debian.org/debian</field>
+        <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="suite">unstable</field>
         <field type="CharField" name="codename">sid</field>
         <field type="TextField" name="components">main contrib non-free</field>
@@ -48,8 +48,8 @@
     <object pk="4" model="core.repository">
         <field type="CharField" name="name">Debian Experimental</field>
         <field type="CharField" name="shorthand">exp</field>
-        <field type="CharField" name="uri">http://httpredir.debian.org/debian</field>
-        <field type="CharField" name="public_uri">http://httpredir.debian.org/debian</field>
+        <field type="CharField" name="uri">http://deb.debian.org/debian</field>
+        <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="suite">experimental</field>
         <field type="CharField" name="codename">experimental</field>
         <field type="TextField" name="components">main contrib non-free</field>
@@ -93,8 +93,8 @@
     <object pk="7" model="core.repository">
         <field type="CharField" name="name">Debian Testing</field>
         <field type="CharField" name="shorthand">testing</field>
-        <field type="CharField" name="uri">http://httpredir.debian.org/debian</field>
-        <field type="CharField" name="public_uri">http://httpredir.debian.org/debian</field>
+        <field type="CharField" name="uri">http://deb.debian.org/debian</field>
+        <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="suite">testing</field>
         <field type="CharField" name="codename">buster</field>
         <field type="TextField" name="components">main contrib non-free</field>
@@ -123,8 +123,8 @@
     <object pk="9" model="core.repository">
         <field type="CharField" name="name">Debian Oldstable Backports</field>
         <field type="CharField" name="shorthand">old-bpo</field>
-        <field type="CharField" name="uri">http://httpredir.debian.org/debian</field>
-        <field type="CharField" name="public_uri">http://httpredir.debian.org/debian</field>
+        <field type="CharField" name="uri">http://deb.debian.org/debian</field>
+        <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="suite">jessie-backports</field>
         <field type="CharField" name="codename">jessie-backports</field>
         <field type="TextField" name="components">main contrib non-free</field>
@@ -138,8 +138,8 @@
     <object pk="10" model="core.repository">
         <field type="CharField" name="name">Debian Stable Backports</field>
         <field type="CharField" name="shorthand">stable-bpo</field>
-        <field type="CharField" name="uri">http://httpredir.debian.org/debian</field>
-        <field type="CharField" name="public_uri">http://httpredir.debian.org/debian</field>
+        <field type="CharField" name="uri">http://deb.debian.org/debian</field>
+        <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="suite">stretch-backports</field>
         <field type="CharField" name="codename">stretch-backports</field>
         <field type="TextField" name="components">main contrib non-free</field>
@@ -153,8 +153,8 @@
     <object pk="11" model="core.repository">
         <field type="CharField" name="name">Debian Oldstable Proposed Updates</field>
         <field type="CharField" name="shorthand">old-p-u</field>
-        <field type="CharField" name="uri">http://httpredir.debian.org/debian</field>
-        <field type="CharField" name="public_uri">http://httpredir.debian.org/debian</field>
+        <field type="CharField" name="uri">http://deb.debian.org/debian</field>
+        <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="suite">oldstable-proposed-updates</field>
         <field type="CharField" name="codename">jessie-proposed-updates</field>
         <field type="TextField" name="components">main contrib non-free</field>
@@ -168,8 +168,8 @@
     <object pk="12" model="core.repository">
         <field type="CharField" name="name">Debian Stable Proposed Updates</field>
         <field type="CharField" name="shorthand">stable-p-u</field>
-        <field type="CharField" name="uri">http://httpredir.debian.org/debian</field>
-        <field type="CharField" name="public_uri">http://httpredir.debian.org/debian</field>
+        <field type="CharField" name="uri">http://deb.debian.org/debian</field>
+        <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="suite">proposed-updates</field>
         <field type="CharField" name="codename">stretch-proposed-updates</field>
         <field type="TextField" name="components">main contrib non-free</field>
@@ -183,8 +183,8 @@
     <object pk="13" model="core.repository">
         <field type="CharField" name="name">Debian Testing Proposed Updates</field>
         <field type="CharField" name="shorthand">test-p-u</field>
-        <field type="CharField" name="uri">http://httpredir.debian.org/debian</field>
-        <field type="CharField" name="public_uri">http://httpredir.debian.org/debian</field>
+        <field type="CharField" name="uri">http://deb.debian.org/debian</field>
+        <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="suite">testing-proposed-updates</field>
         <field type="CharField" name="codename">buster-proposed-updates</field>
         <field type="TextField" name="components">main contrib non-free</field>
@@ -198,8 +198,8 @@
     <object pk="15" model="core.repository">
         <field type="CharField" name="name">Debian Oldstable Updates</field>
         <field type="CharField" name="shorthand">old-upd</field>
-        <field type="CharField" name="uri">http://httpredir.debian.org/debian</field>
-        <field type="CharField" name="public_uri">http://httpredir.debian.org/debian</field>
+        <field type="CharField" name="uri">http://deb.debian.org/debian</field>
+        <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="suite">oldstable-updates</field>
         <field type="CharField" name="codename">jessie-updates</field>
         <field type="TextField" name="components">main contrib non-free</field>
@@ -213,8 +213,8 @@
     <object pk="16" model="core.repository">
         <field type="CharField" name="name">Debian Stable Updates</field>
         <field type="CharField" name="shorthand">stable-upd</field>
-        <field type="CharField" name="uri">http://httpredir.debian.org/debian</field>
-        <field type="CharField" name="public_uri">http://httpredir.debian.org/debian</field>
+        <field type="CharField" name="uri">http://deb.debian.org/debian</field>
+        <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="suite">stable-updates</field>
         <field type="CharField" name="codename">stretch-updates</field>
         <field type="TextField" name="components">main contrib non-free</field>
@@ -228,8 +228,8 @@
     <object pk="17" model="core.repository">
         <field type="CharField" name="name">Debian Oldstable Backports Sloppy</field>
         <field type="CharField" name="shorthand">old-bpo-sl</field>
-        <field type="CharField" name="uri">http://httpredir.debian.org/debian</field>
-        <field type="CharField" name="public_uri">http://httpredir.debian.org/debian</field>
+        <field type="CharField" name="uri">http://deb.debian.org/debian</field>
+        <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="suite">jessie-backports-sloppy</field>
         <field type="CharField" name="codename">jessie-backports-sloppy</field>
         <field type="TextField" name="components">main contrib non-free</field>
