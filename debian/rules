@@ -34,3 +34,4 @@ endif
 
 override_dh_systemd_enable:
 	dh_systemd_enable --name=distro-tracker-mail
+	dh_systemd_enable --name=distro-tracker-web

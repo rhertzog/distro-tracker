@@ -1,0 +1,18 @@
+[Unit]
+Description=Distro Tracker Website run with gunicorn3
+After=network.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+User=distro-tracker
+Group=distro-tracker
+Restart=always
+
+ExecStart=/usr/bin/gunicorn3 --bind=unix:/var/lib/distro-tracker/gunicorn.sock --workers=4 distro_tracker.project.wsgi
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+
+WorkingDirectory=/var/lib/distro-tracker/
+PrivateTmp=true

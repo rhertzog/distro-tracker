@@ -33,7 +33,7 @@ to take care of:
 Configuration with Nginx + Gunicorn
 -----------------------------------
 
-If you wish to use nginx, you should also install gunicorn (they are
+If you wish to use nginx, you should also install gunicorn3 (they are
 probably already installed by way of dependencies unless you already had a
 webserver installed).
 
@@ -41,7 +41,7 @@ The package provides a sample gunicorn configuration to run the Distro
 Tracker application on /var/lib/distro-tracker/gunicorn.sock and the
 corresponding nginx virtual host.
 
-$ sudo apt-get install nginx gunicorn
+$ sudo apt-get install nginx gunicorn3
 $ sudo cp /etc/gunicorn.d/distro-tracker.example \
           /etc/gunicorn.d/distro-tracker
 $ sudo service gunicorn restart
@@ -53,11 +53,11 @@ $ sudo service nginx restart
 Configuration with Apache + mod_wsgi
 ------------------------------------
 
-If you wish to use apache2, you should also install libapache2-mod-wsgi.
-The package provides a sample virtual host configuration file that
-you can customize and enable:
+If you wish to use apache2, you should also install
+libapache2-mod-wsgi-py3. The package provides a sample virtual host
+configuration file that you can customize and enable:
 
-$ sudo apt-get install apache2 libapache2-mod-wsgi
+$ sudo apt-get install apache2 libapache2-mod-wsgi-py3
 $ sudo vim /etc/apache2/sites-available/distro-tracker
 $ sudo a2enmod ssl
 $ sudo a2ensite distro-tracker

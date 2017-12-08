@@ -1,5 +1,5 @@
-distro-tracker (0.20170119) UNRELEASED; urgency=low
+distro-tracker (1.0.0) unstable; urgency=low
 
-  * Initial release.
+  * Initial release with Python 3 only.
 
- -- Raphaël Hertzog <hertzog@debian.org>  Thu, 10 Jul 2014 21:07:29 +0200
+ -- Raphaël Hertzog <hertzog@debian.org>  Fri, 08 Dec 2017 14:04:45 +0100
