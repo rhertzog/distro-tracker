@@ -548,6 +548,10 @@ def get_bug_panel_stats(package_name):
             'display_name': 'F&P',
             'description': 'Fixed and Pending',
         },
+        'help': {
+            'display_name': 'help',
+            'description': 'Help needed',
+        }
         'newcomer': {
             'display_name': 'NC',
             'description': 'newcomer',
@@ -555,7 +559,7 @@ def get_bug_panel_stats(package_name):
         }
     }
     # Some bug categories should not be included in the count.
-    exclude_from_count = ('newcomer',)
+    exclude_from_count = ('help', 'newcomer')
 
     stats = bug_stats.stats
     categories = []
