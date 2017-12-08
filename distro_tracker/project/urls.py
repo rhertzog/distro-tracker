@@ -12,7 +12,7 @@
 
 import importlib
 
-from django.conf.urls import url
+from django.conf.urls import url, include
 from django.conf import settings
 from django.shortcuts import redirect
 from django.views.generic import TemplateView
@@ -250,7 +250,7 @@ urlpatterns += [
 if settings.DJANGO_EMAIL_ACCOUNTS_USE_CAPTCHA:
     import captcha.urls
     urlpatterns += [
-        url(r'^captcha/', captcha.urls),
+        url(r'^captcha/', include(captcha.urls.urlpatterns)),
     ]
 
 if settings.DEBUG:
