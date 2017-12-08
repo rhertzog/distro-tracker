@@ -28,7 +28,7 @@ to take care of:
    $ sudo -u distro-tracker distro-tracker migrate
 
 4/ you must configure a webserver (see below for details on how to use
-   nginx + gunicorn or apache2 + mod_wsgi).
+   nginx + gunicorn3 or apache2 + mod_wsgi).
 
 Configuration with Nginx + Gunicorn
 -----------------------------------
@@ -37,18 +37,18 @@ If you wish to use nginx, you should also install gunicorn3 (they are
 probably already installed by way of dependencies unless you already had a
 webserver installed).
 
-The package provides a sample gunicorn configuration to run the Distro
-Tracker application on /var/lib/distro-tracker/gunicorn.sock and the
-corresponding nginx virtual host.
+The package provides a distro-tracker-web.service unit for systemd
+that will run gunicorn3 with the Distro Tracker application on
+/var/lib/distro-tracker/gunicorn.sock. There's also a ready to use
+nginx virtual host pointing to this gunicorn setup.
 
 $ sudo apt-get install nginx gunicorn3
-$ sudo cp /etc/gunicorn.d/distro-tracker.example \
-          /etc/gunicorn.d/distro-tracker
-$ sudo service gunicorn restart
+$ sudo systemctl enable distro-tracker-web
+$ sudo systemctl start distro-tracker-web
 $ sudo vim /etc/nginx/sites-available/distro-tracker
 $ sudo ln -sf /etc/nginx/sites-available/distro-tracker \
               /etc/nginx/sites-enabled
-$ sudo service nginx restart
+$ sudo systemctl restart nginx
 
 Configuration with Apache + mod_wsgi
 ------------------------------------

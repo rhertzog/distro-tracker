@@ -35,7 +35,7 @@
 
 	WSGIDaemonProcess distro-tracker user=distro-tracker group=distro-tracker processes=4 maximum-requests=500 threads=1 display-name=%{GROUP}
 	WSGIProcessGroup distro-tracker
-	WSGIScriptAlias / /usr/share/pyshared/distro_tracker/project/wsgi.py
+	WSGIScriptAlias / /usr/lib/python3/dist-packages/distro_tracker/project/wsgi.py
 </VirtualHost>
 
 <VirtualHost *:443>
@@ -80,5 +80,5 @@
 	</Directory>
 
 	WSGIProcessGroup distro-tracker
-	WSGIScriptAlias / /usr/share/pyshared/distro_tracker/project/wsgi.py
+	WSGIScriptAlias / /usr/lib/python3/dist-packages/distro_tracker/project/wsgi.py
 </VirtualHost>
