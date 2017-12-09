@@ -551,7 +551,7 @@ def get_bug_panel_stats(package_name):
         'help': {
             'display_name': 'help',
             'description': 'Help needed',
-        }
+        },
         'newcomer': {
             'display_name': 'NC',
             'description': 'newcomer',
