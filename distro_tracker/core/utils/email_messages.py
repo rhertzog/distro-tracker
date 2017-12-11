@@ -31,7 +31,7 @@ def extract_email_address_from_header(header):
     'foo@domain.com'
     """
     from email.utils import parseaddr
-    real_name, from_address = parseaddr(header)
+    real_name, from_address = parseaddr(str(header))
     return from_address
 
 

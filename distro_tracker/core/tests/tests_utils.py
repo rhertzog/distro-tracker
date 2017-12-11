@@ -48,7 +48,9 @@ from distro_tracker.core.utils.email_messages import CustomEmailMessage
 from distro_tracker.core.utils.email_messages import decode_header
 from distro_tracker.core.utils.email_messages import (
     name_and_address_from_string,
-    names_and_addresses_from_string)
+    names_and_addresses_from_string,
+    extract_email_address_from_header,
+)
 from distro_tracker.core.utils.email_messages import unfold_header
 from distro_tracker.core.utils.linkify import linkify
 from distro_tracker.core.utils.linkify import LinkifyDebianBugLinks
@@ -253,6 +255,9 @@ class EmailUtilsTest(SimpleTestCase):
         self.assertSequenceEqual(names_and_addresses_from_string(''), [])
 
     def test_unfold_header(self):
+        """
+        Ensure unfold_header() respect the unfolding rules.
+        """
         test_values = {
             'a\n b': 'a b',
             'a\r\n b': 'a b',
@@ -265,6 +270,23 @@ class EmailUtilsTest(SimpleTestCase):
 
     def test_unfold_header_with_none_value(self):
         self.assertIsNone(unfold_header(None))
+
+    def test_extract_email_address_from_header_with_angle_brackets(self):
+        email = extract_email_address_from_header('Real Name <foo@domain.com>')
+        self.assertEqual(email, 'foo@domain.com')
+
+    def test_extract_email_address_from_header_with_parenthesis(self):
+        email = extract_email_address_from_header('foo@domain.com (Real Name)')
+        self.assertEqual(email, 'foo@domain.com')
+
+    def test_extract_email_address_from_header_with_header_object(self):
+        """
+        Ensure the function can deal with an Header object representing
+        the value of the field.
+        """
+        header = Header("Raphaël Hertzog <foo@domain.com>")
+        email = extract_email_address_from_header(header)
+        self.assertEqual(email, 'foo@domain.com')
 
 
 class CustomEmailMessageTest(TestCase):
