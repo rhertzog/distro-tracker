@@ -66,7 +66,7 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
             return
 
         has_experimental = False
-        experimental_repo = get_or_none(Repository, name='experimental')
+        experimental_repo = get_or_none(Repository, suite='experimental')
         if experimental_repo:
             has_experimental = experimental_repo.has_source_package_name(
                 self.package.name)
