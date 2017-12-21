@@ -596,43 +596,43 @@ class PrettyPrintListTest(SimpleTestCase):
         """
         Tests the output of a PrettyPrintList.
         """
-        l = PrettyPrintList(['a', 'b', 'abe', 'q'])
-        self.assertEqual(str(l), 'a b abe q')
+        pp_list = PrettyPrintList(['a', 'b', 'abe', 'q'])
+        self.assertEqual(str(pp_list), 'a b abe q')
 
-        l = PrettyPrintList()
-        self.assertEqual(str(l), '')
+        pp_list = PrettyPrintList()
+        self.assertEqual(str(pp_list), '')
 
-        l = PrettyPrintList([0, 'a', 1])
-        self.assertEqual(str(l), '0 a 1')
+        pp_list = PrettyPrintList([0, 'a', 1])
+        self.assertEqual(str(pp_list), '0 a 1')
 
     def test_list_methods_accessible(self):
         """
         Tests that list methods are accessible to the PrettyPrintList object.
         """
-        l = PrettyPrintList()
-        l.append('a')
-        self.assertEqual(str(l), 'a')
+        pp_list = PrettyPrintList()
+        pp_list.append('a')
+        self.assertEqual(str(pp_list), 'a')
 
-        l.extend(['q', 'w'])
-        self.assertEqual(str(l), 'a q w')
+        pp_list.extend(['q', 'w'])
+        self.assertEqual(str(pp_list), 'a q w')
 
-        l.pop()
-        self.assertEqual(str(l), 'a q')
+        pp_list.pop()
+        self.assertEqual(str(pp_list), 'a q')
 
         # len works?
-        self.assertEqual(len(l), 2)
+        self.assertEqual(len(pp_list), 2)
         # Iterable?
-        self.assertSequenceEqual(l, ['a', 'q'])
+        self.assertSequenceEqual(pp_list, ['a', 'q'])
         # Indexable?
-        self.assertEqual(l[0], 'a')
+        self.assertEqual(pp_list[0], 'a')
         # Comparable?
-        l2 = PrettyPrintList(['a', 'q'])
-        self.assertTrue(l == l2)
-        l3 = PrettyPrintList()
-        self.assertFalse(l == l3)
+        pp_list2 = PrettyPrintList(['a', 'q'])
+        self.assertTrue(pp_list == pp_list2)
+        pp_list3 = PrettyPrintList()
+        self.assertFalse(pp_list == pp_list3)
         # Comparable to plain lists?
-        self.assertTrue(l == ['a', 'q'])
-        self.assertFalse(l == ['a'])
+        self.assertTrue(pp_list == ['a', 'q'])
+        self.assertFalse(pp_list == ['a'])
 
 
 class SpaceDelimitedTextFieldTest(SimpleTestCase):
@@ -665,10 +665,10 @@ class SpaceDelimitedTextFieldTest(SimpleTestCase):
         )
 
     def test_sane_inverse(self):
-        l = PrettyPrintList(['a', 'b', 'c'])
+        pp_list = PrettyPrintList(['a', 'b', 'c'])
         self.assertEqual(
-            self.field.to_python(self.field.get_db_prep_value(l)),
-            l
+            self.field.to_python(self.field.get_db_prep_value(pp_list)),
+            pp_list
         )
 
 

@@ -94,11 +94,11 @@ class PrettyPrintList(object):
     >>> a == ['1', '2', '3']
     False
     """
-    def __init__(self, l=None, delimiter=' '):
-        if l is None:
+    def __init__(self, the_list=None, delimiter=' '):
+        if the_list is None:
             self._list = []
         else:
-            self._list = l
+            self._list = the_list
         self.delimiter = delimiter
 
     def __getattr__(self, name, *args, **kwargs):

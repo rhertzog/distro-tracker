@@ -124,21 +124,23 @@ class SubscriptionManagerTest(TestCase):
                                  self.user_email.email,
                                  active=False)
 
-        l = Subscription.objects.get_for_email(self.user_email.email)
-        l = [sub.package for sub in l]
+        subscriptions = Subscription.objects.get_for_email(
+            self.user_email.email)
+        subscribed_packages = [sub.package for sub in subscriptions]
 
-        self.assertIn(self.package, l)
-        self.assertIn(p, l)
-        self.assertNotIn(package_not_subscribed_to, l)
+        self.assertIn(self.package, subscribed_packages)
+        self.assertIn(p, subscribed_packages)
+        self.assertNotIn(package_not_subscribed_to, subscribed_packages)
 
     def test_get_for_email_no_subsriptions(self):
         """
         Tests the get_for_email method when the user is not subscribed to any
         packages.
         """
-        l = Subscription.objects.get_for_email(self.user_email.email)
+        subscriptions = Subscription.objects.get_for_email(
+            self.user_email.email)
 
-        self.assertEqual(len(l), 0)
+        self.assertEqual(len(subscriptions), 0)
 
     def test_all_active(self):
         active_subs = [
