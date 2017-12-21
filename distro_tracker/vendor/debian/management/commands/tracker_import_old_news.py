@@ -82,7 +82,7 @@ class Command(BaseCommand):
                     package=package,
                     datetime_created=date,
                     **news_kwargs))
-            except:
+            except Exception:
                 import traceback
                 traceback.print_exc()
                 self.write('Problem importing news {}'.format(news_file_path))

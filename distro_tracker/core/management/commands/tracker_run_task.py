@@ -53,7 +53,7 @@ class Command(BaseCommand):
                         task_name)
             try:
                 run_task(task_name, additional_arguments)
-            except:
+            except Exception:
                 logger.exception("Task %s failed:", task_name)
                 if verbose:
                     self.stdout.write('Task {} failed:\n'.format(task_name))

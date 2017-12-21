@@ -456,14 +456,14 @@ class UpdatePackageBugStats(BaseTask):
         try:
             help_bugs = self._get_tagged_bug_stats('help')
             self._extend_bug_stats(bug_stats, help_bugs, 'help')
-        except:
+        except RuntimeError:
             logger.exception("Could not get bugs tagged help")
 
         # Add in newcomer bugs from the BTS interface
         try:
             newcomer_bugs = self._get_tagged_bug_stats('newcomer')
             self._extend_bug_stats(bug_stats, newcomer_bugs, 'newcomer')
-        except:
+        except RuntimeError:
             logger.exception("Could not get bugs tagged newcomer")
 
         with transaction.atomic():
@@ -1777,8 +1777,8 @@ class UpdateWnppStatsTask(BaseTask):
             try:
                 package_name, wnpp_type, bug_id = line.split('|')[0].split()
                 bug_id = int(bug_id)
-            except:
-                # Badly formatted
+            except ValueError:
+                # Badly formatted bug number
                 continue
             # Strip the colon from the end of the package name
             package_name = package_name[:-1]
@@ -1812,7 +1812,7 @@ class UpdateWnppStatsTask(BaseTask):
         try:
             release = package.main_entry.repository.suite or \
                 package.main_entry.repository.codename
-        except:
+        except AttributeError:
             release = None
 
         msgs = {

@@ -19,7 +19,7 @@ class InvalidPluginException(Exception):
     pass
 
 
-class PluginProcessingError(Exception):
+class PluginProcessingError(RuntimeError):
     pass
 
 

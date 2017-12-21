@@ -70,7 +70,7 @@ def validate_sources_list_entry(value):
         raise ValidationError(
             "Invalid repository:"
             " Received an invalid HTTP response from {url}.".format(url=url))
-    except:
+    except Exception:
         raise ValidationError(
             "Invalid repository: Could not connect to {url}".format(url=url))
 

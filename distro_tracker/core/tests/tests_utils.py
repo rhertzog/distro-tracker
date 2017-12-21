@@ -1262,6 +1262,7 @@ class HttpCacheTest(SimpleTestCase):
         """
         content = "Raphaël".encode('latin1')
         mock_cache = self.get_mock_of_http_cache(get_content=content)
+        mock_cache.is_expired.return_value = False
 
         content = get_resource_text("http://some.url.com/", cache=mock_cache,
                                     encoding='latin1')

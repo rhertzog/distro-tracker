@@ -32,6 +32,7 @@ from django.urls import reverse
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.template.defaultfilters import slugify
+from django.template.exceptions import TemplateDoesNotExist
 from django_email_accounts.models import UserEmail
 from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.utils import SpaceDelimitedTextField
@@ -2018,7 +2019,7 @@ class ActionItem(models.Model):
                 distro_tracker_render_to_string(
                     self.full_description_template,
                     {'item': self, }))
-        except:
+        except TemplateDoesNotExist:
             return ''
 
     def to_dict(self):

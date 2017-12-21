@@ -25,6 +25,7 @@ from distro_tracker.core.panels import BasePanel
 from distro_tracker.core.panels import LinksPanel
 from distro_tracker.core.panels import HtmlPanelItem
 from distro_tracker.core.panels import TemplatePanelItem
+from distro_tracker.vendor.debian.models import BuildLogCheckStats
 from distro_tracker.vendor.debian.models import LintianStats
 from distro_tracker.vendor.debian.models import PackageExcuses
 from distro_tracker.vendor.debian.models import UbuntuPackage
@@ -75,7 +76,7 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
         try:
             self.package.build_logcheck_stats
             has_checks = True
-        except:
+        except BuildLogCheckStats.DoesNotExist:
             has_checks = False
         logcheck_url = \
             "https://qa.debian.org/bls/packages/{hash}/{pkg}.html".format(

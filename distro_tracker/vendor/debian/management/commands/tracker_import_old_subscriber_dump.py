@@ -36,11 +36,7 @@ class Command(BaseCommand):
         for line in self.stdin:
             package_name, emails = line.split('=>', 1)
             package_name = package_name.strip()
-            try:
-                emails = emails.strip().strip('[]').strip().split()
-            except:
-                self.write("Malformed line: {}".format(line))
-                continue
+            emails = emails.strip().strip('[]').strip().split()
             emails = [email.strip() for email in emails]
             # For each email create a subscription to the package
             self.write(

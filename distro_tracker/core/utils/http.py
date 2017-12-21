@@ -222,7 +222,7 @@ def get_resource_content(url, cache=None, compression="auto",
     if cache.is_expired(url):
         try:
             _, updated = cache.update(url)
-        except:
+        except IOError:
             # Ignore network errors but log them
             import logging
             logger = logging.getLogger(__name__)

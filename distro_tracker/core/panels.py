@@ -724,7 +724,7 @@ class ListPanel(BasePanel, metaclass=ListPanelMeta):
             panel_provider = panel_provider_class(self.package)
             try:
                 new_panel_items = panel_provider.get_panel_items()
-            except:
+            except Exception:
                 logger.exception(
                     'Panel provider {provider}: error generating items.'.format(
                         provider=panel_provider.__class__))

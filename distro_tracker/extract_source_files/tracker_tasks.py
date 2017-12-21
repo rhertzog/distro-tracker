@@ -118,7 +118,7 @@ class ExtractSourcePackageFiles(BaseTask):
             if files_to_extract:
                 try:
                     self.extract_files(srcpkg, files_to_extract)
-                except:
+                except Exception:
                     logger.exception(
                         'Problem extracting source files for'
                         ' {pkg} version {ver}'.format(
@@ -140,7 +140,7 @@ class ExtractSourcePackageFiles(BaseTask):
         for source_package in source_packages:
             try:
                 self.extract_files(source_package)
-            except:
+            except Exception:
                 logger.exception(
                     'Problem extracting source files for'
                     ' {pkg} version {ver}'.format(

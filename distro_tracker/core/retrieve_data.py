@@ -57,7 +57,7 @@ def update_pseudo_package_list():
     """
     try:
         pseudo_packages, implemented = vendor.call('get_pseudo_package_list')
-    except:
+    except RuntimeError:
         # Error accessing pseudo package resource: do not update the list
         return
 
