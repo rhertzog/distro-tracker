@@ -105,7 +105,7 @@ def _classify_dak_message(msg, package, keyword):
 
 def classify_message(msg, package, keyword):
     # Default values for git commit notifications
-    xgitrepo = msg.get('X-Git-Repo')
+    xgitrepo = msg.get('X-GitLab-Project', msg.get('X-Git-Repo'))
     if xgitrepo:
         if not package:
             if xgitrepo.endswith('.git'):

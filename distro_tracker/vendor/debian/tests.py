@@ -103,6 +103,8 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
     Tests Debian-specific keyword classification.
     """
 
+    GIT_HEADERS = ('X-Git-Repo', 'X-GitLab-Project')
+
     def setUp(self):
         self.clear_message()
         self.from_email = 'dummy-email@domain.com'
@@ -325,22 +327,32 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
         self.assertEqual(self.package.news_set.count(), 1)
 
     def test_classify_git_mail(self):
-        self.add_header('X-Git-Repo', self.package_name)
-        pkg, keyword = self.run_classify()
-        self.assertEqual(pkg, self.package_name)
-        self.assertEqual(keyword, 'vcs')
+        for header in self.GIT_HEADERS:
+            with self.subTest(header=header):
+                self.add_header(header, self.package_name)
+                pkg, keyword = self.run_classify()
+                self.assertEqual(pkg, self.package_name)
+                self.assertEqual(keyword, 'vcs')
+                del self.message[header]
 
     def test_classify_git_mail_drops_git_suffix_from_repo_name(self):
-        self.add_header('X-Git-Repo', self.package_name + '.git')
-        pkg, keyword = self.run_classify()
-        self.assertEqual(pkg, self.package_name)
-        self.assertEqual(keyword, 'vcs')
+        for header in self.GIT_HEADERS:
+            with self.subTest(header=header):
+                self.add_header(header, self.package_name + '.git')
+                pkg, keyword = self.run_classify()
+                self.assertEqual(pkg, self.package_name)
+                self.assertEqual(keyword, 'vcs')
+                del self.message[header]
 
     def test_classify_git_mail_keeps_basename_only(self):
-        self.add_header('X-Git-Repo', 'packages/unstable/' + self.package_name)
-        pkg, keyword = self.run_classify()
-        self.assertEqual(pkg, self.package_name)
-        self.assertEqual(keyword, 'vcs')
+        for header in self.GIT_HEADERS:
+            with self.subTest(header=header):
+                self.add_header(header,
+                                'packages/unstable/' + self.package_name)
+                pkg, keyword = self.run_classify()
+                self.assertEqual(pkg, self.package_name)
+                self.assertEqual(keyword, 'vcs')
+                del self.message[header]
 
 
 class GetPseudoPackageListTest(TestCase):
