@@ -1,4 +1,4 @@
-# Copyright 2015 The Distro Tracker Developers
+# Copyright 2015-2018 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -141,6 +141,8 @@ class MailProcessor(object):
             self.handle_bounces(details)
         elif service == 'control':
             self.handle_control()
+        elif service == 'team':
+            self.handle_team(details)
         elif settings.DISTRO_TRACKER_ACCEPT_UNQUALIFIED_EMAILS:
             package, keyword = (addr.split('@', 1)[0], None)
             if package and '_' in package:
@@ -167,6 +169,9 @@ class MailProcessor(object):
     def handle_dispatch(self, package=None, keyword=None):
         distro_tracker.mail.dispatch.process(self.message, package=package,
                                              keyword=keyword)
+
+    def handle_team(self, team):
+        pass
 
 
 def run_mail_processor(mail_path, log_failure=False):

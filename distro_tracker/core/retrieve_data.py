@@ -1,4 +1,4 @@
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2018 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -20,6 +20,7 @@ from distro_tracker.core.models import PackageExtractedInfo
 from distro_tracker.core.models import BinaryPackageName
 from distro_tracker.core.models import BinaryPackage
 from distro_tracker.core.models import SourcePackageDeps
+from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.utils.packages import (
     extract_information_from_sources_entry,
     extract_information_from_packages_entry,
@@ -1026,6 +1027,14 @@ class UpdateTeamPackagesTask(BaseTask):
         teams = Team.objects.filter(maintainer_email__email=maintainer.email)
         for team in teams:
             team.packages.add(package)
+        if maintainer.email.endswith("@" + settings.DISTRO_TRACKER_FQDN):
+            localpart, _ = maintainer.email.split('@', 1)
+            service, slug = localpart.split('+', 1)
+            if service != 'team':
+                return
+            team = get_or_none(Team, slug=slug)
+            if team:
+                team.packages.add(package)
 
     def execute(self):
         # We only need to process the packages which are added to the default

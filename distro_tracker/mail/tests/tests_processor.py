@@ -196,6 +196,10 @@ class MailProcessorTest(TestCase, HelperMixin):
         '''bounces+foo@ is processed by handle_bounces()'''
         self._test_process_for_addr('bounces+foo', 'handle_bounces', 'foo')
 
+    def test_process_team(self):
+        '''team+foo@ is processed by handle_team(foo)'''
+        self._test_process_for_addr('team+foo', 'handle_team', 'foo')
+
     def test_process_without_delivery_address(self):
         '''process() fails when no delivery address can be identified'''
         with self.assertRaises(MissingDeliveryAddress):

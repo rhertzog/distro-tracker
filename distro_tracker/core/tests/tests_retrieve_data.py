@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2018 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -14,6 +14,7 @@
 Tests for the Distro Tracker core data retrieval.
 """
 from distro_tracker.test import TestCase
+from django.conf import settings
 from django.test.utils import override_settings
 from unittest import mock
 from distro_tracker.core.tasks import run_task
@@ -1091,6 +1092,39 @@ class UpdateTeamPackagesTaskTests(TestCase):
         Tests the scenario where a new package version appears in the default
         repository.
         """
+        self.repository.add_source_package(self.package)
+        self.add_mock_events('new-source-package-version-in-repository', {
+            'name': self.package.name,
+            'version': self.package.version,
+            'repository': self.repository.name,
+        })
+        # Sanity check: the team does not have any packages
+        self.assertEqual(0, self.team.packages.count())
+
+        self.run_task()
+
+        # The team is now associated with a new package
+        self.assertEqual(1, self.team.packages.count())
+        self.assertEqual(self.package.name, self.team.packages.all()[0].name)
+
+    def test_team_gets_package_with_team_email(self):
+        """
+        Tests the scenario where a new package version appears in the default
+        repository with a maintainer email using the team+<slug>@ email
+        address of the distro tracker instance.
+        """
+        team_email = "team+{}@{}".format(
+            self.team.slug,
+            settings.DISTRO_TRACKER_FQDN
+        )
+        self.package = create_source_package({
+            'name': 'team-package',
+            'version': '1.0.0',
+            'maintainer': {
+                'name': 'Maintainer',
+                'email': team_email,
+            },
+        })
         self.repository.add_source_package(self.package)
         self.add_mock_events('new-source-package-version-in-repository', {
             'name': self.package.name,
