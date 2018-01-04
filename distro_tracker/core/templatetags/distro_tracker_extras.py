@@ -71,8 +71,8 @@ def toggle_chevron(title='Toggle details'):
     Renders a chevron to toggle details.
     """
     chevron = \
-        '<a href="#" role="button" aria-label="{}" tabindex="0">{}</a>'.format(
-            title, octicon('chevron-down', title=title, content=''))
+        '<span role="button" aria-label="{}">{}</span>'.format(title,
+                octicon('chevron-down', title=title, content=''))
     return mark_safe(chevron)
 
 

@@ -6,31 +6,26 @@
 <div class="list-group list-group-flush" id="action-needed-list" role="list">
     {% for item in panel.context.items %}
     <div class="card list-group-item" role="listitem">
-	<div class="card-block p-a-0 action-needed-heading">
-	    <span data-toggle="collapse"
-		  data-parent="#action-needed-list"
-		  data-target="#action-needed-details-{{ forloop.counter }}"
-		  class="chevron">
-		{% toggle_chevron %}
-	    </span>
-	    {# The short description is allowed to contain some HTML markup #}
-	    {{ item.short_description|safe }}
-	    {% with severity=item.to_dict.severity %}
-	    <div class="label label-{{ severity.label_type }} pull-xs-right">{{ severity.name }}</div>
-	    {% endwith %}
-	</div>
-	<div id="action-needed-details-{{ forloop.counter }}" class="collapse">
-	    <div class="card-block">
-	    {{ item.full_description }}
-	    </div>
-	    <div class="small card-footer text-muted">
-	    Created: {{ item.created_timestamp|date:"Y-m-d" }}
-	    <span class="pull-xs-right">
-	    Last update: {{ item.last_updated_timestamp|date:"Y-m-d" }}
-		         {{  item.last_updated_timestamp|time:"H:i" }}
-	    </span>
-	    </div>
-        </div>
+        <details>
+            <summary>
+                <span class="chevron">{% toggle_chevron %}</span>
+                {# The short description is allowed to contain some HTML markup #}
+                {{ item.short_description|safe }}
+                {% with severity=item.to_dict.severity %}
+                <span class="label label-{{ severity.label_type }} pull-xs-right">{{ severity.name }}</span>
+                {% endwith %}
+            </summary>
+            <div class="card-block">
+                {{ item.full_description }}
+            </div>
+            <div class="small card-footer text-muted">
+                Created: {{ item.created_timestamp|date:"Y-m-d" }}
+                <span class="pull-xs-right">
+                    Last update: {{ item.last_updated_timestamp|date:"Y-m-d" }}
+                    {{  item.last_updated_timestamp|time:"H:i" }}
+                </span>
+            </div>
+        </details>
     </div>
     {% endfor %}
 </div>

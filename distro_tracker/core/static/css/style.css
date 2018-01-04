@@ -315,3 +315,11 @@ label {
   cursor: pointer;
   color: #0275D8;
 }
+
+summary {
+ display: block;
+}
+
+summary::-webkit-details-marker {
+ display: none;
+}
