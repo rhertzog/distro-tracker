@@ -36,12 +36,12 @@ class TemplateTagsTests(SimpleTestCase):
 
     def test_toggle_chevron_generates_a_toggle_details_link(self):
         html = self.parse_toggle_chevron()
-        link = html.find(name='a')
+        link = html.find(name='span')
         self.assertIsNotNone(link)
         self.assertIn(link.get_text(), "[Toggle details]")
 
     def test_toggle_chevron_generates_a_custom_link(self):
         html = self.parse_toggle_chevron('title="abc"')
-        link = html.find(name='a')
+        link = html.find(name='span')
         self.assertIsNotNone(link)
         self.assertIn(link.get_text(), "[abc]")
