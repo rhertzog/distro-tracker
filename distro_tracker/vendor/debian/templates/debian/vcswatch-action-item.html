@@ -12,7 +12,10 @@ the current version of the package is not in its VCS.<br/>
 Either you need to push your commits, or the information about the package's
 VCS are out of date.  A common cause of the latter issue when using the Git VCS
 is not specifying the correct branch when the packaging is not in the default
-one.
+one (remote HEAD branch, which is usually "master" but can be modified with
+<code>git remote set-head origin &lt;branch-name&gt;</code>). The
+Vcs-Git field in debian/control can contain a "-b &lt;branch-name&gt;"
+suffix to indicate what branch is used for the Debian packaging.
 {% elif status == "UNREL" %}
 this package has been uploaded into the archive but the debian/changelog in the
 VCS is still UNRELEASED.  You should consider pushing the missing commits
