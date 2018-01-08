@@ -2450,20 +2450,20 @@ class UpdateVcsWatchTask(BaseTask):
         },
         "OLD": {
             'description':
-                'The <a href="{url}">VCS repository is NOT up to date</a>, '
-                'push the missing commits.',
+                'The <a href="{url}">VCS repository is not up to date</a>, '
+                'consider pushing the missing commits.',
             "severity": ActionItem.SEVERITY_HIGH,
         },
         "UNREL": {
             "description":
-                'The <a href="{url}">VCS repository is NOT up to date</a>, '
-                'push the missing commits.',
+                'The <a href="{url}">VCS repository is not up to date</a>, '
+                'consider pushing the missing commits.',
             "severity": ActionItem.SEVERITY_HIGH,
         },
         "ERROR": {
             "description":
                 '<a href="{url}">Error while accessing the VCS repository</a>. '
-                'Please troubleshot and fix.',
+                'Please troubleshot and fix the issue.',
             "severity": ActionItem.SEVERITY_HIGH,
         },
         "DEFAULT": {
