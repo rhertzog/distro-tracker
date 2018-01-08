@@ -6,9 +6,8 @@ Design Overview
 Introduction
 ------------
 
-Distro Tracker is implemented as a Python application using the
-`Django framework <https://www.djangoproject.com>`_. It aims to support both
-Python2.7 and Python3.
+Distro Tracker is implemented as a Python 3 application using the
+`Django framework <https://www.djangoproject.com>`_.
 
 An important goal of the project is to implement a system which is easily
 customizable so it could serve Debian derivatives too (vendors).
