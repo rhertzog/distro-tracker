@@ -120,11 +120,15 @@ def classify_message(msg, package, keyword):
 
     bts_match = 'owner@bugs.debian.org' in xloop
     dak_match = 'DAK' in xdebian
+    buildd_match = 'buildd.debian.org' in xdebian
 
     if bts_match:  # This is a mail of the Debian bug tracking system
         package, keyword = _classify_bts_message(msg, package, keyword)
     elif dak_match:
         package, keyword = _classify_dak_message(msg, package, keyword)
+    elif buildd_match:
+        keyword = 'build'
+        package = msg.get('X-Debian-Package', package)
     elif testing_watch:
         package = testing_watch
         keyword = 'summary'

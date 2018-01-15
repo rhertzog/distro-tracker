@@ -354,6 +354,13 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
                 self.assertEqual(keyword, 'vcs')
                 del self.message[header]
 
+    def test_classify_buildd_mail(self):
+        self.set_header('X-Debian', 'buildd.debian.org')
+        self.set_header('X-Debian-Package', 'foobar')
+        pkg, keyword = self.run_classify()
+        self.assertEqual(pkg, 'foobar')
+        self.assertEqual(keyword, 'build')
+
 
 class GetPseudoPackageListTest(TestCase):
 
