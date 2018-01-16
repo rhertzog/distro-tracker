@@ -21,6 +21,7 @@ import os
 import apt
 import shutil
 import apt_pkg
+import re
 import subprocess
 import tarfile
 
@@ -55,7 +56,7 @@ def extract_vcs_information(stanza):
     :type stanza: dict
 
     :returns: VCS information regarding the package. Contains the following
-        keys: type[, browser, url]
+        keys: type[, browser, url, branch]
     :rtype: dict
     """
     vcs = {}
@@ -66,6 +67,11 @@ def extract_vcs_information(stanza):
         elif key.startswith('vcs-'):
             vcs['type'] = key[4:]
             vcs['url'] = value
+            if vcs['type'] == 'git':
+                match = re.match(r'(?P<url>.*?)\s+-b\s*(?P<branch>\S+)', value)
+                if match:
+                    vcs['url'] = match.group('url')
+                    vcs['branch'] = match.group('branch')
     return vcs
 
 

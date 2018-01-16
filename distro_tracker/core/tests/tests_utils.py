@@ -716,6 +716,19 @@ class PackageUtilsTests(SimpleTestCase):
             extract_vcs_information(d)
         )
 
+        # Git with branch info
+        d = {
+            'Vcs-Git': vcs_url + ' -b some-branch'
+        }
+        self.assertDictEqual(
+            {
+                'type': 'git',
+                'url': vcs_url,
+                'branch': 'some-branch',
+            },
+            extract_vcs_information(d)
+        )
+
         # Empty dict
         self.assertDictEqual({}, extract_vcs_information({}))
         # No vcs information in the dict
