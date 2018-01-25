@@ -30,7 +30,7 @@ def classify_message(msg, package, keyword):
 
     # Recognize build logs
     if msg.get('X-Rebuildd-Host'):
-        match = re.search('build of (\S+)_', msg.get('Subject'))
+        match = re.search(r'build of (\S+)_', msg.get('Subject'))
         if match:
             keyword = 'build'
             package = match.group(1)
