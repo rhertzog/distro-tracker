@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: DistroTracker
-Source: https://anonscm.debian.org/cgit/qa/distro-tracker.git
+Source: https://salsa.debian.org/qa/distro-tracker
 
 Files: *
 Copyright: 2013-2017 The Distro Tracker Developers

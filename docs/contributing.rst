@@ -42,10 +42,10 @@ Usual workflow
 
   1. Clone distro-tracker locally::
 
-       $ git clone git://anonscm.debian.org/qa/distro-tracker.git
+       $ git clone https://salsa.debian.org/qa/distro-tracker.git
 
      Note that you can also browse the sources at
-     https://anonscm.debian.org/cgit/qa/distro-tracker.git
+     https://salsa.debian.org/qa/distro-tracker
 
   2. Follow the steps in the chapter :ref:`setting-up`.
 
