@@ -1,10 +1,17 @@
 image: 'debian:stretch-backports'
 
+variables:
+  DJANGO_DEB_REPOSITORY: 'stretch-backports'
+
 before_script:
   - apt-get update
   # Runtime dependencies
-  - apt-get -y install python3-django/stretch-backports
-  - apt-get -y install python3-requests python3-django-jsonfield python3-django-captcha python3-debian python3-debianbts python3-apt python3-gpgme python3-yaml python3-bs4 python3-pyinotify
+  - apt-get -y install python3-django/$DJANGO_DEB_REPOSITORY
+  - apt-get -y install python3-requests python3-django-jsonfield python3-django-captcha python3-debian python3-debianbts python3-apt python3-yaml python3-bs4 python3-pyinotify
+  # python3-gpgme is only in stretch... we must get rid of it.
+  - apt-get -y wget ca-certificates
+  - '[ $DJANGO_DEB_REPOSITORY != buster ] || (wget https://deb.debian.org/debian/pool/main/p/pygpgme/python3-gpgme_0.3-1.2_amd64.deb; dpkg -i python3-gpgme_0.3-1.2_amd64.deb; apt-get -f install)'
+  - '[ $DJANGO_DEB_REPOSITORY != stretch-backports ] || apt-get -y install python3-gpgme'
   # Test dependencies
   - apt-get -y install python3-coverage python3-selenium chromium-driver xvfb python3-pip
   # Dependencies to build docs
@@ -24,9 +31,13 @@ unit-tests:
   artifacts:
     paths:
       - .coverage
+    when: always
     expire_in: 6h
 
 functional-tests:
+  image: 'debian:buster'
+  variables:
+    DJANGO_DEB_REPOSITORY: 'buster'
   script:
     - xvfb-run python3 ./manage.py test functional_tests
 
