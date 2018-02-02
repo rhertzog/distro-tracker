@@ -1,0 +1,14 @@
+image: 'debian:9'
+
+pages:
+  script:
+    - apt-get install python3-sphinx
+    - make -C docs html
+    - mv docs/_build/html/ public/
+  artifacts:
+    paths:
+      - public
+  only:
+    - master
+  tags:
+    - pages
