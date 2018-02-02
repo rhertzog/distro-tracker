@@ -1294,7 +1294,10 @@ class VerifySignatureTest(SimpleTestCase):
 
     def tearDown(self):
         import shutil
-        shutil.rmtree(self.TEST_KEYRING_DIRECTORY)
+        # We ignore errors as the gpg-agent socket might be removed in parallel
+        # leading to unexpected failures when rmtree() tries to remove an
+        # already removed file.
+        shutil.rmtree(self.TEST_KEYRING_DIRECTORY, ignore_errors=True)
 
     def test_signed_message(self):
         """
