@@ -372,7 +372,7 @@ class RepositoryAdminTest(SeleniumTestCase):
         )
 
         # The user now wants to create a new repository.
-        self.click_link("Add repository")
+        self.browser.find_element_by_css_selector('a.addlink').click()
         self.assert_in_page_body("Add repository")
         try:
             save_button = self.browser.find_element_by_css_selector(
@@ -410,13 +410,13 @@ class RepositoryAdminTest(SeleniumTestCase):
         # The response page shows confirmation the repository has been added.
         self.assert_in_page_body("added successfully")
         # The page also shows the information of the newly added repository.
-        self.assert_in_page_body('Codename')
+        self.assert_in_page_body('CODENAME')
         self.assert_in_page_body('wheezy')
-        self.assert_in_page_body('Components')
+        self.assert_in_page_body('COMPONENTS')
         self.assert_in_page_body('main contrib non-free')
 
         # The user now wants to add another repository
-        self.click_link("Add repository")
+        self.browser.find_element_by_css_selector('a.addlink').click()
         # This time, they want to enter all the necessary data manually.
         self.input_to_element('id_name', 'testing')
         self.input_to_element('id_shorthand', 'testing')
@@ -1011,7 +1011,8 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         self.refresh_user_object()
         self.assertEqual(name, self.user.first_name)
         # === But the last name has not ===
-        self.assertEqual(old_last_name, self.user.last_name)
+        self.assertTrue(self.user.last_name is None or
+                        self.user.last_name == old_last_name)
 
         # The user now wants to update both their first and last name.
         self.clear_element_text('id_first_name')
@@ -1065,13 +1066,6 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         # The response shows an error saying the current password was
         # incorrect.
         self.assert_in_page_body('Your old password was entered incorrectly')
-
-        # The user enters their current password correctly, but
-        # forgets the new password.
-        self.input_to_element('id_old_password', self.password)
-        self.send_enter('id_old_password')
-        # The response shows a message that the field is required.
-        self.assert_in_page_body('This field is required')
 
         # This time, the user enters both the old password and fills in the new
         # password fields, but they are mismatched
@@ -1357,10 +1351,6 @@ class TeamTests(SeleniumTestCase):
         self.get_page(self.get_create_team_url())
         # This time the response page has a form to create a new team.
         self.assert_element_with_id_in_page('create-team-form')
-        # The user forgets to input the team name, initially.
-        self.send_enter('id_name')
-        # Since a name is required, an error is returned
-        self.assert_in_page_body('This field is required')
         # The user inputs the team name, but not a maintainer email
         team_name = 'New team'
         self.input_to_element('id_name', team_name)
