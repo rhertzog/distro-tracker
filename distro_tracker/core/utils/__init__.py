@@ -1,4 +1,4 @@
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2018 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -14,9 +14,8 @@ from django.db import models
 from django.conf import settings
 import os
 import json
-import gpgme
+import gpg
 import datetime
-import io
 
 # Re-export some functions
 from .email_messages import extract_email_address_from_header  # noqa
@@ -210,29 +209,38 @@ def verify_signature(content):
         # The vendor has not provided a keyring
         return None
 
+    if content is None:
+        return None
+
     if isinstance(content, str):
         content = content.encode('utf-8')
 
     os.environ['GNUPGHOME'] = keyring_directory
-    ctx = gpgme.Context()
-
-    # Try to verify the given content
-    plain = io.BytesIO()
-    try:
-        signatures = ctx.verify(io.BytesIO(content), None, plain)
-    except gpgme.GpgmeError:
-        return None
-
-    # Extract signer information
     signers = []
-    for signature in signatures:
-        key_missing = bool(signature.summary & gpgme.SIGSUM_KEY_MISSING)
 
-        if key_missing:
-            continue
+    with gpg.Context() as ctx:
 
-        key = ctx.get_key(signature.fpr)
-        signers.append((key.uids[0].name, key.uids[0].email))
+        # Try to verify the given content
+        signed_data = gpg.Data()
+        signed_data.new_from_mem(content)
+
+        try:
+            _, result = ctx.verify(signed_data)
+        except gpg.errors.BadSignatures:
+            return []
+        except gpg.errors.GpgError:
+            return None
+
+        # Extract signer information
+        for signature in result.signatures:
+            key_missing = bool(signature.summary &
+                               gpg.constants.SIGSUM_KEY_MISSING)
+
+            if key_missing:
+                continue
+
+            key = ctx.get_key(signature.fpr)
+            signers.append((key.uids[0].name, key.uids[0].email))
 
     return signers
 

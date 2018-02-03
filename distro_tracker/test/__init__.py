@@ -101,15 +101,17 @@ class TestCaseHelpersMixin(object):
         Imports a key from an ascii armored file located in tests-data/keys/
         into Distro Tracker's keyrings/.
         """
-        import gpgme
+        import gpg
 
         old = os.environ.get('GNUPGHOME', None)
         os.environ['GNUPGHOME'] = settings.DISTRO_TRACKER_KEYRING_DIRECTORY
-        ctx = gpgme.Context()
 
         file_path = self.get_test_data_path('keys/' + filename)
-        with open(file_path, 'rb') as key_file:
-            ctx.import_(key_file)
+        keydata = gpg.Data()
+        keydata.new_from_file(file_path)
+
+        with gpg.Context() as ctx:
+            ctx.op_import(keydata)
 
         if old:
             os.environ['GNUPGHOME'] = old

@@ -1299,6 +1299,13 @@ class VerifySignatureTest(SimpleTestCase):
         # already removed file.
         shutil.rmtree(self.TEST_KEYRING_DIRECTORY, ignore_errors=True)
 
+    def test_verify_signature_none(self):
+        """
+        Ensure the function does not fail when it's passed None as data
+        to analyze.
+        """
+        self.assertIsNone(verify_signature(None))
+
     def test_signed_message(self):
         """
         Tests extracting the signature from a correctly signed message when the

@@ -18,7 +18,7 @@ Distro Tracker currently depends on the following Debian packages:
 - python3-debian
 - python3-debianbts
 - python3-apt
-- python3-gpgme
+- python3-gpg
 - python3-yaml
 - python3-bs4
 - python3-pyinotify
@@ -28,7 +28,7 @@ Distro Tracker currently depends on the following Debian packages:
 
 Here is the list of required packages for development on Debian Buster::
 
- $ sudo apt install python3-django python3-requests python3-django-jsonfield python3-django-debug-toolbar python3-debian python3-debianbts python3-apt python3-gpgme python3-yaml python3-bs4 python3-pyinotify python3-selenium chromium-driver
+ $ sudo apt install python3-django python3-requests python3-django-jsonfield python3-django-debug-toolbar python3-debian python3-debianbts python3-apt python3-gpg python3-yaml python3-bs4 python3-pyinotify python3-selenium chromium-driver
 
 .. _database_setup:
 
