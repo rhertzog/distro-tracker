@@ -52,7 +52,9 @@ class SeleniumTestCase(LiveServerTestCase):
             if os.path.exists(chromedriver):
                 break
         os.environ["webdriver.chrome.driver"] = chromedriver
-        self.browser = webdriver.Chrome(chromedriver)
+        options = webdriver.ChromeOptions()
+        options.add_argument('no-sandbox')
+        self.browser = webdriver.Chrome(chromedriver, chrome_options=options)
         self.browser.implicitly_wait(3)
         self.browser.set_page_load_timeout(3)
         self.browser.set_script_timeout(3)
