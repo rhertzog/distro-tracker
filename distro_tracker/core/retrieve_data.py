@@ -327,11 +327,7 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                     })
 
                 # Add it to the repository
-                kwargs = {
-                    'priority': stanza.get('priority', ''),
-                    'section': stanza.get('section', ''),
-                }
-                entry = repository.add_source_package(src_pkg, **kwargs)
+                entry = repository.add_source_package(src_pkg)
                 self.raise_event('new-source-package-version-in-repository', {
                     'name': src_pkg.name,
                     'version': src_pkg.version,
@@ -836,8 +832,6 @@ class UpdatePackageGeneralInformation(PackageUpdateTask):
         srcpkg = entry.source_package
         general_information = {
             'name': srcpkg.name,
-            'priority': entry.priority,
-            'section': entry.section,
             'version': entry.source_package.version,
             'maintainer': srcpkg.maintainer.to_dict(),
             'uploaders': [

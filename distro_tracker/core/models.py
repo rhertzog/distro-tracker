@@ -1323,9 +1323,6 @@ class SourcePackageRepositoryEntry(models.Model):
     repository = models.ForeignKey(Repository, related_name='source_entries',
                                    on_delete=models.CASCADE)
 
-    priority = models.CharField(max_length=50, blank=True)
-    section = models.CharField(max_length=50, blank=True)
-
     objects = SourcePackageRepositoryEntryManager()
 
     class Meta:

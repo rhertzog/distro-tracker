@@ -9,9 +9,6 @@
 	{% with url=ctx.url|default:"#" %}
 	<a href="{{ url }}">{{ ctx.name }}</a>
 	{% endwith %}
-	{% if ctx.priority %}
-	(<span title="priority">{{ ctx.priority }}</span>, <span title="section">{{ ctx.section }}</span>)
-	{% endif %}
     </li>
     {% endif %}
 
