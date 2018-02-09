@@ -506,10 +506,15 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         self.assertEqual(bounce_stats[0].mails_bounced, 1)
         self.assertEqual(self.user.emailsettings.subscription_set.count(), 1)
 
-    def test_spam_bounce_ignored(self):
+    def _test_spam_bounce_ignored(self, payload):
         self.assertEqual(self.user.bouncestats_set.count(), 0)
-        self.message.set_payload(
-            """
+        self.message.set_payload(payload)
+        dispatch.handle_bounces(self.create_bounce_address(self.user.email),
+                                self.message)
+        self.assertEqual(self.user.bouncestats_set.count(), 0)
+
+    def test_spam_bounce_ignored(self):
+        self._test_spam_bounce_ignored("""
   someone@example.net
     SMTP error from remote mail server after end of data:
     host aspmx.l.google.com [2607:f8b0:400e:c02::1a]:
@@ -518,9 +523,16 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
     552-5.7.0  https://support.google.com/mail/?p=BlockedMessage to review our
     552 5.7.0 message content and attachment content guidelines.
             """)
-        dispatch.handle_bounces(self.create_bounce_address(self.user.email),
-                                self.message)
-        self.assertEqual(self.user.bouncestats_set.count(), 0)
+
+    def test_spam_bounce_ignored_2(self):
+        self._test_spam_bounce_ignored("""
+Remote-MTA: dns; gmail-smtp-in.l.google.com
+Diagnostic-Code: smtp; 550-5.7.1 [....] Our system has detected
+ 550-5.7.1 that this message is likely suspicious due to the very low reputation
+ 550-5.7.1 of the sending domain. To best protect our users from spam, the
+ 550-5.7.1 message has been blocked. Please visit
+ 550 5.7.1  https://support.google.com/mail/answer/188131 for more information.
+            """)
 
     def test_bounce_over_limit(self):
         """

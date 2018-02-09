@@ -383,7 +383,7 @@ def bounce_is_for_spam(message):
         # host ...: 550 High probability of spam
         # host ...: 554 5.7.1 Message rejected because it contains malware
         # 550 Executable files are not allowed in compressed files.
-        r"55[0-9] .*(?:spam|malware|virus|[Ee]xecutable files)",
+        r"55[0-9][- ].*(?:spam|malware|virus|[Ee]xecutable files)",
     ]
     # XXX: Handle delivery report properly
     for part in message.walk():
