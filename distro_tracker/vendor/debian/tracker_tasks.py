@@ -1695,7 +1695,7 @@ class UpdateDebianDuckTask(BaseTask):
         :returns: A array if source package names.
         """
 
-        ducklist = get_resource_content(self.DUCK_SP_LIST_URL)
+        ducklist = get_resource_text(self.DUCK_SP_LIST_URL)
         if ducklist is None:
             return None
 
