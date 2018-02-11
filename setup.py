@@ -49,6 +49,18 @@ setup(name='DistroTracker',
         if '__init__.py' in files
       ],
       package_data=find_package_data('distro_tracker'),
+      classifiers=[
+          "Development Status :: 5 - Production/Stable",
+          "Intended Audience :: Information Technology",
+          "Intended Audience :: Developers",
+          ("License :: OSI Approved :: "
+           "GNU General Public License v2 or later (GPLv2+)"),
+          "Operating System :: POSIX :: Linux",
+          "Environment :: Web Environment",
+          "Programming Language :: Python :: 3",
+          "Framework :: Django",
+          "Topic :: Software Development",
+      ],
      )
 setup(name='DjangoEmailAccounts',
       version=version,
@@ -62,4 +74,15 @@ setup(name='DjangoEmailAccounts',
         if '__init__.py' in files
       ],
       package_data=find_package_data('django_email_accounts'),
+      classifiers=[
+          "Development Status :: 5 - Production/Stable",
+          "Intended Audience :: Information Technology",
+          "Intended Audience :: Developers",
+          ("License :: OSI Approved :: "
+           "GNU General Public License v2 or later (GPLv2+)"),
+          "Operating System :: POSIX :: Linux",
+          "Environment :: Web Environment",
+          "Programming Language :: Python :: 3",
+          "Framework :: Django",
+      ],
      )
