@@ -103,13 +103,18 @@ class TestCaseHelpersMixin(object):
         """
         import gpg
 
+        old = os.environ.get('GNUPGHOME', None)
+        os.environ['GNUPGHOME'] = settings.DISTRO_TRACKER_KEYRING_DIRECTORY
+
         file_path = self.get_test_data_path('keys/' + filename)
         keydata = gpg.Data()
         keydata.new_from_file(file_path)
 
-        with gpg.Context(home_dir=settings.DISTRO_TRACKER_KEYRING_DIRECTORY) \
-                as ctx:
+        with gpg.Context() as ctx:
             ctx.op_import(keydata)
+
+        if old:
+            os.environ['GNUPGHOME'] = old
 
 
 class SimpleTestCase(TempDirsMixin, TestCaseHelpersMixin,
