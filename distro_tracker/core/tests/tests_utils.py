@@ -1289,16 +1289,6 @@ class VerifySignatureTest(SimpleTestCase):
     Tests the :func:`distro_tracker.core.utils.verify_signature` function.
     """
 
-    def setUp(self):
-        self.TEST_KEYRING_DIRECTORY = tempfile.mkdtemp(suffix='-test-keyring')
-
-    def tearDown(self):
-        import shutil
-        # We ignore errors as the gpg-agent socket might be removed in parallel
-        # leading to unexpected failures when rmtree() tries to remove an
-        # already removed file.
-        shutil.rmtree(self.TEST_KEYRING_DIRECTORY, ignore_errors=True)
-
     def test_verify_signature_none(self):
         """
         Ensure the function does not fail when it's passed None as data
@@ -1335,9 +1325,7 @@ class VerifySignatureTest(SimpleTestCase):
         Tests extracting signature information when the signature itself is
         wrong.
         """
-        with self.settings(
-                DISTRO_TRACKER_KEYRING_DIRECTORY=self.TEST_KEYRING_DIRECTORY):
-            self.assertIsNone(verify_signature(b"This is not a signature"))
+        self.assertIsNone(verify_signature(b"This is not a signature"))
 
     def test_utf8_content(self):
         """

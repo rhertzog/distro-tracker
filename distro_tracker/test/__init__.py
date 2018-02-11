@@ -60,7 +60,7 @@ class TempDirsMixin(object):
         self.addCleanup(self._restore_settings)
         self._backup_settings('DISTRO_TRACKER_DATA_PATH')
         tempdir = tempfile.mkdtemp(prefix='distro-tracker-tests-')
-        self.addCleanup(shutil.rmtree, tempdir)
+        self.addCleanup(shutil.rmtree, tempdir, ignore_errors=True)
         setattr(settings, 'DISTRO_TRACKER_DATA_PATH', tempdir)
         for name, dirname in self.DISTRO_TRACKER_PATH_SETTINGS.items():
             self._backup_settings(name)
@@ -103,18 +103,13 @@ class TestCaseHelpersMixin(object):
         """
         import gpg
 
-        old = os.environ.get('GNUPGHOME', None)
-        os.environ['GNUPGHOME'] = settings.DISTRO_TRACKER_KEYRING_DIRECTORY
-
         file_path = self.get_test_data_path('keys/' + filename)
         keydata = gpg.Data()
         keydata.new_from_file(file_path)
 
-        with gpg.Context() as ctx:
+        with gpg.Context(home_dir=settings.DISTRO_TRACKER_KEYRING_DIRECTORY) \
+                as ctx:
             ctx.op_import(keydata)
-
-        if old:
-            os.environ['GNUPGHOME'] = old
 
 
 class SimpleTestCase(TempDirsMixin, TestCaseHelpersMixin,

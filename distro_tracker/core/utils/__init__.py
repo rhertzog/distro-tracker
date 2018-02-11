@@ -12,7 +12,6 @@ from django.template.loader import render_to_string
 from django.http import HttpResponse
 from django.db import models
 from django.conf import settings
-import os
 import json
 import gpg
 import datetime
@@ -215,10 +214,9 @@ def verify_signature(content):
     if isinstance(content, str):
         content = content.encode('utf-8')
 
-    os.environ['GNUPGHOME'] = keyring_directory
     signers = []
 
-    with gpg.Context() as ctx:
+    with gpg.Context(home_dir=keyring_directory) as ctx:
 
         # Try to verify the given content
         signed_data = gpg.Data()
