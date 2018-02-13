@@ -126,7 +126,7 @@ class LinkifyCVELinks(Linkify):
     def linkify(text):
         address = getattr(settings, 'DISTRO_TRACKER_CVE_URL',
                           'https://cve.mitre.org/cgi-bin/cvename.cgi?name=')
-        return re.sub(r'(?:(?<=\s)|\A)((CVE)-(\d){4}-(\d){4,})',
+        return re.sub(r'(?:(?<=\s|\()|\A)((CVE)-(\d{4})-(\d{4,}))',
                       r'<a href="{}\1">\1</a>'.format(address),
                       text, flags=re.IGNORECASE)
 

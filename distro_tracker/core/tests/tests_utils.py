@@ -1667,6 +1667,10 @@ class LinkifyTests(TestCase):
                 'intext': ('see ' + 'cve-2014-67890' + ' for informations',
                            'see ' + self.cve_link('cve-2014-67890') +
                            ' for informations'),
+                'parens': ('(CVE-2017-1234)',
+                           "(%s)" % (
+                               self.cve_link('CVE-2017-1234'),
+                           )),
                 'notinurl': ('foo.debian.org/CVE-2014-1234',
                              'foo.debian.org/CVE-2014-1234'),
             },
