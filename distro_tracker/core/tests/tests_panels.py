@@ -24,6 +24,7 @@ from distro_tracker.core.models import PackageName
 from distro_tracker.core.models import SourcePackage
 from distro_tracker.core.models import Repository, SourcePackageRepositoryEntry
 from distro_tracker.core.panels import VersionedLinks, DeadPackageWarningPanel
+from distro_tracker.core.panels import PackageExtractedInfo
 
 
 class VersionedLinksPanelTests(TestCase):
@@ -126,6 +127,22 @@ class GeneralInfoLinkPanelItemsTests(TestCase, TemplateTestsMixin):
             version='1.0.0',
             homepage=self.homepage)
 
+        # Useful for last test
+        PackageExtractedInfo.objects.create(
+            package=self.package_name,
+            key='general',
+            value={
+                'name': 'dummy-package',
+                'maintainer': {
+                    'email': 'jane@example.com',
+                },
+                'vcs': {
+                    'type': 'git',
+                    'url': 'https://salsa.debian.org/qa/distro-tracker.git',
+                },
+            }
+        )
+
     def get_package_page_response(self):
         url = reverse('dtracker-package-page', kwargs={
             'package_name': self.package.name,
@@ -158,6 +175,25 @@ class GeneralInfoLinkPanelItemsTests(TestCase, TemplateTestsMixin):
         response = self.get_package_page_response()
         self.assertTrue(self.get_general_info_link_panel(response))
         self.assert_homepage_is_in_linkspanel(response)
+
+    def test_panel_has_vcs_rel(self):
+        """
+        Tests that the panel has proper vcs info including the rel='vcs-*'
+        tags on links
+        """
+
+        response = self.get_package_page_response()
+        html = soup(response.content, 'html.parser')
+
+        link = html.findAll("link", {'rel': 'vcs-git'})
+        self.assertEqual(len(link), 1)
+        self.assertEqual(link[0].attrs['href'],
+                         'https://salsa.debian.org/qa/distro-tracker.git')
+
+        a = html.findAll("a", {'rel': 'vcs-git'})
+        self.assertEqual(len(a), 1)
+        self.assertEqual(a[0].attrs['href'],
+                         'https://salsa.debian.org/qa/distro-tracker.git')
 
 
 class DeadPackageWarningPanelTests(TestCase):
