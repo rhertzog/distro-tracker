@@ -1,4 +1,4 @@
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2018 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -9,14 +9,26 @@
 # except according to the terms contained in the LICENSE file.
 """Implements the RSS news feed."""
 
+from itertools import chain
+import re
+
 from django.conf import settings
 from django.http import Http404
 from django.contrib.syndication.views import Feed
+
 from distro_tracker.core.models import get_web_package
 from distro_tracker.core.models import News
 from distro_tracker.core.models import NewsRenderer
 from distro_tracker.core.models import ActionItem
-from itertools import chain
+
+
+def filter_control_chars(method):
+    # We have to filter out control chars otherwise the FeedGenerator
+    # raises UnserializableContentError (see django/utils/xmlutils.py)
+    def wrapped(self, obj):
+        result = method(self, obj)
+        return re.sub(r'[\x00-\x08\x0B-\x0C\x0E-\x1F]', '', result)
+    return wrapped
 
 
 class PackageNewsFeed(Feed):
@@ -29,14 +41,17 @@ class PackageNewsFeed(Feed):
 
         return package
 
+    @filter_control_chars
     def title(self, obj):
         return "{vendor} package news for {pkg}".format(
             vendor=settings.DISTRO_TRACKER_VENDOR_NAME,
             pkg=obj.name)
 
+    @filter_control_chars
     def link(self, obj):
         return obj.get_absolute_url()
 
+    @filter_control_chars
     def description(self, obj):
         return (
             "Latest developer's news for {vendor} source package {pkg}"
@@ -59,12 +74,14 @@ class PackageNewsFeed(Feed):
         all_items = chain(news, action_items)
         return sorted(all_items, key=item_key, reverse=True)[:item_limit]
 
+    @filter_control_chars
     def item_title(self, item):
         if isinstance(item, News):
             return item.title
         elif isinstance(item, ActionItem):
             return item.short_description
 
+    @filter_control_chars
     def item_description(self, item):
         if isinstance(item, News):
             renderer_class = NewsRenderer.get_renderer_for_content_type(

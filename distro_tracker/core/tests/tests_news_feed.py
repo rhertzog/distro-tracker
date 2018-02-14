@@ -192,6 +192,22 @@ class NewsFeedTests(TestCase):
         # Ensure the name is correctly decoded
         self.assertContains(response, 'David Martínez Moreno')
 
+    def test_news_feed_filters_out_control_characters(self):
+        content = ('This is a test entry with control chars\n'
+                   '\x00\x01\x08 \x0B\x0C \x0E\x1F')
+        title = 'This is a title with control chars \x01'
+        News.objects.create(
+            title=title,
+            content=content,
+            package=self.package)
+
+        response = self.get_rss_feed_response(self.package.name)
+
+        # Ensure the name is correctly decoded
+        self.assertContains(response, 'This is a test entry with control chars')
+        self.assertContains(response, 'This is a title with control chars')
+        self.assertNotContains(response, '\x01')
+
     def test_action_items_and_news(self):
         """
         Tests that both action items and news are included in the same feed.
