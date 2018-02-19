@@ -242,8 +242,8 @@ class GeneralInformationPanel(BasePanel):
         if implemented and url:
             general['url'] = url
         # Map the VCS type to its name.
-        if 'vcs' in general and 'type' in general['vcs']:
-            shorthand = general['vcs']['type']
+        if 'vcs' in general:
+            shorthand = general['vcs'].get('type', 'unknown')
             general['vcs']['full_name'] = get_vcs_name(shorthand)
             # Add vcs extra links (including Vcs-Browser)
             try:

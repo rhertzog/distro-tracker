@@ -185,7 +185,7 @@ def get_vcs_name(shorthand):
 
     :rtype: string
     """
-    return VCS_SHORTHAND_TO_NAME.get(shorthand, '')
+    return VCS_SHORTHAND_TO_NAME.get(shorthand, shorthand)
 
 
 def verify_signature(content):

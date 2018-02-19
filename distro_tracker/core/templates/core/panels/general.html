@@ -88,7 +88,7 @@
     {% if ctx.vcs %}
     <li class="list-group-item">
         <span class="list-item-key"><b>VCS:</b></span>
-	{% with vcs=ctx.vcs.full_name|default:ctx.vcs.type %}
+	{% with vcs=ctx.vcs.full_name %}
 	{% if vcs|lower == "cvs" %}
 	<span title="{{ ctx.vcs.url }}">{{ vcs }}</span>
 	{% else %}
