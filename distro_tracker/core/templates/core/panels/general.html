@@ -92,7 +92,11 @@
 	{% if vcs|lower == "cvs" %}
 	<span title="{{ ctx.vcs.url }}">{{ vcs }}</span>
 	{% else %}
-	<a rel="vcs-{{ ctx.vcs.type }}" href="{{ ctx.vcs.url }}">{{ vcs }}</a>
+	    {% if ctx.vcs.url %}
+	    <a rel="vcs-{{ ctx.vcs.type }}" href="{{ ctx.vcs.url }}">{{ vcs }}</a>
+	    {% else %}
+	    {{ vcs }}
+	    {% endif %}
 	{% endif %}
 	{% if ctx.vcs.extra_links %}
 	({% for name, url in ctx.vcs.extra_links %}<a href="{{ url }}">{{ name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %})

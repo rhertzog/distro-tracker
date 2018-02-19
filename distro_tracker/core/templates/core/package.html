@@ -7,8 +7,8 @@
 <link href="{% static 'css/dense.css' %}" rel="stylesheet" media="screen">
 {% for panel in panels.left %}
     {% with ctx=panel.context %}
-        {% if panel.context.vcs %}
-        <link rel="vcs-{{ ctx.vcs.type }}" href="{{ ctx.vcs.url}}" title="{{ ctx.vcs.type }} repository for {{ package.name }}">
+        {% if ctx.vcs and ctx.vcs.url %}
+        <link rel="vcs-{{ ctx.vcs.type }}" href="{{ ctx.vcs.url }}" title="{{ ctx.vcs.type }} repository for {{ package.name }}">
         {% endif %}
     {% endwith %}
 {% endfor %}
