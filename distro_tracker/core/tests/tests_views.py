@@ -541,6 +541,49 @@ class CreateTeamViewTest(UserAuthMixin, TestCase):
         )
 
 
+class TeamDetailsViewTest(UserAuthMixin, TestCase):
+    """
+    Tests for the :class:`distro_tracker.core.views.TeamDetailsView`.
+    """
+    def setUp(self):
+        self.setup_users(login=True)
+        self.team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Team name", public=True)
+
+    def get_team_page(self, slug='team-name'):
+        return self.client.get(reverse('dtracker-team-page', kwargs={
+            'slug': slug
+        }))
+
+    def test_team_page_for_a_member(self):
+        """
+        Tests the return of a team page for a team member
+        """
+        response = self.get_team_page()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['user_member_of_team'], True)
+        self.assertTemplateUsed(response, 'core/team.html')
+        self.assertContains(response, '<h1>Team name</h1>', html=True)
+
+    def test_team_page_for_a_non_member(self):
+        """
+        Tests the return of a team page for non-team member
+        """
+        self.client.logout()
+        response = self.get_team_page()
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse('user_member_of_team' in response.context)
+        self.assertTemplateUsed(response, 'core/team.html')
+        self.assertContains(response, '<h1>Team name</h1>', html=True)
+
+    def test_team_page_not_found(self):
+        """
+        Tests the request of non-existing team page
+        """
+        response = self.get_team_page(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+
 class NewsViewTest(TestCase, TemplateTestsMixin):
     """
     Tests for the :class:`distro_tracker.core.views.PackageNews`.
