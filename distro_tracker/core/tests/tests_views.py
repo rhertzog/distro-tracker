@@ -14,11 +14,13 @@
 Tests for the Distro Tracker core views.
 """
 from distro_tracker.test import TestCase, TemplateTestsMixin
+from distro_tracker.test import UserAuthMixin
 from distro_tracker.core.models import BinaryPackage, BinaryPackageName
 from distro_tracker.core.models import SourcePackageName, SourcePackage
 from distro_tracker.core.models import PackageName, PseudoPackageName
 from distro_tracker.core.models import News
 from distro_tracker.core.models import ActionItem, ActionItemType
+from distro_tracker.core.models import Team
 import json
 
 from django.urls import reverse
@@ -484,6 +486,59 @@ class ActionItemJsonViewTest(TestCase):
         }))
 
         self.assertEqual(response.status_code, 404)
+
+
+class CreateTeamViewTest(UserAuthMixin, TestCase):
+    """
+    Tests for the :class:`distro_tracker.core.views.CreateTeamView`.
+    """
+    def setUp(self):
+        self.setup_users(login=True)
+        self.create_POST_data = {
+            'maintainer_email': 'john@debian.org',
+            'name': 'QA',
+            'slug': 'qa',
+            'public': 'true',
+            'description': 'imaginary team',
+        }
+
+    def create_team(self):
+        return self.client.post(
+            reverse('dtracker-teams-create'), self.create_POST_data)
+
+    def test_team_creation(self):
+        """
+        Tests that the View correctly creates a new Team and redirects to its
+        page.
+        """
+        self.assertEqual(Team.objects.count(), 0)
+        response = self.create_team()
+        self.assertEqual(Team.objects.count(), 1)
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': 'qa'
+        }))
+
+    def test_invalid_team(self):
+        """
+        Tests that the View does not create a new Team when it is invalid.
+        """
+        self.create_POST_data['name'] = ''
+        response = self.create_team()
+        self.assertEqual(Team.objects.count(), 0)
+        self.assertFormError(
+            response, 'form', 'name', 'This field is required.')
+
+    def test_authorization_for_team_creation(self):
+        """
+        Tests the user authorization to create a new Team.
+        """
+        self.client.logout()
+        response = self.create_team()
+        self.assertEqual(Team.objects.count(), 0)
+        self.assertRedirects(
+            response,
+            reverse('dtracker-accounts-login') + '?next=/teams/%2Bcreate/'
+        )
 
 
 class NewsViewTest(TestCase, TemplateTestsMixin):
