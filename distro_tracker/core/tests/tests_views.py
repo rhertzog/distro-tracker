@@ -584,6 +584,63 @@ class TeamDetailsViewTest(UserAuthMixin, TestCase):
         self.assertEqual(response.status_code, 404)
 
 
+class DeleteTeamViewTest(UserAuthMixin, TestCase):
+    """
+    Tests for the :class:`distro_tracker.core.views.DeleteTeamView`.
+    """
+    def setUp(self):
+        self.USERS['paul'] = {
+            'main_email': 'paul@debian.org',
+            'password': 'paulpassword'
+        }
+        self.setup_users(login=True)
+        self.team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Team name", public=True)
+
+    def post_team_delete(self, slug='team-name'):
+        return self.client.post(
+            reverse('dtracker-team-delete', kwargs={'slug': slug}))
+
+    def test_delete_intermediary_screen(self):
+        """
+        Tests the confirmation popup to delete a team
+        """
+        response = self.client.get(
+            reverse('dtracker-team-delete', kwargs={'slug': self.team.slug}))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'core/team-confirm-delete.html')
+        self.assertContains(
+            response,
+            '<h3>Are you sure you want to delete the team?</h3>',
+            html=True
+        )
+
+    def test_delete_team_as_owner(self):
+        """
+        Tests deleting a team loggedin as the team owner
+        """
+        response = self.post_team_delete()
+        self.assertRedirects(response, reverse('dtracker-team-deleted'))
+        self.assertDoesNotExist(self.team)
+
+    def test_delete_team_as_non_owner(self):
+        """
+        Tests the permission denied when an user who is not the team owner
+        tries to delete a team
+        """
+        self.login(username='paul')
+        response = self.post_team_delete()
+        self.assertEqual(response.status_code, 403)
+        self.assertDoesExist(self.team)
+
+    def test_delete_non_existing_team(self):
+        """
+        Tests the attempt to destroy a non existing team
+        """
+        response = self.post_team_delete(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+
 class NewsViewTest(TestCase, TemplateTestsMixin):
     """
     Tests for the :class:`distro_tracker.core.views.PackageNews`.
