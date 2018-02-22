@@ -641,6 +641,85 @@ class DeleteTeamViewTest(UserAuthMixin, TestCase):
         self.assertEqual(response.status_code, 404)
 
 
+class UpdateTeamViewTest(UserAuthMixin, TestCase):
+    """
+    Tests for the :class:`distro_tracker.core.views.UpdateTeamView`.
+    """
+    def setUp(self):
+        self.USERS['paul'] = {
+            'main_email': 'paul@debian.org',
+            'password': 'paulpassword'
+        }
+        self.setup_users(login=True)
+        self.team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Team name", public=True)
+        self.update_POST_data = {
+            'name': 'New name',
+            'slug': 'new-name',
+            'maintainer_email': 'newmaintainer@debian.org',
+            'public': False,
+            'description': 'New description',
+        }
+
+    def post_team_update(self, slug='team-name'):
+        return self.client.post(
+            reverse('dtracker-team-update', kwargs={'slug': slug}),
+            self.update_POST_data
+        )
+
+    def test_update_team_as_owner(self):
+        """
+        Tests updating a team loggedin as the team owner
+        """
+        response = self.post_team_update()
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': 'new-name'
+        }))
+        self.team.refresh_from_db()
+        self.assertEqual(self.team.name, self.update_POST_data['name'])
+        self.assertEqual(self.team.slug, self.update_POST_data['slug'])
+        self.assertEqual(
+            self.team.maintainer_email.email,
+            self.update_POST_data['maintainer_email']
+        )
+        self.assertEqual(
+            self.team.description, self.update_POST_data['description'])
+        self.assertFalse(self.team.public)
+
+    def test_update_team_with_invalid_data(self):
+        """
+        Tests updating a team with invalid data
+        """
+        self.update_POST_data['name'] = ''
+        response = self.post_team_update()
+        self.assertEqual(response.status_code, 200)
+        self.assertFormError(
+            response, 'form', 'name', 'This field is required.')
+
+    def test_update_team_as_non_owner(self):
+        """
+        Tests the permission denied when an user who is not the team owner
+        tries to update a team
+        """
+        self.login(username='paul')
+        response = self.post_team_update()
+        self.assertEqual(response.status_code, 403)
+        self.team.refresh_from_db()
+        self.assertNotEqual(self.team.name, self.update_POST_data['name'])
+        self.assertNotEqual(self.team.slug, self.update_POST_data['slug'])
+        self.assertIsNone(self.team.maintainer_email)
+        self.assertNotEqual(
+            self.team.description, self.update_POST_data['description'])
+        self.assertTrue(self.team.public)
+
+    def test_update_non_existing_team(self):
+        """
+        Tests the attempt to update a non existing team
+        """
+        response = self.post_team_update(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+
 class NewsViewTest(TestCase, TemplateTestsMixin):
     """
     Tests for the :class:`distro_tracker.core.views.PackageNews`.
