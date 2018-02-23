@@ -720,6 +720,65 @@ class UpdateTeamViewTest(UserAuthMixin, TestCase):
         self.assertEqual(response.status_code, 404)
 
 
+class AddPackageToTeamViewTest(UserAuthMixin, TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.views.AddPackageToTeamView`.
+    """
+    def setUp(self):
+        self.USERS['paul'] = {
+            'main_email': 'paul@debian.org',
+            'password': 'paulpassword'
+        }
+        self.setup_users(login=True)
+        self.team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Team name", public=True)
+        self.package = SourcePackageName.objects.create(name='dummy-package')
+
+    def post_team_add_package(
+            self, slug='team-name', package_name='dummy-package'):
+        return self.client.post(
+            reverse('dtracker-team-add-package', kwargs={
+                'slug': slug
+            }),
+            {'package': package_name}
+        )
+
+    def test_add_package_as_team_member(self):
+        """
+        Tests adding a package to a team loggedin as a team member
+        """
+        response = self.post_team_add_package()
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertEqual(self.team.packages.count(), 1)
+
+    def test_add_non_existing_package(self):
+        """
+        Tests adding a non-existing package to a team loggedin as a team member
+        """
+        self.post_team_add_package(package_name='does-not-exist')
+        self.assertEqual(self.team.packages.count(), 0)
+
+    def test_add_package_as_no_team_member(self):
+        """
+        Tests the permission denied when an user who is not a team member
+        tries to add a package to the team
+        """
+        self.login(username='paul')
+        response = self.post_team_add_package()
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(self.team.packages.count(), 0)
+
+    def test_add_package_to_non_existing_team(self):
+        """
+        Tests the attempt of adding a package to a non-existing team
+        """
+        response = self.post_team_add_package(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+
 class NewsViewTest(TestCase, TemplateTestsMixin):
     """
     Tests for the :class:`distro_tracker.core.views.PackageNews`.
