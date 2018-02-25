@@ -117,22 +117,41 @@ class TestCaseHelpersMixin(object):
             os.environ['GNUPGHOME'] = old
 
 
+class DatabaseAssertionsMixin(object):
+    """
+    Database-related assertions injected into distro_tracker's *TestCase
+    objects.
+    """
+
+    def assertDoesNotExist(self, obj):
+        with self.assertRaises(obj.__class__.DoesNotExist):
+            obj.__class__.objects.get(pk=obj.id)
+
+    def assertDoesExist(self, obj):
+        try:
+            self.assertIsNotNone(obj.__class__.objects.get(pk=obj.id))
+        except obj.__class__.DoesNotExist as error:
+            raise AssertionError(error)
+
+
 class SimpleTestCase(TempDirsMixin, TestCaseHelpersMixin,
                      django.test.SimpleTestCase):
     pass
 
 
-class TestCase(TempDirsMixin, TestCaseHelpersMixin,
+class TestCase(TempDirsMixin, TestCaseHelpersMixin, DatabaseAssertionsMixin,
                django.test.TestCase):
     pass
 
 
 class TransactionTestCase(TempDirsMixin, TestCaseHelpersMixin,
+                          DatabaseAssertionsMixin,
                           django.test.TransactionTestCase):
     pass
 
 
 class LiveServerTestCase(TempDirsMixin, TestCaseHelpersMixin,
+                         DatabaseAssertionsMixin,
                          StaticLiveServerTestCase):
     pass
 
