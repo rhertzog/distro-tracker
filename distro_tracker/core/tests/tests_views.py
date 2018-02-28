@@ -269,6 +269,16 @@ class PackageSearchViewTest(TestCase):
         })
         self.assertRedirects(response, self.source_package.get_absolute_url())
 
+    def test_search_package_with_leading_and_trailing_spaces_in_its_name(self):
+        """
+        Tests that we can visit the page for a package by searching
+        the name with leading and trailing spaces
+        """
+        response = self.client.get(reverse('dtracker-package-search'), {
+            'package_name': '    dummy-package    '
+        })
+        self.assertRedirects(response, self.source_package.get_absolute_url())
+
 
 class OpenSearchDescriptionTest(TestCase):
     """
