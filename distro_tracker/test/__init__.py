@@ -25,6 +25,7 @@ from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 import django.test
 from django.test.signals import setting_changed
 from bs4 import BeautifulSoup as soup
+from django_email_accounts.models import User
 
 
 class TempDirsMixin(object):
@@ -172,3 +173,47 @@ class TemplateTestsMixin(object):
 
     def assertLinkIsNotInResponse(self, response, link):
         self.assertFalse(self.html_contains_link(response.content, link))
+
+
+class UserAuthMixin(object):
+    """
+    Helpers methods to manage user authentication.
+    One may define additional USERS before call self.setup_users()
+    in self.setUp()
+    """
+
+    USERS = {
+        'john': {
+            'main_email': 'john@example.com',
+            'password': 'johnpassword',
+        },
+    }
+
+    def setup_users(self, login=False):
+        """
+        Creates users defined in self.USERS and use the 'login' parameter as
+        follows:
+        * If Flase: no user login
+        * If True: login with default user
+        * If a particular username: login with the user who owns the username
+        """
+        self.users = {}
+        for username, user_data in self.USERS.items():
+            self.users[username] = User.objects.create_user(**user_data)
+        if login:
+            username = None if login is True else login
+            self.login(username)
+
+    def login(self, username=None):
+        """
+        Logins with a the user that owns the 'username' or with the first user
+        in self.users
+        """
+        if not username:
+            username = list(self.users.keys())[0]
+        self.client.login(
+            username=self.USERS[username]['main_email'],
+            password=self.USERS[username]['password']
+        )
+        self.current_user = self.users[username]
+        return self.current_user
