@@ -154,6 +154,7 @@ class GeneralInformationPanel(BasePanel):
     This panel displays general information regarding a package.
 
     - name
+    - component
     - version (in the default repository)
     - maintainer
     - uploaders

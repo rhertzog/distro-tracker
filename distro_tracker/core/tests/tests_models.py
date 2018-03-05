@@ -641,6 +641,7 @@ class RepositoryTests(TestCase):
         self.repo2 = Repository.objects.create(
             name='repo2', shorthand='repo2', codename='codename2',
             suite='suite2')
+        self.component = 'main'
 
     def test_add_source_entry_to_repository(self):
         """
@@ -680,7 +681,8 @@ class RepositoryTests(TestCase):
         Tests adding a source package entry (name, version + repository
         specific information) to a repository instance.
         """
-        self.repository.add_source_package(self.source_package)
+        self.repository.add_source_package(
+            self.source_package, component=self.component)
 
         # An entry is created.
         self.assertEqual(SourcePackageRepositoryEntry.objects.count(), 1)
@@ -690,6 +692,7 @@ class RepositoryTests(TestCase):
         # Correct repository
         self.assertEqual(e.repository, self.repository)
         # Extra (repository-specific data is saved)
+        self.assertEqual(e.component, self.component)
 
     def test_has_source_package_name_1(self):
         """

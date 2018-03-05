@@ -140,6 +140,7 @@ class GeneralInfoLinkPanelItemsTests(TestCase, TemplateTestsMixin):
                     'type': 'git',
                     'url': 'https://salsa.debian.org/qa/distro-tracker.git',
                 },
+                'component': 'main',
             }
         )
 
@@ -194,6 +195,17 @@ class GeneralInfoLinkPanelItemsTests(TestCase, TemplateTestsMixin):
         self.assertEqual(len(a), 1)
         self.assertEqual(a[0].attrs['href'],
                          'https://salsa.debian.org/qa/distro-tracker.git')
+
+    def test_panel_has_component(self):
+        """
+        Tests that the panel displays component information
+        """
+        response = self.get_package_page_response()
+        html = soup(response.content, 'html.parser')
+
+        component = html.find('span', attrs={'id': 'component'})
+
+        self.assertEqual(component.text, 'main')
 
 
 class DeadPackageWarningPanelTests(TestCase):

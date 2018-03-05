@@ -8,6 +8,9 @@
         <span class="list-item-key"><b>source:</b></span>
 	{% with url=ctx.url|default:"#" %}
 	<a href="{{ url }}">{{ ctx.name }}</a>
+		{% if ctx.component %}
+		(<span id="component" title="Repository's component">{{ ctx.component }}</span>)
+		{% endif %}
 	{% endwith %}
     </li>
     {% endif %}

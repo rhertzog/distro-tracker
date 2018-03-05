@@ -867,7 +867,7 @@ class Repository(models.Model):
         entry = SourcePackageRepositoryEntry.objects.create(
             repository=self,
             source_package=package,
-            **kwargs
+            component=kwargs.get('component', '')
         )
         return entry
 
@@ -1322,6 +1322,8 @@ class SourcePackageRepositoryEntry(models.Model):
     )
     repository = models.ForeignKey(Repository, related_name='source_entries',
                                    on_delete=models.CASCADE)
+
+    component = models.CharField(max_length=50, blank=True)
 
     objects = SourcePackageRepositoryEntryManager()
 
