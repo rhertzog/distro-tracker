@@ -217,3 +217,8 @@ class UserAuthMixin(object):
         )
         self.current_user = self.users[username]
         return self.current_user
+
+    def get_user(self, username=None):
+        if not username:
+            return self.current_user
+        return self.users[username]

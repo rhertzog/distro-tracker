@@ -21,6 +21,7 @@ from distro_tracker.core.models import PackageName, PseudoPackageName
 from distro_tracker.core.models import News
 from distro_tracker.core.models import ActionItem, ActionItemType
 from distro_tracker.core.models import Team
+from distro_tracker.accounts.models import UserEmail
 import json
 
 from django.urls import reverse
@@ -888,6 +889,113 @@ class RemovePackageFromTeamViewTest(UserAuthMixin, TestCase):
         """
         response = self.request_team_remove_package(slug='does-not-exist')
         self.assertEqual(response.status_code, 404)
+
+
+class JoinTeamViewTest(UserAuthMixin, TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.views.JoinTeamView`.
+    """
+    def setUp(self):
+        self.USERS['paul'] = {
+            'main_email': 'paul@debian.org',
+            'password': 'paulpassword'
+        }
+        self.setup_users(login='paul')
+        self.team = Team.objects.create_with_slug(
+            owner=self.get_user('john'), name="Team name", public=True)
+        self.team.add_members(
+            UserEmail.objects.filter(email=self.team.owner.main_email))
+
+    def request_join_team(self, method='post', slug='team-name',
+                          email='paul@debian.org'):
+        path = reverse('dtracker-team-join', kwargs={'slug': slug})
+        data = {'email': email}
+        if method == 'post':
+            return self.client.post(path, data)
+        else:
+            return self.client.get(path)
+
+    def test_join_team_page(self):
+        """
+        Tests rendering the page to join a team
+        """
+        response = self.request_join_team(method='get')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(
+            response, 'core/team-join-choose-email.html')
+        self.assertContains(
+            response, "Choose an email with which to join the team")
+
+    def test_join_team_page_for_non_existing_team(self):
+        """
+        Tests rendering the page to join a non existing team
+        """
+        response = self.request_join_team(method='get', slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+    def test_join_team_page_for_logged_out_user(self):
+        """
+        Tests rendering the page to join a team as a logged out user
+        """
+        self.client.logout()
+        response = self.request_join_team(method='get')
+        self.assertRedirects(
+            response,
+            (reverse('dtracker-accounts-login') +
+                '?next=/teams/' + self.team.slug + '/%2Bjoin/')
+        )
+
+    def test_join_a_team_as_no_member(self):
+        """
+        Tests joining a team logged in as a no-team member
+        """
+        response = self.request_join_team()
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertIn(
+            UserEmail.objects.get(email=self.current_user.main_email),
+            self.team.members.all()
+        )
+
+    def test_join_a_non_existing_team(self):
+        """
+        Tests joining a non-existing team
+        """
+        response = self.request_join_team(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+    def test_join_team_without_email_parameter(self):
+        """
+        Tests joining a team without the email parameter
+        """
+        response = self.client.post(
+            reverse('dtracker-team-join', kwargs={'slug': self.team.slug}), {})
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertNotIn(
+            UserEmail.objects.get(email=self.current_user.main_email),
+            self.team.members.all()
+        )
+
+    def test_join_team_with_an_email_not_registered(self):
+        """
+        Tests the permission denied when an user tries to join a team with
+        an email not registered in his/her account
+        """
+        response = self.request_join_team(email='paul@notregistered.com')
+        self.assertEqual(response.status_code, 403)
+
+    def test_join_a_non_public_team(self):
+        """
+        Tests the attempt of joining a non-public team
+        """
+        self.team.public = False
+        self.team.save()
+        response = self.request_join_team()
+        self.assertEqual(response.status_code, 403)
 
 
 class NewsViewTest(TestCase, TemplateTestsMixin):
