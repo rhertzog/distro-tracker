@@ -1434,7 +1434,8 @@ class AptCacheTests(TestCase):
         prefix = prefix.replace('/', '_')
         for file_name in files:
             self.cached_files.append(prefix + file_name)
-        self.cache._match_index_file_to_repository.return_value = repository
+        self.cache._match_index_file_to_repository.return_value = (
+            repository, 'main')
 
     def assert_cache_size_equal(self, size):
         self.assertEqual(size, self.cache.cache_size)

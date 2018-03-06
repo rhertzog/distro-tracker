@@ -728,6 +728,7 @@ class RetrieveSourcesInformationDebian(TestCase):
 
     def setUp(self):
         self.repository = Repository.objects.all()[0]
+        self.component = 'main'
 
     @mock.patch(
         'distro_tracker.core.retrieve_data.AptCache.update_repositories')
@@ -758,7 +759,7 @@ Files:
             with open(sources_file_path, 'w') as f:
                 f.write(sources_contents)
             mock_update_repositories.return_value = (
-                [(self.repository, sources_file_path)],
+                [(self.repository, self.component, sources_file_path)],
                 []
             )
             # Sanity check - no source packages before running the task

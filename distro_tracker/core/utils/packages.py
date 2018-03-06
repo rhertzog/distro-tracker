@@ -310,16 +310,20 @@ class AptCache(object):
 
     def _match_index_file_to_repository(self, sources_file):
         """
-        Returns the :class:`Repository <distro_tracker.core.models.Repository>`
-        instance which matches the given cached ``Sources`` file.
+        Returns a two-tuple ``(class:`Repository <distro_tracker.core.
+        models.Repository>`, component)``. The class:`Repository
+        <distro_tracker.core.models.Repository>` instance which matches the
+        given cached ``Sources`` file and the ``component`` of the ``Source``.
 
-        :rtype: :class:`Repository <distro_tracker.core.models.Repository>`
+        :rtype: (:class:`Repository <distro_tracker.core.models.Repository>`,
+        string)
         """
         from distro_tracker.core.models import Repository
 
         sources_list = apt_pkg.SourceList()
         sources_list.read_main_list()
         component_url = None
+        component = None
         for entry in sources_list.list:
             for index_file in entry.index_files:
                 if os.path.basename(sources_file) in index_file.describe:
@@ -327,9 +331,14 @@ class AptCache(object):
                     base_url = base_url.rstrip('/')
                     component_url = base_url + '/' + component
                     break
+
+        components = component.split('/')
+        if len(components) >= 2:
+            component = components[1].strip()
+
         for repository in Repository.objects.all():
             if component_url in repository.component_urls:
-                return repository
+                return repository, component
 
     def _get_all_cached_files(self):
         """
@@ -388,7 +397,8 @@ class AptCache(object):
         return self.get_cached_files(
             lambda file_name: (
                 file_name.endswith('Sources') and
-                self._match_index_file_to_repository(file_name) == repository))
+                self._match_index_file_to_repository(
+                    file_name)[0] == repository))
 
     def get_packages_files_for_repository(self, repository):
         """
@@ -408,7 +418,8 @@ class AptCache(object):
         return self.get_cached_files(
             lambda file_name: (
                 file_name.endswith('Packages') and
-                self._match_index_file_to_repository(file_name) == repository))
+                self._match_index_file_to_repository(
+                    file_name)[0] == repository))
 
     def update_repositories(self, force_download=False):
         """
@@ -421,9 +432,10 @@ class AptCache(object):
         :returns: A two-tuple ``(updated_sources, updated_packages)``. Each of
             the tuple's members is a list of
             (:class:`Repository <distro_tracker.core.models.Repository>`,
-             ``file_name``) pairs representing the repository which was updated
-            and the file which contains the fresh information. The file is
-            either a ``Sources`` or a ``Packages`` file, respectively.
+            ``component``, ``file_name``) tuple representing the repository
+            which was updated, component, and the file which contains the fresh
+            information. The file is either a ``Sources`` or a ``Packages``
+            file respectively.
         """
         if force_download:
             self.clear_cache()
@@ -443,9 +455,10 @@ class AptCache(object):
                 dest = updated_packages
             else:
                 continue
-            repository = self._match_index_file_to_repository(fetched_file)
+            repository, component = self._match_index_file_to_repository(
+                fetched_file)
             dest.append((
-                repository, self._index_file_full_path(fetched_file)
+                repository, component, self._index_file_full_path(fetched_file)
             ))
 
         return updated_sources, updated_packages

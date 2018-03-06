@@ -283,7 +283,7 @@ class UpdateRepositoriesTask(PackageUpdateTask):
 
         return entry
 
-    def _update_sources_file(self, repository, sources_file):
+    def _update_sources_file(self, repository, component, sources_file):
         for stanza in deb822.Sources.iter_paragraphs(sources_file):
             allow, implemented = vendor.call('allow_package', stanza)
             if allow is not None and implemented and not allow:
@@ -327,7 +327,8 @@ class UpdateRepositoriesTask(PackageUpdateTask):
                     })
 
                 # Add it to the repository
-                entry = repository.add_source_package(src_pkg)
+                entry = repository.add_source_package(
+                    src_pkg, component=component)
                 self.raise_event('new-source-package-version-in-repository', {
                     'name': src_pkg.name,
                     'version': src_pkg.version,
@@ -545,44 +546,66 @@ class UpdateRepositoriesTask(PackageUpdateTask):
 
     def group_files_by_repository(self, cached_files):
         """
-        :param cached_files: A list of ``(repository, file_name)`` pairs
-        :returns: A dict mapping repositories to all file names found for that
-            repository.
+        :param cached_files: A list of ``(repository, component, file_name)``
+            pairs
+        :returns: A Two-Tuple (`repository_files`, component)
+            `repository_files is a dict mapping repositories to all
+            file names found for that repository. component is a string
+            pointing to the component of the repository.
         """
         repository_files = {}
-        for repository, file_name in cached_files:
+
+        for repository, component, file_name in cached_files:
             repository_files.setdefault(repository, [])
-            repository_files[repository].append(file_name)
+            repository_files[repository].append((file_name, component))
 
         return repository_files
+
+    def sources_file_in_sources_files_data(
+            self, sources_file, sources_files_data):
+        """
+        Performs a search for the sources file in the sources_files_data list.
+
+        :param sources_file: The file to search for
+        :param sources_files_data: list of (`sources_file`, `component`) to
+            search the sources_file.
+        :return: True or false depending on whether the sources_file was found
+            in the sources_files_data list.
+        """
+        for sources_f, component in sources_files_data:
+            if sources_f == sources_file:
+                return True
+        return False
 
     def update_sources_files(self, updated_sources):
         """
         Performs an update of tracked packages based on the updated Sources
         files.
 
-        :param updated_sources: A list of ``(repository, sources_file_name)``
-            pairs giving the Sources files which were updated and should be
-            used to update the Distro Tracker tracked information too.
+        :param updated_sources: A list of ``(repository, component,
+        sources_file_name)`` giving the Sources files which were updated and
+        should be used to update the Distro Tracker tracked information too.
         """
         # Group all files by repository to which they belong
         repository_files = self.group_files_by_repository(updated_sources)
 
-        for repository, sources_files in repository_files.items():
+        for repository, sources_files_data in repository_files.items():
             with transaction.atomic():
                 self.log("Processing Sources files of %s repository",
                          repository.shorthand)
                 # First update package information based on updated files
-                for sources_file in sources_files:
+                for sources_file, component in sources_files_data:
                     with open(sources_file) as sources_fd:
-                        self._update_sources_file(repository, sources_fd)
+                        self._update_sources_file(
+                            repository, component, sources_fd)
 
                 # Mark package versions found in un-updated files as still
                 # existing
                 all_sources = \
                     self.apt_cache.get_sources_files_for_repository(repository)
                 for sources_file in all_sources:
-                    if sources_file not in sources_files:
+                    if not self.sources_file_in_sources_files_data(
+                            sources_file, sources_files_data):
                         self._mark_file_not_processed(
                             repository,
                             sources_file,
@@ -611,18 +634,18 @@ class UpdateRepositoriesTask(PackageUpdateTask):
         Performs an update of tracked packages based on the updated Packages
         files.
 
-        :param updated_sources: A list of ``(repository, packages_file_name)``
+        :param updated_packages: A list of ``(repository, packages_file_name)``
             pairs giving the Packages files which were updated and should be
             used to update the Distro Tracker tracked information too.
         """
         # Group all files by repository to which they belong
         repository_files = self.group_files_by_repository(updated_packages)
 
-        for repository, packages_files in repository_files.items():
+        for repository, packages_files_data in repository_files.items():
             self.log("Processing Packages files of %s repository",
                      repository.shorthand)
             # First update package information based on updated files
-            for packages_file in packages_files:
+            for packages_file, component in packages_files_data:
                 with open(packages_file) as packages_fd:
                     self._update_packages_file(repository, packages_fd)
 
@@ -630,7 +653,8 @@ class UpdateRepositoriesTask(PackageUpdateTask):
             all_sources = \
                 self.apt_cache.get_packages_files_for_repository(repository)
             for packages_file in all_sources:
-                if packages_file not in packages_files:
+                if not self.sources_file_in_sources_files_data(
+                        packages_file, packages_files_data):
                     self._mark_file_not_processed(
                         repository, packages_file,
                         BinaryPackageRepositoryEntry.objects)
@@ -832,6 +856,7 @@ class UpdatePackageGeneralInformation(PackageUpdateTask):
         srcpkg = entry.source_package
         general_information = {
             'name': srcpkg.name,
+            'component': entry.component,
             'version': entry.source_package.version,
             'maintainer': srcpkg.maintainer.to_dict(),
             'uploaders': [

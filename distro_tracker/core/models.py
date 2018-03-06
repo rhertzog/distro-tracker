@@ -864,10 +864,11 @@ class Repository(models.Model):
 
         :rtype: :class:`SourcePackageRepositoryEntry`
         """
+
         entry = SourcePackageRepositoryEntry.objects.create(
             repository=self,
             source_package=package,
-            component=kwargs.get('component', '')
+            **kwargs,
         )
         return entry
 

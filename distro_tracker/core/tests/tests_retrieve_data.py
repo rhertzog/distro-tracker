@@ -342,6 +342,7 @@ class RetrieveSourcesInformationTest(TestCase):
         )
         self._old_plugins = BaseTask.plugins
         BaseTask.plugins = [UpdateRepositoriesTask, self.intercept_events_task]
+        self.component = 'main'
 
     def tearDown(self):
         # Return them as we found them.
@@ -380,7 +381,7 @@ class RetrieveSourcesInformationTest(TestCase):
 
         sources, packages = old_return
         mock_update.return_value = ([
-            (self.repository, self.get_path_to(file_name))
+            (self.repository, self.component, self.get_path_to(file_name))
         ], packages)
 
     def set_mock_packages(self, mock_update, file_name):
@@ -390,7 +391,7 @@ class RetrieveSourcesInformationTest(TestCase):
 
         sources, packages = old_return
         mock_update.return_value = sources, [
-            (self.repository, self.get_path_to(file_name))
+            (self.repository, self.component, self.get_path_to(file_name))
         ]
 
     def clear_events(self):
@@ -438,6 +439,25 @@ class RetrieveSourcesInformationTest(TestCase):
             'new-source-package-version',
             'new-source-package-version-in-repository',
         ] + ['new-binary-package'] * 8)
+
+    @mock.patch(
+        'distro_tracker.core.retrieve_data.AptCache.update_repositories')
+    def test_update_repositories_adds_component(self, mock_update_repositories):
+        """
+        Tests that the new package created sets the component field in
+        PackageExtractedInfo
+        """
+        self.set_mock_sources(mock_update_repositories, 'Sources')
+
+        self.assertEqual(PackageExtractedInfo.objects.count(), 0)
+        self.run_update()
+
+        task = UpdatePackageGeneralInformation(force_update=True)
+        task.execute()
+
+        package_extracted_info = PackageExtractedInfo.objects.all()[0]
+        self.assertEqual(
+            package_extracted_info.value['component'], self.component)
 
     @mock.patch(
         'distro_tracker.core.retrieve_data.AptCache.update_repositories')
@@ -1280,9 +1300,12 @@ class UpdatePackageGeneralInformationTest(TestCase):
             },
             'architectures': ['i386', 'amd64'],
         })
+        self.component = 'main'
         self.repo1 = Repository.objects.create(name='repo1', shorthand='repo1')
         SourcePackageRepositoryEntry.objects.create(
-            source_package=self.srcpkg, repository=self.repo1)
+            source_package=self.srcpkg,
+            repository=self.repo1,
+            component=self.component)
 
     def test_UpdatePackageGeneralInformation_task(self):
 
@@ -1296,3 +1319,4 @@ class UpdatePackageGeneralInformationTest(TestCase):
         self.assertEqual(pkgdata['name'], self.srcpkg.name)
         self.assertEqual(pkgdata['version'], self.srcpkg.version)
         self.assertListEqual(pkgdata['architectures'], ['amd64', 'i386'])
+        self.assertEqual(pkgdata['component'], self.component)
