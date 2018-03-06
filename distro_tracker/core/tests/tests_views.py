@@ -998,6 +998,87 @@ class JoinTeamViewTest(UserAuthMixin, TestCase):
         self.assertEqual(response.status_code, 403)
 
 
+class LeaveTeamViewTest(UserAuthMixin, TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.views.LeaveTeamView`.
+    """
+    def setUp(self):
+        self.USERS['paul'] = {
+            'main_email': 'paul@debian.org',
+            'password': 'paulpassword'
+        }
+        self.setup_users(login=True)
+        self.team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Team name", public=True)
+        self.team.add_members(
+            UserEmail.objects.filter(email=self.team.owner.main_email))
+
+    def request_leave_team(self, method='post', slug='team-name'):
+        path = reverse('dtracker-team-leave', kwargs={'slug': slug})
+        if method == 'post':
+            return self.client.post(path)
+        else:
+            return self.client.get(path)
+
+    def test_leave_team_page(self):
+        """
+        Tests rendering the page to leave a team
+        """
+        response = self.request_leave_team(method='get')
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': self.team.slug
+        }))
+
+    def test_leave_team_page_for_non_existing_team(self):
+        """
+        Tests rendering the page to leave a non existing team
+        """
+        response = self.request_leave_team(method='get', slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+    def test_leave_team_page_for_logged_out_user(self):
+        """
+        Tests rendering the page to leave a team as a logged out user
+        """
+        self.client.logout()
+        response = self.request_leave_team(method='get')
+        self.assertRedirects(
+            response,
+            (reverse('dtracker-accounts-login') +
+                '?next=/teams/' + self.team.slug + '/%2Bleave/')
+        )
+
+    def test_leave_a_team_as_member(self):
+        """
+        Tests leaving a team logged in as a team member
+        """
+        response = self.request_leave_team()
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertNotIn(
+            UserEmail.objects.get(email=self.current_user.main_email),
+            self.team.members.all()
+        )
+
+    def test_leave_a_non_existing_team(self):
+        """
+        Tests leaving a non-existing team
+        """
+        response = self.request_leave_team(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+    def test_leave_team_as_non_member(self):
+        """
+        Tests the permission denied when a no-team member tries to leave
+        the team
+        """
+        self.login('paul')
+        response = self.request_leave_team()
+        self.assertEqual(response.status_code, 403)
+
+
 class NewsViewTest(TestCase, TemplateTestsMixin):
     """
     Tests for the :class:`distro_tracker.core.views.PackageNews`.
