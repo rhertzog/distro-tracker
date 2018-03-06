@@ -779,6 +779,117 @@ class AddPackageToTeamViewTest(UserAuthMixin, TestCase):
         self.assertEqual(response.status_code, 404)
 
 
+class RemovePackageFromTeamViewTest(UserAuthMixin, TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.views.RemovePackageFromTeamView`.
+    """
+    def setUp(self):
+        self.USERS['paul'] = {
+            'main_email': 'paul@debian.org',
+            'password': 'paulpassword'
+        }
+        self.setup_users(login=True)
+        self.team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Team name", public=True)
+        self.package = SourcePackageName.objects.create(name='dummy-package')
+        self.team.packages.add(self.package)
+
+    def request_team_remove_package(self, method='post', slug='team-name',
+                                    package_name='dummy-package'):
+        path = reverse('dtracker-team-remove-package', kwargs={'slug': slug})
+        data = {'package': package_name}
+        if method == 'post':
+            return self.client.post(path, data)
+        else:
+            return self.client.get(path, data)
+
+    def test_remove_package_intermediary_screen(self):
+        """
+        Tests the confirmation popup to remove a package from a team
+        """
+        response = self.request_team_remove_package(method='get')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(
+            response, 'core/team-remove-package-confirm.html')
+        self.assertContains(
+            response,
+            "Are you sure you want to remove this package from the team?",
+            html=True
+        )
+
+    def test_intermediary_screen_for_non_team_member(self):
+        """
+        Tests the confirmation popup for removing a package from a team
+        loggedin as a non-team member
+        """
+        self.login(username='paul')
+        response = self.request_team_remove_package(method='get')
+        self.assertEqual(response.status_code, 403)
+
+    def test_intermediary_screen_for_non_existing_team(self):
+        """
+        Tests the confirmation popup to the attempt of removing a package
+        from a non-existing team
+        """
+        response = self.request_team_remove_package(
+            method='get', slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+    def test_intermediary_screen_without_package_parameter(self):
+        """
+        Tests the confirmation popup to remove a package when the package
+        parameter is not informed
+        """
+        response = self.client.get(
+            reverse(
+                'dtracker-team-remove-package',
+                kwargs={'slug': self.team.slug}
+            ),
+            {}
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_remove_package_as_team_member(self):
+        """
+        Tests removing a package from a team loggedin as a team member
+        """
+        response = self.request_team_remove_package()
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertEqual(self.team.packages.count(), 0)
+
+    def test_remove_non_existing_package(self):
+        """
+        Tests removing a non-existing package from a team loggedin as a team
+        member
+        """
+        response = self.request_team_remove_package(
+            package_name='does-not-exist')
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertEqual(self.team.packages.count(), 1)
+
+    def test_remove_package_as_no_team_member(self):
+        """
+        Tests the permission denied when an user who is not a team member
+        tries to remove a package from the team
+        """
+        self.login(username='paul')
+        response = self.request_team_remove_package()
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(self.team.packages.count(), 1)
+
+    def test_remove_package_from_non_existing_team(self):
+        """
+        Tests the attempt of removing a package from a non-existing team
+        """
+        response = self.request_team_remove_package(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+
 class NewsViewTest(TestCase, TemplateTestsMixin):
     """
     Tests for the :class:`distro_tracker.core.views.PackageNews`.
