@@ -1345,6 +1345,47 @@ class ConfirmMembershipViewTest(UserAuthMixin, TestCase):
         self.assertEqual(response.status_code, 404)
 
 
+class TeamListViewTest(UserAuthMixin, TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.views.TeamListView`.
+    """
+    def setUp(self):
+        self.setup_users(login=True)
+        self.first_team = Team.objects.create_with_slug(
+            owner=self.current_user, name="First team", public=True)
+        self.second_team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Second team", public=True)
+        self.third_team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Third team", public=False)
+        self.response = self.client.get(reverse('dtracker-team-list'))
+
+    def test_team_list_page(self):
+        """
+        Tests rendering the team list page
+        """
+        self.assertEqual(self.response.status_code, 200)
+        self.assertTemplateUsed(self.response, 'core/team-list.html')
+        self.assertContains(self.response, "<h1>List of teams</h1>", html=True)
+
+    def test_team_list_contains_public_teams_only(self):
+        """
+        Tests the inclusion of public teams only in the team list
+        """
+        self.assertIn(self.first_team, self.response.context['team_list'])
+        self.assertIn(self.second_team, self.response.context['team_list'])
+        self.assertNotIn(self.third_team, self.response.context['team_list'])
+
+    def test_team_list_is_ordered_by_name(self):
+        """
+        Tests the order of the team list
+        """
+        self.assertEqual(
+            [{'name': 'First team'}, {'name': 'Second team'}],
+            list(self.response.context['team_list'].values('name'))
+        )
+
+
 class NewsViewTest(TestCase, TemplateTestsMixin):
     """
     Tests for the :class:`distro_tracker.core.views.PackageNews`.
