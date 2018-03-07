@@ -1489,6 +1489,127 @@ class SetMuteTeamViewTest(UserAuthMixin, TestCase):
         self.assertTrue(self.membership.is_muted(self.package))
 
 
+class SetMembershipKeywordsTest(UserAuthMixin, TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.views.SetMembershipKeywords`.
+    """
+    def setUp(self):
+        self.USERS['paul'] = {
+            'main_email': 'paul@debian.org',
+            'password': 'paulpassword'
+        }
+        self.setup_users(login=True)
+        self.team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Team name", public=True)
+        self.membership = self.team.add_members(
+            self.team.owner.emails.filter(email=self.team.owner.main_email))[0]
+        self.package = SourcePackageName.objects.create(name='dummy-package')
+        self.team.packages.add(self.package)
+
+    def post_set_membership_keywords(
+        self,
+        slug='team-name',
+        email='john@example.com',
+        keyword=['translation', 'derivatives'],
+        package=None,
+        next_url=None
+    ):
+        data = {}
+        if email:
+            data['email'] = email
+        if package:
+            data['package'] = package
+        if next_url:
+            data['next'] = next_url
+        if keyword:
+            data['keyword[]'] = keyword
+        return self.client.post(
+            reverse('dtracker-team-set-keywords', kwargs={'slug': slug}), data)
+
+    def test_set_membership_keywords(self):
+        """
+        Tests setting membership keywords as a team member
+        """
+        response = self.post_set_membership_keywords()
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertEqual(self.membership.default_keywords.count(), 2)
+
+    def test_set_membership_keywords_through_ajax_request(self):
+        """
+        Tests setting membership keywords as a team member through Ajax request
+        """
+        response = self.client.post(
+            reverse(
+                'dtracker-team-set-keywords', kwargs={'slug': self.team.slug}),
+            {'email': self.current_user.main_email, 'keyword[]': ['bts']},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        self.assertJSONEqual(
+            str(response.content, encoding='utf8'), {'status': 'ok'})
+
+    def test_set_membership_keywords_with_redirection_to_next_url(self):
+        """
+        Tests setting membership keywords and redirecting to the url
+        informed in 'next' parameter
+        """
+        next_url = self.package.get_absolute_url()
+        response = self.post_set_membership_keywords(next_url=next_url)
+        self.assertRedirects(response, next_url)
+        self.assertEqual(self.membership.default_keywords.count(), 2)
+
+    def test_set_membership_keywords_as_no_team_member(self):
+        """
+        Tests setting membership keywords as a no-team member
+        """
+        self.login('paul')
+        response = self.post_set_membership_keywords(
+            email=self.current_user.main_email)
+        self.assertEqual(response.status_code, 404)
+
+    def test_set_membership_keywords_for_non_existing_team(self):
+        """
+        Tests setting membership keywords for a non-existing team
+        """
+        response = self.post_set_membership_keywords(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+    def test_set_membership_keywords_without_email_parameter(self):
+        """
+        Tests setting membership keywords without send the email parameter
+        """
+        response = self.post_set_membership_keywords(email=None)
+        self.assertEqual(response.status_code, 404)
+
+    def test_set_membership_keywords_without_keyword_parameter(self):
+        """
+        Tests setting membership keywords without send the keyword[] parameter
+        """
+        response = self.post_set_membership_keywords(keyword=None)
+        self.assertEqual(response.status_code, 404)
+
+    def test_set_membership_keywords_with_unregistered_email(self):
+        """
+        Tests setting membership keywords with an email that does not belong
+        to the logged user
+        """
+        response = self.post_set_membership_keywords(
+            email='unregistered@example.com')
+        self.assertEqual(response.status_code, 403)
+
+    def test_set_membership_keywords_for_package_in_team(self):
+        """
+        Tests setting package-specific keywords as a team member
+        """
+        response = self.post_set_membership_keywords(package=self.package.name)
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertEqual(self.membership.get_keywords(self.package).count(), 2)
+
+
 class NewsViewTest(TestCase, TemplateTestsMixin):
     """
     Tests for the :class:`distro_tracker.core.views.PackageNews`.
