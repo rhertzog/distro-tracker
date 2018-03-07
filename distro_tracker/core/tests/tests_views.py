@@ -1386,6 +1386,109 @@ class TeamListViewTest(UserAuthMixin, TestCase):
         )
 
 
+class SetMuteTeamViewTest(UserAuthMixin, TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.views.SetMuteTeamView`.
+    """
+    def setUp(self):
+        self.USERS['paul'] = {
+            'main_email': 'paul@debian.org',
+            'password': 'paulpassword'
+        }
+        self.setup_users(login=True)
+        self.team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Team name", public=True)
+        self.membership = self.team.add_members(
+            UserEmail.objects.filter(email=self.team.owner.main_email))[0]
+        self.package = SourcePackageName.objects.create(name='dummy-package')
+        self.team.packages.add(self.package)
+
+    def post_set_mute_team(self, slug='team-name', action='mute',
+                           email='john@example.com', package=None,
+                           next_url=None):
+        data = {}
+        if email:
+            data['email'] = email
+        if package:
+            data['package'] = package
+        if next_url:
+            data['next'] = next_url
+        return self.client.post(
+            reverse('dtracker-team-' + action, kwargs={'slug': slug}), data)
+
+    def assert_membership_muted(self, action='mute', muted=True):
+        response = self.post_set_mute_team(action=action)
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': self.team.slug
+        }))
+        self.membership.refresh_from_db()
+        self.assertEqual(self.membership.muted, muted)
+
+    def test_mute_team_membership(self):
+        """
+        Tests muting a team membership as a team member
+        """
+        self.assert_membership_muted()
+
+    def test_unmute_team_membership(self):
+        """
+        Tests unmuting a team membership as a team member
+        """
+        self.membership.muted = True
+        self.membership.save()
+        self.assert_membership_muted(action='unmute', muted=False)
+
+    def test_mute_team_membership_redirection_to_next_url(self):
+        """
+        Tests muting a team membership and redirecting to the url
+        informed in 'next' parameter
+        """
+        next_url = self.package.get_absolute_url()
+        response = self.post_set_mute_team(next_url=next_url)
+        self.assertRedirects(response, next_url)
+
+    def test_mute_team_membership_as_no_team_member(self):
+        """
+        Tests muting a team membership as a no-team member
+        """
+        self.login('paul')
+        response = self.post_set_mute_team(email=self.current_user.main_email)
+        self.assertEqual(response.status_code, 404)
+
+    def test_mute_team_membership_for_non_existing_team(self):
+        """
+        Tests muting a team membership for a non-existing team
+        """
+        response = self.post_set_mute_team(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+    def test_mute_team_membership_without_email_parameter(self):
+        """
+        Tests muting a team membership without send the email parameter
+        """
+        response = self.post_set_mute_team(email=None)
+        self.assertEqual(response.status_code, 404)
+
+    def test_mute_team_membership_with_unregistered_email(self):
+        """
+        Tests muting a team membership with an email that does not belong to
+        the logged user
+        """
+        response = self.post_set_mute_team(email='unregistered@example.com')
+        self.assertEqual(response.status_code, 403)
+
+    def test_mute_package_in_team_membership(self):
+        """
+        Tests muting a particular package in a team membership as a team member
+        """
+        response = self.post_set_mute_team(package=self.package.name)
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertTrue(self.membership.is_muted(self.package))
+
+
 class NewsViewTest(TestCase, TemplateTestsMixin):
     """
     Tests for the :class:`distro_tracker.core.views.PackageNews`.
