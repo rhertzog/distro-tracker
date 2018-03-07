@@ -10,12 +10,13 @@ the debian/changelog and uploading this new version into the archive.
 {% elif status == "OLD" %}
 the current version of the package is not in its VCS.<br/>
 Either you need to push your commits, or the information about the package's
-VCS are out of date.  A common cause of the latter issue when using the Git VCS
+VCS are out of date. A common cause of the latter issue when using the Git VCS
 is not specifying the correct branch when the packaging is not in the default
-one (remote HEAD branch, which is usually "master" but can be modified with
-<code>git remote set-head origin &lt;branch-name&gt;</code>). The
-Vcs-Git field in debian/control can contain a "-b &lt;branch-name&gt;"
-suffix to indicate what branch is used for the Debian packaging.
+one (remote HEAD branch), which is usually "master" but can be modified in
+salsa.debian.org in the project's general settings with the "Default
+Branch" field). Alternatively the Vcs-Git field in debian/control can
+contain a "-b &lt;branch-name&gt;" suffix to indicate what branch is used
+for the Debian packaging.
 {% elif status == "UNREL" %}
 this package has been uploaded into the archive but the debian/changelog in the
 VCS is still UNRELEASED.  You should consider pushing the missing commits
