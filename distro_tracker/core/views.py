@@ -504,8 +504,6 @@ class AddTeamMember(LoginRequiredMixin, View):
 
 
 class ConfirmMembershipView(View):
-    template_name = 'core/membership-confirmation.html'
-
     def get(self, request, confirmation_key):
         confirmation = get_object_or_404(
             MembershipConfirmation, confirmation_key=confirmation_key)
@@ -516,10 +514,6 @@ class ConfirmMembershipView(View):
         confirmation.delete()
 
         return redirect(membership.team)
-
-        return render(request, self.template_name, {
-            'membership': membership,
-        })
 
 
 class TeamListView(ListView):
