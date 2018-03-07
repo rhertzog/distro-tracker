@@ -2444,8 +2444,8 @@ class UpdateVcsWatchTask(BaseTask):
         },
         "COMMITS": {
             "description":
-                '<a href="{url}">{commits} new commit</a> since last upload, '
-                'time to release an update?',
+                '<a href="{url}">{commits} new commit{commits_s}</a> '
+                'since last upload, time to release an update?',
             "severity": ActionItem.SEVERITY_NORMAL,
         },
         "OLD": {
@@ -2594,7 +2594,9 @@ class UpdateVcsWatchTask(BaseTask):
         else:
             # Report for short description of the :class:`ActionItem`
             desc = self.VCSWATCH_STATUS_DICT[package_status]['description']
-            action_item.short_description = desc.format(**new_extra_data)
+            commits_s = 's' if nb_commits != 1 else ''
+            action_item.short_description = \
+                desc.format(commits_s=commits_s, **new_extra_data)
             action_item.extra_data = new_extra_data
             return True
 
