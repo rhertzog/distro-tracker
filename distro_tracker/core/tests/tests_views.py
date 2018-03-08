@@ -1132,6 +1132,80 @@ class ManageTeamMembersTest(UserAuthMixin, TestCase):
         self.assertEqual(response.status_code, 404)
 
 
+class RemoveTeamMemberTest(UserAuthMixin, TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.views.RemoveTeamMember`.
+    """
+    def setUp(self):
+        self.USERS['paul'] = {
+            'main_email': 'paul@debian.org',
+            'password': 'paulpassword'
+        }
+        self.setup_users(login=True)
+        self.team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Team name", public=True)
+        self.team.add_members(
+            UserEmail.objects.filter(email=self.team.owner.main_email))
+        self.team.add_members(
+            UserEmail.objects.filter(email=self.get_user('paul').main_email))
+
+    def post_remove_team_member(self, slug='team-name',
+                                email='paul@debian.org'):
+        return self.client.post(
+            reverse('dtracker-team-remove-member', kwargs={'slug': slug}),
+            {'email': email}
+        )
+
+    def test_remove_team_member_as_owner(self):
+        """
+        Tests removing a team member as owner
+        """
+        response = self.post_remove_team_member()
+        self.assertRedirects(response, reverse('dtracker-team-manage', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertNotIn(
+            UserEmail.objects.get(email=self.get_user('paul').main_email),
+            self.team.members.all()
+        )
+
+    def test_remove_team_member_from_non_existing_team(self):
+        """
+        Tests removing a team member of a non existing team
+        """
+        response = self.post_remove_team_member(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+    def test_remove_team_member_as_not_owner(self):
+        """
+        Tests the permission denied when an user who is not the team owner
+        tries to remove a member of this team
+        """
+        self.login('paul')
+        response = self.post_remove_team_member()
+        self.assertEqual(response.status_code, 403)
+
+    def test_remove_team_member_without_email_parameter(self):
+        """
+        Tests removing a team member without the email parameter
+        """
+        response = self.client.post(
+            reverse(
+                'dtracker-team-remove-member',
+                kwargs={'slug': self.team.slug}
+            ),
+            {}
+        )
+        self.assertRedirects(response, reverse('dtracker-team-manage', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertIn(
+            UserEmail.objects.get(email=self.current_user.main_email),
+            self.team.members.all()
+        )
+
+
 class NewsViewTest(TestCase, TemplateTestsMixin):
     """
     Tests for the :class:`distro_tracker.core.views.PackageNews`.
