@@ -22,6 +22,7 @@ from distro_tracker.core.models import News
 from distro_tracker.core.models import ActionItem, ActionItemType
 from distro_tracker.core.models import Team
 from distro_tracker.accounts.models import UserEmail
+from distro_tracker.core.forms import AddTeamMemberForm
 import json
 
 from django.urls import reverse
@@ -1077,6 +1078,58 @@ class LeaveTeamViewTest(UserAuthMixin, TestCase):
         self.login('paul')
         response = self.request_leave_team()
         self.assertEqual(response.status_code, 403)
+
+
+class ManageTeamMembersTest(UserAuthMixin, TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.views.ManageTeamMembers`.
+    """
+    def setUp(self):
+        self.USERS['paul'] = {
+            'main_email': 'paul@debian.org',
+            'password': 'paulpassword'
+        }
+        self.setup_users(login=True)
+        self.team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Team name", public=True)
+        self.team.add_members(
+            UserEmail.objects.filter(email=self.team.owner.main_email))
+        self.team.add_members(
+            UserEmail.objects.filter(email=self.get_user('paul').main_email))
+
+    def get_manage_team_members(self, slug='team-name'):
+        return self.client.get(
+            reverse('dtracker-team-manage', kwargs={'slug': slug}))
+
+    def test_manage_team_members_as_owner(self):
+        """
+        Tests rendering manage team members page for team owner
+        """
+        response = self.get_manage_team_members()
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(
+            response, 'core/team-manage.html')
+        self.assertContains(response, "Member management for team")
+        self.assertContains(response, "<h3>Team members</h3>", html=True)
+        self.assertEqual(response.context['team'], self.team)
+        self.assertTrue(isinstance(response.context['form'], AddTeamMemberForm))
+
+    def test_manage_team_members_as_not_owner(self):
+        """
+        Tests rendering manage team members page for a user who is not the
+        team owner
+        """
+        self.login('paul')
+        response = self.get_manage_team_members()
+        self.assertEqual(response.status_code, 403)
+
+    def test_manage_team_members_for_non_existing_team(self):
+        """
+        Tests rendering manage team members page for a non existing team
+        """
+        response = self.get_manage_team_members(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
 
 
 class NewsViewTest(TestCase, TemplateTestsMixin):
