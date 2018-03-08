@@ -18,6 +18,7 @@ from django.utils.http import urlencode, urlquote, urlquote_plus
 from django.utils.safestring import mark_safe
 
 from distro_tracker.core.utils import get_or_none
+from distro_tracker.core.utils.packages import package_hashdir
 from distro_tracker.core.models import Repository
 from distro_tracker.core.models import SourcePackageName
 from distro_tracker.core.models import PackageExtractedInfo
@@ -121,6 +122,24 @@ class PopconLink(LinksPanel.ItemProvider):
                 self.POPCON_URL.format(
                     package=urlquote_plus(self.package.name)))
         ]
+
+
+class DebciLink(LinksPanel.ItemProvider):
+    """
+    If there are any debci report for the package, provides a link to the
+    debci page.
+    """
+
+    def get_panel_items(self):
+        try:
+            self.package.packageextractedinfo_set.get(key='debci')
+        except PackageExtractedInfo.DoesNotExist:
+            return []
+
+        url = 'https://ci.debian.net/packages/{prefix}/{package}/'.format(
+            prefix=package_hashdir(self.package.name),
+            package=self.package.name)
+        return [LinksPanel.SimpleLinkItem('debci', url)]
 
 
 class SourceCodeSearchLinks(LinksPanel.ItemProvider):

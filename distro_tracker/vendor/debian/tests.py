@@ -15,6 +15,7 @@ Tests for Debian-specific modules/functionality of Distro Tracker.
 """
 
 from distro_tracker.test import TestCase, SimpleTestCase
+from distro_tracker.test import TemplateTestsMixin
 from django.test.utils import override_settings
 from django.core import mail
 from django.urls import reverse
@@ -2727,6 +2728,45 @@ class PopconLinkTest(TestCase):
 
         response_content = response.content.decode('utf-8')
         self.assertNotIn('popcon', response_content)
+
+
+class DebciLinkTest(TestCase, TemplateTestsMixin):
+
+    """
+    Tests that the debci link is added to source package pages.
+    """
+
+    def setUp(self):
+        self.package_name = SourcePackageName.objects.create(name='dummy')
+        self.package = SourcePackage.objects.create(
+            source_package_name=self.package_name,
+            version='1.0.0')
+
+    def get_package_page_response(self, package_name):
+        package_page_url = reverse('dtracker-package-page', kwargs={
+            'package_name': package_name,
+        })
+        return self.client.get(package_page_url)
+
+    def test_package_with_debci_report(self):
+        PackageExtractedInfo.objects.create(
+            package=self.package_name,
+            key='debci',
+            value={'debci report': 'not null'}
+        )
+
+        response = self.get_package_page_response(self.package.name)
+        self.assertLinkIsInResponse(
+            response,
+            'https://ci.debian.net/packages/d/dummy/'
+        )
+
+    def test_package_without_debci_report(self):
+        response = self.get_package_page_response(self.package.name)
+        self.assertLinkIsNotInResponse(
+            response,
+            'https://ci.debian.net/packages/d/dummy/'
+        )
 
 
 class DebtagsLinkTest(TestCase):
