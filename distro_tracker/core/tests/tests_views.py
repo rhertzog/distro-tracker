@@ -1610,6 +1610,90 @@ class SetMembershipKeywordsTest(UserAuthMixin, TestCase):
         self.assertEqual(self.membership.get_keywords(self.package).count(), 2)
 
 
+class EditMembershipViewTest(UserAuthMixin, TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.views.EditMembershipView`.
+    """
+    def setUp(self):
+        self.USERS['paul'] = {
+            'main_email': 'paul@debian.org',
+            'password': 'paulpassword'
+        }
+        self.setup_users(login=True)
+        self.team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Team name", public=True)
+        self.membership = self.team.add_members(
+            UserEmail.objects.filter(email=self.team.owner.main_email))[0]
+        self.first_package = SourcePackageName.objects.create(
+            name='first-package')
+        self.second_package = SourcePackageName.objects.create(
+            name='second-package')
+        self.team.packages.add(self.first_package)
+        self.team.packages.add(self.second_package)
+        self.membership.set_mute_package(self.second_package, True)
+
+    def get_edit_membership(self, slug='team-name', email='john@example.com'):
+        data = {}
+        if email:
+            data['email'] = email
+        return self.client.get(
+            reverse('dtracker-team-manage-membership', kwargs={'slug': slug}),
+            data
+        )
+
+    def test_edit_membership(self):
+        """
+        Tests rendering the edit membership page
+        """
+        response = self.get_edit_membership()
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(
+            response, 'core/edit-team-membership.html')
+        self.assertContains(response, "Membership management for ")
+        self.assertEqual(
+            self.membership,
+            response.context['membership']
+        )
+        self.assertIn(
+            self.first_package, response.context['package_list'])
+        self.assertIn(
+            self.second_package, response.context['package_list'])
+        for package in response.context['package_list']:
+            self.assertIn(package.is_muted, [True, False])
+
+    def test_edit_membership_in_non_existing_team(self):
+        """
+        Tests the attempt to render edit membership page for non-existing team
+        """
+        response = self.get_edit_membership(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+    def test_edit_membership_without_email_parameter(self):
+        """
+        Tests the attempt to render edit membership page without the email
+        parameter
+        """
+        response = self.get_edit_membership(email=None)
+        self.assertEqual(response.status_code, 404)
+
+    def test_edit_membership_with_unregistered_email(self):
+        """
+        Tests the attempt to render edit membership page with an unregistered
+        email
+        """
+        response = self.get_edit_membership(email='unregistered@example.com')
+        self.assertEqual(response.status_code, 403)
+
+    def test_edit_membership_as_no_team_member(self):
+        """
+        Tests the attempt to render edit membership page as no-team member
+        """
+        self.login('paul')
+        response = self.get_edit_membership(email=self.current_user.main_email)
+        self.assertEqual(response.status_code, 404)
+
+
 class NewsViewTest(TestCase, TemplateTestsMixin):
     """
     Tests for the :class:`distro_tracker.core.views.PackageNews`.
