@@ -20,7 +20,7 @@ from distro_tracker.core.models import SourcePackageName, SourcePackage
 from distro_tracker.core.models import PackageName, PseudoPackageName
 from distro_tracker.core.models import News
 from distro_tracker.core.models import ActionItem, ActionItemType
-from distro_tracker.core.models import Team
+from distro_tracker.core.models import Team, MembershipConfirmation
 from distro_tracker.accounts.models import UserEmail
 from distro_tracker.core.forms import AddTeamMemberForm
 import json
@@ -890,6 +890,91 @@ class RemovePackageFromTeamViewTest(UserAuthMixin, TestCase):
         """
         response = self.request_team_remove_package(slug='does-not-exist')
         self.assertEqual(response.status_code, 404)
+
+
+class AddTeamMemberTest(UserAuthMixin, TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.views.AddTeamMember`.
+    """
+    def setUp(self):
+        self.USERS['paul'] = {
+            'main_email': 'paul@debian.org',
+            'password': 'paulpassword'
+        }
+        self.setup_users(login=True)
+        self.team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Team name", public=True)
+        self.team.add_members(
+            UserEmail.objects.filter(email=self.team.owner.main_email))
+        self.prev_user_email_count = UserEmail.objects.count()
+
+    def post_add_team_member(self, slug='team-name', email='paul@debian.org'):
+        return self.client.post(
+            reverse('dtracker-team-add-member', kwargs={'slug': slug}),
+            {'email': email}
+        )
+
+    def test_add_existing_user_as_team_member(self):
+        """
+        Tests adding an existing user as team member logged in as the team
+        owner
+        """
+        response = self.post_add_team_member()
+        self.assertRedirects(response, reverse('dtracker-team-manage', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertIn(
+            UserEmail.objects.get(email=self.get_user('paul').main_email),
+            self.team.members.all()
+        )
+        self.assertEqual(MembershipConfirmation.objects.count(), 1)
+
+    def test_add_non_existing_user_as_team_member(self):
+        """
+        Tests adding a non-existing user as team member logged in as the team
+        owner
+        """
+        response = self.post_add_team_member(email='newuser@example.com')
+        self.assertRedirects(response, reverse('dtracker-team-manage', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertIn(
+            UserEmail.objects.get(email='newuser@example.com'),
+            self.team.members.all()
+        )
+        self.assertEqual(
+            self.prev_user_email_count + 1, UserEmail.objects.count())
+        self.assertEqual(MembershipConfirmation.objects.count(), 1)
+
+    def test_add_team_member_to_non_existing_team(self):
+        """
+        Tests adding a team member to a non existing team
+        """
+        response = self.post_add_team_member(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(MembershipConfirmation.objects.count(), 0)
+
+    def test_add_team_member_as_not_owner(self):
+        """
+        Tests the permission denied when an user who is not the team owner
+        tries to add a member to this team
+        """
+        self.login('paul')
+        response = self.post_add_team_member()
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(MembershipConfirmation.objects.count(), 0)
+
+    def test_add_team_member_with_invalid_email(self):
+        """
+        Tests adding a team member with an invalid email parameter
+        """
+        response = self.post_add_team_member(email='invalid-email')
+        self.assertRedirects(response, reverse('dtracker-team-manage', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertEqual(self.prev_user_email_count, UserEmail.objects.count())
+        self.assertEqual(MembershipConfirmation.objects.count(), 0)
 
 
 class JoinTeamViewTest(UserAuthMixin, TestCase):
