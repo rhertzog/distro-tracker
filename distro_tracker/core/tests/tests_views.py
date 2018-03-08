@@ -1291,6 +1291,60 @@ class RemoveTeamMemberTest(UserAuthMixin, TestCase):
         )
 
 
+class ConfirmMembershipViewTest(UserAuthMixin, TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.views.ConfirmMembershipView`.
+    """
+    def setUp(self):
+        self.setup_users(login=True)
+        self.team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Team name", public=True)
+        self.membership = self.team.add_members(
+            [UserEmail.objects.create(email='joe@debian.org')], muted=True)[0]
+        self.confirmation = MembershipConfirmation.objects.create_confirmation(
+            membership=self.membership)
+        self.client.logout()
+
+    def get_confirm_membership(self, slug='team-name', confirmation_key=None):
+        if not confirmation_key:
+            confirmation_key = self.confirmation.confirmation_key
+        return self.client.get(reverse(
+            'dtracker-team-confirm-membership',
+            kwargs={'confirmation_key': confirmation_key}
+        ))
+
+    def test_confirm_membership(self):
+        """
+        Tests a valid request to confirm membership
+        """
+        response = self.get_confirm_membership()
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': self.team.slug
+        }))
+        self.membership.refresh_from_db()
+        self.assertFalse(self.membership.muted)
+        self.assertDoesNotExist(self.confirmation)
+
+    def test_confirm_membership_with_invalid_key(self):
+        """
+        Tests the attempt to confirm membership with a invalid key
+        """
+        response = self.get_confirm_membership(confirmation_key='invalid-key')
+        self.assertEqual(response.status_code, 404)
+
+    def test_confirm_membership_twice(self):
+        """
+        Tests the attempt to confirm membership twice
+        """
+        response = self.get_confirm_membership()
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': self.team.slug
+        }))
+        response = self.get_confirm_membership()
+        self.assertEqual(response.status_code, 404)
+
+
 class NewsViewTest(TestCase, TemplateTestsMixin):
     """
     Tests for the :class:`distro_tracker.core.views.PackageNews`.
