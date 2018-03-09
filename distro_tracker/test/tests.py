@@ -16,6 +16,7 @@ Tests for test functionalities of Distro Tracker.
 
 from distro_tracker.test import SimpleTestCase, TestCase, TransactionTestCase
 from distro_tracker.test import TempDirsMixin
+from distro_tracker.core.models import PackageName
 from django.conf import settings
 import copy
 import os.path
@@ -82,16 +83,35 @@ class TestCaseHelpersTests(object):
         self.assertNotIn(template_dir, settings.TEMPLATES[0]['DIRS'])
 
 
+class DatabaseAssertionsMixinTests(object):
+    def assert_fails(self, assert_function, *args):
+        with self.assertRaises(AssertionError):
+            assert_function(*args)
+
+    def test_assert_does_not_exist(self):
+        sample_object = PackageName.objects.create(name='dummy-package')
+        self.assert_fails(self.assertDoesNotExist, sample_object)
+        sample_object.delete()
+        self.assertDoesNotExist(sample_object)
+
+    def test_assert_does_exist(self):
+        sample_object = PackageName.objects.create(name='dummy-package')
+        self.assertDoesExist(sample_object)
+        sample_object.delete()
+        self.assert_fails(self.assertDoesExist, sample_object)
+
+
 class TempDirsOnSimpleTestCase(TempDirsTests, TestCaseHelpersTests,
                                SimpleTestCase):
     pass
 
 
 class TempDirsOnTestCase(TempDirsTests, TestCaseHelpersTests,
-                         TestCase):
+                         DatabaseAssertionsMixinTests, TestCase):
     pass
 
 
 class TempDirsOnTransactionTestCase(TempDirsTests, TestCaseHelpersTests,
+                                    DatabaseAssertionsMixinTests,
                                     TransactionTestCase):
     pass

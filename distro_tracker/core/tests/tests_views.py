@@ -14,11 +14,15 @@
 Tests for the Distro Tracker core views.
 """
 from distro_tracker.test import TestCase, TemplateTestsMixin
+from distro_tracker.test import UserAuthMixin
 from distro_tracker.core.models import BinaryPackage, BinaryPackageName
 from distro_tracker.core.models import SourcePackageName, SourcePackage
 from distro_tracker.core.models import PackageName, PseudoPackageName
 from distro_tracker.core.models import News
 from distro_tracker.core.models import ActionItem, ActionItemType
+from distro_tracker.core.models import Team, MembershipConfirmation
+from distro_tracker.accounts.models import UserEmail
+from distro_tracker.core.forms import AddTeamMemberForm
 import json
 
 from django.urls import reverse
@@ -483,6 +487,1210 @@ class ActionItemJsonViewTest(TestCase):
             'item_pk': does_not_exist,
         }))
 
+        self.assertEqual(response.status_code, 404)
+
+
+class CreateTeamViewTest(UserAuthMixin, TestCase):
+    """
+    Tests for the :class:`distro_tracker.core.views.CreateTeamView`.
+    """
+    def setUp(self):
+        self.setup_users(login=True)
+        self.create_POST_data = {
+            'maintainer_email': 'john@debian.org',
+            'name': 'QA',
+            'slug': 'qa',
+            'public': 'true',
+            'description': 'imaginary team',
+        }
+
+    def create_team(self):
+        return self.client.post(
+            reverse('dtracker-teams-create'), self.create_POST_data)
+
+    def test_team_creation(self):
+        """
+        Tests that the View correctly creates a new Team and redirects to its
+        page.
+        """
+        self.assertEqual(Team.objects.count(), 0)
+        response = self.create_team()
+        self.assertEqual(Team.objects.count(), 1)
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': 'qa'
+        }))
+
+    def test_invalid_team(self):
+        """
+        Tests that the View does not create a new Team when it is invalid.
+        """
+        self.create_POST_data['name'] = ''
+        response = self.create_team()
+        self.assertEqual(Team.objects.count(), 0)
+        self.assertFormError(
+            response, 'form', 'name', 'This field is required.')
+
+    def test_authorization_for_team_creation(self):
+        """
+        Tests the user authorization to create a new Team.
+        """
+        self.client.logout()
+        response = self.create_team()
+        self.assertEqual(Team.objects.count(), 0)
+        self.assertRedirects(
+            response,
+            reverse('dtracker-accounts-login') + '?next=/teams/%2Bcreate/'
+        )
+
+
+class TeamDetailsViewTest(UserAuthMixin, TestCase):
+    """
+    Tests for the :class:`distro_tracker.core.views.TeamDetailsView`.
+    """
+    def setUp(self):
+        self.setup_users(login=True)
+        self.team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Team name", public=True)
+
+    def get_team_page(self, slug='team-name'):
+        return self.client.get(reverse('dtracker-team-page', kwargs={
+            'slug': slug
+        }))
+
+    def test_team_page_for_a_member(self):
+        """
+        Tests the return of a team page for a team member
+        """
+        response = self.get_team_page()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['user_member_of_team'], True)
+        self.assertTemplateUsed(response, 'core/team.html')
+        self.assertContains(response, '<h1>Team name</h1>', html=True)
+
+    def test_team_page_for_a_non_member(self):
+        """
+        Tests the return of a team page for non-team member
+        """
+        self.client.logout()
+        response = self.get_team_page()
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse('user_member_of_team' in response.context)
+        self.assertTemplateUsed(response, 'core/team.html')
+        self.assertContains(response, '<h1>Team name</h1>', html=True)
+
+    def test_team_page_not_found(self):
+        """
+        Tests the request of non-existing team page
+        """
+        response = self.get_team_page(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+
+class DeleteTeamViewTest(UserAuthMixin, TestCase):
+    """
+    Tests for the :class:`distro_tracker.core.views.DeleteTeamView`.
+    """
+    def setUp(self):
+        self.USERS['paul'] = {
+            'main_email': 'paul@debian.org',
+            'password': 'paulpassword'
+        }
+        self.setup_users(login=True)
+        self.team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Team name", public=True)
+
+    def post_team_delete(self, slug='team-name'):
+        return self.client.post(
+            reverse('dtracker-team-delete', kwargs={'slug': slug}))
+
+    def test_delete_intermediary_screen(self):
+        """
+        Tests the confirmation popup to delete a team
+        """
+        response = self.client.get(
+            reverse('dtracker-team-delete', kwargs={'slug': self.team.slug}))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'core/team-confirm-delete.html')
+        self.assertContains(
+            response,
+            '<h3>Are you sure you want to delete the team?</h3>',
+            html=True
+        )
+
+    def test_delete_team_as_owner(self):
+        """
+        Tests deleting a team loggedin as the team owner
+        """
+        response = self.post_team_delete()
+        self.assertRedirects(response, reverse('dtracker-team-deleted'))
+        self.assertDoesNotExist(self.team)
+
+    def test_delete_team_as_non_owner(self):
+        """
+        Tests the permission denied when an user who is not the team owner
+        tries to delete a team
+        """
+        self.login(username='paul')
+        response = self.post_team_delete()
+        self.assertEqual(response.status_code, 403)
+        self.assertDoesExist(self.team)
+
+    def test_delete_non_existing_team(self):
+        """
+        Tests the attempt to destroy a non existing team
+        """
+        response = self.post_team_delete(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+
+class UpdateTeamViewTest(UserAuthMixin, TestCase):
+    """
+    Tests for the :class:`distro_tracker.core.views.UpdateTeamView`.
+    """
+    def setUp(self):
+        self.USERS['paul'] = {
+            'main_email': 'paul@debian.org',
+            'password': 'paulpassword'
+        }
+        self.setup_users(login=True)
+        self.team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Team name", public=True)
+        self.update_POST_data = {
+            'name': 'New name',
+            'slug': 'new-name',
+            'maintainer_email': 'newmaintainer@debian.org',
+            'public': False,
+            'description': 'New description',
+        }
+
+    def post_team_update(self, slug='team-name'):
+        return self.client.post(
+            reverse('dtracker-team-update', kwargs={'slug': slug}),
+            self.update_POST_data
+        )
+
+    def test_update_team_as_owner(self):
+        """
+        Tests updating a team loggedin as the team owner
+        """
+        response = self.post_team_update()
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': 'new-name'
+        }))
+        self.team.refresh_from_db()
+        self.assertEqual(self.team.name, self.update_POST_data['name'])
+        self.assertEqual(self.team.slug, self.update_POST_data['slug'])
+        self.assertEqual(
+            self.team.maintainer_email.email,
+            self.update_POST_data['maintainer_email']
+        )
+        self.assertEqual(
+            self.team.description, self.update_POST_data['description'])
+        self.assertFalse(self.team.public)
+
+    def test_update_team_with_invalid_data(self):
+        """
+        Tests updating a team with invalid data
+        """
+        self.update_POST_data['name'] = ''
+        response = self.post_team_update()
+        self.assertEqual(response.status_code, 200)
+        self.assertFormError(
+            response, 'form', 'name', 'This field is required.')
+
+    def test_update_team_as_non_owner(self):
+        """
+        Tests the permission denied when an user who is not the team owner
+        tries to update a team
+        """
+        self.login(username='paul')
+        response = self.post_team_update()
+        self.assertEqual(response.status_code, 403)
+        self.team.refresh_from_db()
+        self.assertNotEqual(self.team.name, self.update_POST_data['name'])
+        self.assertNotEqual(self.team.slug, self.update_POST_data['slug'])
+        self.assertIsNone(self.team.maintainer_email)
+        self.assertNotEqual(
+            self.team.description, self.update_POST_data['description'])
+        self.assertTrue(self.team.public)
+
+    def test_update_non_existing_team(self):
+        """
+        Tests the attempt to update a non existing team
+        """
+        response = self.post_team_update(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+
+class AddPackageToTeamViewTest(UserAuthMixin, TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.views.AddPackageToTeamView`.
+    """
+    def setUp(self):
+        self.USERS['paul'] = {
+            'main_email': 'paul@debian.org',
+            'password': 'paulpassword'
+        }
+        self.setup_users(login=True)
+        self.team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Team name", public=True)
+        self.package = SourcePackageName.objects.create(name='dummy-package')
+
+    def post_team_add_package(
+            self, slug='team-name', package_name='dummy-package'):
+        return self.client.post(
+            reverse('dtracker-team-add-package', kwargs={
+                'slug': slug
+            }),
+            {'package': package_name}
+        )
+
+    def test_add_package_as_team_member(self):
+        """
+        Tests adding a package to a team loggedin as a team member
+        """
+        response = self.post_team_add_package()
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertEqual(self.team.packages.count(), 1)
+
+    def test_add_non_existing_package(self):
+        """
+        Tests adding a non-existing package to a team loggedin as a team member
+        """
+        self.post_team_add_package(package_name='does-not-exist')
+        self.assertEqual(self.team.packages.count(), 0)
+
+    def test_add_package_as_no_team_member(self):
+        """
+        Tests the permission denied when an user who is not a team member
+        tries to add a package to the team
+        """
+        self.login(username='paul')
+        response = self.post_team_add_package()
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(self.team.packages.count(), 0)
+
+    def test_add_package_to_non_existing_team(self):
+        """
+        Tests the attempt of adding a package to a non-existing team
+        """
+        response = self.post_team_add_package(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+
+class RemovePackageFromTeamViewTest(UserAuthMixin, TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.views.RemovePackageFromTeamView`.
+    """
+    def setUp(self):
+        self.USERS['paul'] = {
+            'main_email': 'paul@debian.org',
+            'password': 'paulpassword'
+        }
+        self.setup_users(login=True)
+        self.team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Team name", public=True)
+        self.package = SourcePackageName.objects.create(name='dummy-package')
+        self.team.packages.add(self.package)
+
+    def request_team_remove_package(self, method='post', slug='team-name',
+                                    package_name='dummy-package'):
+        path = reverse('dtracker-team-remove-package', kwargs={'slug': slug})
+        data = {'package': package_name}
+        if method == 'post':
+            return self.client.post(path, data)
+        else:
+            return self.client.get(path, data)
+
+    def test_remove_package_intermediary_screen(self):
+        """
+        Tests the confirmation popup to remove a package from a team
+        """
+        response = self.request_team_remove_package(method='get')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(
+            response, 'core/team-remove-package-confirm.html')
+        self.assertContains(
+            response,
+            "Are you sure you want to remove this package from the team?",
+            html=True
+        )
+
+    def test_intermediary_screen_for_non_team_member(self):
+        """
+        Tests the confirmation popup for removing a package from a team
+        loggedin as a non-team member
+        """
+        self.login(username='paul')
+        response = self.request_team_remove_package(method='get')
+        self.assertEqual(response.status_code, 403)
+
+    def test_intermediary_screen_for_non_existing_team(self):
+        """
+        Tests the confirmation popup to the attempt of removing a package
+        from a non-existing team
+        """
+        response = self.request_team_remove_package(
+            method='get', slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+    def test_intermediary_screen_without_package_parameter(self):
+        """
+        Tests the confirmation popup to remove a package when the package
+        parameter is not informed
+        """
+        response = self.client.get(
+            reverse(
+                'dtracker-team-remove-package',
+                kwargs={'slug': self.team.slug}
+            ),
+            {}
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_remove_package_as_team_member(self):
+        """
+        Tests removing a package from a team loggedin as a team member
+        """
+        response = self.request_team_remove_package()
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertEqual(self.team.packages.count(), 0)
+
+    def test_remove_non_existing_package(self):
+        """
+        Tests removing a non-existing package from a team loggedin as a team
+        member
+        """
+        response = self.request_team_remove_package(
+            package_name='does-not-exist')
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertEqual(self.team.packages.count(), 1)
+
+    def test_remove_package_as_no_team_member(self):
+        """
+        Tests the permission denied when an user who is not a team member
+        tries to remove a package from the team
+        """
+        self.login(username='paul')
+        response = self.request_team_remove_package()
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(self.team.packages.count(), 1)
+
+    def test_remove_package_from_non_existing_team(self):
+        """
+        Tests the attempt of removing a package from a non-existing team
+        """
+        response = self.request_team_remove_package(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+
+class AddTeamMemberTest(UserAuthMixin, TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.views.AddTeamMember`.
+    """
+    def setUp(self):
+        self.USERS['paul'] = {
+            'main_email': 'paul@debian.org',
+            'password': 'paulpassword'
+        }
+        self.setup_users(login=True)
+        self.team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Team name", public=True)
+        self.team.add_members(
+            UserEmail.objects.filter(email=self.team.owner.main_email))
+        self.prev_user_email_count = UserEmail.objects.count()
+
+    def post_add_team_member(self, slug='team-name', email='paul@debian.org'):
+        return self.client.post(
+            reverse('dtracker-team-add-member', kwargs={'slug': slug}),
+            {'email': email}
+        )
+
+    def test_add_existing_user_as_team_member(self):
+        """
+        Tests adding an existing user as team member logged in as the team
+        owner
+        """
+        response = self.post_add_team_member()
+        self.assertRedirects(response, reverse('dtracker-team-manage', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertIn(
+            UserEmail.objects.get(email=self.get_user('paul').main_email),
+            self.team.members.all()
+        )
+        self.assertEqual(MembershipConfirmation.objects.count(), 1)
+
+    def test_add_non_existing_user_as_team_member(self):
+        """
+        Tests adding a non-existing user as team member logged in as the team
+        owner
+        """
+        response = self.post_add_team_member(email='newuser@example.com')
+        self.assertRedirects(response, reverse('dtracker-team-manage', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertIn(
+            UserEmail.objects.get(email='newuser@example.com'),
+            self.team.members.all()
+        )
+        self.assertEqual(
+            self.prev_user_email_count + 1, UserEmail.objects.count())
+        self.assertEqual(MembershipConfirmation.objects.count(), 1)
+
+    def test_add_team_member_to_non_existing_team(self):
+        """
+        Tests adding a team member to a non existing team
+        """
+        response = self.post_add_team_member(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(MembershipConfirmation.objects.count(), 0)
+
+    def test_add_team_member_as_not_owner(self):
+        """
+        Tests the permission denied when an user who is not the team owner
+        tries to add a member to this team
+        """
+        self.login('paul')
+        response = self.post_add_team_member()
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(MembershipConfirmation.objects.count(), 0)
+
+    def test_add_team_member_with_invalid_email(self):
+        """
+        Tests adding a team member with an invalid email parameter
+        """
+        response = self.post_add_team_member(email='invalid-email')
+        self.assertRedirects(response, reverse('dtracker-team-manage', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertEqual(self.prev_user_email_count, UserEmail.objects.count())
+        self.assertEqual(MembershipConfirmation.objects.count(), 0)
+
+
+class JoinTeamViewTest(UserAuthMixin, TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.views.JoinTeamView`.
+    """
+    def setUp(self):
+        self.USERS['paul'] = {
+            'main_email': 'paul@debian.org',
+            'password': 'paulpassword'
+        }
+        self.setup_users(login='paul')
+        self.team = Team.objects.create_with_slug(
+            owner=self.get_user('john'), name="Team name", public=True)
+        self.team.add_members(
+            UserEmail.objects.filter(email=self.team.owner.main_email))
+
+    def request_join_team(self, method='post', slug='team-name',
+                          email='paul@debian.org'):
+        path = reverse('dtracker-team-join', kwargs={'slug': slug})
+        data = {'email': email}
+        if method == 'post':
+            return self.client.post(path, data)
+        else:
+            return self.client.get(path)
+
+    def test_join_team_page(self):
+        """
+        Tests rendering the page to join a team
+        """
+        response = self.request_join_team(method='get')
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(
+            response, 'core/team-join-choose-email.html')
+        self.assertContains(
+            response, "Choose an email with which to join the team")
+
+    def test_join_team_page_for_non_existing_team(self):
+        """
+        Tests rendering the page to join a non existing team
+        """
+        response = self.request_join_team(method='get', slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+    def test_join_team_page_for_logged_out_user(self):
+        """
+        Tests rendering the page to join a team as a logged out user
+        """
+        self.client.logout()
+        response = self.request_join_team(method='get')
+        self.assertRedirects(
+            response,
+            (reverse('dtracker-accounts-login') +
+                '?next=/teams/' + self.team.slug + '/%2Bjoin/')
+        )
+
+    def test_join_a_team_as_no_member(self):
+        """
+        Tests joining a team logged in as a no-team member
+        """
+        response = self.request_join_team()
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertIn(
+            UserEmail.objects.get(email=self.current_user.main_email),
+            self.team.members.all()
+        )
+
+    def test_join_a_non_existing_team(self):
+        """
+        Tests joining a non-existing team
+        """
+        response = self.request_join_team(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+    def test_join_team_without_email_parameter(self):
+        """
+        Tests joining a team without the email parameter
+        """
+        response = self.client.post(
+            reverse('dtracker-team-join', kwargs={'slug': self.team.slug}), {})
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertNotIn(
+            UserEmail.objects.get(email=self.current_user.main_email),
+            self.team.members.all()
+        )
+
+    def test_join_team_with_an_email_not_registered(self):
+        """
+        Tests the permission denied when an user tries to join a team with
+        an email not registered in his/her account
+        """
+        response = self.request_join_team(email='paul@notregistered.com')
+        self.assertEqual(response.status_code, 403)
+
+    def test_join_a_non_public_team(self):
+        """
+        Tests the attempt of joining a non-public team
+        """
+        self.team.public = False
+        self.team.save()
+        response = self.request_join_team()
+        self.assertEqual(response.status_code, 403)
+
+
+class LeaveTeamViewTest(UserAuthMixin, TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.views.LeaveTeamView`.
+    """
+    def setUp(self):
+        self.USERS['paul'] = {
+            'main_email': 'paul@debian.org',
+            'password': 'paulpassword'
+        }
+        self.setup_users(login=True)
+        self.team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Team name", public=True)
+        self.team.add_members(
+            UserEmail.objects.filter(email=self.team.owner.main_email))
+
+    def request_leave_team(self, method='post', slug='team-name'):
+        path = reverse('dtracker-team-leave', kwargs={'slug': slug})
+        if method == 'post':
+            return self.client.post(path)
+        else:
+            return self.client.get(path)
+
+    def test_leave_team_page(self):
+        """
+        Tests rendering the page to leave a team
+        """
+        response = self.request_leave_team(method='get')
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': self.team.slug
+        }))
+
+    def test_leave_team_page_for_non_existing_team(self):
+        """
+        Tests rendering the page to leave a non existing team
+        """
+        response = self.request_leave_team(method='get', slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+    def test_leave_team_page_for_logged_out_user(self):
+        """
+        Tests rendering the page to leave a team as a logged out user
+        """
+        self.client.logout()
+        response = self.request_leave_team(method='get')
+        self.assertRedirects(
+            response,
+            (reverse('dtracker-accounts-login') +
+                '?next=/teams/' + self.team.slug + '/%2Bleave/')
+        )
+
+    def test_leave_a_team_as_member(self):
+        """
+        Tests leaving a team logged in as a team member
+        """
+        response = self.request_leave_team()
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertNotIn(
+            UserEmail.objects.get(email=self.current_user.main_email),
+            self.team.members.all()
+        )
+
+    def test_leave_a_non_existing_team(self):
+        """
+        Tests leaving a non-existing team
+        """
+        response = self.request_leave_team(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+    def test_leave_team_as_non_member(self):
+        """
+        Tests the permission denied when a no-team member tries to leave
+        the team
+        """
+        self.login('paul')
+        response = self.request_leave_team()
+        self.assertEqual(response.status_code, 403)
+
+
+class ManageTeamMembersTest(UserAuthMixin, TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.views.ManageTeamMembers`.
+    """
+    def setUp(self):
+        self.USERS['paul'] = {
+            'main_email': 'paul@debian.org',
+            'password': 'paulpassword'
+        }
+        self.setup_users(login=True)
+        self.team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Team name", public=True)
+        self.team.add_members(
+            UserEmail.objects.filter(email=self.team.owner.main_email))
+        self.team.add_members(
+            UserEmail.objects.filter(email=self.get_user('paul').main_email))
+
+    def get_manage_team_members(self, slug='team-name'):
+        return self.client.get(
+            reverse('dtracker-team-manage', kwargs={'slug': slug}))
+
+    def test_manage_team_members_as_owner(self):
+        """
+        Tests rendering manage team members page for team owner
+        """
+        response = self.get_manage_team_members()
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(
+            response, 'core/team-manage.html')
+        self.assertContains(response, "Member management for team")
+        self.assertContains(response, "<h3>Team members</h3>", html=True)
+        self.assertEqual(response.context['team'], self.team)
+        self.assertTrue(isinstance(response.context['form'], AddTeamMemberForm))
+
+    def test_manage_team_members_as_not_owner(self):
+        """
+        Tests rendering manage team members page for a user who is not the
+        team owner
+        """
+        self.login('paul')
+        response = self.get_manage_team_members()
+        self.assertEqual(response.status_code, 403)
+
+    def test_manage_team_members_for_non_existing_team(self):
+        """
+        Tests rendering manage team members page for a non existing team
+        """
+        response = self.get_manage_team_members(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+
+class RemoveTeamMemberTest(UserAuthMixin, TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.views.RemoveTeamMember`.
+    """
+    def setUp(self):
+        self.USERS['paul'] = {
+            'main_email': 'paul@debian.org',
+            'password': 'paulpassword'
+        }
+        self.setup_users(login=True)
+        self.team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Team name", public=True)
+        self.team.add_members(
+            UserEmail.objects.filter(email=self.team.owner.main_email))
+        self.team.add_members(
+            UserEmail.objects.filter(email=self.get_user('paul').main_email))
+
+    def post_remove_team_member(self, slug='team-name',
+                                email='paul@debian.org'):
+        return self.client.post(
+            reverse('dtracker-team-remove-member', kwargs={'slug': slug}),
+            {'email': email}
+        )
+
+    def test_remove_team_member_as_owner(self):
+        """
+        Tests removing a team member as owner
+        """
+        response = self.post_remove_team_member()
+        self.assertRedirects(response, reverse('dtracker-team-manage', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertNotIn(
+            UserEmail.objects.get(email=self.get_user('paul').main_email),
+            self.team.members.all()
+        )
+
+    def test_remove_team_member_from_non_existing_team(self):
+        """
+        Tests removing a team member of a non existing team
+        """
+        response = self.post_remove_team_member(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+    def test_remove_team_member_as_not_owner(self):
+        """
+        Tests the permission denied when an user who is not the team owner
+        tries to remove a member of this team
+        """
+        self.login('paul')
+        response = self.post_remove_team_member()
+        self.assertEqual(response.status_code, 403)
+
+    def test_remove_team_member_without_email_parameter(self):
+        """
+        Tests removing a team member without the email parameter
+        """
+        response = self.client.post(
+            reverse(
+                'dtracker-team-remove-member',
+                kwargs={'slug': self.team.slug}
+            ),
+            {}
+        )
+        self.assertRedirects(response, reverse('dtracker-team-manage', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertIn(
+            UserEmail.objects.get(email=self.current_user.main_email),
+            self.team.members.all()
+        )
+
+
+class ConfirmMembershipViewTest(UserAuthMixin, TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.views.ConfirmMembershipView`.
+    """
+    def setUp(self):
+        self.setup_users(login=True)
+        self.team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Team name", public=True)
+        self.membership = self.team.add_members(
+            [UserEmail.objects.create(email='joe@debian.org')], muted=True)[0]
+        self.confirmation = MembershipConfirmation.objects.create_confirmation(
+            membership=self.membership)
+        self.client.logout()
+
+    def get_confirm_membership(self, slug='team-name', confirmation_key=None):
+        if not confirmation_key:
+            confirmation_key = self.confirmation.confirmation_key
+        return self.client.get(reverse(
+            'dtracker-team-confirm-membership',
+            kwargs={'confirmation_key': confirmation_key}
+        ))
+
+    def test_confirm_membership(self):
+        """
+        Tests a valid request to confirm membership
+        """
+        response = self.get_confirm_membership()
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': self.team.slug
+        }))
+        self.membership.refresh_from_db()
+        self.assertFalse(self.membership.muted)
+        self.assertDoesNotExist(self.confirmation)
+
+    def test_confirm_membership_with_invalid_key(self):
+        """
+        Tests the attempt to confirm membership with a invalid key
+        """
+        response = self.get_confirm_membership(confirmation_key='invalid-key')
+        self.assertEqual(response.status_code, 404)
+
+    def test_confirm_membership_twice(self):
+        """
+        Tests the attempt to confirm membership twice
+        """
+        response = self.get_confirm_membership()
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': self.team.slug
+        }))
+        response = self.get_confirm_membership()
+        self.assertEqual(response.status_code, 404)
+
+
+class TeamListViewTest(UserAuthMixin, TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.views.TeamListView`.
+    """
+    def setUp(self):
+        self.setup_users(login=True)
+        self.first_team = Team.objects.create_with_slug(
+            owner=self.current_user, name="First team", public=True)
+        self.second_team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Second team", public=True)
+        self.third_team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Third team", public=False)
+        self.response = self.client.get(reverse('dtracker-team-list'))
+
+    def test_team_list_page(self):
+        """
+        Tests rendering the team list page
+        """
+        self.assertEqual(self.response.status_code, 200)
+        self.assertTemplateUsed(self.response, 'core/team-list.html')
+        self.assertContains(self.response, "<h1>List of teams</h1>", html=True)
+
+    def test_team_list_contains_public_teams_only(self):
+        """
+        Tests the inclusion of public teams only in the team list
+        """
+        self.assertIn(self.first_team, self.response.context['team_list'])
+        self.assertIn(self.second_team, self.response.context['team_list'])
+        self.assertNotIn(self.third_team, self.response.context['team_list'])
+
+    def test_team_list_is_ordered_by_name(self):
+        """
+        Tests the order of the team list
+        """
+        self.assertEqual(
+            [{'name': 'First team'}, {'name': 'Second team'}],
+            list(self.response.context['team_list'].values('name'))
+        )
+
+
+class SetMuteTeamViewTest(UserAuthMixin, TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.views.SetMuteTeamView`.
+    """
+    def setUp(self):
+        self.USERS['paul'] = {
+            'main_email': 'paul@debian.org',
+            'password': 'paulpassword'
+        }
+        self.setup_users(login=True)
+        self.team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Team name", public=True)
+        self.membership = self.team.add_members(
+            UserEmail.objects.filter(email=self.team.owner.main_email))[0]
+        self.package = SourcePackageName.objects.create(name='dummy-package')
+        self.team.packages.add(self.package)
+
+    def post_set_mute_team(self, slug='team-name', action='mute',
+                           email='john@example.com', package=None,
+                           next_url=None):
+        data = {}
+        if email:
+            data['email'] = email
+        if package:
+            data['package'] = package
+        if next_url:
+            data['next'] = next_url
+        return self.client.post(
+            reverse('dtracker-team-' + action, kwargs={'slug': slug}), data)
+
+    def assert_membership_muted(self, action='mute', muted=True):
+        response = self.post_set_mute_team(action=action)
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': self.team.slug
+        }))
+        self.membership.refresh_from_db()
+        self.assertEqual(self.membership.muted, muted)
+
+    def test_mute_team_membership(self):
+        """
+        Tests muting a team membership as a team member
+        """
+        self.assert_membership_muted()
+
+    def test_unmute_team_membership(self):
+        """
+        Tests unmuting a team membership as a team member
+        """
+        self.membership.muted = True
+        self.membership.save()
+        self.assert_membership_muted(action='unmute', muted=False)
+
+    def test_mute_team_membership_redirection_to_next_url(self):
+        """
+        Tests muting a team membership and redirecting to the url
+        informed in 'next' parameter
+        """
+        next_url = self.package.get_absolute_url()
+        response = self.post_set_mute_team(next_url=next_url)
+        self.assertRedirects(response, next_url)
+
+    def test_mute_team_membership_as_no_team_member(self):
+        """
+        Tests muting a team membership as a no-team member
+        """
+        self.login('paul')
+        response = self.post_set_mute_team(email=self.current_user.main_email)
+        self.assertEqual(response.status_code, 404)
+
+    def test_mute_team_membership_for_non_existing_team(self):
+        """
+        Tests muting a team membership for a non-existing team
+        """
+        response = self.post_set_mute_team(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+    def test_mute_team_membership_without_email_parameter(self):
+        """
+        Tests muting a team membership without send the email parameter
+        """
+        response = self.post_set_mute_team(email=None)
+        self.assertEqual(response.status_code, 404)
+
+    def test_mute_team_membership_with_unregistered_email(self):
+        """
+        Tests muting a team membership with an email that does not belong to
+        the logged user
+        """
+        response = self.post_set_mute_team(email='unregistered@example.com')
+        self.assertEqual(response.status_code, 403)
+
+    def test_mute_package_in_team_membership(self):
+        """
+        Tests muting a particular package in a team membership as a team member
+        """
+        response = self.post_set_mute_team(package=self.package.name)
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertTrue(self.membership.is_muted(self.package))
+
+
+class SetMembershipKeywordsTest(UserAuthMixin, TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.views.SetMembershipKeywords`.
+    """
+    def setUp(self):
+        self.USERS['paul'] = {
+            'main_email': 'paul@debian.org',
+            'password': 'paulpassword'
+        }
+        self.setup_users(login=True)
+        self.team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Team name", public=True)
+        self.membership = self.team.add_members(
+            self.team.owner.emails.filter(email=self.team.owner.main_email))[0]
+        self.package = SourcePackageName.objects.create(name='dummy-package')
+        self.team.packages.add(self.package)
+
+    def post_set_membership_keywords(
+        self,
+        slug='team-name',
+        email='john@example.com',
+        keyword=['translation', 'derivatives'],
+        package=None,
+        next_url=None
+    ):
+        data = {}
+        if email:
+            data['email'] = email
+        if package:
+            data['package'] = package
+        if next_url:
+            data['next'] = next_url
+        if keyword:
+            data['keyword[]'] = keyword
+        return self.client.post(
+            reverse('dtracker-team-set-keywords', kwargs={'slug': slug}), data)
+
+    def test_set_membership_keywords(self):
+        """
+        Tests setting membership keywords as a team member
+        """
+        response = self.post_set_membership_keywords()
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertEqual(self.membership.default_keywords.count(), 2)
+
+    def test_set_membership_keywords_through_ajax_request(self):
+        """
+        Tests setting membership keywords as a team member through Ajax request
+        """
+        response = self.client.post(
+            reverse(
+                'dtracker-team-set-keywords', kwargs={'slug': self.team.slug}),
+            {'email': self.current_user.main_email, 'keyword[]': ['bts']},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        self.assertJSONEqual(
+            str(response.content, encoding='utf8'), {'status': 'ok'})
+
+    def test_set_membership_keywords_with_redirection_to_next_url(self):
+        """
+        Tests setting membership keywords and redirecting to the url
+        informed in 'next' parameter
+        """
+        next_url = self.package.get_absolute_url()
+        response = self.post_set_membership_keywords(next_url=next_url)
+        self.assertRedirects(response, next_url)
+        self.assertEqual(self.membership.default_keywords.count(), 2)
+
+    def test_set_membership_keywords_as_no_team_member(self):
+        """
+        Tests setting membership keywords as a no-team member
+        """
+        self.login('paul')
+        response = self.post_set_membership_keywords(
+            email=self.current_user.main_email)
+        self.assertEqual(response.status_code, 404)
+
+    def test_set_membership_keywords_for_non_existing_team(self):
+        """
+        Tests setting membership keywords for a non-existing team
+        """
+        response = self.post_set_membership_keywords(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+    def test_set_membership_keywords_without_email_parameter(self):
+        """
+        Tests setting membership keywords without send the email parameter
+        """
+        response = self.post_set_membership_keywords(email=None)
+        self.assertEqual(response.status_code, 404)
+
+    def test_set_membership_keywords_without_keyword_parameter(self):
+        """
+        Tests setting membership keywords without send the keyword[] parameter
+        """
+        response = self.post_set_membership_keywords(keyword=None)
+        self.assertEqual(response.status_code, 404)
+
+    def test_set_membership_keywords_with_unregistered_email(self):
+        """
+        Tests setting membership keywords with an email that does not belong
+        to the logged user
+        """
+        response = self.post_set_membership_keywords(
+            email='unregistered@example.com')
+        self.assertEqual(response.status_code, 403)
+
+    def test_set_membership_keywords_for_package_in_team(self):
+        """
+        Tests setting package-specific keywords as a team member
+        """
+        response = self.post_set_membership_keywords(package=self.package.name)
+        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+            'slug': self.team.slug
+        }))
+        self.assertEqual(self.membership.get_keywords(self.package).count(), 2)
+
+
+class EditMembershipViewTest(UserAuthMixin, TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.views.EditMembershipView`.
+    """
+    def setUp(self):
+        self.USERS['paul'] = {
+            'main_email': 'paul@debian.org',
+            'password': 'paulpassword'
+        }
+        self.setup_users(login=True)
+        self.team = Team.objects.create_with_slug(
+            owner=self.current_user, name="Team name", public=True)
+        self.membership = self.team.add_members(
+            UserEmail.objects.filter(email=self.team.owner.main_email))[0]
+        self.first_package = SourcePackageName.objects.create(
+            name='first-package')
+        self.second_package = SourcePackageName.objects.create(
+            name='second-package')
+        self.team.packages.add(self.first_package)
+        self.team.packages.add(self.second_package)
+        self.membership.set_mute_package(self.second_package, True)
+
+    def get_edit_membership(self, slug='team-name', email='john@example.com'):
+        data = {}
+        if email:
+            data['email'] = email
+        return self.client.get(
+            reverse('dtracker-team-manage-membership', kwargs={'slug': slug}),
+            data
+        )
+
+    def test_edit_membership(self):
+        """
+        Tests rendering the edit membership page
+        """
+        response = self.get_edit_membership()
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(
+            response, 'core/edit-team-membership.html')
+        self.assertContains(response, "Membership management for ")
+        self.assertEqual(
+            self.membership,
+            response.context['membership']
+        )
+        self.assertIn(
+            self.first_package, response.context['package_list'])
+        self.assertIn(
+            self.second_package, response.context['package_list'])
+        for package in response.context['package_list']:
+            self.assertIn(package.is_muted, [True, False])
+
+    def test_edit_membership_in_non_existing_team(self):
+        """
+        Tests the attempt to render edit membership page for non-existing team
+        """
+        response = self.get_edit_membership(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
+
+    def test_edit_membership_without_email_parameter(self):
+        """
+        Tests the attempt to render edit membership page without the email
+        parameter
+        """
+        response = self.get_edit_membership(email=None)
+        self.assertEqual(response.status_code, 404)
+
+    def test_edit_membership_with_unregistered_email(self):
+        """
+        Tests the attempt to render edit membership page with an unregistered
+        email
+        """
+        response = self.get_edit_membership(email='unregistered@example.com')
+        self.assertEqual(response.status_code, 403)
+
+    def test_edit_membership_as_no_team_member(self):
+        """
+        Tests the attempt to render edit membership page as no-team member
+        """
+        self.login('paul')
+        response = self.get_edit_membership(email=self.current_user.main_email)
         self.assertEqual(response.status_code, 404)
 
 
