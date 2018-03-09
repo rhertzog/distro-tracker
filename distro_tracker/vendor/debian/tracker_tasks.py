@@ -2046,7 +2046,8 @@ class UpdateDebciStatusTask(BaseTask):
         debci_action_item = package.get_action_item_for_type(
             self.debci_action_item_type.type_name)
         if debci_status.get('status') == 'pass':
-            debci_action_item.delete()
+            if debci_action_item:
+                debci_action_item.delete()
             return
 
         if debci_action_item is None:
@@ -2084,18 +2085,29 @@ class UpdateDebciStatusTask(BaseTask):
             return
 
         with transaction.atomic():
+            # Delete obsolete data
+            PackageExtractedInfo.objects.filter(key='debci').delete()
             packages = []
+            infos = []
             for result in all_debci_status:
-                if result['status'] == 'fail':
-                    try:
-                        package = SourcePackageName.objects.get(
-                            name=result['package'])
-                        packages.append(package)
-                        self.update_action_item(package, result)
-                    except SourcePackageName.DoesNotExist:
-                        pass
+                try:
+                    package = SourcePackageName.objects.get(
+                        name=result['package'])
+                    packages.append(package)
+                except SourcePackageName.DoesNotExist:
+                    continue
 
-            # Remove action items for packages without failing tests.
+                infos.append(
+                    PackageExtractedInfo(
+                        package=package,
+                        key='debci',
+                        value=result
+                    )
+                )
+
+                self.update_action_item(package, result)
+
+            PackageExtractedInfo.objects.bulk_create(infos)
             ActionItem.objects.delete_obsolete_items(
                 [self.debci_action_item_type], packages)
 
