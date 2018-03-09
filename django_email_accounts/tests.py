@@ -9,8 +9,9 @@
 # except according to the terms contained in the LICENSE file.
 
 from django.test import TestCase
+from django.urls import reverse
 
-from django_email_accounts.models import UserEmail
+from django_email_accounts.models import UserEmail, User
 
 
 class UserEmailTests(TestCase):
@@ -21,3 +22,30 @@ class UserEmailTests(TestCase):
             email='myemail@example.net')
         self.assertFalse(created)
         self.assertEqual(orig_user_email.pk, user_email.pk)
+
+
+class LoginViewTests(TestCase):
+
+    def test_login_redirect_to_next(self):
+        """
+        Tests if login redirects to the correct page
+        """
+        username = 'user@domain.com'
+        password = 'abcd'
+        login_url = reverse('dtracker-accounts-login')
+        redirect_url = '/foobar/'
+
+        User.objects.create_user(
+            main_email=username, password=password, first_name='', last_name='')
+        data = {'username': username, 'password': password}
+
+        # Tests login redirects to the account page by default
+        response = self.client.post(login_url, data)
+        self.assertRedirects(response, reverse('dtracker-accounts-profile'))
+
+        # Tests that adding a next parameter redirects the page
+        url = login_url + '?next=' + redirect_url
+
+        response = self.client.post(url, data)
+        self.assertRedirects(
+            response, redirect_url, fetch_redirect_response=False)

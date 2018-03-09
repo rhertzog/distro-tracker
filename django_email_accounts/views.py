@@ -54,8 +54,11 @@ class LoginView(FormView):
     form_class = AuthenticationForm
     success_url = reverse_lazy('accounts-profile')
     template_name = 'accounts/login.html'
+    redirect_parameter = 'next'
 
     def form_valid(self, form):
+        self.success_url = self.request.GET.get(
+            self.redirect_parameter, self.success_url)
         if not is_safe_url(url=self.success_url, host=self.request.get_host()):
             self.success_url = '/'
 
