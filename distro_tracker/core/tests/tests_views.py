@@ -590,12 +590,13 @@ class DeleteTeamViewTest(UserAuthMixin, TestCase):
     """
     Tests for the :class:`distro_tracker.core.views.DeleteTeamView`.
     """
+    USERS = {
+        'john': {},
+        'paul': {},
+    }
+
     def setUp(self):
-        self.USERS['paul'] = {
-            'main_email': 'paul@debian.org',
-            'password': 'paulpassword'
-        }
-        self.setup_users(login=True)
+        self.setup_users(login='john')
         self.team = Team.objects.create_with_slug(
             owner=self.current_user, name="Team name", public=True)
 
@@ -647,12 +648,13 @@ class UpdateTeamViewTest(UserAuthMixin, TestCase):
     """
     Tests for the :class:`distro_tracker.core.views.UpdateTeamView`.
     """
+    USERS = {
+        'john': {},
+        'paul': {},
+    }
+
     def setUp(self):
-        self.USERS['paul'] = {
-            'main_email': 'paul@debian.org',
-            'password': 'paulpassword'
-        }
-        self.setup_users(login=True)
+        self.setup_users(login='john')
         self.team = Team.objects.create_with_slug(
             owner=self.current_user, name="Team name", public=True)
         self.update_POST_data = {
@@ -727,12 +729,13 @@ class AddPackageToTeamViewTest(UserAuthMixin, TestCase):
     Tests for the
     :class:`distro_tracker.core.views.AddPackageToTeamView`.
     """
+    USERS = {
+        'john': {},
+        'paul': {},
+    }
+
     def setUp(self):
-        self.USERS['paul'] = {
-            'main_email': 'paul@debian.org',
-            'password': 'paulpassword'
-        }
-        self.setup_users(login=True)
+        self.setup_users(login='john')
         self.team = Team.objects.create_with_slug(
             owner=self.current_user, name="Team name", public=True)
         self.package = SourcePackageName.objects.create(name='dummy-package')
@@ -786,12 +789,13 @@ class RemovePackageFromTeamViewTest(UserAuthMixin, TestCase):
     Tests for the
     :class:`distro_tracker.core.views.RemovePackageFromTeamView`.
     """
+    USERS = {
+        'john': {},
+        'paul': {},
+    }
+
     def setUp(self):
-        self.USERS['paul'] = {
-            'main_email': 'paul@debian.org',
-            'password': 'paulpassword'
-        }
-        self.setup_users(login=True)
+        self.setup_users(login='john')
         self.team = Team.objects.create_with_slug(
             owner=self.current_user, name="Team name", public=True)
         self.package = SourcePackageName.objects.create(name='dummy-package')
@@ -897,19 +901,22 @@ class AddTeamMemberTest(UserAuthMixin, TestCase):
     Tests for the
     :class:`distro_tracker.core.views.AddTeamMember`.
     """
+    USERS = {
+        'john': {},
+        'paul': {},
+    }
+
     def setUp(self):
-        self.USERS['paul'] = {
-            'main_email': 'paul@debian.org',
-            'password': 'paulpassword'
-        }
-        self.setup_users(login=True)
+        self.setup_users(login='john')
         self.team = Team.objects.create_with_slug(
             owner=self.current_user, name="Team name", public=True)
         self.team.add_members(
             UserEmail.objects.filter(email=self.team.owner.main_email))
         self.prev_user_email_count = UserEmail.objects.count()
 
-    def post_add_team_member(self, slug='team-name', email='paul@debian.org'):
+    def post_add_team_member(self, email=None, slug='team-name'):
+        if email is None:
+            email = self.get_user('paul').main_email
         return self.client.post(
             reverse('dtracker-team-add-member', kwargs={'slug': slug}),
             {'email': email}
@@ -920,12 +927,13 @@ class AddTeamMemberTest(UserAuthMixin, TestCase):
         Tests adding an existing user as team member logged in as the team
         owner
         """
-        response = self.post_add_team_member()
+        paul_email = self.get_user('paul').main_email
+        response = self.post_add_team_member(email=paul_email)
         self.assertRedirects(response, reverse('dtracker-team-manage', kwargs={
             'slug': self.team.slug
         }))
         self.assertIn(
-            UserEmail.objects.get(email=self.get_user('paul').main_email),
+            UserEmail.objects.get(email=paul_email),
             self.team.members.all()
         )
         self.assertEqual(MembershipConfirmation.objects.count(), 1)
@@ -982,20 +990,22 @@ class JoinTeamViewTest(UserAuthMixin, TestCase):
     Tests for the
     :class:`distro_tracker.core.views.JoinTeamView`.
     """
+    USERS = {
+        'john': {},
+        'paul': {},
+    }
+
     def setUp(self):
-        self.USERS['paul'] = {
-            'main_email': 'paul@debian.org',
-            'password': 'paulpassword'
-        }
         self.setup_users(login='paul')
         self.team = Team.objects.create_with_slug(
             owner=self.get_user('john'), name="Team name", public=True)
         self.team.add_members(
             UserEmail.objects.filter(email=self.team.owner.main_email))
 
-    def request_join_team(self, method='post', slug='team-name',
-                          email='paul@debian.org'):
+    def request_join_team(self, email=None, method='post', slug='team-name'):
         path = reverse('dtracker-team-join', kwargs={'slug': slug})
+        if email is None:
+            email = self.get_user('paul').main_email
         data = {'email': email}
         if method == 'post':
             return self.client.post(path, data)
@@ -1089,12 +1099,13 @@ class LeaveTeamViewTest(UserAuthMixin, TestCase):
     Tests for the
     :class:`distro_tracker.core.views.LeaveTeamView`.
     """
+    USERS = {
+        'john': {},
+        'paul': {},
+    }
+
     def setUp(self):
-        self.USERS['paul'] = {
-            'main_email': 'paul@debian.org',
-            'password': 'paulpassword'
-        }
-        self.setup_users(login=True)
+        self.setup_users(login='john')
         self.team = Team.objects.create_with_slug(
             owner=self.current_user, name="Team name", public=True)
         self.team.add_members(
@@ -1170,12 +1181,13 @@ class ManageTeamMembersTest(UserAuthMixin, TestCase):
     Tests for the
     :class:`distro_tracker.core.views.ManageTeamMembers`.
     """
+    USERS = {
+        'john': {},
+        'paul': {},
+    }
+
     def setUp(self):
-        self.USERS['paul'] = {
-            'main_email': 'paul@debian.org',
-            'password': 'paulpassword'
-        }
-        self.setup_users(login=True)
+        self.setup_users(login='john')
         self.team = Team.objects.create_with_slug(
             owner=self.current_user, name="Team name", public=True)
         self.team.add_members(
@@ -1222,12 +1234,13 @@ class RemoveTeamMemberTest(UserAuthMixin, TestCase):
     Tests for the
     :class:`distro_tracker.core.views.RemoveTeamMember`.
     """
+    USERS = {
+        'john': {},
+        'paul': {},
+    }
+
     def setUp(self):
-        self.USERS['paul'] = {
-            'main_email': 'paul@debian.org',
-            'password': 'paulpassword'
-        }
-        self.setup_users(login=True)
+        self.setup_users(login='john')
         self.team = Team.objects.create_with_slug(
             owner=self.current_user, name="Team name", public=True)
         self.team.add_members(
@@ -1235,8 +1248,9 @@ class RemoveTeamMemberTest(UserAuthMixin, TestCase):
         self.team.add_members(
             UserEmail.objects.filter(email=self.get_user('paul').main_email))
 
-    def post_remove_team_member(self, slug='team-name',
-                                email='paul@debian.org'):
+    def post_remove_team_member(self, slug='team-name', email=None):
+        if email is None:
+            email = self.get_user('paul').main_email
         return self.client.post(
             reverse('dtracker-team-remove-member', kwargs={'slug': slug}),
             {'email': email}
@@ -1391,12 +1405,13 @@ class SetMuteTeamViewTest(UserAuthMixin, TestCase):
     Tests for the
     :class:`distro_tracker.core.views.SetMuteTeamView`.
     """
+    USERS = {
+        'john': {},
+        'paul': {},
+    }
+
     def setUp(self):
-        self.USERS['paul'] = {
-            'main_email': 'paul@debian.org',
-            'password': 'paulpassword'
-        }
-        self.setup_users(login=True)
+        self.setup_users(login='john')
         self.team = Team.objects.create_with_slug(
             owner=self.current_user, name="Team name", public=True)
         self.membership = self.team.add_members(
@@ -1494,12 +1509,13 @@ class SetMembershipKeywordsTest(UserAuthMixin, TestCase):
     Tests for the
     :class:`distro_tracker.core.views.SetMembershipKeywords`.
     """
+    USERS = {
+        'john': {},
+        'paul': {},
+    }
+
     def setUp(self):
-        self.USERS['paul'] = {
-            'main_email': 'paul@debian.org',
-            'password': 'paulpassword'
-        }
-        self.setup_users(login=True)
+        self.setup_users(login='john')
         self.team = Team.objects.create_with_slug(
             owner=self.current_user, name="Team name", public=True)
         self.membership = self.team.add_members(
@@ -1615,12 +1631,13 @@ class EditMembershipViewTest(UserAuthMixin, TestCase):
     Tests for the
     :class:`distro_tracker.core.views.EditMembershipView`.
     """
+    USERS = {
+        'john': {},
+        'paul': {},
+    }
+
     def setUp(self):
-        self.USERS['paul'] = {
-            'main_email': 'paul@debian.org',
-            'password': 'paulpassword'
-        }
-        self.setup_users(login=True)
+        self.setup_users(login='john')
         self.team = Team.objects.create_with_slug(
             owner=self.current_user, name="Team name", public=True)
         self.membership = self.team.add_members(

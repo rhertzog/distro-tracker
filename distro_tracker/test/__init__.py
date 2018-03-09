@@ -181,24 +181,21 @@ class UserAuthMixin(object):
     One may define additional USERS before call self.setup_users()
     in self.setUp()
     """
-
     USERS = {
-        'john': {
-            'main_email': 'john@example.com',
-            'password': 'johnpassword',
-        },
+        'john': {},
     }
 
     def setup_users(self, login=False):
         """
         Creates users defined in self.USERS and use the 'login' parameter as
         follows:
-        * If Flase: no user login
-        * If True: login with default user
+        * If False: no user login
+        * If True: login with the only user defined
         * If a particular username: login with the user who owns the username
         """
         self.users = {}
-        for username, user_data in self.USERS.items():
+        for username in self.USERS:
+            user_data = self._get_user_data(username)
             self.users[username] = User.objects.create_user(**user_data)
         if login:
             username = None if login is True else login
@@ -206,14 +203,18 @@ class UserAuthMixin(object):
 
     def login(self, username=None):
         """
-        Logins with a the user that owns the 'username' or with the first user
-        in self.users
+        Login with the user that owns the 'username' or with the only available
+        user in self.users. If multiple users are available, you must specify
+        the username or you will trigger a ValueError exception.
         """
         if not username:
+            if len(self.users) > 1:
+                raise ValueError("multiple users but username not specified")
             username = list(self.users.keys())[0]
+        user_data = self._get_user_data(username)
         self.client.login(
-            username=self.USERS[username]['main_email'],
-            password=self.USERS[username]['password']
+            username=user_data['main_email'],
+            password=user_data['password'],
         )
         self.current_user = self.users[username]
         return self.current_user
@@ -222,3 +223,9 @@ class UserAuthMixin(object):
         if not username:
             return self.current_user
         return self.users[username]
+
+    def _get_user_data(self, username):
+        user_data = self.USERS[username].copy()
+        user_data.setdefault('main_email', '{}@example.com'.format(username))
+        user_data.setdefault('password', '{}password'.format(username))
+        return user_data
