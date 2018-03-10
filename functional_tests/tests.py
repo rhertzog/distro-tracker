@@ -815,7 +815,9 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
         # ...and tries subscribing to the package
         self.get_element_by_id('subscribe-not-logged-in-button').click()
         # ...only to find himself redirected to the log in page.
-        self.assert_current_url_equal(self.get_login_url())
+        url = self.get_login_url() + '?next=' + self.get_package_url(
+            self.package)
+        self.assert_current_url_equal(url)
 
     def test_subscribe_multiple_associated_emails(self):
         """

@@ -67,7 +67,7 @@
     {% else %}
 	{# When the user is not authenticated, the subscribe button leads to the log in page instead #}
 	<div class="btn-group" role="group" style="margin-left: 10px;{% if is_subscribed %}display: none;{% endif %}">
-	  <a href="{% url 'dtracker-accounts-login' %}" id='subscribe-not-logged-in-button' class="btn btn-primary">Subscribe</a>
+	  <a href="{% url 'dtracker-accounts-login' %}?next={% url 'dtracker-package-page' package %}" id='subscribe-not-logged-in-button' class="btn btn-primary">Subscribe</a>
 	</div>
     {% endif %}
 
