@@ -300,6 +300,11 @@ class UpdateTeamView(UpdateView):
         instance = super(UpdateTeamView, self).get_object(*args, **kwargs)
         if instance.owner != self.request.user:
             raise PermissionDenied
+
+        # Set current maintainer email to the email field in the form
+        if instance.maintainer_email is not None:
+            self.initial.update(
+                {'maintainer_email': instance.maintainer_email.email})
         return instance
 
 
