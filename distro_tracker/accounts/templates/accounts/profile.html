@@ -2,13 +2,7 @@
 {% block title %}{{ user }} | {{ block.super}}{% endblock %}
 
 {% block content %}
-{% if messages %}
-<div id="profile-messages">
-    {% for message in messages %}
-    <div class="alert alert-danger" role="alert">{{ message }}</div>
-    {% endfor %}
-</div>
-{% endif %}
+{% include 'core/profile-messages.html' %}
 {% include 'accounts/profile-navbar.html' with active_element='profile' %}
 Hello, {{ user }}.
 {% endblock %}
