@@ -723,6 +723,39 @@ class UpdateTeamViewTest(UserAuthMixin, TestCase):
         response = self.post_team_update(slug='does-not-exist')
         self.assertEqual(response.status_code, 404)
 
+    def test_check_update_team_maintainer_email(self):
+        """
+        Tests that the update team form shows the current maintainer email
+        :return:
+        """
+        self.post_team_update()
+        self.team.refresh_from_db()
+
+        response = self.client.get(
+            reverse('dtracker-team-update', kwargs={'slug': self.team.slug})
+        )
+
+        self.assertContains(response, self.team.maintainer_email.email)
+
+    def test_reset_maintainers_email(self):
+        """
+        Tests passing an empty value to the maintainer email field resets it.
+        :return:
+        """
+        self.post_team_update()
+        self.team.refresh_from_db()
+
+        data = self.update_POST_data.copy()
+        data['maintainer_email'] = ''
+
+        self.client.post(
+            reverse('dtracker-team-update', kwargs={'slug': self.team.slug}),
+            data
+        )
+
+        self.team.refresh_from_db()
+        self.assertIsNone(self.team.maintainer_email)
+
 
 class AddPackageToTeamViewTest(UserAuthMixin, TestCase):
     """
