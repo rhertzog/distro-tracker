@@ -2,12 +2,18 @@
 {% with bugs=item.extra_data.bugs %}
 {% with bugs_dependencies=item.extra_data.bugs_dependencies %}
 {% with buggy_dependencies=item.extra_data.buggy_dependencies %}
+{% with reverse_dependencies=item.extra_data.reverse_dependencies %}
+{% with number_rdeps=item.extra_data.number_rdeps %}
 
 <div>
     <span>Version {{ item.extra_data.version }} of {{ item.package.name }} is marked for autoremoval from testing on {{ item.extra_data.removal_date }}. </span>
 
     {% if bugs %}
     <span>It is affected by {{ bugs|safe }}. </span>
+    {% endif %}
+
+    {% if reverse_dependencies %}
+    <span>The removal of {{ item.package.name }} will also cause the removal of (transitive) reverse dependenc{{ number_rdeps|pluralize:"y,ies" }}: {{ reverse_dependencies|safe }}. </span>
     {% endif %}
 
     {% if bugs_dependencies %}
@@ -17,6 +23,8 @@
     </span>You should try to prevent the removal by fixing these RC bugs.</span>
 </div>
 
+{% endwith %}
+{% endwith %}
 {% endwith %}
 {% endwith %}
 {% endwith %}

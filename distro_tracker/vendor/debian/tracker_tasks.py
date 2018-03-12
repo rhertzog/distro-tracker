@@ -2143,6 +2143,17 @@ class UpdateAutoRemovalsStatsTask(BaseTask):
         if content:
             return yaml.safe_load(io.BytesIO(content))
 
+    def list_of_packages_to_html(self, packages):
+        packages_html = []
+        for package in packages:
+            package_url = reverse(
+                'dtracker-package-page',
+                kwargs={'package_name': package})
+            html = '<a href="{}">{}</a>'.format(package_url, package)
+            packages_html.append(html)
+
+        return ' , '.join(packages_html)
+
     def update_action_item(self, package, stats):
         """
         Creates an :class:`ActionItem <distro_tracker.core.models.ActionItem>`
@@ -2158,6 +2169,7 @@ class UpdateAutoRemovalsStatsTask(BaseTask):
 
         bugs_dependencies = stats.get('bugs_dependencies', [])
         buggy_dependencies = stats.get('buggy_dependencies', [])
+        reverse_dependencies = stats.get('rdeps', [])
         all_bugs = stats['bugs'] + bugs_dependencies
         link = '<a href="https://bugs.debian.org/{}">{}</a>'
         removal_date = stats['removal_date'].strftime('%d %B')
@@ -2179,12 +2191,11 @@ class UpdateAutoRemovalsStatsTask(BaseTask):
             'bugs': ', '.join(link.format(bug, bug) for bug in stats['bugs']),
             'bugs_dependencies': ', '.join(
                 link.format(bug, bug) for bug in bugs_dependencies),
-            'buggy_dependencies': ' and '.join(
-                ['<a href="{}">{}</a>'.format(
-                    reverse(
-                        'dtracker-package-page',
-                        kwargs={'package_name': p}),
-                    p) for p in buggy_dependencies])}
+            'buggy_dependencies':
+                self.list_of_packages_to_html(buggy_dependencies),
+            'reverse_dependencies':
+                self.list_of_packages_to_html(reverse_dependencies),
+            'number_rdeps': len(reverse_dependencies)}
         action_item.save()
 
     def execute(self):
