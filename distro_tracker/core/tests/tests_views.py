@@ -914,12 +914,13 @@ class AddTeamMemberTest(UserAuthMixin, TestCase):
             UserEmail.objects.filter(email=self.team.owner.main_email))
         self.prev_user_email_count = UserEmail.objects.count()
 
-    def post_add_team_member(self, email=None, slug='team-name'):
+    def post_add_team_member(self, email=None, slug='team-name', follow=False):
         if email is None:
             email = self.get_user('paul').main_email
         return self.client.post(
             reverse('dtracker-team-add-member', kwargs={'slug': slug}),
-            {'email': email}
+            {'email': email},
+            follow=follow
         )
 
     def test_add_existing_user_as_team_member(self):
@@ -983,6 +984,24 @@ class AddTeamMemberTest(UserAuthMixin, TestCase):
         }))
         self.assertEqual(self.prev_user_email_count, UserEmail.objects.count())
         self.assertEqual(MembershipConfirmation.objects.count(), 0)
+
+    def test_add_team_member_with_an_email_already_added(self):
+        """
+        Tests the attempt of adding a team member with an email that
+        has already been added before.
+        """
+        response = self.post_add_team_member(
+            email=self.get_user('john').main_email, follow=True)
+        self.assertRedirects(response, reverse('dtracker-team-manage', kwargs={
+            'slug': self.team.slug
+        }))
+        message = list(response.context['messages'])[0]
+        self.assertEqual(message.level_tag, "danger")
+        self.assertIn(
+            ("The email address %s is already a member of the team"
+                % self.get_user('john').main_email),
+            message.message
+        )
 
 
 class JoinTeamViewTest(UserAuthMixin, TestCase):

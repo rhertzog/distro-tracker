@@ -44,6 +44,7 @@ from distro_tracker.accounts.views import LoginRequiredMixin
 from distro_tracker.accounts.models import UserEmail
 from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.utils import distro_tracker_render_to_string
+from django.contrib import messages
 
 
 def package_page(request, package_name):
@@ -480,11 +481,20 @@ class AddTeamMember(LoginRequiredMixin, View):
         if self.team.owner != request.user:
             raise PermissionDenied
 
+        response = redirect('dtracker-team-manage', slug=self.team.slug)
         form = AddTeamMemberForm(request.POST)
         if form.is_valid():
             email = form.cleaned_data['email']
             # Emails that do not exist should be created
             user, _ = UserEmail.objects.get_or_create(email=email)
+            if self.team.members.filter(email=user).exists():
+                messages.error(
+                    request,
+                    ("The email address %s is already a member "
+                        "of the team" % email)
+                )
+                return response
+
             # The membership is muted by default until the user confirms it
             membership = self.team.add_members([user], muted=True)[0]
             confirmation = MembershipConfirmation.objects.create_confirmation(
@@ -500,7 +510,7 @@ class AddTeamMember(LoginRequiredMixin, View):
                 from_email=settings.DISTRO_TRACKER_CONTACT_EMAIL,
                 recipient_list=[email])
 
-        return redirect('dtracker-team-manage', slug=self.team.slug)
+        return response
 
 
 class ConfirmMembershipView(View):
