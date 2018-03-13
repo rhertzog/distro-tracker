@@ -123,6 +123,7 @@ More settings:
 import django
 from django.core.exceptions import ImproperlyConfigured
 from os.path import dirname
+from django.contrib.messages import constants as message_constants
 
 import socket
 import os.path
@@ -354,6 +355,9 @@ LOGGING = {
         },
     }
 }
+
+# Map Django's 'error' level to Bootstrap's '*-danger' CSS classes
+MESSAGE_TAGS = {message_constants.ERROR: 'danger'}
 
 # === Distro Tracker specific settings ===
 

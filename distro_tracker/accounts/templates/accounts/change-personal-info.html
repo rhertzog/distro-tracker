@@ -4,11 +4,7 @@
 {% block content %}
 {% include 'accounts/profile-navbar.html' with active_element='change-profile' %}
 
-<div id="profile-messages">
-    {% for message in messages %}
-    <div class="alert alert-success">{{ message }}</div>
-    {% endfor %}
-</div>
+{% include 'core/profile-messages.html' %}
 
 {% include 'accounts/post-form.html' with form_id='form-change-profile' %}
 {% endblock %}

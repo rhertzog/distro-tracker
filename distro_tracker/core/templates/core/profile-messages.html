@@ -1,0 +1,9 @@
+{% if messages %}
+<div id="profile-messages">
+  {% for message in messages %}
+  <div class="{% if message.level_tag %}alert alert-{{ message.level_tag }}{% endif %} {{ message.extra_tags|default_if_none:'' }}" role="alert">
+    {{ message }}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
