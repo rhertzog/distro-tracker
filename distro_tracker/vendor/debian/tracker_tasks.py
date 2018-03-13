@@ -819,86 +819,47 @@ class UpdateExcusesTask(BaseTask):
             return True
         return False
 
-    def _extract_problems_in_excuses_item(self, subline, package, problematic):
-        if 'days old (needed' in subline:
-            words = subline.split()
-            age, limit = words[0], words[4]
-            if age != limit:
-                # It is problematic only when the age is strictly
-                # greater than the limit.
-                problematic[package] = {
-                    'age': age,
-                    'limit': limit,
-                }
+    def _extract_problematic(self, item):
+        if not 'policy_info' in item or not 'age' in item['policy_info']:
+            return
+        package = item['item-name']
+        age = item['policy_info']['age']['current-age']
+        limit = item['policy_info']['age']['age-requirement']
+        if age > limit:
+            return (package, {'age': age, 'limit': limit})
 
-    def _get_excuses_and_problems(self, content_lines):
+    def _get_excuses_and_problems(self, content):
         """
-        Gets the excuses for each package from the given iterator of lines
-        representing the excuses html file.
-        Also finds a list of packages which have not migrated to testing even
-        after the necessary time has passed.
+        Gets the excuses for each package.
+        Also finds a list of packages which have not migrated to testing
+        agter the necessary time has passed.
 
-        :returns: A two-tuple where the first element is a dict mapping
-            package names to a list of excuses. The second element is a dict
-            mapping package names to a problem information. Problem information
-            is a dict with the keys ``age`` and ``limit``.
+        :returns: A two-tuple  where the first element is a dict mapping
+        package names to a list of excuses. The second element is a dict
+        mapping packages names to a problem information. Problem information
+        is a dict with the keys ``age`` and ``limit``.
         """
-        try:
-            # Skip all HTML before the first list
-            while '<ul>' not in next(content_lines):
-                pass
-        except StopIteration:
+        if not 'sources' in content:
             logger.warning("Invalid format of excuses file")
             return
 
-        top_level_list = True
-        package = ""
-        package_excuses = {}
-        problematic = {}
-        excuses = []
-        for line in content_lines:
-            if isinstance(line, bytes):
-                line = line.decode('utf-8')
-            if '</ul>' in line:
-                # The inner list is closed -- all excuses for the package are
-                # processed and we're back to the top-level list.
-                top_level_list = True
-                if '/' in package:
-                    continue
-                # Done with the package
-                package_excuses[package] = deepcopy(excuses)
-                continue
-
-            if '<ul>' in line:
-                # Entering the list of excuses
-                top_level_list = False
-                continue
-
-            if top_level_list:
-                # The entry in the top level list outside of an inner list is
-                # a <li> item giving the name of the package for which the
-                # excuses follow.
-                words = re.split("[><() ]", line)
-                package = words[6]
-                excuses = []
-                top_level_list = False
-                continue
-
-            line = line.strip()
-            for subline in line.split("<li>"):
-                if self._skip_excuses_item(subline):
-                    continue
-
-                # Check if there is a problem for the package.
-                self._extract_problems_in_excuses_item(subline, package,
-                                                       problematic)
-
-                # Extract the rest of the excuses
-                # If it contains a link to an anchor convert it to a link to a
-                # package page.
-                excuses.append(self._adapt_excuse_links(subline))
-
-        return package_excuses, problematic
+        items = content['sources']
+        excuses = [
+            (
+               e['item-name'],
+               [
+                   self._adapt_excuse_links(excuse)
+                   for excuse in e['excuses']
+               ],
+            )
+            for e in items
+        ]
+        problems = [
+            self._extract_problematic(item)
+            for item in items
+        ]
+        problematic = [p for p in problems if p]
+        return dict(excuses), dict(problematic)
 
     def _create_action_item(self, package, extra_data):
         """
@@ -933,16 +894,16 @@ class UpdateExcusesTask(BaseTask):
 
     def _get_update_excuses_content(self):
         """
-        Function returning the content of the update_excuses.html file as an
-        terable of lines.
-        Returns ``None`` if the content in the cache is up to date.
+        Function returning the content of excuses from debian-release
+        :returns: a dict of excuses or ``None`` if the content in the
+        cache is up to date.
         """
-        url = 'https://release.debian.org/britney/update_excuses.html'
+        url = 'https://release.debian.org/britney/excuses.yaml'
         response, updated = self.cache.update(url, force=self.force_update)
         if not updated:
             return
 
-        return response.iter_lines(decode_unicode=True)
+        return yaml.load(response.text)
 
     def execute(self):
         content_lines = self._get_update_excuses_content()

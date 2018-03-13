@@ -18,6 +18,8 @@ import io
 import json
 import logging
 import os
+import yaml
+
 from email.message import Message
 from unittest import mock
 
@@ -1781,15 +1783,14 @@ class UpdateExcusesTaskActionItemTest(TestCase):
 
     def set_update_excuses_content(self, content):
         """
-        Sets the stub content of the update_excuses.html that the task will
+        Sets the stub content of the update_excuses.yaml that the task will
         have access to.
         """
-        self.task._get_update_excuses_content.return_value = iter(
-            content.splitlines())
+        self.task._get_update_excuses_content.return_value = yaml.load(content)
 
     def set_update_excuses_content_from_file(self, file_name):
         """
-        Sets the stub content of the update_excuses.html that the task will
+        Sets the stub content of the update_excuses.yaml that the task will
         have access to based on the content of the test file with the given
         name.
         """
@@ -1807,12 +1808,12 @@ class UpdateExcusesTaskActionItemTest(TestCase):
         Tests that an action item is created when a package has not moved to
         testing after the allocated period.
         """
-        self.set_update_excuses_content_from_file('update_excuses-1.html')
+        self.set_update_excuses_content_from_file('update_excuses-1.yaml')
         # Sanity check: no action items currently
         self.assertEqual(0, ActionItem.objects.count())
         expected_data = {
-            'age': '20',
-            'limit': '10',
+            'age': 20,
+            'limit': 10,
         }
 
         self.run_task()
@@ -1836,7 +1837,7 @@ class UpdateExcusesTaskActionItemTest(TestCase):
         Tests that an action item is not created when the allocated time period
         has not yet passed.
         """
-        self.set_update_excuses_content_from_file('update_excuses-2.html')
+        self.set_update_excuses_content_from_file('update_excuses-2.yaml')
         # Sanity check: no action items currently
         self.assertEqual(0, ActionItem.objects.count())
 
@@ -1855,7 +1856,7 @@ class UpdateExcusesTaskActionItemTest(TestCase):
             package=self.package_name,
             item_type=self.get_action_item_type(),
             short_description="Desc")
-        self.set_update_excuses_content_from_file('update_excuses-2.html')
+        self.set_update_excuses_content_from_file('update_excuses-2.yaml')
 
         self.run_task()
 
@@ -1870,10 +1871,10 @@ class UpdateExcusesTaskActionItemTest(TestCase):
             package=self.package_name,
             item_type=self.get_action_item_type(),
             short_description="Desc")
-        self.set_update_excuses_content_from_file('update_excuses-1.html')
+        self.set_update_excuses_content_from_file('update_excuses-1.yaml')
         expected_data = {
-            'age': '20',
-            'limit': '10',
+            'age': 20,
+            'limit': 10,
         }
 
         self.run_task()

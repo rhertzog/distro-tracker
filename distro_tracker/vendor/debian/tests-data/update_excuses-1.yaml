@@ -1,0 +1,15 @@
+generated-date: 2017-02-01 06:47:18.195464
+sources:
+- excuses:
+  - Some excuses
+  policy_info:
+      age:
+          current-age: 20
+          age-requirement: 10
+  hints:
+  is-candidate:
+  item-name: dummy-package
+  new-version: 2.0.0
+  old-version: 1.0.0
+  reason: []
+  source: dummy-package
