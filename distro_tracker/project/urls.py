@@ -105,6 +105,8 @@ urlpatterns = [
 
     url(r'^news/(?P<news_id>\d+)$', news_page,
         name='dtracker-news-page'),
+    url(r'^news/(?P<news_id>\d+)/(?P<slug>.+)/$', news_page,
+        name='dtracker-news-page'),
     url(r'^action-items/(?P<item_pk>\d+)$', ActionItemView.as_view(),
         name='dtracker-action-item'),
 

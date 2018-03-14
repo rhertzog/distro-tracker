@@ -1645,6 +1645,7 @@ class News(models.Model):
     def get_absolute_url(self):
         return reverse('dtracker-news-page', kwargs={
             'news_id': self.pk,
+            'slug': slugify(self.title)
         })
 
 

@@ -19,6 +19,7 @@ import itertools
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.base import ContentFile
 from django.db import IntegrityError
+from django.template.defaultfilters import slugify
 from django.test.utils import override_settings
 from django.urls import reverse
 
@@ -1436,6 +1437,16 @@ class NewsTests(TestCase):
     """
     def setUp(self):
         self.package = SourcePackageName.objects.create(name='dummy-package')
+
+    def test_get_absolute_url(self):
+        """
+        Tests that the :meth:`distro_tracker.core.models.News.get_absolute_url`
+        method returns a url that includes the news' id and the title slug
+        """
+        news = News.objects.create(title='some title', package=self.package)
+        url = news.get_absolute_url()
+        self.assertIn(str(news.id), url)
+        self.assertIn(slugify(news.title), url)
 
     def test_content_from_db(self):
         """
