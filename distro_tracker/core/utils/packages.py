@@ -1,4 +1,4 @@
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2018 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -13,6 +13,7 @@ from distro_tracker.core.utils.email_messages import (
     names_and_addresses_from_string as parse_addresses
 )
 from django.conf import settings
+from django.urls import reverse
 from django.utils.encoding import force_bytes
 
 from debian import deb822
@@ -45,6 +46,22 @@ def package_hashdir(package_name):
         return package_name[0:4]
     else:
         return package_name[0:1]
+
+
+def package_url(package_name):
+    """
+    Returns the URL of the page dedicated to this package name.
+
+    :param package_name: The package name.
+    :type package_name: str or PackageName model
+
+    :returns: Name of the hash directory.
+    :rtype: str
+    """
+    if package_name is None:
+        return None
+    return reverse('dtracker-package-page',
+                   kwargs={'package_name': str(package_name)})
 
 
 def extract_vcs_information(stanza):

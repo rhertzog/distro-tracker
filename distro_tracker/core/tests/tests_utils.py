@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2013-2016 The Distro Tracker Developers
+# Copyright 2013-2018 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -22,15 +22,16 @@ import io
 import os
 import time
 import tempfile
+from unittest import mock
 
 from debian import deb822
 from django.core import mail
 from django.test.utils import override_settings
+from django.urls import reverse
 from django.utils.http import http_date
 from django.utils.functional import curry
-from unittest import mock
 
-from distro_tracker.core.models import Repository
+from distro_tracker.core.models import Repository, PackageName
 from distro_tracker.core.utils import verp
 from distro_tracker.core.utils import message_from_bytes
 from distro_tracker.core.utils import now
@@ -43,6 +44,7 @@ from distro_tracker.core.utils.packages import AptCache
 from distro_tracker.core.utils.packages import extract_vcs_information
 from distro_tracker.core.utils.packages import extract_dsc_file_name
 from distro_tracker.core.utils.packages import package_hashdir
+from distro_tracker.core.utils.packages import package_url
 from distro_tracker.core.utils.datastructures import DAG, InvalidDAGException
 from distro_tracker.core.utils.email_messages import CustomEmailMessage
 from distro_tracker.core.utils.email_messages import decode_header
@@ -746,6 +748,24 @@ class PackageUtilsTests(SimpleTestCase):
         self.assertEqual(package_hashdir("lib+fancy"), "lib+")
         self.assertEqual(package_hashdir(""), "")
         self.assertEqual(package_hashdir(None), None)
+
+    def test_package_url_with_string(self):
+        self.assertEqual(
+            package_url('dpkg'),
+            reverse('dtracker-package-page',
+                    kwargs={'package_name': 'dpkg'})
+        )
+
+    def test_package_url_with_package_name_model(self):
+        obj = PackageName(name='dpkg')
+        self.assertEqual(
+            package_url(obj),
+            reverse('dtracker-package-page',
+                    kwargs={'package_name': 'dpkg'})
+        )
+
+    def test_package_url_with_none(self):
+        self.assertEqual(package_url(None), None)
 
     def test_extract_dsc_file_name(self):
 
