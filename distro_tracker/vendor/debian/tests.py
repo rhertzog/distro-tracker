@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2013-2017 The Distro Tracker Developers
+# Copyright 2013-2018 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -30,6 +30,7 @@ from distro_tracker.accounts.models import UserEmail
 from distro_tracker.test.utils import make_temp_directory
 from distro_tracker.test.utils import set_mock_response
 from distro_tracker.core.utils.email_messages import message_from_bytes
+from distro_tracker.core.utils.packages import package_url
 from distro_tracker.core.models import ActionItem, ActionItemType
 from distro_tracker.core.models import News
 from distro_tracker.core.models import Keyword
@@ -2588,10 +2589,7 @@ class CodeSearchLinksTest(TestCase):
             shorthand='unstable')
 
     def get_package_page_response(self, package_name):
-        package_page_url = reverse('dtracker-package-page', kwargs={
-            'package_name': package_name,
-        })
-        return self.client.get(package_page_url)
+        return self.client.get(package_url(package_name))
 
     def browse_link_in_content(self, content):
         html = soup(content, 'html.parser')
@@ -2705,10 +2703,7 @@ class PopconLinkTest(TestCase):
     """
 
     def get_package_page_response(self, package_name):
-        package_page_url = reverse('dtracker-package-page', kwargs={
-            'package_name': package_name,
-        })
-        return self.client.get(package_page_url)
+        return self.client.get(package_url(package_name))
 
     def test_source_package(self):
         package_name = SourcePackageName.objects.create(name='dummy')
@@ -2743,10 +2738,7 @@ class DebciLinkTest(TestCase, TemplateTestsMixin):
             version='1.0.0')
 
     def get_package_page_response(self, package_name):
-        package_page_url = reverse('dtracker-package-page', kwargs={
-            'package_name': package_name,
-        })
-        return self.client.get(package_page_url)
+        return self.client.get(package_url(package_name))
 
     def test_package_with_debci_report(self):
         PackageExtractedInfo.objects.create(
@@ -2776,10 +2768,7 @@ class DebtagsLinkTest(TestCase):
     """
 
     def get_package_page_response(self, package_name):
-        package_page_url = reverse('dtracker-package-page', kwargs={
-            'package_name': package_name,
-        })
-        return self.client.get(package_page_url)
+        return self.client.get(package_url(package_name))
 
     def test_source_package(self):
         package_name = SourcePackageName.objects.create(name='dummy')
@@ -2827,10 +2816,7 @@ class ScreenshotsLinkTest(TestCase):
         )
 
     def get_package_page_response(self, package_name):
-        package_page_url = reverse('dtracker-package-page', kwargs={
-            'package_name': package_name,
-        })
-        return self.client.get(package_page_url)
+        return self.client.get(package_url(package_name))
 
     def test_source_package_with_screenshot(self):
         response = self.get_package_page_response(self.package.name)
@@ -3449,10 +3435,7 @@ class UbuntuPanelTests(TestCase):
             name='dummy-package')
 
     def get_package_page_response(self, package_name):
-        package_page_url = reverse('dtracker-package-page', kwargs={
-            'package_name': package_name,
-        })
-        return self.client.get(package_page_url)
+        return self.client.get(package_url(package_name))
 
     def ubuntu_panel_in_content(self, content):
         html = soup(content, 'html.parser')
@@ -4054,10 +4037,7 @@ class NewQueueVersionsPanelTests(TestCase):
             key='versions', value={})
 
     def get_package_page_response(self, package_name):
-        package_page_url = reverse('dtracker-package-page', kwargs={
-            'package_name': package_name,
-        })
-        return self.client.get(package_page_url)
+        return self.client.get(package_url(package_name))
 
     def add_new_queue_entry(self, distribution, version):
         info, _ = PackageExtractedInfo.objects.get_or_create(

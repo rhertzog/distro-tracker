@@ -761,7 +761,7 @@ class PackageUtilsTests(SimpleTestCase):
         self.assertEqual(
             package_url(obj),
             reverse('dtracker-package-page',
-                    kwargs={'package_name': 'dpkg'})
+                    kwargs={'package_name': obj.name})
         )
 
     def test_package_url_with_none(self):

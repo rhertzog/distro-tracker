@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2018 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -13,20 +13,22 @@
 """
 Tests for the Distro Tracker core views.
 """
-from distro_tracker.test import TestCase, TemplateTestsMixin
-from distro_tracker.test import UserAuthMixin
+import json
+
+from django.urls import reverse
+from django.conf import settings
+
+from distro_tracker.accounts.models import UserEmail
+from distro_tracker.core.forms import AddTeamMemberForm
 from distro_tracker.core.models import BinaryPackage, BinaryPackageName
 from distro_tracker.core.models import SourcePackageName, SourcePackage
 from distro_tracker.core.models import PackageName, PseudoPackageName
 from distro_tracker.core.models import News
 from distro_tracker.core.models import ActionItem, ActionItemType
 from distro_tracker.core.models import Team, MembershipConfirmation
-from distro_tracker.accounts.models import UserEmail
-from distro_tracker.core.forms import AddTeamMemberForm
-import json
-
-from django.urls import reverse
-from django.conf import settings
+from distro_tracker.core.utils.packages import package_url
+from distro_tracker.test import TestCase, TemplateTestsMixin
+from distro_tracker.test import UserAuthMixin
 
 
 class PackageViewTest(TestCase):
@@ -49,21 +51,12 @@ class PackageViewTest(TestCase):
         self.src_pkg.save()
         self.bin_pkg.save()
 
-    def get_package_url(self, package_name):
-        """
-        Helper method which returns the URL for the package with the given name
-        """
-        return reverse('dtracker-package-page', kwargs={
-            'package_name': package_name
-        })
-
     def test_source_package_page(self):
         """
         Tests that when visiting the package page for an existing package, a
         response based on the correct template is returned.
         """
-        url = self.get_package_url(self.package.name)
-        response = self.client.get(url)
+        response = self.client.get(package_url(self.package.name))
 
         self.assertTemplateUsed(response, 'core/package.html')
 
@@ -73,9 +66,8 @@ class PackageViewTest(TestCase):
         a plus its name (non-regression test for bug #754497).
         """
         pkg = SourcePackageName.objects.create(name='libti++')
-        url = self.get_package_url(pkg.name)
 
-        response = self.client.get(url)
+        response = self.client.get(package_url(pkg))
 
         self.assertTemplateUsed(response, 'core/package.html')
 
@@ -84,18 +76,16 @@ class PackageViewTest(TestCase):
         Tests that when visited a binary package URL, the user is redirected
         to the corresponding source package page.
         """
-        url = self.get_package_url(self.binary_package.name)
-        response = self.client.get(url)
+        response = self.client.get(package_url(self.binary_package))
 
-        self.assertRedirects(response, self.get_package_url(self.package.name))
+        self.assertRedirects(response, package_url(self.package))
 
     def test_pseudo_package_page(self):
         """
         Tests that when visiting a page for a pseudo package the correct
         template is used.
         """
-        url = self.get_package_url(self.pseudo_package.name)
-        response = self.client.get(url)
+        response = self.client.get(package_url(self.pseudo_package))
 
         self.assertTemplateUsed(response, 'core/package.html')
 
@@ -103,8 +93,8 @@ class PackageViewTest(TestCase):
         """
         Tests that a 404 is returned when the given package does not exist.
         """
-        url = self.get_package_url('no-exist')
-        self.assertEqual(self.client.get(url).status_code, 404)
+        response = self.client.get(package_url('no-exist'))
+        self.assertEqual(response.status_code, 404)
 
     def test_subscriptions_only_package(self):
         """
@@ -115,8 +105,8 @@ class PackageViewTest(TestCase):
         # Make sure the package actually exists.
         PackageName.objects.create(name=package_name)
 
-        url = self.get_package_url(package_name)
-        self.assertEqual(self.client.get(url).status_code, 404)
+        response = self.client.get(package_url(package_name))
+        self.assertEqual(response.status_code, 404)
 
     def test_old_package_with_news(self):
         """
@@ -127,9 +117,8 @@ class PackageViewTest(TestCase):
         oldpackage = PackageName.objects.create(name=package_name)
         News.objects.create(package=oldpackage, title='sample-title',
                             content='sample-content')
-        url = self.get_package_url(package_name)
 
-        response = self.client.get(url)
+        response = self.client.get(package_url(package_name))
 
         self.assertTemplateUsed(response, 'core/package.html')
 
@@ -143,19 +132,20 @@ class PackageViewTest(TestCase):
         url = url_template.format(hash=self.package.name[0],
                                   package=self.package.name)
         response = self.client.get(url)
-        self.assertRedirects(response, self.get_package_url(self.package.name),
+        self.assertRedirects(response, package_url(self.package),
                              status_code=301)
 
         # No redirect when the hash does not match the package
         url = url_template.format(hash='q', package=self.package.name)
-        self.assertEqual(self.client.get(url).status_code, 404)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
 
         # Redirect when the package name starts with "lib"
         lib_package = 'libpackage'
         SourcePackageName.objects.create(name=lib_package)
         url = url_template.format(hash='libp', package=lib_package)
         self.assertRedirects(self.client.get(url),
-                             self.get_package_url(lib_package),
+                             package_url(lib_package),
                              status_code=301)
 
     def test_catchall_redirect(self):
@@ -166,13 +156,13 @@ class PackageViewTest(TestCase):
         url = '/{}'.format(self.package.name)
         response = self.client.get(url, follow=True)
         # User redirected to the existing package page
-        self.assertRedirects(response, self.get_package_url(self.package.name))
+        self.assertRedirects(response, package_url(self.package))
 
         # Trailing slash
         url = '/{}/'.format(self.package.name)
         response = self.client.get(url, follow=True)
         # User redirected to the existing package page
-        self.assertRedirects(response, self.get_package_url(self.package.name))
+        self.assertRedirects(response, package_url(self.package))
 
         # Admin URLs have precedence to the catch all package redirect
         url = reverse('admin:index')
@@ -189,18 +179,15 @@ class PackageViewTest(TestCase):
         """
         Tests that the short description is displayed.
         """
-        url = self.get_package_url(self.package.name)
-        response = self.client.get(url)
-        response_content = response.content.decode('utf-8')
+        response = self.client.get(package_url(self.package))
 
-        self.assertIn('a useful package', response_content)
+        self.assertContains(response, 'a useful package')
 
     def test_page_does_not_contain_None(self):
         """
         Ensure Python's None never ends up displayed on the web page.
         """
-        url = self.get_package_url(self.package.name)
-        response = self.client.get(url)
+        response = self.client.get(package_url(self.package))
         response_content = response.content.decode('utf-8')
 
         self.assertNotIn('None', response_content)
@@ -1790,10 +1777,7 @@ class NewsViewTest(TestCase, TemplateTestsMixin):
 
     def test_news_page_has_link_to_package_page(self):
         response = self.get_package_news()
-        package_url = reverse('dtracker-package-page', kwargs={
-            'package_name': self.package.name,
-        })
-        self.assertLinkIsInResponse(response, package_url)
+        self.assertLinkIsInResponse(response, package_url(self.package))
 
     def test_news_page_has_paginated_link_to_page_2(self):
         response = self.get_package_news()

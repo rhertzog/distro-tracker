@@ -1,4 +1,4 @@
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2018 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -15,7 +15,6 @@ Debian-specific tasks.
 from django.db import transaction
 from django.conf import settings
 from django.utils.http import urlencode
-from django.urls import reverse
 
 from distro_tracker.core.tasks import BaseTask
 from distro_tracker.core.models import PackageExtractedInfo
@@ -36,7 +35,7 @@ from distro_tracker.core.utils.http import HttpCache
 from distro_tracker.core.utils.http import get_resource_content
 from distro_tracker.core.utils.http import get_resource_text
 from distro_tracker.core.utils.misc import get_data_checksum
-from distro_tracker.core.utils.packages import package_hashdir
+from distro_tracker.core.utils.packages import package_hashdir, package_url
 from .models import DebianContributor
 from distro_tracker import vendor
 
@@ -802,9 +801,7 @@ class UpdateExcusesTask(BaseTask):
             if not match:
                 continue
             package = match.group(1)
-            a_tag['href'] = reverse('dtracker-package-page', kwargs={
-                'package_name': package
-            })
+            a_tag['href'] = package_url(package)
 
         return str(html)
 
@@ -2146,13 +2143,10 @@ class UpdateAutoRemovalsStatsTask(BaseTask):
     def list_of_packages_to_html(self, packages):
         packages_html = []
         for package in packages:
-            package_url = reverse(
-                'dtracker-package-page',
-                kwargs={'package_name': package})
-            html = '<a href="{}">{}</a>'.format(package_url, package)
+            html = '<a href="{}">{}</a>'.format(package_url(package), package)
             packages_html.append(html)
 
-        return ' , '.join(packages_html)
+        return ', '.join(packages_html)
 
     def update_action_item(self, package, stats):
         """

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2018 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -25,6 +25,7 @@ from distro_tracker.core.models import SourcePackage
 from distro_tracker.core.models import Repository, SourcePackageRepositoryEntry
 from distro_tracker.core.panels import VersionedLinks, DeadPackageWarningPanel
 from distro_tracker.core.panels import PackageExtractedInfo
+from distro_tracker.core.utils.packages import package_url
 
 
 class VersionedLinksPanelTests(TestCase):
@@ -47,10 +48,7 @@ class VersionedLinksPanelTests(TestCase):
              {'icons': icons})
 
     def get_package_page_response(self):
-        url = reverse('dtracker-package-page', kwargs={
-            'package_name': self.package.name,
-        })
-        return self.client.get(url)
+        return self.client.get(package_url(self.package.name))
 
     def panel_is_in_response(self, response):
         """
@@ -145,10 +143,7 @@ class GeneralInfoLinkPanelItemsTests(TestCase, TemplateTestsMixin):
         )
 
     def get_package_page_response(self):
-        url = reverse('dtracker-package-page', kwargs={
-            'package_name': self.package.name,
-        })
-        return self.client.get(url)
+        return self.client.get(package_url(self.package.name))
 
     def get_general_info_link_panel(self, response):
         """
@@ -280,10 +275,7 @@ class NewsPanelTests(TestCase, TemplateTestsMixin):
                                          created_by="Author {}".format(i))
 
     def get_package_page_response(self):
-        url = reverse('dtracker-package-page', kwargs={
-            'package_name': self.package.name,
-        })
-        return self.client.get(url)
+        return self.client.get(package_url(self.package.name))
 
     def test_panel_links_to_news_page(self):
         response = self.get_package_page_response()

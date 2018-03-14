@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2018 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -26,6 +26,7 @@ from distro_tracker.core.models import ActionItem
 from distro_tracker.core.models import News
 from distro_tracker.core.models import EmailNews
 from distro_tracker.core.utils import message_from_bytes
+from distro_tracker.core.utils.packages import package_url
 
 
 class NewsFeedTests(TestCase):
@@ -356,9 +357,6 @@ class NewsFeedTests(TestCase):
             status_code=301)
 
     def test_package_page_contains_news_feed_url(self):
-        pkg_url = reverse('dtracker-package-page', kwargs={
-            'package_name': self.package.name
-        })
         rss_url = self.get_package_news_feed_url(self.package.name)
         News.objects.create(
             title="Hello world",
@@ -366,7 +364,6 @@ class NewsFeedTests(TestCase):
             package=self.package
         )
 
-        response = self.client.get(pkg_url)
+        response = self.client.get(package_url(self.package.name))
 
-        self.assertIn('<a href="{}">'.format(rss_url),
-                      response.content.decode('utf8'))
+        self.assertContains(response, '<a href="{}">'.format(rss_url))
