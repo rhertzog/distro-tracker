@@ -11,28 +11,28 @@
 Implements the processing of received package messages in order to dispatch
 them to subscribers.
 """
-from copy import deepcopy
-from datetime import datetime
 import logging
 import re
+from copy import deepcopy
+from datetime import datetime
 
-from django.core.mail import get_connection
-from django.utils import timezone
-from django.core.mail import EmailMessage
 from django.conf import settings
+from django.core.mail import EmailMessage, get_connection
+from django.utils import timezone
 
 from distro_tracker import vendor
-from distro_tracker.core.models import PackageName
-from distro_tracker.core.models import Keyword
-from distro_tracker.core.models import Team
-from distro_tracker.core.utils import extract_email_address_from_header
-from distro_tracker.core.utils import get_decoded_message_payload
-from distro_tracker.core.utils import get_or_none
-from distro_tracker.core.utils import distro_tracker_render_to_string
-from distro_tracker.core.utils import verp
-from distro_tracker.core.utils.email_messages import CustomEmailMessage
+from distro_tracker.core.models import Keyword, PackageName, Team
+from distro_tracker.core.utils import (
+    distro_tracker_render_to_string,
+    extract_email_address_from_header,
+    get_decoded_message_payload,
+    get_or_none,
+    verp
+)
 from distro_tracker.core.utils.email_messages import (
-    patch_message_for_django_compat)
+    CustomEmailMessage,
+    patch_message_for_django_compat
+)
 from distro_tracker.mail.models import UserEmailBounceStats
 
 DISTRO_TRACKER_CONTROL_EMAIL = settings.DISTRO_TRACKER_CONTROL_EMAIL

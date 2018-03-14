@@ -13,15 +13,20 @@
 """
 Tests for the Distro Tracker core's tasks framework.
 """
-from distro_tracker.test import TestCase
-from unittest import mock
-from distro_tracker.core.models import RunningJob
-from distro_tracker.core.tasks import BaseTask
-from distro_tracker.core.tasks import Event
-from distro_tracker.core.tasks import JobState
-from distro_tracker.core.tasks import run_task, continue_task_from_state
-from distro_tracker.core.tasks import run_all_tasks
 import logging
+from unittest import mock
+
+from distro_tracker.core.models import RunningJob
+from distro_tracker.core.tasks import (
+    BaseTask,
+    Event,
+    JobState,
+    continue_task_from_state,
+    run_all_tasks,
+    run_task
+)
+from distro_tracker.test import TestCase
+
 logging.disable(logging.CRITICAL)
 
 

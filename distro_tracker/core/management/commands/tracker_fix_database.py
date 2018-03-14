@@ -11,12 +11,12 @@
 Implements a command to perform various database fixups.
 """
 
-from django.db.models import Count
-from django.db.models.functions import Lower
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand
+from django.db.models import Count
+from django.db.models.functions import Lower
 
-from distro_tracker.core.models import UserEmail, EmailSettings
+from distro_tracker.core.models import EmailSettings, UserEmail
 
 
 class Command(BaseCommand):

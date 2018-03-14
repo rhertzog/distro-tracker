@@ -11,7 +11,7 @@
 from django.test import TestCase
 from django.urls import reverse
 
-from django_email_accounts.models import UserEmail, User
+from django_email_accounts.models import User, UserEmail
 
 
 class UserEmailTests(TestCase):

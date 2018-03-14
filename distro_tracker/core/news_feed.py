@@ -9,17 +9,19 @@
 # except according to the terms contained in the LICENSE file.
 """Implements the RSS news feed."""
 
-from itertools import chain
 import re
+from itertools import chain
 
 from django.conf import settings
-from django.http import Http404
 from django.contrib.syndication.views import Feed
+from django.http import Http404
 
-from distro_tracker.core.models import get_web_package
-from distro_tracker.core.models import News
-from distro_tracker.core.models import NewsRenderer
-from distro_tracker.core.models import ActionItem
+from distro_tracker.core.models import (
+    ActionItem,
+    News,
+    NewsRenderer,
+    get_web_package
+)
 
 
 def filter_control_chars(method):

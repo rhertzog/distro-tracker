@@ -10,13 +10,16 @@
 """
 Implements the command which outputs statistics.
 """
+import json
+
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-import json
-
-from distro_tracker.core.models import SourcePackageName, Subscription
-from distro_tracker.core.models import UserEmail
+from distro_tracker.core.models import (
+    SourcePackageName,
+    Subscription,
+    UserEmail
+)
 
 
 class Command(BaseCommand):

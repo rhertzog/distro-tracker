@@ -15,18 +15,20 @@ Tests for the :mod:`distro_tracker.core.news_feed` module.
 """
 
 from datetime import datetime
-
-from django.urls import reverse
 from xml.dom import minidom
 
-from distro_tracker.test import TestCase
-from distro_tracker.core.models import PackageName
-from distro_tracker.core.models import ActionItemType
-from distro_tracker.core.models import ActionItem
-from distro_tracker.core.models import News
-from distro_tracker.core.models import EmailNews
+from django.urls import reverse
+
+from distro_tracker.core.models import (
+    ActionItem,
+    ActionItemType,
+    EmailNews,
+    News,
+    PackageName
+)
 from distro_tracker.core.utils import message_from_bytes
 from distro_tracker.core.utils.packages import package_url
+from distro_tracker.test import TestCase
 
 
 class NewsFeedTests(TestCase):

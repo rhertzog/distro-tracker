@@ -14,12 +14,18 @@
 Tests for test functionalities of Distro Tracker.
 """
 
-from distro_tracker.test import SimpleTestCase, TestCase, TransactionTestCase
-from distro_tracker.test import TempDirsMixin
-from distro_tracker.core.models import PackageName
-from django.conf import settings
 import copy
 import os.path
+
+from django.conf import settings
+
+from distro_tracker.core.models import PackageName
+from distro_tracker.test import (
+    SimpleTestCase,
+    TempDirsMixin,
+    TestCase,
+    TransactionTestCase
+)
 
 settings_copy = copy.deepcopy(settings)
 

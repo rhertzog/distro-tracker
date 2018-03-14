@@ -8,16 +8,15 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """Models for the :mod:`distro_tracker.accounts` app."""
-from django_email_accounts.models import User as EmailAccountsUser
-
 # Re-export some objects of django_email_accounts
-from django_email_accounts.models import UserEmail
 from django_email_accounts.models import (  # noqa
-    UserRegistrationConfirmation,
-    ResetPasswordConfirmation,
     AddEmailConfirmation,
     MergeAccountConfirmation,
+    ResetPasswordConfirmation,
+    UserEmail,
+    UserRegistrationConfirmation
 )
+from django_email_accounts.models import User as EmailAccountsUser
 
 
 class User(EmailAccountsUser):

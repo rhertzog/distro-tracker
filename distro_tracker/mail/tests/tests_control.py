@@ -12,35 +12,39 @@
 """
 Tests for :mod:`distro_tracker.mail.tracker_control`.
 """
-from django.conf import settings
-from distro_tracker.test import TestCase
-from django.core import mail
-
-from distro_tracker.mail import control
-from distro_tracker.core.utils import distro_tracker_render_to_string
-from distro_tracker.core.utils import extract_email_address_from_header
-from distro_tracker.core.utils import get_or_none
-from distro_tracker.core.models import PackageName, UserEmail, Subscription
-from distro_tracker.core.models import EmailSettings
-from distro_tracker.core.models import Keyword
-from distro_tracker.core.models import Team
-from distro_tracker.core.models import BinaryPackageName
-from distro_tracker.core.models import SourcePackageName
-from distro_tracker.core.models import SourcePackage
-from distro_tracker.accounts.models import User
-from distro_tracker.mail.models import CommandConfirmation
-from distro_tracker.mail.control.commands import UNIQUE_COMMANDS
-
+import re
+from datetime import timedelta
 from email import encoders
 from email.message import Message
+from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.mime.base import MIMEBase
 from email.utils import make_msgid
-from datetime import timedelta
 
-import re
+from django.conf import settings
+from django.core import mail
 
+from distro_tracker.accounts.models import User
+from distro_tracker.core.models import (
+    BinaryPackageName,
+    EmailSettings,
+    Keyword,
+    PackageName,
+    SourcePackage,
+    SourcePackageName,
+    Subscription,
+    Team,
+    UserEmail
+)
+from distro_tracker.core.utils import (
+    distro_tracker_render_to_string,
+    extract_email_address_from_header,
+    get_or_none
+)
+from distro_tracker.mail import control
+from distro_tracker.mail.control.commands import UNIQUE_COMMANDS
+from distro_tracker.mail.models import CommandConfirmation
+from distro_tracker.test import TestCase
 
 DISTRO_TRACKER_CONTACT_EMAIL = settings.DISTRO_TRACKER_CONTACT_EMAIL
 DISTRO_TRACKER_CONTROL_EMAIL = settings.DISTRO_TRACKER_CONTROL_EMAIL

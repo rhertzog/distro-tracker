@@ -8,46 +8,39 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 from django.conf import settings
-from django.utils.http import is_safe_url
 from django.contrib import messages
-from django.contrib.auth import authenticate
-from django.contrib.auth import login
-from django.contrib.auth import logout
-from django.utils.decorators import method_decorator
-from django.shortcuts import render
-from django.shortcuts import get_object_or_404
-from django.shortcuts import redirect
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.views.generic.base import View
-from django.views.generic.edit import CreateView
-from django.views.generic.edit import UpdateView
-from django.views.generic.edit import FormView
-from django.views.generic import TemplateView
-from django.utils.http import urlencode
-from django.urls import reverse_lazy
-from django.template.loader import render_to_string
-from django_email_accounts.models import User
-from django_email_accounts.models import UserEmail
-from django.core.mail import send_mail
-from django.core.exceptions import PermissionDenied
 from django.contrib.auth.forms import PasswordChangeForm
+from django.core.exceptions import PermissionDenied
+from django.core.mail import send_mail
 from django.http import Http404
+from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
+from django.urls import reverse_lazy
+from django.utils.decorators import method_decorator
+from django.utils.http import is_safe_url, urlencode
+from django.views.generic import TemplateView
+from django.views.generic.base import View
+from django.views.generic.edit import CreateView, FormView, UpdateView
 
+from django_email_accounts import run_hook
 from django_email_accounts.forms import (
     AddEmailToAccountForm,
-    UserCreationForm,
-    ResetPasswordForm,
-    ForgotPasswordForm,
-    ChangePersonalInfoForm,
     AuthenticationForm,
+    ChangePersonalInfoForm,
+    ForgotPasswordForm,
+    ResetPasswordForm,
+    UserCreationForm
 )
 from django_email_accounts.models import (
-    MergeAccountConfirmation,
-    UserRegistrationConfirmation,
     AddEmailConfirmation,
+    MergeAccountConfirmation,
     ResetPasswordConfirmation,
+    User,
+    UserEmail,
+    UserRegistrationConfirmation
 )
-from django_email_accounts import run_hook
 
 
 class LoginView(FormView):

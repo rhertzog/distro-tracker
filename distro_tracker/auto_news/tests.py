@@ -10,19 +10,23 @@
 """
 Tests for the :mod:`distro_tracker.auto_news` app.
 """
-from distro_tracker.test import TestCase
-from django.core.files.base import ContentFile
 from unittest import mock
-from distro_tracker.core.models import ExtractedSourceFile
-from distro_tracker.core.models import News
-from distro_tracker.core.models import SourcePackageName, SourcePackage
-from distro_tracker.core.models import SourcePackageRepositoryEntry
-from distro_tracker.core.models import Repository
-from distro_tracker.core.tasks import Job
-from distro_tracker.core.tasks import JobState
-from distro_tracker.core.tasks import Event
-from distro_tracker.auto_news.tracker_tasks \
-    import GenerateNewsFromRepositoryUpdates
+
+from django.core.files.base import ContentFile
+
+from distro_tracker.auto_news.tracker_tasks import (
+    GenerateNewsFromRepositoryUpdates
+)
+from distro_tracker.core.models import (
+    ExtractedSourceFile,
+    News,
+    Repository,
+    SourcePackage,
+    SourcePackageName,
+    SourcePackageRepositoryEntry
+)
+from distro_tracker.core.tasks import Event, Job, JobState
+from distro_tracker.test import TestCase
 
 
 class GenerateNewsFromRepositoryUpdatesTest(TestCase):

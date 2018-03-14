@@ -10,7 +10,6 @@
 """Implements Django context processors specific to Distro Tracker."""
 from django.conf import settings
 
-
 #: Defines a dictionary of all Distro Tracker extra context key/value pairs that
 #: are to be included in the
 #: :class:`RequestContext <django.template.RequestContext>`.

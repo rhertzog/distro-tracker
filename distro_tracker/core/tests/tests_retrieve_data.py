@@ -13,38 +13,39 @@
 """
 Tests for the Distro Tracker core data retrieval.
 """
-from distro_tracker.test import TestCase
-from django.conf import settings
-from django.test.utils import override_settings
-from unittest import mock
-from distro_tracker.core.tasks import run_task
-from distro_tracker.core.tasks import Job
-from distro_tracker.core.tasks import JobState
-from distro_tracker.core.tasks import Event
-from distro_tracker.core.models import Subscription
-from distro_tracker.core.models import PackageName, BinaryPackageName
-from distro_tracker.core.models import SourcePackageName, SourcePackage
-from distro_tracker.core.models import SourcePackageRepositoryEntry
-from distro_tracker.core.models import PseudoPackageName
-from distro_tracker.core.models import BinaryPackage
-from distro_tracker.core.models import Repository
-from distro_tracker.core.models import RepositoryFlag
-from distro_tracker.core.models import Architecture
-from distro_tracker.core.models import Team
-from distro_tracker.core.models import PackageExtractedInfo
-from distro_tracker.core.retrieve_data import UpdateRepositoriesTask
-from distro_tracker.core.retrieve_data import UpdateTeamPackagesTask
-from distro_tracker.core.retrieve_data import retrieve_repository_info
-from distro_tracker.core.retrieve_data import UpdateVersionInformation
-from distro_tracker.core.retrieve_data import UpdatePackageGeneralInformation
-from distro_tracker.test.utils import create_source_package
-from distro_tracker.test.utils import set_mock_response
-from distro_tracker.accounts.models import User, UserEmail
-
-from distro_tracker.core.tasks import BaseTask
-
 import os
 import sys
+from unittest import mock
+
+from django.conf import settings
+from django.test.utils import override_settings
+
+from distro_tracker.accounts.models import User, UserEmail
+from distro_tracker.core.models import (
+    Architecture,
+    BinaryPackage,
+    BinaryPackageName,
+    PackageExtractedInfo,
+    PackageName,
+    PseudoPackageName,
+    Repository,
+    RepositoryFlag,
+    SourcePackage,
+    SourcePackageName,
+    SourcePackageRepositoryEntry,
+    Subscription,
+    Team
+)
+from distro_tracker.core.retrieve_data import (
+    UpdatePackageGeneralInformation,
+    UpdateRepositoriesTask,
+    UpdateTeamPackagesTask,
+    UpdateVersionInformation,
+    retrieve_repository_info
+)
+from distro_tracker.core.tasks import BaseTask, Event, Job, JobState, run_task
+from distro_tracker.test import TestCase
+from distro_tracker.test.utils import create_source_package, set_mock_response
 
 
 @override_settings(

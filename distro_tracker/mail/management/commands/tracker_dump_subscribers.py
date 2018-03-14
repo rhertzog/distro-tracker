@@ -10,9 +10,9 @@
 """
 Implements the command which outputs all subscribers for given packages.
 """
-from django.core.management.base import BaseCommand
-
 import json
+
+from django.core.management.base import BaseCommand
 
 from distro_tracker.core.models import PackageName
 from distro_tracker.core.utils import get_or_none

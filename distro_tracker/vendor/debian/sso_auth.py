@@ -9,14 +9,14 @@
 # except according to the terms contained in the LICENSE file.
 
 import json
-from django.contrib.auth.middleware import RemoteUserMiddleware
-from django.contrib.auth.backends import RemoteUserBackend
+
 from django.contrib import auth
+from django.contrib.auth.backends import RemoteUserBackend
+from django.contrib.auth.middleware import RemoteUserMiddleware
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.http import urlencode
 
-from distro_tracker.accounts.models import UserEmail
-from distro_tracker.accounts.models import User
+from distro_tracker.accounts.models import User, UserEmail
 from distro_tracker.core.utils.http import get_resource_content
 
 

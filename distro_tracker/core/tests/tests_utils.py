@@ -14,58 +14,67 @@
 Tests for the Distro Tracker core utils.
 """
 import datetime
-from email import encoders
-from email.header import Header
-from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
 import io
 import os
-import time
 import tempfile
+import time
+from email import encoders
+from email.header import Header
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
 from unittest import mock
 
 from debian import deb822
 from django.core import mail
 from django.test.utils import override_settings
 from django.urls import reverse
-from django.utils.http import http_date
 from django.utils.functional import curry
+from django.utils.http import http_date
 
-from distro_tracker.core.models import Repository, PackageName
-from distro_tracker.core.utils import verp
-from distro_tracker.core.utils import message_from_bytes
-from distro_tracker.core.utils import now
-from distro_tracker.core.utils import SpaceDelimitedTextField
-from distro_tracker.core.utils import PrettyPrintList
-from distro_tracker.core.utils import verify_signature
-from distro_tracker.core.utils.compression import get_uncompressed_stream
-from distro_tracker.core.utils.compression import guess_compression_method
-from distro_tracker.core.utils.packages import AptCache
-from distro_tracker.core.utils.packages import extract_vcs_information
-from distro_tracker.core.utils.packages import extract_dsc_file_name
-from distro_tracker.core.utils.packages import package_hashdir
-from distro_tracker.core.utils.packages import package_url
+from distro_tracker.core.models import PackageName, Repository
+from distro_tracker.core.utils import (
+    PrettyPrintList,
+    SpaceDelimitedTextField,
+    message_from_bytes,
+    now,
+    verify_signature,
+    verp
+)
+from distro_tracker.core.utils.compression import (
+    get_uncompressed_stream,
+    guess_compression_method
+)
 from distro_tracker.core.utils.datastructures import DAG, InvalidDAGException
-from distro_tracker.core.utils.email_messages import CustomEmailMessage
-from distro_tracker.core.utils.email_messages import decode_header
 from distro_tracker.core.utils.email_messages import (
+    CustomEmailMessage,
+    decode_header,
+    extract_email_address_from_header,
     name_and_address_from_string,
     names_and_addresses_from_string,
-    extract_email_address_from_header,
+    unfold_header
 )
-from distro_tracker.core.utils.email_messages import unfold_header
-from distro_tracker.core.utils.linkify import linkify
-from distro_tracker.core.utils.linkify import LinkifyDebianBugLinks
-from distro_tracker.core.utils.linkify import LinkifyUbuntuBugLinks
-from distro_tracker.core.utils.linkify import LinkifyHttpLinks
-from distro_tracker.core.utils.linkify import LinkifyCVELinks
-from distro_tracker.core.utils.http import HttpCache
-from distro_tracker.core.utils.http import get_resource_content
-from distro_tracker.core.utils.http import get_resource_text
-from distro_tracker.test import TestCase, SimpleTestCase
-from distro_tracker.test.utils import set_mock_response
-from distro_tracker.test.utils import make_temp_directory
+from distro_tracker.core.utils.http import (
+    HttpCache,
+    get_resource_content,
+    get_resource_text
+)
+from distro_tracker.core.utils.linkify import (
+    LinkifyCVELinks,
+    LinkifyDebianBugLinks,
+    LinkifyHttpLinks,
+    LinkifyUbuntuBugLinks,
+    linkify
+)
 from distro_tracker.core.utils.misc import get_data_checksum
+from distro_tracker.core.utils.packages import (
+    AptCache,
+    extract_dsc_file_name,
+    extract_vcs_information,
+    package_hashdir,
+    package_url
+)
+from distro_tracker.test import SimpleTestCase, TestCase
+from distro_tracker.test.utils import make_temp_directory, set_mock_response
 
 
 class VerpModuleTest(SimpleTestCase):

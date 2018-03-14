@@ -15,18 +15,19 @@ Tests for the Distro Tracker core management commands.
 """
 
 from unittest import mock
+
 from django.core.management import call_command
 
-from distro_tracker.accounts.models import User
-from distro_tracker.accounts.models import UserEmail
-from distro_tracker.core.models import EmailNews
-from distro_tracker.core.models import EmailSettings
-from distro_tracker.core.models import News
-from distro_tracker.core.models import SourcePackageName
-from distro_tracker.core.models import Subscription
+from distro_tracker.accounts.models import User, UserEmail
+from distro_tracker.core.models import (
+    EmailNews,
+    EmailSettings,
+    News,
+    SourcePackageName,
+    Subscription
+)
 from distro_tracker.core.utils import message_from_bytes
-from distro_tracker.test import SimpleTestCase
-from distro_tracker.test import TestCase
+from distro_tracker.test import SimpleTestCase, TestCase
 
 
 class RunTaskManagementCommandTest(SimpleTestCase):

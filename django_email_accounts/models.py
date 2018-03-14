@@ -7,17 +7,19 @@
 # distribution and at https://deb.li/DTLicense. No part of Distro Tracker,
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
-from django.db import models
+import hashlib
+import random
+import string
+
 from django.conf import settings
-from django.contrib.auth.models import AbstractBaseUser
-from django.contrib.auth.models import BaseUserManager
-from django.contrib.auth.models import PermissionsMixin
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    BaseUserManager,
+    PermissionsMixin
+)
+from django.db import models
 from django.db.utils import IntegrityError
 from django.utils import timezone
-
-import string
-import random
-import hashlib
 
 
 class ConfirmationException(Exception):

@@ -12,49 +12,55 @@
 Debian-specific tasks.
 """
 
-from django.db import transaction
-from django.conf import settings
-from django.utils.http import urlencode
-
-from distro_tracker.core.tasks import BaseTask
-from distro_tracker.core.models import PackageExtractedInfo
-from distro_tracker.core.models import ActionItem, ActionItemType
-from distro_tracker.accounts.models import UserEmail
-from distro_tracker.core.models import PackageBugStats
-from distro_tracker.core.models import BinaryPackageBugStats
-from distro_tracker.core.models import PackageName
-from distro_tracker.core.models import SourcePackageName
-from distro_tracker.core.models import BinaryPackageName
-from distro_tracker.core.models import SourcePackageDeps
-from distro_tracker.vendor.debian.models import LintianStats
-from distro_tracker.vendor.debian.models import BuildLogCheckStats
-from distro_tracker.vendor.debian.models import PackageTransition
-from distro_tracker.vendor.debian.models import PackageExcuses
-from distro_tracker.vendor.debian.models import UbuntuPackage
-from distro_tracker.core.utils.http import HttpCache
-from distro_tracker.core.utils.http import get_resource_content
-from distro_tracker.core.utils.http import get_resource_text
-from distro_tracker.core.utils.misc import get_data_checksum
-from distro_tracker.core.utils.packages import package_hashdir, package_url
-from .models import DebianContributor
-from distro_tracker import vendor
-
 import collections
 import io
+import itertools
+import json
+import logging
 import os
 import re
-import json
-import itertools
-
-from debian import deb822
-from debian.debian_support import AptPkgVersion
-from debian import debian_support
 from copy import deepcopy
-from bs4 import BeautifulSoup as soup
-import yaml
-import debianbts
 
-import logging
+import debianbts
+import yaml
+from bs4 import BeautifulSoup as soup
+from debian import deb822, debian_support
+from debian.debian_support import AptPkgVersion
+from django.conf import settings
+from django.db import transaction
+from django.utils.http import urlencode
+
+from distro_tracker import vendor
+from distro_tracker.accounts.models import UserEmail
+from distro_tracker.core.models import (
+    ActionItem,
+    ActionItemType,
+    BinaryPackageBugStats,
+    BinaryPackageName,
+    PackageBugStats,
+    PackageExtractedInfo,
+    PackageName,
+    SourcePackageDeps,
+    SourcePackageName
+)
+from distro_tracker.core.tasks import BaseTask
+from distro_tracker.core.utils.http import (
+    HttpCache,
+    get_resource_content,
+    get_resource_text
+)
+from distro_tracker.core.utils.misc import get_data_checksum
+from distro_tracker.core.utils.packages import package_hashdir, package_url
+from distro_tracker.vendor.debian.models import (
+    BuildLogCheckStats,
+    LintianStats,
+    PackageExcuses,
+    PackageTransition,
+    UbuntuPackage
+)
+
+from .models import DebianContributor
+
 logger = logging.getLogger(__name__)
 
 

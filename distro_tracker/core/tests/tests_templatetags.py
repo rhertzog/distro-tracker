@@ -15,7 +15,7 @@ Tests for the Distro Tracker template tags.
 """
 
 from bs4 import BeautifulSoup as soup
-from django.template import Template, Context
+from django.template import Context, Template
 
 from distro_tracker.test import SimpleTestCase
 

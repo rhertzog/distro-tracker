@@ -13,8 +13,8 @@ and confirming such commands.
 """
 
 from distro_tracker.core.utils import get_or_none
-from distro_tracker.mail.models import CommandConfirmation
 from distro_tracker.mail.control.commands.base import Command
+from distro_tracker.mail.models import CommandConfirmation
 
 
 def needs_confirmation(klass):

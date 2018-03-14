@@ -7,16 +7,15 @@
 # distribution and at https://deb.li/DTLicense. No part of Distro Tracker,
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
-from django.core.management.base import BaseCommand, CommandError
-from django.utils import timezone
-from django.core.files.base import ContentFile
-from distro_tracker.core.models import EmailNews
-from distro_tracker.core.models import News
-from distro_tracker.core.models import PackageName
-
+import email
 import os
 from datetime import datetime
-import email
+
+from django.core.files.base import ContentFile
+from django.core.management.base import BaseCommand, CommandError
+from django.utils import timezone
+
+from distro_tracker.core.models import EmailNews, News, PackageName
 
 
 class Command(BaseCommand):

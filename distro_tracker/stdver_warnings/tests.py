@@ -13,14 +13,19 @@
 Tests for the :mod:`distro_tracker.stdver_warnings` app.
 """
 
-from distro_tracker.test import TestCase
 from unittest import mock
-from distro_tracker.stdver_warnings.tracker_tasks \
-    import UpdateStandardsVersionWarnings
+
+from distro_tracker.core.models import (
+    ActionItem,
+    ActionItemType,
+    SourcePackage,
+    SourcePackageName
+)
 from distro_tracker.core.tasks import Event, Job, JobState
-from distro_tracker.core.models import SourcePackageName
-from distro_tracker.core.models import SourcePackage
-from distro_tracker.core.models import ActionItem, ActionItemType
+from distro_tracker.stdver_warnings.tracker_tasks import (
+    UpdateStandardsVersionWarnings
+)
+from distro_tracker.test import TestCase
 
 
 class StandardsVersionActionItemTests(TestCase):

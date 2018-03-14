@@ -8,27 +8,30 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """Implements the core panels shown on package pages."""
-from django.conf import settings
-from django.utils.functional import cached_property
-from django.core.exceptions import ObjectDoesNotExist
-from django.utils.safestring import mark_safe
-from distro_tracker.core.utils.plugins import PluginRegistry
-from distro_tracker.core.utils import get_vcs_name
-from distro_tracker.core.utils import get_or_none
-from distro_tracker import vendor
-from distro_tracker.core.models import SourcePackageName
-from distro_tracker.core.models import PseudoPackageName
-from distro_tracker.core.models import ActionItem
-from distro_tracker.core.models import PackageExtractedInfo
-from distro_tracker.core.models import MailingList
-from distro_tracker.core.models import News
-from distro_tracker.core.models import BinaryPackageBugStats
-from distro_tracker.core.templatetags.distro_tracker_extras import octicon
-from debian.debian_support import AptPkgVersion
-from collections import defaultdict
-
 import importlib
 import logging
+from collections import defaultdict
+
+from debian.debian_support import AptPkgVersion
+from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
+from django.utils.functional import cached_property
+from django.utils.safestring import mark_safe
+
+from distro_tracker import vendor
+from distro_tracker.core.models import (
+    ActionItem,
+    BinaryPackageBugStats,
+    MailingList,
+    News,
+    PackageExtractedInfo,
+    PseudoPackageName,
+    SourcePackageName
+)
+from distro_tracker.core.templatetags.distro_tracker_extras import octicon
+from distro_tracker.core.utils import get_or_none, get_vcs_name
+from distro_tracker.core.utils.plugins import PluginRegistry
+
 logger = logging.getLogger(__name__)
 
 

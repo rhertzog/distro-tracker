@@ -14,15 +14,13 @@
 Debian-specific models.
 """
 
-from django.db import models
+import re
 
-from distro_tracker.core.utils import SpaceDelimitedTextField
-from distro_tracker.core.utils import get_or_none
-from distro_tracker.core.models import PackageName
-from distro_tracker.core.models import SourcePackageName
+from django.db import models
 from jsonfield import JSONField
 
-import re
+from distro_tracker.core.models import PackageName, SourcePackageName
+from distro_tracker.core.utils import SpaceDelimitedTextField, get_or_none
 
 
 class DebianContributor(models.Model):

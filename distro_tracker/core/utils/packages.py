@@ -8,23 +8,23 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """Utilities for processing Debian package information."""
-from distro_tracker.core.utils.email_messages import (
-    name_and_address_from_string as parse_address,
-    names_and_addresses_from_string as parse_addresses
-)
+import os
+import re
+import shutil
+import subprocess
+import tarfile
+
+import apt
+from debian import deb822
 from django.conf import settings
 from django.urls import reverse
 from django.utils.encoding import force_bytes
 
-from debian import deb822
-
-import os
-import apt
-import shutil
 import apt_pkg
-import re
-import subprocess
-import tarfile
+from distro_tracker.core.utils.email_messages import \
+    name_and_address_from_string as parse_address
+from distro_tracker.core.utils.email_messages import \
+    names_and_addresses_from_string as parse_addresses
 
 
 def package_hashdir(package_name):

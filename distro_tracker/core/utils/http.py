@@ -11,17 +11,18 @@
 Utilities for handling HTTP resource access.
 """
 
-from hashlib import md5
-from django.utils import timezone
-from django.utils.http import parse_http_date
-from django.conf import settings
+import json
 import os
 import time
-import json
-from requests.structures import CaseInsensitiveDict
-import requests
+from hashlib import md5
 
-from .compression import guess_compression_method, get_uncompressed_stream
+import requests
+from django.conf import settings
+from django.utils import timezone
+from django.utils.http import parse_http_date
+from requests.structures import CaseInsensitiveDict
+
+from .compression import get_uncompressed_stream, guess_compression_method
 
 
 def parse_cache_control_header(header):

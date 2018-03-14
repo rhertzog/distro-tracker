@@ -10,13 +10,13 @@
 """
 Implements the management command which invokes the dispatch functionality.
 """
-from django.core.management.base import BaseCommand
-
-from distro_tracker.mail.processor import MailProcessor
-from distro_tracker.core.utils.email_messages import message_from_bytes
-
 import io
 import sys
+
+from django.core.management.base import BaseCommand
+
+from distro_tracker.core.utils.email_messages import message_from_bytes
+from distro_tracker.mail.processor import MailProcessor
 
 
 class Command(BaseCommand):

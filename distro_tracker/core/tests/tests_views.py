@@ -15,20 +15,26 @@ Tests for the Distro Tracker core views.
 """
 import json
 
-from django.urls import reverse
 from django.conf import settings
+from django.urls import reverse
 
 from distro_tracker.accounts.models import UserEmail
 from distro_tracker.core.forms import AddTeamMemberForm
-from distro_tracker.core.models import BinaryPackage, BinaryPackageName
-from distro_tracker.core.models import SourcePackageName, SourcePackage
-from distro_tracker.core.models import PackageName, PseudoPackageName
-from distro_tracker.core.models import News
-from distro_tracker.core.models import ActionItem, ActionItemType
-from distro_tracker.core.models import Team, MembershipConfirmation
+from distro_tracker.core.models import (
+    ActionItem,
+    ActionItemType,
+    BinaryPackage,
+    BinaryPackageName,
+    MembershipConfirmation,
+    News,
+    PackageName,
+    PseudoPackageName,
+    SourcePackage,
+    SourcePackageName,
+    Team
+)
 from distro_tracker.core.utils.packages import package_url
-from distro_tracker.test import TestCase, TemplateTestsMixin
-from distro_tracker.test import UserAuthMixin
+from distro_tracker.test import TemplateTestsMixin, TestCase, UserAuthMixin
 
 
 class PackageViewTest(TestCase):

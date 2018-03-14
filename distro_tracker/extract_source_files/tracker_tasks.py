@@ -11,14 +11,14 @@
 Implements the Distro Tracker tasks necessary for interesting package source
 files.
 """
-from distro_tracker.core.tasks import BaseTask
-from distro_tracker.core.utils.packages import AptCache
-from distro_tracker.core.models import ExtractedSourceFile
-from distro_tracker.core.models import SourcePackage
+import logging
+import os
+
 from django.core.files import File
 
-import os
-import logging
+from distro_tracker.core.models import ExtractedSourceFile, SourcePackage
+from distro_tracker.core.tasks import BaseTask
+from distro_tracker.core.utils.packages import AptCache
 
 logger = logging.getLogger('distro_tracker.core.tasks')
 

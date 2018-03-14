@@ -13,42 +13,48 @@
 """
 Tests for the Distro Tracker core module's models.
 """
-from distro_tracker.test import TestCase
-from django.test.utils import override_settings
-from django.core.files.base import ContentFile
-from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from django.urls import reverse
-from django.db import IntegrityError
-from distro_tracker.core.models import Subscription, EmailSettings
-from distro_tracker.core.models import PackageName, BinaryPackageName
-from distro_tracker.core.models import BinaryPackage
-from distro_tracker.core.models import Architecture
-from distro_tracker.core.models import BinaryPackageRepositoryEntry
-from distro_tracker.core.models import SourcePackageName
-from distro_tracker.core.models import SourcePackageRepositoryEntry
-from distro_tracker.core.models import Keyword
-from distro_tracker.core.models import ActionItem, ActionItemType
-from distro_tracker.core.models import PseudoPackageName
-from distro_tracker.core.models import Repository
-from distro_tracker.core.models import RepositoryFlag
-from distro_tracker.core.models import RepositoryRelation
-from distro_tracker.core.models import News
-from distro_tracker.core.models import EmailNews
-from distro_tracker.core.models import EmailNewsRenderer
-from distro_tracker.core.models import SourcePackage
-from distro_tracker.core.models import ExtractedSourceFile
-from distro_tracker.core.models import MailingList
-from distro_tracker.core.models import Team
-from distro_tracker.core.models import TeamMembership
-from distro_tracker.core.models import MembershipPackageSpecifics
-from distro_tracker.core.models import get_web_package
-from distro_tracker.core.utils import message_from_bytes
-from distro_tracker.core.utils.email_messages import get_decoded_message_payload
-from distro_tracker.accounts.models import User, UserEmail
-from distro_tracker.test.utils import create_source_package
-
 import email
 import itertools
+
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.files.base import ContentFile
+from django.db import IntegrityError
+from django.test.utils import override_settings
+from django.urls import reverse
+
+from distro_tracker.accounts.models import User, UserEmail
+from distro_tracker.core.models import (
+    ActionItem,
+    ActionItemType,
+    Architecture,
+    BinaryPackage,
+    BinaryPackageName,
+    BinaryPackageRepositoryEntry,
+    EmailNews,
+    EmailNewsRenderer,
+    EmailSettings,
+    ExtractedSourceFile,
+    Keyword,
+    MailingList,
+    MembershipPackageSpecifics,
+    News,
+    PackageName,
+    PseudoPackageName,
+    Repository,
+    RepositoryFlag,
+    RepositoryRelation,
+    SourcePackage,
+    SourcePackageName,
+    SourcePackageRepositoryEntry,
+    Subscription,
+    Team,
+    TeamMembership,
+    get_web_package
+)
+from distro_tracker.core.utils import message_from_bytes
+from distro_tracker.core.utils.email_messages import get_decoded_message_payload
+from distro_tracker.test import TestCase
+from distro_tracker.test.utils import create_source_package
 
 
 class SubscriptionManagerTest(TestCase):

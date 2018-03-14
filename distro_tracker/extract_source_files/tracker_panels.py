@@ -11,8 +11,8 @@
 Implements the classes necessary to place the links to extracted source
 files in the :class:`distro_tracker.core.panels.VersionedLinks` panel.
 """
-from distro_tracker.core.panels import VersionedLinks
 from distro_tracker.core.models import ExtractedSourceFile
+from distro_tracker.core.panels import VersionedLinks
 from distro_tracker.core.templatetags.distro_tracker_extras import octicon
 
 

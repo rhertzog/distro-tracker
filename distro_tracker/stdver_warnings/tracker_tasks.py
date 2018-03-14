@@ -13,10 +13,13 @@
 Distro Tracker tasks for the :mod:`distro_tracker.stdver_warnings` app.
 """
 
+from distro_tracker.core.models import (
+    ActionItem,
+    ActionItemType,
+    SourcePackageName
+)
 from distro_tracker.core.tasks import BaseTask
 from distro_tracker.core.utils import get_or_none
-from distro_tracker.core.models import SourcePackageName
-from distro_tracker.core.models import ActionItem, ActionItemType
 
 
 class UpdateStandardsVersionWarnings(BaseTask):

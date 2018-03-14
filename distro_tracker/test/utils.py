@@ -5,20 +5,24 @@
 # at https://deb.li/DTAuthors
 #
 # This file is part of Distro Tracker. It is subject to the license terms
-# in the LICENSE file found in the top-level directory of this
-# distribution and at https://deb.li/DTLicense. No part of Distro Tracker,
-# including this file, may be copied, modified, propagated, or distributed
-# except according to the terms contained in the LICENSE file.
-from distro_tracker.core.models import Architecture
-from distro_tracker.accounts.models import UserEmail
-from distro_tracker.core.models import ContributorName
-from distro_tracker.core.models import SourcePackage
-from distro_tracker.core.models import SourcePackageName
-from distro_tracker.core.models import BinaryPackageName
 
+
+import contextlib
 import shutil
 import tempfile
-import contextlib
+
+# in the LICENSE file found in the top-level directory of this
+# distribution and at https://deb.li/DTLicense. No part of Distro Tracker,
+from distro_tracker.accounts.models import UserEmail
+# including this file, may be copied, modified, propagated, or distributed
+# except according to the terms contained in the LICENSE file.
+from distro_tracker.core.models import (
+    Architecture,
+    BinaryPackageName,
+    ContributorName,
+    SourcePackage,
+    SourcePackageName
+)
 
 
 @contextlib.contextmanager

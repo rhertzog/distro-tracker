@@ -11,16 +11,25 @@
 Implementation of miscellaneous commands.
 """
 
-from distro_tracker.core.utils import get_or_none
-from distro_tracker.core.utils import distro_tracker_render_to_string
-from distro_tracker.core.models import Subscription, UserEmail, EmailSettings, \
-    PackageName, BinaryPackageName
-from distro_tracker.core.models import SourcePackageName, PseudoPackageName
-from distro_tracker.mail.control.commands.confirmation import needs_confirmation
-from distro_tracker.mail.control.commands.base import Command
-
-from django.core.exceptions import ValidationError
 from django.conf import settings
+from django.core.exceptions import ValidationError
+
+from distro_tracker.core.models import (
+    BinaryPackageName,
+    EmailSettings,
+    PackageName,
+    PseudoPackageName,
+    SourcePackageName,
+    Subscription,
+    UserEmail
+)
+from distro_tracker.core.utils import (
+    distro_tracker_render_to_string,
+    get_or_none
+)
+from distro_tracker.mail.control.commands.base import Command
+from distro_tracker.mail.control.commands.confirmation import needs_confirmation
+
 DISTRO_TRACKER_FQDN = settings.DISTRO_TRACKER_FQDN
 
 

@@ -14,85 +14,84 @@
 Tests for Debian-specific modules/functionality of Distro Tracker.
 """
 
-from distro_tracker.test import TestCase, SimpleTestCase
-from distro_tracker.test import TemplateTestsMixin
-from django.test.utils import override_settings
-from django.core import mail
-from django.urls import reverse
-from django.core.management import call_command
-from unittest import mock
-from django.utils.encoding import force_bytes
-from django.utils.functional import curry
-from distro_tracker.mail.tests.tests_dispatch \
-    import DispatchTestHelperMixin
-from distro_tracker.accounts.models import User
-from distro_tracker.accounts.models import UserEmail
-from distro_tracker.test.utils import make_temp_directory
-from distro_tracker.test.utils import set_mock_response
-from distro_tracker.core.utils.email_messages import message_from_bytes
-from distro_tracker.core.utils.packages import package_url
-from distro_tracker.core.models import ActionItem, ActionItemType
-from distro_tracker.core.models import News
-from distro_tracker.core.models import Keyword
-from distro_tracker.core.models import EmailSettings
-from distro_tracker.core.models import Subscription
-from distro_tracker.core.models import PackageExtractedInfo
-from distro_tracker.core.models import PackageName
-from distro_tracker.core.models import SourcePackage
-from distro_tracker.core.models import PseudoPackageName
-from distro_tracker.core.models import SourcePackageName
-from distro_tracker.core.models import Repository
-from distro_tracker.core.tasks import run_task
-from distro_tracker.core.retrieve_data import UpdateRepositoriesTask
-from distro_tracker.vendor.debian.rules import get_package_information_site_url
-from distro_tracker.vendor.debian.rules import get_maintainer_extra
-from distro_tracker.vendor.debian.rules import get_uploader_extra
-from distro_tracker.vendor.debian.rules import get_developer_information_url
-from distro_tracker.vendor.debian.rules import classify_message
-from distro_tracker.vendor.debian.tracker_tasks import UpdateNewQueuePackages
-from distro_tracker.vendor.debian.tracker_tasks import UpdateWnppStatsTask
-from distro_tracker.vendor.debian.tracker_tasks import UpdateUbuntuStatsTask
-from distro_tracker.vendor.debian.tracker_tasks import UpdateSecurityIssuesTask
-from distro_tracker.vendor.debian.tracker_tasks import UpdatePiuPartsTask
-from distro_tracker.vendor.debian.tracker_tasks import UpdateBuildLogCheckStats
-from distro_tracker.vendor.debian.tracker_tasks import UpdatePackageBugStats
-from distro_tracker.vendor.debian.tracker_tasks \
-    import RetrieveDebianMaintainersTask
-from distro_tracker.vendor.debian.tracker_tasks \
-    import RetrieveLowThresholdNmuTask
-from distro_tracker.vendor.debian.tracker_tasks \
-    import DebianWatchFileScannerUpdate
-from distro_tracker.vendor.debian.tracker_tasks import UpdateExcusesTask
-from distro_tracker.vendor.debian.tracker_tasks import UpdateDebciStatusTask
-from distro_tracker.vendor.debian.tracker_tasks import UpdateDebianDuckTask
-from distro_tracker.vendor.debian.tracker_tasks \
-    import UpdateAutoRemovalsStatsTask
-from distro_tracker.vendor.debian.tracker_tasks \
-    import UpdatePackageScreenshotsTask
-from distro_tracker.vendor.debian.tracker_tasks \
-    import UpdateBuildReproducibilityTask
-from distro_tracker.vendor.debian.tracker_tasks import UpdateVcsWatchTask
-from distro_tracker.vendor.debian.models import DebianContributor
-from distro_tracker.vendor.debian.models import UbuntuPackage
-from distro_tracker.vendor.debian.tracker_tasks import UpdateLintianStatsTask
-from distro_tracker.vendor.debian.models import LintianStats
-from distro_tracker.vendor.debian.management.commands\
-    .tracker_import_old_subscriber_dump \
-    import Command as ImportOldSubscribersCommand
-from distro_tracker.vendor.debian.management.commands\
-    .tracker_import_old_tags_dump \
-    import Command as ImportOldTagsCommand
-from distro_tracker.vendor.debian.sso_auth import DebianSsoUserBackend
-from distro_tracker.vendor.debian.views import CodeSearchView
-from distro_tracker.mail.mail_news import process
-
-from email.message import Message
-from bs4 import BeautifulSoup as soup
-
 import io
-import os
 import json
 import logging
+import os
+from email.message import Message
+from unittest import mock
+
+from bs4 import BeautifulSoup as soup
+from django.core import mail
+from django.core.management import call_command
+from django.test.utils import override_settings
+from django.urls import reverse
+from django.utils.encoding import force_bytes
+from django.utils.functional import curry
+
+from distro_tracker.accounts.models import User, UserEmail
+from distro_tracker.core.models import (
+    ActionItem,
+    ActionItemType,
+    EmailSettings,
+    Keyword,
+    News,
+    PackageExtractedInfo,
+    PackageName,
+    PseudoPackageName,
+    Repository,
+    SourcePackage,
+    SourcePackageName,
+    Subscription
+)
+from distro_tracker.core.retrieve_data import UpdateRepositoriesTask
+from distro_tracker.core.tasks import run_task
+from distro_tracker.core.utils.email_messages import message_from_bytes
+from distro_tracker.core.utils.packages import package_url
+from distro_tracker.mail.mail_news import process
+from distro_tracker.mail.tests.tests_dispatch import DispatchTestHelperMixin
+from distro_tracker.test import SimpleTestCase, TemplateTestsMixin, TestCase
+from distro_tracker.test.utils import make_temp_directory, set_mock_response
+from distro_tracker.vendor.debian.management.commands.\
+    tracker_import_old_subscriber_dump \
+    import Command as ImportOldSubscribersCommand
+from distro_tracker.vendor.debian.management.commands.\
+    tracker_import_old_tags_dump \
+    import Command as ImportOldTagsCommand
+from distro_tracker.vendor.debian.models import (
+    DebianContributor,
+    LintianStats,
+    UbuntuPackage
+)
+from distro_tracker.vendor.debian.rules import (
+    classify_message,
+    get_developer_information_url,
+    get_maintainer_extra,
+    get_package_information_site_url,
+    get_uploader_extra
+)
+from distro_tracker.vendor.debian.sso_auth import DebianSsoUserBackend
+from distro_tracker.vendor.debian.tracker_tasks import (
+    DebianWatchFileScannerUpdate,
+    RetrieveDebianMaintainersTask,
+    RetrieveLowThresholdNmuTask,
+    UpdateAutoRemovalsStatsTask,
+    UpdateBuildLogCheckStats,
+    UpdateBuildReproducibilityTask,
+    UpdateDebciStatusTask,
+    UpdateDebianDuckTask,
+    UpdateExcusesTask,
+    UpdateLintianStatsTask,
+    UpdateNewQueuePackages,
+    UpdatePackageBugStats,
+    UpdatePackageScreenshotsTask,
+    UpdatePiuPartsTask,
+    UpdateSecurityIssuesTask,
+    UpdateUbuntuStatsTask,
+    UpdateVcsWatchTask,
+    UpdateWnppStatsTask
+)
+from distro_tracker.vendor.debian.views import CodeSearchView
 
 logging.disable(logging.CRITICAL)
 

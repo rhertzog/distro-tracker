@@ -10,27 +10,32 @@
 """
 Tests the management command of the :mod:`distro_tracker.mail` app.
 """
-from distro_tracker.test import TestCase
-from distro_tracker.mail.management.commands.tracker_control import (
-    Command as ControlCommand)
-from distro_tracker.mail.management.commands.tracker_dispatch import (
-    Command as DispatchCommand)
-from django.core.management import call_command
-from django.core.management.base import CommandError
-
-from distro_tracker.core.models import PackageName, UserEmail, EmailSettings
-from distro_tracker.core.models import Subscription, Keyword
-from distro_tracker.core.models import SourcePackageName, PseudoPackageName
+import io
+import json
+from email.message import Message
+from unittest import mock
 
 from django.conf import settings
 from django.core import mail
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.utils import timezone
 from django.utils.encoding import force_bytes
-from unittest import mock
 
-from email.message import Message
-import io
-import json
+from distro_tracker.core.models import (
+    EmailSettings,
+    Keyword,
+    PackageName,
+    PseudoPackageName,
+    SourcePackageName,
+    Subscription,
+    UserEmail
+)
+from distro_tracker.mail.management.commands.tracker_control import \
+    Command as ControlCommand
+from distro_tracker.mail.management.commands.tracker_dispatch import \
+    Command as DispatchCommand
+from distro_tracker.test import TestCase
 
 
 class CommandWithInputTestCase(TestCase):

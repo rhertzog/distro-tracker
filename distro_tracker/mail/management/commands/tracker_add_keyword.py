@@ -13,8 +13,12 @@ Implements a management command which adds a new keyword.
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from distro_tracker.core.models import Keyword, EmailSettings, Subscription
-from distro_tracker.core.models import UserEmail
+from distro_tracker.core.models import (
+    EmailSettings,
+    Keyword,
+    Subscription,
+    UserEmail
+)
 from distro_tracker.core.utils import get_or_none
 
 

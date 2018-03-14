@@ -11,19 +11,19 @@
 Module implementing the processing of incoming email messages.
 """
 import asyncore
-from datetime import timedelta
 import email
+import logging
+import os
+from datetime import timedelta
 from itertools import chain
 from multiprocessing import Pool
-import os
 
-from django.conf import settings
 import pyinotify
-import logging
+from django.conf import settings
 
-from distro_tracker.core.utils import message_from_bytes
 import distro_tracker.mail.control
 import distro_tracker.mail.dispatch
+from distro_tracker.core.utils import message_from_bytes
 
 logger = logging.getLogger(__name__)
 

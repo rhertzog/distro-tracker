@@ -13,24 +13,25 @@
 This module contains the tests for the dispatch functionality
 (:py:mod:`distro_tracker.mail.dispatch` module) of distro-tracker.
 """
-from email.message import Message
-from datetime import timedelta
 import logging
-
-from django.core import mail
-from django.conf import settings
-from django.utils import timezone
+from datetime import timedelta
+from email.message import Message
 from unittest import mock
 
-from distro_tracker.accounts.models import UserEmail
-from distro_tracker.accounts.models import User
-from distro_tracker.core.models import PackageName, Subscription, Keyword
-from distro_tracker.core.models import Team
-from distro_tracker.core.utils import verp
-from distro_tracker.core.utils import get_decoded_message_payload
-from distro_tracker.core.utils import distro_tracker_render_to_string
+from django.conf import settings
+from django.core import mail
+from django.utils import timezone
+
+from distro_tracker.accounts.models import User, UserEmail
+from distro_tracker.core.models import Keyword, PackageName, Subscription, Team
+from distro_tracker.core.utils import (
+    distro_tracker_render_to_string,
+    get_decoded_message_payload,
+    verp
+)
 from distro_tracker.core.utils.email_messages import (
-    patch_message_for_django_compat)
+    patch_message_for_django_compat
+)
 from distro_tracker.mail import dispatch
 from distro_tracker.mail.models import UserEmailBounceStats
 from distro_tracker.test import TestCase

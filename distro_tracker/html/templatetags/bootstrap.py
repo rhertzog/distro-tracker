@@ -39,9 +39,8 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from django import forms
+from django import forms, template
 from django.template.loader import get_template
-from django import template
 
 BOOTSTRAP_COLUMN_COUNT = 12
 

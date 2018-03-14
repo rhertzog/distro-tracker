@@ -13,12 +13,12 @@ A management command which is used to process an email message which could
 potentially be turned into a news item.
 """
 
+import logging
+import sys
+
 from django.core.management.base import BaseCommand
 
 from distro_tracker.mail.mail_news import process
-
-import sys
-import logging
 
 logger = logging.getLogger(__name__)
 

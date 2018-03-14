@@ -8,42 +8,46 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """Models for the :mod:`distro_tracker.core` app."""
-from email.utils import getaddresses
-from email.utils import parseaddr
-from email.iterators import typed_subpart_iterator
-from jsonfield import JSONField
-import os
 import hashlib
-import string
+import os
 import random
 import re
+import string
+from email.iterators import typed_subpart_iterator
+from email.utils import getaddresses, parseaddr
 
-from debian.debian_support import AptPkgVersion
 from debian import changelog as debian_changelog
+from debian.debian_support import AptPkgVersion
+from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.files.base import ContentFile
 from django.db import models
 from django.db.utils import IntegrityError
-from django.utils import timezone
-from django.utils.encoding import force_text
-from django.utils.html import escape
-from django.utils.functional import cached_property
-from django.utils.safestring import mark_safe
-from django.urls import reverse
-from django.conf import settings
-from django.core.files.base import ContentFile
 from django.template.defaultfilters import slugify
 from django.template.exceptions import TemplateDoesNotExist
-from django_email_accounts.models import UserEmail
-from distro_tracker.core.utils import get_or_none
-from distro_tracker.core.utils import SpaceDelimitedTextField
-from distro_tracker.core.utils import verify_signature
-from distro_tracker.core.utils import distro_tracker_render_to_string
-from distro_tracker.core.utils.plugins import PluginRegistry
-from distro_tracker.core.utils.email_messages import decode_header
-from distro_tracker.core.utils.email_messages import get_decoded_message_payload
-from distro_tracker.core.utils.email_messages import message_from_bytes
-from distro_tracker.core.utils.packages import package_hashdir
+from django.urls import reverse
+from django.utils import timezone
+from django.utils.encoding import force_text
+from django.utils.functional import cached_property
+from django.utils.html import escape
+from django.utils.safestring import mark_safe
+from jsonfield import JSONField
+
+from distro_tracker.core.utils import (
+    SpaceDelimitedTextField,
+    distro_tracker_render_to_string,
+    get_or_none,
+    verify_signature
+)
+from distro_tracker.core.utils.email_messages import (
+    decode_header,
+    get_decoded_message_payload,
+    message_from_bytes
+)
 from distro_tracker.core.utils.linkify import linkify
+from distro_tracker.core.utils.packages import package_hashdir
+from distro_tracker.core.utils.plugins import PluginRegistry
+from django_email_accounts.models import UserEmail
 
 DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS = \
     settings.DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS

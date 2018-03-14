@@ -17,19 +17,25 @@ from django.utils.functional import cached_property
 from django.utils.http import urlencode, urlquote, urlquote_plus
 from django.utils.safestring import mark_safe
 
+from distro_tracker.core.models import (
+    PackageExtractedInfo,
+    Repository,
+    SourcePackageName
+)
+from distro_tracker.core.panels import (
+    BasePanel,
+    HtmlPanelItem,
+    LinksPanel,
+    TemplatePanelItem
+)
 from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.utils.packages import package_hashdir
-from distro_tracker.core.models import Repository
-from distro_tracker.core.models import SourcePackageName
-from distro_tracker.core.models import PackageExtractedInfo
-from distro_tracker.core.panels import BasePanel
-from distro_tracker.core.panels import LinksPanel
-from distro_tracker.core.panels import HtmlPanelItem
-from distro_tracker.core.panels import TemplatePanelItem
-from distro_tracker.vendor.debian.models import BuildLogCheckStats
-from distro_tracker.vendor.debian.models import LintianStats
-from distro_tracker.vendor.debian.models import PackageExcuses
-from distro_tracker.vendor.debian.models import UbuntuPackage
+from distro_tracker.vendor.debian.models import (
+    BuildLogCheckStats,
+    LintianStats,
+    PackageExcuses,
+    UbuntuPackage
+)
 
 
 class LintianLink(LinksPanel.ItemProvider):

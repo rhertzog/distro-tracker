@@ -39,9 +39,10 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from distro_tracker.test import TestCase
-from django.template import Template, Context
 from django import forms
+from django.template import Context, Template
+
+from distro_tracker.test import TestCase
 
 CHOICES = (
     (0, 'Zero'),

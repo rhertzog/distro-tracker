@@ -11,14 +11,15 @@
 """
 Module including some utility functions and classes for manipulating email.
 """
-from django.core.mail import EmailMessage
-from django.utils.encoding import force_bytes
-from email.mime.base import MIMEBase
-import re
 import copy
 import email
-import types
 import io
+import re
+import types
+from email.mime.base import MIMEBase
+
+from django.core.mail import EmailMessage
+from django.utils.encoding import force_bytes
 
 
 def extract_email_address_from_header(header):

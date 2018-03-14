@@ -10,16 +10,18 @@
 """
 Tests for the :mod:`distro_tracker.accounts` app.
 """
-from distro_tracker.test import TestCase
-from distro_tracker.accounts.models import User
-from distro_tracker.accounts.models import UserEmail
-from distro_tracker.core.models import EmailSettings
-from distro_tracker.core.models import PackageName
-from distro_tracker.core.models import Subscription
-from distro_tracker.core.models import Keyword
+import json
+
 from django.urls import reverse
 
-import json
+from distro_tracker.accounts.models import User, UserEmail
+from distro_tracker.core.models import (
+    EmailSettings,
+    Keyword,
+    PackageName,
+    Subscription
+)
+from distro_tracker.test import TestCase
 
 
 class UserManagerTests(TestCase):

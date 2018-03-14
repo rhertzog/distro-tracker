@@ -12,7 +12,7 @@ Implements the command which removes all subscriptions for a given email.
 """
 from django.core.management.base import BaseCommand, CommandError
 
-from distro_tracker.core.models import UserEmail, EmailSettings
+from distro_tracker.core.models import EmailSettings, UserEmail
 from distro_tracker.core.utils import get_or_none
 
 

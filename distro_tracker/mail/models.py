@@ -10,11 +10,15 @@
 """
 Defines models specific for the :py:mod:`distro_tracker.mail` app.
 """
-from django.db import models
 from django.conf import settings
+from django.db import models
+
+from distro_tracker.core.models import (
+    Confirmation,
+    ConfirmationManager,
+    UserEmail
+)
 from django_email_accounts.models import UserEmailManager
-from distro_tracker.core.models import UserEmail
-from distro_tracker.core.models import Confirmation, ConfirmationManager
 
 
 class CommandConfirmationManager(ConfirmationManager):

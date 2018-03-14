@@ -10,7 +10,7 @@
 
 import collections
 
-from debian.debian_support import version_compare, BaseVersion
+from debian.debian_support import BaseVersion, version_compare
 
 CATEGORIES_VERSION_COMPARISON = {
     'missing_pkg': 'Packages missing in the derivative',

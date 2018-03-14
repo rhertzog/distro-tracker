@@ -11,17 +11,23 @@
 Settings for the admin panel for the models defined in the
 :mod:`distro_tracker.core` app.
 """
-from django.contrib import admin
+import requests
 from django import forms
-from .models import Repository
+from django.contrib import admin
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
-from distro_tracker.core.models import Architecture
-from distro_tracker.core.models import RepositoryFlag
-from distro_tracker.core.models import RepositoryRelation
-from distro_tracker.core.retrieve_data import retrieve_repository_info
-from distro_tracker.core.retrieve_data import InvalidRepositoryException
-import requests
+
+from distro_tracker.core.models import (
+    Architecture,
+    RepositoryFlag,
+    RepositoryRelation
+)
+from distro_tracker.core.retrieve_data import (
+    InvalidRepositoryException,
+    retrieve_repository_info
+)
+
+from .models import Repository
 
 
 def validate_sources_list_entry(value):

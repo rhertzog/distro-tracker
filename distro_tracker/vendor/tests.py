@@ -15,13 +15,14 @@ The test suite automatically includes any tests available in a ``tests``
 module of all subpackages.
 """
 
-from distro_tracker.test import SimpleTestCase
+import importlib
+import inspect
+import sys
+
 from django.test.utils import override_settings
 
 from distro_tracker.mail.tests.tests_dispatch import DispatchBaseTest
-import sys
-import inspect
-import importlib
+from distro_tracker.test import SimpleTestCase
 
 
 def get_subpackages():

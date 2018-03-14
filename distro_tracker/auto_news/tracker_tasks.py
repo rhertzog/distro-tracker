@@ -10,11 +10,9 @@
 """
 The Distro-Tracker-specific tasks for :mod:`distro_tracker.auto_news` app.
 """
+from distro_tracker.core.models import News, Repository, SourcePackageName
 from distro_tracker.core.tasks import BaseTask
 from distro_tracker.core.utils.http import get_resource_content
-from distro_tracker.core.models import SourcePackageName
-from distro_tracker.core.models import Repository
-from distro_tracker.core.models import News
 
 
 class GenerateNewsFromRepositoryUpdates(BaseTask):

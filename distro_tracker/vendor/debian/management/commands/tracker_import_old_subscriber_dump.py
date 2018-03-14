@@ -7,12 +7,12 @@
 # distribution and at https://deb.li/DTLicense. No part of Distro Tracker,
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
-from django.db import transaction
+import sys
+
 from django.core.management.base import BaseCommand
+from django.db import transaction
 
 from distro_tracker.core.models import Subscription
-
-import sys
 
 
 class Command(BaseCommand):

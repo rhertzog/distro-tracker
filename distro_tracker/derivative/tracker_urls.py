@@ -11,7 +11,7 @@
 
 from django.conf.urls import url
 
-from .views import index, comparison
+from .views import comparison, index
 
 urlpatterns = [
     url('^derivative/$', index, name='dtracker-derivative-index'),

@@ -10,10 +10,11 @@
 from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django_email_accounts.models import UserEmail
-from django.contrib.auth.forms \
-    import AuthenticationForm as ContribAuthenticationForm
+from django.contrib.auth.forms import \
+    AuthenticationForm as ContribAuthenticationForm
+
 from django_email_accounts import run_hook
+from django_email_accounts.models import UserEmail
 
 User = get_user_model()
 

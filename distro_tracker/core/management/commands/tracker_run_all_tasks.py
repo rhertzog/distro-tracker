@@ -11,9 +11,11 @@
 Implements a command which starts all independent Distro Tracker tasks.
 A task is a subclass of :class:`distro_tracker.core.tasks.BaseTask`.
 """
-from django.core.management.base import BaseCommand
-from distro_tracker.core.tasks import run_all_tasks
 import logging
+
+from django.core.management.base import BaseCommand
+
+from distro_tracker.core.tasks import run_all_tasks
 
 logger = logging.getLogger('distro_tracker.tasks')
 

@@ -11,8 +11,8 @@
 Miscellaneous utilities that don't require their own python module.
 """
 
-import json
 import hashlib
+import json
 
 
 def get_data_checksum(data):

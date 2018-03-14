@@ -8,12 +8,11 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 
-from django.shortcuts import render
-from django.shortcuts import get_list_or_404, get_object_or_404
+from django.shortcuts import get_list_or_404, get_object_or_404, render
 
-from distro_tracker.core.models import RepositoryRelation
-from distro_tracker.core.models import Repository
-from .utils import compare_repositories, CATEGORIES_VERSION_COMPARISON
+from distro_tracker.core.models import Repository, RepositoryRelation
+
+from .utils import CATEGORIES_VERSION_COMPARISON, compare_repositories
 
 
 def index(request):

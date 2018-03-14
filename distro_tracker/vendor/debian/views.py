@@ -9,10 +9,10 @@
 # except according to the terms contained in the LICENSE file.
 """Views for the :mod:`distro_tracker.vendor.debian` app."""
 
-from django.utils.http import urlencode
-from django.views.generic import View
 from django.http import HttpResponseBadRequest
 from django.shortcuts import redirect
+from django.utils.http import urlencode
+from django.views.generic import View
 
 
 class CodeSearchView(View):

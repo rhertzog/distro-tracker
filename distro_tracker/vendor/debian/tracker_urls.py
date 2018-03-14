@@ -13,7 +13,6 @@ from django.conf.urls import url
 
 from distro_tracker.vendor.debian.views import CodeSearchView
 
-
 urlpatterns = [
     # code search
     url(r'^codesearch/$', CodeSearchView.as_view(),

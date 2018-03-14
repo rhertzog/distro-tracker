@@ -16,6 +16,7 @@ It launches an
 <distro_tracker.core.retrieve_data.UpdateRepositoriesTask>` task.
 """
 from django.core.management.base import BaseCommand
+
 from distro_tracker.core.retrieve_data import UpdateRepositoriesTask
 from distro_tracker.core.tasks import run_task
 

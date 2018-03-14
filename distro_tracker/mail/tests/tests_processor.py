@@ -12,29 +12,30 @@
 """
 Tests for :mod:`distro_tracker.mail.processor`.
 """
-from email.message import Message
-from datetime import datetime
-from datetime import timedelta
 import multiprocessing
 import os.path
 import time
+from datetime import datetime, timedelta
+from email.message import Message
+from unittest import mock
 
+import pyinotify
 from django.conf import settings
 from django.test.utils import override_settings
 from django.utils.encoding import force_bytes
-from unittest import mock
-import pyinotify
 
-from distro_tracker.test import TestCase
 from distro_tracker.core.utils.email_messages import message_from_bytes
-from distro_tracker.mail.processor import MailProcessor
-from distro_tracker.mail.processor import MailQueue
-from distro_tracker.mail.processor import MailQueueEntry
-from distro_tracker.mail.processor import MailQueueWatcher
-from distro_tracker.mail.processor import ConflictingDeliveryAddresses
-from distro_tracker.mail.processor import InvalidDeliveryAddress
-from distro_tracker.mail.processor import MissingDeliveryAddress
-from distro_tracker.mail.processor import MailProcessorException
+from distro_tracker.mail.processor import (
+    ConflictingDeliveryAddresses,
+    InvalidDeliveryAddress,
+    MailProcessor,
+    MailProcessorException,
+    MailQueue,
+    MailQueueEntry,
+    MailQueueWatcher,
+    MissingDeliveryAddress
+)
+from distro_tracker.test import TestCase
 
 
 class HelperMixin(object):

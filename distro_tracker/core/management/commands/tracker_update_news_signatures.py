@@ -12,8 +12,9 @@ Implements a command which tries to update the signature information
 for :class:`News <distro_tracker.core.models.News>` instances which do not have
 any associated signatures.
 """
-from django.db import models
 from django.core.management.base import BaseCommand
+from django.db import models
+
 from distro_tracker.core.models import EmailNews
 
 

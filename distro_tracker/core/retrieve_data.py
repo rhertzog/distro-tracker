@@ -8,36 +8,40 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """Implements core data retrieval from various external resources."""
-from distro_tracker import vendor
-from distro_tracker.core.models import PseudoPackageName, PackageName
-from distro_tracker.core.models import Repository
-from distro_tracker.core.models import SourcePackageRepositoryEntry
-from distro_tracker.core.models import BinaryPackageRepositoryEntry
-from distro_tracker.core.models import ContributorName
-from distro_tracker.core.models import SourcePackage
-from distro_tracker.core.models import Team
-from distro_tracker.core.models import PackageExtractedInfo
-from distro_tracker.core.models import BinaryPackageName
-from distro_tracker.core.models import BinaryPackage
-from distro_tracker.core.models import SourcePackageDeps
-from distro_tracker.core.utils import get_or_none
-from distro_tracker.core.utils.packages import (
-    extract_information_from_sources_entry,
-    extract_information_from_packages_entry,
-    AptCache)
-from distro_tracker.core.tasks import BaseTask
-from distro_tracker.core.tasks import clear_all_events_on_exception
-from distro_tracker.core.models import SourcePackageName, Architecture
-from distro_tracker.accounts.models import UserEmail
-from django.db import transaction
-from django.db import models
-from django.conf import settings
-
-from debian import deb822
-import re
-import requests
 import itertools
 import logging
+import re
+
+import requests
+from debian import deb822
+from django.conf import settings
+from django.db import models, transaction
+
+from distro_tracker import vendor
+from distro_tracker.accounts.models import UserEmail
+from distro_tracker.core.models import (
+    Architecture,
+    BinaryPackage,
+    BinaryPackageName,
+    BinaryPackageRepositoryEntry,
+    ContributorName,
+    PackageExtractedInfo,
+    PackageName,
+    PseudoPackageName,
+    Repository,
+    SourcePackage,
+    SourcePackageDeps,
+    SourcePackageName,
+    SourcePackageRepositoryEntry,
+    Team
+)
+from distro_tracker.core.tasks import BaseTask, clear_all_events_on_exception
+from distro_tracker.core.utils import get_or_none
+from distro_tracker.core.utils.packages import (
+    AptCache,
+    extract_information_from_packages_entry,
+    extract_information_from_sources_entry
+)
 
 logger = logging.getLogger('distro_tracker.tasks')
 

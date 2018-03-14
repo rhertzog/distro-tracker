@@ -11,14 +11,17 @@
 Tests for the :mod:`distro_tracker.derivative` app.
 """
 
+from distro_tracker.core.models import (
+    Repository,
+    RepositoryRelation,
+    SourcePackageName
+)
+from distro_tracker.derivative.utils import (
+    categorize_version_comparison,
+    compare_repositories,
+    split_version
+)
 from distro_tracker.test import TestCase
-
-from distro_tracker.core.models import Repository
-from distro_tracker.core.models import RepositoryRelation
-from distro_tracker.core.models import SourcePackageName
-from distro_tracker.derivative.utils import compare_repositories
-from distro_tracker.derivative.utils import split_version
-from distro_tracker.derivative.utils import categorize_version_comparison
 
 
 class GenerateComparatingListTest(TestCase):

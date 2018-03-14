@@ -12,62 +12,68 @@
 
 import importlib
 
-from django.conf.urls import url, include
 from django.conf import settings
+from django.conf.urls import include, url
+from django.contrib import admin
 from django.shortcuts import redirect
 from django.views.generic import TemplateView
 
-from distro_tracker.core.views import legacy_package_url_redirect
-from distro_tracker.core.views import legacy_rss_redirect
-from distro_tracker.core.views import news_page
-from distro_tracker.core.views import package_page
-from distro_tracker.core.views import package_page_redirect
-from distro_tracker.core.views import PackageSearchView, PackageAutocompleteView
-from distro_tracker.core.views import OpenSearchDescription
-from distro_tracker.core.views import ActionItemJsonView, ActionItemView
-from distro_tracker.core.views import KeywordsView
-from distro_tracker.core.views import CreateTeamView
-from distro_tracker.core.views import TeamDetailsView
-from distro_tracker.core.views import DeleteTeamView
-from distro_tracker.core.views import UpdateTeamView
-from distro_tracker.core.views import AddPackageToTeamView
-from distro_tracker.core.views import RemovePackageFromTeamView
-from distro_tracker.core.views import JoinTeamView
-from distro_tracker.core.views import LeaveTeamView
-from distro_tracker.core.views import TeamListView
-from distro_tracker.core.views import ManageTeamMembers
-from distro_tracker.core.views import RemoveTeamMember
-from distro_tracker.core.views import AddTeamMember
-from distro_tracker.core.views import ConfirmMembershipView
-from distro_tracker.core.views import SetMuteTeamView
-from distro_tracker.core.views import SetMembershipKeywords
-from distro_tracker.core.views import EditMembershipView
-from distro_tracker.core.views import IndexView
-from distro_tracker.core.views import PackageNews
+from distro_tracker.accounts.views import (
+    AccountMergeConfirmedView,
+    AccountMergeConfirmView,
+    AccountMergeFinalize,
+    AccountProfile,
+    ChangePersonalInfoView,
+    ChooseSubscriptionEmailView,
+    ConfirmAddAccountEmail,
+    ForgotPasswordView,
+    LoginView,
+    LogoutView,
+    ManageAccountEmailsView,
+    ModifyKeywordsView,
+    PasswordChangeView,
+    RegisterUser,
+    RegistrationConfirmation,
+    ResetPasswordView,
+    SubscribeUserToPackageView,
+    SubscriptionsView,
+    UnsubscribeAllView,
+    UnsubscribeUserView,
+    UserEmailsView
+)
 from distro_tracker.core.news_feed import PackageNewsFeed
-from distro_tracker.accounts.views import ConfirmAddAccountEmail
-from distro_tracker.accounts.views import LoginView
-from distro_tracker.accounts.views import AccountMergeFinalize
-from distro_tracker.accounts.views import RegisterUser
-from distro_tracker.accounts.views import ManageAccountEmailsView
-from distro_tracker.accounts.views import ForgotPasswordView
-from distro_tracker.accounts.views import ResetPasswordView
-from distro_tracker.accounts.views import RegistrationConfirmation
-from distro_tracker.accounts.views import AccountProfile
-from distro_tracker.accounts.views import SubscriptionsView
-from distro_tracker.accounts.views import UserEmailsView
-from distro_tracker.accounts.views import SubscribeUserToPackageView
-from distro_tracker.accounts.views import LogoutView
-from distro_tracker.accounts.views import UnsubscribeUserView
-from distro_tracker.accounts.views import UnsubscribeAllView
-from distro_tracker.accounts.views import ChooseSubscriptionEmailView
-from distro_tracker.accounts.views import ChangePersonalInfoView
-from distro_tracker.accounts.views import PasswordChangeView
-from distro_tracker.accounts.views import ModifyKeywordsView
-from distro_tracker.accounts.views import AccountMergeConfirmView
-from distro_tracker.accounts.views import AccountMergeConfirmedView
+from distro_tracker.core.views import (
+    ActionItemJsonView,
+    ActionItemView,
+    AddPackageToTeamView,
+    AddTeamMember,
+    ConfirmMembershipView,
+    CreateTeamView,
+    DeleteTeamView,
+    EditMembershipView,
+    IndexView,
+    JoinTeamView,
+    KeywordsView,
+    LeaveTeamView,
+    ManageTeamMembers,
+    OpenSearchDescription,
+    PackageAutocompleteView,
+    PackageNews,
+    PackageSearchView,
+    RemovePackageFromTeamView,
+    RemoveTeamMember,
+    SetMembershipKeywords,
+    SetMuteTeamView,
+    TeamDetailsView,
+    TeamListView,
+    UpdateTeamView,
+    legacy_package_url_redirect,
+    legacy_rss_redirect,
+    news_page,
+    package_page,
+    package_page_redirect
+)
 
-from django.contrib import admin
 admin.autodiscover()
 
 urlpatterns = [

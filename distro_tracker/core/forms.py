@@ -10,9 +10,9 @@
 """Forms for the :mod:`distro_tracker.core` app."""
 from django import forms
 from django.template.defaultfilters import slugify
-from distro_tracker.core.models import Team
-from distro_tracker.core.models import SourcePackageName
+
 from distro_tracker.accounts.models import UserEmail
+from distro_tracker.core.models import SourcePackageName, Team
 
 
 class CreateTeamForm(forms.ModelForm):

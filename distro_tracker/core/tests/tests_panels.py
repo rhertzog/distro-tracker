@@ -13,19 +13,25 @@
 """
 Tests for the Distro Tracker core panels.
 """
-from django.urls import reverse
-from django.conf import settings
 from bs4 import BeautifulSoup as soup
+from django.conf import settings
+from django.urls import reverse
 
-from distro_tracker.test import TestCase, TemplateTestsMixin
-from distro_tracker.core.models import SourcePackageName
-from distro_tracker.core.models import PseudoPackageName
-from distro_tracker.core.models import PackageName
-from distro_tracker.core.models import SourcePackage
-from distro_tracker.core.models import Repository, SourcePackageRepositoryEntry
-from distro_tracker.core.panels import VersionedLinks, DeadPackageWarningPanel
-from distro_tracker.core.panels import PackageExtractedInfo
+from distro_tracker.core.models import (
+    PackageName,
+    PseudoPackageName,
+    Repository,
+    SourcePackage,
+    SourcePackageName,
+    SourcePackageRepositoryEntry
+)
+from distro_tracker.core.panels import (
+    DeadPackageWarningPanel,
+    PackageExtractedInfo,
+    VersionedLinks
+)
 from distro_tracker.core.utils.packages import package_url
+from distro_tracker.test import TemplateTestsMixin, TestCase
 
 
 class VersionedLinksPanelTests(TestCase):

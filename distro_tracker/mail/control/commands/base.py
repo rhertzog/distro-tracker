@@ -13,7 +13,9 @@ commands.
 """
 
 import re
+
 from django.conf import settings
+
 DISTRO_TRACKER_CONTROL_EMAIL = settings.DISTRO_TRACKER_CONTROL_EMAIL
 
 

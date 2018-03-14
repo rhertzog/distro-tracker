@@ -11,28 +11,30 @@
 
 import os.path
 import re
-import requests
 
+import requests
 from django import forms
+from django.conf import settings
 from django.utils.http import urlencode, urlquote_plus
 from django.utils.safestring import mark_safe
-from django.conf import settings
 
-from distro_tracker.core.models import PackageBugStats
-from distro_tracker.core.models import EmailNews
-from distro_tracker.core.models import PackageName
-from distro_tracker.core.models import SourcePackageName
-from distro_tracker.core.models import BinaryPackageBugStats
-from distro_tracker.core.models import PackageExtractedInfo
-from distro_tracker.core.models import UserEmail
-from distro_tracker.core.utils import get_decoded_message_payload
-from distro_tracker.core.utils import get_or_none
+from distro_tracker.core.models import (
+    BinaryPackageBugStats,
+    EmailNews,
+    PackageBugStats,
+    PackageExtractedInfo,
+    PackageName,
+    SourcePackageName,
+    UserEmail
+)
+from distro_tracker.core.utils import get_decoded_message_payload, get_or_none
 from distro_tracker.core.utils.http import HttpCache
 from distro_tracker.core.utils.packages import package_hashdir
 from distro_tracker.mail import mail_news
-from .models import DebianContributor
 from distro_tracker.vendor.common import PluginProcessingError
 from distro_tracker.vendor.debian.tracker_tasks import UpdateNewQueuePackages
+
+from .models import DebianContributor
 
 
 def _simplify_pkglist(pkglist, multi_allowed=True, default=None):

@@ -8,24 +8,19 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """Views for the :mod:`distro_tracker.accounts` app."""
-from django.views.generic.base import View
-from django.urls import reverse_lazy
-from django.shortcuts import get_object_or_404
-from django.shortcuts import render
-from django.shortcuts import redirect
-from django.http import HttpResponseBadRequest
-from django.http import HttpResponseForbidden
-from django.http import Http404
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.http import Http404, HttpResponseBadRequest, HttpResponseForbidden
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse_lazy
+from django.views.generic.base import View
 
 from distro_tracker.accounts.models import UserEmail
-from distro_tracker.core.utils import distro_tracker_render_to_string
-from distro_tracker.core.utils import render_to_json_response
-from distro_tracker.core.models import Subscription
-from distro_tracker.core.models import EmailSettings
-from distro_tracker.core.models import Keyword
-
+from distro_tracker.core.models import EmailSettings, Keyword, Subscription
+from distro_tracker.core.utils import (
+    distro_tracker_render_to_string,
+    render_to_json_response
+)
 from django_email_accounts import views as email_accounts_views
 from django_email_accounts.views import LoginRequiredMixin
 

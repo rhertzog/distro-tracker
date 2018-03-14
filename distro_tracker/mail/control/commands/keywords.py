@@ -11,13 +11,17 @@
 Implements all commands which deal with message keywords.
 """
 
-from distro_tracker.mail.control.commands.base import Command
-from distro_tracker.core.models import (
-    Subscription, UserEmail, EmailSettings, PackageName, Keyword)
-
-from distro_tracker.core.utils import get_or_none
-
 import re
+
+from distro_tracker.core.models import (
+    EmailSettings,
+    Keyword,
+    PackageName,
+    Subscription,
+    UserEmail
+)
+from distro_tracker.core.utils import get_or_none
+from distro_tracker.mail.control.commands.base import Command
 
 __all__ = (
     'ViewDefaultKeywordsCommand',

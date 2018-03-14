@@ -13,17 +13,17 @@
 Tests for the :mod:`distro_tracker.mail.mail_news` app.
 """
 
-from distro_tracker.test import TestCase, SimpleTestCase
-from unittest import mock
-from django.utils.encoding import force_bytes
-from distro_tracker.core.models import SourcePackageName, SourcePackage
-from distro_tracker.core.models import News
-from distro_tracker.mail.mail_news import process
-from distro_tracker.mail.management.commands.tracker_receive_news import (
-    Command as MailNewsCommand)
-
-from email.message import Message
 import io
+from email.message import Message
+from unittest import mock
+
+from django.utils.encoding import force_bytes
+
+from distro_tracker.core.models import News, SourcePackage, SourcePackageName
+from distro_tracker.mail.mail_news import process
+from distro_tracker.mail.management.commands.tracker_receive_news import \
+    Command as MailNewsCommand
+from distro_tracker.test import SimpleTestCase, TestCase
 
 
 class BasicNewsGeneration(TestCase):

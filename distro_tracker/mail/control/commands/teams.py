@@ -11,12 +11,10 @@
 Implements all commands which deal with teams.
 """
 
+from distro_tracker.core.models import Team, UserEmail
+from distro_tracker.core.utils import get_or_none
 from distro_tracker.mail.control.commands.base import Command
 from distro_tracker.mail.control.commands.confirmation import needs_confirmation
-
-from distro_tracker.core.models import Team
-from distro_tracker.core.models import UserEmail
-from distro_tracker.core.utils import get_or_none
 
 
 @needs_confirmation

@@ -9,42 +9,45 @@
 # except according to the terms contained in the LICENSE file.
 """Views for the :mod:`distro_tracker.core` app."""
 import importlib
+
 from django.conf import settings
-from django.db.models import Q
-from django.shortcuts import render, redirect
-from django.shortcuts import get_object_or_404
-from django.http import Http404
-from django.utils.decorators import method_decorator
-from django.views.generic import View
-from django.views.generic.edit import FormView
-from django.views.generic.edit import UpdateView
-from django.views.generic.detail import DetailView
-from django.views.generic import DeleteView
-from django.views.generic import ListView
-from django.views.generic import TemplateView
-from django.views.decorators.cache import cache_control
-from django.core.mail import send_mail
-from django.core.exceptions import PermissionDenied
-from django.urls import reverse, reverse_lazy
-from django.utils.http import urlquote
-from distro_tracker.core.models import get_web_package
-from distro_tracker.core.forms import CreateTeamForm
-from distro_tracker.core.forms import AddTeamMemberForm
-from distro_tracker.core.utils import render_to_json_response
-from distro_tracker.core.models import SourcePackageName, PackageName
-from distro_tracker.core.models import PseudoPackageName, BinaryPackageName
-from distro_tracker.core.models import ActionItem
-from distro_tracker.core.models import News, NewsRenderer
-from distro_tracker.core.models import Keyword
-from distro_tracker.core.models import Team
-from distro_tracker.core.models import TeamMembership
-from distro_tracker.core.models import MembershipConfirmation
-from distro_tracker.core.panels import get_panels_for_package
-from distro_tracker.accounts.views import LoginRequiredMixin
-from distro_tracker.accounts.models import UserEmail
-from distro_tracker.core.utils import get_or_none
-from distro_tracker.core.utils import distro_tracker_render_to_string
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
+from django.core.mail import send_mail
+from django.db.models import Q
+from django.http import Http404
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse, reverse_lazy
+from django.utils.decorators import method_decorator
+from django.utils.http import urlquote
+from django.views.decorators.cache import cache_control
+from django.views.generic import DeleteView, ListView, TemplateView, View
+from django.views.generic.detail import DetailView
+from django.views.generic.edit import FormView, UpdateView
+
+from distro_tracker.accounts.models import UserEmail
+from distro_tracker.accounts.views import LoginRequiredMixin
+from distro_tracker.core.forms import AddTeamMemberForm, CreateTeamForm
+from distro_tracker.core.models import (
+    ActionItem,
+    BinaryPackageName,
+    Keyword,
+    MembershipConfirmation,
+    News,
+    NewsRenderer,
+    PackageName,
+    PseudoPackageName,
+    SourcePackageName,
+    Team,
+    TeamMembership,
+    get_web_package
+)
+from distro_tracker.core.panels import get_panels_for_package
+from distro_tracker.core.utils import (
+    distro_tracker_render_to_string,
+    get_or_none,
+    render_to_json_response
+)
 
 
 def package_page(request, package_name):
