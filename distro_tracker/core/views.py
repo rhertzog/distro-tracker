@@ -160,7 +160,7 @@ class PackageAutocompleteView(View):
                                          for package in filtered]])
 
 
-def news_page(request, news_id):
+def news_page(request, news_id, slug=''):
     """
     Displays a news item's full content.
     """

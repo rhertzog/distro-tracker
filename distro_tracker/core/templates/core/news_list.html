@@ -2,7 +2,7 @@
     {% for news_item in news %}
     <li class="list-group-item">
         [<span class="news-date">{{ news_item.datetime_created|date:"Y-m-d" }}</span>]
-        <a href="{% url 'dtracker-news-page' news_item.pk %}">
+        <a href="{{ news_item.get_absolute_url }}">
             <span class="news-title">{{ news_item.title }}</span>
         </a>
         {% if news_item.created_by %}(<span class="news-creator">{{ news_item.created_by }}</span>){% endif %}
