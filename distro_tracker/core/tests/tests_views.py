@@ -1781,6 +1781,19 @@ class NewsViewTest(TestCase, TemplateTestsMixin):
         else:
             return self.client.get('%s?page=%s' % (self.news_url, page))
 
+    def test_news_page_urls(self):
+        """
+        Tests all possibile urls to access the page of a single news
+        """
+        news = self.package.news_set.first()
+        url = reverse('dtracker-news-page', kwargs={'news_id': news.id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(url + '/')
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(news.get_absolute_url())
+        self.assertEqual(response.status_code, 200)
+
     def test_news_page_has_link_to_package_page(self):
         response = self.get_package_news()
         self.assertLinkIsInResponse(response, package_url(self.package))
