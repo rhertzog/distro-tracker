@@ -103,7 +103,7 @@ urlpatterns = [
 
     url(r'^admin/', admin.site.urls),
 
-    url(r'^news/(?P<news_id>\d+)$', news_page,
+    url(r'^news/(?P<news_id>\d+)/?$', news_page,
         name='dtracker-news-page'),
     url(r'^news/(?P<news_id>\d+)/(?P<slug>.+)/$', news_page,
         name='dtracker-news-page'),
