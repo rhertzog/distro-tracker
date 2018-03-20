@@ -2486,7 +2486,7 @@ class UpdateVcsWatchTask(BaseTask):
         "ERROR": {
             "description":
                 '<a href="{url}">Error while accessing the VCS repository</a>. '
-                'Please troubleshot and fix the issue.',
+                'Please troubleshoot and fix the issue.',
             "severity": ActionItem.SEVERITY_HIGH,
         },
         "DEFAULT": {
