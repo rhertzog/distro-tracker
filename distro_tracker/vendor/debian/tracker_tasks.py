@@ -2171,7 +2171,7 @@ class UpdateAutoRemovalsStatsTask(BaseTask):
         buggy_dependencies = stats.get('buggy_dependencies', [])
         reverse_dependencies = stats.get('rdeps', [])
         all_bugs = stats['bugs'] + bugs_dependencies
-        link = '<a href="https://bugs.debian.org/{}">{}</a>'
+        link = '<a href="https://bugs.debian.org/{}">#{}</a>'
         removal_date = stats['removal_date'].strftime('%d %B')
         if isinstance(removal_date, bytes):
             removal_date = removal_date.decode('utf-8', 'ignore')
