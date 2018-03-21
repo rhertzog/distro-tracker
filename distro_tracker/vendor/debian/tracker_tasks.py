@@ -2121,7 +2121,8 @@ class UpdateAutoRemovalsStatsTask(BaseTask):
     """
     ACTION_ITEM_TYPE_NAME = 'debian-autoremoval'
     ACTION_ITEM_TEMPLATE = 'debian/autoremoval-action-item.html'
-    ITEM_DESCRIPTION = 'Marked for autoremoval on {removal_date}: {bugs}'
+    ITEM_DESCRIPTION = ('Marked for autoremoval on {removal_date}' +
+                        '{dependencies}: {bugs}')
 
     def __init__(self, force_update=False, *args, **kwargs):
         super(UpdateAutoRemovalsStatsTask, self).__init__(*args, **kwargs)
@@ -2178,6 +2179,8 @@ class UpdateAutoRemovalsStatsTask(BaseTask):
 
         action_item.short_description = self.ITEM_DESCRIPTION.format(
             removal_date=removal_date,
+            dependencies=(' due to ' + self.list_of_packages_to_html(
+                buggy_dependencies) if buggy_dependencies else ''),
             bugs=', '.join(link.format(bug, bug) for bug in all_bugs))
 
         # datetime objects are not JSON-serializable, convert them ourselves
