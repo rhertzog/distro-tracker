@@ -819,7 +819,7 @@ class UpdateExcusesTask(BaseTask):
         return False
 
     def _extract_problematic(self, item):
-        if not 'policy_info' in item or not 'age' in item['policy_info']:
+        if 'policy_info' not in item or 'age' not in item['policy_info']:
             return
         package = item['item-name']
         age = item['policy_info']['age']['current-age']
@@ -838,7 +838,7 @@ class UpdateExcusesTask(BaseTask):
         mapping packages names to a problem information. Problem information
         is a dict with the keys ``age`` and ``limit``.
         """
-        if not 'sources' in content:
+        if 'sources' not in content:
             logger.warning("Invalid format of excuses file")
             return
 
