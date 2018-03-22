@@ -1776,7 +1776,7 @@ class UpdateExcusesTaskActionItemTest(TestCase):
             source_package_name=self.package_name, version='1.0.0')
 
         self.task = UpdateExcusesTask()
-        self.task._get_update_excuses_content = mock.MagicMock()
+        self.task._get_excuses_yaml = mock.MagicMock()
 
     def run_task(self):
         self.task.execute()
@@ -1786,7 +1786,7 @@ class UpdateExcusesTaskActionItemTest(TestCase):
         Sets the stub content of the update_excuses.yaml that the task will
         have access to.
         """
-        self.task._get_update_excuses_content.return_value = yaml.load(content)
+        self.task._get_excuses_yaml.return_value = yaml.load(content)
 
     def set_update_excuses_content_from_file(self, file_name):
         """

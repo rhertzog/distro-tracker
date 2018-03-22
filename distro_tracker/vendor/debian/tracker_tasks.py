@@ -892,7 +892,7 @@ class UpdateExcusesTask(BaseTask):
             item_types=[self.action_item_type],
             non_obsolete_packages=problematic.keys())
 
-    def _get_update_excuses_content(self):
+    def _get_excuses_yaml(self):
         """
         Function returning the content of excuses from debian-release
         :returns: a dict of excuses or ``None`` if the content in the
@@ -906,7 +906,7 @@ class UpdateExcusesTask(BaseTask):
         return yaml.load(response.text)
 
     def execute(self):
-        content_lines = self._get_update_excuses_content()
+        content_lines = self._get_excuses_yaml()
         if not content_lines:
             return
 
