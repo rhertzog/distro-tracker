@@ -19,6 +19,7 @@ import json
 import logging
 import os
 import re
+from enum import Enum
 
 import debianbts
 import yaml
@@ -785,6 +786,12 @@ class UpdateExcusesTask(BaseTask):
         "The package has not entered testing even though the delay is over")
     ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/testing-migration-action-item.html'
 
+    class AgeVerdict(Enum):
+        PKG_OF_AGE = 0
+        PKG_TOO_OLD = 1
+        PKG_TOO_YOUNG = 2
+        PKG_WO_POLICY = 3
+
     def __init__(self, force_update=False, *args, **kwargs):
         super(UpdateExcusesTask, self).__init__(*args, **kwargs)
         self.force_update = force_update
@@ -822,14 +829,27 @@ class UpdateExcusesTask(BaseTask):
             return True
         return False
 
-    def _extract_problematic(self, source):
+    def _check_age(self, source):
+        """Checks the age of the package and compares it to the age requirement
+        for migration"""
+
         if 'policy_info' not in source or 'age' not in source['policy_info']:
-            return
-        package = source['item-name']
+            return (self.AgeVerdict.PKG_WO_POLICY, None, None)
+
         age = source['policy_info']['age']['current-age']
         limit = source['policy_info']['age']['age-requirement']
         if age > limit:
-            return (package, {'age': age, 'limit': limit})
+            return (self.AgeVerdict.PKG_TOO_OLD, age, limit)
+        elif age < limit:
+            return (self.AgeVerdict.PKG_TOO_YOUNG, age, limit)
+        else:
+            return (self.AgeVerdict.PKG_OF_AGE, age, limit)
+
+    def _extract_problematic(self, source):
+        verdict, age, limit = self._check_age(source)
+
+        if verdict == self.AgeVerdict.PKG_TOO_OLD:
+            return (source['item-name'], {'age': age, 'limit': limit})
 
     @staticmethod
     def _make_excuses_check_verdict(source):
@@ -858,26 +878,27 @@ class UpdateExcusesTask(BaseTask):
 
         return addendum
 
-    @staticmethod
-    def _make_excuses_check_age(source):
+    def _make_excuses_check_age(self, source):
         """Checks how old is the package and builds an excuses message
         depending on the result."""
 
         addendum = []
 
-        if 'policy_info' in source and 'age' in source['policy_info']:
-            age = source['policy_info']['age']['current-age']
-            limit = source['policy_info']['age']['age-requirement']
-            if age < limit:
-                addendum.append("Too young, only %d of %d days old" % (
-                    age,
-                    limit,
-                ))
-            elif age >= limit:
-                addendum.append("%d days old (%d needed)" % (
-                    age,
-                    limit,
-                ))
+        verdict, age, limit = self._check_age(source)
+
+        if verdict in [
+            self.AgeVerdict.PKG_TOO_OLD,
+            self.AgeVerdict.PKG_OF_AGE
+        ]:
+            addendum.append("%d days old (%d needed)" % (
+                age,
+                limit,
+            ))
+        elif verdict == self.AgeVerdict.PKG_TOO_YOUNG:
+            addendum.append("Too young, only %d of %d days old" % (
+                age,
+                limit,
+            ))
 
         return addendum
 
