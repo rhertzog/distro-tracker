@@ -827,6 +827,89 @@ class UpdateExcusesTask(BaseTask):
         if age > limit:
             return (package, {'age': age, 'limit': limit})
 
+    @staticmethod
+    def _make_excuses_check_verdict(source):
+        """Checks the migration policy verdict of the package and builds an
+        excuses message depending on the result."""
+
+        addendum = []
+
+        if 'migration-policy-verdict' in source:
+            verdict = source['migration-policy-verdict']
+            if verdict == 'REJECTED_BLOCKED_BY_ANOTHER_ITEM':
+                addendum.append((
+                    "Migration status: Blocked. Can't migrate due to a "
+                    "non-migrable dependency. Check status below."
+                ))
+                if 'dependencies' in source:
+                    blocked_by = source['dependencies'].get('blocked-by', [])
+                    after = source['dependencies'].get('migrate-after', [])
+                    deps = list({
+                        element
+                        for element in blocked_by + after
+                    })
+                    addendum.append("Blocked by: %s" % (
+                        ",".join([
+                            '<a href="%s">%s</a>' % (
+                                package_url(pkg_name),
+                                pkg_name
+                            )
+                            for pkg_name in deps
+                        ])
+                    ))
+
+        return addendum
+
+    @staticmethod
+    def _make_excuses_check_age(source):
+        """Checks how old is the package and builds an excuses message
+        depending on the result."""
+
+        addendum = []
+
+        if 'policy_info' in source and 'age' in source['policy_info']:
+            age = source['policy_info']['age']['current-age']
+            limit = source['policy_info']['age']['age-requirement']
+            if age < limit:
+                addendum.append("Too young, only %d of %d days old" % (
+                    age,
+                    limit,
+                ))
+            elif age >= limit:
+                addendum.append("%d days old (%d needed)" % (
+                    age,
+                    limit,
+                ))
+
+        return addendum
+
+    def _make_excuses(self, source):
+        """Make the excuses list for a source item using the yaml data it
+        contains"""
+
+        excuses = [
+            self._adapt_excuse_links(excuse)
+            for excuse in source['excuses']
+        ]
+
+        # This is the place where we compute some additionnal
+        # messages that should be added to excuses.
+        addendum = []
+
+        addendum.extend(self._make_excuses_check_verdict(source))
+        addendum.extend(self._make_excuses_check_age(source))
+
+        excuses = addendum + excuses
+
+        if 'is-candidate' in source:
+            if not source['is-candidate']:
+                excuses.append("Not considered")
+
+        return (
+            source['item-name'],
+            excuses,
+        )
+
     def _get_excuses_and_problems(self, content):
         """
         Gets the excuses for each package.
@@ -844,14 +927,8 @@ class UpdateExcusesTask(BaseTask):
 
         items = content['sources']
         excuses = [
-            (
-               e['item-name'],
-               [
-                   self._adapt_excuse_links(excuse)
-                   for excuse in e['excuses']
-               ],
-            )
-            for e in items
+            self._make_excuses(source)
+            for source in items
         ]
         problems = [
             self._extract_problematic(item)
