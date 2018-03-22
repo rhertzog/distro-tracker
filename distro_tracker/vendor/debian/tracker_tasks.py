@@ -818,12 +818,12 @@ class UpdateExcusesTask(BaseTask):
             return True
         return False
 
-    def _extract_problematic(self, item):
-        if 'policy_info' not in item or 'age' not in item['policy_info']:
+    def _extract_problematic(self, source):
+        if 'policy_info' not in source or 'age' not in source['policy_info']:
             return
-        package = item['item-name']
-        age = item['policy_info']['age']['current-age']
-        limit = item['policy_info']['age']['age-requirement']
+        package = source['item-name']
+        age = source['policy_info']['age']['current-age']
+        limit = source['policy_info']['age']['age-requirement']
         if age > limit:
             return (package, {'age': age, 'limit': limit})
 
@@ -925,14 +925,14 @@ class UpdateExcusesTask(BaseTask):
             logger.warning("Invalid format of excuses file")
             return
 
-        items = content['sources']
+        sources = content['sources']
         excuses = [
             self._make_excuses(source)
-            for source in items
+            for source in sources
         ]
         problems = [
-            self._extract_problematic(item)
-            for item in items
+            self._extract_problematic(source)
+            for source in sources
         ]
         problematic = [p for p in problems if p]
         return dict(excuses), dict(problematic)
