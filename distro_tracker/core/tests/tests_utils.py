@@ -70,6 +70,7 @@ from distro_tracker.core.utils.packages import (
     AptCache,
     extract_dsc_file_name,
     extract_vcs_information,
+    html_package_list,
     package_hashdir,
     package_url
 )
@@ -775,6 +776,31 @@ class PackageUtilsTests(SimpleTestCase):
 
     def test_package_url_with_none(self):
         self.assertEqual(package_url(None), None)
+
+    def test_html_package_list(self):
+        """Tests the output of html_package_list function"""
+
+        list_of_packages = ['dummy-package', 'other-dummy-package']
+
+        output = html_package_list(list_of_packages)
+
+        first_url = '<a href="%s">%s</a>' % (
+            package_url('dummy-package'),
+            'dummy-package',
+        )
+
+        second_url = '<a href="%s">%s</a>' % (
+            package_url('other-dummy-package'),
+            'other-dummy-package',
+        )
+
+        self.assertEqual(
+            output,
+            "%s, %s" % (
+                first_url,
+                second_url,
+            ),
+        )
 
     def test_extract_dsc_file_name(self):
 

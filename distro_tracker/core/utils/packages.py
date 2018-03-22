@@ -701,3 +701,13 @@ class AptCache(object):
         self._cache_size += size_delta
 
         return outdir
+
+
+def html_package_list(packages):
+    packages_html = []
+    for package in packages:
+        html = '<a href="{}">{}</a>'.format(
+            package_url(package), package)
+        packages_html.append(html)
+
+    return ', '.join(packages_html)
