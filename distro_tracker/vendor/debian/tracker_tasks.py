@@ -49,7 +49,11 @@ from distro_tracker.core.utils.http import (
     get_resource_text
 )
 from distro_tracker.core.utils.misc import get_data_checksum
-from distro_tracker.core.utils.packages import package_hashdir, package_url
+from distro_tracker.core.utils.packages import (
+    html_package_list,
+    package_hashdir,
+    package_url
+)
 from distro_tracker.vendor.debian.models import (
     BuildLogCheckStats,
     LintianStats,
@@ -849,13 +853,7 @@ class UpdateExcusesTask(BaseTask):
                         for element in blocked_by + after
                     })
                     addendum.append("Blocked by: %s" % (
-                        ",".join([
-                            '<a href="%s">%s</a>' % (
-                                package_url(pkg_name),
-                                pkg_name
-                            )
-                            for pkg_name in deps
-                        ])
+                        html_package_list(deps),
                     ))
 
         return addendum
@@ -2184,14 +2182,6 @@ class UpdateAutoRemovalsStatsTask(BaseTask):
         if content:
             return yaml.safe_load(io.BytesIO(content))
 
-    def list_of_packages_to_html(self, packages):
-        packages_html = []
-        for package in packages:
-            html = '<a href="{}">{}</a>'.format(package_url(package), package)
-            packages_html.append(html)
-
-        return ', '.join(packages_html)
-
     def update_action_item(self, package, stats):
         """
         Creates an :class:`ActionItem <distro_tracker.core.models.ActionItem>`
@@ -2232,9 +2222,9 @@ class UpdateAutoRemovalsStatsTask(BaseTask):
             'bugs_dependencies': ', '.join(
                 link.format(bug, bug) for bug in bugs_dependencies),
             'buggy_dependencies':
-                self.list_of_packages_to_html(buggy_dependencies),
+                html_package_list(buggy_dependencies),
             'reverse_dependencies':
-                self.list_of_packages_to_html(reverse_dependencies),
+                html_package_list(reverse_dependencies),
             'number_rdeps': len(reverse_dependencies)}
         action_item.save()
 
