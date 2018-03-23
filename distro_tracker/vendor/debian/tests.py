@@ -38,7 +38,7 @@ from distro_tracker.core.models import (
     EmailSettings,
     Keyword,
     News,
-    PackageExtractedInfo,
+    PackageData,
     PackageName,
     PseudoPackageName,
     Repository,
@@ -2424,25 +2424,25 @@ class UpdateSecurityIssuesTaskTests(TestCase):
     def test_execute_create_data(self):
         self.mock_json_data('open')
         self.run_task()
-        data = self.package.packageextractedinfo_set.get(
+        data = self.package.data.get(
             key='debian-security').value
         self.assertEqual(data['stats']['jessie']['open'], 2)
         self.assertEqual(data['stats']['jessie']['nodsa'], 1)
 
     def test_execute_drop_data(self):
         pkg = SourcePackageName.objects.create(name='pkg')
-        pkg.packageextractedinfo_set.create(key='debian-security', value={})
+        pkg.data.create(key='debian-security', value={})
         self.mock_json_data('open')
         self.assertEqual(
-            pkg.packageextractedinfo_set.filter(key='debian-security').count(),
+            pkg.data.filter(key='debian-security').count(),
             1)
         self.run_task()
         self.assertEqual(
-            pkg.packageextractedinfo_set.filter(key='debian-security').count(),
+            pkg.data.filter(key='debian-security').count(),
             0)
 
     def test_execute_update_data(self):
-        self.package.packageextractedinfo_set.create(
+        self.package.data.create(
             key='debian-security',
             value={
                 'details': {},
@@ -2451,7 +2451,7 @@ class UpdateSecurityIssuesTaskTests(TestCase):
             })
         content = self.mock_json_data('open')
         self.run_task()
-        after = self.package.packageextractedinfo_set.get(key='debian-security')
+        after = self.package.data.get(key='debian-security')
         self.assertNotEqual(after.value['checksum'],
                             '99914b932bd37a50b983c5e7c90ae93b')
         self.maxDiff = None
@@ -2473,7 +2473,7 @@ class UpdateSecurityIssuesTaskTests(TestCase):
             # This checksum is for details={} (empty dict)
             'checksum': '99914b932bd37a50b983c5e7c90ae93b',
         }
-        self.package.packageextractedinfo_set.create(
+        self.package.data.create(
             key='debian-security', value=initial_value)
         # Ensure the data retrieved is empty for the package we test
         content = {
@@ -2483,7 +2483,7 @@ class UpdateSecurityIssuesTaskTests(TestCase):
         self.run_task()
         # Ensure that we still have the initial data and that it has not
         # been updated
-        after = self.package.packageextractedinfo_set.get(key='debian-security')
+        after = self.package.data.get(key='debian-security')
         self.assertDictEqual(after.value, initial_value)
 
     def test_update_action_item(self):
@@ -2741,7 +2741,7 @@ class DebciLinkTest(TestCase, TemplateTestsMixin):
         return self.client.get(package_url(package_name))
 
     def test_package_with_debci_report(self):
-        PackageExtractedInfo.objects.create(
+        PackageData.objects.create(
             package=self.package_name,
             key='debci',
             value={'debci report': 'not null'}
@@ -2775,7 +2775,7 @@ class DebtagsLinkTest(TestCase):
         package = SourcePackage.objects.create(
             source_package_name=package_name,
             version='1.0.0')
-        PackageExtractedInfo.objects.create(
+        PackageData.objects.create(
             package=package.source_package_name,
             key='general',
             value={
@@ -2809,7 +2809,7 @@ class ScreenshotsLinkTest(TestCase):
         self.package = SourcePackage.objects.create(
             source_package_name=self.package_name,
             version='1.0.0')
-        PackageExtractedInfo.objects.create(
+        PackageData.objects.create(
             package=self.package.source_package_name,
             key='screenshots',
             value={'screenshots': 'true'}
@@ -3826,14 +3826,14 @@ class UpdateNewQueuePackagesTests(TestCase):
     def get_new_info(self, package):
         """
         Helper method which returns the package's
-        :class:`PackageExtractedInfo
-        <distro_tracker.core.models.PackageExtractedInfo>` instance containing
+        :class:`PackageData
+        <distro_tracker.core.models.PackageData>` instance containing
         the NEW queue info, or ``None`` if there is no such instance.
         """
         try:
-            return package.packageextractedinfo_set.get(
-                key=UpdateNewQueuePackages.EXTRACTED_INFO_KEY)
-        except PackageExtractedInfo.DoesNotExist:
+            return package.data.get(
+                key=UpdateNewQueuePackages.DATA_KEY)
+        except PackageData.DoesNotExist:
             return None
 
     def test_single_distribution(self):
@@ -3974,9 +3974,9 @@ class UpdateNewQueuePackagesTests(TestCase):
         old_version = '1.0.0'
         version = '2.0.0'
         # Create an old entry
-        PackageExtractedInfo.objects.create(
+        PackageData.objects.create(
             package=self.package,
-            key=UpdateNewQueuePackages.EXTRACTED_INFO_KEY,
+            key=UpdateNewQueuePackages.DATA_KEY,
             value={
                 distribution: {
                     'version': old_version,
@@ -4000,15 +4000,15 @@ class UpdateNewQueuePackagesTests(TestCase):
 
     def test_entry_dropped(self):
         """
-        Tests that the NEW entry is correctly dropped from PackageExtractedInfo
+        Tests that the NEW entry is correctly dropped from PackageData
         when the entry is gone.
         """
         distribution = 'sid'
         old_version = '1.0.0'
         # Create an old entry
-        PackageExtractedInfo.objects.create(
+        PackageData.objects.create(
             package=self.package,
-            key=UpdateNewQueuePackages.EXTRACTED_INFO_KEY,
+            key=UpdateNewQueuePackages.DATA_KEY,
             value={
                 distribution: {
                     'version': old_version,
@@ -4033,16 +4033,16 @@ class NewQueueVersionsPanelTests(TestCase):
         self.package = PackageName.objects.create(
             source=True,
             name='dummy-package')
-        self.package.packageextractedinfo_set.create(
+        self.package.data.create(
             key='versions', value={})
 
     def get_package_page_response(self, package_name):
         return self.client.get(package_url(package_name))
 
     def add_new_queue_entry(self, distribution, version):
-        info, _ = PackageExtractedInfo.objects.get_or_create(
+        info, _ = PackageData.objects.get_or_create(
             package=self.package, key=UpdateNewQueuePackages.
-            EXTRACTED_INFO_KEY)
+            DATA_KEY)
         if not info.value:
             info.value = {}
         info.value.update({
@@ -4884,7 +4884,7 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
                 "description": "a game that you can play"
             }]}
         """
-        PackageExtractedInfo.objects.create(
+        PackageData.objects.create(
             package=self.dummy_package,
             key='general',
             value={
@@ -4913,7 +4913,7 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
         task = UpdatePackageScreenshotsTask()
         task.execute()
 
-    def test_extractedinfo_item_for_without_screenshot(self, mock_requests):
+    def test_packagedata_item_for_without_screenshot(self, mock_requests):
         """
         Tests that packages without screenshots don't claim to have them.
         """
@@ -4922,10 +4922,10 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
 
         self.run_task()
 
-        with self.assertRaises(PackageExtractedInfo.DoesNotExist):
-            other_package.packageextractedinfo_set.get(key='screenshots')
+        with self.assertRaises(PackageData.DoesNotExist):
+            other_package.data.get(key='screenshots')
 
-    def test_no_extractedinfo_for_unknown_package(self, mock_requests):
+    def test_no_packagedata_for_unknown_package(self, mock_requests):
         """
         Tests that UpdatePackageScreenshotsTask doesn't fail with an unknown
         package.
@@ -4945,12 +4945,12 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
 
         self.run_task()
 
-        count = PackageExtractedInfo.objects.filter(key='screenshots').count()
+        count = PackageData.objects.filter(key='screenshots').count()
         self.assertEqual(0, count)
 
-    def test_extractedinfo_for_package_with_screenshots(self, mock_requests):
+    def test_packagedata_for_package_with_screenshots(self, mock_requests):
         """
-        Tests that PackageExtractedInfo for a package with a screenshot is
+        Tests that PackageData for a package with a screenshot is
         correct.
         """
         set_mock_response(mock_requests, text=self.json_data)
@@ -4958,14 +4958,14 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
         self.run_task()
 
         info = \
-            self.dummy_package.packageextractedinfo_set.get(key='screenshots')
+            self.dummy_package.data.get(key='screenshots')
 
         self.assertEqual(info.value['screenshots'], 'true')
 
-    def test_extractedinfo_is_dropped_when_no_more_screenshot(self,
-                                                              mock_requests):
+    def test_packagedata_is_dropped_when_no_more_screenshot(self,
+                                                            mock_requests):
         """
-        Tests that PackageExtractedInfo is dropped if screenshot goes away.
+        Tests that PackageData is dropped if screenshot goes away.
         """
         set_mock_response(mock_requests, text=self.json_data)
         self.run_task()
@@ -4973,12 +4973,12 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
         set_mock_response(mock_requests, text=self.other_json_data)
         self.run_task()
 
-        with self.assertRaises(PackageExtractedInfo.DoesNotExist):
-            self.dummy_package.packageextractedinfo_set.get(key='screenshots')
+        with self.assertRaises(PackageData.DoesNotExist):
+            self.dummy_package.data.get(key='screenshots')
 
-    def test_other_extractedinfo_keys_not_dropped(self, mock_requests):
+    def test_other_packagedata_keys_not_dropped(self, mock_requests):
         """
-        Ensure that other PackageExtractedInfo keys are not dropped when
+        Ensure that other PackageData keys are not dropped when
         deleting the screenshot key.
         """
         set_mock_response(mock_requests, text=self.json_data)
@@ -4987,7 +4987,7 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
         set_mock_response(mock_requests, text=self.other_json_data)
         self.run_task()
 
-        info = self.dummy_package.packageextractedinfo_set.get(key='general')
+        info = self.dummy_package.data.get(key='general')
 
         self.assertEqual(info.value['name'], 'dummy')
 
@@ -5016,7 +5016,7 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
         }]
         """
         self.dummy_package = SourcePackageName.objects.create(name='dummy')
-        PackageExtractedInfo.objects.create(
+        PackageData.objects.create(
             package=self.dummy_package,
             key='general',
             value={
@@ -5034,7 +5034,7 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
         task = UpdateBuildReproducibilityTask()
         task.execute()
 
-    def test_extractedinfo_without_reproducibility(self, mock_requests):
+    def test_packagedata_without_reproducibility(self, mock_requests):
         """
         Tests that packages without reproducibility info don't claim to have
         them.
@@ -5044,10 +5044,10 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
 
         self.run_task()
 
-        with self.assertRaises(PackageExtractedInfo.DoesNotExist):
-            other_package.packageextractedinfo_set.get(key='reproducibility')
+        with self.assertRaises(PackageData.DoesNotExist):
+            other_package.data.get(key='reproducibility')
 
-    def test_no_extractedinfo_for_unknown_package(self, mock_requests):
+    def test_no_packagedata_for_unknown_package(self, mock_requests):
         """
         Tests that BuildReproducibilityTask doesn't fail with an unknown
         package.
@@ -5056,20 +5056,20 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
 
         self.run_task()
 
-        count = PackageExtractedInfo.objects.filter(
+        count = PackageData.objects.filter(
             key='reproducibility').count()
         self.assertEqual(0, count)
 
-    def test_extractedinfo_with_reproducibility(self, mock_requests):
+    def test_packagedata_with_reproducibility(self, mock_requests):
         """
-        Tests that PackageExtractedInfo for a package with reproducibility info
+        Tests that PackageData for a package with reproducibility info
         is correct.
         """
         set_mock_response(mock_requests, text=self.json_data)
 
         self.run_task()
 
-        info = self.dummy_package.packageextractedinfo_set.get(
+        info = self.dummy_package.data.get(
             key='reproducibility')
 
         self.assertEqual(info.value['reproducibility'], 'unreproducible')
@@ -5078,9 +5078,9 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
         self.assertEqual(action_items.first().item_type.type_name,
                          UpdateBuildReproducibilityTask.ACTION_ITEM_TYPE_NAME)
 
-    def test_extractedinfo_is_dropped_when_data_is_gone(self, mock_requests):
+    def test_packagedata_is_dropped_when_data_is_gone(self, mock_requests):
         """
-        Tests that PackageExtractedInfo is dropped if reproducibility info
+        Tests that PackageData is dropped if reproducibility info
         goes away.
         """
         set_mock_response(mock_requests, text=self.json_data)
@@ -5089,8 +5089,8 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
         set_mock_response(mock_requests, text=self.other_json_data)
         self.run_task()
 
-        with self.assertRaises(PackageExtractedInfo.DoesNotExist):
-            self.dummy_package.packageextractedinfo_set.get(
+        with self.assertRaises(PackageData.DoesNotExist):
+            self.dummy_package.data.get(
                 key='reproducibility')
         self.assertEqual(self.dummy_package.action_items.count(), 0)
 
@@ -5116,9 +5116,9 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
 
         self.assertEqual(self.dummy_package.action_items.count(), 0)
 
-    def test_other_extractedinfo_keys_not_dropped(self, mock_requests):
+    def test_other_packagedata_keys_not_dropped(self, mock_requests):
         """
-        Ensure that other PackageExtractedInfo keys are not dropped when
+        Ensure that other PackageData keys are not dropped when
         deleting the reproducibility key.
         """
         set_mock_response(mock_requests, text=self.json_data)
@@ -5127,7 +5127,7 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
         set_mock_response(mock_requests, text=self.other_json_data)
         self.run_task()
 
-        info = self.dummy_package.packageextractedinfo_set.get(key='general')
+        info = self.dummy_package.data.get(key='general')
 
         self.assertEqual(info.value['name'], 'dummy')
 
@@ -5162,7 +5162,7 @@ class UpdateVcsWatchTaskTest(TestCase):
             name='other-dummy')
 
         # Useful for last test
-        PackageExtractedInfo.objects.create(
+        PackageData.objects.create(
             package=self.dummy_package,
             key='general',
             value={
@@ -5177,17 +5177,17 @@ class UpdateVcsWatchTaskTest(TestCase):
         task = UpdateVcsWatchTask()
         task.execute()
 
-    def test_extractedinfo_without_vcswatch(self):
+    def test_packagedata_without_vcswatch(self):
         """
         Tests that packages without vcswatch info don't claim to have them.
         """
         self.run_task()
 
-        with self.assertRaises(PackageExtractedInfo.DoesNotExist):
-            self.other_dummy_package.packageextractedinfo_set.get(
+        with self.assertRaises(PackageData.DoesNotExist):
+            self.other_dummy_package.data.get(
                 key='vcs_extra_links')
 
-    def test_no_extractedinfo_for_unknown_package(self):
+    def test_no_packagedata_for_unknown_package(self):
         """
         Tests that the task doesn't fail with an unknown package.
         """
@@ -5195,13 +5195,13 @@ class UpdateVcsWatchTaskTest(TestCase):
 
         self.run_task()
 
-        count = PackageExtractedInfo.objects.filter(
+        count = PackageData.objects.filter(
             key='vcs_extra_links').count()
         self.assertEqual(0, count)
 
-    def test_extractedinfo_with_vcswatch(self):
+    def test_packagedata_with_vcswatch(self):
         """
-        Tests that PackageExtractedInfo for a package with vcswatch info
+        Tests that PackageData for a package with vcswatch info
         is correct.
         """
         self.run_task()
@@ -5220,7 +5220,7 @@ class UpdateVcsWatchTaskTest(TestCase):
             "QA": 'https://qa.debian.org/cgi-bin/vcswatch?package=dummy',
         }
 
-        info = self.dummy_package.packageextractedinfo_set.get(
+        info = self.dummy_package.data.get(
             key='vcs_extra_links')
 
         self.assertDictEqual(info.value, theoretical_package_info)
@@ -5231,15 +5231,15 @@ class UpdateVcsWatchTaskTest(TestCase):
                          UpdateVcsWatchTask.ACTION_ITEM_TYPE_NAME)
         self.assertDictEqual(action_item.extra_data, theoretical_extra_data)
 
-    def test_extractedinfo_is_updated_if_needed(self):
+    def test_packagedata_is_updated_if_needed(self):
         """
-        Tests that PackageExtractedInfo is updated if vcswatch_url changes.
+        Tests that PackageData is updated if vcswatch_url changes.
         """
         self.run_task()
 
         # Alters the info so that it's not destroyed when we
         # remove vcswatch data.
-        dummy_pi = self.dummy_package.packageextractedinfo_set.get(
+        dummy_pi = self.dummy_package.data.get(
             key='vcs_extra_links')
         dummy_pi.value['test_useless_entry'] = True
 
@@ -5254,7 +5254,7 @@ class UpdateVcsWatchTaskTest(TestCase):
         self.run_task()
 
         # Normally, no watch_url in the package
-        dummy_pi = self.dummy_package.packageextractedinfo_set.get(
+        dummy_pi = self.dummy_package.data.get(
             key='vcs_extra_links')
         self.assertEqual('QA' not in dummy_pi.value, True)
 
@@ -5262,15 +5262,15 @@ class UpdateVcsWatchTaskTest(TestCase):
         self.vcswatch_data = initial_data
         self.run_task()
 
-        dummy_pi = self.dummy_package.packageextractedinfo_set.get(
+        dummy_pi = self.dummy_package.data.get(
             key='vcs_extra_links').value
         self.assertTrue('QA' in dummy_pi)
         self.assertEqual(dummy_pi['QA'],
                          'https://qa.debian.org/cgi-bin/vcswatch?package=dummy')
 
-    def test_extractedinfo_is_dropped_when_data_is_gone(self):
+    def test_packagedata_is_dropped_when_data_is_gone(self):
         """
-        Tests that PackageExtractedInfo is dropped if vcswatch info
+        Tests that PackageData is dropped if vcswatch info
         goes away.
         """
         self.run_task()
@@ -5278,8 +5278,8 @@ class UpdateVcsWatchTaskTest(TestCase):
         self.vcswatch_data = []
         self.run_task()
 
-        with self.assertRaises(PackageExtractedInfo.DoesNotExist):
-            self.dummy_package.packageextractedinfo_set.get(
+        with self.assertRaises(PackageData.DoesNotExist):
+            self.dummy_package.data.get(
                 key='vcs_extra_links')
 
     def test_action_item_is_dropped_when_status_is_ok(self):
@@ -5310,9 +5310,9 @@ class UpdateVcsWatchTaskTest(TestCase):
         ai = self.dummy_package.action_items.first()
         self.assertEqual(ai.extra_data['commits'], 47)
 
-    def test_other_extractedinfo_keys_not_dropped(self):
+    def test_other_packagedata_keys_not_dropped(self):
         """
-        Ensure that other PackageExtractedInfo keys are not dropped when
+        Ensure that other PackageData keys are not dropped when
         deleting the vcs key.
         """
         self.run_task()
@@ -5320,6 +5320,6 @@ class UpdateVcsWatchTaskTest(TestCase):
         self.vcswatch_data = []
         self.run_task()
 
-        info = self.dummy_package.packageextractedinfo_set.get(key='general')
+        info = self.dummy_package.data.get(key='general')
 
         self.assertEqual(info.value['name'], 'dummy')

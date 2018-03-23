@@ -1415,13 +1415,15 @@ class ExtractedSourceFile(models.Model):
             extracted_file=self.extracted_file, package=self.source_package)
 
 
-class PackageExtractedInfo(models.Model):
+class PackageData(models.Model):
     """
     A model representing a quasi key-value store for package information
     extracted from other models in order to speed up its rendering on
     Web pages.
     """
-    package = models.ForeignKey(PackageName, on_delete=models.CASCADE)
+    package = models.ForeignKey(PackageName,
+                                on_delete=models.CASCADE,
+                                related_name="data")
     key = models.CharField(max_length=50)
     value = JSONField()
 

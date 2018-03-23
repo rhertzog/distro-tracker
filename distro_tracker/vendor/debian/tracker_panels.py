@@ -18,7 +18,7 @@ from django.utils.http import urlencode, urlquote, urlquote_plus
 from django.utils.safestring import mark_safe
 
 from distro_tracker.core.models import (
-    PackageExtractedInfo,
+    PackageData,
     Repository,
     SourcePackageName
 )
@@ -90,11 +90,11 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
                 hash=urlquote(self.package.name[0], safe=""),
                 pkg=urlquote(self.package.name, safe=""))
         try:
-            infos = self.package.packageextractedinfo_set.get(
+            infos = self.package.data.get(
                 key='reproducibility')
             has_reproducibility = True
             reproducibility_status = infos.value['reproducibility']
-        except PackageExtractedInfo.DoesNotExist:
+        except PackageData.DoesNotExist:
             has_reproducibility = False
             reproducibility_status = None
         reproducibility_url = \
@@ -138,8 +138,8 @@ class DebciLink(LinksPanel.ItemProvider):
 
     def get_panel_items(self):
         try:
-            self.package.packageextractedinfo_set.get(key='debci')
-        except PackageExtractedInfo.DoesNotExist:
+            self.package.data.get(key='debci')
+        except PackageData.DoesNotExist:
             return []
 
         url = 'https://ci.debian.net/packages/{prefix}/{package}/'.format(
@@ -207,8 +207,8 @@ class DebtagsLink(LinksPanel.ItemProvider):
         if not isinstance(self.package, SourcePackageName):
             return
         try:
-            infos = self.package.packageextractedinfo_set.get(key='general')
-        except PackageExtractedInfo.DoesNotExist:
+            infos = self.package.data.get(key='general')
+        except PackageData.DoesNotExist:
             return
         maintainer = infos.value['maintainer']['email']
         return [
@@ -229,7 +229,7 @@ class SecurityTrackerLink(LinksPanel.ItemProvider):
         'https://security-tracker.debian.org/tracker/source-package/{package}'
 
     def get_panel_items(self):
-        if self.package.packageextractedinfo_set.filter(
+        if self.package.data.filter(
                 key='debian-security').count() == 0:
             return
         return [
@@ -251,8 +251,8 @@ class ScreenshotsLink(LinksPanel.ItemProvider):
         if not isinstance(self.package, SourcePackageName):
             return
         try:
-            infos = self.package.packageextractedinfo_set.get(key='screenshots')
-        except PackageExtractedInfo.DoesNotExist:
+            infos = self.package.data.get(key='screenshots')
+        except PackageData.DoesNotExist:
             return
         if infos.value['screenshots'] == 'true':
             return [

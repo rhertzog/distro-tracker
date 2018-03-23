@@ -24,7 +24,7 @@ from distro_tracker.core.models import (
     BinaryPackageBugStats,
     MailingList,
     News,
-    PackageExtractedInfo,
+    PackageData,
     PseudoPackageName,
     SourcePackageName
 )
@@ -231,9 +231,9 @@ class GeneralInformationPanel(BasePanel):
     @cached_property
     def context(self):
         try:
-            info = PackageExtractedInfo.objects.get(
+            info = PackageData.objects.get(
                 package=self.package, key='general')
-        except PackageExtractedInfo.DoesNotExist:
+        except PackageData.DoesNotExist:
             # There is no general info for the package
             return
 
@@ -251,9 +251,9 @@ class GeneralInformationPanel(BasePanel):
             general['vcs']['full_name'] = get_vcs_name(shorthand)
             # Add vcs extra links (including Vcs-Browser)
             try:
-                vcs_extra_links = PackageExtractedInfo.objects.get(
+                vcs_extra_links = PackageData.objects.get(
                     package=self.package, key='vcs_extra_links').value
-            except PackageExtractedInfo.DoesNotExist:
+            except PackageData.DoesNotExist:
                 vcs_extra_links = {}
             if 'browser' in general['vcs']:
                 vcs_extra_links['Browse'] = general['vcs']['browser']
@@ -295,9 +295,9 @@ class VersionsInformationPanel(BasePanel):
     @cached_property
     def context(self):
         try:
-            info = PackageExtractedInfo.objects.get(
+            info = PackageData.objects.get(
                 package=self.package, key='versions')
-        except PackageExtractedInfo.DoesNotExist:
+        except PackageData.DoesNotExist:
             info = None
 
         context = {}
@@ -566,9 +566,9 @@ class BinariesInformationPanel(BasePanel):
     @cached_property
     def context(self):
         try:
-            info = PackageExtractedInfo.objects.get(
+            info = PackageData.objects.get(
                 package=self.package, key='binaries')
-        except PackageExtractedInfo.DoesNotExist:
+        except PackageData.DoesNotExist:
             return
 
         binaries = info.value
