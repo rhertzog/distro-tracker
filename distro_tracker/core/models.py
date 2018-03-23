@@ -1415,7 +1415,7 @@ class ExtractedSourceFile(models.Model):
             extracted_file=self.extracted_file, package=self.source_package)
 
 
-class PackageExtractedInfo(models.Model):
+class PackageData(models.Model):
     """
     A model representing a quasi key-value store for package information
     extracted from other models in order to speed up its rendering on

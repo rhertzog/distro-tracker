@@ -27,7 +27,7 @@ from distro_tracker.core.models import (
 )
 from distro_tracker.core.panels import (
     DeadPackageWarningPanel,
-    PackageExtractedInfo,
+    PackageData,
     VersionedLinks
 )
 from distro_tracker.core.utils.packages import package_url
@@ -132,7 +132,7 @@ class GeneralInfoLinkPanelItemsTests(TestCase, TemplateTestsMixin):
             homepage=self.homepage)
 
         # Useful for last test
-        PackageExtractedInfo.objects.create(
+        PackageData.objects.create(
             package=self.package_name,
             key='general',
             value={

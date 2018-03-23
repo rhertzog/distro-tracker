@@ -38,7 +38,7 @@ from distro_tracker.core.models import (
     BinaryPackageBugStats,
     BinaryPackageName,
     PackageBugStats,
-    PackageExtractedInfo,
+    PackageData,
     PackageName,
     SourcePackageDeps,
     SourcePackageName
@@ -1441,8 +1441,8 @@ class UpdateSecurityIssuesTask(BaseTask):
         return to_add, to_update, to_drop
 
     def execute(self):
-        # Fetch all debian-security PackageExtractedInfo
-        all_pkgdata = PackageExtractedInfo.objects.select_related(
+        # Fetch all debian-security PackageData
+        all_pkgdata = PackageData.objects.select_related(
             'package').filter(key='debian-security').only(
                 'package__name', 'value')
 
@@ -1476,7 +1476,7 @@ class UpdateSecurityIssuesTask(BaseTask):
                 # Add data for a new package
                 package, _ = PackageName.objects.get_or_create(name=pkgname)
                 to_add.append(
-                    PackageExtractedInfo(
+                    PackageData(
                         package=package,
                         key='debian-security',
                         value=self.generate_package_data(issues)
@@ -1495,7 +1495,7 @@ class UpdateSecurityIssuesTask(BaseTask):
         # Sync in database
         with transaction.atomic():
             # Delete obsolete data
-            PackageExtractedInfo.objects.filter(
+            PackageData.objects.filter(
                 key='debian-security').exclude(
                     package__name__in=content.keys()).delete()
             ActionItem.objects.filter(
@@ -1505,7 +1505,7 @@ class UpdateSecurityIssuesTask(BaseTask):
                 item_type__type_name__startswith='debian-security-issue-in-',
                 id__in=[ai.id for ai in ai_to_drop]).delete()
             # Add new entries
-            PackageExtractedInfo.objects.bulk_create(to_add)
+            PackageData.objects.bulk_create(to_add)
             ActionItem.objects.bulk_create(ai_to_add)
             # Update existing entries
             for pkgdata in to_update:
@@ -1981,7 +1981,7 @@ class UpdateNewQueuePackages(BaseTask):
     """
     Updates the versions of source packages found in the NEW queue.
     """
-    EXTRACTED_INFO_KEY = 'debian-new-queue-info'
+    DATA_KEY = 'debian-new-queue-info'
 
     def __init__(self, force_update=False, *args, **kwargs):
         super(UpdateNewQueuePackages, self).__init__(*args, **kwargs)
@@ -2050,18 +2050,18 @@ class UpdateNewQueuePackages(BaseTask):
 
         with transaction.atomic():
             # Drop old entries
-            PackageExtractedInfo.objects.filter(
-                key=self.EXTRACTED_INFO_KEY).delete()
+            PackageData.objects.filter(
+                key=self.DATA_KEY).delete()
             # Prepare current entries
-            extracted_info = []
+            data = []
             for package in packages:
-                new_queue_info = PackageExtractedInfo(
-                    key=self.EXTRACTED_INFO_KEY,
+                new_queue_info = PackageData(
+                    key=self.DATA_KEY,
                     package=package,
                     value=all_package_info[package.name])
-                extracted_info.append(new_queue_info)
+                data.append(new_queue_info)
             # Bulk create them
-            PackageExtractedInfo.objects.bulk_create(extracted_info)
+            PackageData.objects.bulk_create(data)
 
 
 class UpdateDebciStatusTask(BaseTask):
@@ -2145,7 +2145,7 @@ class UpdateDebciStatusTask(BaseTask):
 
         with transaction.atomic():
             # Delete obsolete data
-            PackageExtractedInfo.objects.filter(key='debci').delete()
+            PackageData.objects.filter(key='debci').delete()
             packages = []
             infos = []
             for result in all_debci_status:
@@ -2157,7 +2157,7 @@ class UpdateDebciStatusTask(BaseTask):
                     continue
 
                 infos.append(
-                    PackageExtractedInfo(
+                    PackageData(
                         package=package,
                         key='debci',
                         value=result
@@ -2166,7 +2166,7 @@ class UpdateDebciStatusTask(BaseTask):
 
                 self.update_action_item(package, result)
 
-            PackageExtractedInfo.objects.bulk_create(infos)
+            PackageData.objects.bulk_create(infos)
             ActionItem.objects.delete_obsolete_items(
                 [self.debci_action_item_type], packages)
 
@@ -2270,9 +2270,9 @@ class UpdateAutoRemovalsStatsTask(BaseTask):
 class UpdatePackageScreenshotsTask(BaseTask):
     """
     Check if a screenshot exists on screenshots.debian.net, and add a
-    key to PackageExtractedInfo if it does.
+    key to PackageData if it does.
     """
-    EXTRACTED_INFO_KEY = 'screenshots'
+    DATA_KEY = 'screenshots'
 
     def __init__(self, force_update=False, *args, **kwargs):
         super(UpdatePackageScreenshotsTask, self).__init__(*args, **kwargs)
@@ -2307,23 +2307,23 @@ class UpdatePackageScreenshotsTask(BaseTask):
                 pass
 
         with transaction.atomic():
-            PackageExtractedInfo.objects.filter(key='screenshots').delete()
+            PackageData.objects.filter(key='screenshots').delete()
 
-            extracted_info = []
+            data = []
             for package in packages_with_screenshots:
                 try:
-                    screenshot_info = package.packageextractedinfo_set.get(
-                        key=self.EXTRACTED_INFO_KEY)
+                    screenshot_info = package.packagedata_set.get(
+                        key=self.DATA_KEY)
                     screenshot_info.value['screenshots'] = 'true'
-                except PackageExtractedInfo.DoesNotExist:
-                    screenshot_info = PackageExtractedInfo(
-                        key=self.EXTRACTED_INFO_KEY,
+                except PackageData.DoesNotExist:
+                    screenshot_info = PackageData(
+                        key=self.DATA_KEY,
                         package=package,
                         value={'screenshots': 'true'})
 
-                extracted_info.append(screenshot_info)
+                data.append(screenshot_info)
 
-            PackageExtractedInfo.objects.bulk_create(extracted_info)
+            PackageData.objects.bulk_create(data)
 
 
 class UpdateBuildReproducibilityTask(BaseTask):
@@ -2398,10 +2398,10 @@ class UpdateBuildReproducibilityTask(BaseTask):
             return
 
         with transaction.atomic():
-            PackageExtractedInfo.objects.filter(key='reproducibility').delete()
+            PackageData.objects.filter(key='reproducibility').delete()
 
             packages = []
-            extracted_info = []
+            data = []
 
             for name, status in reproducibilities.items():
                 try:
@@ -2411,15 +2411,15 @@ class UpdateBuildReproducibilityTask(BaseTask):
                 except SourcePackageName.DoesNotExist:
                     continue
 
-                reproducibility_info = PackageExtractedInfo(
+                reproducibility_info = PackageData(
                     key='reproducibility',
                     package=package,
                     value={'reproducibility': status})
-                extracted_info.append(reproducibility_info)
+                data.append(reproducibility_info)
 
             ActionItem.objects.delete_obsolete_items([self.action_item_type],
                                                      packages)
-            PackageExtractedInfo.objects.bulk_create(extracted_info)
+            PackageData.objects.bulk_create(data)
 
 
 class MultiArchHintsTask(BaseTask):
@@ -2577,7 +2577,7 @@ class UpdateVcsWatchTask(BaseTask):
         return out
 
     def clean_package_info(self, package_infos_without_watch, todo):
-        """Takes a list of :class:`PackageExtractedInfo` which do not
+        """Takes a list of :class:`PackageData` which do not
         have a watch entry and cleans it. Then schedule in todo what
         to do with them.
         """
@@ -2678,9 +2678,9 @@ class UpdateVcsWatchTask(BaseTask):
         """
         """
 
-        # Same thing with PackageExtractedInfo
+        # Same thing with PackageData
         if package_info is None:
-            package_info = PackageExtractedInfo(
+            package_info = PackageData(
                 package=package,
                 key='vcs_extra_links',
             )
@@ -2713,25 +2713,25 @@ class UpdateVcsWatchTask(BaseTask):
         Categories of statuses are:
         {u'COMMITS', u'ERROR', u'NEW', u'OK', u'OLD', u'UNREL'}
 
-        Basically, it fetches all info from :class:`PackageExtractedInfo`
+        Basically, it fetches all info from :class:`PackageData`
         with key='vcs', the ones without data matching vcswatch_datas are
         stored in one variable that's iterated through directly, and if
         there was something before, it is purged. Then, all entries in
         that queryset that have no relevant intel anymore are scheduled
         to be deleted. The others are only updated.
 
-        All :class:`PackageExtractedInfo` matching vcswatch_datas
+        All :class:`PackageData` matching vcswatch_datas
         are stored in another variable. The same is done with the list of
         :class:`ActionItem` that match this task type.
 
         Then, it iterates on all vcswatch_datas' packages and it tries to
         determine if there are any news, if so, it updates apopriately the
-        prospective :class:`ActionItem` and :class:`PackageExtractedInfo`,
+        prospective :class:`ActionItem` and :class:`PackageData`,
         and schedule them to be updated. If no data was existent, then
         it creates them and schedule them to be added to the database.
 
         At the end, this function returns a dict of all instances of
-        :class:`ActionItem` and :class:`PackageExtractedInfo` stored
+        :class:`ActionItem` and :class:`PackageData` stored
         in subdicts depending on their class and what is to be done
         with them.
 
@@ -2754,20 +2754,20 @@ class UpdateVcsWatchTask(BaseTask):
             },
         }
 
-        # Fetches all PackageExtractedInfo for packages having a vcswatch
+        # Fetches all PackageData for packages having a vcswatch
         # key. As the pair (package, key) is unique, there is a bijection
         # between these data, and we fetch them classifying them by package
         # name.
         package_infos = {
             package_info.package.name: package_info
-            for package_info in PackageExtractedInfo.objects.select_related(
+            for package_info in PackageData.objects.select_related(
                 'package'
             ).filter(key='vcs_extra_links').only('package__name', 'value')
         }
 
-        # As :class:`PackageExtractedInfo` key=vcs_extra_links is shared, we
+        # As :class:`PackageData` key=vcs_extra_links is shared, we
         # have to clean up those with vcs watch_url that aren't in vcs_data
-        package_infos_without_watch = PackageExtractedInfo.objects.filter(
+        package_infos_without_watch = PackageData.objects.filter(
             key='vcs_extra_links').exclude(
             package__name__in=vcswatch_datas.keys()).only('value')
 
@@ -2829,11 +2829,11 @@ class UpdateVcsWatchTask(BaseTask):
 
         with transaction.atomic():
             # Delete the :class:`ActionItem` that are osbolete, and also
-            # the :class:`PackageExtractedInfo` of the same.
+            # the :class:`PackageData` of the same.
             ActionItem.objects.delete_obsolete_items(
                 [self.vcswatch_ai_type],
                 vcs_data.keys())
-            PackageExtractedInfo.objects.filter(
+            PackageData.objects.filter(
                 key='vcs_extra_links',
                 id__in=[
                     package_info.id
@@ -2851,9 +2851,9 @@ class UpdateVcsWatchTask(BaseTask):
             ).delete()
 
             # Then bulk_create the :class:`ActionItem` to add and the
-            # :class:`PackageExtractedInfo`
+            # :class:`PackageData`
             ActionItem.objects.bulk_create(todo['add']['action_items'])
-            PackageExtractedInfo.objects.bulk_create(
+            PackageData.objects.bulk_create(
                 todo['add']['package_infos']
             )
 

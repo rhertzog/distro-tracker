@@ -25,7 +25,7 @@ from distro_tracker.core.models import (
     Architecture,
     BinaryPackage,
     BinaryPackageName,
-    PackageExtractedInfo,
+    PackageData,
     PackageName,
     PseudoPackageName,
     Repository,
@@ -446,19 +446,19 @@ class RetrieveSourcesInformationTest(TestCase):
     def test_update_repositories_adds_component(self, mock_update_repositories):
         """
         Tests that the new package created sets the component field in
-        PackageExtractedInfo
+        PackageData
         """
         self.set_mock_sources(mock_update_repositories, 'Sources')
 
-        self.assertEqual(PackageExtractedInfo.objects.count(), 0)
+        self.assertEqual(PackageData.objects.count(), 0)
         self.run_update()
 
         task = UpdatePackageGeneralInformation(force_update=True)
         task.execute()
 
-        package_extracted_info = PackageExtractedInfo.objects.all()[0]
+        package_data = PackageData.objects.all()[0]
         self.assertEqual(
-            package_extracted_info.value['component'], self.component)
+            package_data.value['component'], self.component)
 
     @mock.patch(
         'distro_tracker.core.retrieve_data.AptCache.update_repositories')
@@ -1315,7 +1315,7 @@ class UpdatePackageGeneralInformationTest(TestCase):
         task.execute()
 
         # check that the task worked as expected
-        pkgdata = PackageExtractedInfo.objects.get(
+        pkgdata = PackageData.objects.get(
             package=self.srcpkg.source_package_name, key='general').value
         self.assertEqual(pkgdata['name'], self.srcpkg.name)
         self.assertEqual(pkgdata['version'], self.srcpkg.version)

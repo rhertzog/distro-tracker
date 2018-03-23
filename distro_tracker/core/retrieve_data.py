@@ -25,7 +25,7 @@ from distro_tracker.core.models import (
     BinaryPackageName,
     BinaryPackageRepositoryEntry,
     ContributorName,
-    PackageExtractedInfo,
+    PackageData,
     PackageName,
     PseudoPackageName,
     Repository,
@@ -894,7 +894,7 @@ class UpdatePackageGeneralInformation(PackageUpdateTask):
                 if entry is None:
                     continue
 
-                general, _ = PackageExtractedInfo.objects.get_or_create(
+                general, _ = PackageData.objects.get_or_create(
                     key='general',
                     package=package
                 )
@@ -960,7 +960,7 @@ class UpdateVersionInformation(PackageUpdateTask):
                          len(package_names))
                 qs = SourcePackageName.objects.filter(name__in=package_names)
             for package in qs:
-                versions, _ = PackageExtractedInfo.objects.get_or_create(
+                versions, _ = PackageData.objects.get_or_create(
                     key='versions',
                     package=package)
                 versions.value = self._extract_versions_for_package(package)
@@ -1017,7 +1017,7 @@ class UpdateSourceToBinariesInformation(PackageUpdateTask):
             else:
                 qs = SourcePackageName.objects.filter(name__in=package_names)
             for package in qs:
-                binaries, _ = PackageExtractedInfo.objects.get_or_create(
+                binaries, _ = PackageData.objects.get_or_create(
                     key='binaries',
                     package=package)
                 binaries.value = self._get_all_binaries(package)

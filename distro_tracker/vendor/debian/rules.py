@@ -22,7 +22,7 @@ from distro_tracker.core.models import (
     BinaryPackageBugStats,
     EmailNews,
     PackageBugStats,
-    PackageExtractedInfo,
+    PackageData,
     PackageName,
     SourcePackageName,
     UserEmail
@@ -759,9 +759,9 @@ def get_extra_versions(package):
     :returns: The versions of the package found in the NEW queue.
     """
     try:
-        info = package.packageextractedinfo_set.get(
-            key=UpdateNewQueuePackages.EXTRACTED_INFO_KEY)
-    except PackageExtractedInfo.DoesNotExist:
+        info = package.packagedata_set.get(
+            key=UpdateNewQueuePackages.DATA_KEY)
+    except PackageData.DoesNotExist:
         return
 
     version_url_template = 'https://ftp-master.debian.org/new/{pkg}_{ver}.html'
