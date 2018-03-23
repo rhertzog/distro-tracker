@@ -2227,7 +2227,7 @@ class UpdateAutoRemovalsStatsTask(BaseTask):
 
         action_item.short_description = self.ITEM_DESCRIPTION.format(
             removal_date=removal_date,
-            dependencies=(' due to ' + self.list_of_packages_to_html(
+            dependencies=(' due to ' + html_package_list(
                 buggy_dependencies) if buggy_dependencies else ''),
             bugs=', '.join(link.format(bug, bug) for bug in all_bugs))
 
