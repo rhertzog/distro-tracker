@@ -2312,7 +2312,7 @@ class UpdatePackageScreenshotsTask(BaseTask):
             data = []
             for package in packages_with_screenshots:
                 try:
-                    screenshot_info = package.packagedata_set.get(
+                    screenshot_info = package.data.get(
                         key=self.DATA_KEY)
                     screenshot_info.value['screenshots'] = 'true'
                 except PackageData.DoesNotExist:

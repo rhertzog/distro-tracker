@@ -2424,25 +2424,25 @@ class UpdateSecurityIssuesTaskTests(TestCase):
     def test_execute_create_data(self):
         self.mock_json_data('open')
         self.run_task()
-        data = self.package.packagedata_set.get(
+        data = self.package.data.get(
             key='debian-security').value
         self.assertEqual(data['stats']['jessie']['open'], 2)
         self.assertEqual(data['stats']['jessie']['nodsa'], 1)
 
     def test_execute_drop_data(self):
         pkg = SourcePackageName.objects.create(name='pkg')
-        pkg.packagedata_set.create(key='debian-security', value={})
+        pkg.data.create(key='debian-security', value={})
         self.mock_json_data('open')
         self.assertEqual(
-            pkg.packagedata_set.filter(key='debian-security').count(),
+            pkg.data.filter(key='debian-security').count(),
             1)
         self.run_task()
         self.assertEqual(
-            pkg.packagedata_set.filter(key='debian-security').count(),
+            pkg.data.filter(key='debian-security').count(),
             0)
 
     def test_execute_update_data(self):
-        self.package.packagedata_set.create(
+        self.package.data.create(
             key='debian-security',
             value={
                 'details': {},
@@ -2451,7 +2451,7 @@ class UpdateSecurityIssuesTaskTests(TestCase):
             })
         content = self.mock_json_data('open')
         self.run_task()
-        after = self.package.packagedata_set.get(key='debian-security')
+        after = self.package.data.get(key='debian-security')
         self.assertNotEqual(after.value['checksum'],
                             '99914b932bd37a50b983c5e7c90ae93b')
         self.maxDiff = None
@@ -2473,7 +2473,7 @@ class UpdateSecurityIssuesTaskTests(TestCase):
             # This checksum is for details={} (empty dict)
             'checksum': '99914b932bd37a50b983c5e7c90ae93b',
         }
-        self.package.packagedata_set.create(
+        self.package.data.create(
             key='debian-security', value=initial_value)
         # Ensure the data retrieved is empty for the package we test
         content = {
@@ -2483,7 +2483,7 @@ class UpdateSecurityIssuesTaskTests(TestCase):
         self.run_task()
         # Ensure that we still have the initial data and that it has not
         # been updated
-        after = self.package.packagedata_set.get(key='debian-security')
+        after = self.package.data.get(key='debian-security')
         self.assertDictEqual(after.value, initial_value)
 
     def test_update_action_item(self):
@@ -3831,7 +3831,7 @@ class UpdateNewQueuePackagesTests(TestCase):
         the NEW queue info, or ``None`` if there is no such instance.
         """
         try:
-            return package.packagedata_set.get(
+            return package.data.get(
                 key=UpdateNewQueuePackages.DATA_KEY)
         except PackageData.DoesNotExist:
             return None
@@ -4033,7 +4033,7 @@ class NewQueueVersionsPanelTests(TestCase):
         self.package = PackageName.objects.create(
             source=True,
             name='dummy-package')
-        self.package.packagedata_set.create(
+        self.package.data.create(
             key='versions', value={})
 
     def get_package_page_response(self, package_name):
@@ -4923,7 +4923,7 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
         self.run_task()
 
         with self.assertRaises(PackageData.DoesNotExist):
-            other_package.packagedata_set.get(key='screenshots')
+            other_package.data.get(key='screenshots')
 
     def test_no_packagedata_for_unknown_package(self, mock_requests):
         """
@@ -4974,7 +4974,7 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
         self.run_task()
 
         with self.assertRaises(PackageData.DoesNotExist):
-            self.dummy_package.packagedata_set.get(key='screenshots')
+            self.dummy_package.data.get(key='screenshots')
 
     def test_other_packagedata_keys_not_dropped(self, mock_requests):
         """
@@ -4987,7 +4987,7 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
         set_mock_response(mock_requests, text=self.other_json_data)
         self.run_task()
 
-        info = self.dummy_package.packagedata_set.get(key='general')
+        info = self.dummy_package.data.get(key='general')
 
         self.assertEqual(info.value['name'], 'dummy')
 
@@ -5045,7 +5045,7 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
         self.run_task()
 
         with self.assertRaises(PackageData.DoesNotExist):
-            other_package.packagedata_set.get(key='reproducibility')
+            other_package.data.get(key='reproducibility')
 
     def test_no_packagedata_for_unknown_package(self, mock_requests):
         """
@@ -5069,7 +5069,7 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
 
         self.run_task()
 
-        info = self.dummy_package.packagedata_set.get(
+        info = self.dummy_package.data.get(
             key='reproducibility')
 
         self.assertEqual(info.value['reproducibility'], 'unreproducible')
@@ -5090,7 +5090,7 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
         self.run_task()
 
         with self.assertRaises(PackageData.DoesNotExist):
-            self.dummy_package.packagedata_set.get(
+            self.dummy_package.data.get(
                 key='reproducibility')
         self.assertEqual(self.dummy_package.action_items.count(), 0)
 
@@ -5127,7 +5127,7 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
         set_mock_response(mock_requests, text=self.other_json_data)
         self.run_task()
 
-        info = self.dummy_package.packagedata_set.get(key='general')
+        info = self.dummy_package.data.get(key='general')
 
         self.assertEqual(info.value['name'], 'dummy')
 
@@ -5184,7 +5184,7 @@ class UpdateVcsWatchTaskTest(TestCase):
         self.run_task()
 
         with self.assertRaises(PackageData.DoesNotExist):
-            self.other_dummy_package.packagedata_set.get(
+            self.other_dummy_package.data.get(
                 key='vcs_extra_links')
 
     def test_no_packagedata_for_unknown_package(self):
@@ -5220,7 +5220,7 @@ class UpdateVcsWatchTaskTest(TestCase):
             "QA": 'https://qa.debian.org/cgi-bin/vcswatch?package=dummy',
         }
 
-        info = self.dummy_package.packagedata_set.get(
+        info = self.dummy_package.data.get(
             key='vcs_extra_links')
 
         self.assertDictEqual(info.value, theoretical_package_info)
@@ -5239,7 +5239,7 @@ class UpdateVcsWatchTaskTest(TestCase):
 
         # Alters the info so that it's not destroyed when we
         # remove vcswatch data.
-        dummy_pi = self.dummy_package.packagedata_set.get(
+        dummy_pi = self.dummy_package.data.get(
             key='vcs_extra_links')
         dummy_pi.value['test_useless_entry'] = True
 
@@ -5254,7 +5254,7 @@ class UpdateVcsWatchTaskTest(TestCase):
         self.run_task()
 
         # Normally, no watch_url in the package
-        dummy_pi = self.dummy_package.packagedata_set.get(
+        dummy_pi = self.dummy_package.data.get(
             key='vcs_extra_links')
         self.assertEqual('QA' not in dummy_pi.value, True)
 
@@ -5262,7 +5262,7 @@ class UpdateVcsWatchTaskTest(TestCase):
         self.vcswatch_data = initial_data
         self.run_task()
 
-        dummy_pi = self.dummy_package.packagedata_set.get(
+        dummy_pi = self.dummy_package.data.get(
             key='vcs_extra_links').value
         self.assertTrue('QA' in dummy_pi)
         self.assertEqual(dummy_pi['QA'],
@@ -5279,7 +5279,7 @@ class UpdateVcsWatchTaskTest(TestCase):
         self.run_task()
 
         with self.assertRaises(PackageData.DoesNotExist):
-            self.dummy_package.packagedata_set.get(
+            self.dummy_package.data.get(
                 key='vcs_extra_links')
 
     def test_action_item_is_dropped_when_status_is_ok(self):
@@ -5320,6 +5320,6 @@ class UpdateVcsWatchTaskTest(TestCase):
         self.vcswatch_data = []
         self.run_task()
 
-        info = self.dummy_package.packagedata_set.get(key='general')
+        info = self.dummy_package.data.get(key='general')
 
         self.assertEqual(info.value['name'], 'dummy')

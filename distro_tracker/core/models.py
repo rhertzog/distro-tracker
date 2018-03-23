@@ -1421,7 +1421,9 @@ class PackageData(models.Model):
     extracted from other models in order to speed up its rendering on
     Web pages.
     """
-    package = models.ForeignKey(PackageName, on_delete=models.CASCADE)
+    package = models.ForeignKey(PackageName,
+                                on_delete=models.CASCADE,
+                                related_name="data")
     key = models.CharField(max_length=50)
     value = JSONField()
 
