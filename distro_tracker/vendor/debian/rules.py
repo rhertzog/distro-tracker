@@ -759,8 +759,7 @@ def get_extra_versions(package):
     :returns: The versions of the package found in the NEW queue.
     """
     try:
-        info = package.data.get(
-            key=UpdateNewQueuePackages.DATA_KEY)
+        info = package.data.get(key=UpdateNewQueuePackages.DATA_KEY)
     except PackageData.DoesNotExist:
         return
 

@@ -2050,8 +2050,7 @@ class UpdateNewQueuePackages(BaseTask):
 
         with transaction.atomic():
             # Drop old entries
-            PackageData.objects.filter(
-                key=self.DATA_KEY).delete()
+            PackageData.objects.filter(key=self.DATA_KEY).delete()
             # Prepare current entries
             data = []
             for package in packages:
@@ -2312,8 +2311,7 @@ class UpdatePackageScreenshotsTask(BaseTask):
             data = []
             for package in packages_with_screenshots:
                 try:
-                    screenshot_info = package.data.get(
-                        key=self.DATA_KEY)
+                    screenshot_info = package.data.get(key=self.DATA_KEY)
                     screenshot_info.value['screenshots'] = 'true'
                 except PackageData.DoesNotExist:
                     screenshot_info = PackageData(
@@ -2853,9 +2851,7 @@ class UpdateVcsWatchTask(BaseTask):
             # Then bulk_create the :class:`ActionItem` to add and the
             # :class:`PackageData`
             ActionItem.objects.bulk_create(todo['add']['action_items'])
-            PackageData.objects.bulk_create(
-                todo['add']['package_infos']
-            )
+            PackageData.objects.bulk_create(todo['add']['package_infos'])
 
             # Update existing entries
             for action_item in todo['update']['action_items']:

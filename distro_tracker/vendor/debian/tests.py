@@ -3831,8 +3831,7 @@ class UpdateNewQueuePackagesTests(TestCase):
         the NEW queue info, or ``None`` if there is no such instance.
         """
         try:
-            return package.data.get(
-                key=UpdateNewQueuePackages.DATA_KEY)
+            return package.data.get(key=UpdateNewQueuePackages.DATA_KEY)
         except PackageData.DoesNotExist:
             return None
 
@@ -4033,8 +4032,7 @@ class NewQueueVersionsPanelTests(TestCase):
         self.package = PackageName.objects.create(
             source=True,
             name='dummy-package')
-        self.package.data.create(
-            key='versions', value={})
+        self.package.data.create(key='versions', value={})
 
     def get_package_page_response(self, package_name):
         return self.client.get(package_url(package_name))
@@ -4957,8 +4955,7 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
 
         self.run_task()
 
-        info = \
-            self.dummy_package.data.get(key='screenshots')
+        info = self.dummy_package.data.get(key='screenshots')
 
         self.assertEqual(info.value['screenshots'], 'true')
 
@@ -5056,8 +5053,7 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
 
         self.run_task()
 
-        count = PackageData.objects.filter(
-            key='reproducibility').count()
+        count = PackageData.objects.filter(key='reproducibility').count()
         self.assertEqual(0, count)
 
     def test_packagedata_with_reproducibility(self, mock_requests):
@@ -5069,8 +5065,7 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
 
         self.run_task()
 
-        info = self.dummy_package.data.get(
-            key='reproducibility')
+        info = self.dummy_package.data.get(key='reproducibility')
 
         self.assertEqual(info.value['reproducibility'], 'unreproducible')
         action_items = self.dummy_package.action_items
@@ -5090,8 +5085,7 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
         self.run_task()
 
         with self.assertRaises(PackageData.DoesNotExist):
-            self.dummy_package.data.get(
-                key='reproducibility')
+            self.dummy_package.data.get(key='reproducibility')
         self.assertEqual(self.dummy_package.action_items.count(), 0)
 
     def test_action_item_is_dropped_when_status_is_reproducible(self,
@@ -5184,8 +5178,7 @@ class UpdateVcsWatchTaskTest(TestCase):
         self.run_task()
 
         with self.assertRaises(PackageData.DoesNotExist):
-            self.other_dummy_package.data.get(
-                key='vcs_extra_links')
+            self.other_dummy_package.data.get(key='vcs_extra_links')
 
     def test_no_packagedata_for_unknown_package(self):
         """
@@ -5195,8 +5188,7 @@ class UpdateVcsWatchTaskTest(TestCase):
 
         self.run_task()
 
-        count = PackageData.objects.filter(
-            key='vcs_extra_links').count()
+        count = PackageData.objects.filter(key='vcs_extra_links').count()
         self.assertEqual(0, count)
 
     def test_packagedata_with_vcswatch(self):
@@ -5220,8 +5212,7 @@ class UpdateVcsWatchTaskTest(TestCase):
             "QA": 'https://qa.debian.org/cgi-bin/vcswatch?package=dummy',
         }
 
-        info = self.dummy_package.data.get(
-            key='vcs_extra_links')
+        info = self.dummy_package.data.get(key='vcs_extra_links')
 
         self.assertDictEqual(info.value, theoretical_package_info)
         action_items = self.dummy_package.action_items
@@ -5239,8 +5230,7 @@ class UpdateVcsWatchTaskTest(TestCase):
 
         # Alters the info so that it's not destroyed when we
         # remove vcswatch data.
-        dummy_pi = self.dummy_package.data.get(
-            key='vcs_extra_links')
+        dummy_pi = self.dummy_package.data.get(key='vcs_extra_links')
         dummy_pi.value['test_useless_entry'] = True
 
         # No need to change the checksum as we test a case where it's
@@ -5254,16 +5244,14 @@ class UpdateVcsWatchTaskTest(TestCase):
         self.run_task()
 
         # Normally, no watch_url in the package
-        dummy_pi = self.dummy_package.data.get(
-            key='vcs_extra_links')
+        dummy_pi = self.dummy_package.data.get(key='vcs_extra_links')
         self.assertEqual('QA' not in dummy_pi.value, True)
 
         # This part will test another part of the code.
         self.vcswatch_data = initial_data
         self.run_task()
 
-        dummy_pi = self.dummy_package.data.get(
-            key='vcs_extra_links').value
+        dummy_pi = self.dummy_package.data.get(key='vcs_extra_links').value
         self.assertTrue('QA' in dummy_pi)
         self.assertEqual(dummy_pi['QA'],
                          'https://qa.debian.org/cgi-bin/vcswatch?package=dummy')
@@ -5279,8 +5267,7 @@ class UpdateVcsWatchTaskTest(TestCase):
         self.run_task()
 
         with self.assertRaises(PackageData.DoesNotExist):
-            self.dummy_package.data.get(
-                key='vcs_extra_links')
+            self.dummy_package.data.get(key='vcs_extra_links')
 
     def test_action_item_is_dropped_when_status_is_ok(self):
         """

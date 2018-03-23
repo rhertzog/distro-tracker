@@ -90,8 +90,7 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
                 hash=urlquote(self.package.name[0], safe=""),
                 pkg=urlquote(self.package.name, safe=""))
         try:
-            infos = self.package.data.get(
-                key='reproducibility')
+            infos = self.package.data.get(key='reproducibility')
             has_reproducibility = True
             reproducibility_status = infos.value['reproducibility']
         except PackageData.DoesNotExist:
@@ -229,8 +228,7 @@ class SecurityTrackerLink(LinksPanel.ItemProvider):
         'https://security-tracker.debian.org/tracker/source-package/{package}'
 
     def get_panel_items(self):
-        if self.package.data.filter(
-                key='debian-security').count() == 0:
+        if self.package.data.filter(key='debian-security').count() == 0:
             return
         return [
             LinksPanel.SimpleLinkItem(

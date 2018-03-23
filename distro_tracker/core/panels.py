@@ -231,8 +231,7 @@ class GeneralInformationPanel(BasePanel):
     @cached_property
     def context(self):
         try:
-            info = PackageData.objects.get(
-                package=self.package, key='general')
+            info = PackageData.objects.get(package=self.package, key='general')
         except PackageData.DoesNotExist:
             # There is no general info for the package
             return
