@@ -19,7 +19,7 @@ import json
 import logging
 import os
 import re
-from copy import deepcopy
+from enum import Enum
 
 import debianbts
 import yaml
@@ -50,7 +50,11 @@ from distro_tracker.core.utils.http import (
     get_resource_text
 )
 from distro_tracker.core.utils.misc import get_data_checksum
-from distro_tracker.core.utils.packages import package_hashdir, package_url
+from distro_tracker.core.utils.packages import (
+    html_package_list,
+    package_hashdir,
+    package_url
+)
 from distro_tracker.vendor.debian.models import (
     BuildLogCheckStats,
     LintianStats,
@@ -782,6 +786,12 @@ class UpdateExcusesTask(BaseTask):
         "The package has not entered testing even though the delay is over")
     ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/testing-migration-action-item.html'
 
+    class AgeVerdict(Enum):
+        PKG_OF_AGE = 0
+        PKG_TOO_OLD = 1
+        PKG_TOO_YOUNG = 2
+        PKG_WO_POLICY = 3
+
     def __init__(self, force_update=False, *args, **kwargs):
         super(UpdateExcusesTask, self).__init__(*args, **kwargs)
         self.force_update = force_update
@@ -819,86 +829,132 @@ class UpdateExcusesTask(BaseTask):
             return True
         return False
 
-    def _extract_problems_in_excuses_item(self, subline, package, problematic):
-        if 'days old (needed' in subline:
-            words = subline.split()
-            age, limit = words[0], words[4]
-            if age != limit:
-                # It is problematic only when the age is strictly
-                # greater than the limit.
-                problematic[package] = {
-                    'age': age,
-                    'limit': limit,
-                }
+    def _check_age(self, source):
+        """Checks the age of the package and compares it to the age requirement
+        for migration"""
 
-    def _get_excuses_and_problems(self, content_lines):
-        """
-        Gets the excuses for each package from the given iterator of lines
-        representing the excuses html file.
-        Also finds a list of packages which have not migrated to testing even
-        after the necessary time has passed.
+        if 'policy_info' not in source or 'age' not in source['policy_info']:
+            return (self.AgeVerdict.PKG_WO_POLICY, None, None)
 
-        :returns: A two-tuple where the first element is a dict mapping
-            package names to a list of excuses. The second element is a dict
-            mapping package names to a problem information. Problem information
-            is a dict with the keys ``age`` and ``limit``.
+        age = source['policy_info']['age']['current-age']
+        limit = source['policy_info']['age']['age-requirement']
+        if age > limit:
+            return (self.AgeVerdict.PKG_TOO_OLD, age, limit)
+        elif age < limit:
+            return (self.AgeVerdict.PKG_TOO_YOUNG, age, limit)
+        else:
+            return (self.AgeVerdict.PKG_OF_AGE, age, limit)
+
+    def _extract_problematic(self, source):
+        verdict, age, limit = self._check_age(source)
+
+        if verdict == self.AgeVerdict.PKG_TOO_OLD:
+            return (source['item-name'], {'age': age, 'limit': limit})
+
+    @staticmethod
+    def _make_excuses_check_verdict(source):
+        """Checks the migration policy verdict of the package and builds an
+        excuses message depending on the result."""
+
+        addendum = []
+
+        if 'migration-policy-verdict' in source:
+            verdict = source['migration-policy-verdict']
+            if verdict == 'REJECTED_BLOCKED_BY_ANOTHER_ITEM':
+                addendum.append((
+                    "Migration status: Blocked. Can't migrate due to a "
+                    "non-migrable dependency. Check status below."
+                ))
+                if 'dependencies' in source:
+                    blocked_by = source['dependencies'].get('blocked-by', [])
+                    after = source['dependencies'].get('migrate-after', [])
+                    deps = list({
+                        element
+                        for element in blocked_by + after
+                    })
+                    addendum.append("Blocked by: %s" % (
+                        html_package_list(deps),
+                    ))
+
+        return addendum
+
+    def _make_excuses_check_age(self, source):
+        """Checks how old is the package and builds an excuses message
+        depending on the result."""
+
+        addendum = []
+
+        verdict, age, limit = self._check_age(source)
+
+        if verdict in [
+            self.AgeVerdict.PKG_TOO_OLD,
+            self.AgeVerdict.PKG_OF_AGE
+        ]:
+            addendum.append("%d days old (%d needed)" % (
+                age,
+                limit,
+            ))
+        elif verdict == self.AgeVerdict.PKG_TOO_YOUNG:
+            addendum.append("Too young, only %d of %d days old" % (
+                age,
+                limit,
+            ))
+
+        return addendum
+
+    def _make_excuses(self, source):
+        """Make the excuses list for a source item using the yaml data it
+        contains"""
+
+        excuses = [
+            self._adapt_excuse_links(excuse)
+            for excuse in source['excuses']
+        ]
+
+        # This is the place where we compute some additionnal
+        # messages that should be added to excuses.
+        addendum = []
+
+        addendum.extend(self._make_excuses_check_verdict(source))
+        addendum.extend(self._make_excuses_check_age(source))
+
+        excuses = addendum + excuses
+
+        if 'is-candidate' in source:
+            if not source['is-candidate']:
+                excuses.append("Not considered")
+
+        return (
+            source['item-name'],
+            excuses,
+        )
+
+    def _get_excuses_and_problems(self, content):
         """
-        try:
-            # Skip all HTML before the first list
-            while '<ul>' not in next(content_lines):
-                pass
-        except StopIteration:
+        Gets the excuses for each package.
+        Also finds a list of packages which have not migrated to testing
+        agter the necessary time has passed.
+
+        :returns: A two-tuple  where the first element is a dict mapping
+        package names to a list of excuses. The second element is a dict
+        mapping packages names to a problem information. Problem information
+        is a dict with the keys ``age`` and ``limit``.
+        """
+        if 'sources' not in content:
             logger.warning("Invalid format of excuses file")
             return
 
-        top_level_list = True
-        package = ""
-        package_excuses = {}
-        problematic = {}
-        excuses = []
-        for line in content_lines:
-            if isinstance(line, bytes):
-                line = line.decode('utf-8')
-            if '</ul>' in line:
-                # The inner list is closed -- all excuses for the package are
-                # processed and we're back to the top-level list.
-                top_level_list = True
-                if '/' in package:
-                    continue
-                # Done with the package
-                package_excuses[package] = deepcopy(excuses)
-                continue
-
-            if '<ul>' in line:
-                # Entering the list of excuses
-                top_level_list = False
-                continue
-
-            if top_level_list:
-                # The entry in the top level list outside of an inner list is
-                # a <li> item giving the name of the package for which the
-                # excuses follow.
-                words = re.split("[><() ]", line)
-                package = words[6]
-                excuses = []
-                top_level_list = False
-                continue
-
-            line = line.strip()
-            for subline in line.split("<li>"):
-                if self._skip_excuses_item(subline):
-                    continue
-
-                # Check if there is a problem for the package.
-                self._extract_problems_in_excuses_item(subline, package,
-                                                       problematic)
-
-                # Extract the rest of the excuses
-                # If it contains a link to an anchor convert it to a link to a
-                # package page.
-                excuses.append(self._adapt_excuse_links(subline))
-
-        return package_excuses, problematic
+        sources = content['sources']
+        excuses = [
+            self._make_excuses(source)
+            for source in sources
+        ]
+        problems = [
+            self._extract_problematic(source)
+            for source in sources
+        ]
+        problematic = [p for p in problems if p]
+        return dict(excuses), dict(problematic)
 
     def _create_action_item(self, package, extra_data):
         """
@@ -931,21 +987,21 @@ class UpdateExcusesTask(BaseTask):
             item_types=[self.action_item_type],
             non_obsolete_packages=problematic.keys())
 
-    def _get_update_excuses_content(self):
+    def _get_excuses_yaml(self):
         """
-        Function returning the content of the update_excuses.html file as an
-        terable of lines.
-        Returns ``None`` if the content in the cache is up to date.
+        Function returning the content of excuses from debian-release
+        :returns: a dict of excuses or ``None`` if the content in the
+        cache is up to date.
         """
-        url = 'https://release.debian.org/britney/update_excuses.html'
+        url = 'https://release.debian.org/britney/excuses.yaml'
         response, updated = self.cache.update(url, force=self.force_update)
         if not updated:
             return
 
-        return response.iter_lines(decode_unicode=True)
+        return yaml.load(response.text)
 
     def execute(self):
-        content_lines = self._get_update_excuses_content()
+        content_lines = self._get_excuses_yaml()
         if not content_lines:
             return
 
@@ -2147,14 +2203,6 @@ class UpdateAutoRemovalsStatsTask(BaseTask):
         if content:
             return yaml.safe_load(io.BytesIO(content))
 
-    def list_of_packages_to_html(self, packages):
-        packages_html = []
-        for package in packages:
-            html = '<a href="{}">{}</a>'.format(package_url(package), package)
-            packages_html.append(html)
-
-        return ', '.join(packages_html)
-
     def update_action_item(self, package, stats):
         """
         Creates an :class:`ActionItem <distro_tracker.core.models.ActionItem>`
@@ -2195,9 +2243,9 @@ class UpdateAutoRemovalsStatsTask(BaseTask):
             'bugs_dependencies': ', '.join(
                 link.format(bug, bug) for bug in bugs_dependencies),
             'buggy_dependencies':
-                self.list_of_packages_to_html(buggy_dependencies),
+                html_package_list(buggy_dependencies),
             'reverse_dependencies':
-                self.list_of_packages_to_html(reverse_dependencies),
+                html_package_list(reverse_dependencies),
             'number_rdeps': len(reverse_dependencies)}
         action_item.save()
 
