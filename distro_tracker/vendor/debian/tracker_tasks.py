@@ -948,10 +948,12 @@ class UpdateExcusesTask(BaseTask):
         excuses = [
             self._make_excuses(source)
             for source in sources
+            if '/' not in source['item-name']
         ]
         problems = [
             self._extract_problematic(source)
             for source in sources
+            if '/' not in source['item-name']
         ]
         problematic = [p for p in problems if p]
         return dict(excuses), dict(problematic)
