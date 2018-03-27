@@ -2240,6 +2240,7 @@ class UpdateAutoRemovalsStatsTask(BaseTask):
         action_item.extra_data = {
             'stats': stats,
             'removal_date': stats['removal_date'],
+            'version': stats.get('version', ''),
             'bugs': ', '.join(link.format(bug, bug) for bug in stats['bugs']),
             'bugs_dependencies': ', '.join(
                 link.format(bug, bug) for bug in bugs_dependencies),
