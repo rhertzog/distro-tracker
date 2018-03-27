@@ -1,0 +1,15 @@
+generated-date: 2018-03-27 09:20:10.745223
+sources:
+- excuses:
+  - Some excuses
+  policy_info:
+      age:
+          current-age: 20
+          age-requirement: 10
+  hints:
+  is-candidate:
+  item-name: dummy-package/amd64
+  new-version: 2.0.0
+  old-version: 1.0.0
+  reason: []
+  source: dummy-package

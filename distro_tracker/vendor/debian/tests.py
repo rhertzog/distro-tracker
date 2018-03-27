@@ -1846,6 +1846,20 @@ class UpdateExcusesTaskActionItemTest(TestCase):
         # Still no action items
         self.assertEqual(0, ActionItem.objects.count())
 
+    def test_item_skipped_when_slash_in_name(self):
+        """
+        Tests that when the task meets a package with a / in its name, it
+        ignores it.
+        """
+        self.set_update_excuses_content_from_file('update_excuses-3.yaml')
+        # Sanity check: no action items currently
+        self.assertEqual(0, ActionItem.objects.count())
+
+        self.run_task()
+
+        # Still no action items
+        self.assertEqual(0, ActionItem.objects.count())
+
     def test_action_item_removed(self):
         """
         Tests that an already existing action item is removed when the package
