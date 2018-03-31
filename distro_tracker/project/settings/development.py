@@ -4,7 +4,7 @@ Appropriate settings to run during development.
 When running in development mode, selected.py should point to this file.
 """
 
-from .defaults import INSTALLED_APPS, TEMPLATES
+from .defaults import INSTALLED_APPS, MIDDLEWARE, TEMPLATES
 from .db_sqlite import DATABASES  # noqa
 
 DEBUG = True
@@ -31,3 +31,5 @@ XHR_SIMULATED_DELAY = 0.5
 INSTALLED_APPS += (
     'debug_toolbar',
 )
+
+MIDDLEWARE.append('debug_toolbar.middleware.DebugToolbarMiddleware')
