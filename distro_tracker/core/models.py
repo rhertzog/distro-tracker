@@ -13,6 +13,7 @@ import os
 import random
 import re
 import string
+from datetime import timedelta
 from email.iterators import typed_subpart_iterator
 from email.utils import getaddresses, parseaddr
 
@@ -38,6 +39,7 @@ from distro_tracker.core.utils import (
     SpaceDelimitedTextField,
     distro_tracker_render_to_string,
     get_or_none,
+    now,
     verify_signature
 )
 from distro_tracker.core.utils.email_messages import (
@@ -45,6 +47,7 @@ from distro_tracker.core.utils.email_messages import (
     get_decoded_message_payload,
     message_from_bytes
 )
+from distro_tracker.core.utils.misc import get_data_checksum
 from distro_tracker.core.utils.linkify import linkify
 from distro_tracker.core.utils.packages import package_hashdir
 from distro_tracker.core.utils.plugins import PluginRegistry
@@ -2576,3 +2579,43 @@ class BugDisplayManagerMixin(object):
             else:
                 self._bug_manager = BugDisplayManager()
         return self._bug_manager
+
+
+class TaskData(models.Model):
+    """
+    Stores runtime data about tasks to help schedule them and store
+    list of things to process once they have been identified.
+    """
+    task_name = models.CharField(max_length=250, unique=True,
+                                 blank=False, null=False)
+    task_is_pending = models.BooleanField(default=False)
+    run_lock = models.DateTimeField(default=None, null=True)
+    last_attempted_run = models.DateTimeField(default=None, null=True)
+    last_completed_run = models.DateTimeField(default=None, null=True)
+    data = JSONField()
+    data_checksum = models.CharField(max_length=40, default=None, null=True)
+    version = models.IntegerField(default=0, null=False)
+
+    def save(self, update_checksum=False, *args, **kwargs):
+        if update_checksum:
+            self.data_checksum = get_data_checksum(self.data)
+        return super(TaskData, self).save(*args, **kwargs)
+
+    def versioned_update(self, **kwargs):
+        kwargs['version'] = self.version + 1
+        if 'data' in kwargs and 'data_checksum' not in kwargs:
+            kwargs['data_checksum'] = get_data_checksum(kwargs['data'])
+        updated = TaskData.objects.filter(
+            pk=self.pk, version=self.version).update(**kwargs)
+        if updated:
+            self.refresh_from_db(fields=kwargs.keys())
+        return updated
+
+    def get_run_lock(self, timeout=600):
+        self.refresh_from_db()
+        if self.run_lock is not None:
+            return False
+        locked_until = now() + timedelta(seconds=timeout)
+        self.run_lock = locked_until
+        self.save()
+        return True

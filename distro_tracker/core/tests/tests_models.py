@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2018 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -15,6 +15,8 @@ Tests for the Distro Tracker core module's models.
 """
 import email
 import itertools
+from datetime import datetime, timedelta, timezone
+from unittest import mock
 
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.base import ContentFile
@@ -48,12 +50,14 @@ from distro_tracker.core.models import (
     SourcePackageName,
     SourcePackageRepositoryEntry,
     Subscription,
+    TaskData,
     Team,
     TeamMembership,
     get_web_package
 )
 from distro_tracker.core.utils import message_from_bytes
 from distro_tracker.core.utils.email_messages import get_decoded_message_payload
+from distro_tracker.core.utils.misc import get_data_checksum
 from distro_tracker.test import TestCase
 
 
@@ -1932,3 +1936,73 @@ class SourcePackageNameTests(TestCase):
         SourcePackage.objects.create(source_package_name=pkg, version='1.0.0')
 
         self.assertEqual(pkg.short_description(), '')
+
+
+class TaskDataTests(TestCase):
+    """
+    Tests for the :class:`distro_tracker.core.models.TaskData` model.
+    """
+    def setUp(self):
+        self.taskdata = TaskData(task_name='FooTask')
+        self.taskdata.save()
+        self.sample_data = {'foo': 'bar'}
+        self.sample_data_checksum = get_data_checksum(self.sample_data)
+
+    def test_default_values(self):
+        self.assertFalse(self.taskdata.task_is_pending)
+        self.assertIsNone(self.taskdata.run_lock)
+        self.assertIsNone(self.taskdata.last_attempted_run)
+        self.assertIsNone(self.taskdata.last_completed_run)
+        self.assertIsNone(self.taskdata.data_checksum)
+        self.assertEqual(self.taskdata.version, 0)
+
+    def test_save_update_checksum(self):
+        self.taskdata.data = self.sample_data
+        self.taskdata.save(update_checksum=True)
+        self.assertEqual(self.taskdata.data_checksum,
+                         self.sample_data_checksum)
+
+    def test_versioned_update_increases_the_version(self):
+        self.assertEqual(self.taskdata.version, 0)
+        updated = self.taskdata.versioned_update()
+        self.assertTrue(updated)
+        self.assertEqual(self.taskdata.version, 1)
+
+    def test_versioned_update_fails_when_not_uptodate(self):
+        # Change the version in the database, self.taskdata is outdated now
+        TaskData.objects.update(version=123)
+
+        updated = self.taskdata.versioned_update(data=self.sample_data)
+
+        # The update failed, nothing has been changed
+        self.assertFalse(updated)
+        self.assertEqual(self.taskdata.version, 0)
+        self.assertDictEqual(self.taskdata.data, {})
+
+    def test_versioned_update_generates_missing_checksum(self):
+        self.assertIsNone(self.taskdata.data_checksum)
+        self.taskdata.versioned_update(data=self.sample_data)
+        self.assertEqual(self.taskdata.data_checksum,
+                         self.sample_data_checksum)
+
+    def test_versioned_update_keeps_data(self):
+        self.taskdata.versioned_update(data=self.sample_data)
+        self.assertDictEqual(self.taskdata.data, self.sample_data)
+
+    @mock.patch('distro_tracker.core.models.now')
+    def test_get_run_lock(self, now_mock):
+        now = datetime.now(timezone.utc)
+        now_mock.return_value = now
+        locked_until = now + timedelta(seconds=600)
+        result = self.taskdata.get_run_lock()
+        self.assertTrue(result)
+        self.assertEqual(self.taskdata.run_lock, locked_until)
+
+    def test_get_run_lock_second_call_fails(self):
+        self.taskdata.get_run_lock()
+        locked_until = self.taskdata.run_lock
+        result = self.taskdata.get_run_lock()
+        self.assertFalse(result)
+        # Ensure the lock is unmodified
+        self.taskdata.refresh_from_db()
+        self.assertEqual(self.taskdata.run_lock, locked_until)
