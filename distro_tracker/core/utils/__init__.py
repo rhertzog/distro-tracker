@@ -245,9 +245,9 @@ def verify_signature(content):
     return signers
 
 
-def now():
+def now(tz=datetime.timezone.utc):
     """
-    Returns datetime.datetime.now() and can be easily mocked out
-    for tests.
+    Returns datetime.datetime.now() in the requested timezone (UTC by default)
+    and can be easily mocked out for tests.
     """
-    return datetime.datetime.now()
+    return datetime.datetime.now(tz)
