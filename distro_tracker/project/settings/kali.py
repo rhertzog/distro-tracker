@@ -1,9 +1,21 @@
 """Kali.org specific settings"""
 
-from .defaults import INSTALLED_APPS
+from . import defaults
 from .db_postgresql import DATABASES  # noqa
 
-INSTALLED_APPS += (
+__all__ = [
+    'DATABASES',
+    'DISTRO_TRACKER_DEVEL_REPOSITORIES',
+    'DISTRO_TRACKER_FQDN',
+    'DISTRO_TRACKER_VENDOR_NAME',
+    'DISTRO_TRACKER_VENDOR_RULES',
+    'DISTRO_TRACKER_VENDOR_URL',
+    'DJANGO_EMAIL_ACCOUNTS_USE_CAPTCHA',
+    'INSTALLED_APPS',
+]
+
+INSTALLED_APPS = defaults.INSTALLED_APPS.copy()
+INSTALLED_APPS.extend([
     # Extract common files from the source package
     'distro_tracker.extract_source_files',
 
@@ -12,7 +24,7 @@ INSTALLED_APPS += (
 
     # Captcha support
     'captcha',
-)
+])
 
 # Official service name
 DISTRO_TRACKER_FQDN = "pkg.kali.org"
