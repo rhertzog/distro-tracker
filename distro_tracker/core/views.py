@@ -680,15 +680,17 @@ class TeamAutocompleteView(View):
         if 'q' not in request.GET:
             raise Http404
         query_string = request.GET['q']
-        filtered = Team.objects.filter(name__icontains=query_string)
-        # Extract only the name of the team.
-        filtered = filtered.values('name')
+        filtered = Team.objects.filter(
+            Q(name__icontains=query_string) | Q(slug__icontains=query_string))
+        # Extract only the name and slug of the team.
+        filtered = filtered.values('name', 'slug')
         # Limit the number of teams returned from the autocomplete
         AUTOCOMPLETE_ITEMS_LIMIT = 100
         filtered = filtered[:AUTOCOMPLETE_ITEMS_LIMIT]
-        return render_to_json_response([query_string,
-                                        [team['name']
-                                         for team in filtered]])
+        return render_to_json_response({
+            'query_string': query_string,
+            'teams': list(filtered)
+        })
 
 
 class TeamSearchView(View):

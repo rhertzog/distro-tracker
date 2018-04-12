@@ -71,6 +71,43 @@ $(function() {
     }
     );
 
+    var teams = new Bloodhound({
+      datumTokenizer: function(data) {
+        Bloodhound.tokenizers.obj.whitespace(data.slug);
+      },
+      queryTokenizer: Bloodhound.tokenizers.whitespace,
+      remote: {
+        url: '/api/teams/search/autocomplete?q=%QUERY',
+        wildcard: '%QUERY',
+        rateLimitWait: 500,
+        transform: function(r) {
+          return r['teams'];
+        }
+      }
+    });
+
+    $('.team-completion').typeahead({
+        hint: false,
+        highlight: true,
+        minLength: 2
+      },
+      {
+        name: 'teams',
+        displayKey: 'slug',
+        source: teams,
+        templates: {
+        suggestion: function (teams) {
+            return '<p>' + teams.name + '</p>';
+          }
+        }
+      }
+    ).bind('typeahead:render', function(e) {
+      var options = $('div.tt-dataset-teams p');
+      if(options.length == 1){
+        options.first().addClass('tt-cursor');
+      }
+    });
+
     var subscribe_url = $('#subscribe-button').data('url');
     var unsubscribe_url = $('#unsubscribe-button').data('url')
     var toggle_subscription_buttons = function() {

@@ -429,6 +429,70 @@ class PackageAutocompleteViewTest(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
+class TeamAutocompleteViewTest(TestCase):
+    def setUp(self):
+        Team.objects.create_with_slug(name='Debian Go Packaging Team')
+        Team.objects.create_with_slug(name='Debian HPC')
+        Team.objects.create_with_slug(name='Java Team')
+
+    def test_team_autocomplete(self):
+        """
+        Tests the autocomplete functionality when the client asks for teams
+        """
+        response = self.client.get(reverse('dtracker-api-team-autocomplete'),
+                                   {'q': 'd'})
+
+        response = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(response['query_string'], 'd')
+        self.assertEqual(len(response['teams']), 2)
+        names = [team['name'] for team in response['teams']]
+        self.assertIn('Debian Go Packaging Team', names)
+        self.assertIn('Debian HPC', names)
+
+        response = self.client.get(reverse('dtracker-api-team-autocomplete'),
+                                   {'q': 'team'})
+
+        response = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(response['query_string'], 'team')
+        self.assertEqual(len(response['teams']), 2)
+        names = [team['name'] for team in response['teams']]
+        self.assertIn('Debian Go Packaging Team', names)
+        self.assertIn('Java Team', names)
+
+    def test_team_autocomplete_with_slug(self):
+        """
+        Tests the autocomplete functionality when the client asks for teams
+        by their slugs
+        """
+        response = self.client.get(reverse('dtracker-api-team-autocomplete'),
+                                   {'q': '-team'})
+
+        response = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(response['query_string'], '-team')
+        self.assertEqual(len(response['teams']), 2)
+        names = [team['name'] for team in response['teams']]
+        self.assertIn('Debian Go Packaging Team', names)
+        self.assertIn('Java Team', names)
+
+    def test_query_does_not_match_teams(self):
+        """
+        Tests the autocomplete functionality when the client's query
+        does not match any team
+        """
+        response = self.client.get(reverse('dtracker-api-team-autocomplete'),
+                                   {'q': 'z'})
+        response = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(response['query_string'], 'z')
+        self.assertEqual(len(response['teams']), 0)
+
+    def test_no_query_given(self):
+        """
+        Tests the autocomplete when there is no query parameter given.
+        """
+        response = self.client.get(reverse('dtracker-api-package-autocomplete'))
+        self.assertEqual(response.status_code, 404)
+
+
 class ActionItemJsonViewTest(TestCase):
     """
     Tests for the :class:`distro_tracker.core.views.ActionItemJsonView`.

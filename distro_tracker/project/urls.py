@@ -102,6 +102,8 @@ urlpatterns = [
         name='dtracker-api-action-item'),
     url(r'^api/keywords/$', KeywordsView.as_view(),
         name='dtracker-api-keywords'),
+    url(r'^api/teams/search/autocomplete$', TeamAutocompleteView.as_view(),
+        name='dtracker-api-team-autocomplete'),
 
     url(r'^admin/', admin.site.urls),
 
