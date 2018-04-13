@@ -323,3 +323,7 @@ summary {
 summary::-webkit-details-marker {
  display: none;
 }
+
+form#team-search-form div.input-group {
+  width: 100%;
+}

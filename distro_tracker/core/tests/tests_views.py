@@ -1445,6 +1445,99 @@ class TeamListViewTest(UserAuthMixin, TestCase):
         )
 
 
+class TeamSearchViewTest(TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.views.TeamSearchView`.
+    """
+    def setUp(self):
+        self.team_1 = Team.objects.create_with_slug(name='Debian HPC')
+        self.team_2 = Team.objects.create_with_slug(
+            name='Debian Go Packaging Team')
+
+    def assert_not_found_team(self, response, query="new-team"):
+        self.assertRedirects(response, reverse('dtracker-team-list'))
+        message = list(response.context['messages'])[0]
+        self.assertEqual(message.level_tag, "danger")
+        self.assertIn(
+            ("No team could be identified with the query string %s" % query),
+            message.message
+        )
+
+    def test_search_for_existing_team_by_slug(self):
+        """
+        Tests the search for existing team by slug
+        """
+        response = self.client.get(reverse('dtracker-team-search'), {
+            'query': self.team_1.slug
+        })
+        self.assertRedirects(response, self.team_1.get_absolute_url())
+
+    def test_search_for_existing_team_by_name(self):
+        """
+        Tests the search for existing team by name
+        """
+        response = self.client.get(reverse('dtracker-team-search'), {
+            'query': self.team_1.name
+        })
+        self.assertRedirects(response, self.team_1.get_absolute_url())
+
+    def test_search_for_team_by_partial_name_or_slug(self):
+        """
+        Tests the search for team by partial name or slug
+        when it identify a single matching team
+        """
+        response = self.client.get(reverse('dtracker-team-search'), {
+            'query': 'Debian H'
+        })
+        self.assertRedirects(response, self.team_1.get_absolute_url())
+
+        response = self.client.get(reverse('dtracker-team-search'), {
+            'query': 'debian-h'
+        })
+        self.assertRedirects(response, self.team_1.get_absolute_url())
+
+    def test_fail_to_search_for_team_by_partial_name_or_slug(self):
+        """
+        Tests the search for team by partial name or slug
+        when it identifies multiple matching teams
+        """
+        response = self.client.get(reverse('dtracker-team-search'), {
+            'query': 'Debian'
+        }, follow=True)
+        self.assert_not_found_team(response, 'Debian')
+
+        response = self.client.get(reverse('dtracker-team-search'), {
+            'query': 'debian-'
+        }, follow=True)
+        self.assert_not_found_team(response, 'debian-')
+
+    def test_team_does_not_exist(self):
+        """
+        Tests the team search when the given team does not exist.
+        """
+        slug = 'does-not-exist'
+        response = self.client.get(
+            reverse('dtracker-team-search'), {'query': slug}, follow=True)
+        self.assert_not_found_team(response, slug)
+
+    def test_case_insensitive_team_search(self):
+        """
+        Tests that team search is case insensitive
+        """
+        slug = 'debian-HPC'
+        response = self.client.get(
+            reverse('dtracker-team-search'), {'query': slug}, follow=True)
+        self.assertRedirects(response, self.team_1.get_absolute_url())
+
+    def test_search_without_query_parameter(self):
+        """
+        Tests error response when the query parameter is missing
+        """
+        response = self.client.get(reverse('dtracker-package-search'))
+        self.assertEqual(response.status_code, 404)
+
+
 class SetMuteTeamViewTest(UserAuthMixin, TestCase):
     """
     Tests for the
