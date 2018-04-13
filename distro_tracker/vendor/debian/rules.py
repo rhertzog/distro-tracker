@@ -533,8 +533,6 @@ def get_bug_panel_stats(package_name):
     the rendered template.
     """
     bug_stats = get_or_none(PackageBugStats, package__name=package_name)
-    if not bug_stats:
-        return
 
     # Map category names to their bug panel display names and descriptions
     category_descriptions = {
@@ -567,7 +565,11 @@ def get_bug_panel_stats(package_name):
     # Some bug categories should not be included in the count.
     exclude_from_count = ('help', 'newcomer')
 
-    stats = bug_stats.stats
+    if bug_stats:
+        stats = bug_stats.stats
+    else:
+        stats = []
+
     categories = []
     total, total_merged = 0, 0
     # From all known bug stats, extract only the ones relevant for the panel
