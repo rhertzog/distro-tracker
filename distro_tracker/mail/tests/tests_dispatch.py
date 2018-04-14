@@ -647,6 +647,7 @@ Diagnostic-Code: smtp; 550-5.7.1 [....] Our system has detected
             'bounces@' + DISTRO_TRACKER_FQDN,
             self.message)
 
+
 class BounceStatsTest(TestCase):
     """
     Tests for the ``distro_tracker.mail.models`` handling users' bounce

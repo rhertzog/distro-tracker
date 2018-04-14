@@ -15,7 +15,6 @@ Tests for :mod:`distro_tracker.mail.tracker_control`.
 import re
 from datetime import timedelta
 from email import encoders
-from email.header import Header
 from email.message import Message
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
