@@ -1057,9 +1057,9 @@ class UpdateTeamPackagesTask(BaseTask):
             team.packages.add(package)
         if maintainer.email.endswith("@" + settings.DISTRO_TRACKER_FQDN):
             localpart, _ = maintainer.email.split('@', 1)
-            service, slug = localpart.split('+', 1)
-            if service != 'team':
+            if not localpart.startswith("team+"):
                 return
+            service, slug = localpart.split('+', 1)
             team = get_or_none(Team, slug=slug)
             if team:
                 team.packages.add(package)

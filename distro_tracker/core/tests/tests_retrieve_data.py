@@ -1161,6 +1161,29 @@ class UpdateTeamPackagesTaskTests(TestCase):
         self.assertEqual(1, self.team.packages.count())
         self.assertEqual(self.package.name, self.team.packages.all()[0].name)
 
+    def test_with_unqualified_team_email(self):
+        """
+        Non-regression test for a failure to handle team@ (instead of
+        team+<slug>@).
+        """
+        team_email = "team@{}".format(settings.DISTRO_TRACKER_FQDN)
+        self.package = create_source_package({
+            'name': 'team-package',
+            'version': '1.0.0',
+            'maintainer': {
+                'name': 'Maintainer',
+                'email': team_email,
+            },
+        })
+        self.repository.add_source_package(self.package)
+        self.add_mock_events('new-source-package-version-in-repository', {
+            'name': self.package.name,
+            'version': self.package.version,
+            'repository': self.repository.name,
+        })
+
+        self.run_task()
+
     def test_new_package_version_team_has_package(self):
         """
         Tests that there is no change to a team when a new package version
