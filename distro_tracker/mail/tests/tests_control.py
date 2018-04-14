@@ -15,6 +15,7 @@ Tests for :mod:`distro_tracker.mail.tracker_control`.
 import re
 from datetime import timedelta
 from email import encoders
+from email.header import Header
 from email.message import Message
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
@@ -39,7 +40,8 @@ from distro_tracker.core.models import (
 from distro_tracker.core.utils import (
     distro_tracker_render_to_string,
     extract_email_address_from_header,
-    get_or_none
+    get_or_none,
+    message_from_bytes
 )
 from distro_tracker.mail import control
 from distro_tracker.mail.control.commands import UNIQUE_COMMANDS
@@ -557,6 +559,13 @@ class ControlBotBasic(EmailControlTest):
                         '/5Yiw5bqV5piv5LiN5piv55yf5q2j55qE6aKG5a+8?=\n\t'
                         '=?utf-8?B?Ow==?=')
         self.set_input_lines(['help'])
+
+        self.control_process()
+
+    def test_ensure_no_failure_with_utf8_message_id(self):
+        """Non-regression test for a failure with an UTF-8 message id"""
+        with open(self.get_test_data_path('utf8-message-id.txt'), 'rb') as f:
+            self.message = message_from_bytes(f.read())
 
         self.control_process()
 

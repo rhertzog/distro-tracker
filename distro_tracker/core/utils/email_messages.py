@@ -250,4 +250,4 @@ def unfold_header(header):
     """
     if header is None:
         return None
-    return re.sub(r'\r?\n(\s)', r'\1', header, 0, re.MULTILINE)
+    return re.sub(r'\r?\n(\s)', r'\1', str(header), 0, re.MULTILINE)
