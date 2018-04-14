@@ -8,8 +8,8 @@ of packages).
 
 ## Documentation
 
-The [documentation](https://tracker.debian.org/docs/) is updated once a
-day and matches what is deployed on tracker.debian.org.
+The [documentation](https://qa.pages.debian.net/distro-tracker/) always
+matches what's in the git repository's master branch.
 
 Otherwise you can generate the documentation yourself by doing `make html`
 in the docs subdirectory of the distro-tracker git repository.
@@ -19,7 +19,7 @@ in the docs subdirectory of the distro-tracker git repository.
 ### How to contribute
 
 Have a look at the ["Contributing"
-section](https://tracker.debian.org/docs/contributing.html) of the
+section](https://qa.pages.debian.net/distro-tracker/contributing.html) of the
 documentation.
 
 ### Contact information
@@ -33,16 +33,20 @@ The lead developer is Raphaël Hertzog (buxy on IRC).
 
 ### Reporting bugs and vulnerabilities
 
-We use the Debian bug tracker to manage bug reports (including security
-issues, there's a "security" tag). If you have something to report, please
-file a bug against the `tracker.debian.org` package. You can follow
-[Debian's instructions](https://www.debian.org/Bugs/Reporting) to complete
-this process. You should check the [list of open
-issues](https://bugs.debian.org/tracker.debian.org) before filing a new
-bug to avoid duplicates.
+We are using [GitLab's bug
+tracker](https://salsa.debian.org/qa/distro-tracker/issues) to manage bug
+reports. You should file new bugs there.
 
-You can also have a look at all the [closed bug
-reports](https://bugs.debian.org/cgi-bin/pkgreport.cgi?archive=1;package=tracker.debian.org) too.
+However we also use the Debian bug tracker with its `tracker.debian.org`
+pseudo-package. You should thus check [its list of open
+issues](https://bugs.debian.org/tracker.debian.org) before filing a new
+bug to avoid duplicates. You can also have a look at all the [closed bug
+reports](https://bugs.debian.org/cgi-bin/pkgreport.cgi?archive=1;package=tracker.debian.org)
+too.
+
+Security issues should be reported to the bug tracker like other bugs.
+If you believe that the issue is really sensitive, then you can
+mail [Raphaël Hertzog](mailto:hertzog@debian.org) privately.
 
 ## Misc information
 
