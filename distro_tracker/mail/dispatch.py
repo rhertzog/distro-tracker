@@ -408,7 +408,12 @@ def handle_bounces(sent_to_address, message):
         bounced email was returned.
     :type sent_to_address: string
     """
-    bounce_email, user_email = verp.decode(sent_to_address)
+    try:
+        bounce_email, user_email = verp.decode(sent_to_address)
+    except ValueError:
+        logger.warning('bounces :: no VERP data to extract from %s',
+                       sent_to_address)
+        return
     match = re.match(r'^bounces\+(\d{8})@' + DISTRO_TRACKER_FQDN, bounce_email)
     if not match:
         logger.warning('bounces :: invalid address %s', bounce_email)
