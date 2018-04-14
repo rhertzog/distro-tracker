@@ -11,45 +11,68 @@ The recommended way to send feedback is to write to the Debian Quality
 Assurance mailing list <debian-qa@lists.debian.org>. You can also reach us
 using IRC on the #debian-qa channel at irc.debian.org.
 
-You can also report bugs against the `tracker.debian.org pseudo-package
-<https://bugs.debian.org/cgi-bin/pkgreport.cgi?pkg=tracker.debian.org>`_, to do so
-please follow `the usual instructions
-<https://www.debian.org/Bugs/Reporting>`_.
-
-When you report a bug, ensure you include detailed steps to reproduce it
-and any details that might be helpful in troubleshooting.
+You can also `report bugs <https://salsa.debian.org/qa/distro-tracker/issues>`_
+in GitLab's interface. When you report a bug, ensure you include detailed
+steps to reproduce it and any details that might be helpful in
+troubleshooting.
 
 If you are proposing a feature, please explain in detail how it would work,
 and keep the scope as narrow as possible, to make it easier to implement.
 
-If you do not know where to start, we have `a list of tasks suitable for
-newcomers
-<https://bugs.debian.org/cgi-bin/pkgreport.cgi?dist=unstable;package=tracker.debian.org;tag=newcomer>`_,
-mentors will review your changes with special care when you try to tackle
-those.
+If you do not know where to start, we have tasks suitable for
+newcomers:
 
-Please remember this is a volunteer-driven project, and that contributions are
-welcome.
+ * `in Debian's bug tracker <https://bugs.debian.org/cgi-bin/pkgreport.cgi?dist=unstable;package=tracker.debian.org;tag=newcomer>`_
+ * `in GitLab's bug tracker <https://salsa.debian.org/qa/distro-tracker/issues?label_name%5B%5D=newcomer>`_
+
+There are mentors willing to review your changes with special care when
+you try to tackle those.
+
+Please remember that this is a volunteer-driven project, and that
+contributions are welcome.
 
 Contribute
 ----------
 
-Ready to contribute? Here's how to set up `distro-tracker` for local
+Ready to contribute? Here's how to set up distro-tracker for local
 development:
 
 Usual workflow
 ~~~~~~~~~~~~~~
 
-  1. Clone distro-tracker locally::
+  1. Create a guest account on `Salsa <https://salsa.debian.org>`_ (a GitLab
+     instance run by the Debian project) by visiting this page:
+     https://signup.salsa.debian.org
+
+     Follow all the steps to confirm your email, fill your profile,
+     `setup your SSH keys
+     <https://salsa.debian.org/help/gitlab-basics/create-your-ssh-keys.md>`_.
+
+     You might want to have a look at `Salsa's
+     documentation <https://wiki.debian.org/Salsa/Doc>`_ and `GitLab's
+     documentation <https://salsa.debian.org/help>`_ if you have doubts
+     about something.
+
+     Note that Debian Developers can skip this step as they already have
+     an account on this service.
+
+  2. Visit the `project's page <https://salsa.debian.org/qa/distro-tracker>`_
+     and fork distro-tracker in your own account. See `GitLab's
+     help <https://salsa.debian.org/help/gitlab-basics/fork-project.md>`_.
+
+  3. Clone distro-tracker locally::
+
+       $ git clone git@salsa.debian.org:your-account-guest/distro-tracker.git
+
+     Note that ``your-account-guest`` should be replaced by your Salsa's username.
+     If you want to clone the project without creating any account then
+     use this command::
 
        $ git clone https://salsa.debian.org/qa/distro-tracker.git
 
-     Note that you can also browse the sources at
-     https://salsa.debian.org/qa/distro-tracker
+  4. Follow the steps in the chapter :ref:`setting-up`.
 
-  2. Follow the steps in the chapter :ref:`setting-up`.
-
-  3. Start a local test server::
+  5. Start a local test server::
 
        $ ./manage.py runserver
        [...]
@@ -58,17 +81,17 @@ Usual workflow
 
      Visit the URL returned to have access to the test website.
 
-  4. Configure the package repositories as explained in
+  6. Configure the package repositories as explained in
      :ref:`repositories`. With your test server, the URL of
      the admin web interface is http://127.0.0.1:8000/admin/.
 
-  5. Switch to a new branch::
+  7. Switch to a new branch::
 
        $ git checkout -b name-of-your-bugfix-or-feature
 
-  6. Develop your new feature, ideally following the rules of :ref:`tdd`.
+  8. Develop your new feature, ideally following the rules of :ref:`tdd`.
 
-  7. When you're done, check that all tests are succeeding in all
+  9. When you're done, check that all tests are succeeding in all
      supported platforms::
 
        $ tox
@@ -76,8 +99,25 @@ Usual workflow
      This basically runs “./manage.py test” with multiple versions
      of Django and Python.
 
-  8. Push your changes on a public repository or send them by
-     email to the Debian Quality Assurance team::
+  10. Push your branch to your repository::
+
+       $ git push -u origin name-of-your-bugfix-or-feature
+
+  11. Submit us your work, ideally by opening a `merge
+      request <https://salsa.debian.org/qa/distro-tracker/merge_requests/>`_.
+      You can do this easily by visiting the distro-tracker
+      project fork hosted in your own account (either through the “Branches”
+      page, or through the “Merge requests” page). See `GitLab's
+      help <https://salsa.debian.org/help/gitlab-basics/add-merge-request.md>`_
+      if needed.
+
+      Make sure to address any issue identified by the continuous
+      integration system, the result of its “pipeline” can be directly
+      seen in the merge request (and in the commits pushed in your own
+      repository).
+
+      If you don't have any Salsa account, you can generate patches and
+      send them by email to the Debian Quality Assurance team::
 
        $ git format-patch -o . origin/master
        $ mutt debian-qa@lists.debian.org -a *.patch
@@ -133,17 +173,46 @@ Conventions
      <http://legacy.python.org/dev/peps/pep-0008/>`_ with a few exceptions.
 
   2. Functions are documented using doctrings with `Sphinx markup
-     <http://sphinx-doc.org/contents.html>`_.
+     <http://sphinx-doc.org/en/master/>`_.
+
+  3. Imports are sorted in 3 groups separated by one empty line: first the
+     Python standard modules, then the third-party modules and finally
+     the project modules. Each group is further split in two between
+     ``import foo`` statements and ``from foo import bar`` statements.
+     Within each group entries are alphabetically sorted. The isort
+     command used to implement the initial formatting was ``isort -m 3 -l
+     80 -rc django_email_accounts/ distro_tracker/``.
+
+Git commit notices
+~~~~~~~~~~~~~~~~~~
+
+Please invest some time to write good commit notices. Just like your code,
+you write it once but it will be read many times by different persons
+looking to understand why you made the change. So make it pleasant to
+read.
+
+The first line is the “summary” (or title) and describes briefly what the
+commit changes. It's followed by an empty line and a long description. The
+long description can be as long as you want and should explain why you
+implemented the change seen in the commit.
+
+The long description can also be used to close bugs by putting some
+pseudo-fields at the end of the description:
+
+ * for a GitLab issue, use ``Fixes: #XX`` (this is a standard GitLab
+   feature)
+ * for a Debian bug, use ``Closes: #XXXXXX`` (this is implemented by a
+   `webhook <https://salsa.debian.org/salsa/webhook>`_)
 
 Write access to the git repository
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Debian developers in the "qa" group have write access to the
-repository and should use the following command to checkout
-a git repository where they can push changes::
+`Project (and Debian QA group) members
+<https://salsa.debian.org/qa/distro-tracker/project_members>`_ have write
+access to the main git repository. They can thus clone the repository
+with this URL::
 
-   $ git clone ssh://<yourdebianlogin>@git.debian.org/git/qa/distro-tracker.git
+   $ git clone git@salsa.debian.org:qa/distro-tracker.git
 
-Anyone with commit access can use topic branches in the
-“people/`debianlogin`/” hierarchy.
-
+From there they can push their changes directly. They are however free to
+use a fork and request review anyway when they prefer.
