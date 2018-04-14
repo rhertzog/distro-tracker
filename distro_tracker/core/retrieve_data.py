@@ -938,9 +938,12 @@ class UpdateVersionInformation(PackageUpdateTask):
                 },
                 'version': entry.source_package.version,
             })
+        default_pool_url = None
+        if package_name.main_entry:
+            default_pool_url = package_name.main_entry.directory_url
         versions = {
             'version_list': version_list,
-            'default_pool_url': package_name.main_entry.directory_url,
+            'default_pool_url': default_pool_url,
         }
 
         return versions
@@ -990,6 +993,8 @@ class UpdateSourceToBinariesInformation(PackageUpdateTask):
         Returns a list representing binary packages linked to the given
         source package.
         """
+        if not package.main_entry:
+            return []
         repository = package.main_entry.repository
         return [
             {
