@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<django-objects version="1.0">
+    <object pk="1" model="core.repository">
+        <field type="CharField" name="name">Debian Unstable</field>
+        <field type="CharField" name="shorthand">unstable</field>
+        <field type="CharField" name="uri">http://deb.debian.org/debian</field>
+        <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
+        <field type="CharField" name="suite">unstable</field>
+        <field type="CharField" name="codename">sid</field>
+        <field type="TextField" name="components">main contrib non-free</field>
+        <field type="BooleanField" name="default">True</field>
+        <field type="BooleanField" name="optional">False</field>
+        <field type="BooleanField" name="binary">True</field>
+        <field type="BooleanField" name="source">True</field>
+        <field type="IntegerField" name="position">1</field>
+        <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object></field>
+    </object>
+    <object pk="2" model="core.repository">
+        <field type="CharField" name="name">Debian Experimental</field>
+        <field type="CharField" name="shorthand">exp</field>
+        <field type="CharField" name="uri">http://deb.debian.org/debian</field>
+        <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
+        <field type="CharField" name="suite">experimental</field>
+        <field type="CharField" name="codename">experimental</field>
+        <field type="TextField" name="components">main contrib non-free</field>
+        <field type="BooleanField" name="default">False</field>
+        <field type="BooleanField" name="optional">False</field>
+        <field type="BooleanField" name="binary">False</field>
+        <field type="BooleanField" name="source">True</field>
+        <field type="IntegerField" name="position">2</field>
+        <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="5"></object></field>
+    </object>
+</django-objects>
