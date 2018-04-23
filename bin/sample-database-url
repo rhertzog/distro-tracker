@@ -1,0 +1,24 @@
+#!/usr/bin/python3
+
+import re
+import sys
+
+import requests
+from bs4 import BeautifulSoup as soup
+
+# NOTE: this script is required to work-around this bug:
+# https://gitlab.com/gitlab-org/gitlab-ce/issues/45697
+
+for i in range(1,5):
+    jobs_url = 'https://salsa.debian.org/qa/distro-tracker/-/jobs?page=%d' % i
+    r = requests.get(jobs_url)
+    r.raise_for_status()
+
+    s = soup(r.text, 'html.parser')
+    for td in s.find_all('td', string=re.compile('sample-database')):
+        if td.parent.find_all(class_='ci-success'):
+            download_url = td.parent.findChild('a', class_='btn-build')['href']
+            url = 'https://salsa.debian.org' + download_url.replace(
+                '/download', '/raw/data/distro-tracker.sqlite')
+            print(url)
+            sys.exit(0)

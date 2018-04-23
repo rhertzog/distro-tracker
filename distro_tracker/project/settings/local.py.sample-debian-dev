@@ -1,41 +1,46 @@
 """Site-specific settings
 
-Rename this file to local.py and edit it to customize the settings of your
-Distro Tracker installation. By default it imports settings from the ``selected.py``
-file which is a symlink to the type of installation to you have
-(typically, ``production.py`` or ``development.py``) and lets you add
-overrides on top of those type-of-installation-specific settings.
+Rename this file to local.py to have a development setup with a configuration
+close to what's running on tracker.debian.org
 """
 # Load the selected configuration (selected.py is a symlink to preferred config)
 
-from . imports defaults
-from .selected import *
+from .development import *
+from .debian import *
+from .db_sqlite import DATABASES
 
-# If you want to run a development setup close to what's running on
-# tracker.debian.org, use the local.py.sample-debian-dev file next to this
-# one.
+# Disable some production settings
+ALLOWED_HOSTS = []
 
-## Add your custom settings here
+try:
+    # Drop distro_tracker.extract_source_files as it takes way too much time
+    # and network bandwith for running the task
+    INSTALLED_APPS.remove('distro_tracker.extract_source_files')
+except ValueError:
+    pass
+
+# Re-inject development settings lost by .debian import
+INSTALLED_APPS.append('debug_toolbar')
+MIDDLEWARE.append('debug_toolbar.middleware.DebugToolbarMiddleware')
+
+# === Add your custom settings here ===
 
 # If you don't use the packaged version of Distro Tracker, put a random secret
 # key here. DO NOT USE THE EXAMPLE KEY GIVEN BELOW.
 # SECRET_KEY = 'etu2#5lv=!0(g9l31mw=cpwhioy!egg60lb5o3_67d83#(wu-u'
 
+# DJANGO_EMAIL_ACCOUNTS_USE_CAPTCHA = True
 # DISTRO_TRACKER_FQDN = "tracker.debian.org"
 # DISTRO_TRACKER_VENDOR_NAME = "Debian"
-# DISTRO_TRACKER_VENDOR_URL = "https://www.debian.org"
+# DISTRO_TRACKER_VENDOR_URL = "http://www.debian.org"
 # DISTRO_TRACKER_VENDOR_RULES = "distro_tracker.vendor.debian.rules"
 # DISTRO_TRACKER_CONTACT_EMAIL = 'owner@' + DISTRO_TRACKER_FQDN
 
 # You can enable supplementary Django applications here, refer to the
 # documation for details about what they do
-INSTALLED_APPS = defaults.INSTALLED_APPS.copy()
 INSTALLED_APPS.extend([
     # Can be useful to create visualizations of the models
     # 'django_extensions',
-
-    # Generate warnings for outdated values of the Standards-Version field
-    # 'distro_tracker.stdver_warnings',
 
     # Generate news when packages are uploaded/removed/migrated
     # 'distro_tracker.auto_news',

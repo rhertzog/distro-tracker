@@ -70,7 +70,17 @@ Usual workflow
 
        $ git clone https://salsa.debian.org/qa/distro-tracker.git
 
-  4. Follow the steps in the chapter :ref:`setting-up`.
+  4. For a quick startup, run this command::
+
+       $ bin/quick-setup.sh
+       
+     It will install required packages with apt, put a sample
+     configuration file in place and download a pre-built database file to
+     save you some setup time.
+
+     If you have more time and want to learn more about the configuration
+     of distro tracker, follow the steps in the sections :ref:`setting-up`
+     and :ref:`repositories`.
 
   5. Start a local test server::
 
@@ -81,17 +91,13 @@ Usual workflow
 
      Visit the URL returned to have access to the test website.
 
-  6. Configure the package repositories as explained in
-     :ref:`repositories`. With your test server, the URL of
-     the admin web interface is http://127.0.0.1:8000/admin/.
-
-  7. Switch to a new branch::
+  6. Switch to a new branch::
 
        $ git checkout -b name-of-your-bugfix-or-feature
 
-  8. Develop your new feature, ideally following the rules of :ref:`tdd`.
+  7. Develop your new feature, ideally following the rules of :ref:`tdd`.
 
-  9. When you're done, check that all tests are succeeding in all
+  8. When you're done, check that all tests are succeeding in all
      supported platforms::
 
        $ tox
@@ -99,11 +105,11 @@ Usual workflow
      This basically runs “./manage.py test” with multiple versions
      of Django and Python.
 
-  10. Push your branch to your repository::
+  9. Push your branch to your repository::
 
        $ git push -u origin name-of-your-bugfix-or-feature
 
-  11. Submit us your work, ideally by opening a `merge
+  10. Submit us your work, ideally by opening a `merge
       request <https://salsa.debian.org/qa/distro-tracker/merge_requests/>`_.
       You can do this easily by visiting the distro-tracker
       project fork hosted in your own account (either through the “Branches”

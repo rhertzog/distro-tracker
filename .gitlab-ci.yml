@@ -62,6 +62,7 @@ sample-database:
   only:
     - schedules
   script:
+    - cp distro_tracker/project/settings/local.py.sample-debian-dev distro_tracker/project/settings/local.py
     - python3 manage.py migrate
     - python3 manage.py loaddata distro_tracker/core/fixtures/sample-database-repositories.xml
     - python3 manage.py tracker_update_repositories
