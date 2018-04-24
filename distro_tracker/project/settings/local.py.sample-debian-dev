@@ -21,7 +21,7 @@ except ValueError:
 
 # Re-inject development settings lost by .debian import
 INSTALLED_APPS.append('debug_toolbar')
-MIDDLEWARE.append('debug_toolbar.middleware.DebugToolbarMiddleware')
+MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
 
 # === Add your custom settings here ===
 
