@@ -186,7 +186,7 @@ class HttpCache(object):
 
 
 def get_resource_content(url, cache=None, compression="auto",
-                         only_if_updated=False):
+                         only_if_updated=False, force_update=False):
     """
     A helper function which returns the content of the resource found at the
     given URL.
@@ -211,6 +211,9 @@ def get_resource_content(url, cache=None, compression="auto",
     :param only_if_updated: if set to `True` returns None when no update is
         done. Otherwise, returns the content in any case.
     :type only_if_updated: bool
+    :param force_update: if set to `True` do a new HTTP request even if we
+        non-expired data in the cache.
+    :type force_update: bool
 
     :returns: The bytes representation of the resource found at the given url
     :rtype: bytes
@@ -220,9 +223,9 @@ def get_resource_content(url, cache=None, compression="auto",
         cache = HttpCache(cache_directory_path)
 
     updated = False
-    if cache.is_expired(url):
+    if force_update or cache.is_expired(url):
         try:
-            _, updated = cache.update(url)
+            _, updated = cache.update(url, force=force_update)
         except IOError:
             # Ignore network errors but log them
             import logging

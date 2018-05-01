@@ -1247,8 +1247,26 @@ class HttpCacheTest(SimpleTestCase):
         content = get_resource_content(self.url, mock_cache)
 
         # The update request has been made and returned new data
-        mock_cache.update.assert_called_once_with(self.url)
+        mock_cache.update.assert_called_once_with(self.url, force=False)
         self.assertEqual(content, self.response_content)
+
+    def test_get_resource_content_utility_function_force_update(self):
+        """
+        Tests the :func:`distro_tracker.core.utils.http.get_resource_content`
+        utility function when the force_update keyword argument is passed.
+        """
+
+        mock_cache = self.get_mock_of_http_cache()
+
+        # In this test, the cache is expired, and hence update has
+        # to be called.
+        mock_cache.is_expired.return_value = False
+        mock_cache.update.return_value = (None, True)
+
+        get_resource_content(self.url, mock_cache, force_update=True)
+
+        # The update request has been made with the force=True
+        mock_cache.update.assert_called_once_with(self.url, force=True)
 
     def test_get_resource_content_with_only_arg_and_cache_expired(self):
         """
@@ -1269,7 +1287,7 @@ class HttpCacheTest(SimpleTestCase):
         self.assertEqual(content, self.response_content)
 
         # The function updated the cache
-        mock_cache.update.assert_called_once_with(self.url)
+        mock_cache.update.assert_called_once_with(self.url, force=False)
 
     def test_get_resource_content_with_only_arg_and_cache_not_expired(self):
         """
@@ -1308,7 +1326,7 @@ class HttpCacheTest(SimpleTestCase):
 
         # Nothing returned because the update request resulted in no new data
         self.assertIsNone(content)
-        mock_cache.update.assert_called_once_with(self.url)
+        mock_cache.update.assert_called_once_with(self.url, force=False)
 
     @mock.patch('distro_tracker.core.utils.http.get_resource_content')
     def test_get_resource_text(self, mock_get_resource_content):
