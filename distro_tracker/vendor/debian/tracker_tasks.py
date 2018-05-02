@@ -40,6 +40,7 @@ from distro_tracker.core.models import (
     PackageBugStats,
     PackageData,
     PackageName,
+    Repository,
     SourcePackageDeps,
     SourcePackageName
 )
@@ -50,6 +51,7 @@ from distro_tracker.core.utils.http import (
     get_resource_text
 )
 from distro_tracker.core.utils.misc import get_data_checksum
+from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.utils.packages import (
     html_package_list,
     package_hashdir,
@@ -691,6 +693,220 @@ class UpdateLintianStatsTask(BaseTask):
             self.update_action_item(package, lintian_stats)
 
         LintianStats.objects.bulk_create(stats)
+
+
+class UpdateAppStreamStatsTask(BaseTask):
+    """
+    Updates packages' AppStream issue hints data.
+    """
+    ACTION_ITEM_TYPE_NAME = 'appstream-issue-hints'
+    ITEM_DESCRIPTION = 'AppStream hints: {report}'
+    ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/appstream-action-item.html'
+
+    def __init__(self, force_update=False, *args, **kwargs):
+        super(UpdateAppStreamStatsTask, self).__init__(*args, **kwargs)
+        self.force_update = force_update
+        self.appstream_action_item_type = \
+            ActionItemType.objects.create_or_update(
+                type_name=self.ACTION_ITEM_TYPE_NAME,
+                full_description_template=self.ITEM_FULL_DESCRIPTION_TEMPLATE)
+        self._tag_severities = {}
+
+    def set_parameters(self, parameters):
+        if 'force_update' in parameters:
+            self.force_update = parameters['force_update']
+
+    def _load_tag_severities(self):
+        url = 'https://appstream.debian.org/hints/asgen-hints.json'
+        json_data = get_resource_text(url, force_update=True)
+
+        data = json.loads(json_data)
+        for tag, info in data.items():
+            self._tag_severities[tag] = info['severity']
+
+    def _load_appstream_hint_stats(self, section, arch, all_stats={}):
+        url = 'https://appstream.debian.org/hints/sid/{}/Hints-{}.json.gz' \
+              .format(section, arch)
+        hints_json = get_resource_text(url, force_update=self.force_update)
+
+        hints = json.loads(hints_json)
+        for hint in hints:
+            pkid = hint['package']
+            parts = pkid.split('/')
+            package_name = parts[0]
+
+            # get the source package for this binary package name
+            src_pkgname = None
+            if SourcePackageName.objects.exists_with_name(package_name):
+                package = SourcePackageName.objects.get(name=package_name)
+                src_pkgname = package.name
+            elif BinaryPackageName.objects.exists_with_name(package_name):
+                bin_package = BinaryPackageName.objects.get(name=package_name)
+                package = bin_package.main_source_package_name
+                src_pkgname = package.name
+            else:
+                src_pkgname = package_name
+
+            if src_pkgname not in all_stats:
+                all_stats[src_pkgname] = {}
+            if package_name not in all_stats[src_pkgname]:
+                all_stats[src_pkgname][package_name] = {}
+
+            for cid, h in hint['hints'].items():
+                for e in h:
+                    severity = self._tag_severities[e['tag']]
+                    sevkey = "errors"
+                    if severity == "warning":
+                        sevkey = "warnings"
+                    elif severity == "info":
+                        sevkey = "infos"
+                    if sevkey not in all_stats[src_pkgname][package_name]:
+                        all_stats[src_pkgname][package_name][sevkey] = 1
+                    else:
+                        all_stats[src_pkgname][package_name][sevkey] += 1
+
+        return all_stats
+
+    def _get_appstream_url(self, package, bin_pkgname):
+        """
+        Returns the AppStream URL for the given PackageName in :package.
+        """
+
+        src_package = get_or_none(SourcePackageName, pk=package.pk)
+        if not src_package:
+            return '#'
+
+        if not src_package.main_version:
+            return '#'
+
+        component = 'main'
+        main_entry = src_package.main_entry
+        if main_entry:
+            component = main_entry.component
+            if not component:
+                component = 'main'
+
+        return (
+            'https://appstream.debian.org/sid/{}/issues/{}.html'
+            .format(component, bin_pkgname)
+        )
+
+    def _create_final_stats_report(self, package, package_stats):
+        """
+        Returns a transformed statistics report to be stored in the database.
+        """
+
+        as_report = package_stats.copy()
+        for bin_package in list(as_report.keys()):
+            # we currently don't want to display info-type hints
+            as_report[bin_package].pop('infos', None)
+            if as_report[bin_package]:
+                as_report[bin_package]['url'] = \
+                    self._get_appstream_url(package, bin_package)
+            else:
+                as_report.pop(bin_package)
+        return as_report
+
+    def update_action_item(self, package, package_stats):
+        """
+        Updates the :class:`ActionItem` for the given package based on the
+        AppStream hint statistics given in ``package_stats``.
+        If the package has errors or warnings an
+        :class:`ActionItem` is created.
+        """
+
+        total_warnings = 0
+        total_errors = 0
+        for bin_pkgname, info in package_stats.items():
+            total_warnings += info.get('warnings', 0)
+            total_errors += info.get('errors', 0)
+
+        # Get the old action item for this warning, if it exists.
+        appstream_action_item = package.get_action_item_for_type(
+            self.appstream_action_item_type.type_name)
+        if not total_warnings and not total_errors:
+            if appstream_action_item:
+                # If the item previously existed, delete it now since there
+                # are no longer any warnings/errors.
+                appstream_action_item.delete()
+            return
+
+        # The item didn't previously have an action item: create it now
+        if appstream_action_item is None:
+            appstream_action_item = ActionItem(
+                package=package,
+                item_type=self.appstream_action_item_type)
+
+        as_report = self._create_final_stats_report(package, package_stats)
+
+        if appstream_action_item.extra_data:
+            old_extra_data = appstream_action_item.extra_data
+            if old_extra_data == as_report:
+                # No need to update
+                return
+
+        appstream_action_item.extra_data = as_report
+
+        if total_errors and total_warnings:
+            short_report = '{} error{} and {} warning{}'.format(
+                total_errors,
+                's' if total_errors > 1 else '',
+                total_warnings,
+                's' if total_warnings > 1 else '')
+        elif total_errors:
+            short_report = '{} error{}'.format(
+                total_errors,
+                's' if total_errors > 1 else '')
+        elif total_warnings:
+            short_report = '{} warning{}'.format(
+                total_warnings,
+                's' if total_warnings > 1 else '')
+
+        appstream_action_item.short_description = \
+            self.ITEM_DESCRIPTION.format(report=short_report)
+
+        # If there are errors make the item a high severity issue
+        if total_errors:
+            appstream_action_item.severity = ActionItem.SEVERITY_HIGH
+
+        appstream_action_item.save()
+
+    def execute(self):
+        self._load_tag_severities()
+        all_stats = {}
+        repository = Repository.objects.get(default=True)
+        arch = "amd64"
+        for component in repository.components:
+            self._load_appstream_hint_stats(component, arch, all_stats)
+        if not all_stats:
+            return
+
+        with transaction.atomic():
+            # Delete obsolete data
+            PackageData.objects.filter(key='appstream').delete()
+
+            packages = PackageName.objects.filter(name__in=all_stats.keys())
+            packages.prefetch_related('action_items')
+
+            stats = []
+            for package in packages:
+                package_stats = all_stats[package.name]
+                stats.append(
+                    PackageData(
+                        package=package,
+                        key='appstream',
+                        value=package_stats
+                    )
+                )
+
+                # Create an ActionItem if there are errors or warnings
+                self.update_action_item(package, package_stats)
+
+            PackageData.objects.bulk_create(stats)
+            # Remove action items for packages which no longer have associated
+            # AppStream hints.
+            ActionItem.objects.delete_obsolete_items(
+                [self.appstream_action_item_type], all_stats.keys())
 
 
 class UpdateTransitionsTask(BaseTask):

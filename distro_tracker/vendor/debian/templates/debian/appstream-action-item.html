@@ -1,0 +1,23 @@
+{% spaceless %}
+<a href="https://wiki.debian.org/AppStream">AppStream</a> found metadata issues for packages:
+
+<ul>
+{% for bin_package, info in item.extra_data.items %}
+<li>
+{{ bin_package }}:
+<a href="{{ info.url }}">
+{% if info.errors %}
+<span>{{ info.errors }} error{{ info.errors|pluralize }}</span>
+{% if info.warnings %}and{% endif %}
+{% endif %}
+{% if info.warnings %}
+<span>{{ info.warnings }} warning{{ info.warnings|pluralize }}</span>
+{% endif %}
+</a>
+
+</li>
+{% endfor %}
+</ul>
+
+You should get rid of them to provide more metadata about this software.
+{% endspaceless %}
