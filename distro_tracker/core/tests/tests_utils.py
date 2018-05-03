@@ -780,7 +780,11 @@ class PackageUtilsTests(SimpleTestCase):
     def test_html_package_list(self):
         """Tests the output of html_package_list function"""
 
-        list_of_packages = ['dummy-package', 'other-dummy-package']
+        list_of_packages = [
+            'dummy-package',
+            'other-dummy-package',
+            'last-dummy-package/amd64',
+        ]
 
         output = html_package_list(list_of_packages)
 
@@ -794,11 +798,17 @@ class PackageUtilsTests(SimpleTestCase):
             'other-dummy-package',
         )
 
+        third_url = '<a href="%s">%s</a>/amd64' % (
+            package_url('last-dummy-package'),
+            'last-dummy-package',
+        )
+
         self.assertEqual(
             output,
-            "%s, %s" % (
+            "%s, %s, %s" % (
                 first_url,
                 second_url,
+                third_url,
             ),
         )
 

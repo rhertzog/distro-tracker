@@ -706,8 +706,13 @@ class AptCache(object):
 def html_package_list(packages):
     packages_html = []
     for package in packages:
-        html = '<a href="{}">{}</a>'.format(
-            package_url(package), package)
+        if "/" in package:
+            (source_package_name, remain) = package.split("/", 1)
+            remain = "/%s" % (remain,)
+        else:
+            (source_package_name, remain) = (package, "")
+        html = '<a href="{}">{}</a>{}'.format(
+            package_url(source_package_name), source_package_name, remain)
         packages_html.append(html)
 
     return ', '.join(packages_html)
