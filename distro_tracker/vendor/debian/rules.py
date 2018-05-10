@@ -165,11 +165,15 @@ def add_new_headers(received_message, package_name, keyword):
     :type keyword: string
     """
     new_headers = [
-        ('X-Debian-Package', package_name),
         ('X-Debian', 'tracker.debian.org'),
-        ('X-PTS-Package', package_name),  # for compat with old PTS
-        ('X-PTS-Keyword', keyword),       # for compat with old PTS
     ]
+    if package_name:
+        new_headers.append(('X-Debian-Package', package_name))
+        new_headers.append(
+            ('X-PTS-Package', package_name))  # for compat with old PTS
+    if keyword:
+        new_headers.append(
+            ('X-PTS-Keyword', keyword))       # for compat with old PTS
     return new_headers
 
 
