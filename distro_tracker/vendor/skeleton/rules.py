@@ -27,7 +27,7 @@ def classify_message(msg, package=None, keyword=None):
     return (package, keyword)
 
 
-def add_new_headers(received_message, package_name, keyword):
+def add_new_headers(received_message, package_name, keyword, team):
     """
     The function should return a list of two-tuples (header_name, header_value)
     which are extra headers that should be added to package messages before
@@ -40,10 +40,14 @@ def add_new_headers(received_message, package_name, keyword):
 
     :param package_name: The name of the package for which the message was
         intended
-    :type package_name: string
+    :type package_name: str
 
     :param keyword: The keyword with which the message is tagged.
-    :type keyword: string
+    :type keyword: str
+
+    :param team: The team slug for a message sent to the team or received
+        through the team.
+    :type team: str
     """
     pass
 

@@ -148,7 +148,7 @@ def classify_message(msg, package, keyword):
     return (package, keyword)
 
 
-def add_new_headers(received_message, package_name, keyword):
+def add_new_headers(received_message, package_name, keyword, team):
     """
     Debian adds the following new headers:
      - X-Debian-Package

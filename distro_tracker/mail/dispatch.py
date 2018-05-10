@@ -126,8 +126,7 @@ def forward(msg, package, keyword):
         return
 
     # Now send the message to subscribers
-    add_xloop(msg)
-    add_new_headers(msg, package, keyword)
+    add_new_headers(msg, package_name=package, keyword=keyword)
     send_to_subscribers(msg, package, keyword)
     send_to_teams(msg, package, keyword)
 
@@ -157,9 +156,11 @@ def process_for_team(msg, team_slug):
 
 
 def forward_to_team(msg, team):
-    logdata = _get_logdata(msg, None, None, team)
+    logdata = _get_logdata(msg, None, None, team.slug)
     logger.info("dispatch :: forward to team %(team)s :: %(msgid)s",
                 logdata)
+
+    add_new_headers(msg, keyword="contact", team=team.slug)
     send_to_team(msg, team, keyword="contact")
 
 
@@ -210,11 +211,8 @@ def approved_default(msg):
         return False
 
 
-def add_xloop(msg):
-    msg['X-Loop'] = 'dispatch@{}'.format(DISTRO_TRACKER_FQDN)
-
-
-def add_new_headers(received_message, package_name, keyword):
+def add_new_headers(received_message, package_name=None, keyword=None,
+                    team=None):
     """
     The function adds new distro-tracker specific headers to the received
     message. This is used before forwarding the message to subscribers.
@@ -235,13 +233,20 @@ def add_new_headers(received_message, package_name, keyword):
     :type keyword: string
     """
     new_headers = [
-        ('X-Distro-Tracker-Package', package_name),
-        ('X-Distro-Tracker-Keyword', keyword),
-        ('List-Id', '<{}.{}>'.format(package_name, DISTRO_TRACKER_FQDN)),
+        ('X-Loop', 'dispatch@{}'.format(DISTRO_TRACKER_FQDN)),
     ]
+    if keyword:
+        new_headers.append(('X-Distro-Tracker-Keyword', keyword))
+    if package_name:
+        new_headers.extend([
+            ('X-Distro-Tracker-Package', package_name),
+            ('List-Id', '<{}.{}>'.format(package_name, DISTRO_TRACKER_FQDN)),
+        ])
+    if team:
+        new_headers.append(('X-Distro-Tracker-Team', team))
 
     extra_vendor_headers, implemented = vendor.call(
-        'add_new_headers', received_message, package_name, keyword)
+        'add_new_headers', received_message, package_name, keyword, team)
     if implemented:
         new_headers.extend(extra_vendor_headers)
 
@@ -271,7 +276,6 @@ def add_team_membership_headers(received_message, keyword, team):
     messages to be sent to users that are members of a team.
     """
     received_message['X-Distro-Tracker-Team'] = team.slug
-    received_message['X-Distro-Tracker-Keyword'] = keyword
 
 
 def send_to_teams(received_message, package_name, keyword):
