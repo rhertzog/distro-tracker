@@ -2302,7 +2302,7 @@ class TeamMembership(models.Model):
         :type package_name: :class:`PackageName` or :class:`str`
         """
         if not isinstance(package_name, PackageName):
-            package_name = PackageName.objects.get(package_name)
+            package_name = get_or_none(PackageName, name=package_name)
         if self.muted:
             return True
         try:
@@ -2397,7 +2397,7 @@ class TeamMembership(models.Model):
             :class:`Keyword` instances.
         """
         if not isinstance(package_name, PackageName):
-            package_name = PackageName.objects.get(package_name)
+            package_name = get_or_none(PackageName, name=package_name)
 
         try:
             membership_package_specifics = \

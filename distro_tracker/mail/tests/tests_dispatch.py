@@ -105,6 +105,12 @@ class DispatchTestHelperMixin(object):
             keyword=keyword,
         )
 
+    def run_dispatch_to_team(self, team=None):
+        """
+        Starts the dispatch process for a team
+        """
+        dispatch.process_for_team(self.message, team)
+
     def run_forward(self, package=None, keyword=None):
         """
         Starts the forward process.
@@ -349,7 +355,7 @@ class DispatchBaseTest(TestCase, DispatchTestHelperMixin):
         self.set_header('X-Loop', 'dispatch@' + DISTRO_TRACKER_FQDN)
         self.subscribe_user_to_package('user@domain.com', self.package_name)
 
-        self.run_forward()
+        self.run_dispatch()
 
         self.assertEqual(len(mail.outbox), 0)
 
@@ -821,3 +827,68 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
         self.run_forward()
 
         self.assertEqual(0, len(mail.outbox))
+
+    def test_dispatch_to_team_manual_mail(self):
+        """
+        Tests that the message is forwarded to team members.
+        """
+        self.run_dispatch_to_team(self.team.slug)
+        self.assert_message_forwarded_to(self.user.main_email)
+
+    def test_dispatch_to_team_has_correct_headers(self):
+        """
+        Tests that the message forwarded to team members has the required
+        headers.
+        """
+        self.run_dispatch_to_team(self.team.slug)
+
+        headers = [
+            ('X-Loop', 'dispatch@{}'.format(DISTRO_TRACKER_FQDN)),
+            ('X-Distro-Tracker-Team', self.team.slug),
+            ('X-Distro-Tracker-Keyword', 'contact'),
+        ]
+        self.assert_all_headers_found(headers)
+
+    def test_dispatch_to_non_existing_team(self):
+        """
+        Tests that nothing is forwarded when the team doesn't exist.
+        """
+        self.run_dispatch_to_team('does-not-exist')
+
+        self.assertEqual(0, len(mail.outbox))
+
+    def test_dispatch_to_team_discards_automatic_emails(self):
+        """
+        Tests that nothing is forwarded when the email is an automatic
+        message that we should have received by another channel already.
+        """
+        self.add_header('X-Distro-Tracker-Package', 'foobar')
+        self.run_dispatch_to_team(self.team.slug)
+
+        self.assertEqual(0, len(mail.outbox))
+
+    def test_dispatch_to_team_respects_the_contact_keyword_setting(self):
+        """
+        Tests that a team message is not forwarded to a team member that does
+        not have the "contact" keyword set.
+        """
+        email = self.user.main_email
+        membership = self.team.team_membership_set.get(user_email__email=email)
+        membership.set_membership_keywords(
+            [k.name for k in Keyword.objects.exclude(name='contact')])
+
+        self.run_dispatch_to_team(self.team.slug)
+
+        self.assertEqual(0, len(mail.outbox))
+
+    def test_dispatch_to_team_xloop_already_set(self):
+        """
+        Tests that the message is dropped when the X-Loop header is already
+        set.
+        """
+        self.set_header('X-Loop', 'somevalue')
+        self.set_header('X-Loop', 'dispatch@' + DISTRO_TRACKER_FQDN)
+
+        self.run_dispatch_to_team(self.team.slug)
+
+        self.assertEqual(len(mail.outbox), 0)

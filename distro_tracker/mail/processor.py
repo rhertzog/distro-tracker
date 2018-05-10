@@ -171,7 +171,7 @@ class MailProcessor(object):
                                              keyword=keyword)
 
     def handle_team(self, team):
-        pass
+        distro_tracker.mail.dispatch.process_for_team(self.message, team)
 
 
 def run_mail_processor(mail_path, log_failure=False):

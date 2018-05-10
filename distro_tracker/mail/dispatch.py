@@ -47,13 +47,23 @@ class SkipMessage(Exception):
     The mail is then silently dropped."""
 
 
-def _get_logdata(msg, package, keyword):
+def _get_logdata(msg, package, keyword, team):
     return {
         'from': extract_email_address_from_header(msg.get('From', '')),
         'msgid': msg.get('Message-ID', 'no-msgid-present@localhost'),
         'package': package or '<unknown>',
         'keyword': keyword or '<unknown>',
     }
+
+
+def _must_discard(msg, logdata):
+    # Check loop
+    dispatch_email = 'dispatch@{}'.format(DISTRO_TRACKER_FQDN)
+    if dispatch_email in msg.get_all('X-Loop', ()):
+        # Bad X-Loop, discard the message
+        logger.info('dispatch :: discarded %(msgid)s due to X-Loop', logdata)
+        return True
+    return False
 
 
 def process(msg, package=None, keyword=None):
@@ -68,7 +78,7 @@ def process(msg, package=None, keyword=None):
 
     :param str keyword: The keyword under which the message must be dispatched.
     """
-    logdata = _get_logdata(msg, package, keyword)
+    logdata = _get_logdata(msg, package, keyword, None)
     logger.info("dispatch :: received from %(from)s :: %(msgid)s",
                 logdata)
     try:
@@ -80,6 +90,9 @@ def process(msg, package=None, keyword=None):
     if package is None:
         logger.warning('dispatch :: no package identified for %(msgid)s',
                        logdata)
+        return
+
+    if _must_discard(msg, logdata):
         return
 
     if isinstance(package, (list, set)):
@@ -101,16 +114,10 @@ def forward(msg, package, keyword):
 
     :param str keyword: The keyword under which the message must be forwarded.
     """
-    logdata = _get_logdata(msg, package, keyword)
+    logdata = _get_logdata(msg, package, keyword, None)
 
     logger.info("dispatch :: forward to %(package)s %(keyword)s :: %(msgid)s",
                 logdata)
-    # Check loop
-    dispatch_email = 'dispatch@{}'.format(DISTRO_TRACKER_FQDN)
-    if dispatch_email in msg.get_all('X-Loop', ()):
-        # Bad X-Loop, discard the message
-        logger.info('dispatch :: discarded %(msgid)s due to X-Loop', logdata)
-        return
 
     # Default keywords require special approvement
     if keyword == 'default' and not approved_default(msg):
@@ -119,9 +126,41 @@ def forward(msg, package, keyword):
         return
 
     # Now send the message to subscribers
+    add_xloop(msg)
     add_new_headers(msg, package, keyword)
     send_to_subscribers(msg, package, keyword)
     send_to_teams(msg, package, keyword)
+
+
+def process_for_team(msg, team_slug):
+    logdata = _get_logdata(msg, None, None, team_slug)
+    logger.info("dispatch :: received for team %(team)s "
+                "from %(from)s :: %(msgid)s", logdata)
+
+    if _must_discard(msg, logdata):
+        return
+
+    try:
+        team = Team.objects.get(slug=team_slug)
+    except Team.DoesNotExist:
+        logger.info("dispatch :: discarded %(msgid)s for team %(team)s "
+                    "since team doesn't exist", logdata)
+        return
+
+    package, keyword = classify_message(msg)
+    if package:
+        logger.info("dispatch :: discarded %(msgid)s for team %(team)s "
+                    "as an automatic mail", logdata)
+        return
+
+    forward_to_team(msg, team)
+
+
+def forward_to_team(msg, team):
+    logdata = _get_logdata(msg, None, None, team)
+    logger.info("dispatch :: forward to team %(team)s :: %(msgid)s",
+                logdata)
+    send_to_team(msg, team, keyword="contact")
 
 
 def classify_message(msg, package=None, keyword=None):
@@ -171,6 +210,10 @@ def approved_default(msg):
         return False
 
 
+def add_xloop(msg):
+    msg['X-Loop'] = 'dispatch@{}'.format(DISTRO_TRACKER_FQDN)
+
+
 def add_new_headers(received_message, package_name, keyword):
     """
     The function adds new distro-tracker specific headers to the received
@@ -192,7 +235,6 @@ def add_new_headers(received_message, package_name, keyword):
     :type keyword: string
     """
     new_headers = [
-        ('X-Loop', 'dispatch@{}'.format(DISTRO_TRACKER_FQDN)),
         ('X-Distro-Tracker-Package', package_name),
         ('X-Distro-Tracker-Keyword', keyword),
         ('List-Id', '<{}.{}>'.format(package_name, DISTRO_TRACKER_FQDN)),
@@ -203,7 +245,8 @@ def add_new_headers(received_message, package_name, keyword):
     if implemented:
         new_headers.extend(extra_vendor_headers)
 
-    add_headers(received_message, new_headers)
+    for header_name, header_value in new_headers:
+        received_message[header_name] = header_value
 
 
 def add_direct_subscription_headers(received_message, package_name, keyword):
@@ -218,27 +261,17 @@ def add_direct_subscription_headers(received_message, package_name, keyword):
                 control_email=DISTRO_TRACKER_CONTROL_EMAIL,
                 package=package_name)),
     ]
-    add_headers(received_message, new_headers)
+    for header_name, header_value in new_headers:
+        received_message[header_name] = header_value
 
 
-def add_team_membership_headers(received_message, package_name, keyword, team):
+def add_team_membership_headers(received_message, keyword, team):
     """
     The function adds headers to the received message which are specific for
     messages to be sent to users that are members of a team.
     """
-    new_headers = [
-        ('X-Distro-Tracker-Team', team.slug),
-    ]
-    add_headers(received_message, new_headers)
-
-
-def add_headers(message, new_headers):
-    """
-    Adds the given headers to the given message. This used to
-    contain more code for Python 2 compat.
-    """
-    for header_name, header_value in new_headers:
-        message[header_name] = header_value
+    received_message['X-Distro-Tracker-Team'] = team.slug
+    received_message['X-Distro-Tracker-Keyword'] = keyword
 
 
 def send_to_teams(received_message, package_name, keyword):
@@ -270,25 +303,30 @@ def send_to_teams(received_message, package_name, keyword):
     teams = Team.objects.filter(packages=package)
     teams = teams.prefetch_related('team_membership_set')
 
+    for team in teams:
+        send_to_team(received_message, team, keyword, package.name)
+
+
+def send_to_team(received_message, team, keyword, package_name=None):
+    keyword = get_or_none(Keyword, name=keyword)
+    package = get_or_none(PackageName, name=package_name)
     date = timezone.now().date()
     messages_to_send = []
-    for team in teams:
-        logger.info('dispatch :: sending to team %s', team.slug)
-        team_message = deepcopy(received_message)
-        add_team_membership_headers(
-            team_message, package_name, keyword.name, team)
+    logger.info('dispatch :: sending to team %s', team.slug)
+    team_message = deepcopy(received_message)
+    add_team_membership_headers(team_message, keyword.name, team)
 
-        # Send the message to each member of the team
-        for membership in team.team_membership_set.all():
-            # Do not send messages to muted memberships
-            if membership.is_muted(package):
-                continue
-            # Do not send the message if the user has disabled the keyword
-            if keyword not in membership.get_keywords(package):
-                continue
+    # Send the message to each member of the team
+    for membership in team.team_membership_set.all():
+        # Do not send messages to muted memberships
+        if membership.is_muted(package):
+            continue
+        # Do not send the message if the user has disabled the keyword
+        if keyword not in membership.get_keywords(package):
+            continue
 
-            messages_to_send.append(prepare_message(
-                team_message, membership.user_email.email, date))
+        messages_to_send.append(prepare_message(
+            team_message, membership.user_email.email, date))
 
     send_messages(messages_to_send, date)
 
