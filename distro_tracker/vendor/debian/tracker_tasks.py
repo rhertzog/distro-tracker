@@ -852,6 +852,30 @@ class UpdateExcusesTask(BaseTask):
             return (source['item-name'], {'age': age, 'limit': limit})
 
     @staticmethod
+    def _make_excuses_check_dependencies(source):
+        """Checks the dependencies of the package (blocked-by and
+        migrate-after) and returns a list to display."""
+
+        addendum = []
+
+        if 'dependencies' in source:
+            blocked_by = source['dependencies'].get('blocked-by', [])
+            after = source['dependencies'].get('migrate-after', [])
+            after = [
+                element
+                for element in after
+                if element not in blocked_by
+            ]
+            addendum.append("Blocked by: %s" % (
+                html_package_list(blocked_by),
+            ))
+            addendum.append("Migrates after: %s" % (
+                html_package_list(after),
+            ))
+
+        return addendum
+
+    @staticmethod
     def _make_excuses_check_verdict(source):
         """Checks the migration policy verdict of the package and builds an
         excuses message depending on the result."""
@@ -861,20 +885,10 @@ class UpdateExcusesTask(BaseTask):
         if 'migration-policy-verdict' in source:
             verdict = source['migration-policy-verdict']
             if verdict == 'REJECTED_BLOCKED_BY_ANOTHER_ITEM':
-                addendum.append((
-                    "Migration status: Blocked. Can't migrate due to a "
-                    "non-migrable dependency. Check status below."
-                ))
-                if 'dependencies' in source:
-                    blocked_by = source['dependencies'].get('blocked-by', [])
-                    after = source['dependencies'].get('migrate-after', [])
-                    deps = list({
-                        element
-                        for element in blocked_by + after
-                    })
-                    addendum.append("Blocked by: %s" % (
-                        html_package_list(deps),
-                    ))
+                addendum.append("Migration status: Blocked. Can't migrate "
+                                "due to a non-migrable dependency. Check "
+                                "status below."
+                                )
 
         return addendum
 
@@ -916,6 +930,7 @@ class UpdateExcusesTask(BaseTask):
         addendum = []
 
         addendum.extend(self._make_excuses_check_verdict(source))
+        addendum.extend(self._make_excuses_check_dependencies(source))
         addendum.extend(self._make_excuses_check_age(source))
 
         excuses = addendum + excuses
