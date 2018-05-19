@@ -866,12 +866,14 @@ class UpdateExcusesTask(BaseTask):
                 for element in after
                 if element not in blocked_by
             ]
-            addendum.append("Blocked by: %s" % (
-                html_package_list(blocked_by),
-            ))
-            addendum.append("Migrates after: %s" % (
-                html_package_list(after),
-            ))
+            if blocked_by:
+                addendum.append("Blocked by: %s" % (
+                    html_package_list(blocked_by),
+                ))
+            if after:
+                addendum.append("Migrates after: %s" % (
+                    html_package_list(after),
+                ))
 
         return addendum
 
