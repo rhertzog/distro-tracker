@@ -256,6 +256,12 @@ class PackageName(models.Model):
     pseudo_packages = PackageManager('pseudo')
     default_manager = models.Manager()
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['id'], name='id_idx'),
+            models.Index(fields=['name'], name='name_idx'),
+        ]
+
     def __str__(self):
         return self.name
 
@@ -2205,7 +2211,8 @@ class Team(models.Model):
 
     packages = models.ManyToManyField(
         PackageName,
-        related_name='teams')
+        related_name='teams',
+        db_index=True)
     members = models.ManyToManyField(
         UserEmail,
         related_name='teams',

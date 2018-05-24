@@ -160,6 +160,9 @@
                 </ul>
             </div>
         </div>
+        {% for table in tables %}
+          {% include 'core/package-table.html' with table=table %}
+        {% endfor %}
     </div>
     <div class="col-md-3" id="dtracker-package-right">
         {% if user_member_of_team %}

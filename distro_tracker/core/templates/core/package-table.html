@@ -1,0 +1,31 @@
+<div class="panel package-table">
+  <div class="panel-heading">{{table.title}} ({{table.number_of_packages}})</div>
+  <div class="panel-body">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          {% for name in table.column_names %}
+            <th class='center' scope="col">{{name}}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% with rows=table.rows %}
+          {% for row in rows %}
+          <tr scope='row'>
+            {% for field in row %}
+            <td class='center' scope='col'>
+              {% if field.template_name %}
+                {% include field.template_name with field=field %}
+              {% else %}
+                {{ field.html_output }}
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        {% endwith %}
+      </tbody>
+    </table>
+  </div>
+</div>

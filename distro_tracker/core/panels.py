@@ -29,7 +29,11 @@ from distro_tracker.core.models import (
     SourcePackageName
 )
 from distro_tracker.core.templatetags.distro_tracker_extras import octicon
-from distro_tracker.core.utils import get_or_none, get_vcs_name
+from distro_tracker.core.utils import (
+    get_or_none,
+    get_vcs_name,
+    add_developer_extras
+)
 from distro_tracker.core.utils.plugins import PluginRegistry
 
 logger = logging.getLogger(__name__)
@@ -184,12 +188,6 @@ class GeneralInformationPanel(BasePanel):
         if ml:
             return ml.archive_url_for_email(email)
 
-    def _get_developer_information_url(self, email):
-        info_url, implemented = vendor.call(
-            'get_developer_information_url', **{'developer_email': email, })
-        if implemented and info_url:
-            return info_url
-
     def _add_archive_urls(self, general):
         maintainer_email = general['maintainer']['email']
         general['maintainer']['archive_url'] = (
@@ -204,29 +202,6 @@ class GeneralInformationPanel(BasePanel):
             uploader['archive_url'] = (
                 self._get_archive_url_info(uploader['email'])
             )
-
-    def _add_developer_extras(self, general):
-        maintainer_email = general['maintainer']['email']
-        url = self._get_developer_information_url(maintainer_email)
-        if url:
-            general['maintainer']['developer_info_url'] = url
-            extra, implemented = vendor.call(
-                'get_maintainer_extra', maintainer_email, general['name'])
-            general['maintainer']['extra'] = extra
-
-        uploaders = general.get('uploaders', None)
-        if not uploaders:
-            return
-
-        for uploader in uploaders:
-            # Vendor specific extras.
-            extra, implemented = vendor.call(
-                'get_uploader_extra', uploader['email'], general['name'])
-            if implemented and extra:
-                uploader['extra'] = extra
-            url = self._get_developer_information_url(uploader['email'])
-            if url:
-                uploader['developer_info_url'] = url
 
     @cached_property
     def context(self):
@@ -264,7 +239,7 @@ class GeneralInformationPanel(BasePanel):
         # Add mailing list archive URLs
         self._add_archive_urls(general)
         # Add developer information links and any other vendor-specific extras
-        self._add_developer_extras(general)
+        general = add_developer_extras(general)
 
         return general
 
