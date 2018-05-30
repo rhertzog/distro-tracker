@@ -126,7 +126,10 @@ class GeneralInformationTableField(BaseTableField):
             info = self.package.general_data[0]
         except IndexError:
             # There is no general info for the package
-            return
+            return {
+                'url': self.package.get_absolute_url,
+                'name': self.package.name
+            }
 
         general = info.value
         general['url'] = self.package.get_absolute_url

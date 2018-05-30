@@ -1295,6 +1295,12 @@ class TeamTests(SeleniumTestCase):
         team = Team.objects.get(name=team_name)
         return team.get_absolute_url()
 
+    def get_team_manage_url(self, team_name):
+        team = Team.objects.get(name=team_name)
+        return reverse('dtracker-team-manage', kwargs={
+            'slug': team.slug,
+        })
+
     def get_delete_team_url(self, team_name):
         team = Team.objects.get(name=team_name)
         return reverse('dtracker-team-delete', kwargs={
@@ -1591,14 +1597,11 @@ class TeamTests(SeleniumTestCase):
             PackageName.objects.create(name=package_name)
         # === -- ===
 
-        # The user opens the team page without logging in
-        self.get_page(self.get_team_url(team_name))
-        # The page does not show the form to add a package.
-        form = self.get_element_by_id('add-team-package-form')
-        self.assertIsNone(form)
-        # The user logs in and opens the team page
         self.log_in()
         self.get_page(self.get_team_url(team_name))
+        # The user opens the member management page
+        self.get_element_by_id('manage-team-button').click()
+
         # The response page shows the form to add packages now.
         self.assert_element_with_id_in_page('add-team-package-form')
         # The user enters the name of the package to add...
@@ -1608,7 +1611,7 @@ class TeamTests(SeleniumTestCase):
         self.wait_response(1)
 
         # The user is still in the team page
-        self.assert_current_url_equal(self.get_team_url(team_name))
+        self.assert_current_url_equal(self.get_team_manage_url(team_name))
         # The page now shows the package they added in the list of packages.
         self.assert_in_page_body(package_names[0])
 
@@ -1632,7 +1635,7 @@ class TeamTests(SeleniumTestCase):
         self.get_element_by_id('remove-package-cancel-button').click()
         self.wait_response(1)
         # The response is still the team page, and the package is not removed.
-        self.assert_current_url_equal(self.get_team_url(team_name))
+        self.assert_current_url_equal(self.get_team_manage_url(team_name))
         # === The package is not removed? ===
         self.assertEqual(1, team.packages.count())
 
@@ -1644,7 +1647,7 @@ class TeamTests(SeleniumTestCase):
 
         # The user is still on the team page, but the package is not longer
         # a part of the team.
-        self.assert_current_url_equal(self.get_team_url(team_name))
+        self.assert_current_url_equal(self.get_team_manage_url(team_name))
         self.assert_not_in_page_body(package_names[0])
         # === The package is really removed from the team ===
         self.assertEqual(0, team.packages.count())
@@ -1671,9 +1674,6 @@ class TeamTests(SeleniumTestCase):
         self.get_element_by_id('join-team-button').click()
         self.wait_response(1)
 
-        # The response is still the team page, but now the user is a
-        # member of the team.
-        self.assert_element_with_id_in_page('add-team-package-form')
         # === The user is really a member? ===
         self.assertTrue(team.user_is_member(user))
         # The page now has a button to leave the team.
@@ -1704,7 +1704,7 @@ class TeamTests(SeleniumTestCase):
         self.get_page(self.get_team_url(team_name))
         self.assert_in_page_body('Contact the owner')
 
-    def test_owner_members_management(self):
+    def test_owner_team_management(self):
         """
         Tests that a team owner is able to add/remove members from a separate
         panel.

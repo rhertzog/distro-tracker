@@ -336,3 +336,7 @@ form#team-search-form .twitter-typeahead {
 form#team-search-form .twitter-typeahead > input {
   width: 100% !important;
 }
+
+.center {
+  text-align: center;
+}

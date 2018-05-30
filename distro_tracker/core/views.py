@@ -337,12 +337,10 @@ class AddPackageToTeamView(LoginRequiredMixin, View):
             if package:
                 team.packages.add(package)
 
-        return redirect(team)
+        return redirect('dtracker-team-manage', slug=team.slug)
 
 
 class RemovePackageFromTeamView(LoginRequiredMixin, View):
-    template_name = 'core/team-remove-package-confirm.html'
-
     def get_team(self, slug):
         team = get_object_or_404(Team, slug=slug)
         if not team.user_is_member(self.request.user):
@@ -351,20 +349,6 @@ class RemovePackageFromTeamView(LoginRequiredMixin, View):
             raise PermissionDenied
 
         return team
-
-    def get(self, request, slug):
-        self.request = request
-        team = self.get_team(slug)
-
-        if 'package' not in request.GET:
-            raise Http404
-        package_name = request.GET['package']
-        package = get_or_none(PackageName, name=package_name)
-
-        return render(self.request, self.template_name, {
-            'package': package,
-            'team': team,
-        })
 
     def post(self, request, slug):
         """
@@ -385,7 +369,7 @@ class RemovePackageFromTeamView(LoginRequiredMixin, View):
             if package:
                 team.packages.remove(package)
 
-        return redirect(team)
+        return redirect('dtracker-team-manage', slug=team.slug)
 
 
 class JoinTeamView(LoginRequiredMixin, View):
@@ -445,7 +429,7 @@ class LeaveTeamView(LoginRequiredMixin, View):
         return redirect(team)
 
 
-class ManageTeamMembers(LoginRequiredMixin, ListView):
+class ManageTeam(LoginRequiredMixin, ListView):
     """
     Provides the team owner a method to manually add/remove members of the
     team.
@@ -458,8 +442,7 @@ class ManageTeamMembers(LoginRequiredMixin, ListView):
         return self.team.members.all().order_by('email')
 
     def get_context_data(self, *args, **kwargs):
-        context = super(ManageTeamMembers, self).get_context_data(*args,
-                                                                  **kwargs)
+        context = super(ManageTeam, self).get_context_data(*args, **kwargs)
         context['team'] = self.team
         context['form'] = AddTeamMemberForm()
         return context
@@ -469,7 +452,7 @@ class ManageTeamMembers(LoginRequiredMixin, ListView):
         # Make sure only the owner can access this page
         if self.team.owner != request.user:
             raise PermissionDenied
-        return super(ManageTeamMembers, self).get(request, slug)
+        return super(ManageTeam, self).get(request, slug)
 
 
 class RemoveTeamMember(LoginRequiredMixin, View):

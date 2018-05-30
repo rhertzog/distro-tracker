@@ -1,41 +1,115 @@
 {% extends 'core/base.html' %}
 {% load bootstrap %}
+{% load distro_tracker_extras %}
 
-{% block content %}
-<h1 class="text-xs-center">Member management for team <a href="{{ team.get_absolute_url }}">{{ team }}</a></h1>
-<div>
-  {% include 'core/profile-messages.html' %}
-  <h3>Add user to team</h3>
-<form class="form-inline" id="team-add-user-form" action="{% url 'dtracker-team-add-member' team.slug %}" method="POST">{% csrf_token %}
-    {{ form|bootstrap_inline }}
-    <button class="btn btn-default">Add member</button>
-</form>
-</div>
-<div>
-<h3>Team members</h3>
-<ul class="list-group">
-{% for member in members_list %}
-<li class="list-group-item">
+{% block page-content %}
+<div class="container">
+  <h2 class="text-xs-center">Management page for team <a href="{{ team.get_absolute_url }}">{{ team }}</a></h2>
+  <div>
+    {% include 'core/profile-messages.html' %}
+  </div>
+  <div>
+
+  {# A hidden modal which asks for confirmation before removing a package from the team. #}
+  {% spaceless %}
+  <div id="confirm-package-remove-modal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+    <div class="modal-content">
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+      <h3 class="text-xs-center">Are you sure you want to remove this package from the team?</h3>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" id="remove-package-cancel-button" data-dismiss="modal" aria-hidden="true">Cancel</button>
+      <form class="unstyled-form" action="{% url 'dtracker-team-remove-package' team.slug %}" method="POST">{% csrf_token %}
+          <input id="remove-package-name" type="hidden" name="package" value="">
+          <button class="btn btn-danger" id='confirm-remove-package-button' aria-hidden="true">Remove</button>
+      </form>
+    </div>
+    </div>
+    </div>
+  </div>
+  {% endspaceless %}
+
+  <div class="container-fluid">
     <div class="row">
-    <div class="col-md-10">{{ member }}</div>
-    <div class="col-md-2">
-        <form class="unstyled-form" action="{% url 'dtracker-team-remove-member' team.slug %}" method="POST">{% csrf_token %}
-        <input type="hidden" name="email" value="{{ member }}">
-        <button class="btn btn-xs btn-danger remove-user-button">Remove</button>
-        </form>
+      <div class="col-md-3" id="dtracker-package-left">
+        {% if team.packages.all %}{# Anything to display? #}
+          <div class="panel">
+            <div class="panel-heading">Team packages</div>
+            <div class="panel-body">
+              <ul class="list-group list-group-flush">
+              {% with packages=team.packages.all|dictsort:'name' %}
+              {% for package in packages %}
+                <li class="list-group-item">
+                  <div class="row">
+                    <div class="col-xs-12">
+                    {% if package.get_absolute_url %}
+                      <span><a href="{% url 'dtracker-package-page' package %}">{{ package }}</a></span>
+                    {% else %}
+                      <span>{{ package }}</span>
+                    {% endif %}
+                    <div class="pull-xs-right">
+                      <a href="{% url 'dtracker-team-remove-package' team.slug %}?package={{ package|urlencode:'' }}"><span data-package="{{ package }}" class="remove-package-from-team-button">{% octicon 'trashcan' 'remove package from team' %}</span></a>
+                    </div>
+                    </div>
+                  </div>
+                </li>
+              {% endfor %}
+              {% endwith %}
+              </ul>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+      <div class="col-md-6" id="dtracker-package-center">
+        <div class="panel">
+          <div class="panel-heading">Team members</div>
+          <div class="panel-body" style="padding-top: 10px;">
+            <form class="form-inline center" id="team-add-user-form" action="{% url 'dtracker-team-add-member' team.slug %}" method="POST">{% csrf_token %}
+              {{ form|bootstrap_inline }}
+              <button class="btn btn-primary">Add member</button>
+            </form>
+            <hr>
+            <ul class="list-group">
+            {% for member in members_list %}
+              <li class="list-group-item">
+                <div class="row">
+                  <span class="col-md-9 col-sm-12">{{ member }}</span>
+                  <div class="col-md-3 col-sm-12">
+                    <form class="unstyled-form" action="{% url 'dtracker-team-remove-member' team.slug %}" method="POST">{% csrf_token %}
+                      <input type="hidden" name="email" value="{{ member }}">
+                      <button class="btn btn-danger remove-user-button pull-right">Remove</button>
+                    </form>
+                  </div>
+                </div>
+              </li>
+            {% endfor %}
+            </ul>
+          </div>
+        </div>
+        {% if is_paginated %}
+        <div class="text-xs-center">
+          <ul class="pagination">
+          {% for page in page_obj.paginator.page_range %}
+            <li class="page-item{% if page_obj.number == page %} active{% endif %}"><a class="page-link" href="?page={{ page|urlencode:'' }}">{{ page }}</a></li>
+          {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+      </div>
+      <div class="col-md-3" id="dtracker-package-right">
+        <div class="panel">
+          <div class="panel-heading">Add packages</div>
+          <div class="panel-body" style="padding-top: 10px;">
+            <form class="form-inline" id="add-team-package-form" action="{% url 'dtracker-team-add-package' team.slug %}" method="POST">{% csrf_token %}
+              <input class="form-control package-completion" type="search" id="id_package_name" name="package" placeholder="Choose package...">
+              <button class="btn btn-primary">Add</button>
+            </form>
+          </div>
+        </div>
+      </div>
     </div>
-    </div>
-</li>
-{% endfor %}
-</ul>
-{% if is_paginated %}
-<div class="text-xs-center">
-<ul class="pagination">
-    {% for page in page_obj.paginator.page_range %}
-    <li class="page-item{% if page_obj.number == page %} active{% endif %}"><a class="page-link" href="?page={{ page|urlencode:'' }}">{{ page }}</a></li>
-    {% endfor %}
-</ul>
+  </div>
 </div>
-</div>
-{% endif %}
 {% endblock %}
