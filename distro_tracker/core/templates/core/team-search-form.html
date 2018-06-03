@@ -1,0 +1,14 @@
+{% spaceless %}
+<div class="row">
+  <form class="form-inline" id="team-search-form" action="{% url 'dtracker-team-search' %}" method="GET">
+    <div class="col-lg-6 col-lg-offset-3">
+      <div class="input-group">
+        <input type="text" class="form-control team-completion" name="query" id='team-search-input' placeholder="Jump to team..."{% if autofocus %} autofocus='autofocus'{% endif %}>
+        <div class="input-group-btn">
+          <button type="submit" class="btn btn-default">Go</button>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+{% endspaceless %}

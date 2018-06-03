@@ -668,6 +668,64 @@ class EditMembershipView(LoginRequiredMixin, ListView):
         return context
 
 
+class TeamAutocompleteView(View):
+    """
+    A view which responds to team auto-complete queries.
+
+    Renders a JSON list of team names matching the given query, meaning
+    their name contains the given query parameter.
+    """
+    @method_decorator(cache_control(must_revalidate=True, max_age=3600))
+    def get(self, request):
+        if 'q' not in request.GET:
+            raise Http404
+        query_string = request.GET['q']
+        filtered = Team.objects.filter(
+            Q(name__icontains=query_string) | Q(slug__icontains=query_string))
+        # Extract only the name and slug of the team.
+        filtered = filtered.values('name', 'slug')
+        # Limit the number of teams returned from the autocomplete
+        AUTOCOMPLETE_ITEMS_LIMIT = 100
+        filtered = filtered[:AUTOCOMPLETE_ITEMS_LIMIT]
+        return render_to_json_response({
+            'query_string': query_string,
+            'teams': list(filtered)
+        })
+
+
+class TeamSearchView(View):
+    """
+    A view which responds to team search queries.
+    """
+    def get(self, request):
+        if 'query' not in self.request.GET:
+            raise Http404
+
+        query = self.request.GET.get('query')
+        team = self.find_team(query)
+        if team is not None:
+            return redirect(team)
+        else:
+            messages.error(
+                request,
+                ("No team could be identified with the query string %s" % query)
+            )
+            return redirect(reverse('dtracker-team-list'))
+
+    def find_team(self, query):
+        if Team.objects.filter(slug=query).exists():
+            return Team.objects.filter(slug=query).first()
+        elif Team.objects.filter(name=query).exists():
+            return Team.objects.filter(name=query).first()
+        elif Team.objects.filter(
+            Q(name__icontains=query) | Q(slug__icontains=query)
+        ).count() == 1:
+            return Team.objects.filter(
+                Q(name__icontains=query) | Q(slug__icontains=query)).first()
+
+        return None
+
+
 class IndexView(TemplateView):
     template_name = 'core/index.html'
 

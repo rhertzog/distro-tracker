@@ -60,6 +60,8 @@ from distro_tracker.core.views import (
     PackageAutocompleteView,
     PackageNews,
     PackageSearchView,
+    TeamAutocompleteView,
+    TeamSearchView,
     RemovePackageFromTeamView,
     RemoveTeamMember,
     SetMembershipKeywords,
@@ -100,6 +102,8 @@ urlpatterns = [
         name='dtracker-api-action-item'),
     url(r'^api/keywords/$', KeywordsView.as_view(),
         name='dtracker-api-keywords'),
+    url(r'^api/teams/search/autocomplete$', TeamAutocompleteView.as_view(),
+        name='dtracker-api-team-autocomplete'),
 
     url(r'^admin/', admin.site.urls),
 
@@ -211,6 +215,8 @@ urlpatterns = [
     url(r'^teams/\+confirm/(?P<confirmation_key>.+)/$',
         ConfirmMembershipView.as_view(),
         name='dtracker-team-confirm-membership'),
+    url(r'^team/\+search$', TeamSearchView.as_view(),
+        name='dtracker-team-search'),
     url(r'^teams/(?P<slug>.+)/\+mute/$', SetMuteTeamView.as_view(action='mute'),
         name='dtracker-team-mute'),
     url(r'^teams/(?P<slug>.+)/\+unmute/$',

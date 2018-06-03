@@ -323,3 +323,16 @@ summary {
 summary::-webkit-details-marker {
  display: none;
 }
+
+form#team-search-form div.input-group {
+  width: 100%;
+}
+
+form#team-search-form .twitter-typeahead {
+  padding-top: 3px;
+  width: 100%;
+}
+
+form#team-search-form .twitter-typeahead > input {
+  width: 100% !important;
+}

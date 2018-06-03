@@ -429,6 +429,70 @@ class PackageAutocompleteViewTest(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
+class TeamAutocompleteViewTest(TestCase):
+    def setUp(self):
+        Team.objects.create_with_slug(name='Debian Go Packaging Team')
+        Team.objects.create_with_slug(name='Debian HPC')
+        Team.objects.create_with_slug(name='Java Team')
+
+    def test_team_autocomplete(self):
+        """
+        Tests the autocomplete functionality when the client asks for teams
+        """
+        response = self.client.get(reverse('dtracker-api-team-autocomplete'),
+                                   {'q': 'd'})
+
+        response = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(response['query_string'], 'd')
+        self.assertEqual(len(response['teams']), 2)
+        names = [team['name'] for team in response['teams']]
+        self.assertIn('Debian Go Packaging Team', names)
+        self.assertIn('Debian HPC', names)
+
+        response = self.client.get(reverse('dtracker-api-team-autocomplete'),
+                                   {'q': 'team'})
+
+        response = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(response['query_string'], 'team')
+        self.assertEqual(len(response['teams']), 2)
+        names = [team['name'] for team in response['teams']]
+        self.assertIn('Debian Go Packaging Team', names)
+        self.assertIn('Java Team', names)
+
+    def test_team_autocomplete_with_slug(self):
+        """
+        Tests the autocomplete functionality when the client asks for teams
+        by their slugs
+        """
+        response = self.client.get(reverse('dtracker-api-team-autocomplete'),
+                                   {'q': '-team'})
+
+        response = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(response['query_string'], '-team')
+        self.assertEqual(len(response['teams']), 2)
+        names = [team['name'] for team in response['teams']]
+        self.assertIn('Debian Go Packaging Team', names)
+        self.assertIn('Java Team', names)
+
+    def test_query_does_not_match_teams(self):
+        """
+        Tests the autocomplete functionality when the client's query
+        does not match any team
+        """
+        response = self.client.get(reverse('dtracker-api-team-autocomplete'),
+                                   {'q': 'z'})
+        response = json.loads(response.content.decode('utf-8'))
+        self.assertEqual(response['query_string'], 'z')
+        self.assertEqual(len(response['teams']), 0)
+
+    def test_no_query_given(self):
+        """
+        Tests the autocomplete when there is no query parameter given.
+        """
+        response = self.client.get(reverse('dtracker-api-package-autocomplete'))
+        self.assertEqual(response.status_code, 404)
+
+
 class ActionItemJsonViewTest(TestCase):
     """
     Tests for the :class:`distro_tracker.core.views.ActionItemJsonView`.
@@ -1443,6 +1507,99 @@ class TeamListViewTest(UserAuthMixin, TestCase):
             [{'name': 'First team'}, {'name': 'Second team'}],
             list(self.response.context['team_list'].values('name'))
         )
+
+
+class TeamSearchViewTest(TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.views.TeamSearchView`.
+    """
+    def setUp(self):
+        self.team_1 = Team.objects.create_with_slug(name='Debian HPC')
+        self.team_2 = Team.objects.create_with_slug(
+            name='Debian Go Packaging Team')
+
+    def assert_not_found_team(self, response, query="new-team"):
+        self.assertRedirects(response, reverse('dtracker-team-list'))
+        message = list(response.context['messages'])[0]
+        self.assertEqual(message.level_tag, "danger")
+        self.assertIn(
+            ("No team could be identified with the query string %s" % query),
+            message.message
+        )
+
+    def test_search_for_existing_team_by_slug(self):
+        """
+        Tests the search for existing team by slug
+        """
+        response = self.client.get(reverse('dtracker-team-search'), {
+            'query': self.team_1.slug
+        })
+        self.assertRedirects(response, self.team_1.get_absolute_url())
+
+    def test_search_for_existing_team_by_name(self):
+        """
+        Tests the search for existing team by name
+        """
+        response = self.client.get(reverse('dtracker-team-search'), {
+            'query': self.team_1.name
+        })
+        self.assertRedirects(response, self.team_1.get_absolute_url())
+
+    def test_search_for_team_by_partial_name_or_slug(self):
+        """
+        Tests the search for team by partial name or slug
+        when it identify a single matching team
+        """
+        response = self.client.get(reverse('dtracker-team-search'), {
+            'query': 'Debian H'
+        })
+        self.assertRedirects(response, self.team_1.get_absolute_url())
+
+        response = self.client.get(reverse('dtracker-team-search'), {
+            'query': 'debian-h'
+        })
+        self.assertRedirects(response, self.team_1.get_absolute_url())
+
+    def test_fail_to_search_for_team_by_partial_name_or_slug(self):
+        """
+        Tests the search for team by partial name or slug
+        when it identifies multiple matching teams
+        """
+        response = self.client.get(reverse('dtracker-team-search'), {
+            'query': 'Debian'
+        }, follow=True)
+        self.assert_not_found_team(response, 'Debian')
+
+        response = self.client.get(reverse('dtracker-team-search'), {
+            'query': 'debian-'
+        }, follow=True)
+        self.assert_not_found_team(response, 'debian-')
+
+    def test_team_does_not_exist(self):
+        """
+        Tests the team search when the given team does not exist.
+        """
+        slug = 'does-not-exist'
+        response = self.client.get(
+            reverse('dtracker-team-search'), {'query': slug}, follow=True)
+        self.assert_not_found_team(response, slug)
+
+    def test_case_insensitive_team_search(self):
+        """
+        Tests that team search is case insensitive
+        """
+        slug = 'debian-HPC'
+        response = self.client.get(
+            reverse('dtracker-team-search'), {'query': slug}, follow=True)
+        self.assertRedirects(response, self.team_1.get_absolute_url())
+
+    def test_search_without_query_parameter(self):
+        """
+        Tests error response when the query parameter is missing
+        """
+        response = self.client.get(reverse('dtracker-package-search'))
+        self.assertEqual(response.status_code, 404)
 
 
 class SetMuteTeamViewTest(UserAuthMixin, TestCase):
