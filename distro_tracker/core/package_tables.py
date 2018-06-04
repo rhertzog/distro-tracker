@@ -13,6 +13,7 @@ import logging
 from django.utils.functional import cached_property
 from django.db.models import Prefetch
 
+from django.core.exceptions import ObjectDoesNotExist
 from distro_tracker.core.models import (
     PackageData,
     PackageName,
@@ -179,6 +180,29 @@ class RepositoryTableField(BaseTableField):
         return general
 
 
+class BugStatsTableField(BaseTableField):
+    """
+    This table field displays bug statistics for the package.
+    """
+    column_name = 'Bugs'
+    template_name = 'core/package-table-fields/bugs.html'
+    prefetch_related_lookups = ['bug_stats']
+
+    @cached_property
+    def context(self):
+        stats = {}
+        try:
+            stats['bugs'] = self.package.bug_stats.stats
+        except ObjectDoesNotExist:
+            stats['all'] = 0
+            return stats
+
+        # Also adds a total of all those bugs
+        total = sum(category['bug_count'] for category in stats['bugs'])
+        stats['all'] = total
+        return stats
+
+
 class BasePackageTable(metaclass=PluginRegistry):
     """
     A base class representing package tables which are displayed on a team page.
@@ -306,7 +330,9 @@ class GeneralTeamPackageTable(BasePackageTable):
     This table displays the packages information of a team in a simple fashion.
     It must receive a :class:`Team <distro_tracker.core.models.Team>` as scope
     """
-    table_fields = (GeneralInformationTableField, RepositoryTableField)
+    table_fields = (
+        GeneralInformationTableField, RepositoryTableField, BugStatsTableField
+    )
     title = "All team packages"
 
     @property

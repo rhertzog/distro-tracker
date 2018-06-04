@@ -340,3 +340,7 @@ form#team-search-form .twitter-typeahead > input {
 .center {
   text-align: center;
 }
+
+.cursor-pointer:hover {
+  cursor: pointer;
+}

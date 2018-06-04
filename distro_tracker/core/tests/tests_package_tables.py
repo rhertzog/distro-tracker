@@ -17,6 +17,7 @@ from bs4 import BeautifulSoup as soup
 
 from distro_tracker.core.models import (
     PackageData,
+    PackageBugStats,
     Team,
     SourcePackageName
 )
@@ -24,7 +25,8 @@ from django_email_accounts.models import User
 from distro_tracker.core.package_tables import (
     GeneralTeamPackageTable,
     GeneralInformationTableField,
-    RepositoryTableField
+    RepositoryTableField,
+    BugStatsTableField
 )
 from distro_tracker.test import TemplateTestsMixin, TestCase
 
@@ -53,6 +55,15 @@ def create_package_data(package):
             'component': 'main',
         }
     )
+
+
+def create_package_bug_stats(package):
+    bug_stats = [
+        {'bug_count': 3, 'merged_count': 3, 'category_name': 'rc'},
+        {'bug_count': 7, 'merged_count': 7, 'category_name': 'normal'},
+        {'bug_count': 1, 'merged_count': 1, 'category_name': 'wishlist'},
+    ]
+    return PackageBugStats.objects.create(package=package, stats=bug_stats)
 
 
 class GeneralInformationTableFieldTests(TestCase):
@@ -118,6 +129,37 @@ class RepositoryTableFieldTests(TestCase):
         self.assertEqual(len(self.field.prefetch_related_lookups), 1)
 
 
+class BugStatsTableFieldTests(TestCase):
+    def setUp(self):
+        self.package = create_source_package_with_data('dummy-package')
+        create_package_bug_stats(self.package)
+        self.field = BugStatsTableField(self.package)
+
+    def test_field_context(self):
+        """
+        Tests field contex content
+        """
+        context = self.field.context
+        self.assertTrue(context['all'])
+        self.assertEqual(context['all'], 11)
+        self.assertEqual(len(context['bugs']), 3)
+        for bug in context['bugs']:
+            self.assertIn('bug_count', bug)
+            self.assertIn('category_name', bug)
+
+    def test_field_specific_properties(self):
+        """
+        Tests field specific properties
+        """
+        self.assertEqual(self.field.column_name, 'Bugs')
+        self.assertTrue(self.field.has_content)
+        self.assertIsNone(self.field.html_output)
+        self.assertEqual(
+            self.field.template_name,
+            'core/package-table-fields/bugs.html')
+        self.assertEqual(len(self.field.prefetch_related_lookups), 1)
+
+
 class GeneralTeamPackageTableTests(TestCase, TemplateTestsMixin):
     def setUp(self):
         self.tested_instance = GeneralTeamPackageTable(None)
@@ -126,6 +168,7 @@ class GeneralTeamPackageTableTests(TestCase, TemplateTestsMixin):
         self.team = Team.objects.create_with_slug(
             owner=self.user, name="Team name", public=True)
         self.package = create_source_package_with_data('dummy-package')
+        create_package_bug_stats(self.package)
         self.team.packages.add(self.package)
 
     def get_team_page_response(self):
@@ -185,12 +228,13 @@ class GeneralTeamPackageTableTests(TestCase, TemplateTestsMixin):
         rows = table.tbody.findAll('tr')
         self.assertEqual(len(rows), self.team.packages.count())
         ordered_packages = self.team.packages.order_by(
-            'name').prefetch_related('data')
+            'name').prefetch_related('data', 'bug_stats')
 
         for index, row in enumerate(rows):
             self.assertIn(ordered_packages[index].name, str(row))
             general = ordered_packages[index].data.get(key='general').value
             self.assertIn(general['vcs']['browser'], str(row))
+            self.assertIn('bugs-field', str(row))
 
     def test_table_popover_components(self):
         """
@@ -210,6 +254,7 @@ class GeneralTeamPackageTableTests(TestCase, TemplateTestsMixin):
         table = GeneralTeamPackageTable(self.team)
         self.assert_number_of_queries(table)
 
-        self.team.packages.add(
-            create_source_package_with_data('another-dummy-package'))
+        new_package = create_source_package_with_data('another-dummy-package')
+        create_package_bug_stats(new_package)
+        self.team.packages.add(new_package)
         self.assert_number_of_queries(table)
