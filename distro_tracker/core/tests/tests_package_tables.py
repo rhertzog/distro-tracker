@@ -26,6 +26,7 @@ from distro_tracker.core.package_tables import (
     GeneralTeamPackageTable,
     GeneralInformationTableField,
     RepositoryTableField,
+    ArchiveTableField,
     BugStatsTableField
 )
 from distro_tracker.test import TemplateTestsMixin, TestCase
@@ -39,7 +40,7 @@ def create_source_package_with_data(name):
 
 
 def create_package_data(package):
-    return PackageData.objects.create(
+    PackageData.objects.create(
         package=package,
         key='general',
         value={
@@ -53,6 +54,16 @@ def create_package_data(package):
                 'browser': 'https://salsa.debian.org/qa/distro-tracker',
             },
             'component': 'main',
+            'version': '2.0.5-1',
+        }
+    )
+
+    PackageData.objects.create(
+        package=package,
+        key='versions',
+        value={
+            'version_list': [],
+            'default_pool_url': 'http://deb.debian.org/debian/pool/main/'
         }
     )
 
@@ -127,6 +138,36 @@ class RepositoryTableFieldTests(TestCase):
             self.field.template_name,
             'core/package-table-fields/repository.html')
         self.assertEqual(len(self.field.prefetch_related_lookups), 1)
+
+
+class ArchiveTableFieldTests(TestCase):
+    def setUp(self):
+        self.package = create_source_package_with_data('dummy-package')
+        self.package.general_archive_data = self.package.data.filter(
+            key='general')
+        self.package.versions = self.package.data.filter(
+            key='versions')
+        self.field = ArchiveTableField(self.package)
+
+    def test_field_context(self):
+        """
+        Tests field contex content
+        """
+        context = self.field.context
+        self.assertTrue(context['version'])
+        self.assertTrue(context['default_pool_url'])
+
+    def test_field_specific_properties(self):
+        """
+        Tests field specific properties
+        """
+        self.assertEqual(self.field.column_name, 'Archive')
+        self.assertTrue(self.field.has_content)
+        self.assertIsNone(self.field.html_output)
+        self.assertEqual(
+            self.field.template_name,
+            'core/package-table-fields/archive.html')
+        self.assertEqual(len(self.field.prefetch_related_lookups), 2)
 
 
 class BugStatsTableFieldTests(TestCase):

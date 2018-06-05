@@ -180,6 +180,48 @@ class RepositoryTableField(BaseTableField):
         return general
 
 
+class ArchiveTableField(BaseTableField):
+    """
+    This table field displays information regarding the package version on
+    archive.
+
+    It displays the package's version on archive
+    """
+    column_name = 'Archive'
+    template_name = 'core/package-table-fields/archive.html'
+    prefetch_related_lookups = [
+        Prefetch(
+            'data',
+            queryset=PackageData.objects.filter(key='general'),
+            to_attr='general_archive_data'
+        ),
+        Prefetch(
+            'data',
+            queryset=PackageData.objects.filter(key='versions'),
+            to_attr='versions'
+        )
+    ]
+
+    @cached_property
+    def context(self):
+        try:
+            info = self.package.general_archive_data[0]
+        except IndexError:
+            # There is no general info for the package
+            return
+
+        general = info.value
+
+        try:
+            info = self.package.versions[0].value
+            general['default_pool_url'] = info['default_pool_url']
+        except IndexError:
+            # There is no versions info for the package
+            general['default_pool_url'] = '#'
+
+        return general
+
+
 class BugStatsTableField(BaseTableField):
     """
     This table field displays bug statistics for the package.
@@ -331,7 +373,10 @@ class GeneralTeamPackageTable(BasePackageTable):
     It must receive a :class:`Team <distro_tracker.core.models.Team>` as scope
     """
     table_fields = (
-        GeneralInformationTableField, RepositoryTableField, BugStatsTableField
+        GeneralInformationTableField,
+        RepositoryTableField,
+        ArchiveTableField,
+        BugStatsTableField
     )
     title = "All team packages"
 
