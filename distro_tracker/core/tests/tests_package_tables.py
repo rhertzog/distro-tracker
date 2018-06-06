@@ -25,7 +25,7 @@ from django_email_accounts.models import User
 from distro_tracker.core.package_tables import (
     GeneralTeamPackageTable,
     GeneralInformationTableField,
-    RepositoryTableField,
+    VcsTableField,
     ArchiveTableField,
     BugStatsTableField
 )
@@ -86,7 +86,7 @@ class GeneralInformationTableFieldTests(TestCase):
 
     def test_field_context(self):
         """
-        Tests field contex content
+        Tests field context content
         """
         context = self.field.context
         self.assertEqual(context['url'], self.package.get_absolute_url)
@@ -110,15 +110,15 @@ class GeneralInformationTableFieldTests(TestCase):
         self.assertEqual(len(self.field.prefetch_related_lookups), 2)
 
 
-class RepositoryTableFieldTests(TestCase):
+class VcsTableFieldTests(TestCase):
     def setUp(self):
         self.package = create_source_package_with_data('dummy-package')
         self.package.general_vcs_data = self.package.data.all()
-        self.field = RepositoryTableField(self.package)
+        self.field = VcsTableField(self.package)
 
     def test_field_context(self):
         """
-        Tests field contex content
+        Tests field context content
         """
         context = self.field.context
         self.assertTrue(context['vcs'])
@@ -131,12 +131,12 @@ class RepositoryTableFieldTests(TestCase):
         """
         Tests field specific properties
         """
-        self.assertEqual(self.field.column_name, 'Repository')
+        self.assertEqual(self.field.column_name, 'VCS')
         self.assertTrue(self.field.has_content)
         self.assertIsNone(self.field.html_output)
         self.assertEqual(
             self.field.template_name,
-            'core/package-table-fields/repository.html')
+            'core/package-table-fields/vcs.html')
         self.assertEqual(len(self.field.prefetch_related_lookups), 1)
 
 
@@ -151,7 +151,7 @@ class ArchiveTableFieldTests(TestCase):
 
     def test_field_context(self):
         """
-        Tests field contex content
+        Tests field context content
         """
         context = self.field.context
         self.assertTrue(context['version'])
@@ -178,7 +178,7 @@ class BugStatsTableFieldTests(TestCase):
 
     def test_field_context(self):
         """
-        Tests field contex content
+        Tests field context content
         """
         context = self.field.context
         self.assertTrue(context['all'])

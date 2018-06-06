@@ -9,10 +9,13 @@
 # except according to the terms contained in the LICENSE file.
 """Implements the core package tables shown on team pages."""
 import logging
+import importlib
 
 from django.utils.functional import cached_property
 from django.db.models import Prefetch
+from django.conf import settings
 
+from distro_tracker import vendor
 from django.core.exceptions import ObjectDoesNotExist
 from distro_tracker.core.models import (
     PackageData,
@@ -147,14 +150,39 @@ class GeneralInformationTableField(BaseTableField):
         return general
 
 
-class RepositoryTableField(BaseTableField):
+class VcsTableField(BaseTableField):
     """
-    This table field displays information regarding the package repository.
+    This table field displays information regarding the package VCS repository.
+    It is customizable to enable vendors to add specific data
+    regarding the package's vcs repository.
 
-    It displays the package's repository type with a (browser) link to it
+    The default behavior is to display the package's repository type with a
+    (browser) link to it.
+
+    A vendor can provide a
+    :data:`DISTRO_TRACKER_VCS_TABLE_FIELD_TEMPLATE
+    <distro_tracker.project.local_settings.DISTRO_TRACKER_VCS_TABLE_FIELD_TEMPLATE>`
+    settings value which gives the path to a template which should
+    be used to render the field. It is recommended that this template extends
+    ``core/package-table-fields/vcs.html``, but not mandatory.
+    If a custom
+    :func:`get_vcs_data
+    <distro_tracker.vendor.skeleton.rules.get_vcs_data>`
+    function in order to provide custom data to be displayed in the field.
+    Refer to the function's documentation for the format of the return value.
+    If this function is defined then its return value is simply passed to the
+    template and does not require any special format; the vendor's template can
+    access this value in the ``field.context`` context variable and can use it
+    any way it wants.
+
+    To avoid performance issues, if :func:`get_vcs_data
+    <distro_tracker.vendor.skeleton.rules.get_vcs_data>` function
+    depends on data from other database tables than packages, the vendor app
+    should also implement the :func:`additional_prefetch_related_lookups
+    <distro_tracker.vendor.skeleton.rules.additional_prefetch_related_lookups>`
     """
-    column_name = 'Repository'
-    template_name = 'core/package-table-fields/repository.html'
+    column_name = 'VCS'
+    _default_template_name = 'core/package-table-fields/vcs.html'
     prefetch_related_lookups = [
         Prefetch(
             'data',
@@ -162,6 +190,13 @@ class RepositoryTableField(BaseTableField):
             to_attr='general_vcs_data'
         )
     ]
+
+    @property
+    def template_name(self):
+        return getattr(
+            settings,
+            'DISTRO_TRACKER_VCS_TABLE_FIELD_TEMPLATE',
+            self._default_template_name)
 
     @cached_property
     def context(self):
@@ -176,6 +211,12 @@ class RepositoryTableField(BaseTableField):
         if 'vcs' in general:
             shorthand = general['vcs'].get('type', 'Unknown')
             general['vcs']['full_name'] = get_vcs_name(shorthand)
+
+        result, implemented = vendor.call(
+            'get_vcs_data', self.package)
+
+        if implemented:
+            general.update(result)
 
         return general
 
@@ -255,6 +296,12 @@ class BasePackageTable(metaclass=PluginRegistry):
     .. note::
        To make sure the subclass is loaded, make sure to put it in a
        ``tracker_package_tables`` module at the top level of a Django app.
+
+    The following vendor-specific functions can be implemented to augment
+    this table:
+
+    - :func:`get_table_fields
+      <distro_tracker.vendor.skeleton.rules.get_table_fields>`
     """
 
     def __init__(self, scope):
@@ -262,8 +309,8 @@ class BasePackageTable(metaclass=PluginRegistry):
         :param scope: a convenient object that can be used to define the list
         of packages to be displayed on the table. For instance, if you want
         to consider all the packages of a specific team, you must pass that
-        team through as the `scope` attribute so that the function
-        :func:`packages` accesses it to define the packages to be presented.
+        team through the `scope` attribute to allow the function
+        :func:`packages` to access it to define the packages to be presented.
         """
         self.scope = scope
 
@@ -294,6 +341,13 @@ class BasePackageTable(metaclass=PluginRegistry):
         for field in self.table_fields:
             for l in field.prefetch_related_lookups:
                 package_query_set = package_query_set.prefetch_related(l)
+
+        additional_data, implemented = vendor.call(
+            'additional_prefetch_related_lookups'
+        )
+        if implemented and additional_data:
+            for l in additional_data:
+                package_query_set = package_query_set.prefetch_related(l)
         return package_query_set
 
     @property
@@ -316,12 +370,26 @@ class BasePackageTable(metaclass=PluginRegistry):
         return names
 
     @property
+    def default_fields(self):
+        """
+        Returns a list of default :class:`BaseTableField` that will compose the
+        table
+        """
+        return []
+
+    @property
     def table_fields(self):
         """
         Returns the tuple of :class:`BaseTableField` that will compose the
         table
         """
-        return ()
+        fields, implemented = vendor.call('get_table_fields', **{
+            'table': self,
+        })
+        if implemented and fields:
+            return tuple(fields)
+        else:
+            return tuple(self.default_fields)
 
     @property
     def rows(self):
@@ -358,6 +426,14 @@ def get_tables_for_team(team):
     :returns: A list of Tables which should for the given team.
     :rtype: list
     """
+    for app in settings.INSTALLED_APPS:
+        try:
+            module_name = app + '.' + 'tracker_package_tables'
+            importlib.import_module(module_name)
+        except ImportError:
+            # The app does not implement package tables.
+            pass
+
     tables = []
     for table_class in BasePackageTable.plugins:
         if table_class is not BasePackageTable:
@@ -372,12 +448,12 @@ class GeneralTeamPackageTable(BasePackageTable):
     This table displays the packages information of a team in a simple fashion.
     It must receive a :class:`Team <distro_tracker.core.models.Team>` as scope
     """
-    table_fields = (
+    default_fields = [
         GeneralInformationTableField,
-        RepositoryTableField,
+        VcsTableField,
         ArchiveTableField,
-        BugStatsTableField
-    )
+        BugStatsTableField,
+    ]
     title = "All team packages"
 
     @property

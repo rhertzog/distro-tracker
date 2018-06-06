@@ -72,7 +72,9 @@ from distro_tracker.vendor.debian.rules import (
     get_developer_information_url,
     get_maintainer_extra,
     get_package_information_site_url,
-    get_uploader_extra
+    get_uploader_extra,
+    additional_prefetch_related_lookups,
+    get_vcs_data,
 )
 from distro_tracker.vendor.debian.sso_auth import DebianSsoUserBackend
 from distro_tracker.vendor.debian.tracker_tasks import (
@@ -5713,6 +5715,9 @@ class UpdateVcsWatchTaskTest(TestCase):
                 "package": "dummy",
                 "error": None,
                 "status": "COMMITS",
+                "changelog_version": "0.12.1-2",
+                "package_version": "0.12.1-2",
+                "changelog_distribution": "unstable",
             },
         ]
 
@@ -5773,8 +5778,11 @@ class UpdateVcsWatchTaskTest(TestCase):
             'commits': 46,
         }
         theoretical_package_info = {
-            "checksum": 'bb2db81183608a0f02853a0d1087cfef',
+            "checksum": '31fc4cf8a6741a0d9d5764130f612a07',
             "QA": 'https://qa.debian.org/cgi-bin/vcswatch?package=dummy',
+            "changelog_version": "0.12.1-2",
+            "package_version": "0.12.1-2",
+            "changelog_distribution": "unstable",
         }
 
         info = self.dummy_package.data.get(key='vcs_extra_links')
@@ -5818,6 +5826,9 @@ class UpdateVcsWatchTaskTest(TestCase):
 
         dummy_pi = self.dummy_package.data.get(key='vcs_extra_links').value
         self.assertTrue('QA' in dummy_pi)
+        self.assertTrue('package_version' in dummy_pi)
+        self.assertTrue('changelog_version' in dummy_pi)
+        self.assertTrue('changelog_distribution' in dummy_pi)
         self.assertEqual(dummy_pi['QA'],
                          'https://qa.debian.org/cgi-bin/vcswatch?package=dummy')
 
@@ -5826,6 +5837,14 @@ class UpdateVcsWatchTaskTest(TestCase):
         Tests that PackageData is dropped if vcswatch info
         goes away.
         """
+        self.vcswatch_data = [
+            {
+                "commits": 46,
+                "package": "dummy",
+                "error": None,
+                "status": "COMMITS",
+            },
+        ]
         self.run_task()
 
         self.vcswatch_data = []
@@ -5875,3 +5894,44 @@ class UpdateVcsWatchTaskTest(TestCase):
         info = self.dummy_package.data.get(key='general')
 
         self.assertEqual(info.value['name'], 'dummy')
+
+
+class AdditionalPrefetchRelatedLookupsTest(SimpleTestCase):
+    def test_additional_prefetch_related_lookups(self):
+        """
+        Tests the addition of prefetch related lookups for table
+        """
+        data = additional_prefetch_related_lookups()
+        self.assertTrue(type(data) is list)
+        self.assertEqual(len(data), 2)
+
+
+class GetVcsDataTest(TestCase):
+    def test_get_vcs_data(self):
+        """
+        Tests getting extra vcs data provided for VcsTableField
+        """
+        package = SourcePackageName.objects.create(name='dummy-package')
+        item_type = ActionItemType.objects.get_or_create(
+            type_name='vcswatch-warnings-and-errors')[0]
+        ActionItem.objects.create(
+            package=package,
+            item_type=item_type,
+            short_description="Short description...",
+        )
+        package.vcs_extra_data = []
+        context = get_vcs_data(package)
+        self.assertIsNotNone(context['action_item'])
+        self.assertIsNotNone(context['action_item']['url'])
+        self.assertIsNotNone(context['action_item']['severity']['name'])
+        self.assertIsNotNone(context['action_item']['severity']['label_type'])
+
+    def test_get_vcs_data_for_package_without_vcs_watch_warning(self):
+        """
+        Tests getting extra vcs data for a package that does not have
+        VCS Watch warnings
+        """
+        package = SourcePackageName.objects.create(name='dummy-package')
+        package.vcs_extra_data = []
+        context = get_vcs_data(package)
+        self.assertDictEqual(context, {})

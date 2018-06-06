@@ -2927,6 +2927,14 @@ class UpdateVcsWatchTask(BaseTask):
 
         new_value = dict(package_info.value)
         new_value['QA'] = vcswatch_url
+        if 'package_version' in vcswatch_data:
+            new_value['package_version'] = vcswatch_data['package_version']
+        if 'changelog_version' in vcswatch_data:
+            new_value['changelog_version'] = vcswatch_data[
+                'changelog_version']
+        if 'changelog_distribution' in vcswatch_data:
+            new_value['changelog_distribution'] = vcswatch_data[
+                'changelog_distribution']
         new_value['checksum'] = get_data_checksum(new_value)
 
         package_info_match = (
