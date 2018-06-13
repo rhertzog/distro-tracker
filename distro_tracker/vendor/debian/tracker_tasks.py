@@ -1104,7 +1104,7 @@ class UpdateExcusesTask(BaseTask):
             verdict = source['migration-policy-verdict']
             if verdict == 'REJECTED_BLOCKED_BY_ANOTHER_ITEM':
                 addendum.append("Migration status: Blocked. Can't migrate "
-                                "due to a non-migrable dependency. Check "
+                                "due to a non-migratable dependency. Check "
                                 "status below."
                                 )
 
