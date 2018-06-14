@@ -37,6 +37,7 @@ from distro_tracker.vendor.common import PluginProcessingError
 from distro_tracker.vendor.debian.tracker_tasks import UpdateNewQueuePackages
 
 from .models import DebianContributor
+from .tracker_package_tables import UpstreamTableField
 
 
 def _simplify_pkglist(pkglist, multi_allowed=True, default=None):
@@ -820,6 +821,14 @@ def post_logout(request, user, next_url=None):
                 'SIGNOUT_HANDLER': next_url
             })
         )
+
+
+def get_table_fields(table):
+    """
+    The function provides additional fields which should be displayed in
+    the team's packages table
+    """
+    return table.default_fields + [UpstreamTableField]
 
 
 def additional_prefetch_related_lookups():
