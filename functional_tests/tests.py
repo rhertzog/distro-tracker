@@ -489,6 +489,12 @@ class UserAccountsTestMixin(object):
         self.input_to_element('id_password', password)
         self.send_enter('id_password')
 
+    def log_out(self):
+        """
+        Helper method which logs the user out.
+        """
+        self.browser.find_element_by_id("account-logout").click()
+
 
 class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
     """
@@ -1246,6 +1252,7 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         self.assertEqual(2, User.objects.count())
 
         # The user now logs in with the other account
+        self.log_out()
         self.log_in(other_user, password)
         # The user visits the URL from the confirmation email message.
         self.get_page(confirmation_url)

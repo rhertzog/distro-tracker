@@ -49,3 +49,9 @@ class LoginViewTests(TestCase):
         response = self.client.post(url, data)
         self.assertRedirects(
             response, redirect_url, fetch_redirect_response=False)
+
+        # Test that visiting login page after being logged in
+        # redirects to profile
+        response = self.client.get(login_url)
+        self.assertRedirects(
+            response, reverse('dtracker-accounts-profile'))
