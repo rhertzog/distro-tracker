@@ -25,10 +25,13 @@ Distro Tracker currently depends on the following Debian packages:
 - python3-tox (for development only)
 - python3-selenium (for development only)
 - chromium-driver (for development only)
+- python3-sphinx (for development only, to build documentation)
 
 Here is the list of required packages for development on Debian Buster::
 
  $ sudo apt install python3-django python3-requests python3-django-jsonfield python3-django-debug-toolbar python3-debian python3-debianbts python3-apt python3-gpg python3-yaml python3-bs4 python3-pyinotify python3-selenium chromium-driver
+
+If you are using Debian Stretch, you will need to `enable stretch-backports <https://backports.debian.org/Instructions/>`_ before attempting to do local development of Distro Tracker. 
 
 .. _database_setup:
 
@@ -94,5 +97,15 @@ Cron tasks
 
 The data used by distro-tracker needs to be regularly updated/refreshed.
 For this you must put “./manage.py tracker_run_all_tasks” in cron.
+
+Documentation
+-------------
+
+This project uses `Sphinx <http://www.sphinx-doc.org/en/master/index.html>`_ for documentation. If you want to improve the documentation or build the documentation locally, first be sure to have the python3-sphinx package installed. Then go to the docs subdirectory ``cd docs`` and run ``make html`` to build the documentation. 
+
+The output will be located in ``_build/html`` and you can preview the documentation in a web browser ``firefox _build/html/index.html``.
+
+
+
 
 
