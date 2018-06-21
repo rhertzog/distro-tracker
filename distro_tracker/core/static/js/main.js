@@ -234,4 +234,16 @@ $(function() {
       }
     }, 100);
   });
+
+  $(".team-tables .package-table .panel-heading").click(function(){
+    $(this).parent().find(".panel-body").toggle(500);
+    if( $(this).find("span.octicon-chevron-up").length )
+    {
+      $(this).find("span.octicon-chevron-up").addClass("octicon-chevron-down").removeClass("octicon-chevron-up")
+    }
+    else if( $(this).find("span.octicon-chevron-down").length )
+    {
+      $(this).find("span.octicon-chevron-down").addClass("octicon-chevron-up").removeClass("octicon-chevron-down")
+    }
+  });
 });

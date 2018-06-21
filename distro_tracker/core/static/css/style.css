@@ -352,3 +352,16 @@ td span#bugs-field {
 td span#bugs-field a{
   color: black;
 }
+
+.team-tables .package-table .panel-heading {
+  cursor: pointer;
+}
+
+.team-tables .package-table .panel-heading span.octicon{
+  float: right;
+  margin-right: 10px;
+}
+
+.table-page .package-table .panel-heading span.octicon{
+  display: none;
+}
