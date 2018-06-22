@@ -7,6 +7,7 @@ omit =
     */tests/*
     */tests.py
     distro_tracker/project/*
+    distro_tracker/vendor/skeleton/rules.py
 
 [report]
 # Regexes for lines to exclude from consideration
