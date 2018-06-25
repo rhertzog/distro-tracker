@@ -49,6 +49,19 @@ class LoginView(FormView):
     template_name = 'accounts/login.html'
     redirect_parameter = 'next'
 
+    def get(self, request, *args, **kwargs):
+        """
+        Handles GET requests and instantiates a blank version of the form
+        when a user is not authenticated.
+
+        Override default FormView behavior to redirect to profile
+        if user is already authenticated.
+        """
+        if self.request.user.is_authenticated:
+            return redirect(self.success_url)
+        else:
+            return super().get(request, *args, **kwargs)
+
     def form_valid(self, form):
         self.success_url = self.request.GET.get(
             self.redirect_parameter, self.success_url)

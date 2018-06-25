@@ -489,6 +489,12 @@ class UserAccountsTestMixin(object):
         self.input_to_element('id_password', password)
         self.send_enter('id_password')
 
+    def log_out(self):
+        """
+        Helper method which logs the user out.
+        """
+        self.browser.find_element_by_id("account-logout").click()
+
 
 class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
     """
@@ -1246,6 +1252,7 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         self.assertEqual(2, User.objects.count())
 
         # The user now logs in with the other account
+        self.log_out()
         self.log_in(other_user, password)
         # The user visits the URL from the confirmation email message.
         self.get_page(confirmation_url)
@@ -1277,17 +1284,7 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         self.assert_in_page_body(other_email)
 
 
-class TeamTests(SeleniumTestCase):
-    def setUp(self):
-        super(TeamTests, self).setUp()
-        self.password = 'asdf'
-        self.user = User.objects.create_user(
-            main_email='user@domain.com', password=self.password,
-            first_name='', last_name='')
-
-    def get_login_url(self):
-        return reverse('dtracker-accounts-login')
-
+class TeamTests(UserAccountsTestMixin, SeleniumTestCase):
     def get_create_team_url(self):
         return reverse('dtracker-teams-create')
 
@@ -1318,27 +1315,6 @@ class TeamTests(SeleniumTestCase):
         self.assertEqual(len(package_names), len(team_package_names))
         for package_name in package_names:
             self.assertIn(package_name, team_package_names)
-
-    def log_in(self, user=None, password=None):
-        """
-        Helper method which logs the user in, without taking any shortcuts (it
-        goes through the steps to fill in the form and submit it).
-        """
-        if user is None:
-            user = self.user
-        if password is None:
-            password = self.password
-
-        self.get_page(self.get_login_url())
-        self.input_to_element('id_username', user.main_email)
-        self.input_to_element('id_password', password)
-        self.send_enter('id_password')
-
-    def log_out(self):
-        """
-        Logs the currently logged in user out.
-        """
-        self.browser.find_element_by_id("account-logout").click()
 
     def test_create_team(self):
         """
@@ -1398,9 +1374,6 @@ class TeamTests(SeleniumTestCase):
                     name=package_name),
                 version='1.0.0',
                 maintainer=maintainer)
-        # === Create a package with no maintainer ===
-        SourcePackageName.objects.create(name='dummy-package')
-        # === -- ===
 
         # The user logs in and accesses the create team page.
         self.log_in()
