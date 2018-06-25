@@ -28,6 +28,7 @@ from debian import deb822, debian_support
 from debian.debian_support import AptPkgVersion
 from django.conf import settings
 from django.db import transaction
+from django.db.models import Prefetch
 from django.utils.http import urlencode
 
 from distro_tracker import vendor
@@ -1453,16 +1454,17 @@ class DebianWatchFileScannerUpdate(BaseTask):
         all_new_versions, all_failures = [], []
         for entry in dehs_data:
             package_name = entry['package']
+            stats.setdefault(package_name, {})
+            stats[package_name]['upstream_version'] = entry['upstream-version']
+            stats[package_name]['upstream_url'] = entry['upstream-url']
             if 'status' in entry and ('Newer version' in entry['status'] or
                                       'newer package' in entry['status']):
-                stats.setdefault(package_name, {})
                 stats[package_name]['new-upstream-version'] = {
                     'upstream_version': entry['upstream-version'],
                     'upstream_url': entry['upstream-url'],
                 }
                 all_new_versions.append(package_name)
             if entry.get('warnings') or entry.get('errors'):
-                stats.setdefault(package_name, {})
                 msg = '{}\n{}'.format(
                     entry.get('errors') or '',
                     entry.get('warnings') or '',
@@ -1473,6 +1475,35 @@ class DebianWatchFileScannerUpdate(BaseTask):
                 all_failures.append(package_name)
 
         return all_new_versions, all_failures
+
+    def update_package_info(self, package, stats):
+        """
+        Updates upstream information of the given package based on the given
+        stats. Upstream data is saved as a :class:`PackageData` within the
+        `general` key
+
+        :param package: The package to which the upstream info should be
+            associated.
+        :type package: :class:`distro_tracker.core.models.PackageName`
+        :param stats: The stats which are used to create the upstream info.
+        :type stats: :class:`dict`
+        """
+        try:
+            package_info = package.data.all()[0]
+        except IndexError:
+            package_info = PackageData(
+                package=package,
+                key='general',
+            )
+
+        new_value = dict(package_info.value)
+        new_value['upstream'] = {
+            'version': stats['upstream_version'],
+            'url': stats['upstream_url'],
+        }
+
+        package_info.value = new_value
+        package_info.save()
 
     def update_action_item(self, item_type, package, stats):
         """
@@ -1524,7 +1555,13 @@ class DebianWatchFileScannerUpdate(BaseTask):
 
         packages = SourcePackageName.objects.filter(
             name__in=stats.keys())
-        packages = packages.prefetch_related('action_items')
+        packages = packages.prefetch_related(
+            'action_items',
+            Prefetch(
+                'data',
+                queryset=PackageData.objects.filter(key='general'),
+            )
+        )
 
         # Update action items for each package
         for package in packages:
@@ -1533,6 +1570,8 @@ class DebianWatchFileScannerUpdate(BaseTask):
                     # method(package, stats[package.name][type_name])
                     self.update_action_item(
                         type_name, package, stats[package.name][type_name])
+
+            self.update_package_info(package, stats[package.name])
 
 
 class UpdateSecurityIssuesTask(BaseTask):
@@ -2927,6 +2966,14 @@ class UpdateVcsWatchTask(BaseTask):
 
         new_value = dict(package_info.value)
         new_value['QA'] = vcswatch_url
+        if 'package_version' in vcswatch_data:
+            new_value['package_version'] = vcswatch_data['package_version']
+        if 'changelog_version' in vcswatch_data:
+            new_value['changelog_version'] = vcswatch_data[
+                'changelog_version']
+        if 'changelog_distribution' in vcswatch_data:
+            new_value['changelog_distribution'] = vcswatch_data[
+                'changelog_distribution']
         new_value['checksum'] = get_data_checksum(new_value)
 
         package_info_match = (

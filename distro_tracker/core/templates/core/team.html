@@ -9,9 +9,6 @@
 <link href="{% static 'css/dense.css' %}" rel="stylesheet" media="screen">
 {% endblock %}
 
-{% block page-header-title %}
-<h1>{{ team }}</h1>
-{% endblock %}
 
 {% block page-header-right %}
     {% include 'accounts/user-widget.html' with logout_redirect=request.path %}
@@ -51,130 +48,61 @@
 {% endblock %}
 
 {% block page-content %}
-{# A hidden modal which asks for confirmation before deleting the team. #}
-{% spaceless %}
-<div id="confirm-team-delete-modal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
-  <div class="modal-content">
-  <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-    <h3>Are you sure you want to delete the team?</h3>
+<div class="container">
+  <h2 class="center">{{ team }}</h2>
+  {% if team.description %}
+  <div class="team-description center">
+    <h6>{{ team.description }}</h6>
   </div>
-  <div class="modal-body">
-    <div>This action is final and permanent. Once the team is deleted it will not be possible to restore it.</div>
+  {% if team.url %}
+  <div class="team-url center">
+    <span class="">
+      <b>URL:</b> <a href="{{ team.url }}">{{ team.url }}</a>
+    </span>
   </div>
-  <div class="modal-footer">
-    <button class="btn btn-default" id="team-delete-cancel-button" data-dismiss="modal" aria-hidden="true">Cancel</button>
-    <form class="unstyled-form" action="{% url 'dtracker-team-delete' team.slug %}" method="POST">{% csrf_token %}
-    <button class="btn btn-danger" id='confirm-team-delete-button' aria-hidden="true">Delete</button>
-    </form>
+  {% endif %}
+  {% endif %}
+  {% if team.maintainer_email %}
+  <div class="team-maintainer-email center">
+    <span class="">
+      <b>Maintainer email:</b> {{ team.maintainer_email }}
+    </span>
   </div>
-  </div>
-  </div>
-</div>
-{% endspaceless %}
-{# A hidden modal which asks for confirmation before removing a package from the team. #}
-{% spaceless %}
-<div id="confirm-package-remove-modal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
-  <div class="modal-content">
-  <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-    <h3 class="text-xs-center">Are you sure you want to remove this package from the team?</h3>
-  </div>
-  <div class="modal-footer">
-    <button class="btn btn-default" id="remove-package-cancel-button" data-dismiss="modal" aria-hidden="true">Cancel</button>
-    <form class="unstyled-form" action="{% url 'dtracker-team-remove-package' team.slug %}" method="POST">{% csrf_token %}
-        <input id="remove-package-name" type="hidden" name="package" value="">
-        <button class="btn btn-danger" id='confirm-remove-package-button' aria-hidden="true">Remove</button>
-    </form>
-  </div>
-  </div>
-  </div>
-</div>
-{% endspaceless %}
+  {% endif %}
+  <hr>
 
+  {# A hidden modal which asks for confirmation before deleting the team. #}
+  {% spaceless %}
+  <div id="confirm-team-delete-modal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+    <div class="modal-content">
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+      <h3>Are you sure you want to delete the team?</h3>
+    </div>
+    <div class="modal-body">
+      <div>This action is final and permanent. Once the team is deleted it will not be possible to restore it.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" id="team-delete-cancel-button" data-dismiss="modal" aria-hidden="true">Cancel</button>
+      <form class="unstyled-form" action="{% url 'dtracker-team-delete' team.slug %}" method="POST">{% csrf_token %}
+      <button class="btn btn-danger" id='confirm-team-delete-button' aria-hidden="true">Delete</button>
+      </form>
+    </div>
+    </div>
+    </div>
+  </div>
+  {% endspaceless %}
 
-<div class="container-fluid">
-<div class="row">
-    <div class="col-md-3" id="dtracker-package-left">
-        {% if team.public or user_member_of_team %}{# Should display? #}
-        {% if team.packages.all %}{# Anything to display? #}
-        <div class="panel">
-            <div class="panel-heading">team packages</div>
-            <div class="panel-body">
-                <ul class="list-group list-group-flush">
-                    {% with packages=team.packages.all|dictsort:'name' %}
-                    {% for package in packages %}
-                    <li class="list-group-item">
-			<div class="row">
-                        <div class="col-xs-12">
-                            {% if package.get_absolute_url %}
-                            <span><a href="{% url 'dtracker-package-page' package %}">{{ package }}</a></span>
-                            {% else %}
-                            <span>{{ package }}</span>
-                            {% endif %}
-			    {% if user_member_of_team %}
-			    <div class="pull-xs-right">
-				<a href="{% url 'dtracker-team-remove-package' team.slug %}?package={{ package|urlencode:'' }}"><span data-package="{{ package }}" class="remove-package-from-team-button">{% octicon 'trashcan' 'remove package from team' %}</span></a>
-			    </div>
-			    {% endif %}
-			</div>
-			</div>
-                    </li>
-                    {% endfor %}
-                    {% endwith %}
-                </ul>
-            </div>
-        </div>
-        {% endif %}
-        {% endif %}
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12" id="dtracker-package-center">
+        {% for table in tables %}
+        {% include 'core/package-table.html' with table=table %}
+        {% endfor %}
+      </div>
     </div>
-    <div class="col-md-6" id="dtracker-package-center">
-        <div class="panel">
-            <div class="panel-heading">team info</div>
-            <div class="panel-body">
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item">
-                        <span class="list-item-key"><b>name:</b></span>
-                        {{ team.name }}
-                    </li>
-                    {% if team.maintainer_email %}
-                    <li class="list-group-item">
-                        <span class="list-item-key"><b>maintainer email:</b></span>
-                        {{ team.maintainer_email }}
-                    </li>
-                    {% endif %}
-                    {% if team.url %}
-                    <li class="list-group-item">
-                        <span class="list-item-key"><b>url:</b></span>
-                        <a href="{{ team.url }}">{{ team.url }}</a>
-                    </li>
-                    {% endif %}
-                    {% if team.description %}
-                    <li class="list-group-item">
-                        <span class="list-item-key"><b>description:</b></span>
-                        {{ team.description }}
-                    </li>
-                    {% endif %}
-                </ul>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3" id="dtracker-package-right">
-        {% if user_member_of_team %}
-        <div class="panel">
-            <div class="panel-heading">add packages</div>
-            <div class="panel-body" style="padding-top: 10px;">
-                <form class="form-inline" id="add-team-package-form" action="{% url 'dtracker-team-add-package' team.slug %}" method="POST">{% csrf_token %}
-                    <input class="form-control package-completion" type="search" id="id_package_name" name="package" placeholder="Choose package...">
-                    <button class="btn btn-primary">Add</button>
-                </form>
-            </div>
-        </div>
-        {% endif %}
-    </div>
-</div>
+  </div>
 </div>
 {% endblock %}
 

@@ -622,7 +622,8 @@ class TeamDetailsViewTest(UserAuthMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['user_member_of_team'], True)
         self.assertTemplateUsed(response, 'core/team.html')
-        self.assertContains(response, '<h1>Team name</h1>', html=True)
+        self.assertContains(
+            response, '<h2 class="center">Team name</h2>', html=True)
 
     def test_team_page_for_a_non_member(self):
         """
@@ -633,7 +634,8 @@ class TeamDetailsViewTest(UserAuthMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse('user_member_of_team' in response.context)
         self.assertTemplateUsed(response, 'core/team.html')
-        self.assertContains(response, '<h1>Team name</h1>', html=True)
+        self.assertContains(
+            response, '<h2 class="center">Team name</h2>', html=True)
 
     def test_team_page_not_found(self):
         """
@@ -660,20 +662,6 @@ class DeleteTeamViewTest(UserAuthMixin, TestCase):
     def post_team_delete(self, slug='team-name'):
         return self.client.post(
             reverse('dtracker-team-delete', kwargs={'slug': slug}))
-
-    def test_delete_intermediary_screen(self):
-        """
-        Tests the confirmation popup to delete a team
-        """
-        response = self.client.get(
-            reverse('dtracker-team-delete', kwargs={'slug': self.team.slug}))
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'core/team-confirm-delete.html')
-        self.assertContains(
-            response,
-            '<h3>Are you sure you want to delete the team?</h3>',
-            html=True
-        )
 
     def test_delete_team_as_owner(self):
         """
@@ -844,7 +832,7 @@ class AddPackageToTeamViewTest(UserAuthMixin, TestCase):
         Tests adding a package to a team loggedin as a team member
         """
         response = self.post_team_add_package()
-        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+        self.assertRedirects(response, reverse('dtracker-team-manage', kwargs={
             'slug': self.team.slug
         }))
         self.assertEqual(self.team.packages.count(), 1)
@@ -891,67 +879,18 @@ class RemovePackageFromTeamViewTest(UserAuthMixin, TestCase):
         self.package = SourcePackageName.objects.create(name='dummy-package')
         self.team.packages.add(self.package)
 
-    def request_team_remove_package(self, method='post', slug='team-name',
+    def request_team_remove_package(self, slug='team-name',
                                     package_name='dummy-package'):
         path = reverse('dtracker-team-remove-package', kwargs={'slug': slug})
         data = {'package': package_name}
-        if method == 'post':
-            return self.client.post(path, data)
-        else:
-            return self.client.get(path, data)
-
-    def test_remove_package_intermediary_screen(self):
-        """
-        Tests the confirmation popup to remove a package from a team
-        """
-        response = self.request_team_remove_package(method='get')
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(
-            response, 'core/team-remove-package-confirm.html')
-        self.assertContains(
-            response,
-            "Are you sure you want to remove this package from the team?",
-            html=True
-        )
-
-    def test_intermediary_screen_for_non_team_member(self):
-        """
-        Tests the confirmation popup for removing a package from a team
-        loggedin as a non-team member
-        """
-        self.login(username='paul')
-        response = self.request_team_remove_package(method='get')
-        self.assertEqual(response.status_code, 403)
-
-    def test_intermediary_screen_for_non_existing_team(self):
-        """
-        Tests the confirmation popup to the attempt of removing a package
-        from a non-existing team
-        """
-        response = self.request_team_remove_package(
-            method='get', slug='does-not-exist')
-        self.assertEqual(response.status_code, 404)
-
-    def test_intermediary_screen_without_package_parameter(self):
-        """
-        Tests the confirmation popup to remove a package when the package
-        parameter is not informed
-        """
-        response = self.client.get(
-            reverse(
-                'dtracker-team-remove-package',
-                kwargs={'slug': self.team.slug}
-            ),
-            {}
-        )
-        self.assertEqual(response.status_code, 404)
+        return self.client.post(path, data)
 
     def test_remove_package_as_team_member(self):
         """
         Tests removing a package from a team loggedin as a team member
         """
         response = self.request_team_remove_package()
-        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+        self.assertRedirects(response, reverse('dtracker-team-manage', kwargs={
             'slug': self.team.slug
         }))
         self.assertEqual(self.team.packages.count(), 0)
@@ -963,7 +902,7 @@ class RemovePackageFromTeamViewTest(UserAuthMixin, TestCase):
         """
         response = self.request_team_remove_package(
             package_name='does-not-exist')
-        self.assertRedirects(response, reverse('dtracker-team-page', kwargs={
+        self.assertRedirects(response, reverse('dtracker-team-manage', kwargs={
             'slug': self.team.slug
         }))
         self.assertEqual(self.team.packages.count(), 1)
@@ -1285,10 +1224,10 @@ class LeaveTeamViewTest(UserAuthMixin, TestCase):
         self.assertEqual(response.status_code, 403)
 
 
-class ManageTeamMembersTest(UserAuthMixin, TestCase):
+class ManageTeamTest(UserAuthMixin, TestCase):
     """
     Tests for the
-    :class:`distro_tracker.core.views.ManageTeamMembers`.
+    :class:`distro_tracker.core.views.ManageTeam`.
     """
     USERS = {
         'john': {},
@@ -1316,8 +1255,12 @@ class ManageTeamMembersTest(UserAuthMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(
             response, 'core/team-manage.html')
-        self.assertContains(response, "Member management for team")
-        self.assertContains(response, "<h3>Team members</h3>", html=True)
+        self.assertContains(response, "Management page for team")
+        self.assertContains(
+            response,
+            '<div class="panel-heading">Team members</div>',
+            html=True
+        )
         self.assertEqual(response.context['team'], self.team)
         self.assertTrue(isinstance(response.context['form'], AddTeamMemberForm))
 

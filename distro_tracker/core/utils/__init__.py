@@ -17,6 +17,8 @@ import json
 import gpg
 import datetime
 
+from distro_tracker import vendor
+
 # Re-export some functions
 from .email_messages import extract_email_address_from_header  # noqa
 from .email_messages import get_decoded_message_payload        # noqa
@@ -251,3 +253,43 @@ def now(tz=datetime.timezone.utc):
     and can be easily mocked out for tests.
     """
     return datetime.datetime.now(tz)
+
+
+def get_developer_information_url(email):
+    """
+    Returns developer's information url based on his/her email
+    through vendor-specific function
+    """
+    info_url, implemented = vendor.call(
+        'get_developer_information_url', **{'developer_email': email, })
+    if implemented and info_url:
+        return info_url
+
+
+def add_developer_extras(general):
+    """
+    Receives a general dict with package data and add to it more data
+    regarding that package's developers
+    """
+    if 'maintainer' in general:
+        maintainer_email = general['maintainer']['email']
+        url = get_developer_information_url(maintainer_email)
+        if url:
+            general['maintainer']['developer_info_url'] = url
+            extra, implemented = vendor.call(
+                'get_maintainer_extra', maintainer_email, general['name'])
+            general['maintainer']['extra'] = extra
+
+    uploaders = general.get('uploaders', None)
+    if uploaders:
+        for uploader in uploaders:
+            # Vendor specific extras.
+            extra, implemented = vendor.call(
+                'get_uploader_extra', uploader['email'], general['name'])
+            if implemented and extra:
+                uploader['extra'] = extra
+            url = get_developer_information_url(uploader['email'])
+            if url:
+                uploader['developer_info_url'] = url
+
+    return general

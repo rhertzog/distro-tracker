@@ -1,0 +1,8 @@
+<div id='vcs-field'>
+  <a href='{{ field.context.vcs.browser }}'>{{ field.context.vcs_extra_data.changelog_version }} <small>({{ field.context.vcs.full_name }})</small></a>
+  {% if field.context.action_item != None %}
+    <span class="popover-hover cursor-pointer label label-{{field.context.action_item.severity.label_type}}" data-toggle="popover" data-placement="left" title="Issue with <b>{{ field.context.action_item.severity.name }}</b> severity" data-content='{% include "debian/package-table-fields/popovers/vcs.html" with field=field %}'>
+      action needed
+    </span>
+  {% endif %}
+</div>

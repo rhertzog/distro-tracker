@@ -15,10 +15,12 @@ import re
 import requests
 from django import forms
 from django.conf import settings
+from django.db.models import Prefetch
 from django.utils.http import urlencode, urlquote_plus
 from django.utils.safestring import mark_safe
 
 from distro_tracker.core.models import (
+    ActionItem,
     BinaryPackageBugStats,
     EmailNews,
     PackageBugStats,
@@ -35,6 +37,7 @@ from distro_tracker.vendor.common import PluginProcessingError
 from distro_tracker.vendor.debian.tracker_tasks import UpdateNewQueuePackages
 
 from .models import DebianContributor
+from .tracker_package_tables import UpstreamTableField
 
 
 def _simplify_pkglist(pkglist, multi_allowed=True, default=None):
@@ -818,3 +821,55 @@ def post_logout(request, user, next_url=None):
                 'SIGNOUT_HANDLER': next_url
             })
         )
+
+
+def get_table_fields(table):
+    """
+    The function provides additional fields which should be displayed in
+    the team's packages table
+    """
+    return table.default_fields + [UpstreamTableField]
+
+
+def additional_prefetch_related_lookups():
+    """
+    :returns: The list with additional lookups to be prefetched along with
+    default lookups defined by :class:`BaseTableField`
+    """
+    return [
+        Prefetch(
+            'action_items',
+            queryset=ActionItem.objects.filter(
+                item_type__type_name='vcswatch-warnings-and-errors'),
+        ),
+        Prefetch(
+            'data',
+            queryset=PackageData.objects.filter(key='vcs_extra_links'),
+            to_attr='vcs_extra_data'
+        ),
+    ]
+
+
+def get_vcs_data(package):
+    """
+    :returns: The dictionary with VCS Watch data to be displayed in
+    the template defined by :data:`DISTRO_TRACKER_VCS_TABLE_FIELD_TEMPLATE
+    <distro_tracker.project.local_settings.DISTRO_TRACKER_VCS_TABLE_FIELD_TEMPLATE>`
+    settings.
+    """
+    try:
+        data = {}
+        item = package.vcs_extra_data[0]
+        data['vcs_extra_data'] = item.value
+    except IndexError:
+        # There is no vcs extra data for the package
+        pass
+
+    try:
+        item = package.action_items.all()[0]
+        data['action_item'] = item.to_dict()
+        data['action_item']['url'] = item.get_absolute_url()
+    except IndexError:
+        # There is no action item for the package
+        pass
+    return data

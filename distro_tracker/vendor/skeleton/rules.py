@@ -340,3 +340,58 @@ def get_extra_versions(package):
     :type package: :class:`PackageName <distro_tracker.core.models.PackageName>`
     """
     pass
+
+
+def get_table_fields(table):
+    """
+    The function provides additional fields which should be displayed in a table
+
+    One may add new specific :class:`BaseTableField`
+    to the fields defined in the table's function :func:`default_fields
+    <distro_tracker.core.package_tables.BasePackageTable.default_fields>`.
+    However, it is also possible to redefine the entire list of
+    :class:`BaseTableField` that must be displayed in the table.
+
+    The return value should be a list of such table fields or ``None`` if the
+    vendor does not wish to provide any additional fields.
+
+    :param table: The table for which additional fields should be
+        provided.
+    :type table: :class:`BasePackageTable
+        <distro_tracker.core.package_tables.BasePackageTable>`
+    """
+    pass
+
+
+def additional_prefetch_related_lookups():
+    """
+    The function provides additional list of lookups to be prefetched along
+    with the default lookups defined by :class:`BaseTableField
+    <distro_tracker.core.package_tables.BaseTableField>`
+    classes.
+
+    The return value should be a list whose elements are either String or
+    Prefetch objects
+    """
+    pass
+
+
+def get_vcs_data(package):
+    """
+    The function provides additional data which should be displayed in the
+    VCS table field.
+
+    The return value should be a dictionary which will be merged with
+    default context data defined by :func:`context
+    <distro_tracker.core.package_tables.VcsTableField.context>` function.
+    If this function is defined then its return value is simply passed to the
+    template and does not require any special format; the vendor's template can
+    access this value in the ``field.context`` context variable and can use it
+    any way it wants.
+
+    :param package: The package for which additional vcs data should be
+        provided.
+    :type package: :class:`PackageName
+        <distro_tracker.core.models.PackageName>`
+    """
+    pass
