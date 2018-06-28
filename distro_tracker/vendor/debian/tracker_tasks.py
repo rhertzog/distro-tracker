@@ -2947,15 +2947,15 @@ class UpdateVcsWatchTask(BaseTask):
             action_item.extra_data = new_extra_data
             return True
 
-    def update_package_info(self, package, vcswatch_data, package_info, todo):
+    def update_package_info(self, package, vcswatch_data, package_info, key,
+                            todo):
         """
         """
-
         # Same thing with PackageData
         if package_info is None:
             package_info = PackageData(
                 package=package,
-                key='vcs_extra_links',
+                key=key,
             )
             todo['add']['package_infos'].append(package_info)
         else:
@@ -2965,15 +2965,18 @@ class UpdateVcsWatchTask(BaseTask):
         vcswatch_url = self.VCSWATCH_URL % {'package': package.name}
 
         new_value = dict(package_info.value)
-        new_value['QA'] = vcswatch_url
-        if 'package_version' in vcswatch_data:
-            new_value['package_version'] = vcswatch_data['package_version']
-        if 'changelog_version' in vcswatch_data:
-            new_value['changelog_version'] = vcswatch_data[
-                'changelog_version']
-        if 'changelog_distribution' in vcswatch_data:
-            new_value['changelog_distribution'] = vcswatch_data[
-                'changelog_distribution']
+        if key == 'vcs_extra_links':
+            new_value['QA'] = vcswatch_url
+        elif key == 'vcswatch':
+            if 'package_version' in vcswatch_data:
+                new_value['package_version'] = vcswatch_data['package_version']
+            if 'changelog_version' in vcswatch_data:
+                new_value['changelog_version'] = vcswatch_data[
+                    'changelog_version']
+            if 'changelog_distribution' in vcswatch_data:
+                new_value['changelog_distribution'] = vcswatch_data[
+                    'changelog_distribution']
+
         new_value['checksum'] = get_data_checksum(new_value)
 
         package_info_match = (
@@ -3035,16 +3038,18 @@ class UpdateVcsWatchTask(BaseTask):
             },
         }
 
-        # Fetches all PackageData for packages having a vcswatch
-        # key. As the pair (package, key) is unique, there is a bijection
-        # between these data, and we fetch them classifying them by package
-        # name.
-        package_infos = {
-            package_info.package.name: package_info
+        package_info_keys = ['vcs_extra_links', 'vcswatch']
+        package_infos = {}
+        for key in package_info_keys:
+            # Fetches all PackageData with a given key for packages having
+            # a vcswatch key. As the pair (package, key) is unique, there is a
+            # bijection between these data, and we fetch them classifying them
+            # by package name.
             for package_info in PackageData.objects.select_related(
-                'package'
-            ).filter(key='vcs_extra_links').only('package__name', 'value')
-        }
+                    'package').filter(key=key).only('package__name', 'value'):
+                if package_info.package.name not in package_infos:
+                    package_infos[package_info.package.name] = {}
+                package_infos[package_info.package.name][key] = package_info
 
         # As :class:`PackageData` key=vcs_extra_links is shared, we
         # have to clean up those with vcs watch_url that aren't in vcs_data
@@ -3070,7 +3075,6 @@ class UpdateVcsWatchTask(BaseTask):
 
             # Get the old action item for this warning, if it exists.
             action_item = action_items.get(package.name, None)
-            package_info = package_infos.get(package.name, None)
 
             # Updates the :class:`ActionItem`. If _continue is None,
             # then there is nothing more to do with this package.
@@ -3083,11 +3087,19 @@ class UpdateVcsWatchTask(BaseTask):
                 action_item,
                 todo)
 
-            _pi_continue = self.update_package_info(
-                package,
-                vcswatch_data,
-                package_info,
-                todo)
+            _pi_continue = False
+            for key in package_info_keys:
+                try:
+                    package_info = package_infos[package.name][key]
+                except KeyError:
+                    package_info = None
+
+                _pi_continue |= self.update_package_info(
+                    package,
+                    vcswatch_data,
+                    package_info,
+                    key,
+                    todo)
 
             if not _ai_continue and not _pi_continue:
                 continue

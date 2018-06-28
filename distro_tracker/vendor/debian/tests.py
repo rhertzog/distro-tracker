@@ -5800,6 +5800,10 @@ class UpdateVcsWatchTaskTest(TestCase):
         task = UpdateVcsWatchTask()
         task.execute()
 
+    def check_package_info(self, key, theoretical_package_info={}):
+        info = self.dummy_package.data.get(key=key)
+        self.assertDictEqual(info.value, theoretical_package_info)
+
     def test_packagedata_without_vcswatch(self):
         """
         Tests that packages without vcswatch info don't claim to have them.
@@ -5836,17 +5840,21 @@ class UpdateVcsWatchTaskTest(TestCase):
             ),
             'commits': 46,
         }
-        theoretical_package_info = {
-            "checksum": '31fc4cf8a6741a0d9d5764130f612a07',
+        theoretical_vcs_extra_links_package_info = {
+            "checksum": 'bb2db81183608a0f02853a0d1087cfef',
             "QA": 'https://qa.debian.org/cgi-bin/vcswatch?package=dummy',
+        }
+        theoretical_vcswatch_package_info = {
+            "checksum": '6ca379c61ff0c003bb8c9379a9d401d0',
             "changelog_version": "0.12.1-2",
             "package_version": "0.12.1-2",
             "changelog_distribution": "unstable",
         }
 
-        info = self.dummy_package.data.get(key='vcs_extra_links')
+        self.check_package_info(
+            'vcs_extra_links', theoretical_vcs_extra_links_package_info)
+        self.check_package_info('vcswatch', theoretical_vcswatch_package_info)
 
-        self.assertDictEqual(info.value, theoretical_package_info)
         action_items = self.dummy_package.action_items
         self.assertEqual(action_items.count(), 1)
         action_item = action_items.first()
@@ -5881,29 +5889,24 @@ class UpdateVcsWatchTaskTest(TestCase):
 
         # This part will test another part of the code.
         self.vcswatch_data = initial_data
+        self.vcswatch_data[0]['changelog_version'] = "0.12.1-3"
         self.run_task()
 
         dummy_pi = self.dummy_package.data.get(key='vcs_extra_links').value
         self.assertTrue('QA' in dummy_pi)
-        self.assertTrue('package_version' in dummy_pi)
-        self.assertTrue('changelog_version' in dummy_pi)
-        self.assertTrue('changelog_distribution' in dummy_pi)
         self.assertEqual(dummy_pi['QA'],
                          'https://qa.debian.org/cgi-bin/vcswatch?package=dummy')
+
+        dummy_pi = self.dummy_package.data.get(key='vcswatch').value
+        self.assertEqual(dummy_pi['package_version'], '0.12.1-2')
+        self.assertEqual(dummy_pi['changelog_version'], '0.12.1-3')
+        self.assertEqual(dummy_pi['changelog_distribution'], 'unstable')
 
     def test_packagedata_is_dropped_when_data_is_gone(self):
         """
         Tests that PackageData is dropped if vcswatch info
         goes away.
         """
-        self.vcswatch_data = [
-            {
-                "commits": 46,
-                "package": "dummy",
-                "error": None,
-                "status": "COMMITS",
-            },
-        ]
         self.run_task()
 
         self.vcswatch_data = []
@@ -5978,7 +5981,7 @@ class GetVcsDataTest(TestCase):
             item_type=item_type,
             short_description="Short description...",
         )
-        package.vcs_extra_data = []
+        package.vcswatch_data = []
         context = get_vcs_data(package)
         self.assertIsNotNone(context['action_item'])
         self.assertIsNotNone(context['action_item']['url'])
@@ -5991,7 +5994,7 @@ class GetVcsDataTest(TestCase):
         VCS Watch warnings
         """
         package = SourcePackageName.objects.create(name='dummy-package')
-        package.vcs_extra_data = []
+        package.vcswatch_data = []
         context = get_vcs_data(package)
         self.assertDictEqual(context, {})
 
