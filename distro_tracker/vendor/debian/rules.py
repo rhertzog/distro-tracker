@@ -844,8 +844,8 @@ def additional_prefetch_related_lookups():
         ),
         Prefetch(
             'data',
-            queryset=PackageData.objects.filter(key='vcs_extra_links'),
-            to_attr='vcs_extra_data'
+            queryset=PackageData.objects.filter(key='vcswatch'),
+            to_attr='vcswatch_data'
         ),
     ]
 
@@ -859,7 +859,7 @@ def get_vcs_data(package):
     """
     try:
         data = {}
-        item = package.vcs_extra_data[0]
+        item = package.vcswatch_data[0]
         data['vcs_extra_data'] = item.value
     except IndexError:
         # There is no vcs extra data for the package
