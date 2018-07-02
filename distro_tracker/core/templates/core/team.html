@@ -98,7 +98,13 @@
     <div class="row">
       <div class="col-md-12" id="dtracker-package-center">
         {% for table in tables %}
-        {% include 'core/package-table.html' with table=table %}
+          {% with rows_length=table.rows|length %}
+            {% if table.number_of_packages > rows_length %}
+              {% include 'core/package-table.html' with table=table show_link=1 %}
+            {% else %}
+              {% include 'core/package-table.html' with table=table %}
+            {% endif %}
+          {% endwith %}
         {% endfor %}
       </div>
     </div>

@@ -330,9 +330,23 @@ class BasePackageTable(metaclass=PluginRegistry):
     @property
     def title(self):
         """
-        The title of the panel.
+        The title of the table.
         """
         return ''
+
+    @property
+    def slug(self):
+        """
+        The slug of the table which is used to define its url.
+        """
+        return ''
+
+    @property
+    def relative_url(self, **kwargs):
+        """
+        The relative url for the table.
+        """
+        return '+table/' + self.slug
 
     @property
     def packages_with_prefetch_related(self):
@@ -462,6 +476,7 @@ class GeneralTeamPackageTable(BasePackageTable):
         BugStatsTableField,
     ]
     title = "All team packages"
+    slug = 'general'
 
     @property
     def packages(self):

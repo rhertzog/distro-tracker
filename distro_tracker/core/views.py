@@ -43,7 +43,10 @@ from distro_tracker.core.models import (
     get_web_package
 )
 from distro_tracker.core.panels import get_panels_for_package
-from distro_tracker.core.package_tables import get_tables_for_team
+from distro_tracker.core.package_tables import (
+    GeneralTeamPackageTable,
+    get_tables_for_team,
+)
 from distro_tracker.core.utils import (
     distro_tracker_render_to_string,
     get_or_none,
@@ -266,10 +269,11 @@ class CreateTeamView(LoginRequiredMixin, FormView):
 class TeamDetailsView(DetailView):
     model = Team
     template_name = 'core/team.html'
+    table_limit = 20
 
     def get_context_data(self, **kwargs):
         context = super(TeamDetailsView, self).get_context_data(**kwargs)
-        context['tables'] = get_tables_for_team(self.object)
+        context['tables'] = get_tables_for_team(self.object, self.table_limit)
         if self.request.user.is_authenticated:
             context['user_member_of_team'] = self.object.user_is_member(
                 self.request.user)
@@ -709,6 +713,23 @@ class TeamSearchView(View):
                 Q(name__icontains=query) | Q(slug__icontains=query)).first()
 
         return None
+
+
+class TeamPackagesTableView(View):
+    """
+    View renders a :class:`distro_tracker.core.package_tables.BasePackageTable`
+    in an HTML response.
+    """
+    template_name = 'core/team-packages-table.html'
+    table_class = GeneralTeamPackageTable
+
+    def get(self, request, slug):
+        team = get_object_or_404(Team, slug=slug)
+        self.table = self.table_class(team)
+        return render(request, self.template_name, {
+            'table': self.table,
+            'team': team
+        })
 
 
 class IndexView(TemplateView):

@@ -28,4 +28,9 @@
       </tbody>
     </table>
   </div>
+  {% if show_link %}
+  <div class="text-xs-center panel-footer">
+    <a class="view-more-link" href={{ table.relative_url|urlencode:'' }}><b>View More</b></a>
+  </div>
+  {% endif %}
 </div>
