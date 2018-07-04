@@ -840,7 +840,8 @@ def additional_prefetch_related_lookups():
         Prefetch(
             'action_items',
             queryset=ActionItem.objects.filter(
-                item_type__type_name='vcswatch-warnings-and-errors'),
+                item_type__type_name='vcswatch-warnings-and-errors'
+            ).prefetch_related('item_type'),
         ),
         Prefetch(
             'data',

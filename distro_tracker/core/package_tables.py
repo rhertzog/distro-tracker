@@ -139,7 +139,7 @@ class GeneralInformationTableField(BaseTableField):
         general['url'] = self.package.get_absolute_url
 
         # Add developer information links and any other vendor-specific extras
-        general = add_developer_extras(general)
+        general = add_developer_extras(general, url_only=True)
 
         try:
             info = self.package.binaries_data[0]
