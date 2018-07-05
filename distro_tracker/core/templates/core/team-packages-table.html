@@ -1,0 +1,30 @@
+{% extends "core/base.html" %}
+{% load staticfiles %}
+{% load distro_tracker_extras %}
+
+{% block title %}{{ block.super }} - {{ team }}{% endblock %}
+
+{% block extra-css %}
+<link href="{% static 'css/dense.css' %}" rel="stylesheet" media="screen">
+{% endblock %}
+
+
+{% block page-header-right %}
+    {% include 'accounts/user-widget.html' with logout_redirect=request.path %}
+{% endblock %}
+
+{% block page-content %}
+<div class="container">
+  <h2 class="center">
+    <a href="{{ team.get_absolute_url }}">{{ team }}</a>
+  </h2>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12" id="dtracker-package-center">
+        {% include 'core/package-table.html' with table=table %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

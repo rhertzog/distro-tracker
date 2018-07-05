@@ -33,6 +33,9 @@ from distro_tracker.core.models import (
     SourcePackageName,
     Team
 )
+from distro_tracker.core.package_tables import (
+    GeneralTeamPackageTable,
+)
 from distro_tracker.core.utils.packages import package_url
 from distro_tracker.test import TemplateTestsMixin, TestCase, UserAuthMixin
 
@@ -302,6 +305,40 @@ class OpenSearchDescriptionTest(TestCase):
         self.assertContains(response, reverse('dtracker-favicon'))
         self.assertContains(response, reverse('dtracker-package-search') +
                             '?package_name={searchTerms}')
+
+
+class TeamPackagesTableViewTest(TestCase, TemplateTestsMixin):
+    """
+    Tests for the :class:`distro_tracker.core.views.TeamPackagesTableView`.
+    """
+    def setUp(self):
+        self.team = Team.objects.create_with_slug(name="Team name", public=True)
+        self.package = SourcePackageName.objects.create(name='dummy-package')
+        self.team.packages.add(self.package)
+
+    def get_table_page(self, slug='team-name',
+                       url_name='dtracker-team-general-table'):
+        url = reverse(url_name, kwargs={'slug': slug})
+        return self.client.get(url)
+
+    def test_table_page_content_for_general_table(self):
+        """
+        Tests the return of a table page for GeneralTeamPackageTable
+        """
+        response = self.get_table_page()
+        self.assertEqual(response.status_code, 200)
+        table = response.context['table']
+        self.assertTrue(
+            isinstance(table, GeneralTeamPackageTable))
+        self.assertIsNotNone(table.rows)
+        self.assertTemplateUsed(response, 'core/team-packages-table.html')
+
+    def test_team_not_found(self):
+        """
+        Tests the request of table page for a non-existing team
+        """
+        response = self.get_table_page(slug='does-not-exist')
+        self.assertEqual(response.status_code, 404)
 
 
 class IndexViewTest(TestCase):
@@ -643,6 +680,22 @@ class TeamDetailsViewTest(UserAuthMixin, TestCase):
         """
         response = self.get_team_page(slug='does-not-exist')
         self.assertEqual(response.status_code, 404)
+
+    def test_team_tables_with_a_limited_number_of_packages(self):
+        """
+        Tests table limit for team's page
+        """
+        # Add other 20 packages to team
+        for number in range(30):
+            name = 'dummy-package-' + str(number)
+            package = SourcePackageName.objects.create(name=name)
+            self.team.packages.add(package)
+
+        response = self.get_team_page()
+        self.assertEqual(response.status_code, 200)
+        table = response.context['tables'][0]
+        # Only shows the limit defined by TeamDetailsView
+        self.assertEqual(len(table.rows), 20)
 
 
 class DeleteTeamViewTest(UserAuthMixin, TestCase):

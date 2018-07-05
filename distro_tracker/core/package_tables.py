@@ -304,15 +304,18 @@ class BasePackageTable(metaclass=PluginRegistry):
       <distro_tracker.vendor.skeleton.rules.get_table_fields>`
     """
 
-    def __init__(self, scope):
+    def __init__(self, scope, limit=None):
         """
         :param scope: a convenient object that can be used to define the list
         of packages to be displayed on the table. For instance, if you want
         to consider all the packages of a specific team, you must pass that
         team through the `scope` attribute to allow the function
+        :param limit: an integer that can be used to define the limit number of
+        packages to be displayed
         :func:`packages` to access it to define the packages to be presented.
         """
         self.scope = scope
+        self.limit = limit
 
     @property
     def context(self):
@@ -327,9 +330,23 @@ class BasePackageTable(metaclass=PluginRegistry):
     @property
     def title(self):
         """
-        The title of the panel.
+        The title of the table.
         """
         return ''
+
+    @property
+    def slug(self):
+        """
+        The slug of the table which is used to define its url.
+        """
+        return ''
+
+    @property
+    def relative_url(self, **kwargs):
+        """
+        The relative url for the table.
+        """
+        return '+table/' + self.slug
 
     @property
     def packages_with_prefetch_related(self):
@@ -398,7 +415,11 @@ class BasePackageTable(metaclass=PluginRegistry):
         of :class:`BaseTableField` for each package
         """
         rows_list = []
-        for package in self.packages_with_prefetch_related:
+        packages = self.packages_with_prefetch_related
+        if self.limit:
+            packages = packages[:self.limit]
+
+        for package in packages:
             row = []
             for field_class in self.table_fields:
                 row.append(field_class(package))
@@ -417,7 +438,7 @@ class BasePackageTable(metaclass=PluginRegistry):
             return 0
 
 
-def get_tables_for_team(team):
+def get_tables_for_team(team, limit=None):
     """
     A convenience method which accesses a list of pre-defined
     :class:`BasePackageTable`'s children and instantiates them for the given
@@ -437,7 +458,7 @@ def get_tables_for_team(team):
     tables = []
     for table_class in BasePackageTable.plugins:
         if table_class is not BasePackageTable:
-            table = table_class(team)
+            table = table_class(team, limit)
             tables.append(table)
 
     return tables
@@ -455,6 +476,7 @@ class GeneralTeamPackageTable(BasePackageTable):
         BugStatsTableField,
     ]
     title = "All team packages"
+    slug = 'general'
 
     @property
     def packages(self):

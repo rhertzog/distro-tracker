@@ -299,3 +299,25 @@ class GeneralTeamPackageTableTests(TestCase, TemplateTestsMixin):
         create_package_bug_stats(new_package)
         self.team.packages.add(new_package)
         self.assert_number_of_queries(table)
+
+    def test_table_limit_of_packages(self):
+        """
+        Tests table with a limited number of packages
+        """
+        new_package = create_source_package_with_data('dummy-package-2')
+        self.team.packages.add(new_package)
+        table = GeneralTeamPackageTable(self.team, limit=1)
+
+        self.assertEqual(table.number_of_packages, 2)
+        self.assertEqual(len(table.rows), 1)
+        # Get the first column from the first row
+        table_field = table.rows[0][0]
+        self.assertEqual(self.package, table_field.package)
+
+        table.limit = 2
+        # Get the first column from the first row
+        table_field = table.rows[0][0]
+        self.assertEqual(self.package, table_field.package)
+        # Get the first column from the second row
+        table_field = table.rows[1][0]
+        self.assertEqual(new_package, table_field.package)
