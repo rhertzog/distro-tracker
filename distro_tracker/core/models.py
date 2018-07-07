@@ -2190,8 +2190,7 @@ class Team(models.Model):
         verbose_name='Identifier',
         help_text='Used in the URL (/teams/<em>identifier</em>/) and in the '
                   'associated email address '
-                  'team+<em>identifier</em>@{}.'.format(
-                      settings.DISTRO_TRACKER_FQDN),
+                  'team+<em>identifier</em>@<em>domain</em>.',
     )
     maintainer_email = models.ForeignKey(
         UserEmail,
