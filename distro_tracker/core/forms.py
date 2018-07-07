@@ -1,4 +1,4 @@
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2018 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -9,6 +9,7 @@
 # except according to the terms contained in the LICENSE file.
 """Forms for the :mod:`distro_tracker.core` app."""
 from django import forms
+from django.conf import settings
 from django.template.defaultfilters import slugify
 
 from distro_tracker.accounts.models import UserEmail
@@ -16,7 +17,12 @@ from distro_tracker.core.models import SourcePackageName, Team
 
 
 class CreateTeamForm(forms.ModelForm):
-    maintainer_email = forms.EmailField(required=False)
+    maintainer_email = forms.EmailField(
+        required=False,
+        help_text='All packages having this email address listed in the '
+                  'Maintainer or Uploaders fields will be automatically added '
+                  'to the team.'
+    )
 
     class Meta:
         model = Team
@@ -27,6 +33,15 @@ class CreateTeamForm(forms.ModelForm):
             'description',
             'url',
         )
+        labels = {
+            'public': 'Visible in the list of teams and free to join by anyone',
+        }
+        help_texts = {
+            'slug': 'Used in the URL (/teams/<em>identifier</em>/) and in the '
+                    'associated email address '
+                    'team+<em>identifier</em>@{}.'.format(
+                        settings.DISTRO_TRACKER_FQDN),
+        }
 
     def __init__(self, *args, **kwargs):
         super(CreateTeamForm, self).__init__(*args, **kwargs)

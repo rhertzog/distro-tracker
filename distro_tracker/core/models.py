@@ -2187,7 +2187,12 @@ class Team(models.Model):
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(
         unique=True,
-        help_text="A team's slug determines its URL")
+        verbose_name='Identifier',
+        help_text='Used in the URL (/teams/<em>identifier</em>/) and in the '
+                  'associated email address '
+                  'team+<em>identifier</em>@{}.'.format(
+                      settings.DISTRO_TRACKER_FQDN),
+    )
     maintainer_email = models.ForeignKey(
         UserEmail,
         null=True,
