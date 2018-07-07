@@ -1667,14 +1667,14 @@ class UpdateAppStreamStatsTaskTest(TestCase):
         src_name1 = SourcePackageName.objects.create(name='alpha-package')
         src_pkg1, _ = SourcePackage.objects.get_or_create(
             source_package_name=src_name1, version='1.0.0')
-        src_pkg1.binary_packages = [bin1, bin2]
+        src_pkg1.binary_packages.set([bin1, bin2])
         src_pkg1.save()
 
         bin3 = BinaryPackageName.objects.create(name="beta-common")
         src_name2 = SourcePackageName.objects.create(name='beta-package')
         src_pkg2, _ = SourcePackage.objects.get_or_create(
             source_package_name=src_name2, version='1.2.0')
-        src_pkg2.binary_packages = [bin3]
+        src_pkg2.binary_packages.set([bin3])
         src_pkg2.save()
 
         # Set mock data
