@@ -1297,15 +1297,15 @@ class ManageTeamTest(UserAuthMixin, TestCase):
         self.team.add_members(
             UserEmail.objects.filter(email=self.get_user('paul').main_email))
 
-    def get_manage_team_members(self, slug='team-name'):
+    def get_manage_team(self, slug='team-name'):
         return self.client.get(
             reverse('dtracker-team-manage', kwargs={'slug': slug}))
 
-    def test_manage_team_members_as_owner(self):
+    def test_manage_team_as_owner(self):
         """
-        Tests rendering manage team members page for team owner
+        Tests rendering manage team page for team owner
         """
-        response = self.get_manage_team_members()
+        response = self.get_manage_team()
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(
             response, 'core/team-manage.html')
@@ -1318,13 +1318,12 @@ class ManageTeamTest(UserAuthMixin, TestCase):
         self.assertEqual(response.context['team'], self.team)
         self.assertTrue(isinstance(response.context['form'], AddTeamMemberForm))
 
-    def test_manage_team_members_as_member(self):
+    def test_manage_team_as_member(self):
         """
-        Tests rendering manage team members page for a user who is member but
-        not owner
+        Tests rendering manage team page for a user who is member but not owner
         """
         self.login('paul')
-        response = self.get_manage_team_members()
+        response = self.get_manage_team()
         self.assertEqual(response.status_code, 200)
         # The team member management feature is hidden
         self.assertNotContains(
@@ -1333,19 +1332,19 @@ class ManageTeamTest(UserAuthMixin, TestCase):
             html=True
         )
 
-    def test_manage_team_members_as_not_member(self):
+    def test_manage_team_as_not_member(self):
         """
-        Tests rendering manage team members page for a user who is not member
+        Tests rendering manage team page for a user who is not member
         """
         self.login('pierre')
-        response = self.get_manage_team_members()
+        response = self.get_manage_team()
         self.assertEqual(response.status_code, 403)
 
-    def test_manage_team_members_for_non_existing_team(self):
+    def test_manage_team_for_non_existing_team(self):
         """
-        Tests rendering manage team members page for a non existing team
+        Tests rendering manage team page for a non existing team
         """
-        response = self.get_manage_team_members(slug='does-not-exist')
+        response = self.get_manage_team(slug='does-not-exist')
         self.assertEqual(response.status_code, 404)
 
 
