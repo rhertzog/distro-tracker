@@ -453,8 +453,8 @@ class ManageTeam(LoginRequiredMixin, ListView):
 
     def get(self, request, slug):
         self.team = get_object_or_404(Team, slug=slug)
-        # Make sure only the owner can access this page
-        if self.team.owner != request.user:
+        if not self.team.user_is_member(self.request.user):
+            # Only team members are allowed to access the page
             raise PermissionDenied
         return super(ManageTeam, self).get(request, slug)
 

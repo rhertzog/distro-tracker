@@ -1285,6 +1285,7 @@ class ManageTeamTest(UserAuthMixin, TestCase):
     USERS = {
         'john': {},
         'paul': {},
+        'pierre': {},
     }
 
     def setUp(self):
@@ -1317,12 +1318,26 @@ class ManageTeamTest(UserAuthMixin, TestCase):
         self.assertEqual(response.context['team'], self.team)
         self.assertTrue(isinstance(response.context['form'], AddTeamMemberForm))
 
-    def test_manage_team_members_as_not_owner(self):
+    def test_manage_team_members_as_member(self):
         """
-        Tests rendering manage team members page for a user who is not the
-        team owner
+        Tests rendering manage team members page for a user who is member but
+        not owner
         """
         self.login('paul')
+        response = self.get_manage_team_members()
+        self.assertEqual(response.status_code, 200)
+        # The team member management feature is hidden
+        self.assertNotContains(
+            response,
+            '<div class="panel-heading">Team members</div>',
+            html=True
+        )
+
+    def test_manage_team_members_as_not_member(self):
+        """
+        Tests rendering manage team members page for a user who is not member
+        """
+        self.login('pierre')
         response = self.get_manage_team_members()
         self.assertEqual(response.status_code, 403)
 

@@ -20,10 +20,11 @@
       <button class="btn btn-danger" id="delete-team-button">Delete</button>
       </form>
       <a href="{% url 'dtracker-team-update' team.slug %}"><button class="btn btn-default" id="update-team-button">Update</button></a>
-      <a href="{% url 'dtracker-team-manage' team.slug %}"><button class="btn btn-default" id="manage-team-button">Member management</button></a>
+      <a href="{% url 'dtracker-team-manage' team.slug %}"><button class="btn btn-default" id="manage-team-button">Manage team</button></a>
       {% else %}
       {% if user_member_of_team %}
       {# Team member options #}
+	  <a href="{% url 'dtracker-team-manage' team.slug %}"><button class="btn btn-default" id="manage-team-button">Manage team</button></a>
 	  <form class="unstyled-form" action="{% url 'dtracker-team-leave' team.slug %}" method="POST">{% csrf_token %}
 	  <button id="leave-team-button" class="btn btn-danger">Leave</button>
 	  </form>
