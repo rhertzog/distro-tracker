@@ -203,10 +203,12 @@ $(function() {
         var $this = $(this);
         var name = $this.val();
         var slug = name.toLowerCase()
-                       .replace(/[^\w ]+/g, '')
+                       .replace(/[^-\w ]+/g, '')
                        .replace(/ +/g, '-');
         var $form = $this.parents('form');
-        $form.find('#id_slug').val(slug);
+	if (!$form.find('#id_slug').val()) {
+	    $form.find('#id_slug').val(slug);
+	}
     });
 
     $('.toggle-package-mute').click(function(evt) {
