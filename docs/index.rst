@@ -1,18 +1,42 @@
-.. Distro Tracker documentation master file, created by
-   sphinx-quickstart on Fri Jun 14 17:14:16 2013.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-Welcome to Distro Tracker's documentation!
+Welcome to Distro Tracker's Documentation!
 ==========================================
 
-Contents:
+Distro Tracker is the name of the software that powers the
+`Debian Package Tracker <https://tracker.debian.org>`_.
+
+This software lets you follow the evolution of a Debian-based
+distribution both with email updates and with a comprehensive web
+interface.
+
+Having all the information about packages conveniently available in a
+single place is particularly interesting for package maintainers,
+contributors, advanced users, etc.
+
+Documentation for End-Users
+---------------------------
+
+.. toctree::
+
+   usage/follow-packages
+   usage/messages
+   usage/teams
+   usage/mailbot
+
+Documentation for Administrators
+--------------------------------
+
+.. toctree::
+
+   admin/initial-setup
+   admin/email
+   admin/vendor
+
+Documentation for Developers
+----------------------------
 
 .. toctree::
    :maxdepth: 3
 
-   about
-   design
-   API Documentation <api/modules>
-   setup/index
    contributing
+   devel/design
+   API Documentation <api/modules>
