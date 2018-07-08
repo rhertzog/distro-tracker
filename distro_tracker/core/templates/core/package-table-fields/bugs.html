@@ -1,7 +1,13 @@
 {% if field.context.all == 0 %}
   <b class='center'>{{field.context.all}}</b>
 {% else %}
-  <span class="popover-hover cursor-pointer text-primary" id="bugs-field" data-toggle="popover" data-placement="left" title="All bugs" data-content='{% include "core/package-table-fields/popovers/bugs.html" with field=field %}'>
+  <span class="popover-hover cursor-pointer text-primary" id="bugs-field" data-toggle="popover" data-placement="left" title="All bugs" data-content='
+    <p>
+    {% for bug in field.context.bugs %}
+      <span class="font-weight-bold">{{ bug.category_name}}:</span> {{ bug.bug_count }}
+      <br>
+    {% endfor %}
+  '>
     <b class='center'>{{field.context.all}}</b>
   </span>
 {% endif %}

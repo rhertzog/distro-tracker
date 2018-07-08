@@ -1,3 +1,56 @@
-<span class="popover-hover cursor-pointer text-primary" id="general-field" data-toggle="popover" data-placement="right" title="<a href='{{ field.context.url }}'>{{ field.context.name }}</a>" data-content='{% include "core/package-table-fields/popovers/general.html" with field=field %}'>
+<span class="popover-hover cursor-pointer text-primary" id="general-field" data-toggle="popover" data-placement="right" title="<a href='{{ field.context.url }}'>{{ field.context.name }}</a>" data-content='
+  <p>
+  <span class="font-weight-bold">version:</span> {{ field.context.version }} <br>
+  {% if field.context.maintainer %}
+  <span class="font-weight-bold">maintainer:</span>
+    {% with mailto="mailto:"|add:field.context.maintainer.email %}
+    {% with url=field.context.maintainer.developer_info_url|default:mailto %}
+    <a href="{{ url }}">{{ field.context.maintainer.name }}</a>
+    {% endwith %}{% endwith %}
+    <br>
+  {% endif %}
+
+  {% if field.context.uploaders %}
+    <span class="font-weight-bold">uploaders:</span>
+    {% for uploader in field.context.uploaders %}
+      {% with mailto="mailto:"|add:uploader.email %}
+      {% with url=uploader.developer_info_url|default:mailto %}
+      <br><a href="{{ url }}">{{ uploader.name }}</a>
+      {% endwith %}{% endwith %}
+    {% endfor %}
+    <br>
+  {% endif %}
+
+  {% if field.context.architectures %}
+    <span class="font-weight-bold">arch:</span>
+    {{ field.context.architectures|join:", " }}
+    <br>
+  {% endif %}
+
+  {% if field.context.standards_version %}
+    <span class="font-weight-bold">std-ver:</span>
+    {{ field.context.standards_version }}
+    <br>
+  {% endif %}
+  </p>
+
+  <p>
+  {% with items=field.context.binaries|dictsort:"name"|slice:":5" %}
+    <span class="font-weight-bold">Binaries ({{field.context.binaries|length}}):</span>
+    {% for item in items %}
+      <br>
+      {% with url=item.url|default:"#" %}
+      <a href="{{ url }}" title="{{ item.repository_name }}">{{ item.name }}</a>
+      {% endwith %}
+    {% endfor %}
+    {% with count=field.context.binaries|length %}
+    {% if count > 5 %}
+      <br>
+      <a href="{{ field.context.url }}"><small>More...</small></a>
+    {% endif %}
+    {% endwith %}
+  {% endwith %}
+  </p>
+'>
 	<a href='{{ field.context.url }}'>{{ field.context.name }}</a>
 </span>

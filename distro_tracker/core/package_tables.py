@@ -11,9 +11,9 @@
 import logging
 import importlib
 
-from django.utils.functional import cached_property
 from django.db.models import Prefetch
 from django.conf import settings
+from django.template.loader import get_template
 
 from distro_tracker import vendor
 from django.core.exceptions import ObjectDoesNotExist
@@ -39,11 +39,7 @@ class BaseTableField(metaclass=PluginRegistry):
        ``tracker_package_tables`` module at the top level of a Django app.
     """
 
-    def __init__(self, package):
-        self.package = package
-
-    @property
-    def context(self):
+    def context(self, package):
         """
         Should return a dictionary representing context variables necessary for
         the package table field.
@@ -67,22 +63,15 @@ class BaseTableField(metaclass=PluginRegistry):
         """
         return None
 
-    @property
-    def html_output(self):
+    def render(self, package, context=None, request=None):
         """
-        If the field does not want to use a template, it can return rendered
-        HTML in this property. The HTML needs to be marked safe or else it will
-        be escaped in the final output.
+        Render the field's HTML output for the given package.
         """
-        return None
-
-    @property
-    def has_content(self):
-        """
-        Returns a bool indicating whether the table actually has any content to
-        display for the package.
-        """
-        return True
+        if not hasattr(self, '_template'):
+            self._template = get_template(self.template_name)
+        if context is None:
+            context = self.context(package)
+        return self._template.render(context, request)
 
     @property
     def prefetch_related_lookups():
@@ -124,25 +113,24 @@ class GeneralInformationTableField(BaseTableField):
         ),
     ]
 
-    @cached_property
-    def context(self):
+    def context(self, package):
         try:
-            info = self.package.general_data[0]
+            info = package.general_data[0]
         except IndexError:
             # There is no general info for the package
             return {
-                'url': self.package.get_absolute_url,
-                'name': self.package.name
+                'url': package.get_absolute_url,
+                'name': package.name
             }
 
         general = info.value
-        general['url'] = self.package.get_absolute_url
+        general['url'] = package.get_absolute_url
 
         # Add developer information links and any other vendor-specific extras
         general = add_developer_extras(general, url_only=True)
 
         try:
-            info = self.package.binaries_data[0]
+            info = package.binaries_data[0]
             general['binaries'] = info.value
         except IndexError:
             general['binaries'] = []
@@ -187,7 +175,7 @@ class VcsTableField(BaseTableField):
         Prefetch(
             'data',
             queryset=PackageData.objects.filter(key='general'),
-            to_attr='general_vcs_data'
+            to_attr='general_data'
         )
     ]
 
@@ -198,22 +186,22 @@ class VcsTableField(BaseTableField):
             'DISTRO_TRACKER_VCS_TABLE_FIELD_TEMPLATE',
             self._default_template_name)
 
-    @cached_property
-    def context(self):
+    def context(self, package):
         try:
-            info = self.package.general_vcs_data[0]
+            info = package.general_data[0]
         except IndexError:
             # There is no general info for the package
             return
 
-        general = info.value
-        # Map the VCS type to its name.
-        if 'vcs' in general:
+        general = {}
+        if 'vcs' in info.value:
+            general['vcs'] = info.value['vcs']
+            # Map the VCS type to its name.
             shorthand = general['vcs'].get('type', 'Unknown')
             general['vcs']['full_name'] = get_vcs_name(shorthand)
 
         result, implemented = vendor.call(
-            'get_vcs_data', self.package)
+            'get_vcs_data', package)
 
         if implemented:
             general.update(result)
@@ -234,7 +222,7 @@ class ArchiveTableField(BaseTableField):
         Prefetch(
             'data',
             queryset=PackageData.objects.filter(key='general'),
-            to_attr='general_archive_data'
+            to_attr='general_data'
         ),
         Prefetch(
             'data',
@@ -243,18 +231,19 @@ class ArchiveTableField(BaseTableField):
         )
     ]
 
-    @cached_property
-    def context(self):
+    def context(self, package):
         try:
-            info = self.package.general_archive_data[0]
+            info = package.general_data[0]
         except IndexError:
             # There is no general info for the package
             return
 
-        general = info.value
+        general = {}
+        if 'version' in info.value:
+            general['version'] = info.value['version']
 
         try:
-            info = self.package.versions[0].value
+            info = package.versions[0].value
             general['default_pool_url'] = info['default_pool_url']
         except IndexError:
             # There is no versions info for the package
@@ -271,11 +260,10 @@ class BugStatsTableField(BaseTableField):
     template_name = 'core/package-table-fields/bugs.html'
     prefetch_related_lookups = ['bug_stats']
 
-    @cached_property
-    def context(self):
+    def context(self, package):
         stats = {}
         try:
-            stats['bugs'] = self.package.bug_stats.stats
+            stats['bugs'] = package.bug_stats.stats
         except ObjectDoesNotExist:
             stats['all'] = 0
             return stats
@@ -317,7 +305,6 @@ class BasePackageTable(metaclass=PluginRegistry):
         self.scope = scope
         self.limit = limit
 
-    @property
     def context(self):
         """
         Should return a dictionary representing context variables necessary for
@@ -354,9 +341,15 @@ class BasePackageTable(metaclass=PluginRegistry):
         Returns the list of packages with prefetched relationships defined by
         table fields
         """
+        attributes_name = set()
         package_query_set = self.packages
         for field in self.table_fields:
             for l in field.prefetch_related_lookups:
+                if isinstance(l, Prefetch):
+                    if l.to_attr in attributes_name:
+                        continue
+                    else:
+                        attributes_name.add(l.to_attr)
                 package_query_set = package_query_set.prefetch_related(l)
 
         additional_data, implemented = vendor.call(
@@ -419,10 +412,18 @@ class BasePackageTable(metaclass=PluginRegistry):
         if self.limit:
             packages = packages[:self.limit]
 
+        fields = [f() for f in self.table_fields]
+        context = {
+            'field': {
+                'context': ''
+            },
+        }
         for package in packages:
+            context['package'] = package
             row = []
-            for field_class in self.table_fields:
-                row.append(field_class(package))
+            for field in fields:
+                context['field']['context'] = field.context(package)
+                row.append(field.render(package, context))
             rows_list.append(row)
 
         return rows_list
