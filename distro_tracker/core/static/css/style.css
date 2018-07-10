@@ -344,3 +344,7 @@ form#team-search-form .twitter-typeahead > input {
 .cursor-pointer:hover {
   cursor: pointer;
 }
+
+td span#bugs-field {
+  white-space: nowrap;
+}

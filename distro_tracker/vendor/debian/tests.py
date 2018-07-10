@@ -40,6 +40,7 @@ from distro_tracker.core.models import (
     EmailSettings,
     Keyword,
     News,
+    PackageBugStats,
     PackageData,
     PackageName,
     PseudoPackageName,
@@ -75,6 +76,7 @@ from distro_tracker.vendor.debian.rules import (
     get_uploader_extra,
     additional_prefetch_related_lookups,
     get_vcs_data,
+    get_bug_stats_field_data,
 )
 from distro_tracker.vendor.debian.sso_auth import DebianSsoUserBackend
 from distro_tracker.vendor.debian.tracker_package_tables import (
@@ -5997,6 +5999,41 @@ class GetVcsDataTest(TestCase):
         package.vcswatch_data = []
         context = get_vcs_data(package)
         self.assertDictEqual(context, {})
+
+
+class GetBugStatsFieldDataTest(TestCase):
+    def test_get_bug_stats_field_data(self):
+        """
+        Tests getting extra bug stats data provided for BugStatsTableField
+        """
+        package = SourcePackageName.objects.create(name='dummy-package')
+        stats = {}
+        stats['bugs'] = [
+            {'bug_count': 3, 'merged_count': 0, 'category_name': 'rc'},
+            {'bug_count': 7, 'merged_count': 7, 'category_name': 'normal'},
+            {'bug_count': 1, 'merged_count': 1, 'category_name': 'wishlist'},
+        ]
+        PackageBugStats.objects.create(package=package, stats=stats['bugs'])
+        context = get_bug_stats_field_data(package, stats)
+        self.assertIsNotNone(context['bts_url'])
+        self.assertEqual(context['rc_bugs'], 3)
+
+        self.assertEqual(len(context['bugs']), 3)
+        for bug in context['bugs']:
+            self.assertIsNotNone(bug['url'])
+            self.assertIsNotNone(bug['bug_count'])
+            self.assertIsNotNone(bug['category_name'])
+
+    def test_get_bug_stat_data_for_package_without_bug(self):
+        """
+        Tests getting extra bug stats data for a package that does not have
+        bug stats records
+        """
+        package = SourcePackageName.objects.create(name='dummy-package')
+        context = get_bug_stats_field_data(package, {'bugs': []})
+        self.assertIsNotNone(context['bts_url'])
+        self.assertNotIn('rc_bugs', context)
+        self.assertEqual(len(context['bugs']), 0)
 
 
 class UpstreamTableFieldTests(TestCase):

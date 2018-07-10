@@ -395,3 +395,27 @@ def get_vcs_data(package):
         <distro_tracker.core.models.PackageName>`
     """
     pass
+
+
+def get_bug_stats_field_data(package, stats):
+    """
+    The function provides additional data which should be displayed in the
+    Bug Stats table field.
+
+    The return value should be a dictionary which will be merged with
+    default context data defined by :func:`context
+    <distro_tracker.core.package_tables.BugStatsTableField.context>` function.
+    If this function is defined then its return value is simply passed to the
+    template and does not require any special format; the vendor's template can
+    access this value in the ``field.context`` context variable and can use it
+    any way it wants.
+
+    :param package: The package for which additional vcs data should be
+        provided.
+    :param stats: The package's bug stats
+    :type package: :class:`PackageName
+        <distro_tracker.core.models.PackageName>`
+    :type stats: :class:`PackageBugStats
+        <distro_tracker.core.models.PackageBugStats>`
+    """
+    pass

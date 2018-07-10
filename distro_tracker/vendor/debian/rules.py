@@ -874,3 +874,24 @@ def get_vcs_data(package):
         # There is no action item for the package
         pass
     return data
+
+
+def get_bug_stats_field_data(package, stats):
+    """
+    :returns: The context data for package's bug stats with RC bugs data to be
+    highlighted in the template defined by
+    :data:`DISTRO_TRACKER_BUG_STATS_TABLE_FIELD_TEMPLATE
+    <distro_tracker.project.local_settings.DISTRO_TRACKER_BUG_STATS_TABLE_FIELD_TEMPLATE>`
+    settings, as well as providing proper links for Debian BTS.
+    """
+    data = stats
+    data['bts_url'] = get_bug_tracker_url(package.name, 'source', 'all')
+    for bug in data['bugs']:
+        # URL for the non-merged category
+        url = get_bug_tracker_url(
+            package.name, 'source', bug['category_name'])
+        bug['url'] = url
+        if bug['category_name'] == 'rc' and bug['bug_count'] > 0:
+            data['rc_bugs'] = bug['bug_count']
+
+    return data

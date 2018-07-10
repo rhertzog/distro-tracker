@@ -17,6 +17,7 @@ __all__ = [
     'DISTRO_TRACKER_REMOVALS_URL',
     'DISTRO_TRACKER_VENDOR_RULES',
     'DISTRO_TRACKER_VCS_TABLE_FIELD_TEMPLATE',
+    'DISTRO_TRACKER_BUG_STATS_TABLE_FIELD_TEMPLATE',
     'DJANGO_EMAIL_ACCOUNTS_POST_LOGOUT_REDIRECT',
     'DJANGO_EMAIL_ACCOUNTS_PRE_LOGIN_HOOK',
     'INSTALLED_APPS',
@@ -59,6 +60,10 @@ DISTRO_TRACKER_BUGS_PANEL_TEMPLATE = 'debian/bugs.html'
 
 #: A custom template which the vcs table field should use
 DISTRO_TRACKER_VCS_TABLE_FIELD_TEMPLATE = 'debian/package-table-fields/vcs.html'
+
+#: A custom template which the bug stats table field should use
+DISTRO_TRACKER_BUG_STATS_TABLE_FIELD_TEMPLATE = ("debian/package-table-fields"
+                                                 "/bugs.html")
 
 #: A list of suite names which should be used when updating piuparts stats
 DISTRO_TRACKER_DEBIAN_PIUPARTS_SUITES = (
