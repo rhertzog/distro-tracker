@@ -10,7 +10,6 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 
-from django.utils.functional import cached_property
 from django.db.models import Prefetch
 from distro_tracker.core.models import (
     PackageData,
@@ -31,14 +30,13 @@ class UpstreamTableField(BaseTableField):
         Prefetch(
             'data',
             queryset=PackageData.objects.filter(key='general'),
-            to_attr='general_upstream_data'
+            to_attr='general_data'
         ),
     ]
 
-    @cached_property
-    def context(self):
+    def context(self, package):
         try:
-            info = self.package.general_upstream_data[0]
+            info = package.general_data[0]
             if 'upstream' in info.value:
                 return info.value['upstream']
         except IndexError:

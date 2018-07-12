@@ -6010,15 +6010,15 @@ class UpstreamTableFieldTests(TestCase):
             }
         }
         self.data.save()
-        self.package.general_upstream_data = self.package.data.filter(
+        self.package.general_data = self.package.data.filter(
             key='general')
-        self.field = UpstreamTableField(self.package)
+        self.field = UpstreamTableField()
 
     def test_field_context(self):
         """
         Tests field contex content
         """
-        context = self.field.context
+        context = self.field.context(self.package)
         self.assertTrue(context['version'])
         self.assertTrue(context['url'])
 
@@ -6027,8 +6027,6 @@ class UpstreamTableFieldTests(TestCase):
         Tests field specific properties
         """
         self.assertEqual(self.field.column_name, 'Upstream')
-        self.assertTrue(self.field.has_content)
-        self.assertIsNone(self.field.html_output)
         self.assertEqual(
             self.field.template_name,
             'debian/package-table-fields/upstream.html')

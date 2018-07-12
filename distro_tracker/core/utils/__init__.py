@@ -266,7 +266,7 @@ def get_developer_information_url(email):
         return info_url
 
 
-def add_developer_extras(general):
+def add_developer_extras(general, url_only=False):
     """
     Receives a general dict with package data and add to it more data
     regarding that package's developers
@@ -276,20 +276,23 @@ def add_developer_extras(general):
         url = get_developer_information_url(maintainer_email)
         if url:
             general['maintainer']['developer_info_url'] = url
-            extra, implemented = vendor.call(
-                'get_maintainer_extra', maintainer_email, general['name'])
-            general['maintainer']['extra'] = extra
+            if not url_only:
+                extra, implemented = vendor.call(
+                    'get_maintainer_extra', maintainer_email, general['name'])
+                general['maintainer']['extra'] = extra
 
     uploaders = general.get('uploaders', None)
     if uploaders:
         for uploader in uploaders:
+            url = get_developer_information_url(uploader['email'])
+            if url:
+                uploader['developer_info_url'] = url
+            if url_only:
+                continue
             # Vendor specific extras.
             extra, implemented = vendor.call(
                 'get_uploader_extra', uploader['email'], general['name'])
             if implemented and extra:
                 uploader['extra'] = extra
-            url = get_developer_information_url(uploader['email'])
-            if url:
-                uploader['developer_info_url'] = url
 
     return general

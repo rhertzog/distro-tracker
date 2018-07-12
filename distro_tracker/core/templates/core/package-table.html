@@ -13,13 +13,9 @@
         {% with rows=table.rows %}
           {% for row in rows %}
           <tr scope='row'>
-            {% for field in row %}
+            {% for cell in row %}
             <td class='center' scope='col'>
-              {% if field.template_name %}
-                {% include field.template_name with field=field %}
-              {% else %}
-                {{ field.html_output }}
-              {% endif %}
+	            {{ cell }}
             </td>
             {% endfor %}
           </tr>

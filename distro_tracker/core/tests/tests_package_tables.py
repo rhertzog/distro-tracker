@@ -82,13 +82,13 @@ class GeneralInformationTableFieldTests(TestCase):
         self.package = create_source_package_with_data('dummy-package')
         self.package.general_data = self.package.data.filter(key='general')
         self.package.binaries_data = self.package.data.filter(key='binaries')
-        self.field = GeneralInformationTableField(self.package)
+        self.field = GeneralInformationTableField()
 
     def test_field_context(self):
         """
         Tests field context content
         """
-        context = self.field.context
+        context = self.field.context(self.package)
         self.assertEqual(context['url'], self.package.get_absolute_url)
         self.assertTrue(context['vcs'])
         self.assertIn('type', context['vcs'])
@@ -103,8 +103,6 @@ class GeneralInformationTableFieldTests(TestCase):
         Tests field specific properties
         """
         self.assertEqual(self.field.column_name, 'Package')
-        self.assertTrue(self.field.has_content)
-        self.assertIsNone(self.field.html_output)
         self.assertEqual(
             self.field.template_name, 'core/package-table-fields/general.html')
         self.assertEqual(len(self.field.prefetch_related_lookups), 2)
@@ -113,14 +111,14 @@ class GeneralInformationTableFieldTests(TestCase):
 class VcsTableFieldTests(TestCase):
     def setUp(self):
         self.package = create_source_package_with_data('dummy-package')
-        self.package.general_vcs_data = self.package.data.all()
-        self.field = VcsTableField(self.package)
+        self.package.general_data = self.package.data.all()
+        self.field = VcsTableField()
 
     def test_field_context(self):
         """
         Tests field context content
         """
-        context = self.field.context
+        context = self.field.context(self.package)
         self.assertTrue(context['vcs'])
         self.assertIn('type', context['vcs'])
         self.assertIn('url', context['vcs'])
@@ -132,8 +130,6 @@ class VcsTableFieldTests(TestCase):
         Tests field specific properties
         """
         self.assertEqual(self.field.column_name, 'VCS')
-        self.assertTrue(self.field.has_content)
-        self.assertIsNone(self.field.html_output)
         self.assertEqual(
             self.field.template_name,
             'core/package-table-fields/vcs.html')
@@ -143,17 +139,17 @@ class VcsTableFieldTests(TestCase):
 class ArchiveTableFieldTests(TestCase):
     def setUp(self):
         self.package = create_source_package_with_data('dummy-package')
-        self.package.general_archive_data = self.package.data.filter(
+        self.package.general_data = self.package.data.filter(
             key='general')
         self.package.versions = self.package.data.filter(
             key='versions')
-        self.field = ArchiveTableField(self.package)
+        self.field = ArchiveTableField()
 
     def test_field_context(self):
         """
         Tests field context content
         """
-        context = self.field.context
+        context = self.field.context(self.package)
         self.assertTrue(context['version'])
         self.assertTrue(context['default_pool_url'])
 
@@ -162,8 +158,6 @@ class ArchiveTableFieldTests(TestCase):
         Tests field specific properties
         """
         self.assertEqual(self.field.column_name, 'Archive')
-        self.assertTrue(self.field.has_content)
-        self.assertIsNone(self.field.html_output)
         self.assertEqual(
             self.field.template_name,
             'core/package-table-fields/archive.html')
@@ -174,13 +168,13 @@ class BugStatsTableFieldTests(TestCase):
     def setUp(self):
         self.package = create_source_package_with_data('dummy-package')
         create_package_bug_stats(self.package)
-        self.field = BugStatsTableField(self.package)
+        self.field = BugStatsTableField()
 
     def test_field_context(self):
         """
         Tests field context content
         """
-        context = self.field.context
+        context = self.field.context(self.package)
         self.assertTrue(context['all'])
         self.assertEqual(context['all'], 11)
         self.assertEqual(len(context['bugs']), 3)
@@ -193,8 +187,6 @@ class BugStatsTableFieldTests(TestCase):
         Tests field specific properties
         """
         self.assertEqual(self.field.column_name, 'Bugs')
-        self.assertTrue(self.field.has_content)
-        self.assertIsNone(self.field.html_output)
         self.assertEqual(
             self.field.template_name,
             'core/package-table-fields/bugs.html')
@@ -227,14 +219,11 @@ class GeneralTeamPackageTableTests(TestCase, TemplateTestsMixin):
                 return table
         return False
 
-    def assert_number_of_queries(self, table):
-        number_of_queries = 1 + sum(
-            len(f.prefetch_related_lookups) for f in table.table_fields)
-
+    def assert_number_of_queries(self, table, number_of_queries):
         with self.assertNumQueries(number_of_queries):
             for row in table.rows:
-                for field in row:
-                    field.context
+                for cell in row:
+                    self.assertIsNotNone(cell)
 
     def test_table_displayed(self):
         """
@@ -293,12 +282,12 @@ class GeneralTeamPackageTableTests(TestCase, TemplateTestsMixin):
         queries regardless of the number of packages
         """
         table = GeneralTeamPackageTable(self.team)
-        self.assert_number_of_queries(table)
+        self.assert_number_of_queries(table, 5)
 
         new_package = create_source_package_with_data('another-dummy-package')
         create_package_bug_stats(new_package)
         self.team.packages.add(new_package)
-        self.assert_number_of_queries(table)
+        self.assert_number_of_queries(table, 5)
 
     def test_table_limit_of_packages(self):
         """
@@ -312,12 +301,14 @@ class GeneralTeamPackageTableTests(TestCase, TemplateTestsMixin):
         self.assertEqual(len(table.rows), 1)
         # Get the first column from the first row
         table_field = table.rows[0][0]
-        self.assertEqual(self.package, table_field.package)
+        self.assertIn(self.package.name, table_field)
 
         table.limit = 2
         # Get the first column from the first row
         table_field = table.rows[0][0]
-        self.assertEqual(self.package, table_field.package)
+        self.assertIn(self.package.name, table_field)
+        self.assertNotIn(new_package.name, table_field)
         # Get the first column from the second row
         table_field = table.rows[1][0]
-        self.assertEqual(new_package, table_field.package)
+        self.assertIn(new_package.name, table_field)
+        # Get the first column from the second row

@@ -840,7 +840,8 @@ def additional_prefetch_related_lookups():
         Prefetch(
             'action_items',
             queryset=ActionItem.objects.filter(
-                item_type__type_name='vcswatch-warnings-and-errors'),
+                item_type__type_name='vcswatch-warnings-and-errors'
+            ).prefetch_related('item_type'),
         ),
         Prefetch(
             'data',
@@ -857,10 +858,10 @@ def get_vcs_data(package):
     <distro_tracker.project.local_settings.DISTRO_TRACKER_VCS_TABLE_FIELD_TEMPLATE>`
     settings.
     """
+    data = {}
     try:
-        data = {}
         item = package.vcswatch_data[0]
-        data['vcs_extra_data'] = item.value
+        data['changelog_version'] = item.value['changelog_version']
     except IndexError:
         # There is no vcs extra data for the package
         pass
