@@ -19,7 +19,7 @@ from email.utils import getaddresses, parseaddr
 from debian import changelog as debian_changelog
 from debian.debian_support import AptPkgVersion
 from django.conf import settings
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db import models
 from django.db.utils import IntegrityError
@@ -33,6 +33,7 @@ from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from jsonfield import JSONField
 
+from distro_tracker import vendor
 from distro_tracker.core.utils import (
     SpaceDelimitedTextField,
     distro_tracker_render_to_string,
@@ -2454,3 +2455,124 @@ class MembershipConfirmation(Confirmation):
 
     def __str__(self):
         return "Confirmation for {}".format(self.membership)
+
+
+class BugDisplayManager(object):
+    """
+    A class that aims at implementing the logic to handle the multiple ways
+    of displaying bugs data. More specifically, it defines the logic for:
+    * rendering :class:`BugsPanel <distro_tracker.core.panels.BugsPanel>`
+    * rendering :class:`BugStatsTableField
+    <distro_tracker.core.package_tables.BugStatsTableField>`
+    """
+    table_field_template_name = 'core/package-table-fields/bugs.html'
+    panel_template_name = 'core/panels/bugs.html'
+
+    def table_field_context(self, package):
+        """
+        This function is used by the
+        :class:`BugStatsTableField
+        <distro_tracker.core.package_tables.BugStatsTableField>`
+        to display the bug information for packages in tables.
+
+        It should return a dict with the following keys:
+        - ``bugs`` - a list of dicts where each element describes a single
+            bug category for the given package. Each dict has to provide at
+            minimum the following keys:
+            - ``category_name`` - the name of the bug category
+            - ``bug_count`` - the number of known bugs for the given package and
+              category
+        - ``all`` - the total number of bugs for that package
+        """
+        stats = {}
+        try:
+            stats['bugs'] = package.bug_stats.stats
+        except ObjectDoesNotExist:
+            stats['bugs'] = []
+
+        # Also adds a total of all those bugs
+        total = sum(category['bug_count'] for category in stats['bugs'])
+        stats['all'] = total
+
+        return stats
+
+    def panel_context(self, package):
+        """
+        This function is used by the
+        :class:`BugsPanel
+        <distro_tracker.core.panels.BugsPanel>`
+        to display the bug information for a given package.
+
+        It should return a list of dicts where each element describes a
+        single bug category for the given package. Each dict has to provide at
+        minimum the following keys:
+        - ``category_name`` - the name of the bug category
+        - ``bug_count`` - the number of known bugs for the given package and
+              category
+        """
+        try:
+            stats = package.bug_stats.stats
+        except ObjectDoesNotExist:
+            return
+
+        # Also adds a total of all those bugs
+        total = sum(category['bug_count'] for category in stats)
+        stats.insert(0, {
+            'category_name': 'all',
+            'bug_count': total,
+        })
+        return stats
+
+    def get_bug_tracker_url(package_name, package_type, category_name):
+        pass
+
+    def get_binary_bug_stats(self, binary_name):
+        """
+        This function is used by the
+        :class:`BinariesInformationPanel
+        <distro_tracker.core.panels.BinariesInformationPanel>`
+        to display the bug information next to the binary name.
+
+        It should return a list of dicts where each element describes a single
+        bug category for the given package.
+
+        Each dict has to provide at minimum the following keys:
+
+        - ``category_name`` - the name of the bug category
+        - ``bug_count`` - the number of known bugs for the given package and
+          category
+
+        Optionally, the following keys can be provided:
+
+        - ``display_name`` - a name for the bug category. It is used by the
+          :class:`BinariesInformationPanel
+          <distro_tracker.core.panels.BinariesInformationPanel>`
+          to display a tooltip when mousing over the bug count number.
+        """
+        stats = get_or_none(
+            BinaryPackageBugStats, package__name=binary_name)
+        if stats is not None:
+            return stats.stats
+
+        return
+
+
+class BugDisplayManagerMixin(object):
+    """
+    Mixin to another class to provide access to an object of class
+    :class:`BugDisplayManager <distro_tracker.core.models.BugDisplayManager>`.
+    """
+    @property
+    def bug_manager(self):
+        """
+        This function returns the appropriate class for managing
+        the presentation of bugs data.
+        """
+        if not hasattr(self, '_bug_class'):
+            bug_manager_class, implemented = vendor.call(
+                'get_bug_display_manager_class')
+            if implemented:
+                self._bug_manager = bug_manager_class()
+            else:
+                self._bug_manager = BugDisplayManager()
+        return self._bug_manager

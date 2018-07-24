@@ -49,6 +49,7 @@ from distro_tracker.core.models import (
     SourcePackageName,
     Subscription
 )
+from distro_tracker.core.package_tables import BugStatsTableField
 from distro_tracker.core.retrieve_data import UpdateRepositoriesTask
 from distro_tracker.core.tasks import run_task
 from distro_tracker.core.utils.email_messages import message_from_bytes
@@ -76,7 +77,6 @@ from distro_tracker.vendor.debian.rules import (
     get_uploader_extra,
     additional_prefetch_related_lookups,
     get_vcs_data,
-    get_bug_stats_field_data,
 )
 from distro_tracker.vendor.debian.sso_auth import DebianSsoUserBackend
 from distro_tracker.vendor.debian.tracker_package_tables import (
@@ -6001,39 +6001,84 @@ class GetVcsDataTest(TestCase):
         self.assertDictEqual(context, {})
 
 
-class GetBugStatsFieldDataTest(TestCase):
-    def test_get_bug_stats_field_data(self):
-        """
-        Tests getting extra bug stats data provided for BugStatsTableField
-        """
-        package = SourcePackageName.objects.create(name='dummy-package')
+@override_settings(
+    DISTRO_TRACKER_VENDOR_RULES='distro_tracker.vendor.debian.rules')
+class BugStatsTableFieldTests(TestCase):
+    def setUp(self):
+        self.package = SourcePackageName.objects.create(name='dummy-package')
         stats = {}
         stats['bugs'] = [
             {'bug_count': 3, 'merged_count': 0, 'category_name': 'rc'},
             {'bug_count': 7, 'merged_count': 7, 'category_name': 'normal'},
             {'bug_count': 1, 'merged_count': 1, 'category_name': 'wishlist'},
         ]
-        PackageBugStats.objects.create(package=package, stats=stats['bugs'])
-        context = get_bug_stats_field_data(package, stats)
+        PackageBugStats.objects.create(
+            package=self.package, stats=stats['bugs'])
+        self.field = BugStatsTableField()
+
+    def test_field_context(self):
+        """
+        Tests field context content
+        """
+        context = self.field.context(self.package)
+        self.assertTrue(context['all'])
+        self.assertEqual(context['all'], 11)
+        self.assertEqual(len(context['bugs']), 4)
+        for bug in context['bugs']:
+            self.assertIn('bug_count', bug)
+            self.assertIn('category_name', bug)
+            self.assertIsNotNone(bug['url'])
         self.assertIsNotNone(context['bts_url'])
         self.assertEqual(context['rc_bugs'], 3)
 
-        self.assertEqual(len(context['bugs']), 3)
-        for bug in context['bugs']:
-            self.assertIsNotNone(bug['url'])
-            self.assertIsNotNone(bug['bug_count'])
-            self.assertIsNotNone(bug['category_name'])
+    def test_text_color_based_on_available_bugs_categories(self):
+        """
+        Tests text color of the field based on available bugs categories
+        """
+        bug_stats = self.package.bug_stats
+        context = self.field.context(self.package)
+        self.assertEqual(context['text_color'], 'text-danger')
+
+        bug_stats.stats = [
+            {'bug_count': 0, 'merged_count': 0, 'category_name': 'rc'},
+            {'bug_count': 7, 'merged_count': 7, 'category_name': 'normal'},
+        ]
+        bug_stats.save()
+        context = self.field.context(self.package)
+        self.assertEqual(context['text_color'], 'text-warning')
+
+        bug_stats.stats = [
+            {'bug_count': 1, 'merged_count': 1, 'category_name': 'patch'},
+        ]
+        bug_stats.save()
+        context = self.field.context(self.package)
+        self.assertEqual(context['text_color'], 'text-info')
+
+        bug_stats.stats = [
+            {'bug_count': 1, 'merged_count': 1, 'category_name': 'wishlist'},
+        ]
+        bug_stats.save()
+        context = self.field.context(self.package)
+        self.assertEqual(context['text_color'], 'text-default')
+
+    def test_field_specific_properties(self):
+        """
+        Tests field specific properties
+        """
+        self.assertEqual(
+            self.field.template_name,
+            'debian/package-table-fields/bugs.html')
 
     def test_get_bug_stat_data_for_package_without_bug(self):
         """
         Tests getting extra bug stats data for a package that does not have
         bug stats records
         """
-        package = SourcePackageName.objects.create(name='dummy-package')
-        context = get_bug_stats_field_data(package, {'bugs': []})
+        package = SourcePackageName.objects.create(name='another-package')
+        context = self.field.context(package)
         self.assertIsNotNone(context['bts_url'])
         self.assertNotIn('rc_bugs', context)
-        self.assertEqual(len(context['bugs']), 0)
+        self.assertEqual(len(context['bugs']), 1)
 
 
 class UpstreamTableFieldTests(TestCase):

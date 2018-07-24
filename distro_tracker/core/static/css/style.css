@@ -348,3 +348,7 @@ form#team-search-form .twitter-typeahead > input {
 td span#bugs-field {
   white-space: nowrap;
 }
+
+td span#bugs-field a{
+  color: black;
+}

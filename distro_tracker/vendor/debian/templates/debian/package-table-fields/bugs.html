@@ -1,22 +1,24 @@
 {% if field.context.all == 0 %}
-  <a href="{{ field.context.bts_url }}">
-    <b class='center text-success'>{{field.context.all}}</b>
-  </a>
+  <span class="cursor-pointer" id='bugs-field'>
+    <a class='center text-default' href="{{ field.context.bts_url }}">
+      <b>{{field.context.all}}</b>
+    </a>
+  </span>
 {% else %}
   <span class="popover-hover cursor-pointer text-primary" id="bugs-field" data-toggle="popover" data-placement="left" title="All bugs" data-content='
     <p>
     {% for bug in field.context.bugs %}
       <a href="{{ bug.url }}">
-        <span class="font-weight-bold">{{ bug.category_name}}:</span> {{ bug.bug_count }}
+        <span class="font-weight-bold" title="{{ bug.description }}">{{ bug.display_name}}:</span> {{ bug.bug_count }}
       </a>
       <br>
     {% endfor %}
     '>
-    <a href="{{ field.context.bts_url }}">
+    <a class='center {{field.context.text_color}}' href="{{ field.context.bts_url }}">
     {% if field.context.rc_bugs %}
-      <b class='center text-danger'>{{field.context.all}} ({{field.context.rc_bugs}} RC)</b>
+      <b>{{field.context.all}} ({{field.context.rc_bugs}} RC)</b>
     {% else %}
-      <b class='center text-warning'>{{field.context.all}}</b>
+      <b>{{field.context.all}}</b>
     {% endif %}
     </a>
   </span>
