@@ -1,3 +1,4 @@
+{% load distro_tracker_extras %}
 <span class="text-success" id='archive-field'>
-	<a href='{{ field.context.default_pool_url }}'>{{ field.context.version }}</a>
+	<a href='{{ field.context.default_pool_url }}'>{{ field.context.version|breakable }}</a>
 </span>

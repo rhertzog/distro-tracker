@@ -1,3 +1,4 @@
+{% load distro_tracker_extras %}
 <span class="text-success" id='upstream-field'>
-	<a href='{{ field.context.url }}'>{{ field.context.version }}</a>
+	<a href='{{ field.context.url }}'>{{ field.context.version|breakable }}</a>
 </span>

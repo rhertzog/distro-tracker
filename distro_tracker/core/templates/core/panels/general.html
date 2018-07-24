@@ -1,4 +1,5 @@
 {% extends 'core/panels/panel.html' %}
+{% load distro_tracker_extras %}
 
 {% block panel-body %}
 {% with ctx=panel.context %}
@@ -18,7 +19,7 @@
     {% if ctx.version %}
     <li class="list-group-item">
         <span class="list-item-key"><b>version:</b></span>
-        {{ ctx.version }}
+        {{ ctx.version|breakable }}
     </li>
     {% endif %}
 

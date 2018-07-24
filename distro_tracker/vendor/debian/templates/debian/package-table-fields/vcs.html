@@ -1,5 +1,6 @@
+{% load distro_tracker_extras %}
 <div id='vcs-field'>
-  <a href='{{ field.context.vcs.browser }}'>{{ field.context.changelog_version }} <small>({{ field.context.vcs.full_name }})</small></a>
+  <a href='{{ field.context.vcs.browser }}'>{{ field.context.changelog_version|breakable }} <small>({{ field.context.vcs.full_name }})</small></a>
   {% if field.context.action_item != None %}
     <span class="popover-hover cursor-pointer label label-{{field.context.action_item.severity.label_type}}" data-toggle="popover" data-placement="left" title="Issue with <b>{{ field.context.action_item.severity.name }}</b> severity" data-content='
       {{ field.context.action_item.short_description }}

@@ -31,7 +31,7 @@
 	    <b>{{ item.repository.shorthand }}:</b>
 	</span>
 	{% with url=item.url|default:"#" %}
-	<a href="{{ url }}">{{ item.version }}</a>
+	<a href="{{ url }}">{{ item.version|breakable }}</a>
 	{% endwith %}
     </li>
     {% endfor %}
@@ -46,8 +46,8 @@
             {% if item.repository_link %}</a>{% endif %}
         </span>
 	{% if item.version_link %}<a href="{{ item.version_link }}">{% endif %}
-	<span>{{ item.version }}</span>
-	{% if item.version_link %}</a> {% endif %}
+	<span>{{ item.version|breakable }}</span>
+	{% if item.version_link %}</a>{% endif %}
     </li>
     {% endfor %}
 </ul>
