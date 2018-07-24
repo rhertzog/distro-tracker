@@ -9,8 +9,11 @@
 # except according to the terms contained in the LICENSE file.
 """Additional distro-tracker specific template tags."""
 
+import re
+
 from django import template
 from django.template.loader import render_to_string
+from django.utils.html import conditional_escape
 from django.utils.safestring import mark_safe
 
 register = template.Library()
@@ -98,3 +101,16 @@ def lookup(dictionary, key):
     are variables.
     """
     return dictionary.get(key, '')
+
+@register.filter()
+def breakable(content):
+    """
+    A filter that adds <wbr> (word breakpoints) to long words. Useful for
+    very long versions strings that would otherwise cause text overflows in
+    small cells.
+    """
+    if len(content) >= 10:
+        content = conditional_escape(content)
+        return mark_safe(re.sub(r'([-~+\.])', '\\1<wbr>', content))
+
+    return content

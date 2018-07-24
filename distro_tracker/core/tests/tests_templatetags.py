@@ -45,3 +45,39 @@ class TemplateTagsTests(SimpleTestCase):
         link = html.find(name='span')
         self.assertIsNotNone(link)
         self.assertIn(link.get_text(), "[abc]")
+
+
+    def get_breakable_version(self, version):
+        template = self.get_template('{{version|breakable}}')
+        return template.render(Context({'version': version}))
+
+    def test_breakable_on_short_string(self):
+        """
+        Short strings need no breakpoint.
+        """
+        self.assertEqual(self.get_breakable_version('1.2-3'), '1.2-3')
+
+    def test_breakable_on_long_string(self):
+        """
+        Long strings get breakpoints after [~.+-] characters.
+        """
+        version  = "20180727~birthday.gift12+deb9u1-4"
+        expected = "20180727~<wbr>birthday.<wbr>gift12+<wbr>deb9u1-<wbr>4"
+        self.assertEqual(self.get_breakable_version(version), expected)
+
+    def test_breakable_on_short_html(self):
+        """
+        Ensure we don't allow HTML injection on short string.
+        """
+        version  = "<>&foo;"
+        expected = "&lt;&gt;&amp;foo;"
+        self.assertEqual(self.get_breakable_version(version), expected)
+
+    def test_breakable_on_short_html(self):
+        """
+        Ensure we don't allow HTML injection on long string.
+        """
+        version  = "1234567890<>&foo;"
+        expected = "1234567890&lt;&gt;&amp;foo;"
+        self.assertEqual(self.get_breakable_version(version), expected)
+
