@@ -14,14 +14,13 @@ from collections import defaultdict
 
 from debian.debian_support import AptPkgVersion
 from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist
 from django.utils.functional import cached_property
 from django.utils.safestring import mark_safe
 
 from distro_tracker import vendor
 from distro_tracker.core.models import (
     ActionItem,
-    BinaryPackageBugStats,
+    BugDisplayManagerMixin,
     MailingList,
     News,
     PackageData,
@@ -30,7 +29,6 @@ from distro_tracker.core.models import (
 )
 from distro_tracker.core.templatetags.distro_tracker_extras import octicon
 from distro_tracker.core.utils import (
-    get_or_none,
     get_vcs_name,
     add_developer_extras
 )
@@ -474,7 +472,7 @@ class DscLinkProvider(VersionedLinks.LinkProvider):
             return package.main_entry.dsc_file_url
 
 
-class BinariesInformationPanel(BasePanel):
+class BinariesInformationPanel(BasePanel, BugDisplayManagerMixin):
 
     """
     This panel displays a list of binary package names which a given source
@@ -490,46 +488,33 @@ class BinariesInformationPanel(BasePanel):
       <distro_tracker.vendor.skeleton.rules.get_package_information_site_url>`
       provides the link used for each binary package name.
     - :func:`get_binary_package_bug_stats
-      <distro_tracker.vendor.skeleton.rules.get_binary_package_bug_stats>`
-      provides bug statistics for a given binary package in terms of a list of
-      bug counts for different categories. If this is implemented, the panel
-      will display only the categories returned by this function, not all stats
-      found in the database.
-    - :func:`get_bug_tracker_url
-      <distro_tracker.vendor.skeleton.rules.get_bug_tracker_url>`
-      provides a link to an external bug tracker based on the name of a package
-      and the bug category.
+      <distro_tracker.vendor.skeleton.rules.get_bug_display_manager_class>`
+      provides a custom class to handle which bug statistics for a given binary
+      package must be displayed as a list of bug counts for different
+      categories.
+      This is useful if, for example, the vendor wants to display only a small
+      set of categories rather than all stats found in the database.
+      Refer to the function's documentation for the format of the return value.
     """
     position = 'left'
     title = 'binaries'
     template_name = 'core/panels/binaries.html'
 
     def _get_binary_bug_stats(self, binary_name):
-        bug_stats, implemented = vendor.call(
-            'get_binary_package_bug_stats', binary_name)
-        if not implemented:
-            # The vendor does not provide a custom list of bugs, so the default
-            # is to display all bug info known for the package.
-            stats = get_or_none(
-                BinaryPackageBugStats, package__name=binary_name)
-            if stats is not None:
-                bug_stats = stats.stats
+        bug_stats = self.bug_manager.get_binary_bug_stats(binary_name)
 
         if bug_stats is None:
             return
         # Try to get the URL to the bug tracker for the given categories
         for category in bug_stats:
-            url, implemented = vendor.call(
-                'get_bug_tracker_url',
-                binary_name,
-                'binary',
-                category['category_name'])
+            url, implemented = self.bug_manager.get_bug_tracker_url(
+                binary_name, 'binary', category['category_name'])
             if not implemented:
                 continue
             category['url'] = url
         # Include the total bug count and corresponding tracker URL
-        all_bugs_url, implemented = vendor.call(
-            'get_bug_tracker_url', binary_name, 'binary', 'all')
+        all_bugs_url, implemented = self.bug_manager.get_bug_tracker_url(
+            binary_name, 'binary', 'all')
         return {
             'total_count': sum(
                 category['bug_count'] for category in bug_stats),
@@ -807,7 +792,7 @@ class NewsPanel(BasePanel):
         return bool(self.context['news'])
 
 
-class BugsPanel(BasePanel):
+class BugsPanel(BasePanel, BugDisplayManagerMixin):
 
     """
     The panel displays bug statistics for the package.
@@ -820,28 +805,15 @@ class BugsPanel(BasePanel):
     :class:`PackageBugStats <distro_tracker.core.models.PackageBugStats>`
     instance which corresponds to the package. The sum of all bugs from
     all categories is also displayed as the first row of the panel.
+    Such behavior is defined by :class:`BugDisplayManager
+    <distro_tracker.core.models.BugDisplayManager>` class.
 
-    A vendor can choose to implement the
-    :func:`get_bug_panel_stats
-    <distro_tracker.vendor.skeleton.rules.get_bug_panel_stats>`
-    function in order to provide a custom list of bug categories to be
-    displayed in the panel. This is useful if, for example, the vendor does
+    A vendor may provide a custom way of displaying bugs data in
+    bugs panel by implementing :func:`get_bug_display_manager_class
+    <distro_tracker.vendor.skeleton.rules.get_bug_display_manager_class>`
+    function. This is useful if, for example, the vendor does
     not want to display the count of all bug categories.
     Refer to the function's documentation for the format of the return value.
-
-    Finally, for vendors which require an even higher degree of customization,
-    it is possible to provide a
-    :data:`DISTRO_TRACKER_BUGS_PANEL_TEMPLATE
-    <distro_tracker.project.local_settings.DISTRO_TRACKER_BUGS_PANEL_TEMPLATE>`
-    settings value which gives the path to a template which should be used to
-    render the panel. It is recommended that this template extends
-    ``core/panels/bugs.html``, but not mandatory. If a custom
-    :func:`get_bug_panel_stats
-    <distro_tracker.vendor.skeleton.rules.get_bug_panel_stats>`
-    function is also defined then its return value is simply passed to the
-    and does not require any special format; the vendor's template can access
-    this value in the ``panel.context`` context variable and can use it any way
-    it wants.
 
     This customization should be used only by vendors whose bug statistics have
     a significantly different format than the expected ``category: count``
@@ -850,42 +822,14 @@ class BugsPanel(BasePanel):
     position = 'right'
     title = 'bugs'
     panel_importance = 1
-    _default_template_name = 'core/panels/bugs.html'
 
     @property
     def template_name(self):
-        return getattr(
-            settings,
-            'DISTRO_TRACKER_BUGS_PANEL_TEMPLATE',
-            self._default_template_name)
+        return self.bug_manager.panel_template_name
 
     @cached_property
     def context(self):
-        result, implemented = vendor.call(
-            'get_bug_panel_stats', self.package.name)
-        # implemented = False
-        if not implemented:
-            # If the vendor does not provide custom categories to be displayed
-            # in the panel, the default is to make each stored category a
-            # separate entry.
-            try:
-                stats = self.package.bug_stats.stats
-            except ObjectDoesNotExist:
-                return
-            # Also adds a total of all those bugs
-            total = sum(category['bug_count'] for category in stats)
-            stats.insert(0, {
-                'category_name': 'all',
-                'bug_count': total,
-            })
-            result = stats
-
-        # Either the vendor decided not to provide any info for this package
-        # or there is no known info.
-        if not result:
-            return []
-
-        return result
+        return self.bug_manager.panel_context(self.package)
 
     @property
     def has_content(self):

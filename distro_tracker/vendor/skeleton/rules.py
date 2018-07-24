@@ -208,94 +208,6 @@ def allow_package(stanza):
     pass
 
 
-def get_bug_tracker_url(package_name, package_type, category_name):
-    """
-    The function provides a way for vendors to give a URL to a bug tracker
-    based on a package name, its type and the bug category name.
-
-    This function is used by
-    :class:`BugsPanel <distro_tracker.core.panels.BugsPanel>` to
-    include a link to the bug tracking site on top of the known bug statistics.
-
-    :param package_name: The name of the package for which the bug tracker URL
-        should be provided.
-    :param package_type: The type of the package for which the bug tracker URL
-        should be provided. It is one of: ``source``, ``pseudo`` or ``binary``.
-    :param category_name: The name of the bug tracker category for which the
-        URL should be provided.
-
-    :returns: The bug tracker URL for the package and given category.
-    :rtype: string or ``None`` if the vendor does not have a bug tracker URL
-        for the given parameters.
-    """
-    pass
-
-
-def get_bug_panel_stats(package_name):
-    """
-    The function provides a way for vendors to customize the bug categories
-    displayed in the :class:`BugsPanel <distro_tracker.core.panels.BugsPanel>`.
-
-    This is useful if the vendor does not want to have all categories which are
-    stored in the
-    :class:`PackageBugStats <distro_tracker.core.models.PackageBugStats>`
-    displayed on the package page.
-
-    In this case the return value must be a list of dicts where each element
-    describes a single bug category for the given package.
-
-    Each dict has to provide at minimum the following keys:
-
-    - ``category_name`` - the name of the bug category
-    - ``bug_count`` - the number of known bugs for the given package and
-      category
-
-    Optionally, the following keys can be provided:
-
-    - ``display_name`` - a name for the bug category which is displayed in the
-      list. If this is not provided, the ``category_name`` is used instead.
-    - ``description`` - text further explaining the category which shows up in a
-      tooltip when mousing over the display name.
-
-    Another use case is when the vendor provides a custom
-    :data:`DISTRO_TRACKER_BUGS_PANEL_TEMPLATE
-    <distro_tracker.project.local_settings.DISTRO_TRACKER_BUGS_PANEL_TEMPLATE>`
-    in which case the return value is passed to the template in the
-    ``panel.context`` context variable and does not need to follow any special
-    format.
-    """
-    pass
-
-
-def get_binary_package_bug_stats(binary_name):
-    """
-    The function provides a way for vendors to provide customized bug stats
-    for binary packages.
-
-    This function is used by the
-    :class:`BinariesInformationPanel
-    <distro_tracker.core.panels.BinariesInformationPanel>`
-    to display the bug information next to the binary name.
-
-    It should return a list of dicts where each element describes a single bug
-    category for the given package.
-
-    Each dict has to provide at minimum the following keys:
-
-    - ``category_name`` - the name of the bug category
-    - ``bug_count`` - the number of known bugs for the given package and
-      category
-
-    Optionally, the following keys can be provided:
-
-    - ``display_name`` - a name for the bug category. It is used by the
-      :class:`BinariesInformationPanel
-      <distro_tracker.core.panels.BinariesInformationPanel>`
-      to display a tooltip when mousing over the bug count number.
-    """
-    pass
-
-
 def create_news_from_email_message(message):
     """
     The function provides a way for vendors to customize the news created from
@@ -393,5 +305,16 @@ def get_vcs_data(package):
         provided.
     :type package: :class:`PackageName
         <distro_tracker.core.models.PackageName>`
+    """
+    pass
+
+
+def get_bug_display_manager_class():
+    """
+    The function must return the class responsible for handling the dysplaying
+    logic of bugs data. To this end, vendors must define a new class
+    that either inherits from :class:`BugDisplayManager
+    <distro_tracker.core.models.BugDisplayManager>` or implements the same
+    interface defined by it.
     """
     pass

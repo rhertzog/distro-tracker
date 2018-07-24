@@ -9,7 +9,6 @@ __all__ = [
     'ALLOWED_HOSTS',
     'AUTHENTICATION_BACKENDS',
     'DATABASES',
-    'DISTRO_TRACKER_BUGS_PANEL_TEMPLATE',
     'DISTRO_TRACKER_CVE_URL',
     'DISTRO_TRACKER_DEBIAN_PIUPARTS_SUITES',
     'DISTRO_TRACKER_DEVEL_REPOSITORIES',
@@ -53,9 +52,6 @@ if os.path.isfile('/etc/ssl/ca-global/ca-certificates.crt'):
 #: A module implementing vendor-specific hooks for use by Distro Tracker.
 #: For more information see :py:mod:`distro_tracker.vendor`.
 DISTRO_TRACKER_VENDOR_RULES = 'distro_tracker.vendor.debian.rules'
-
-#: A custom template which the bugs panel should use
-DISTRO_TRACKER_BUGS_PANEL_TEMPLATE = 'debian/bugs.html'
 
 #: A custom template which the vcs table field should use
 DISTRO_TRACKER_VCS_TABLE_FIELD_TEMPLATE = 'debian/package-table-fields/vcs.html'

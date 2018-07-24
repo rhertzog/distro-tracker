@@ -16,8 +16,8 @@ from django.conf import settings
 from django.template.loader import get_template
 
 from distro_tracker import vendor
-from django.core.exceptions import ObjectDoesNotExist
 from distro_tracker.core.models import (
+    BugDisplayManagerMixin,
     PackageData,
     PackageName,
 )
@@ -252,26 +252,37 @@ class ArchiveTableField(BaseTableField):
         return general
 
 
-class BugStatsTableField(BaseTableField):
+class BugStatsTableField(BaseTableField, BugDisplayManagerMixin):
     """
     This table field displays bug statistics for the package.
+    It is customizable to enable vendors to add specific data.
+
+    The default behavior defined by :class:`BugDisplayManager
+    <distro_tracker.core.models.BugDisplayManager>`
+    is to display the number of bugs for a package. It also
+    shows the bugs categories on popover content.
+
+    A vendor may provide a custom way of displaying bugs data in
+    packages tables by implementing :func:`get_bug_display_manager_class
+    <distro_tracker.vendor.skeleton.rules.get_bug_display_manager_class>`
+    function in order to provide a custom class to handle the bugs data
+    presentation. Refer to the function's documentation for the format of the
+    return value.
+
+    To avoid performance issues, if additional database lookups are
+    required to display custom bugs data, the vendor app
+    should also implement the :func:`additional_prefetch_related_lookups
+    <distro_tracker.vendor.skeleton.rules.additional_prefetch_related_lookups>`
     """
     column_name = 'Bugs'
-    template_name = 'core/package-table-fields/bugs.html'
     prefetch_related_lookups = ['bug_stats']
 
-    def context(self, package):
-        stats = {}
-        try:
-            stats['bugs'] = package.bug_stats.stats
-        except ObjectDoesNotExist:
-            stats['all'] = 0
-            return stats
+    @property
+    def template_name(self):
+        return self.bug_manager.table_field_template_name
 
-        # Also adds a total of all those bugs
-        total = sum(category['bug_count'] for category in stats['bugs'])
-        stats['all'] = total
-        return stats
+    def context(self, package):
+        return self.bug_manager.table_field_context(package)
 
 
 class BasePackageTable(metaclass=PluginRegistry):
