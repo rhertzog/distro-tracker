@@ -2523,7 +2523,7 @@ class BugDisplayManager(object):
         })
         return stats
 
-    def get_bug_tracker_url(package_name, package_type, category_name):
+    def get_bug_tracker_url(self, package_name, package_type, category_name):
         pass
 
     def get_binary_bug_stats(self, binary_name):
