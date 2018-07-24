@@ -102,13 +102,17 @@ def lookup(dictionary, key):
     """
     return dictionary.get(key, '')
 
+
 @register.filter()
 def breakable(content):
     """
     A filter that adds <wbr> (word breakpoints) to long words. Useful for
     very long versions strings that would otherwise cause text overflows in
-    small cells.
+    small cells. Returns an empty string when passed None.
     """
+    if content is None:
+        return ''
+
     if len(content) >= 10:
         content = conditional_escape(content)
         return mark_safe(re.sub(r'([-~+\.])', '\\1<wbr>', content))

@@ -81,3 +81,9 @@ class TemplateTagsTests(SimpleTestCase):
         expected = "1234567890&lt;&gt;&amp;foo;"
         self.assertEqual(self.get_breakable_version(version), expected)
 
+    def test_breakable_on_none(self):
+        """
+        Ensure we don't fail on None value.
+        """
+        self.assertEqual(self.get_breakable_version(None), '')
+
