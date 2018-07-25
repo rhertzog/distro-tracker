@@ -5033,17 +5033,15 @@ class DebianSsoLoginTests(TestCase):
 
     def test_first_log_in_via_alioth(self, get_user_details):
         """
-        Tests that when an Alioth user first logs in an account is
+        Tests that when an Alioth user first logs in an account is not
         automatically created.
         """
         get_user_details.return_value = None
 
         self.get_page(self.ALIOTH_USER)
 
-        self.assertEqual(1, User.objects.count())
-        user = User.objects.all()[0]
-        self.assertEqual(self.ALIOTH_EMAIL, user.main_email)
-        self.assert_user_logged_in(user)
+        self.assertEqual(0, User.objects.count())
+        self.assert_no_user_logged_in()
 
     def test_no_log_in_invalid_username(self, get_user_details):
         """

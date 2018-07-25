@@ -83,6 +83,10 @@ class DebianSsoUserMiddleware(RemoteUserMiddleware):
                 # headers.
                 return
 
+        if remote_user and remote_user.endswith('@users.alioth.debian.org'):
+            # Disallow logins with Alioth certs
+            return
+
         # This will create the user if it doesn't exist
         user = auth.authenticate(remote_user=remote_user)
         if user:
