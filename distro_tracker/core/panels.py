@@ -487,7 +487,7 @@ class BinariesInformationPanel(BasePanel, BugDisplayManagerMixin):
     - :func:`get_package_information_site_url
       <distro_tracker.vendor.skeleton.rules.get_package_information_site_url>`
       provides the link used for each binary package name.
-    - :func:`get_binary_package_bug_stats
+    - :func:`get_bug_display_manager_class
       <distro_tracker.vendor.skeleton.rules.get_bug_display_manager_class>`
       provides a custom class to handle which bug statistics for a given binary
       package must be displayed as a list of bug counts for different

@@ -38,6 +38,7 @@ from distro_tracker.core.models import (
     ActionItemType,
     BinaryPackageBugStats,
     BinaryPackageName,
+    BugDisplayManagerMixin,
     PackageBugStats,
     PackageData,
     PackageName,
@@ -188,7 +189,7 @@ class RetrieveLowThresholdNmuTask(BaseTask):
                 contributor.save()
 
 
-class UpdatePackageBugStats(BaseTask):
+class UpdatePackageBugStats(BaseTask, BugDisplayManagerMixin):
     """
     Updates the BTS bug stats for all packages (source, binary and pseudo).
     Creates :class:`distro_tracker.core.ActionItem` instances for packages
@@ -317,8 +318,8 @@ class UpdatePackageBugStats(BaseTask):
 
         bug_count = bug_stats['patch']['bug_count']
         # Include the URL in the short description
-        url, _ = vendor.call('get_bug_tracker_url', package.name, 'source',
-                             'patch')
+        url = self.bug_manager.get_bug_tracker_url(
+            package.name, 'source', 'patch')
         if not url:
             url = ''
         # Include the bug count in the short description
@@ -333,9 +334,8 @@ class UpdatePackageBugStats(BaseTask):
             'bug_count': bug_count,
             'merged_count': bug_stats['patch'].get('merged_count', 0),
             'url': url,
-            'merged_url': vendor.call(
-                'get_bug_tracker_url', package.name, 'source',
-                'patch-merged')[0],
+            'merged_url': self.bug_manager.get_bug_tracker_url(
+                package.name, 'source', 'patch-merged'),
         }
         action_item.save()
 

@@ -1986,6 +1986,8 @@ class UpdateAppStreamStatsTaskTest(TestCase):
                                                         errors=0, warnings=2)
 
 
+@override_settings(
+    DISTRO_TRACKER_VENDOR_RULES='distro_tracker.vendor.debian.rules')
 class DebianBugActionItemsTests(TestCase):
 
     """
@@ -2086,6 +2088,7 @@ class DebianBugActionItemsTests(TestCase):
         self.assertEqual(item.package.name, self.package_name.name)
         # It contains the extra data
         self.assertEqual(item.extra_data['bug_count'], bug_count)
+        self.assertNotEqual(item.extra_data['url'], '')
         # Correct full description template
         self.assertEqual(
             item.full_description_template,
