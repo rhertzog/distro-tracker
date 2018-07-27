@@ -70,7 +70,7 @@ class BaseTableField(metaclass=PluginRegistry):
         if not hasattr(self, '_template'):
             self._template = get_template(self.template_name)
         if context is None:
-            context = self.context(package)
+            context = {self.slug: self.context(package)}
         return self._template.render(context, request)
 
     @property
@@ -99,6 +99,7 @@ class GeneralInformationTableField(BaseTableField):
     - binaries
     """
     column_name = 'Package'
+    slug = 'general'
     template_name = 'core/package-table-fields/general.html'
     prefetch_related_lookups = [
         Prefetch(
@@ -170,6 +171,7 @@ class VcsTableField(BaseTableField):
     <distro_tracker.vendor.skeleton.rules.additional_prefetch_related_lookups>`
     """
     column_name = 'VCS'
+    slug = 'vcs'
     _default_template_name = 'core/package-table-fields/vcs.html'
     prefetch_related_lookups = [
         Prefetch(
@@ -217,6 +219,7 @@ class ArchiveTableField(BaseTableField):
     It displays the package's version on archive
     """
     column_name = 'Archive'
+    slug = 'archive'
     template_name = 'core/package-table-fields/archive.html'
     prefetch_related_lookups = [
         Prefetch(
@@ -275,6 +278,7 @@ class BugStatsTableField(BaseTableField, BugDisplayManagerMixin):
     <distro_tracker.vendor.skeleton.rules.additional_prefetch_related_lookups>`
     """
     column_name = 'Bugs'
+    slug = 'bugs'
     prefetch_related_lookups = ['bug_stats']
 
     @property
@@ -424,16 +428,12 @@ class BasePackageTable(metaclass=PluginRegistry):
             packages = packages[:self.limit]
 
         fields = [f() for f in self.table_fields]
-        context = {
-            'field': {
-                'context': ''
-            },
-        }
+        context = {}
         for package in packages:
             context['package'] = package
             row = []
             for field in fields:
-                context['field']['context'] = field.context(package)
+                context[field.slug] = field.context(package)
                 row.append(field.render(package, context))
             rows_list.append(row)
 

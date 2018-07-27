@@ -1,14 +1,14 @@
-{% if field.context.all == 0 %}
-  <b class='center'>{{field.context.all}}</b>
+{% if bugs.all == 0 %}
+  <b class='center'>{{bugs.all}}</b>
 {% else %}
   <span class="popover-hover cursor-pointer text-primary" id="bugs-field" data-toggle="popover" data-placement="left" title="All bugs" data-content='
     <p>
-    {% for bug in field.context.bugs %}
+    {% for bug in bugs.bugs %}
       <span class="font-weight-bold">{{ bug.category_name}}:</span> {{ bug.bug_count }}
       <br>
     {% endfor %}
   '>
-    <b class='center'>{{field.context.all}}</b>
+    <b class='center'>{{bugs.all}}</b>
   </span>
 {% endif %}
 
