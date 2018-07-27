@@ -17,13 +17,7 @@
       <tbody>
         {% with rows=table.rows %}
           {% for row in rows %}
-          <tr scope='row'>
-            {% for cell in row %}
-            <td class='center' scope='col'>
-	            {{ cell }}
-            </td>
-            {% endfor %}
-          </tr>
+	  {{ row }}
           {% endfor %}
         {% endwith %}
       </tbody>

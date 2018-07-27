@@ -13,6 +13,7 @@ import importlib
 
 from django.db.models import Prefetch
 from django.conf import settings
+from django.template import Template, Context
 from django.template.loader import get_template
 
 from distro_tracker import vendor
@@ -422,22 +423,22 @@ class BasePackageTable(metaclass=PluginRegistry):
         Returns the content of the table's rows, where each row has the list
         of :class:`BaseTableField` for each package
         """
-        rows_list = []
+        rows = []
         packages = self.packages_with_prefetch_related
         if self.limit:
             packages = packages[:self.limit]
 
+        template = self.get_row_template()
         fields = [f() for f in self.table_fields]
         context = {}
+
         for package in packages:
             context['package'] = package
-            row = []
             for field in fields:
                 context[field.slug] = field.context(package)
-                row.append(field.render(package, context))
-            rows_list.append(row)
+            rows.append(template.render(Context(context)))
 
-        return rows_list
+        return rows
 
     @property
     def number_of_packages(self):
@@ -448,6 +449,20 @@ class BasePackageTable(metaclass=PluginRegistry):
             return self.packages_with_prefetch_related.count()
         else:
             return 0
+
+    @staticmethod
+    def get_template_content(template_name):
+        with open(get_template(template_name).origin.name) as f:
+            return f.read()
+
+    def get_row_template(self):
+        template = "<tr scope='row'>\n"
+        for f in self.table_fields:
+            template += "<td class='center' scope='col'>"
+            template += self.get_template_content(f().template_name)
+            template += "</td>\n"
+        template += "</tr>\n"
+        return Template(template)
 
 
 def get_tables_for_team(team, limit=None):

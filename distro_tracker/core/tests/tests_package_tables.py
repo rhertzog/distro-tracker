@@ -13,7 +13,10 @@
 """
 Tests for the Distro Tracker core package tables.
 """
+from unittest.mock import patch, mock_open
+
 from bs4 import BeautifulSoup as soup
+from django.template import Context
 
 from distro_tracker.core.models import (
     PackageData,
@@ -23,6 +26,7 @@ from distro_tracker.core.models import (
 )
 from django_email_accounts.models import User
 from distro_tracker.core.package_tables import (
+    BasePackageTable,
     GeneralTeamPackageTable,
     GeneralInformationTableField,
     VcsTableField,
@@ -30,6 +34,10 @@ from distro_tracker.core.package_tables import (
     BugStatsTableField
 )
 from distro_tracker.test import TemplateTestsMixin, TestCase
+
+
+class TestPackageTable(BasePackageTable):
+    table_fields = (GeneralInformationTableField, ArchiveTableField)
 
 
 def create_source_package_with_data(name):
@@ -191,6 +199,29 @@ class BugStatsTableFieldTests(TestCase):
             self.field.template_name,
             'core/package-table-fields/bugs.html')
         self.assertEqual(len(self.field.prefetch_related_lookups), 1)
+
+
+class BasePackageTableTests(TestCase):
+    @patch('distro_tracker.core.package_tables.get_template')
+    def test_get_template_content(self, get_template):
+        '''get_template_content(t) returns the content of the underlying file'''
+        get_template.return_value.origin.name = 'foobar'
+        with patch('builtins.open', mock_open(read_data='YAY')):
+            result = TestPackageTable.get_template_content('fake')
+        self.assertEqual(result, 'YAY')
+
+    def test_get_row_template(self):
+        '''get_row_template() returns a template concatenating all cells'''
+        table = TestPackageTable([])
+        with patch.object(table, 'get_template_content') as get_content:
+            get_content.side_effect = ['field1', 'field2']
+            result = table.get_row_template()
+        output = result.render(Context({}))
+        self.assertTrue(output.startswith('<tr'))
+        self.assertIn('<td', output)
+        self.assertIn('field1</td>', output)
+        self.assertIn('field2</td>', output)
+        self.assertTrue(output.endswith('</tr>\n'))
 
 
 class GeneralTeamPackageTableTests(TestCase, TemplateTestsMixin):
