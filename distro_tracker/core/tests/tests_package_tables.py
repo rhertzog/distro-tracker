@@ -231,7 +231,7 @@ class GeneralTeamPackageTableTests(TestCase, TemplateTestsMixin):
             main_email='paul@example.com', password='pw4paul')
         self.team = Team.objects.create_with_slug(
             owner=self.user, name="Team name", public=True)
-        self.package = create_source_package_with_data('dummy-package')
+        self.package = create_source_package_with_data('dummy-package-1')
         create_package_bug_stats(self.package)
         self.team.packages.add(self.package)
 
@@ -330,16 +330,15 @@ class GeneralTeamPackageTableTests(TestCase, TemplateTestsMixin):
 
         self.assertEqual(table.number_of_packages, 2)
         self.assertEqual(len(table.rows), 1)
-        # Get the first column from the first row
-        table_field = table.rows[0][0]
+        # Get the first row
+        table_field = table.rows[0]
         self.assertIn(self.package.name, table_field)
 
         table.limit = 2
-        # Get the first column from the first row
-        table_field = table.rows[0][0]
+        # Get the first row
+        table_field = table.rows[0]
         self.assertIn(self.package.name, table_field)
         self.assertNotIn(new_package.name, table_field)
-        # Get the first column from the second row
-        table_field = table.rows[1][0]
+        # Get the the second row
+        table_field = table.rows[1]
         self.assertIn(new_package.name, table_field)
-        # Get the first column from the second row
