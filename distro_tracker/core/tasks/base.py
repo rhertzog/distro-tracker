@@ -16,8 +16,8 @@ to happen regularly to update distro-tracker's data.
 import logging
 
 from distro_tracker.core.models import TaskData
+from distro_tracker.core.tasks.schedulers import Scheduler
 from distro_tracker.core.utils.plugins import PluginRegistry
-
 logger = logging.getLogger('distro_tracker.tasks')
 
 
@@ -35,6 +35,17 @@ class BaseTask(metaclass=PluginRegistry):
     """
 
     class ConcurrentDataUpdate(RuntimeError):
+        pass
+
+    class Scheduler(Scheduler):
+        """
+        Each task has an associated
+        :class:`~distro_tracker.core.tasks.schedulers.Scheduler` class that
+        will be used to decide when to run the task. This class
+        is meant to be overriden by a custom class deriving from a more
+        useful Scheduler class provided in
+        :mod:`distro_tracker.core.tasks.schedulers`.
+        """
         pass
 
     @classmethod
@@ -56,7 +67,7 @@ class BaseTask(metaclass=PluginRegistry):
             return cls.__name__
 
     def __init__(self):
-        pass
+        self.scheduler = self.Scheduler(self)
 
     @property
     def data(self):
@@ -66,13 +77,18 @@ class BaseTask(metaclass=PluginRegistry):
         database on first access, and it's saved when you call
         the :meth:`.save_data` method.
         """
-        if hasattr(self, '_data'):
-            return self._data
-        task_data, _ = TaskData.objects.get_or_create(
-            task_name=self.task_name())
-        self._data = task_data.data
-        self._task_data = task_data
+        if not hasattr(self, '_data'):
+            self.refresh_data()
         return self._data
+
+    @property
+    def task_data(self):
+        """
+        Returns the corresponding :class:`~distro_tracker.core.models.TaskData`.
+        """
+        if not hasattr(self, '_task_data'):
+            self.refresh_data()
+        return self._task_data
 
     def save_data(self):
         """
@@ -87,6 +103,48 @@ class BaseTask(metaclass=PluginRegistry):
             raise self.ConcurrentDataUpdate(
                 'Data from task {} have been updated in parallel'.format(
                     self.task_name()))
+
+    def refresh_data(self):
+        """
+        Load (or reload) task data from the database.
+        """
+        task_data, _ = TaskData.objects.get_or_create(
+            task_name=self.task_name())
+        self._data = task_data.data
+        self._task_data = task_data
+
+    def update_field(self, field, value):
+        """
+        Update a field of the associated TaskData with the given value
+        and save it to the database. None of the other fields are saved.
+        This update does not increase the version in the TaskData.
+
+        :param str field: The name of the field to update.
+        :param str value: The value to store in the field.
+        """
+        setattr(self.task_data, field, value)
+        self.task_data.save(update_fields=[field])
+
+    def update_last_attempted_run(self, value):
+        self.update_field('last_attempted_run', value)
+
+    def update_last_completed_run(self, value):
+        self.update_field('last_completed_run', value)
+
+    def update_task_is_pending(self, value):
+        self.update_field('task_is_pending', value)
+
+    @property
+    def task_is_pending(self):
+        return self.task_data.task_is_pending
+
+    @property
+    def last_attempted_run(self):
+        return self.task_data.last_attempted_run
+
+    @property
+    def last_completed_run(self):
+        return self.task_data.last_completed_run
 
     def log(self, message, *args, **kwargs):
         """Log a message about the progress of the task"""
@@ -111,6 +169,21 @@ class BaseTask(metaclass=PluginRegistry):
             if task_class.task_name() == task_name:
                 return task_class
         return None
+
+    def schedule(self):
+        """
+        Asks the scheduler if the task needs to be executed. If yes, then
+        records this information in the ``task_is_pending`` field. If the task
+        is already marked as pending, then returns True immediately.
+
+        :return: True if the task needs to be executed, False otherwise.
+        :rtype: bool
+        """
+        if self.task_is_pending:
+            return True
+        if self.scheduler.needs_to_run():
+            self.update_task_is_pending(True)
+        return self.task_is_pending
 
     def execute(self):
         """
