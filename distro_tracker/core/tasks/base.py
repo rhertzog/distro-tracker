@@ -17,7 +17,10 @@ import logging
 
 from distro_tracker.core.models import TaskData
 from distro_tracker.core.tasks.schedulers import Scheduler
+from distro_tracker.core.utils import now
+from distro_tracker.core.utils.misc import call_methods_with_prefix
 from distro_tracker.core.utils.plugins import PluginRegistry
+
 logger = logging.getLogger('distro_tracker.tasks')
 
 
@@ -25,6 +28,11 @@ class BaseTask(metaclass=PluginRegistry):
     """
     A class representing the base class for all data processing tasks of
     Distro Tracker.
+
+    Sub-classes should provide 'execute_*' methods that do the real work
+    of the task. They should also override the 'Scheduler' class to have
+    a more useful scheduling policy than the default (which will always
+    decide to run the task).
 
     ..note::
       Subclasses of this class are automatically registered when created which
@@ -188,8 +196,18 @@ class BaseTask(metaclass=PluginRegistry):
     def execute(self):
         """
         Performs the actual processing of the task.
+
+        First records the timestamp of the run, stores it in the
+        'last_attempted_run' field, then executes all the methods whose names
+        are starting with 'execute_', then updates the 'last_completed_run'
+        field with the same timestamp (thus documenting the success of the last
+        run) and clears the 'task_is_pending' flag.
         """
-        pass
+        timestamp = now()
+        self.update_last_attempted_run(timestamp)
+        call_methods_with_prefix(self, 'execute_')
+        self.update_last_completed_run(timestamp)
+        self.update_task_is_pending(False)
 
     # TO DROP LATER: kept only for temporary API compatibility
     def is_initial_task(self):

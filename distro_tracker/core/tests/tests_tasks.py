@@ -232,6 +232,45 @@ class BaseTaskTests(TestCase):
             self.assertTrue(result)
             mocked.assert_not_called()
 
+    # task.execute()
+    def test_task_execute_calls_execute_sub_methods(self):
+        self.task.execute_init = mock.MagicMock()
+        self.task.execute_main = mock.MagicMock()
+        self.task.execute()
+        self.task.execute_init.assert_called_with()
+        self.task.execute_main.assert_called_with()
+
+    def test_task_execute_updates_timestamps(self):
+        self.assertIsNone(self.task.last_attempted_run)
+        self.assertIsNone(self.task.last_completed_run)
+
+        self.task.execute()
+
+        self.assertIsNotNone(self.task.last_attempted_run)
+        self.assertIsNotNone(self.task.last_completed_run)
+        self.assertEqual(self.task.last_attempted_run,
+                         self.task.last_completed_run)
+
+    def test_task_execute_when_fails(self):
+        self.init_task_data(task_is_pending=True)
+        self.task.execute_foo = mock.MagicMock()
+        self.task.execute_foo.side_effect = RuntimeError
+
+        try:
+            self.task.execute()
+        except RuntimeError:
+            pass
+
+        # Only the last_attempted_run field has been updated
+        self.assertIsNotNone(self.task.last_attempted_run)
+        self.assertIsNone(self.task.last_completed_run)
+        self.assertTrue(self.task.task_is_pending)
+
+    def test_task_execute_clears_task_is_pending(self):
+        self.init_task_data(task_is_pending=True)
+        self.task.execute()
+        self.assertFalse(self.task.task_is_pending)
+
 
 class SchedulerTests(TestCase):
 
