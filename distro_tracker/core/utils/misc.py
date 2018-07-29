@@ -26,3 +26,19 @@ def get_data_checksum(data):
 
     json_dump = json.dumps(to_hash, sort_keys=True)
     return hashlib.md5(json_dump.encode('utf-8', 'ignore')).hexdigest()
+
+
+def call_methods_with_prefix(obj, prefix, *args, **kwargs):
+    """
+    Identify all the object's methods that start with the given prefix and calls
+    them in the alphabetical order while passing the remaining arguments as
+    positional and keywords arguments.
+
+    :param object obj: The object instance to inspect
+    :param str prefix: The prefix used to identify the methods to call
+    """
+    attributes = sorted(filter(lambda x: x.startswith(prefix), dir(obj)))
+    for name in attributes:
+        method = getattr(obj, name)
+        if callable(method):
+            method(*args, **kwargs)

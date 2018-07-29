@@ -65,7 +65,10 @@ from distro_tracker.core.utils.linkify import (
     LinkifyUbuntuBugLinks,
     linkify
 )
-from distro_tracker.core.utils.misc import get_data_checksum
+from distro_tracker.core.utils.misc import (
+    call_methods_with_prefix,
+    get_data_checksum,
+)
 from distro_tracker.core.utils.packages import (
     AptCache,
     extract_dsc_file_name,
@@ -1826,6 +1829,38 @@ class UtilsTests(TestCase):
             'checksum': 'this key should be ignored for the checksum',
         })
         self.assertEqual(checksum, '99914b932bd37a50b983c5e7c90ae93b')
+
+
+class CallMethodsTests(TestCase):
+    def setUp(self):
+        class Sample(object):
+            do_it = True  # Not callable, but same prefix
+
+            def __init__(self):
+                self.called = []
+
+            def do_step1(self, *args, **kwargs):
+                self.called.append('step1')
+
+            def do_step2(self, *args, **kwargs):
+                self.called.append('step2')
+
+            def do_clean(self, *args, **kwargs):
+                self.called.append('clean')
+
+        self.sample_object = Sample()
+
+    def test_call_method_with_prefix(self):
+        call_methods_with_prefix(self.sample_object, 'do_')
+        # The tree do_* methods have been called in the right order
+        self.assertListEqual(self.sample_object.called,
+                             ['clean', 'step1', 'step2'])
+
+    def test_call_method_passes_arguments(self):
+        with mock.patch.object(self.sample_object, 'do_step1') as method:
+            call_methods_with_prefix(self.sample_object, 'do_', 'arg',
+                                     keyword='keyword')
+            method.assert_called_with('arg', keyword='keyword')
 
 
 class CompressionTests(TestCase):
