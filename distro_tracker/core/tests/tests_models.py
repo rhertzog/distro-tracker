@@ -15,8 +15,7 @@ Tests for the Distro Tracker core module's models.
 """
 import email
 import itertools
-from datetime import datetime, timedelta, timezone
-from unittest import mock
+from datetime import timedelta
 
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.base import ContentFile
@@ -55,7 +54,7 @@ from distro_tracker.core.models import (
     TeamMembership,
     get_web_package
 )
-from distro_tracker.core.utils import message_from_bytes
+from distro_tracker.core.utils import message_from_bytes, now
 from distro_tracker.core.utils.email_messages import get_decoded_message_payload
 from distro_tracker.core.utils.misc import get_data_checksum
 from distro_tracker.test import TestCase
@@ -1989,14 +1988,24 @@ class TaskDataTests(TestCase):
         self.taskdata.versioned_update(data=self.sample_data)
         self.assertDictEqual(self.taskdata.data, self.sample_data)
 
-    @mock.patch('distro_tracker.core.models.now')
-    def test_get_run_lock(self, now_mock):
-        now = datetime.now(timezone.utc)
-        now_mock.return_value = now
-        locked_until = now + timedelta(seconds=600)
+    def test_get_run_lock_with_no_lock(self):
         result = self.taskdata.get_run_lock()
+
         self.assertTrue(result)
-        self.assertEqual(self.taskdata.run_lock, locked_until)
+        self.assertGreater(self.taskdata.run_lock, now())
+
+    def test_get_run_lock_with_expired_lock(self):
+        # Current lock expired 1h in the past
+        timestamp = now()
+        old_lock = timestamp - timedelta(seconds=3600)
+        self.taskdata.run_lock = old_lock
+        self.taskdata.save()
+
+        result = self.taskdata.get_run_lock()
+
+        # New lock acquired, new expiration in the future
+        self.assertTrue(result)
+        self.assertGreater(self.taskdata.run_lock, timestamp)
 
     def test_get_run_lock_second_call_fails(self):
         self.taskdata.get_run_lock()

@@ -23,6 +23,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db import models
+from django.db.models import Q
 from django.db.utils import IntegrityError
 from django.template.defaultfilters import slugify
 from django.template.exceptions import TemplateDoesNotExist
@@ -2597,11 +2598,27 @@ class TaskData(models.Model):
     version = models.IntegerField(default=0, null=False)
 
     def save(self, update_checksum=False, *args, **kwargs):
+        """
+        Like the usual 'save' method except that you can pass a supplementary
+        keyword parameter to update the 'data_checksum' field.
+
+        :param bool update_checksum: Computes the checksum of the 'data' field
+            and stores it in the 'data_checksum' field.
+        """
         if update_checksum:
             self.data_checksum = get_data_checksum(self.data)
         return super(TaskData, self).save(*args, **kwargs)
 
     def versioned_update(self, **kwargs):
+        """
+        Update the fields as requested through the keyword parameters
+        but do it in a way that avoids corruption through concurrent writes.
+        We rely on the 'version' field to update the data only if the version
+        in the database matches the version we loaded.
+
+        :return: True if the update worked, False otherwise
+        :rtype: bool
+        """
         kwargs['version'] = self.version + 1
         if 'data' in kwargs and 'data_checksum' not in kwargs:
             kwargs['data_checksum'] = get_data_checksum(kwargs['data'])
@@ -2609,14 +2626,26 @@ class TaskData(models.Model):
             pk=self.pk, version=self.version).update(**kwargs)
         if updated:
             self.refresh_from_db(fields=kwargs.keys())
-        return updated
+        return True if updated else False
 
-    def get_run_lock(self, timeout=600):
-        locked_until = now() + timedelta(seconds=timeout)
+    def get_run_lock(self, timeout=1800):
+        """
+        Try to grab the run lock associated to the task. Once acquired, the
+        lock will be valid for the number of seconds specified in the 'timeout'
+        parameter.
+
+        :param int timeout: the number of seconds of validity of the lock
+        :return: True if the lock has been acquired, False otherwise.
+        :rtype: bool
+        """
+        timestamp = now()
+        locked_until = timestamp + timedelta(seconds=timeout)
         # By matching on run_lock=NULL we ensure that we have the right
         # to take the lock. If the lock is already taken, the update query
         # will not match any line.
-        updated = TaskData.objects.filter(id=self.id, run_lock=None).update(
-            run_lock=locked_until)
+        updated = TaskData.objects.filter(
+            Q(run_lock=None) | Q(run_lock__lt=timestamp),
+            id=self.id
+        ).update(run_lock=locked_until)
         self.refresh_from_db(fields=['run_lock'])
         return True if updated else False
