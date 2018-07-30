@@ -2612,10 +2612,11 @@ class TaskData(models.Model):
         return updated
 
     def get_run_lock(self, timeout=600):
-        self.refresh_from_db()
-        if self.run_lock is not None:
-            return False
         locked_until = now() + timedelta(seconds=timeout)
-        self.run_lock = locked_until
-        self.save()
-        return True
+        # By matching on run_lock=NULL we ensure that we have the right
+        # to take the lock. If the lock is already taken, the update query
+        # will not match any line.
+        updated = TaskData.objects.filter(id=self.id, run_lock=None).update(
+            run_lock=locked_until)
+        self.refresh_from_db(fields=['run_lock'])
+        return True if updated else False

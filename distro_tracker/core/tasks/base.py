@@ -45,6 +45,9 @@ class BaseTask(metaclass=PluginRegistry):
     class ConcurrentDataUpdate(RuntimeError):
         pass
 
+    class LockError(RuntimeError):
+        pass
+
     class Scheduler(Scheduler):
         """
         Each task has an associated
@@ -203,9 +206,17 @@ class BaseTask(metaclass=PluginRegistry):
         field with the same timestamp (thus documenting the success of the last
         run) and clears the 'task_is_pending' flag.
         """
-        timestamp = now()
-        self.update_last_attempted_run(timestamp)
-        call_methods_with_prefix(self, 'execute_')
+        if not self.task_data.get_run_lock():
+            raise self.LockError('Could not get lock for task {}'.format(
+                self.task_name()))
+
+        try:
+            timestamp = now()
+            self.update_last_attempted_run(timestamp)
+            call_methods_with_prefix(self, 'execute_')
+        finally:
+            self.update_field('run_lock', None)
+
         self.update_last_completed_run(timestamp)
         self.update_task_is_pending(False)
 

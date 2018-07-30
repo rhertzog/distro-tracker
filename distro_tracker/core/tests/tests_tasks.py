@@ -53,6 +53,11 @@ class BaseTaskTests(TestCase):
         else:
             self.assertEqual(getattr(task_data, field), value)
 
+    def setup_execute_for_failure(self, exception=RuntimeError):
+        """Ensure task.execute_foo() raises an exception"""
+        self.task.execute_foo = mock.MagicMock()
+        self.task.execute_foo.side_effect = exception
+
     def test_task_is_registered(self):
         """A task class is automatically registered when created"""
         self.assertIn(TestTask, BaseTask.plugins)
@@ -164,6 +169,11 @@ class BaseTaskTests(TestCase):
         self.assertEqual(task_data.last_completed_run, value)
         self.assertDictEqual(task_data.data, self.sample_data)
 
+    def test_update_field_is_able_to_reset_to_null(self):
+        self.init_task_data(run_lock=now())
+        self.task.update_field('run_lock', None)
+        self.check_field_in_task_data('run_lock', None)
+
     def test_update_last_attempted_run(self):
         value = now()
         with mock.patch.object(self.task, 'update_field') as update_field:
@@ -251,10 +261,9 @@ class BaseTaskTests(TestCase):
         self.assertEqual(self.task.last_attempted_run,
                          self.task.last_completed_run)
 
-    def test_task_execute_when_fails(self):
+    def test_task_execute_field_updated_when_task_failed(self):
         self.init_task_data(task_is_pending=True)
-        self.task.execute_foo = mock.MagicMock()
-        self.task.execute_foo.side_effect = RuntimeError
+        self.setup_execute_for_failure()
 
         try:
             self.task.execute()
@@ -267,9 +276,48 @@ class BaseTaskTests(TestCase):
         self.assertTrue(self.task.task_is_pending)
 
     def test_task_execute_clears_task_is_pending(self):
+        """When task.execute() finishes, it clears the task_is_pending flag."""
         self.init_task_data(task_is_pending=True)
         self.task.execute()
         self.assertFalse(self.task.task_is_pending)
+
+    def test_task_execute_takes_the_lock(self):
+        """Ensure the lock is taken to avoid concurrent runs"""
+        with mock.patch.object(self.task.task_data, 'get_run_lock') as lock:
+            lock.return_value = True
+            self.task.execute()
+            lock.assert_called_once_with()
+
+    def test_task_execute_raises_exception_when_lock_fails(self):
+        """Ensure failure with LockError when the lock fails"""
+        lock_until = now() + timedelta(600)
+        self.init_task_data(run_lock=lock_until)
+        with self.assertRaises(BaseTask.LockError):
+            self.task.execute()
+
+    def test_task_execute_releases_lock_on_success(self):
+        """Ensure task.execute() releases the lock (success case)"""
+        self.task.execute()
+
+        self.check_field_in_task_data('run_lock', None)
+
+    def test_task_execute_releases_lock_on_failure(self):
+        """Ensure task.execute() releases the lock (failure case)"""
+        self.setup_execute_for_failure()
+
+        try:
+            self.task.execute()
+        except RuntimeError:
+            pass
+
+        self.check_field_in_task_data('run_lock', None)
+
+    def test_task_execute_does_not_catch_exceptions(self):
+        """Ensure task.execute() does not catch exceptions"""
+        self.setup_execute_for_failure()
+
+        with self.assertRaises(RuntimeError):
+            self.task.execute()
 
 
 class SchedulerTests(TestCase):
