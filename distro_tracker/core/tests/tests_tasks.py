@@ -17,8 +17,16 @@ import logging
 from datetime import timedelta
 from unittest import mock
 
+from django.test.utils import override_settings
+
 from distro_tracker.core.models import TaskData
-from distro_tracker.core.tasks.base import BaseTask
+from distro_tracker.core.tasks.base import (
+    BaseTask,
+    build_all_tasks,
+    import_all_tasks,
+    run_all_tasks,
+    run_task,
+)
 from distro_tracker.core.tasks.schedulers import Scheduler, IntervalScheduler
 from distro_tracker.core.utils import now
 from distro_tracker.core.utils.misc import get_data_checksum
@@ -384,3 +392,155 @@ class IntervalSchedulerTests(TestCase):
         mocked_now.return_value = next_try
 
         self.assertFalse(self.scheduler.needs_to_run())
+
+
+class TestRunTask(BaseTask):
+    NAME = 'test_run_task'
+    executed = []
+
+    def execute_task(self):
+        self.executed.append('yes')
+
+
+class TaskUtilsTests(TestCase):
+
+    def tearDown(self):
+        TestRunTask.executed.clear()
+
+    @override_settings(INSTALLED_APPS=['distro_tracker.html',
+                                       'distro_tracker.stdver_warnings'])
+    @mock.patch('distro_tracker.core.tasks.base.importlib')
+    def test_import_all_tasks(self, mock_importlib):
+        # called with one existing module and a non-existing one
+        mock_importlib.import_module.side_effect = [ImportError, True]
+
+        import_all_tasks()
+
+        mock_importlib.import_module.assert_any_call(
+            'distro_tracker.html.tracker_tasks')
+        mock_importlib.import_module.assert_called_with(
+            'distro_tracker.stdver_warnings.tracker_tasks')
+
+    def test_run_task(self):
+        result = run_task('test_run_task')
+        self.assertIn('yes', TestRunTask.executed)
+        self.assertTrue(result)
+
+    def test_run_task_with_class(self):
+        result = run_task(TestRunTask)
+        self.assertIn('yes', TestRunTask.executed)
+        self.assertTrue(result)
+
+    def test_run_task_with_task_instance(self):
+        result = run_task(TestRunTask())
+        self.assertIn('yes', TestRunTask.executed)
+        self.assertTrue(result)
+
+    def test_run_task_with_unknown_object(self):
+        with self.assertRaises(ValueError):
+            run_task({})
+
+    def test_run_task_raises_exception_when_not_existing(self):
+        with self.assertRaises(ValueError):
+            run_task('unknown')
+
+    def test_run_task_returns_false_when_execution_fails(self):
+        with mock.patch.object(TestRunTask, 'execute') as mock_execute:
+            mock_execute.side_effect = RuntimeError
+            result = run_task(TestRunTask)
+            self.assertFalse(result)
+
+    def test_build_all_tasks_returns_a_dict_of_all_tasks(self):
+        result = build_all_tasks()
+
+        self.assertIsInstance(result, dict)
+        for name, obj in result.items():
+            self.assertIsInstance(obj, BaseTask)
+            self.assertEqual(name, obj.task_name())
+
+    def test_build_all_tasks_filters_out_base_task(self):
+        result = build_all_tasks()
+
+        self.assertNotIn('BaseTask', result)
+
+    @mock.patch('distro_tracker.core.tasks.base.BaseTask')
+    def test_build_all_tasks_includes_tasks_from_BaseTask_plugins(
+            self, mock_basetask):
+        mock_basetask.plugins = [TestTask]
+        result = build_all_tasks()
+        self.assertListEqual(['TestTask'], list(result.keys()))
+
+    @mock.patch('distro_tracker.core.tasks.base.BaseTask')
+    def test_build_all_tasks_fails_when_two_tasks_have_the_same_name(
+            self, mock_basetask):
+        mock_basetask.plugins = [TestTask, TestTask]
+        with self.assertRaises(ValueError):
+            build_all_tasks()
+
+    def setup_mock_build_all_tasks(self):
+        patcher = mock.patch('distro_tracker.core.tasks.base.build_all_tasks')
+        patcher_run = mock.patch('distro_tracker.core.tasks.base.run_task')
+        self.mock_build_tasks = patcher.start()
+        self.mock_run_task = patcher_run.start()
+        self.mock_run_task.side_effect = lambda task: task.execute()
+
+        self.update_repositories_task = mock.Mock(spec=BaseTask,
+                                                  task_is_pending=True)
+        self.update_repositories_task.schedule.return_value = True
+        self.task1 = mock.Mock(spec=BaseTask, task_is_pending=False)
+        self.task1.schedule.return_value = False
+        self.task2 = mock.Mock(spec=BaseTask, task_is_pending=True)
+        self.task2.schedule.return_value = True
+
+        self.mock_build_tasks.return_value = {
+            'Task2': self.task2,
+            'Task1': self.task1,
+            'UpdateRepositoriesTask': self.update_repositories_task,
+        }
+
+        self.addCleanup(patcher.stop)
+        self.addCleanup(patcher_run.stop)
+        return self.mock_build_tasks
+
+    def test_run_all_tasks_builds_all_tasks(self):
+        self.setup_mock_build_all_tasks()
+
+        run_all_tasks()
+
+        self.mock_build_tasks.assert_called_with()
+
+    def test_run_all_tasks_runs_update_repositories_first(self):
+        self.setup_mock_build_all_tasks()
+        self.update_repositories_task.execute.side_effect = RuntimeError
+
+        try:
+            run_all_tasks()
+        except RuntimeError:
+            self.update_repositories_task.execute.assert_called_once_with()
+            self.task1.execute.assert_not_called()
+            self.task2.execute.assert_not_called()
+        else:
+            self.fail("UpdateRepositoriesTask has not been called")
+
+    def test_run_all_tasks_schedules_and_respects_result(self):
+        self.setup_mock_build_all_tasks()
+
+        run_all_tasks()
+
+        # All tasks have been scheduled
+        self.update_repositories_task.schedule.assert_called_once_with()
+        self.task1.schedule.assert_called_once_with()
+        self.task2.schedule.assert_called_once_with()
+        # Only task1 (whose task_is_pending is False) has not been executed
+        self.update_repositories_task.execute.assert_called_once_with()
+        self.task1.execute.assert_not_called()
+        self.task2.execute.assert_called_once_with()
+
+    def test_run_all_tasks_does_not_always_run_update_repositories(self):
+        self.setup_mock_build_all_tasks()
+        self.update_repositories_task.task_is_pending = False
+        self.update_repositories_task.schedule.return_value = False
+
+        run_all_tasks()
+
+        self.update_repositories_task.execute.assert_not_called()

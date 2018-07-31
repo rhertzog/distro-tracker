@@ -14,6 +14,9 @@ Tasks are used to execute (possibly long-running) operations that need
 to happen regularly to update distro-tracker's data.
 """
 import logging
+import importlib
+
+from django.conf import settings
 
 from distro_tracker.core.models import TaskData
 from distro_tracker.core.tasks.schedulers import Scheduler
@@ -77,8 +80,16 @@ class BaseTask(metaclass=PluginRegistry):
         else:
             return cls.__name__
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.scheduler = self.Scheduler(self)
+        self.initialize(*args, **kwargs)
+
+    def initialize(self, *args, **kwargs):
+        """
+        Process arguments passed to :meth:`__init__()`. Can be overriden
+        to do other runtime preparation.
+        """
+        pass
 
     @property
     def data(self):
@@ -240,3 +251,100 @@ class BaseTask(metaclass=PluginRegistry):
         :type parameters: dict
         """
         pass
+
+
+def import_all_tasks():
+    """
+    Imports tasks found in each installed app's ``tracker_tasks`` module.
+    """
+    for app in settings.INSTALLED_APPS:
+        try:
+            module_name = app + '.' + 'tracker_tasks'
+            importlib.import_module(module_name)
+        except ImportError:
+            # The app does not implement Distro Tracker tasks.
+            pass
+    # This one is an exception, many core tasks are there
+    import distro_tracker.core.retrieve_data  # noqa
+
+
+def run_task(task, *args, **kwargs):
+    """
+    Executes the requested task.
+
+    :param task: The task which should be run. Either the class object
+        of the task, or a string giving the task's name, or the task object
+        itself.
+    :type task: :class:`BaseTask` subclass or :class:`str`
+
+    :returns: True is the task executed without errors, False if it raised
+        an exception during its execution.
+    """
+    # Import tasks implemented by all installed apps
+    import_all_tasks()
+
+    task_class = None
+    if isinstance(task, str):
+        task_name = task
+        task_class = BaseTask.get_task_class_by_name(task_name)
+        if not task_class:
+            raise ValueError("Task '%s' doesn't exist." % task_name)
+        task = task_class(*args, **kwargs)
+    elif isinstance(task, BaseTask):
+        pass
+    elif callable(task) and hasattr(task, 'execute'):
+        task_class = task
+        task = task_class(*args, **kwargs)
+    else:
+        raise ValueError("Can't run a task with a '{}'.".format(repr(task)))
+    logger.info("Starting task %s", task.task_name())
+    try:
+        task.execute()
+    except Exception:
+        logger.exception("Task %s failed with the following traceback.",
+                         task.task_name())
+        return False
+    logger.info("Completed task %s", task.task_name())
+    return True
+
+
+def build_all_tasks(*args, **kwargs):
+    """
+    Builds all the task objects out of the BaseTask sub-classes registered.
+
+    :returns: a dict mapping the task name to the corresponding Task instance.
+    :rtype dict:
+    :raises ValueError: if multiple tasks have the same name.
+    """
+    import_all_tasks()
+    tasks = {}
+    for task_class in BaseTask.plugins:
+        task_name = task_class.task_name()
+        if task_name in tasks:
+            raise ValueError("Multiple tasks with the same name: {}".format(
+                task_name))
+        tasks[task_class.task_name()] = task_class(*args, **kwargs)
+    return tasks
+
+
+def run_all_tasks(*args, **kwargs):
+    """
+    Builds all task and then iterates over them to check if they need
+    to be scheduled. If yes, then executes them with :func:`run_task`.
+
+    The special task "UpdateRepositoriesTask" is always executed
+    first. The execution order of the other tasks is undetermined.
+    """
+    tasks = build_all_tasks(*args, **kwargs)
+
+    for task in tasks.values():
+        task.schedule()
+
+    if 'UpdateRepositoriesTask' in tasks:
+        task = tasks.pop('UpdateRepositoriesTask')
+        if task.task_is_pending:
+            run_task(task)
+
+    for task in tasks.values():
+        if task.task_is_pending:
+            run_task(task)
