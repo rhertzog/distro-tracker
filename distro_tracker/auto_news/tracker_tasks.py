@@ -10,31 +10,22 @@
 """
 The Distro-Tracker-specific tasks for :mod:`distro_tracker.auto_news` app.
 """
-from distro_tracker.core.models import News, Repository, SourcePackageName
+from distro_tracker.core.models import News, SourcePackageName
 from distro_tracker.core.tasks import BaseTask
+from distro_tracker.core.tasks.mixins import ProcessRepositoryUpdates
 from distro_tracker.core.utils.http import get_resource_content
 
 
-class GenerateNewsFromRepositoryUpdates(BaseTask):
-    DEPENDS_ON_EVENTS = (
-        'new-source-package-version',
-        'new-source-package-version-in-repository',
-        'lost-source-package-version-in-repository',
-        # Run after all source files have been retrieved
-        'source-files-extracted',
-    )
+class GenerateNewsFromRepositoryUpdates(BaseTask, ProcessRepositoryUpdates):
 
-    def generate_accepted_news_content(self, package, version):
+    def generate_accepted_news_content(self, srcpkg):
         """
         Generates the content for a news item created when a package version is
         first created.
 
-        :type package: :class:`SourcePackageName
-            <distro_tracker.core.models.SourcePackageName>`
-        :type version: :class:`string`
+        :type srcpkg: :class:`~distro_tracker.core.models.SourcePackage`
         """
-        package_version = package.source_package_versions.get(version=version)
-        entry = package_version.repository_entries.all()[0]
+        entry = srcpkg.repository_entries.all()[0]
 
         # Add dsc file
         content = get_resource_content(entry.dsc_file_url)
@@ -44,91 +35,57 @@ class GenerateNewsFromRepositoryUpdates(BaseTask):
             content = ''
 
         # Add changelog entries since last update...
-        changelog_content = package_version.get_changelog_entry()
+        changelog_content = srcpkg.get_changelog_entry()
         if changelog_content:
-            content = content + '\n<span id="changes">Changes:</span>\n'
-            content = content + changelog_content
+            content += '\n<span id="changes">Changes:</span>\n'
+            content += changelog_content
 
         return content
 
-    def _process_package_event(self, package, event, repository,
-                               new_source_version):
-        version = event.arguments['version']
-        title, content = None, None
-        # Don't process event if the repository is hidden
-        if repository.get_flags()['hidden']:
-            return
-        if event.name == 'new-source-package-version-in-repository':
-            if new_source_version:
-                title = "{pkg} {ver} has been added to {repo}"
-                content = self.generate_accepted_news_content(
-                    package, version)
+    def add_accepted_news(self, entry):
+        title = "{pkg} {ver} has been added to {repo}".format(
+            pkg=entry.source_package.name,
+            ver=entry.source_package.version,
+            repo=entry.repository.name,
+        )
+        content = self.generate_accepted_news_content(entry.source_package)
+        News.objects.create(
+            package=entry.source_package.source_package_name,
+            title=title,
+            _db_content=content
+        )
+
+    def add_migrated_news(self, entry):
+        title = "{pkg} {ver} migrated to {repo}".format(
+            pkg=entry.source_package.name,
+            ver=entry.source_package.version,
+            repo=entry.repository.name,
+        )
+        News.objects.create(
+            package=entry.source_package.source_package_name,
+            title=title
+        )
+
+    def add_removed_news(self, package, repository):
+        title = "{pkg} has been removed from {repo}".format(
+            pkg=package,
+            repo=repository.name,
+        )
+        pkgname = SourcePackageName.objects.get(name=package)
+        pkgname.news_set.create(title=title)
+
+    def execute_main(self):
+        for entry in self.items_to_process():
+            if entry.repository.get_flags()['hidden']:
+                self.item_mark_processed(entry)
+                continue
+            if self.is_new_source_package(entry.source_package):
+                self.add_accepted_news(entry)
             else:
-                title = "{pkg} {ver} migrated to {repo}"
-        elif event.name == 'lost-source-package-version-in-repository':
-            # Check if the repository still has some version of the
-            # source package. If not, a news item needs to be added
-            if self._package_removed_processed:
-                # Create only one package removed item per
-                # repository, package pair
-                return
-            self._package_removed_processed = True
-            if not repository.has_source_package_name(package.name):
-                title = "{pkg} has been removed from {repo}"
+                self.add_migrated_news(entry)
+            self.item_mark_processed(entry)
 
-        if title is not None:
-            News.objects.create(
-                package=package,
-                title=title.format(
-                    pkg=package.name,
-                    repo=event.arguments['repository'],
-                    ver=version
-                ),
-                _db_content=content
-            )
-
-    def _process_package_events(self, package, events, new_source_versions):
-        # Group all the events for this package by repository
-        repository_events = {}
-        for event in events:
-            if event.name == 'new-source-package-version':
+        for package, repository in self.iter_removals_by_repository():
+            if repository.get_flags()['hidden']:
                 continue
-            repository = event.arguments['repository']
-            repository_events.setdefault(repository, [])
-            repository_events[repository].append(event)
-
-        # Process each event for each repository.
-        for repository_name, events in repository_events.items():
-            self._package_removed_processed = False
-            repository = Repository.objects.get(name=repository_name)
-            for event in events:
-                # First time seeing this version?
-                new_source_version = \
-                    event.arguments['version'] in \
-                    new_source_versions[package.name]
-                self._process_package_event(package, event, repository,
-                                            new_source_version)
-
-    def execute(self):
-        package_changes = {}
-        new_source_versions = {}
-        for event in self.get_all_events():
-            if event.name == 'source-files-extracted':
-                continue
-
-            package_name = event.arguments['name']
-            version = event.arguments['version']
-            package_changes.setdefault(package_name, [])
-            package_changes[package_name].append(event)
-
-            new_source_versions.setdefault(package_name, [])
-            if event.name == 'new-source-package-version':
-                new_source_versions[package_name].append(version)
-
-        # Retrieve all relevant packages from the db
-        packages = SourcePackageName.objects.filter(
-            name__in=package_changes.keys())
-
-        for package in packages:
-            events = package_changes[package.name]
-            self._process_package_events(package, events, new_source_versions)
+            self.add_removed_news(package, repository)

@@ -85,7 +85,7 @@ class RetrieveDebianMaintainersTask(BaseTask):
         if 'force_update' in parameters:
             self.force_update = parameters['force_update']
 
-    def execute(self):
+    def execute_main(self):
         cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         url = "https://ftp-master.debian.org/dm.txt"
         if not self.force_update and not cache.is_expired(url):
@@ -174,7 +174,7 @@ class RetrieveLowThresholdNmuTask(BaseTask):
                 match = devel_php_RE.search(line)
         return emails
 
-    def execute(self):
+    def execute_main(self):
         emails = self._retrieve_emails()
         with transaction.atomic():
             # Reset all threshold flags first.
@@ -546,7 +546,7 @@ class UpdatePackageBugStats(BaseTask, BugDisplayManagerMixin):
             ]
             BinaryPackageBugStats.objects.bulk_create(stats)
 
-    def execute(self):
+    def execute_main(self):
         # Stats for source and pseudo packages is retrieved from a different
         # resource (with a different structure) than stats for binary packages.
         self.update_source_and_pseudo_bugs()
@@ -670,7 +670,7 @@ class UpdateLintianStatsTask(BaseTask):
 
         lintian_action_item.save()
 
-    def execute(self):
+    def execute_main(self):
         all_lintian_stats = self.get_lintian_stats()
         if not all_lintian_stats:
             return
@@ -873,7 +873,7 @@ class UpdateAppStreamStatsTask(BaseTask):
 
         appstream_action_item.save()
 
-    def execute(self):
+    def execute_main(self):
         self._load_tag_severities()
         all_stats = {}
         repository = Repository.objects.get(default=True)
@@ -966,7 +966,7 @@ class UpdateTransitionsTask(BaseTask):
                 packages[package_name].setdefault(transition_name, {})
                 packages[package_name][transition_name]['status'] = status
 
-    def execute(self):
+    def execute_main(self):
         # Update the relevant resources first
         _, updated_reject_list = self.cache.update(
             self.REJECT_LIST_URL, force=self.force_update)
@@ -1237,7 +1237,7 @@ class UpdateExcusesTask(BaseTask):
 
         return yaml.load(response.text)
 
-    def execute(self):
+    def execute_main(self):
         content_lines = self._get_excuses_yaml()
         if not content_lines:
             return
@@ -1357,7 +1357,7 @@ class UpdateBuildLogCheckStats(BaseTask):
         action_item.extra_data = stats
         action_item.save()
 
-    def execute(self):
+    def execute_main(self):
         # Build a dict with stats from both buildd and clang
         stats = self.get_buildd_stats()
 
@@ -1542,7 +1542,7 @@ class DebianWatchFileScannerUpdate(BaseTask):
         action_item.save()
 
     @transaction.atomic
-    def execute(self):
+    def execute_main(self):
         stats = {}
         new_upstream_version, failures = self.get_upstream_status_stats(stats)
         updated_packages_per_type = {
@@ -1715,7 +1715,7 @@ class UpdateSecurityIssuesTask(BaseTask):
                 to_add.append(new_ai)
         return to_add, to_update, to_drop
 
-    def execute(self):
+    def execute_main(self):
         # Fetch all debian-security PackageData
         all_pkgdata = PackageData.objects.select_related(
             'package').filter(key='debian-security').only(
@@ -1858,7 +1858,7 @@ class UpdatePiuPartsTask(BaseTask):
         }
         action_item.save()
 
-    def execute(self):
+    def execute_main(self):
         failing_packages = self.get_piuparts_stats()
 
         ActionItem.objects.delete_obsolete_items(
@@ -1965,7 +1965,7 @@ class UpdateUbuntuStatsTask(BaseTask):
 
         return patch_diffs
 
-    def execute(self):
+    def execute_main(self):
         package_versions = self.get_ubuntu_versions()
         bug_stats = self.get_ubuntu_bug_stats()
         patch_diffs = self.get_ubuntu_patch_diffs()
@@ -2059,7 +2059,7 @@ class UpdateDebianDuckTask(BaseTask):
         action_item.severity = ActionItem.SEVERITY_LOW
         action_item.save()
 
-    def execute(self):
+    def execute_main(self):
         ducklings = self._get_duck_urls_content()
         if ducklings is None:
             return
@@ -2208,7 +2208,7 @@ class UpdateWnppStatsTask(BaseTask):
             action_item.save()
 
     @transaction.atomic
-    def execute(self):
+    def execute_main(self):
         wnpp_stats = self.get_wnpp_stats()
         if wnpp_stats is None:
             # Nothing to do: cached content up to date
@@ -2315,7 +2315,7 @@ class UpdateNewQueuePackages(BaseTask):
 
         return packages
 
-    def execute(self):
+    def execute_main(self):
         content = self._get_new_content()
 
         all_package_info = self.extract_package_info(content)
@@ -2412,7 +2412,7 @@ class UpdateDebciStatusTask(BaseTask):
 
         debci_action_item.save()
 
-    def execute(self):
+    def execute_main(self):
         all_debci_status = self.get_debci_status()
         if all_debci_status is None:
             return
@@ -2524,7 +2524,7 @@ class UpdateAutoRemovalsStatsTask(BaseTask):
             'number_rdeps': len(reverse_dependencies)}
         action_item.save()
 
-    def execute(self):
+    def execute_main(self):
         autoremovals_stats = self.get_autoremovals_stats()
         if autoremovals_stats is None:
             # Nothing to do: cached content up to date
@@ -2568,7 +2568,7 @@ class UpdatePackageScreenshotsTask(BaseTask):
         data = json.loads(response.text)
         return data
 
-    def execute(self):
+    def execute_main(self):
         content = self._get_screenshots()
         if content is None:
             return
@@ -2666,7 +2666,7 @@ class UpdateBuildReproducibilityTask(BaseTask):
         action_item.save()
         return True
 
-    def execute(self):
+    def execute_main(self):
         reproducibilities = self.get_build_reproducibility()
         if reproducibilities is None:
             return
@@ -2753,7 +2753,7 @@ class MultiArchHintsTask(BaseTask):
         action_item.extra_data = extra_data
         action_item.save()
 
-    def execute(self):
+    def execute_main(self):
         packages = self.get_packages()
         if not packages:
             return
@@ -3107,7 +3107,7 @@ class UpdateVcsWatchTask(BaseTask):
 
         return todo
 
-    def execute(self):
+    def execute_main(self):
         # Get the actual vcswatch json file from qa.debian.org
         vcs_data = self.get_vcswatch_data()
 

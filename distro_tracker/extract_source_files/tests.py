@@ -13,17 +13,13 @@
 Tests for the :mod:`distro_tracker.extract_source_files` app.
 """
 
+import itertools
 import os
 from unittest import mock
 
 from django.core.files.base import ContentFile
 
-from distro_tracker.core.models import (
-    ExtractedSourceFile,
-    SourcePackage,
-    SourcePackageName
-)
-from distro_tracker.core.tasks import Event, Job, JobState
+from distro_tracker.core.models import ExtractedSourceFile
 from distro_tracker.extract_source_files.tracker_tasks import (
     ExtractSourcePackageFiles
 )
@@ -31,270 +27,125 @@ from distro_tracker.test import TestCase
 from distro_tracker.test.utils import make_temp_directory
 
 
+@mock.patch('distro_tracker.extract_source_files.tracker_tasks.'
+            'AptCache.retrieve_source')
 class ExtractSourcePackageFilesTest(TestCase):
     """
     Tests for the task
     :class:`distro_tracker.extract_source_files.ExtractSourcePackageFiles`.
     """
     def setUp(self):
-        self.job_state = mock.create_autospec(JobState)
-        self.job_state.events_for_task.return_value = []
-        self.job_state.processed_tasks = []
-        self.job = mock.create_autospec(Job)
-        self.job.job_state = self.job_state
         self.task = ExtractSourcePackageFiles()
-        self.task.job = self.job
+        self.srcpkg = self.create_source_package()
 
-    def add_mock_event(self, name, arguments):
-        """
-        Helper method adding mock events which the task will have access to
-        when it runs.
-        """
-        self.job_state.events_for_task.return_value.append(
-            Event(name=name, arguments=arguments)
-        )
-
-    def run_task(self, initial_task=False):
+    def run_task(self, force_update=False):
         """
         Initiates the task run.
 
-        :param initial_task: An optional flag which if ``True`` means that the
-            task should be ran as if it were directly passed to the
-            :func:`distro_tracker.core.tasks.run_task` function.
-        :type initial_task: Boolean
+        :param bool force_update: force a full run
         """
-        if initial_task:
-            self.job_state.events_for_task.return_value = []
-        else:
-            # If it is not the initial task, add a dummy task to make it look
-            # like that.
-            self.job_state.processed_tasks = ['sometask']
-
+        if force_update:
+            self.task.initialize(force_update=True)
         self.task.execute()
 
-    @mock.patch('distro_tracker.extract_source_files.tracker_tasks.'
-                'AptCache.retrieve_source')
+    def setup_debian_dir(self, pkg_directory, files_to_create=None,
+                         extra_files=[]):
+        debian_dir = os.path.join(pkg_directory, 'debian')
+        os.makedirs(debian_dir)
+        if files_to_create is None:
+            files_to_create = self.task.ALL_FILES_TO_EXTRACT
+
+        for file_name in itertools.chain(files_to_create, extra_files):
+            file_path = os.path.join(debian_dir, file_name)
+            with open(file_path, 'w') as f:
+                f.write('Contents')
+
+        return debian_dir
+
+    def assertExtractedFilesInDB(self, expected=None):
+        if expected is None:
+            expected = self.task.ALL_FILES_TO_EXTRACT
+        expected = set(expected)
+        extracted = set([
+            x.name for x in self.srcpkg.extracted_source_files.all()
+        ])
+        self.assertSetEqual(expected, extracted)
+
     def test_create_extracted_files(self, mock_cache):
         """
         Tests that the task creates an
         :class:`distro_tracker.core.models.ExtractedSourceFile` instance.
         """
-        name = SourcePackageName.objects.create(name='dummy-package')
-        package = SourcePackage.objects.create(
-            source_package_name=name, version='1.0.0')
-        self.add_mock_event('new-source-package-version', {
-            'pk': package.pk,
-        })
-
         with make_temp_directory('dtracker-pkg-dir') as pkg_directory:
-            debian_dir = os.path.join(pkg_directory, 'debian')
-            os.makedirs(debian_dir)
-            changelog_path = os.path.join(debian_dir, 'changelog')
-            with open(changelog_path, 'w') as f:
-                f.write('Contents')
-            # This file should not be included in the extracted files.
-            other_file = os.path.join(debian_dir, 'some-file')
-            with open(other_file, 'w') as f:
-                f.write('Contents')
-
-            mock_cache.return_value = os.path.join(pkg_directory)
-
+            mock_cache.return_value = pkg_directory
+            self.setup_debian_dir(pkg_directory, ['changelog'])
             self.run_task()
 
-            # Check that the file was created.
-            self.assertEqual(1, ExtractedSourceFile.objects.count())
-            # Check that it has the correct name
-            extracted_file = ExtractedSourceFile.objects.all()[0]
-            self.assertEqual('changelog', extracted_file.name)
+        self.assertExtractedFilesInDB(['changelog'])
 
-    @mock.patch('distro_tracker.extract_source_files.tracker_tasks.'
-                'AptCache.retrieve_source')
     def test_create_extracted_files_only_wanted_files(self, mock_cache):
         """
         Tests that the task creates an
         :class:`distro_tracker.core.models.ExtractedSourceFile` instance.
         """
-        name = SourcePackageName.objects.create(name='dummy-package')
-        package = SourcePackage.objects.create(
-            source_package_name=name, version='1.0.0')
-        self.add_mock_event('new-source-package-version', {
-            'pk': package.pk,
-        })
-
         with make_temp_directory('dtracker-pkg-dir') as pkg_directory:
-            debian_dir = os.path.join(pkg_directory, 'debian')
-            os.makedirs(debian_dir)
-            wanted_files = [
-                'changelog',
-                'copyright',
-                'rules',
-                'control',
-                'watch',
-            ]
-            all_files = wanted_files + [
-                'other-file',
-            ]
-            for file_name in all_files:
-                file_path = os.path.join(debian_dir, file_name)
-                with open(file_path, 'w') as f:
-                    f.write('Contents')
-
-            mock_cache.return_value = os.path.join(pkg_directory)
-
+            mock_cache.return_value = pkg_directory
+            self.setup_debian_dir(pkg_directory, extra_files=['other-file'])
             self.run_task()
 
-            # Check that only the wanted files are created!
-            self.assertEqual(len(wanted_files),
-                             ExtractedSourceFile.objects.count())
-            extracted_names = [
-                extracted_file.name
-                for extracted_file in ExtractedSourceFile.objects.all()
-            ]
-            for wanted_file in wanted_files:
-                self.assertIn(wanted_file, extracted_names)
+        self.assertExtractedFilesInDB()
 
-    @mock.patch('distro_tracker.extract_source_files.tracker_tasks.'
-                'AptCache.retrieve_source')
-    def test_task_is_initial_no_existing_files(self, mock_cache):
+    def test_task_force_update_no_existing_files(self, mock_cache):
         """
-        Tests the task when it is run as the initial task, but there are no
-        extracted files for existing packages.
+        Test that the force_update mode extracts missing files for already
+        processed source packages.
         """
-        name = SourcePackageName.objects.create(name='dummy-package')
-        SourcePackage.objects.create(
-            source_package_name=name, version='1.0.0')
+        self.task.item_mark_processed(self.srcpkg)
 
         with make_temp_directory('dtracker-pkg-dir') as pkg_directory:
-            debian_dir = os.path.join(pkg_directory, 'debian')
-            os.makedirs(debian_dir)
-            wanted_files = [
-                'changelog',
-                'copyright',
-                'rules',
-                'control',
-                'watch',
-            ]
-            all_files = wanted_files + [
-                'other-file',
-            ]
-            for file_name in all_files:
-                file_path = os.path.join(debian_dir, file_name)
-                with open(file_path, 'w') as f:
-                    f.write('Contents')
+            mock_cache.return_value = pkg_directory
+            self.setup_debian_dir(pkg_directory)
+            self.run_task(force_update=True)
 
-            mock_cache.return_value = os.path.join(pkg_directory)
+        self.assertExtractedFilesInDB()
 
-            self.run_task(initial_task=True)
-
-            # Check that all the wanted files are created!
-            self.assertEqual(len(wanted_files),
-                             ExtractedSourceFile.objects.count())
-            extracted_names = [
-                extracted_file.name
-                for extracted_file in ExtractedSourceFile.objects.all()
-            ]
-            for wanted_file in wanted_files:
-                self.assertIn(wanted_file, extracted_names)
-
-    @mock.patch('distro_tracker.extract_source_files.tracker_tasks.'
-                'AptCache.retrieve_source')
-    def test_task_is_initial_existing_files(self, mock_cache):
+    def test_task_with_existing_files(self, mock_cache):
         """
-        Tests the task when it is run as the initial task, but some files for
-        the package have already been previously extracted.
+        Ensure task doesn't overwrite existing files when it re-process
+        a package that was already processed.
         """
-        name = SourcePackageName.objects.create(name='dummy-package')
-        package = SourcePackage.objects.create(
-            source_package_name=name, version='1.0.0')
+        # Make a previously extracted file.
+        original_content = b'Original content'
+        self.srcpkg.extracted_source_files.create(
+            name='changelog',
+            extracted_file=ContentFile(original_content, name='changelog'))
 
         with make_temp_directory('dtracker-pkg-dir') as pkg_directory:
-            debian_dir = os.path.join(pkg_directory, 'debian')
-            os.makedirs(debian_dir)
-            wanted_files = [
-                'changelog',
-                'copyright',
-                'rules',
-                'control',
-                'watch',
-            ]
-            all_files = wanted_files + [
-                'other-file',
-            ]
-            for file_name in all_files:
-                file_path = os.path.join(debian_dir, file_name)
-                with open(file_path, 'w') as f:
-                    f.write('Contents')
+            mock_cache.return_value = pkg_directory
+            self.setup_debian_dir(pkg_directory)
+            self.run_task()
 
-            mock_cache.return_value = os.path.join(pkg_directory)
+        self.assertExtractedFilesInDB()
 
-            # Make a previously extracted file.
-            original_content = b'Original content'
-            ExtractedSourceFile.objects.create(
-                source_package=package,
-                name='changelog',
-                extracted_file=ContentFile(original_content, name='changelog'))
+        # Check that the existing file was not changed.
+        extracted_file = ExtractedSourceFile.objects.get(
+            name='changelog', source_package=self.srcpkg)
+        extracted_file.extracted_file.open()
+        content = extracted_file.extracted_file.read()
+        extracted_file.extracted_file.close()
+        self.assertEqual(original_content, content)
 
-            self.run_task(initial_task=True)
-
-            # Check that all the wanted files exist.
-            self.assertEqual(len(wanted_files),
-                             ExtractedSourceFile.objects.count())
-            # Check that the existing file was not changed.
-            extracted_file = ExtractedSourceFile.objects.get(
-                name='changelog',
-                source_package=package)
-            extracted_file.extracted_file.open()
-            content = extracted_file.extracted_file.read()
-            extracted_file.extracted_file.close()
-            self.assertEqual(original_content, content)
-
-    @mock.patch('distro_tracker.extract_source_files.tracker_tasks.'
-                'AptCache.retrieve_source')
-    def test_task_is_initial_existing_file_remove(self, mock_cache):
-        """
-        Tests the task when it is run as the initial task, but some of the
-        already extracted source files should no longer be extracted.
-        """
-        name = SourcePackageName.objects.create(name='dummy-package')
-        package = SourcePackage.objects.create(
-            source_package_name=name, version='1.0.0')
+    def test_task_remove_unwanted_file(self, mock_cache):
+        # Make a previously extracted file that we no longer extract
+        original_content = 'Original content'
+        ExtractedSourceFile.objects.create(
+            source_package=self.srcpkg,
+            name='we-dont-want-this-any-more',
+            extracted_file=ContentFile(original_content, name='changelog'))
 
         with make_temp_directory('dtracker-pkg-dir') as pkg_directory:
-            debian_dir = os.path.join(pkg_directory, 'debian')
-            os.makedirs(debian_dir)
-            wanted_files = [
-                'changelog',
-                'copyright',
-                'rules',
-                'control',
-                'watch',
-            ]
-            all_files = wanted_files + [
-                'other-file',
-            ]
-            for file_name in all_files:
-                file_path = os.path.join(debian_dir, file_name)
-                with open(file_path, 'w') as f:
-                    f.write('Contents')
+            mock_cache.return_value = pkg_directory
+            self.setup_debian_dir(pkg_directory)
+            self.run_task()
 
-            mock_cache.return_value = os.path.join(pkg_directory)
-
-            # Make a previously extracted file.
-            original_content = 'Original content'
-            ExtractedSourceFile.objects.create(
-                source_package=package,
-                name='we-dont-want-this-any-more',
-                extracted_file=ContentFile(original_content, name='changelog'))
-
-            self.run_task(initial_task=True)
-
-            # Check that all the wanted files exist.
-            self.assertEqual(len(wanted_files),
-                             ExtractedSourceFile.objects.count())
-            # Check that only the wanted files exist.
-            extracted_names = [
-                extracted_file.name
-                for extracted_file in ExtractedSourceFile.objects.all()
-            ]
-            for wanted_file in wanted_files:
-                self.assertIn(wanted_file, extracted_names)
+        self.assertExtractedFilesInDB()

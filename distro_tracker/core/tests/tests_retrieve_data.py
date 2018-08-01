@@ -40,12 +40,12 @@ from distro_tracker.core.models import (
 from distro_tracker.core.retrieve_data import (
     UpdatePackageGeneralInformation,
     UpdateRepositoriesTask,
+    UpdateSourceToBinariesInformation,
     UpdateTeamPackagesTask,
     UpdateVersionInformation,
     TagPackagesWithBugs,
     retrieve_repository_info
 )
-from distro_tracker.core.tasks import BaseTask, Event, Job, JobState, run_task
 from distro_tracker.test import TestCase
 from distro_tracker.test.utils import set_mock_response
 
@@ -334,48 +334,14 @@ class RetrieveSourcesInformationTest(TestCase):
 
     def setUp(self):
         self.repository = Repository.objects.all()[0]
-        self.caught_events = []
-
-        # A dummy task which simply receives all events that the update task
-        # emits.
-        self.intercept_events_task = self.create_task_class(
-            (),
-            UpdateRepositoriesTask.PRODUCES_EVENTS,
-            ()
-        )
-        self._old_plugins = BaseTask.plugins
-        BaseTask.plugins = [UpdateRepositoriesTask, self.intercept_events_task]
         self.component = 'main'
-
-    def tearDown(self):
-        # Return them as we found them.
-        BaseTask.plugins = self._old_plugins
 
     def get_path_to(self, file_name):
         return os.path.join(os.path.dirname(__file__), 'tests-data', file_name)
-        self.intercept_events_task.unregister_plugin()
 
     def run_update(self, **kwargs):
-        run_task(UpdateRepositoriesTask, parameters=kwargs)
-
-    def create_task_class(self, produces, depends_on, raises):
-        """
-        Helper method creates and returns a new BaseTask subclass.
-        """
-        caught_events = self.caught_events
-
-        class TestTask(BaseTask):
-            PRODUCES_EVENTS = produces
-            DEPENDS_ON_EVENTS = depends_on
-
-            def __init__(self, *args, **kwargs):
-                super(TestTask, self).__init__(*args, **kwargs)
-
-            def execute(self):
-                for event in raises:
-                    self.raise_event(event)
-                caught_events.extend(list(self.get_all_events()))
-        return TestTask
+        task = UpdateRepositoriesTask(**kwargs)
+        task.execute()
 
     def set_mock_sources(self, mock_update, file_name):
         old_return = mock_update.return_value
@@ -396,22 +362,6 @@ class RetrieveSourcesInformationTest(TestCase):
         mock_update.return_value = sources, [
             (self.repository, self.component, self.get_path_to(file_name))
         ]
-
-    def clear_events(self):
-        self.caught_events = []
-
-    def assert_events_raised(self, events):
-        """
-        Asserts that the update task emitted all the given events.
-        """
-        raised_event_names = [
-            event.name
-            for event in self.caught_events
-        ]
-        self.assertEqual(len(events), len(raised_event_names))
-
-        for event_name in events:
-            self.assertIn(event_name, raised_event_names)
 
     def assert_package_by_name_in(self, pkg_name, qs):
         self.assertIn(pkg_name, [pkg.name for pkg in qs])
@@ -436,12 +386,6 @@ class RetrieveSourcesInformationTest(TestCase):
         self.assertEqual(srcpkg.dsc_file_name,
                          'chromium-browser_27.0.1453.110-1~deb7u1.dsc')
         self.assertEqual(BinaryPackageName.objects.count(), 8)
-        self.assert_events_raised([
-            'new-source-package',
-            'new-source-package-in-repository',
-            'new-source-package-version',
-            'new-source-package-version-in-repository',
-        ] + ['new-binary-package'] * 8)
 
     @mock.patch(
         'distro_tracker.core.retrieve_data.AptCache.update_repositories')
@@ -502,11 +446,6 @@ class RetrieveSourcesInformationTest(TestCase):
             SourcePackageName.objects.all()
         )
         self.assertEqual(BinaryPackageName.objects.count(), 8)
-        self.assert_events_raised([
-            'new-source-package-in-repository',
-            'new-source-package-version',
-            'new-source-package-version-in-repository',
-        ] + ['new-binary-package'] * 8)
 
     @mock.patch(
         'distro_tracker.core.retrieve_data.AptCache.update_repositories')
@@ -519,12 +458,9 @@ class RetrieveSourcesInformationTest(TestCase):
         self.run_update()
 
         # Run it again.
-        self.clear_events()
         self.run_update()
 
         self.assertEqual(SourcePackageName.objects.count(), 1)
-        # No events emitted since nothing was done.
-        self.assertEqual(len(self.caught_events), 0)
 
     @mock.patch(
         'distro_tracker.core.retrieve_data.AptCache.update_repositories')
@@ -540,13 +476,9 @@ class RetrieveSourcesInformationTest(TestCase):
         self.assertEqual(len(src.architectures.all()), 0)
 
         # Run it again.
-        self.clear_events()
         self.run_update(force_update=True)
         src = SourcePackage.objects.first()
         self.assertNotEqual(len(src.architectures.all()), 0)
-
-        # No events emitted since there are no new packages
-        self.assertEqual(len(self.caught_events), 0)
 
     @mock.patch(
         'distro_tracker.core.retrieve_data.AptCache.update_repositories')
@@ -617,13 +549,6 @@ class RetrieveSourcesInformationTest(TestCase):
             src_pkg
         )
 
-        self.assert_events_raised(
-            ['new-source-package-version'] * 2 +
-            ['new-source-package-version-in-repository'] * 2 +
-            ['lost-source-package-version-in-repository'] * 2 +
-            ['lost-version-of-source-package'] * 2
-        )
-
     @mock.patch(
         'distro_tracker.core.retrieve_data.AptCache.update_repositories')
     def test_update_changed_binary_mapping_2(self, mock_update):
@@ -684,14 +609,6 @@ class RetrieveSourcesInformationTest(TestCase):
         bin_pkg = BinaryPackageName.objects.get(name='dummy-package-binary')
         self.assertEqual(bin_pkg.main_source_package_name, src_pkg)
 
-        self.assert_events_raised(
-            ['new-source-package-version'] +
-            ['new-source-package-version-in-repository'] +
-            ['lost-version-of-source-package'] * 2 +
-            ['lost-source-package-version-in-repository'] * 2 +
-            ['lost-source-package']
-        )
-
     @mock.patch(
         'distro_tracker.core.retrieve_data.AptCache.update_repositories')
     def test_update_removed_binary_package(self, mock_update):
@@ -729,15 +646,6 @@ class RetrieveSourcesInformationTest(TestCase):
         self.assertEqual(
             bin_pkg.main_source_package_name,
             src_pkg.source_package_name)
-        # All events?
-        self.assert_events_raised(
-            ['new-source-package-version',
-             'new-source-package-version-in-repository'] +
-            ['new-binary-package'] +
-            ['lost-version-of-source-package',
-             'lost-source-package-version-in-repository'] +
-            ['lost-binary-package']
-        )
 
     @mock.patch('distro_tracker.core.retrieve_data.AptCache.'
                 'get_sources_files_for_repository')
@@ -1010,14 +918,14 @@ class RetrieveSourcesInformationTest(TestCase):
         """
         self.set_mock_sources(mock_update_repositories, 'Sources-invalid')
 
-        # No exceptions propagated
-        self.run_update()
+        try:
+            self.run_update()
+        except Exception:
+            pass
 
         # Nothing was created
         self.assertEqual(SourcePackageName.objects.count(), 0)
         self.assertEqual(BinaryPackageName.objects.count(), 0)
-        # No events raised
-        self.assert_events_raised([])
 
 
 class UpdateVersionInformationTest(TestCase):
@@ -1050,6 +958,35 @@ class UpdateVersionInformationTest(TestCase):
         versions = self.update._extract_versions_for_package(
             self.package.source_package_name)
         self.assertFalse(versions['version_list'])
+
+
+class UpdateSourceToBinariesInformationTests(TestCase):
+
+    def setUp(self):
+        self.task = UpdateSourceToBinariesInformation()
+
+    def test_creates_package_data(self):
+        binary_packages = ['pkg-a', 'pkg-b']
+        srcpkg = self.create_source_package(repository='default',
+                                            binary_packages=binary_packages)
+        repository = srcpkg.repository_entries.first().repository
+
+        self.task.execute()
+
+        binaries = PackageData.objects.get(
+            key='binaries', package=srcpkg.source_package_name)
+        for entry in binaries.value:
+            self.assertIn(entry['name'], binary_packages)
+            self.assertDictEqual(
+                entry['repository'],
+                {
+                    'name': repository.name,
+                    'shorthand': repository.shorthand,
+                    'suite': repository.suite,
+                    'codename': repository.codename,
+                    'id': repository.id,
+                }
+            )
 
 
 class UpdateTeamPackagesTaskTests(TestCase):
@@ -1091,21 +1028,7 @@ class UpdateTeamPackagesTaskTests(TestCase):
             for i in range(5)
         ]
 
-        self.job_state = mock.create_autospec(JobState)
-        self.job_state.events_for_task.return_value = []
-        self.job = mock.create_autospec(Job)
-        self.job.job_state = self.job_state
         self.task = UpdateTeamPackagesTask()
-        self.task.job = self.job
-
-    def add_mock_events(self, name, arguments):
-        """
-        Helper method adding mock events which the news generation task will
-        see when it runs.
-        """
-        self.job_state.events_for_task.return_value.append(
-            Event(name=name, arguments=arguments)
-        )
 
     def run_task(self):
         self.task.execute()
@@ -1116,11 +1039,6 @@ class UpdateTeamPackagesTaskTests(TestCase):
         repository.
         """
         self.repository.add_source_package(self.package)
-        self.add_mock_events('new-source-package-version-in-repository', {
-            'name': self.package.name,
-            'version': self.package.version,
-            'repository': self.repository.name,
-        })
         # Sanity check: the team does not have any packages
         self.assertEqual(0, self.team.packages.count())
 
@@ -1149,11 +1067,6 @@ class UpdateTeamPackagesTaskTests(TestCase):
             },
         )
         self.repository.add_source_package(self.package)
-        self.add_mock_events('new-source-package-version-in-repository', {
-            'name': self.package.name,
-            'version': self.package.version,
-            'repository': self.repository.name,
-        })
         # Sanity check: the team does not have any packages
         self.assertEqual(0, self.team.packages.count())
 
@@ -1178,11 +1091,6 @@ class UpdateTeamPackagesTaskTests(TestCase):
             },
         )
         self.repository.add_source_package(self.package)
-        self.add_mock_events('new-source-package-version-in-repository', {
-            'name': self.package.name,
-            'version': self.package.version,
-            'repository': self.repository.name,
-        })
 
         self.run_task()
 
@@ -1194,11 +1102,6 @@ class UpdateTeamPackagesTaskTests(TestCase):
         """
         self.team.packages.add(self.package.source_package_name)
         self.repository.add_source_package(self.package)
-        self.add_mock_events('new-source-package-version-in-repository', {
-            'name': self.package.name,
-            'version': self.package.version,
-            'repository': self.repository.name,
-        })
 
         # Sanity check: the team is definitely already associated to the
         # package
@@ -1215,12 +1118,7 @@ class UpdateTeamPackagesTaskTests(TestCase):
         Tests that when a new version is added to a non-default repository,
         the teams' package associations are not changed.
         """
-        self.repository.add_source_package(self.package)
-        self.add_mock_events('new-source-package-version-in-repository', {
-            'name': self.package.name,
-            'version': self.package.version,
-            'repository': self.non_default_repository.name,
-        })
+        self.non_default_repository.add_source_package(self.package)
         # Sanity check: the team does not have any packages
         self.assertEqual(0, self.team.packages.count())
 
@@ -1241,11 +1139,6 @@ class UpdateTeamPackagesTaskTests(TestCase):
             maintainer_email=self.uploaders[0])
         self.team.packages.add(self.package.source_package_name)
         self.repository.add_source_package(self.package)
-        self.add_mock_events('new-source-package-version-in-repository', {
-            'name': self.package.name,
-            'version': self.package.version,
-            'repository': self.repository.name,
-        })
         # Sanity check the uploader's team does not have any packages
         self.assertEqual(0, uploader_team.packages.count())
 
@@ -1291,11 +1184,6 @@ class UpdateTeamPackagesTaskTests(TestCase):
         for source_package in \
                 team_maintainer_packages + unknown_maintainer_packages:
             self.repository.add_source_package(source_package)
-            self.add_mock_events('new-source-package-version-in-repository', {
-                'name': source_package.name,
-                'version': source_package.version,
-                'repository': self.repository.name,
-            })
         # Sanity check: the maintainer's team does not have any packages
         self.assertEqual(0, self.team.packages.count())
 
@@ -1325,18 +1213,13 @@ class UpdatePackageGeneralInformationTest(TestCase):
                 'email': 'jdoe@debian.org'
             },
             architectures=['i386', 'amd64'],
+            repository='repo1',
         )
-        self.component = 'main'
-        self.repo1 = Repository.objects.create(name='repo1', shorthand='repo1')
-        SourcePackageRepositoryEntry.objects.create(
-            source_package=self.srcpkg,
-            repository=self.repo1,
-            component=self.component)
 
     def test_UpdatePackageGeneralInformation_task(self):
 
         # execute the task
-        task = UpdatePackageGeneralInformation(force_update=True)
+        task = UpdatePackageGeneralInformation()
         task.execute()
 
         # check that the task worked as expected
@@ -1345,7 +1228,7 @@ class UpdatePackageGeneralInformationTest(TestCase):
         self.assertEqual(pkgdata['name'], self.srcpkg.name)
         self.assertEqual(pkgdata['version'], self.srcpkg.version)
         self.assertListEqual(pkgdata['architectures'], ['amd64', 'i386'])
-        self.assertEqual(pkgdata['component'], self.component)
+        self.assertEqual(pkgdata['component'], 'main')
 
 
 class TagPackagesWithBugsTest(TestCase):

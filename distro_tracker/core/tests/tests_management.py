@@ -30,6 +30,7 @@ from distro_tracker.core.utils import message_from_bytes
 from distro_tracker.test import SimpleTestCase, TestCase
 
 
+@mock.patch('distro_tracker.core.management.commands.tracker_run_task.run_task')
 class RunTaskManagementCommandTest(SimpleTestCase):
     """
     Test for the :mod:`distro_tracker.core.management.commands.tracker_run_task`
@@ -38,8 +39,6 @@ class RunTaskManagementCommandTest(SimpleTestCase):
     def run_command(self, tasks, **kwargs):
         call_command('tracker_run_task', *tasks, **kwargs)
 
-    @mock.patch(
-        'distro_tracker.core.management.commands.tracker_run_task.run_task')
     def test_runs_all(self, mock_run_task):
         """
         Tests that the management command calls the
@@ -49,25 +48,30 @@ class RunTaskManagementCommandTest(SimpleTestCase):
         self.run_command(['TaskName1', 'TaskName2'])
 
         # The run task was called only for the given commands
-        self.assertEqual(2, mock_run_task.call_count)
-        mock_run_task.assert_any_call('TaskName1', None)
-        mock_run_task.assert_any_call('TaskName2', None)
+        self.assertListEqual(
+            mock_run_task.mock_calls,
+            [mock.call('TaskName1'), mock.call('TaskName2')]
+        )
 
-    @mock.patch(
-        'distro_tracker.core.management.commands.tracker_run_task.run_task')
     def test_passes_force_flag(self, mock_run_task):
         """
         Tests that the management command passes the force flag to the task
         invocations when it is given.
         """
-        self.run_command(['TaskName1'], force=True)
+        self.run_command(['TaskName1'], force_update=True)
 
-        mock_run_task.assert_called_with('TaskName1', {
-            'force_update': True,
-        })
+        mock_run_task.assert_called_once_with('TaskName1', force_update=True)
+
+    def test_passes_fake_flag(self, mock_run_task):
+        """
+        Tests that the management command passes the fake_update flag to the
+        task invocations when it is given.
+        """
+        self.run_command(['TaskName1'], fake_update=True)
+
+        mock_run_task.assert_called_once_with('TaskName1', fake_update=True)
 
 
-@mock.patch('distro_tracker.core.tasks.import_all_tasks')
 @mock.patch('distro_tracker.core.management.commands.'
             'tracker_run_all_tasks.run_all_tasks')
 class RunAllTasksTests(SimpleTestCase):
@@ -81,24 +85,30 @@ class RunAllTasksTests(SimpleTestCase):
     def test_runs_all(self, mock_run_all_tasks, *args, **kwargs):
         """
         Tests that the management command calls the
-        :func:`run_task <distro_tracker.core.tasks.run_task>` function for each
-        given task name.
+        :func:`run_all_tasks <distro_tracker.core.tasks.base.run_all_tasks>`
+        function.
         """
         self.run_command()
 
-        # The run task was called only for the given commands
-        mock_run_all_tasks.assert_called_once_with(None)
+        mock_run_all_tasks.assert_called_once_with()
 
-    def test_passes_force_flag(self, mock_run_all_tasks, *args, **kwargs):
+    def test_passes_force_flag(self, mock_run_all_tasks):
         """
         Tests that the management command passes the force flag to the task
         invocations when it is given.
         """
-        self.run_command(force=True)
+        self.run_command(force_update=True)
 
-        mock_run_all_tasks.assert_called_once_with({
-            'force_update': True,
-        })
+        mock_run_all_tasks.assert_called_once_with(force_update=True)
+
+    def test_passes_fake_flag(self, mock_run_all_tasks):
+        """
+        Tests that the management command passes the fake_update flag to the
+        task invocations when it is given.
+        """
+        self.run_command(fake_update=True)
+
+        mock_run_all_tasks.assert_called_once_with(fake_update=True)
 
 
 class UpdateNewsSignaturesCommandTest(TestCase):

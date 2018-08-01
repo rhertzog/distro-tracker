@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2018 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -13,55 +13,44 @@
 Distro Tracker tasks for the :mod:`distro_tracker.stdver_warnings` app.
 """
 
+from debian.debian_support import version_compare
+from django.db.models import Prefetch
+
 from distro_tracker.core.models import (
     ActionItem,
     ActionItemType,
     SourcePackageName
 )
 from distro_tracker.core.tasks import BaseTask
+from distro_tracker.core.tasks.mixins import (
+    ProcessSrcRepoEntryInDefaultRepository
+)
 from distro_tracker.core.utils import get_or_none
 
 
-class UpdateStandardsVersionWarnings(BaseTask):
+class UpdateStandardsVersionWarnings(BaseTask,
+                                     ProcessSrcRepoEntryInDefaultRepository):
     """
     The task updates warnings for packages which have an outdated
     Standards-Version.
     """
-    DEPENDS_ON_EVENTS = (
-        'new-source-package-version',
-    )
-
     ACTION_ITEM_TYPE = 'debian-std-ver-outdated'
     FULL_DESCRIPTION_TEMPLATE = \
         'stdver_warnings/standards-version-action-item.html'
     ITEM_DESCRIPTION = "Standards version of the package is outdated."
 
-    def __init__(self, force_update=False, *args, **kwargs):
-        super(UpdateStandardsVersionWarnings, self).__init__(*args, **kwargs)
-        self.force_update = force_update
+    def initialize(self, *args, **kwargs):
+        super().initialize(*args, **kwargs)
         self.action_type = ActionItemType.objects.create_or_update(
             type_name=self.ACTION_ITEM_TYPE,
             full_description_template=self.FULL_DESCRIPTION_TEMPLATE)
 
-    def set_parameters(self, parameters):
-        if 'force_update' in parameters:
-            self.force_update = parameters['force_update']
-
-    def get_packages_from_events(self):
-        """
-        :returns: A list of
-            :class:`distro_tracker.core.models.SourcePackageName` instances
-            which are found from all raised events.
-        """
-        package_pks = [
-            event.arguments['pk']
-            for event in self.get_all_events()
-        ]
-        qs = SourcePackageName.objects.filter(
-            source_package_versions__pk__in=package_pks)
-        qs.prefetch_related('action_items')
-
-        return qs
+    def items_extend_queryset(self, queryset):
+        base_qs = ActionItem.objects.filter(item_type=self.action_type)
+        return queryset.prefetch_related(
+            Prefetch('source_package__source_package_name__action_items',
+                     queryset=base_qs, to_attr='stdver_action_items')
+        )
 
     def get_policy_version(self):
         """
@@ -72,71 +61,78 @@ class UpdateStandardsVersionWarnings(BaseTask):
             return
         policy_version = debian_policy.main_version.version
         # Minor patch level should be disregarded for the comparison
-        policy_version, _ = policy_version.rsplit('.', 1)
+        if policy_version.count('.') == 3:
+            policy_version, _ = policy_version.rsplit('.', 1)
 
         return policy_version
 
-    def create_action_item(self, package, policy_version):
-        """
-        Creates a :class:`distro_tracker.core.models.ActionItem` instance if the
-        Standards-Version of the given package is outdated when compared to the
-        given policy version.
-        """
-        if not package.main_version:
-            return
-        # Get the old action item entry
-        action_item = package.get_action_item_for_type(self.ACTION_ITEM_TYPE)
-        standards_version = package.main_version.standards_version
-        if standards_version.startswith(policy_version):
-            # The std-ver of the package is up to date.
-            # Remove any possibly existing action item.
-            if action_item is not None:
-                action_item.delete()
-            return
-
-        major_policy_version_number, _ = policy_version.split('.', 1)
-        severely_outdated = not standards_version.startswith(
-            major_policy_version_number)
-
-        if action_item is None:
-            action_item = ActionItem(
-                package=package,
-                item_type=self.action_type)
-
-        # Remove the minor patch level from the package's Std-Ver, if it has it
-        if standards_version.count('.') == 3:
-            standards_version, _ = standards_version.rsplit('.', 1)
-
-        if severely_outdated:
-            action_item.severity = ActionItem.SEVERITY_HIGH
-        else:
-            action_item.severity = ActionItem.SEVERITY_WISHLIST
-
-        action_item.short_description = self.ITEM_DESCRIPTION
-        action_item.extra_data = {
-            'lastsv': policy_version,
-            'lastsv_dashes': policy_version.replace('.', '-'),
-            'standards_version': standards_version,
-            'standards_version_dashes': standards_version.replace('.', '-'),
-            'severely_outdated': severely_outdated,
-        }
-        action_item.save()
-
-    def execute(self):
+    def execute_main(self):
         # Get the current policy version
         policy_version = self.get_policy_version()
         if policy_version is None:
             # Nothing to do if there is no ``debian-policy``
             return
 
-        if self.is_initial_task():
-            # If the task is directly ran, update all packages
-            packages = SourcePackageName.objects.all()
-            packages.prefetch_related('action_items')
-        else:
-            # If the task is ran as part of a job, get the packages from raised
-            # events
-            packages = self.get_packages_from_events()
+        seen_packages = {}
+        for entry in self.items_to_process():
+            try:
+                package = entry.source_package.source_package_name
+                standards_version = entry.source_package.standards_version
+                try:
+                    if package.name in seen_packages:
+                        seen_version = seen_packages[package.name]
+                        version = entry.source_package.version
+                        if version_compare(version, seen_version) < 0:
+                            # This version is older, skip it
+                            continue
+                        # If already seen, then the cached action item
+                        # is no longer reliable, retrieve it from the db
+                        action_item = get_or_none(ActionItem, package=package,
+                                                  item_type=self.action_type)
+                    else:
+                        action_item = package.stdver_action_items[0]
+                except IndexError:
+                    action_item = None
+                seen_packages[package.name] = entry.source_package.version
 
-        for package in packages:
-            self.create_action_item(package, policy_version)
+                if standards_version.startswith(policy_version):
+                    # The std-ver of the package is up to date.
+                    # Remove any possibly existing action item.
+                    if action_item is not None:
+                        action_item.delete()
+                    continue
+
+                major_policy_version_number, _ = policy_version.split('.', 1)
+                severely_outdated = not standards_version.startswith(
+                    major_policy_version_number)
+
+                if action_item is None:
+                    action_item = ActionItem(
+                        package=package,
+                        item_type=self.action_type)
+
+                if severely_outdated:
+                    action_item.severity = ActionItem.SEVERITY_HIGH
+                else:
+                    action_item.severity = ActionItem.SEVERITY_WISHLIST
+
+                action_item.short_description = self.ITEM_DESCRIPTION
+                action_item.extra_data = {
+                    'lastsv': policy_version,
+                    'lastsv_dashes': policy_version.replace('.', '-'),
+                    'standards_version': standards_version,
+                    'standards_version_dashes':
+                        standards_version.replace('.', '-'),
+                    'severely_outdated': severely_outdated,
+                }
+                action_item.save()
+            finally:
+                self.item_mark_processed(entry)
+
+        # Remove action items for packages that disappeared from the default
+        # repository
+        ActionItem.objects.delete_obsolete_items(
+            [self.action_type],
+            self.items_all().values_list(
+                'source_package__source_package_name__name', flat=True)
+        )

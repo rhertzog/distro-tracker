@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2018 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -13,15 +13,10 @@
 Tests for the :mod:`distro_tracker.stdver_warnings` app.
 """
 
-from unittest import mock
-
 from distro_tracker.core.models import (
     ActionItem,
     ActionItemType,
-    SourcePackage,
-    SourcePackageName
 )
-from distro_tracker.core.tasks import Event, Job, JobState
 from distro_tracker.stdver_warnings.tracker_tasks import (
     UpdateStandardsVersionWarnings
 )
@@ -35,51 +30,18 @@ class StandardsVersionActionItemTests(TestCase):
     task.
     """
     def setUp(self):
-        self.package_name = \
-            SourcePackageName.objects.create(name='dummy-package')
-        self.package = SourcePackage.objects.create(
-            source_package_name=self.package_name, version='1.0.0')
-
-        self.default_policy_version = '3.9.4.0'
-        self.debian_policy_name = SourcePackageName.objects.create(
-            name='debian-policy')
-        self.debian_policy = SourcePackage.objects.create(
-            source_package_name=self.debian_policy_name,
-            version=self.default_policy_version)
-
-        self.job_state = mock.create_autospec(JobState)
-        self.job_state.events_for_task.return_value = []
-        self.job = mock.create_autospec(Job)
-        self.job.job_state = self.job_state
+        self.package = self.create_source_package(
+            name='dummy-package', version='1.0.0', repository='default')
+        self.debian_policy = self.create_source_package(
+            name='debian-policy', version='3.9.4.0')
+        self.debian_policy.standards_version = '3.9.4.0'
+        self.debian_policy.save()
         self.task = UpdateStandardsVersionWarnings()
-        self.task.job = self.job
 
-    def add_mock_event(self, name, arguments):
-        """
-        Helper method adding mock events which the news generation task will
-        see when it runs.
-        """
-        self.job_state.events_for_task.return_value.append(
-            Event(name=name, arguments=arguments)
-        )
-
-    def run_task(self, initial_task=False):
+    def run_task(self):
         """
         Initiates the task run.
-
-        :param initial_task: An optional flag which if ``True`` means that the
-            task should be ran as if it were directly passed to the
-            :func:`distro_tracker.core.tasks.run_task` function.
-        :type initial_task: Boolean
         """
-        if initial_task:
-            self.job_state.events_for_task.return_value = []
-            self.job_state.processed_tasks = []
-        else:
-            # If it is not the initial task, add a dummy task to make it look
-            # like that.
-            self.job_state.processed_tasks = ['sometask']
-
         self.task.execute()
 
     def set_debian_policy_version(self, policy_version):
@@ -98,29 +60,16 @@ class StandardsVersionActionItemTests(TestCase):
         return ActionItemType.objects.get_or_create(
             type_name=UpdateStandardsVersionWarnings.ACTION_ITEM_TYPE)[0]
 
-    def add_mock_new_source_version_event(self, package):
-        """
-        Helper method adding mock 'new-source-package-version' events where
-        the newly created source package should be the one given in the
-        ``package`` parameter.
-        """
-        self.add_mock_event('new-source-package-version', {
-            'pk': package.pk,
-        })
-
     def test_action_item_outdated_policy(self):
         """
         Tests that an action item is created when the package's standards
         version is outdated.
         """
-        policy_version = '3.9.4.0'
-        self.set_debian_policy_version(policy_version)
         # Set the std-ver below the policy version
         self.package.standards_version = '3.9.3'
         self.package.save()
         # Sanity check: no action item
         self.assertEqual(0, ActionItem.objects.count())
-        self.add_mock_new_source_version_event(self.package)
 
         self.run_task()
 
@@ -145,14 +94,11 @@ class StandardsVersionActionItemTests(TestCase):
         version is severely outdated (major version number differs from the
         major version number of debian-policy).
         """
-        policy_version = '3.9.4.0'
-        self.set_debian_policy_version(policy_version)
         # Set the std-ver below the policy version
         self.package.standards_version = '2.9.3'
         self.package.save()
         # Sanity check: no action item
         self.assertEqual(0, ActionItem.objects.count())
-        self.add_mock_new_source_version_event(self.package)
 
         self.run_task()
 
@@ -164,19 +110,38 @@ class StandardsVersionActionItemTests(TestCase):
         # This is a high severity issue
         self.assertEqual('high', item.get_severity_display())
 
+    def test_action_item_two_entries_same_package_with_outdated_policy(self):
+        """
+        Tests that the task copes with the presence of the same package
+        twice.
+        """
+        # Package with a severe issue (version 1.0.0)
+        self.package.standards_version = '2.9.3'
+        self.package.save()
+        # Same package with higher version but non-severe issue
+        self.package2 = self.create_source_package(
+            name='dummy-package', version='0.5', repository='default')
+        self.package2.standards_version = '3.9.3'
+        self.package2.save()
+
+        self.run_task()
+
+        self.assertEqual(1, ActionItem.objects.count())
+        item = ActionItem.objects.all()[0]
+
+        # The data matches the biggest version
+        self.assertTrue(item.extra_data['severely_outdated'])
+
     def test_no_action_item_policy_up_to_date(self):
         """
         Tests that no action item is created when the package's
         Standards-Version is up to date.
         """
-        policy_version = '3.9.4.0'
-        self.set_debian_policy_version(policy_version)
         # Set the std-ver to be equal to the policy version.
         self.package.standards_version = '3.9.4'
         self.package.save()
         # Sanity check: no action item
         self.assertEqual(0, ActionItem.objects.count())
-        self.add_mock_new_source_version_event(self.package)
 
         self.run_task()
 
@@ -188,14 +153,11 @@ class StandardsVersionActionItemTests(TestCase):
         Tests that an action item is created when the package's standards
         version is outdated and set by giving all 4 version numbers.
         """
-        policy_version = '3.9.4.0'
-        self.set_debian_policy_version(policy_version)
         # Set the std-ver below the policy version
         self.package.standards_version = '3.9.3.1'
         self.package.save()
         # Sanity check: no action item
         self.assertEqual(0, ActionItem.objects.count())
-        self.add_mock_new_source_version_event(self.package)
 
         self.run_task()
 
@@ -212,14 +174,11 @@ class StandardsVersionActionItemTests(TestCase):
         Standards-Version is up to date and set by giving all 4 version
         numbers.
         """
-        policy_version = '3.9.4.0'
-        self.set_debian_policy_version(policy_version)
         # Set the std-ver to be equal to the policy version.
-        self.package.standards_version = policy_version
+        self.package.standards_version = self.debian_policy.version
         self.package.save()
         # Sanity check: no action item
         self.assertEqual(0, ActionItem.objects.count())
-        self.add_mock_new_source_version_event(self.package)
 
         self.run_task()
 
@@ -231,86 +190,92 @@ class StandardsVersionActionItemTests(TestCase):
         Tests that an existing action item is removed when there is a new
         package version with a non-outdated Std-Ver.
         """
-        policy_version = '3.9.4.0'
-        self.set_debian_policy_version(policy_version)
         action_type = self.get_action_type()
         ActionItem.objects.create(
-            package=self.package_name,
+            package=self.package.source_package_name,
             item_type=action_type,
             short_description="Desc")
         self.package.standards_version = '3.9.3'
+        for entry in self.package.repository_entries.all():
+            entry.delete()
         self.package.save()
+
         # Create a new package with a higher Std-Ver
-        new_package = SourcePackage.objects.create(
-            source_package_name=self.package_name,
-            version='4.0.0',
-            standards_version='3.9.4.0')
-        self.add_mock_new_source_version_event(new_package)
+        new_package = self.create_source_package(
+            name=self.package.source_package_name.name,
+            version='4.0.0', repository='default'
+        )
+        new_package.standards_version = '3.9.4.0'
+        new_package.save()
 
         self.run_task()
 
         # The action item has been removed.
-        self.assertEqual(0, self.package_name.action_items.count())
+        self.assertEqual(0,
+                         self.package.source_package_name.action_items.count())
 
     def test_action_item_updated(self):
         """
         Tests that an existing action item is updated when there is a new
         package version which still has an outdated Std-Ver.
         """
-        policy_version = '3.9.4.0'
-        self.set_debian_policy_version(policy_version)
         action_type = self.get_action_type()
         ActionItem.objects.create(
-            package=self.package_name,
+            package=self.package.source_package_name,
             item_type=action_type,
             short_description="Desc")
         self.package.standards_version = '3.9.2'
+        for entry in self.package.repository_entries.all():
+            entry.delete()
         self.package.save()
+
         # Create a new package with a higher Std-Ver
-        new_package = SourcePackage.objects.create(
-            source_package_name=self.package_name,
-            version='4.0.0',
-            standards_version='3.9.3.0')
-        self.add_mock_new_source_version_event(new_package)
+        new_package = self.create_source_package(
+            name=self.package.source_package_name.name,
+            version='4.0.0', repository='default'
+        )
+        new_package.standards_version = '3.9.3.0'
+        new_package.save()
 
         self.run_task()
 
         # Still only one action item
-        self.assertEqual(1, self.package_name.action_items.count())
+        self.assertEqual(1,
+                         self.package.source_package_name.action_items.count())
         # The standards version in the extra data has been updated
-        item = self.package_name.action_items.all()[0]
-        self.assertEqual('3.9.3', item.extra_data['standards_version'])
+        item = self.package.source_package_name.action_items.all()[0]
+        self.assertEqual('3.9.3.0', item.extra_data['standards_version'])
 
     def test_task_directly_called(self):
         """
         Tests that when the task is directly called, the Standards-Version of
         all packages is checked.
         """
-        policy_version = '3.9.4.0'
-        self.set_debian_policy_version(policy_version)
         self.package.standards_version = '3.9.3'
         self.package.save()
         # Create another package with an outdated standards version
-        outdated_package_name = \
-            SourcePackageName.objects.create(name='outdated')
-        SourcePackage.objects.create(
-            source_package_name=outdated_package_name,
-            version='4.0.0',
-            standards_version='3.9.1.0')
+        outdated = self.create_source_package(name='outdated',
+                                              repository='default')
+        outdated.standards_version = '3.9.1.0'
+        outdated.save()
         # Create a package with an up to date standards version
-        up_to_date_package_name = \
-            SourcePackageName.objects.create(name='uptodate')
-        SourcePackage.objects.create(
-            source_package_name=up_to_date_package_name,
-            version='4.0.0',
-            standards_version='3.9.4')
-        # No events received by the task in this case.
+        uptodate = self.create_source_package(name='uptodate',
+                                              repository='default')
+        uptodate.standards_version = '3.9.4'
+        uptodate.save()
+
+        # Mark as already processed
+        for item in self.task.items_to_process():
+            self.task.item_mark_processed(item)
+
         # Sanity check: No action items in the beginning
         self.assertEqual(0, ActionItem.objects.count())
 
-        self.run_task(initial_task=True)
+        self.task.initialize(force_update=True)
+        self.run_task()
 
         # An action item is created for the two packages with out dated std-ver.
         self.assertEqual(2, ActionItem.objects.count())
-        self.assertEqual(1, outdated_package_name.action_items.count())
-        self.assertEqual(1, self.package_name.action_items.count())
+        self.assertEqual(1, outdated.source_package_name.action_items.count())
+        self.assertEqual(
+            1, self.package.source_package_name.action_items.count())

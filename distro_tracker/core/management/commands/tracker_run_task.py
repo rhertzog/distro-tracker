@@ -31,30 +31,40 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('tasks', nargs='+', help='Tasks to be run')
         parser.add_argument(
-            '--force',
+            '--force-update',
             action='store_true',
-            dest='force',
+            dest='force_update',
             default=False,
             help=(
                 'Force the update. '
                 'This clears any caches and makes a full update.'
             )
         )
+        parser.add_argument(
+            '--fake-update',
+            action='store_true',
+            dest='fake_update',
+            default=False,
+            help=(
+                'Instruct the task to not do anything except recording that '
+                'everything has been done.'
+            )
+        )
 
     def handle(self, *args, **kwargs):
         verbose = int(kwargs.get('verbosity', 1)) > 0
-        additional_arguments = None
-        if kwargs['force']:
-            additional_arguments = {
-                'force_update': True
-            }
+        params = {}
+        if kwargs['force_update']:
+            params['force_update'] = True
+        if kwargs['fake_update']:
+            params['fake_update'] = True
         for task_name in kwargs['tasks']:
             if isinstance(task_name, bytes):
                 task_name = task_name.decode('utf-8')
             logger.info("Starting task %s (from ./manage.py tracker_run_task)",
                         task_name)
             try:
-                run_task(task_name, additional_arguments)
+                run_task(task_name, **params)
             except Exception:
                 logger.exception("Task %s failed:", task_name)
                 if verbose:

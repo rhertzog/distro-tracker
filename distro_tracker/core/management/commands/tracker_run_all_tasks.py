@@ -28,23 +28,32 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--force',
+            '--force-update',
             action='store_true',
-            dest='force',
+            dest='force_update',
             default=False,
             help=(
                 'Force the update. '
                 'This clears any caches and makes a full update'
             )
         )
+        parser.add_argument(
+            '--fake-update',
+            action='store_true',
+            dest='fake_update',
+            default=False,
+            help=(
+                'Instruct the task to not do anything except recording that '
+                'everything has been done.'
+            )
+        )
 
     def handle(self, *args, **kwargs):
-        additional_arguments = None
-        if kwargs['force']:
-            additional_arguments = {
-                'force_update': True
-            }
-
+        params = {}
+        if kwargs['force_update']:
+            params['force_update'] = True
+        if kwargs['fake_update']:
+            params['fake_update'] = True
         logger.info(
             'Starting all tasks (from ./manage.py tracker_run_all_tasks')
-        run_all_tasks(additional_arguments)
+        run_all_tasks(**params)
