@@ -70,6 +70,25 @@ class BaseTaskTests(TestCase):
         """A task class is automatically registered when created"""
         self.assertIn(TestTask, BaseTask.plugins)
 
+    # task.initialize()
+    def test_task_init_runs_initialize_with_args_and_kwargs(self):
+        with mock.patch.object(TestTask, 'initialize') as initialize:
+            TestTask('abc', keyword='keyword')
+            initialize.assert_called_with('abc', keyword='keyword')
+
+    def test_task_initialize_with_force_update(self):
+        self.task.initialize(force_update=True)
+        self.assertEqual(self.task.force_update, True)
+
+    def test_task_initialize_with_fake_update(self):
+        self.task.initialize(fake_update=True)
+        self.assertEqual(self.task.fake_update, True)
+
+    def test_task_initialize_store_kwargs_in_parameters(self):
+        parameters = {'key1': 'abc', 'key2': 'abc'}
+        self.task.initialize(**parameters)
+        self.assertDictEqual(self.task.parameters, parameters)
+
     # task.task_name()
     def test_task_has_a_default_name(self):
         self.assertEqual(TestTask.task_name(), 'TestTask')

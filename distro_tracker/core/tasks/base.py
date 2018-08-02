@@ -89,7 +89,9 @@ class BaseTask(metaclass=PluginRegistry):
         Process arguments passed to :meth:`__init__()`. Can be overriden
         to do other runtime preparation.
         """
-        pass
+        self.force_update = kwargs.get('force_update', False)
+        self.fake_update = kwargs.get('fake_update', False)
+        self.parameters = kwargs
 
     @property
     def data(self):
