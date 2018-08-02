@@ -17,15 +17,25 @@ import logging
 from datetime import timedelta
 from unittest import mock
 
+from django.db.models.query import QuerySet
 from django.test.utils import override_settings
 
-from distro_tracker.core.models import TaskData
+from distro_tracker.core.models import (
+    SourcePackage,
+    SourcePackageName,
+    TaskData,
+)
 from distro_tracker.core.tasks.base import (
     BaseTask,
     build_all_tasks,
     import_all_tasks,
     run_all_tasks,
     run_task,
+)
+from distro_tracker.core.tasks.mixins import (
+    ProcessItems,
+    ProcessModel,
+    ProcessSourcePackage,
 )
 from distro_tracker.core.tasks.schedulers import Scheduler, IntervalScheduler
 from distro_tracker.core.utils import now
@@ -563,3 +573,247 @@ class TaskUtilsTests(TestCase):
         run_all_tasks()
 
         self.update_repositories_task.execute.assert_not_called()
+
+
+class ProcessBaseTests(TestCase):
+    def setUp(self):
+        self.task = ProcessItems()
+        self.task.data = {}
+        self.task.force_update = False
+
+    def patch_item_describe(self):
+        def item_describe(item):
+            return getattr(item, 'description', {})
+        patcher = mock.patch.object(self.task, 'item_describe')
+        self.mock_item_describe = patcher.start()
+        self.mock_item_describe.side_effect = item_describe
+        self.addCleanup(patcher.stop)
+        return self.mock_item_describe
+
+    def get_item(self, key):
+        item = mock.MagicMock()
+        item.__str__.return_value = key
+        return item
+
+    def test_item_to_key(self):
+        item = self.get_item('key')
+
+        self.assertEqual(self.task.item_to_key(item), 'key')
+
+    def test_item_describe(self):
+        '''item_describe() returns a dict describing the item'''
+        item = self.get_item('key')
+
+        self.assertIsInstance(self.task.item_describe(item), dict)
+
+    def test_item_mark_processed_adds_key_in_processed_dict(self):
+        item = self.get_item('key')
+
+        self.task.item_mark_processed(item)
+
+        self.assertIn('key', self.task.data['processed'])
+
+    def test_item_mark_processed_stores_description_in_processed_dict(self):
+        item = self.get_item('key')
+        item.description = {'foo': 'bar'}
+        self.patch_item_describe()
+
+        self.task.item_mark_processed(item)
+
+        self.assertDictEqual(item.description,
+                             self.task.data['processed']['key'])
+
+    def test_item_mark_processed_accepts_positional_arguments(self):
+        args = [
+            self.get_item('key1'),
+            self.get_item('key2')
+        ]
+
+        self.task.item_mark_processed(*args)
+
+        self.assertIn('key1', self.task.data['processed'])
+        self.assertIn('key2', self.task.data['processed'])
+
+    def test_item_needs_processing(self):
+        """An unknown item needs to be processed."""
+        item = self.get_item('key')
+        self.assertEqual(self.task.item_needs_processing(item), True)
+
+    def test_item_needs_processing_with_already_processed_item(self):
+        """An item already processed doesn't need processing."""
+        item = self.get_item('key')
+        self.task.item_mark_processed(item)
+
+        self.assertEqual(self.task.item_needs_processing(item), False)
+
+    def test_items_all(self):
+        """items_all() is meant to be overriden the class using the mixin."""
+        with self.assertRaises(NotImplementedError):
+            self.task.items_all()
+
+    def patch_items_all(self, keys=None, items=None):
+        if keys is None:
+            keys = ['key %d' % i for i in range(10)]
+        if items is None:
+            items = [self.get_item(key) for key in keys]
+
+        patcher = mock.patch.object(self.task, 'items_all')
+        self.mock_items_all = patcher.start()
+        self.mock_items_all.return_value = items
+        self.addCleanup(patcher.stop)
+
+        return items
+
+    def mark_some_processed_return_unprocessed(self, items):
+        not_processed = []
+        for i, item in enumerate(items):
+            if i % 2 == 0:
+                self.task.item_mark_processed(item)
+            else:
+                not_processed.append(item)
+        return not_processed
+
+    def test_items_to_process(self):
+        """
+        items_to_process() is the subset of items_all() that needs to
+        be processed
+        """
+        items = self.patch_items_all()
+        not_processed = self.mark_some_processed_return_unprocessed(items)
+
+        result = self.task.items_to_process()
+
+        self.assertSetEqual(set(result), set(not_processed))
+
+    def test_items_to_process_with_force_update(self):
+        """
+        items_to_process() is the same as items_all() when force_udpate=True
+        """
+        self.task.force_update = True
+        items = self.patch_items_all()
+        self.mark_some_processed_return_unprocessed(items)
+
+        result = self.task.items_to_process()
+
+        self.assertSetEqual(set(result), set(items))
+
+    def test_items_all_keys(self):
+        """items_all_keys() returns a set of item_to_key() on items_all()"""
+        items = self.patch_items_all()
+        keys = [self.task.item_to_key(item) for item in items]
+
+        result = self.task.items_all_keys()
+
+        self.assertIsInstance(result, set)
+        self.assertSetEqual(result, set(keys))
+
+    def test_items_to_cleanup(self):
+        """items_to_cleanup() iterates over items that disappeared"""
+        items = self.patch_items_all()
+        self.patch_item_describe()
+        self.unused_item = self.get_item('unused')
+        self.unused_item.description = {'foo': 'bar'}
+        self.task.item_mark_processed(self.unused_item)
+        self.task.item_mark_processed(*items[0:2])
+
+        count = 0
+        for key, data in self.task.items_to_cleanup():
+            self.assertEqual(key, 'unused')
+            self.assertDictEqual(data, self.unused_item.description)
+            count += 1
+        self.assertEqual(count, 1)
+
+    def test_items_cleanup_processed_list(self):
+        """drops keys not associated to any object from the processed list"""
+        items = self.patch_items_all()
+        self.unused_item = self.get_item('unused')
+        self.task.item_mark_processed(self.unused_item)
+        self.task.item_mark_processed(*items[0:2])
+
+        # Check the removal from the processed list through return value of
+        # task.item_needs_processing()
+        self.assertFalse(self.task.item_needs_processing(self.unused_item))
+        self.task.items_cleanup_processed_list()
+        self.assertTrue(self.task.item_needs_processing(self.unused_item))
+
+
+class ProcessModelTests(TestCase):
+    def setUp(self):
+        cls = BaseTask.get_task_class_by_name('TestProcessModel')
+        if not cls:
+            class TestProcessModel(BaseTask, ProcessModel):
+                model = SourcePackageName
+            cls = TestProcessModel
+        self.cls = cls
+        self.task = cls()
+
+    def test_items_all_returns_queryset_of_the_model(self):
+        queryset = self.task.items_all()
+        self.assertIsInstance(queryset, QuerySet)
+        self.assertEqual(queryset.model, self.cls.model)
+
+    def test_items_all_allows_queryset_customizaton(self):
+        '''items_extend_queryset() is called by items_all() at the end'''
+        with mock.patch.object(self.task, 'items_extend_queryset') as mocked:
+            mocked.return_value = mock.sentinel.extended_queryset
+            queryset = self.task.items_all()
+            mocked.assert_called_once_with(mock.ANY)
+        self.assertIs(queryset, mock.sentinel.extended_queryset)
+
+    def test_items_extend_queryset(self):
+        '''default items_extend_queryset() just forwards the queryset'''
+        queryset = mock.sentinel.queryset
+        self.assertEqual(self.task.items_extend_queryset(queryset),
+                         queryset)
+
+    def test_item_to_key(self):
+        '''item_to_key() uses the primary key'''
+        srcpkgname = SourcePackageName.objects.create(name='dummy')
+        self.assertEqual(self.task.item_to_key(srcpkgname), srcpkgname.pk)
+
+    def test_items_all_keys(self):
+        '''items_all_keys() uses an optimized query'''
+        # Better implementation does not call item_to_key() in a loop
+        srcpkgname = SourcePackageName.objects.create(name='dummy')
+        with mock.patch.object(self.task, 'item_to_key') as mock_item_to_key:
+            result = self.task.items_all_keys()
+            mock_item_to_key.assert_not_called()
+
+        expected = set([self.task.item_to_key(srcpkgname)])
+        self.assertSetEqual(result, expected)
+
+    def test_item_describe(self):
+        srcpkgname = SourcePackageName.objects.create(name='dummy')
+        self.task.fields_to_save = ('name', 'get_absolute_url')
+        with mock.patch.object(srcpkgname, 'get_absolute_url') as mocked:
+            mocked.return_value = mock.sentinel.url
+            data = self.task.item_describe(srcpkgname)
+            mocked.assert_called_once_with()
+        self.assertEqual(data['name'], srcpkgname.name)
+        self.assertIs(data['get_absolute_url'], mock.sentinel.url)
+
+
+class ProcessSourcePackageTests(TestCase):
+    def setUp(self):
+        cls = BaseTask.get_task_class_by_name('TestProcessSourcePackage')
+        if not cls:
+            class TestProcessSourcePackage(BaseTask, ProcessSourcePackage):
+                pass
+            cls = TestProcessSourcePackage
+        self.cls = cls
+        self.task = cls()
+        self.pkg1_1 = self.create_source_package(name='pkg1', version='1')
+        self.pkg1_2 = self.create_source_package(name='pkg1', version='2')
+        self.pkg2_1 = self.create_source_package(name='pkg2', version='1')
+        self.all_packages = [self.pkg1_1, self.pkg1_2, self.pkg2_1]
+
+    def test_items_all_returns_source_packages(self):
+        """Returned items are SourcePackage among those we created"""
+        for item in self.task.items_all():
+            self.assertIsInstance(item, SourcePackage)
+            self.assertIn(item, self.all_packages)
+
+    def test_item_describe_has_the_name_and_version_fields(self):
+        data = self.task.item_describe(self.pkg1_1)
+        self.assertEqual(data['name'], 'pkg1')
+        self.assertEqual(data['version'], '1')
