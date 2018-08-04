@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2014 The Distro Tracker Developers
+# Copyright 2014-2018 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -26,6 +26,16 @@ import django.test
 from django.test.signals import setting_changed
 from bs4 import BeautifulSoup as soup
 from django_email_accounts.models import User
+
+from distro_tracker.accounts.models import UserEmail
+from distro_tracker.core.models import (
+    Architecture,
+    BinaryPackageName,
+    ContributorName,
+    SourcePackage,
+    SourcePackageName,
+    Repository,
+)
 
 
 class TempDirsMixin(object):
@@ -118,7 +128,7 @@ class TestCaseHelpersMixin(object):
             os.environ['GNUPGHOME'] = old
 
 
-class DatabaseAssertionsMixin(object):
+class DatabaseMixin(object):
     """
     Database-related assertions injected into distro_tracker's *TestCase
     objects.
@@ -134,26 +144,99 @@ class DatabaseAssertionsMixin(object):
         except obj.__class__.DoesNotExist as error:
             raise AssertionError(error)
 
+    def create_source_package(self, **kwargs):
+        """
+        Creates a source package and any related object requested through the
+        keyword arguments. The following arguments are supported:
+        - name
+        - version
+        - directory
+        - dsc_file_name
+        - maintainer (dict with 'name' and 'email')
+        - uploaders (list of emails)
+        - architectures (list of architectures)
+        - binary_packages (list of package names)
+        - repository (shorthand of a repository)
+        - repositories (list of repositories' shorthand)
+
+        If the shorthand of the requested repository is 'default', then
+        its default field will be set to True.
+
+        :return: the created source package
+        :rtype: :class:`~distro_tracker.core.models.SourcePackage`
+        """
+        name = kwargs.get('name', 'test-package')
+        version = kwargs.get('version', '1')
+
+        fields = {}
+        fields['source_package_name'] = \
+            SourcePackageName.objects.get_or_create(name=name)[0]
+        fields['version'] = version
+        for field in ('directory', 'dsc_file_name'):
+            if field in kwargs:
+                fields[field] = kwargs.get(field)
+
+        if 'maintainer' in kwargs:
+            maintainer = kwargs['maintainer']
+            maintainer_email = UserEmail.objects.get_or_create(
+                email=maintainer['email'])[0]
+            fields['maintainer'] = ContributorName.objects.get_or_create(
+                contributor_email=maintainer_email,
+                name=maintainer.get('name', ''))[0]
+
+        srcpkg = SourcePackage.objects.create(**fields)
+
+        for architecture in kwargs.get('architectures', []):
+            srcpkg.architectures.add(
+                Architecture.objects.get_or_create(name=architecture)[0])
+
+        for uploader in kwargs.get('uploaders', []):
+            contributor = ContributorName.objects.get_or_create(
+                contributor_email=UserEmail.objects.get_or_create(
+                    email=uploader)[0])[0]
+            srcpkg.uploaders.add(contributor)
+
+        for binary in kwargs.get('binary_packages', []):
+            srcpkg.binary_packages.add(
+                BinaryPackageName.objects.get_or_create(name=binary)[0])
+
+        if 'repository' in kwargs:
+            kwargs.setdefault('repositories', [kwargs['repository']])
+        for repo_shorthand in kwargs.get('repositories', []):
+            repository, _ = Repository.objects.get_or_create(
+                shorthand=repo_shorthand,
+                defaults={
+                    'name': 'Test repository %s' % repo_shorthand,
+                    'uri': 'http://localhost/debian',
+                    'suite': repo_shorthand,
+                    'codename': repo_shorthand,
+                    'components': ['main', 'contrib', 'non-free'],
+                    'default': True if repo_shorthand == 'default' else False,
+                }
+            )
+            srcpkg.repository_entries.create(repository=repository)
+
+        srcpkg.save()
+        return srcpkg
+
 
 class SimpleTestCase(TempDirsMixin, TestCaseHelpersMixin,
                      django.test.SimpleTestCase):
     pass
 
 
-class TestCase(TempDirsMixin, TestCaseHelpersMixin, DatabaseAssertionsMixin,
+class TestCase(TempDirsMixin, TestCaseHelpersMixin, DatabaseMixin,
                django.test.TestCase):
     pass
 
 
 class TransactionTestCase(TempDirsMixin, TestCaseHelpersMixin,
-                          DatabaseAssertionsMixin,
-                          django.test.TransactionTestCase):
+                          DatabaseMixin, django.test.TransactionTestCase):
     pass
 
 
 class LiveServerTestCase(TempDirsMixin, TestCaseHelpersMixin,
-                         DatabaseAssertionsMixin,
-                         StaticLiveServerTestCase):
+                         DatabaseMixin, StaticLiveServerTestCase):
     pass
 
 

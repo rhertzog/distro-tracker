@@ -19,7 +19,7 @@ import os.path
 
 from django.conf import settings
 
-from distro_tracker.core.models import PackageName
+from distro_tracker.core.models import PackageName, SourcePackage, Repository
 from distro_tracker.test import (
     SimpleTestCase,
     TempDirsMixin,
@@ -89,7 +89,7 @@ class TestCaseHelpersTests(object):
         self.assertNotIn(template_dir, settings.TEMPLATES[0]['DIRS'])
 
 
-class DatabaseAssertionsMixinTests(object):
+class DatabaseMixinTests(object):
     def assert_fails(self, assert_function, *args):
         with self.assertRaises(AssertionError):
             assert_function(*args)
@@ -106,6 +106,90 @@ class DatabaseAssertionsMixinTests(object):
         sample_object.delete()
         self.assert_fails(self.assertDoesExist, sample_object)
 
+    def test_create_source_package_no_args(self):
+        srcpkg = self.create_source_package()
+        self.assertIsInstance(srcpkg, SourcePackage)
+        self.assertEqual(srcpkg.name, 'test-package')
+        self.assertEqual(srcpkg.version, '1')
+
+    def test_create_source_package_is_saved(self):
+        srcpkg = self.create_source_package()
+        self.assertIsNotNone(srcpkg.id)
+
+    def test_create_source_package_with_fields(self):
+        srcpkg = self.create_source_package(
+            name='dummy', version='2', directory='foo/bar',
+            dsc_file_name='dummy_2.dsc'
+        )
+        self.assertEqual(srcpkg.name, 'dummy')
+        self.assertEqual(srcpkg.version, '2')
+        self.assertEqual(srcpkg.directory, 'foo/bar')
+        self.assertEqual(srcpkg.dsc_file_name, 'dummy_2.dsc')
+
+    def test_create_source_package_with_maintainer(self):
+        maintainer = {
+            'email': 'foo@example.net',
+            'name': 'Foo Bar',
+        }
+        srcpkg = self.create_source_package(maintainer=maintainer)
+        self.assertEqual(srcpkg.maintainer.contributor_email.email,
+                         maintainer['email'])
+        self.assertEqual(srcpkg.maintainer.name, maintainer['name'])
+
+    def test_create_source_package_with_uploaders(self):
+        uploaders = ['foo@example.net', 'bar@example.net']
+        srcpkg = self.create_source_package(uploaders=uploaders)
+        self.assertSetEqual(
+            set(uploaders),
+            set(srcpkg.uploaders.values_list('contributor_email__email',
+                                             flat=True))
+        )
+
+    def test_create_source_package_with_architectures(self):
+        architectures = ['amd64', 'i386']
+        srcpkg = self.create_source_package(architectures=architectures)
+        self.assertSetEqual(
+            set(architectures),
+            set(srcpkg.architectures.values_list('name', flat=True))
+        )
+
+    def test_create_source_package_with_binary_packages(self):
+        binary_packages = ['pkg1', 'pkg2']
+        srcpkg = self.create_source_package(binary_packages=binary_packages)
+        self.assertSetEqual(
+            set(binary_packages),
+            set(srcpkg.binary_packages.values_list('name', flat=True))
+        )
+
+    def test_create_source_package_with_repositories(self):
+        repositories = ['default', 'other']
+        srcpkg = self.create_source_package(repositories=repositories)
+        self.assertSetEqual(
+            set(repositories),
+            set(srcpkg.repository_entries.values_list('repository__shorthand',
+                                                      flat=True))
+        )
+
+    def test_create_source_package_with_repository(self):
+        srcpkg = self.create_source_package(repository='foo')
+        srcpkg.repository_entries.get(repository__shorthand='foo')
+
+    def test_create_source_package_repository_default_values(self):
+        self.create_source_package(repository='default')
+
+        repository = Repository.objects.get(shorthand='default')
+        self.assertListEqual(list(repository.components),
+                             ['main', 'contrib', 'non-free'])
+        self.assertEqual(repository.suite, 'default')
+        self.assertEqual(repository.codename, 'default')
+        self.assertTrue(repository.default)
+
+    def test_create_source_package_repository_non_default_repository(self):
+        self.create_source_package(repository='foobar')
+
+        repository = Repository.objects.get(shorthand='foobar')
+        self.assertFalse(repository.default)
+
 
 class TempDirsOnSimpleTestCase(TempDirsTests, TestCaseHelpersTests,
                                SimpleTestCase):
@@ -113,11 +197,10 @@ class TempDirsOnSimpleTestCase(TempDirsTests, TestCaseHelpersTests,
 
 
 class TempDirsOnTestCase(TempDirsTests, TestCaseHelpersTests,
-                         DatabaseAssertionsMixinTests, TestCase):
+                         DatabaseMixinTests, TestCase):
     pass
 
 
 class TempDirsOnTransactionTestCase(TempDirsTests, TestCaseHelpersTests,
-                                    DatabaseAssertionsMixinTests,
-                                    TransactionTestCase):
+                                    DatabaseMixinTests, TransactionTestCase):
     pass
