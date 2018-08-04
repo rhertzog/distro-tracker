@@ -13,7 +13,10 @@ Mixins to combine to create powerful tasks.
 """
 import logging
 
-from distro_tracker.core.models import SourcePackage
+from distro_tracker.core.models import (
+    SourcePackage,
+    SourcePackageRepositoryEntry,
+)
 
 logger = logging.getLogger('distro_tracker.tasks')
 
@@ -199,5 +202,30 @@ class ProcessModel(ProcessItems):
 
 
 class ProcessSourcePackage(ProcessModel):
+    """
+    Process all :class:`~distro_tracker.core.models.SourcePackage` objects.
+    """
     model = SourcePackage
     fields_to_save = ('name', 'version')
+
+
+class ProcessSrcRepoEntry(ProcessModel):
+    """
+    Process all
+    :class:`~distro_tracker.core.models.SourcePackageRepositoryEntry`.
+    """
+
+    model = SourcePackageRepositoryEntry
+
+    def item_describe(self, item):
+        data = super().item_describe(item)
+        data['name'] = item.source_package.name
+        data['version'] = item.source_package.version
+        data['repository'] = item.repository.shorthand
+        return data
+
+
+class ProcessSrcRepoEntryInDefaultRepository(ProcessSrcRepoEntry):
+
+    def items_extend_queryset(self, queryset):
+        return queryset.filter(repository__default=True)

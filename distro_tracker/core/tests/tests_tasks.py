@@ -23,6 +23,7 @@ from django.test.utils import override_settings
 from distro_tracker.core.models import (
     SourcePackage,
     SourcePackageName,
+    SourcePackageRepositoryEntry,
     TaskData,
 )
 from distro_tracker.core.tasks.base import (
@@ -36,6 +37,8 @@ from distro_tracker.core.tasks.mixins import (
     ProcessItems,
     ProcessModel,
     ProcessSourcePackage,
+    ProcessSrcRepoEntry,
+    ProcessSrcRepoEntryInDefaultRepository,
 )
 from distro_tracker.core.tasks.schedulers import Scheduler, IntervalScheduler
 from distro_tracker.core.utils import now
@@ -817,3 +820,60 @@ class ProcessSourcePackageTests(TestCase):
         data = self.task.item_describe(self.pkg1_1)
         self.assertEqual(data['name'], 'pkg1')
         self.assertEqual(data['version'], '1')
+
+
+class ProcessSrcRepoEntryTests(TestCase):
+    def setUp(self):
+        cls = BaseTask.get_task_class_by_name('TestProcessSrcRepoEntry')
+        if not cls:
+            class TestProcessSrcRepoEntry(BaseTask, ProcessSrcRepoEntry):
+                pass
+            cls = TestProcessSrcRepoEntry
+        self.cls = cls
+        self.task = cls()
+        self.pkg1_1 = self.create_source_package(name='pkg1', version='1',
+                                                 repository='default')
+        self.pkg1_2 = self.create_source_package(name='pkg1', version='2',
+                                                 repository='other')
+        self.pkg2_1 = self.create_source_package(name='pkg2', version='1',
+                                                 repository='default')
+        self.all_packages = [self.pkg1_1, self.pkg1_2, self.pkg2_1]
+
+    def test_items_all_returns_source_package_repository_entries(self):
+        """
+        Returned items are SourcePackageRepositoryEntry among those we created.
+        """
+        for item in self.task.items_all():
+            self.assertIsInstance(item, SourcePackageRepositoryEntry)
+            self.assertIn(item.source_package, self.all_packages)
+
+    def test_item_describe_has_the_desired_fields(self):
+        repo_entry = self.pkg1_1.repository_entries.first()
+        data = self.task.item_describe(repo_entry)
+        self.assertEqual(data['name'], repo_entry.source_package.name)
+        self.assertEqual(data['version'], repo_entry.source_package.version)
+        self.assertEqual(data['repository'], repo_entry.repository.shorthand)
+
+
+class ProcessSrcRepoEntryInDefaultRepositoryTests(TestCase):
+    def setUp(self):
+        cls = BaseTask.get_task_class_by_name(
+            'TestProcessSrcRepoEntryInDefaultRepository')
+        if not cls:
+            class TestProcessSrcRepoEntryInDefaultRepository(
+                    BaseTask, ProcessSrcRepoEntryInDefaultRepository):
+                pass
+            cls = TestProcessSrcRepoEntryInDefaultRepository
+        self.cls = cls
+        self.task = cls()
+        self.pkg_default = self.create_source_package(name='pkg-default',
+                                                      repository='default')
+        self.pkg_other = self.create_source_package(name='pkg-other',
+                                                    repository='other')
+        self.pkg_both = self.create_source_package(
+            name='pkg-both', repositories=['default', 'other'])
+
+    def test_items_all_contains_only_entries_from_default_repository(self):
+        for item in self.task.items_all():
+            self.assertNotEqual(item.source_package, self.pkg_other)
+            self.assertEqual(item.repository.shorthand, 'default')
