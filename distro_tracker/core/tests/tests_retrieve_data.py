@@ -45,7 +45,7 @@ from distro_tracker.core.retrieve_data import (
 )
 from distro_tracker.core.tasks import BaseTask, Event, Job, JobState, run_task
 from distro_tracker.test import TestCase
-from distro_tracker.test.utils import create_source_package, set_mock_response
+from distro_tracker.test.utils import set_mock_response
 
 
 @override_settings(
@@ -555,27 +555,27 @@ class RetrieveSourcesInformationTest(TestCase):
         """
         self.set_mock_sources(mock_update, 'Sources-minimal-1')
 
-        src_pkg = create_source_package({
-            'name': 'dummy-package',
-            'version': '0.1',
-            'maintainer': {
+        src_pkg = self.create_source_package(
+            name='dummy-package',
+            version='0.1',
+            maintainer={
                 'name': 'Maintainer',
                 'email': 'maintainer@domain.com'
             },
-            'architectures': ['amd64', 'all'],
-        })
+            architectures=['amd64', 'all'],
+        )
         self.repository.add_source_package(src_pkg)
 
-        src_pkg2 = create_source_package({
-            'name': 'src-pkg',
-            'binary_packages': ['dummy-package-binary', 'other-package'],
-            'version': '2.1',
-            'maintainer': {
+        src_pkg2 = self.create_source_package(
+            name='src-pkg',
+            binary_packages=['dummy-package-binary', 'other-package'],
+            version='2.1',
+            maintainer={
                 'name': 'Maintainer',
                 'email': 'maintainer@domain.com'
             },
-            'architectures': ['amd64', 'all'],
-        })
+            architectures=['amd64', 'all'],
+        )
         self.repository.add_source_package(src_pkg2)
         # Sanity check: the binary package now exists
         self.assertEqual(BinaryPackageName.objects.count(), 2)
@@ -632,27 +632,27 @@ class RetrieveSourcesInformationTest(TestCase):
         """
         self.set_mock_sources(mock_update, 'Sources-minimal')
 
-        src_pkg = create_source_package({
-            'name': 'dummy-package',
-            'version': '0.1',
-            'maintainer': {
+        src_pkg = self.create_source_package(
+            name='dummy-package',
+            version='0.1',
+            maintainer={
                 'name': 'Maintainer',
                 'email': 'maintainer@domain.com'
             },
-            'architectures': ['amd64', 'all'],
-        })
+            architectures=['amd64', 'all'],
+        )
         self.repository.add_source_package(src_pkg)
 
-        src_pkg2 = create_source_package({
-            'name': 'src-pkg',
-            'binary_packages': ['dummy-package-binary'],
-            'version': '2.1',
-            'maintainer': {
+        src_pkg2 = self.create_source_package(
+            name='src-pkg',
+            binary_packages=['dummy-package-binary'],
+            version='2.1',
+            maintainer={
                 'name': 'Maintainer',
                 'email': 'maintainer@domain.com'
             },
-            'architectures': ['amd64', 'all'],
-        })
+            architectures=['amd64', 'all'],
+        )
         self.repository.add_source_package(src_pkg2)
         # Sanity check: the binary package now exists
         self.assertEqual(BinaryPackageName.objects.count(), 1)
@@ -697,16 +697,16 @@ class RetrieveSourcesInformationTest(TestCase):
         Test the scenario when new data removes an existing binary package.
         """
         self.set_mock_sources(mock_update, 'Sources-minimal')
-        src_pkg = create_source_package({
-            'name': 'dummy-package',
-            'binary_packages': ['some-package'],
-            'version': '0.1',
-            'maintainer': {
+        src_pkg = self.create_source_package(
+            name='dummy-package',
+            binary_packages=['some-package'],
+            version='0.1',
+            maintainer={
                 'name': 'Maintainer',
                 'email': 'maintainer@domain.com'
             },
-            'architectures': ['amd64', 'all'],
-        })
+            architectures=['amd64', 'all'],
+        )
         self.repository.add_source_package(src_pkg)
         # Sanity check -- the binary package exists.
         self.assert_package_by_name_in(
@@ -749,17 +749,17 @@ class RetrieveSourcesInformationTest(TestCase):
         updated. For example, only the main component of a repository is
         updated whereas contrib and non-free were not.
         """
-        src_pkg = create_source_package({
-            'name': 'dummy-package',
-            'binary_packages': ['dummy-package-binary'],
-            'version': '1.0.0',
-            'maintainer': {
+        src_pkg = self.create_source_package(
+            name='dummy-package',
+            binary_packages=['dummy-package-binary'],
+            version='1.0.0',
+            maintainer={
                 'name': 'Maintainer',
                 'email': 'maintainer@domain.com'
             },
-            'architectures': ['amd64', 'all'],
-            'dsc_file_name': 'file.dsc'
-        })
+            architectures=['amd64', 'all'],
+            dsc_file_name='file.dsc'
+        )
         self.repository.add_source_package(src_pkg)
         # Updated sources - only 1 file
         self.set_mock_sources(mock_update_repositories, 'Sources')
@@ -808,17 +808,17 @@ class RetrieveSourcesInformationTest(TestCase):
         versions = ['1.0.0', '2.0.0']
 
         src_pkgs = [
-            create_source_package({
-                'name': src_name,
-                'binary_packages': ['dummy-package-binary'],
-                'version': version,
-                'maintainer': {
+            self.create_source_package(
+                name=src_name,
+                binary_packages=['dummy-package-binary'],
+                version=version,
+                maintainer={
                     'name': 'Maintainer',
                     'email': 'maintainer@domain.com'
                 },
-                'architectures': ['amd64', 'all'],
-                'dsc_file_name': 'file.dsc'
-            })
+                architectures=['amd64', 'all'],
+                dsc_file_name='file.dsc'
+            )
             for version in versions
         ]
         for src_pkg in src_pkgs:
@@ -967,17 +967,17 @@ class RetrieveSourcesInformationTest(TestCase):
         the updated ``Packages`` file no longer contains it.
         """
         binary_name = 'dummy-package-binary'
-        source_package = create_source_package({
-            'name': 'dummy-package',
-            'binary_packages': [binary_name],
-            'version': '1.0.0',
-            'maintainer': {
+        source_package = self.create_source_package(
+            name='dummy-package',
+            binary_packages=[binary_name],
+            version='1.0.0',
+            maintainer={
                 'name': 'Maintainer',
                 'email': 'maintainer@domain.com'
             },
-            'architectures': ['amd64', 'all'],
-            'dsc_file_name': 'file.dsc'
-        })
+            architectures=['amd64', 'all'],
+            dsc_file_name='file.dsc'
+        )
         # Add a binary package to the repository
         bin_name = BinaryPackageName.objects.all()[0]
         bin_pkg = BinaryPackage.objects.create(
@@ -1023,10 +1023,10 @@ class UpdateVersionInformationTest(TestCase):
     def setUp(self):
         self.repo1 = Repository.objects.create(
             name='repo1', shorthand='repo1')
-        self.package = create_source_package({
-            'name': 'dummy-package',
-            'version': '1.0.0',
-        })
+        self.package = self.create_source_package(
+            name='dummy-package',
+            version='1.0.0',
+        )
         self.repo1.add_source_package(self.package)
         self.update = UpdateVersionInformation()
 
@@ -1061,15 +1061,15 @@ class UpdateTeamPackagesTaskTests(TestCase):
             'uploader1@domain.com',
             'uploader2@domain.com',
         ]
-        self.package = create_source_package({
-            'name': 'dummy-package',
-            'version': '1.0.0',
-            'maintainer': {
+        self.package = self.create_source_package(
+            name='dummy-package',
+            version='1.0.0',
+            maintainer={
                 'name': 'Maintainer',
                 'email': self.maintainer_email,
             },
-            'uploaders': self.uploaders,
-        })
+            uploaders=self.uploaders,
+        )
         self.repository = Repository.objects.create(
             name='repo', shorthand='repo', default=True)
         self.non_default_repository = Repository.objects.create(
@@ -1138,14 +1138,14 @@ class UpdateTeamPackagesTaskTests(TestCase):
             self.team.slug,
             settings.DISTRO_TRACKER_FQDN
         )
-        self.package = create_source_package({
-            'name': 'team-package',
-            'version': '1.0.0',
-            'maintainer': {
+        self.package = self.create_source_package(
+            name='team-package',
+            version='1.0.0',
+            maintainer={
                 'name': 'Maintainer',
                 'email': team_email,
             },
-        })
+        )
         self.repository.add_source_package(self.package)
         self.add_mock_events('new-source-package-version-in-repository', {
             'name': self.package.name,
@@ -1167,14 +1167,14 @@ class UpdateTeamPackagesTaskTests(TestCase):
         team+<slug>@).
         """
         team_email = "team@{}".format(settings.DISTRO_TRACKER_FQDN)
-        self.package = create_source_package({
-            'name': 'team-package',
-            'version': '1.0.0',
-            'maintainer': {
+        self.package = self.create_source_package(
+            name='team-package',
+            version='1.0.0',
+            maintainer={
                 'name': 'Maintainer',
                 'email': team_email,
             },
-        })
+        )
         self.repository.add_source_package(self.package)
         self.add_mock_events('new-source-package-version-in-repository', {
             'name': self.package.name,
@@ -1263,27 +1263,27 @@ class UpdateTeamPackagesTaskTests(TestCase):
         """
         team_maintainer_packages = [
             self.package,
-            create_source_package({
-                'name': 'other-package',
-                'version': '1.0.0',
-                'maintainer': {
+            self.create_source_package(
+                name='other-package',
+                version='1.0.0',
+                maintainer={
                     'name': 'Maintainer',
                     'email': self.maintainer_email,
                 },
-                'uploaders': self.uploaders,
-            })
+                uploaders=self.uploaders,
+            )
         ]
         unknown_maintainer = 'unknown@domain.com'
         unknown_maintainer_packages = [
-            create_source_package({
-                'name': 'last-package',
-                'version': '1.0.0',
-                'maintainer': {
+            self.create_source_package(
+                name='last-package',
+                version='1.0.0',
+                maintainer={
                     'name': 'Maintainer',
                     'email': unknown_maintainer,
                 },
-                'uploaders': self.uploaders,
-            })
+                uploaders=self.uploaders,
+            )
         ]
         # Add them all to the default repository
         for source_package in \
@@ -1315,15 +1315,15 @@ class UpdatePackageGeneralInformationTest(TestCase):
     """
 
     def setUp(self):
-        self.srcpkg = create_source_package({
-            'name': 'dummy-package',
-            'version': '1.0.0',
-            'maintainer': {
+        self.srcpkg = self.create_source_package(
+            name='dummy-package',
+            version='1.0.0',
+            maintainer={
                 'name': 'John Doe',
                 'email': 'jdoe@debian.org'
             },
-            'architectures': ['i386', 'amd64'],
-        })
+            architectures=['i386', 'amd64'],
+        )
         self.component = 'main'
         self.repo1 = Repository.objects.create(name='repo1', shorthand='repo1')
         SourcePackageRepositoryEntry.objects.create(

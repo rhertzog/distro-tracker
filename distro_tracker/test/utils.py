@@ -5,24 +5,15 @@
 # at https://deb.li/DTAuthors
 #
 # This file is part of Distro Tracker. It is subject to the license terms
+# in the LICENSE file found in the top-level directory of this
+# distribution and at https://deb.li/DTLicense. No part of Distro Tracker,
+# including this file, may be copied, modified, propagated, or distributed
+# except according to the terms contained in the LICENSE file.
 
 
 import contextlib
 import shutil
 import tempfile
-
-# in the LICENSE file found in the top-level directory of this
-# distribution and at https://deb.li/DTLicense. No part of Distro Tracker,
-from distro_tracker.accounts.models import UserEmail
-# including this file, may be copied, modified, propagated, or distributed
-# except according to the terms contained in the LICENSE file.
-from distro_tracker.core.models import (
-    Architecture,
-    BinaryPackageName,
-    ContributorName,
-    SourcePackage,
-    SourcePackageName
-)
 
 
 @contextlib.contextmanager
@@ -36,55 +27,6 @@ def make_temp_directory(suffix=''):
         yield temp_dir_name
     finally:
         shutil.rmtree(temp_dir_name)
-
-
-def create_source_package(arguments):
-    """
-    Creates and returns a new
-    :class:`SourcePackage <distro_tracker.core.models.SourcePackage>`
-    instance based on the parameters given in the arguments.
-
-    It takes care to automatically create any missing maintainers, package
-    names, etc.
-    """
-    kwargs = {}
-    if 'maintainer' in arguments:
-        maintainer = arguments['maintainer']
-        maintainer_email = UserEmail.objects.get_or_create(
-            email=maintainer['email'])[0]
-        kwargs['maintainer'] = ContributorName.objects.get_or_create(
-            contributor_email=maintainer_email,
-            name=maintainer.get('name', ''))[0]
-    if 'name' in arguments:
-        name = arguments['name']
-        kwargs['source_package_name'] = (
-            SourcePackageName.objects.get_or_create(name=name)[0])
-    for arg in ('version', 'directory', 'dsc_file_name'):
-        if arg in arguments:
-            kwargs[arg] = arguments[arg]
-
-    src_pkg = SourcePackage.objects.create(**kwargs)
-
-    # Now add m2m fields
-    if 'architectures' in arguments:
-        architectures = arguments['architectures']
-        src_pkg.architectures.set(
-            Architecture.objects.filter(name__in=architectures))
-    if 'binary_packages' in arguments:
-        binaries = []
-        for binary in arguments['binary_packages']:
-            binaries.append(
-                BinaryPackageName.objects.get_or_create(name=binary)[0])
-        src_pkg.binary_packages.set(binaries)
-    if 'uploaders' in arguments:
-        for uploader in arguments['uploaders']:
-            contributor = ContributorName.objects.get_or_create(
-                contributor_email=UserEmail.objects.get_or_create(
-                    email=uploader)[0])[0]
-            src_pkg.uploaders.add(contributor)
-
-    src_pkg.save()
-    return src_pkg
 
 
 def set_mock_response(mock_requests, text="", headers=None, status_code=200):

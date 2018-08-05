@@ -55,7 +55,6 @@ from distro_tracker.core.models import (
 from distro_tracker.core.utils import message_from_bytes
 from distro_tracker.core.utils.email_messages import get_decoded_message_payload
 from distro_tracker.test import TestCase
-from distro_tracker.test.utils import create_source_package
 
 
 class SubscriptionManagerTest(TestCase):
@@ -1012,17 +1011,17 @@ class SourcePackageTests(TestCase):
         Tests retrieving the URL of the package's directory from the entry.
         """
         architectures = ['amd64', 'all']
-        src_pkg = create_source_package({
-            'name': 'package-with-directory',
-            'binary_packages': ['binary-package'],
-            'version': '0.1',
-            'maintainer': {
+        src_pkg = self.create_source_package(
+            name='package-with-directory',
+            binary_packages=['binary-package'],
+            version='0.1',
+            maintainer={
                 'name': 'Maintainer',
                 'email': 'maintainer@domain.com'
             },
-            'architectures': architectures,
-            'directory': 'pool/path/to/dir',
-        })
+            architectures=architectures,
+            directory='pool/path/to/dir',
+        )
         entry = self.repository.add_source_package(src_pkg)
 
         self.assertEqual(
@@ -1044,18 +1043,18 @@ class SourcePackageTests(TestCase):
         Tests retrieving the URL of the package's .dsc file given in the entry.
         """
         architectures = ['amd64', 'all']
-        src_pkg = create_source_package({
-            'name': 'package-with-dsc-file',
-            'binary_packages': ['binary-package'],
-            'version': '0.1',
-            'maintainer': {
+        src_pkg = self.create_source_package(
+            name='package-with-dsc-file',
+            binary_packages=['binary-package'],
+            version='0.1',
+            maintainer={
                 'name': 'Maintainer',
                 'email': 'maintainer@domain.com'
             },
-            'architectures': architectures,
-            'directory': 'pool/path/to/dir',
-            'dsc_file_name': 'file.dsc',
-        })
+            architectures=architectures,
+            directory='pool/path/to/dir',
+            dsc_file_name='file.dsc',
+        )
         entry = self.repository.add_source_package(src_pkg)
 
         self.assertEqual(
