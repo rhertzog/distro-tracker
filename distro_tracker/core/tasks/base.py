@@ -21,7 +21,10 @@ from django.conf import settings
 from distro_tracker.core.models import TaskData
 from distro_tracker.core.tasks.schedulers import Scheduler
 from distro_tracker.core.utils import now
-from distro_tracker.core.utils.misc import call_methods_with_prefix
+from distro_tracker.core.utils.misc import (
+    call_methods_with_prefix,
+    get_data_checksum,
+)
 from distro_tracker.core.utils.plugins import PluginRegistry
 
 logger = logging.getLogger('distro_tracker.tasks')
@@ -82,6 +85,7 @@ class BaseTask(metaclass=PluginRegistry):
 
     def __init__(self, *args, **kwargs):
         self.scheduler = self.Scheduler(self)
+        self.data_is_modified = False
         self.initialize(*args, **kwargs)
 
     def initialize(self, *args, **kwargs):
@@ -103,7 +107,16 @@ class BaseTask(metaclass=PluginRegistry):
         """
         if not hasattr(self, '_data'):
             self.refresh_data()
+        if self.data_is_modified is False:
+            self.data_is_modified = None
         return self._data
+
+    def data_mark_modified(self):
+        """
+        Record the fact that the data dictionnary has been modified and will
+        have to be saved.
+        """
+        self.data_is_modified = True
 
     @property
     def task_data(self):
@@ -114,7 +127,7 @@ class BaseTask(metaclass=PluginRegistry):
             self.refresh_data()
         return self._task_data
 
-    def save_data(self):
+    def save_data(self, **kwargs):
         """
         Save the :attr:`.data` attribute in the corresponding
         :class:`~distro_tracker.core.models.TaskData` model in a way
@@ -123,10 +136,12 @@ class BaseTask(metaclass=PluginRegistry):
         :raises BaseTask.ConcurrentUpdateError: when the update is not possible
             without risking to lose another update that happened in parallel.
         """
-        if not self._task_data.versioned_update(data=self._data):
+        kwargs['data'] = self._data
+        if not self._task_data.versioned_update(**kwargs):
             raise self.ConcurrentDataUpdate(
                 'Data from task {} have been updated in parallel'.format(
                     self.task_name()))
+        self.data_is_modified = False
 
     def refresh_data(self):
         """
@@ -229,6 +244,13 @@ class BaseTask(metaclass=PluginRegistry):
             call_methods_with_prefix(self, 'execute_')
         finally:
             self.update_field('run_lock', None)
+
+        if self.data_is_modified is True:
+            self.save_data()
+        elif self.data_is_modified is None:
+            checksum = get_data_checksum(self._data)
+            if checksum != self.task_data.data_checksum:
+                self.save_data(data_checksum=checksum)
 
         self.update_last_completed_run(timestamp)
         self.update_task_is_pending(False)

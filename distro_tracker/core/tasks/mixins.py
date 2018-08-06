@@ -61,6 +61,7 @@ class ProcessItems(object):
         processed = self.data.setdefault('processed', {})
         for item in args:
             processed[self.item_to_key(item)] = self.item_describe(item)
+        self.data_mark_modified()
 
     def item_needs_processing(self, item):
         """

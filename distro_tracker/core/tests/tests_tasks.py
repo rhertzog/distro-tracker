@@ -153,6 +153,40 @@ class BaseTaskTests(TestCase):
         with self.assertRaises(BaseTask.ConcurrentDataUpdate):
             self.task.save_data()
 
+    def test_task_save_data_forwards_kwargs(self):
+        task_data = self.init_task_data()
+        self.task.data.update(self.sample_data)
+
+        self.task.save_data(data_checksum='fakechecksum')
+
+        task_data.refresh_from_db()
+        self.assertEqual(task_data.version, 1)
+        self.assertEqual(task_data.data_checksum, 'fakechecksum')
+
+    # task.data_is_modified
+    def test_data_is_modified_defaults_to_false(self):
+        self.assertIs(self.task.data_is_modified, False)
+
+    def test_data_is_modified_is_none_after_data_access(self):
+        self.task.data
+        self.assertIsNone(self.task.data_is_modified)
+
+    def test_data_is_modified_is_still_true_after_data_access(self):
+        self.task.data_is_modified = True
+        self.task.data
+        self.assertIs(self.task.data_is_modified, True)
+
+    def test_data_is_modified_is_reset_after_save_data(self):
+        self.task.refresh_data()
+        self.task.data_is_modified = True
+        self.task.save_data()
+        self.assertIs(self.task.data_is_modified, False)
+
+    def test_data_mark_modified(self):
+        self.assertIs(self.task.data_is_modified, False)
+        self.task.data_mark_modified()
+        self.assertIs(self.task.data_is_modified, True)
+
     # task.log(...)
     @mock.patch('distro_tracker.core.tasks.base.logger')
     def test_task_log(self, logger):
@@ -358,6 +392,40 @@ class BaseTaskTests(TestCase):
 
         with self.assertRaises(RuntimeError):
             self.task.execute()
+
+    def test_task_execute_does_not_call_save_data_if_not_modified(self):
+        self.task.refresh_data()
+        self.task.data_is_modified = False
+        with mock.patch.object(self.task, 'save_data') as mock_save_data:
+            self.task.execute()
+            mock_save_data.assert_not_called()
+
+    def test_task_execute_does_call_save_data_if_modified(self):
+        self.task.refresh_data()
+        self.task.data_is_modified = True
+        with mock.patch.object(self.task, 'save_data') as mock_save_data:
+            self.task.execute()
+            mock_save_data.assert_called_once_with()
+
+    def test_task_execute_does_call_save_data_if_needed(self):
+        self.task.data['foo'] = 'bar'
+        self.task.save_data()
+        self.task.data['foo2'] = 'bar2'  # Data has been modified
+        self.assertIsNone(self.task.data_is_modified)
+
+        with mock.patch.object(self.task, 'save_data') as mock_save_data:
+            self.task.execute()
+            mock_save_data.assert_called_once_with(data_checksum=mock.ANY)
+
+    def test_task_execute_does_not_call_save_data_if_not_needed(self):
+        self.task.data['foo'] = 'bar'
+        self.task.save_data()
+        self.task.data['foo']  # Data has not been modified
+        self.assertIsNone(self.task.data_is_modified)
+
+        with mock.patch.object(self.task, 'save_data') as mock_save_data:
+            self.task.execute()
+            mock_save_data.assert_not_called()
 
 
 class SchedulerTests(TestCase):
@@ -578,11 +646,15 @@ class TaskUtilsTests(TestCase):
         self.update_repositories_task.execute.assert_not_called()
 
 
-class ProcessBaseTests(TestCase):
+class ProcessItemsTests(TestCase):
     def setUp(self):
-        self.task = ProcessItems()
-        self.task.data = {}
-        self.task.force_update = False
+        cls = BaseTask.get_task_class_by_name('TestProcessItems')
+        if not cls:
+            class TestProcessItems(BaseTask, ProcessItems):
+                pass
+            cls = TestProcessItems
+        self.cls = cls
+        self.task = cls()
 
     def patch_item_describe(self):
         def item_describe(item):
@@ -636,6 +708,11 @@ class ProcessBaseTests(TestCase):
 
         self.assertIn('key1', self.task.data['processed'])
         self.assertIn('key2', self.task.data['processed'])
+
+    def test_item_mark_processed_sets_modified_flag(self):
+        with mock.patch.object(self.task, 'data_mark_modified') as mocked:
+            self.task.item_mark_processed(self.get_item('foo'))
+            mocked.assert_called_once_with()
 
     def test_item_needs_processing(self):
         """An unknown item needs to be processed."""
