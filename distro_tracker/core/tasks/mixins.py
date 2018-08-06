@@ -27,6 +27,11 @@ class ProcessItems(object):
     items that the task should process.
     """
 
+    def __init__(self):
+        self.register_event_handler('execute-finished',
+                                    self.items_cleanup_processed_list)
+        super().__init__()
+
     def item_to_key(self, item):
         """
         Converts an item to process into a unique string representation

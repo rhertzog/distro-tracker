@@ -316,6 +316,41 @@ class BaseTaskTests(TestCase):
             self.assertTrue(result)
             mocked.assert_not_called()
 
+    # task.handle_event()
+    def test_task_register_and_handle_event(self):
+        args = ['a']
+        kwargs = {'foo': 'bar'}
+        event_handler = mock.MagicMock()
+
+        self.task.register_event_handler('event-name', event_handler)
+        event_handler.assert_not_called()
+
+        self.task.handle_event('event-name', *args, **kwargs)
+        event_handler.assert_called_with(*args, **kwargs)
+
+    def test_task_handle_unknown_event_without_handler(self):
+        self.task.handle_event('event-name')
+
+    def test_task_register_and_handle_event_multiple_handlers(self):
+        event_handler1 = mock.MagicMock()
+        event_handler2 = mock.MagicMock()
+        self.task.register_event_handler('event-name', event_handler1)
+        self.task.register_event_handler('event-name', event_handler2)
+
+        self.task.handle_event('event-name')
+
+        event_handler1.assert_called_once_with()
+        event_handler2.assert_called_once_with()
+
+    def test_task_register_same_handler_multiple_times(self):
+        event_handler = mock.MagicMock()
+        self.task.register_event_handler('event-name', event_handler)
+        self.task.register_event_handler('event-name', event_handler)
+
+        self.task.handle_event('event-name')
+
+        self.assertEqual(event_handler.call_count, 1)
+
     # task.execute()
     def test_task_execute_calls_execute_sub_methods(self):
         self.task.execute_init = mock.MagicMock()
@@ -426,6 +461,27 @@ class BaseTaskTests(TestCase):
         with mock.patch.object(self.task, 'save_data') as mock_save_data:
             self.task.execute()
             mock_save_data.assert_not_called()
+
+    def test_task_execute_calls_handle_event(self):
+        with mock.patch.object(self.task, 'handle_event') as mocked:
+            self.task.execute()
+            self.assertListEqual(
+                mocked.mock_calls,
+                [mock.call('execute-started'), mock.call('execute-finished')]
+            )
+
+    def test_task_execute_calls_handle_event_on_failure(self):
+        self.setup_execute_for_failure()
+
+        with mock.patch.object(self.task, 'handle_event') as mocked:
+            try:
+                self.task.execute()
+            except Exception:
+                pass
+            self.assertListEqual(
+                mocked.mock_calls,
+                [mock.call('execute-started'), mock.call('execute-failed')]
+            )
 
 
 class SchedulerTests(TestCase):
@@ -563,17 +619,19 @@ class TaskUtilsTests(TestCase):
 
         self.assertNotIn('BaseTask', result)
 
-    @mock.patch('distro_tracker.core.tasks.base.BaseTask')
+    @mock.patch('distro_tracker.core.tasks.base.BaseTask.plugins',
+                new_callable=mock.PropertyMock)
     def test_build_all_tasks_includes_tasks_from_BaseTask_plugins(
-            self, mock_basetask):
-        mock_basetask.plugins = [TestTask]
+            self, mock_plugins):
+        mock_plugins.return_value = [TestTask]
         result = build_all_tasks()
         self.assertListEqual(['TestTask'], list(result.keys()))
 
-    @mock.patch('distro_tracker.core.tasks.base.BaseTask')
+    @mock.patch('distro_tracker.core.tasks.base.BaseTask.plugins',
+                new_callable=mock.PropertyMock)
     def test_build_all_tasks_fails_when_two_tasks_have_the_same_name(
-            self, mock_basetask):
-        mock_basetask.plugins = [TestTask, TestTask]
+            self, mock_plugins):
+        mock_plugins.return_value = [TestTask, TestTask]
         with self.assertRaises(ValueError):
             build_all_tasks()
 
@@ -814,6 +872,17 @@ class ProcessItemsTests(TestCase):
         # task.item_needs_processing()
         self.assertFalse(self.task.item_needs_processing(self.unused_item))
         self.task.items_cleanup_processed_list()
+        self.assertTrue(self.task.item_needs_processing(self.unused_item))
+
+    def test_execute_does_cleanup_processed_list(self):
+        self.patch_items_all()
+        self.unused_item = self.get_item('unused')
+        self.task.item_mark_processed(self.unused_item)
+
+        # Check the removal from the processed list through return value of
+        # task.item_needs_processing()
+        self.assertFalse(self.task.item_needs_processing(self.unused_item))
+        self.task.execute()
         self.assertTrue(self.task.item_needs_processing(self.unused_item))
 
 

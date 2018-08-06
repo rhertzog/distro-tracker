@@ -86,16 +86,26 @@ class BaseTask(metaclass=PluginRegistry):
     def __init__(self, *args, **kwargs):
         self.scheduler = self.Scheduler(self)
         self.data_is_modified = False
+        self.event_handlers = {}
         self.initialize(*args, **kwargs)
+        super().__init__()
 
     def initialize(self, *args, **kwargs):
         """
         Process arguments passed to :meth:`__init__()`. Can be overriden
         to do other runtime preparation.
+
+        For proper cooperation, you should usually call the method on the
+        object returned by ``super()`` (if it exists).
         """
         self.force_update = kwargs.get('force_update', False)
         self.fake_update = kwargs.get('fake_update', False)
         self.parameters = kwargs
+
+        # Call other implementations of the initialize method
+        super_object = super()
+        if super_object and hasattr(super_object, 'initialize'):
+            super_object.initialize(*args, **kwargs)
 
     @property
     def data(self):
@@ -241,7 +251,12 @@ class BaseTask(metaclass=PluginRegistry):
         try:
             timestamp = now()
             self.update_last_attempted_run(timestamp)
+            self.handle_event('execute-started')
             call_methods_with_prefix(self, 'execute_')
+            self.handle_event('execute-finished')
+        except Exception:
+            self.handle_event('execute-failed')
+            raise
         finally:
             self.update_field('run_lock', None)
 
@@ -254,6 +269,35 @@ class BaseTask(metaclass=PluginRegistry):
 
         self.update_last_completed_run(timestamp)
         self.update_task_is_pending(False)
+
+    def register_event_handler(self, event, function):
+        """
+        Register a function to execute in response to a specific event.
+
+        There's no validation done on the event name. The following events are
+        known to be in use:
+        - execute-started (at the start of the execute method)
+        - execute-finished (at the end of the execute method, in case of
+          success)
+        - execute-failed (at the end of the execute method, in case of failure)
+
+        :param str event: the name of the event to handle
+        :param function: a function or any callable object
+        """
+        handlers = self.event_handlers.setdefault(event, [])
+        if function not in handlers:
+            handlers.append(function)
+
+    def handle_event(self, event, *args, **kwargs):
+        """
+        This method is called at various places (with different values passed
+        to the event parameter) and is a way to let sub-classes, mixins, and
+        users add their own behaviour.
+
+        :param str event: a string describing the event that happened
+        """
+        for function in self.event_handlers.get(event, []):
+            function(*args, **kwargs)
 
     # TO DROP LATER: kept only for temporary API compatibility
     def is_initial_task(self):
