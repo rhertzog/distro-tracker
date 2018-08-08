@@ -46,18 +46,23 @@ from distro_tracker.core.utils.misc import get_data_checksum
 from distro_tracker.test import TestCase
 
 
-class TestTask(BaseTask):
-    pass
-
-
-class Test2Task(BaseTask):
-    NAME = 'Test2'
+def get_test_task_class(name, mixins=None, attributes=None):
+    if not attributes:
+        attributes = {}
+    cls = BaseTask.get_task_class_by_name(attributes.get('NAME', name))
+    if not cls:
+        bases = (BaseTask,)
+        if mixins:
+            bases += mixins
+        cls = type(name, bases, attributes)
+    return cls
 
 
 class BaseTaskTests(TestCase):
 
     def setUp(self):
-        self.task = TestTask()
+        self.cls = get_test_task_class('TestTask')
+        self.task = self.cls()
         self.sample_data = {'foo': 'bar'}
         self.sample_data_checksum = get_data_checksum(self.sample_data)
 
@@ -81,12 +86,12 @@ class BaseTaskTests(TestCase):
 
     def test_task_is_registered(self):
         """A task class is automatically registered when created"""
-        self.assertIn(TestTask, BaseTask.plugins)
+        self.assertIn(self.cls, BaseTask.plugins)
 
     # task.initialize()
     def test_task_init_runs_initialize_with_args_and_kwargs(self):
-        with mock.patch.object(TestTask, 'initialize') as initialize:
-            TestTask('abc', keyword='keyword')
+        with mock.patch.object(self.cls, 'initialize') as initialize:
+            self.cls('abc', keyword='keyword')
             initialize.assert_called_with('abc', keyword='keyword')
 
     def test_task_initialize_with_force_update(self):
@@ -104,12 +109,13 @@ class BaseTaskTests(TestCase):
 
     # task.task_name()
     def test_task_has_a_default_name(self):
-        self.assertEqual(TestTask.task_name(), 'TestTask')
+        self.assertEqual(self.cls.task_name(), 'TestTask')
         self.assertEqual(self.task.task_name(), 'TestTask')
 
     def test_task_can_override_name(self):
-        self.assertEqual(Test2Task.task_name(), 'Test2')
-        self.assertEqual(Test2Task().task_name(), 'Test2')
+        cls = get_test_task_class('Test2Task', attributes={'NAME': 'Test2'})
+        self.assertEqual(cls.task_name(), 'Test2')
+        self.assertEqual(cls().task_name(), 'Test2')
 
     # task.data
     def test_task_has_data_attribute(self):
@@ -212,7 +218,7 @@ class BaseTaskTests(TestCase):
     # BaseTask.get_task_class_by_name()
     def test_get_task_class_by_name(self):
         self.assertEqual(BaseTask.get_task_class_by_name('TestTask'),
-                         TestTask)
+                         self.cls)
 
     def test_get_task_class_by_name_non_existing(self):
         self.assertIsNone(BaseTask.get_task_class_by_name('NonExisting'))
@@ -487,7 +493,8 @@ class BaseTaskTests(TestCase):
 class SchedulerTests(TestCase):
 
     def setUp(self):
-        self.task = TestTask()
+        self.cls = get_test_task_class('TestTask')
+        self.task = self.cls()
         self.scheduler = Scheduler(self.task)
 
     def test_scheduler_needs_to_run(self):
@@ -501,7 +508,8 @@ class TestIntervalScheduler(IntervalScheduler):
 class IntervalSchedulerTests(TestCase):
 
     def setUp(self):
-        self.task = TestTask()
+        self.cls = get_test_task_class('TestTask')
+        self.task = self.cls()
         self.scheduler = TestIntervalScheduler(self.task)
 
     def build_class(self, interval):
@@ -623,7 +631,8 @@ class TaskUtilsTests(TestCase):
                 new_callable=mock.PropertyMock)
     def test_build_all_tasks_includes_tasks_from_BaseTask_plugins(
             self, mock_plugins):
-        mock_plugins.return_value = [TestTask]
+        cls = get_test_task_class('TestTask')
+        mock_plugins.return_value = [cls]
         result = build_all_tasks()
         self.assertListEqual(['TestTask'], list(result.keys()))
 
@@ -631,7 +640,8 @@ class TaskUtilsTests(TestCase):
                 new_callable=mock.PropertyMock)
     def test_build_all_tasks_fails_when_two_tasks_have_the_same_name(
             self, mock_plugins):
-        mock_plugins.return_value = [TestTask, TestTask]
+        cls = get_test_task_class('TestTask')
+        mock_plugins.return_value = [cls, cls]
         with self.assertRaises(ValueError):
             build_all_tasks()
 
@@ -706,13 +716,8 @@ class TaskUtilsTests(TestCase):
 
 class ProcessItemsTests(TestCase):
     def setUp(self):
-        cls = BaseTask.get_task_class_by_name('TestProcessItems')
-        if not cls:
-            class TestProcessItems(BaseTask, ProcessItems):
-                pass
-            cls = TestProcessItems
-        self.cls = cls
-        self.task = cls()
+        self.cls = get_test_task_class('TestProcessItems', (ProcessItems,))
+        self.task = self.cls()
 
     def patch_item_describe(self):
         def item_describe(item):
@@ -888,13 +893,10 @@ class ProcessItemsTests(TestCase):
 
 class ProcessModelTests(TestCase):
     def setUp(self):
-        cls = BaseTask.get_task_class_by_name('TestProcessModel')
-        if not cls:
-            class TestProcessModel(BaseTask, ProcessModel):
-                model = SourcePackageName
-            cls = TestProcessModel
-        self.cls = cls
-        self.task = cls()
+        self.cls = get_test_task_class('TestProcessModel',
+                                       (ProcessModel,),
+                                       {'model': SourcePackageName})
+        self.task = self.cls()
 
     def test_items_all_returns_queryset_of_the_model(self):
         queryset = self.task.items_all()
@@ -944,13 +946,9 @@ class ProcessModelTests(TestCase):
 
 class ProcessSourcePackageTests(TestCase):
     def setUp(self):
-        cls = BaseTask.get_task_class_by_name('TestProcessSourcePackage')
-        if not cls:
-            class TestProcessSourcePackage(BaseTask, ProcessSourcePackage):
-                pass
-            cls = TestProcessSourcePackage
-        self.cls = cls
-        self.task = cls()
+        self.cls = get_test_task_class('TestProcessSourcePackage',
+                                       (ProcessSourcePackage,))
+        self.task = self.cls()
         self.pkg1_1 = self.create_source_package(name='pkg1', version='1')
         self.pkg1_2 = self.create_source_package(name='pkg1', version='2')
         self.pkg2_1 = self.create_source_package(name='pkg2', version='1')
@@ -970,13 +968,9 @@ class ProcessSourcePackageTests(TestCase):
 
 class ProcessSrcRepoEntryTests(TestCase):
     def setUp(self):
-        cls = BaseTask.get_task_class_by_name('TestProcessSrcRepoEntry')
-        if not cls:
-            class TestProcessSrcRepoEntry(BaseTask, ProcessSrcRepoEntry):
-                pass
-            cls = TestProcessSrcRepoEntry
-        self.cls = cls
-        self.task = cls()
+        self.cls = get_test_task_class('TestProcessSrcRepoEntry',
+                                       (ProcessSrcRepoEntry,))
+        self.task = self.cls()
         self.pkg1_1 = self.create_source_package(name='pkg1', version='1',
                                                  repository='default')
         self.pkg1_2 = self.create_source_package(name='pkg1', version='2',
@@ -1003,15 +997,10 @@ class ProcessSrcRepoEntryTests(TestCase):
 
 class ProcessSrcRepoEntryInDefaultRepositoryTests(TestCase):
     def setUp(self):
-        cls = BaseTask.get_task_class_by_name(
-            'TestProcessSrcRepoEntryInDefaultRepository')
-        if not cls:
-            class TestProcessSrcRepoEntryInDefaultRepository(
-                    BaseTask, ProcessSrcRepoEntryInDefaultRepository):
-                pass
-            cls = TestProcessSrcRepoEntryInDefaultRepository
-        self.cls = cls
-        self.task = cls()
+        self.cls = get_test_task_class(
+            'TestProcessSrcRepoEntryInDefaultRepository',
+            (ProcessSrcRepoEntryInDefaultRepository,))
+        self.task = self.cls()
         self.pkg_default = self.create_source_package(name='pkg-default',
                                                       repository='default')
         self.pkg_other = self.create_source_package(name='pkg-other',
