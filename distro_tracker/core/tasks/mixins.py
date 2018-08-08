@@ -154,8 +154,12 @@ class ProcessItems(object):
         returned by :meth:`items_all_keys`.
         """
         processed = self.data.setdefault('processed', {})
+        modified = False
         for key, _ in self.items_to_cleanup():
             del processed[key]
+            modified = True
+        if modified:
+            self.data_mark_modified()
 
 
 class ProcessModel(ProcessItems):

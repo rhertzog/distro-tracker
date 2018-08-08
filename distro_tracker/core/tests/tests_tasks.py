@@ -850,45 +850,61 @@ class ProcessItemsTests(TestCase):
         self.assertIsInstance(result, set)
         self.assertSetEqual(result, set(keys))
 
+    def setup_item_to_cleanup(self, description=None):
+        items = self.patch_items_all()
+        unused_item = self.get_item('unused')
+        if description:
+            unused_item.description = description
+        self.task.item_mark_processed(unused_item)
+        self.task.item_mark_processed(*items[0:2])
+        return unused_item
+
     def test_items_to_cleanup(self):
         """items_to_cleanup() iterates over items that disappeared"""
-        items = self.patch_items_all()
         self.patch_item_describe()
-        self.unused_item = self.get_item('unused')
-        self.unused_item.description = {'foo': 'bar'}
-        self.task.item_mark_processed(self.unused_item)
-        self.task.item_mark_processed(*items[0:2])
+        description = {'foo': 'bar'}
+        self.setup_item_to_cleanup(description)
 
         count = 0
         for key, data in self.task.items_to_cleanup():
             self.assertEqual(key, 'unused')
-            self.assertDictEqual(data, self.unused_item.description)
+            self.assertDictEqual(data, description)
             count += 1
         self.assertEqual(count, 1)
 
     def test_items_cleanup_processed_list(self):
         """drops keys not associated to any object from the processed list"""
-        items = self.patch_items_all()
-        self.unused_item = self.get_item('unused')
-        self.task.item_mark_processed(self.unused_item)
-        self.task.item_mark_processed(*items[0:2])
+        unused_item = self.setup_item_to_cleanup()
 
         # Check the removal from the processed list through return value of
         # task.item_needs_processing()
-        self.assertFalse(self.task.item_needs_processing(self.unused_item))
+        self.assertFalse(self.task.item_needs_processing(unused_item))
         self.task.items_cleanup_processed_list()
-        self.assertTrue(self.task.item_needs_processing(self.unused_item))
+        self.assertTrue(self.task.item_needs_processing(unused_item))
+
+    def test_items_cleanup_processed_list_does_mark_data_modified(self):
+        '''when items are cleaned up, data is modified'''
+        self.setup_item_to_cleanup()
+
+        with mock.patch.object(self.task, 'data_mark_modified') as mocked:
+            self.task.items_cleanup_processed_list()
+            mocked.assert_called_once_with()
+
+    def test_items_cleanup_processed_list_does_not_mark_data_modified(self):
+        '''nothing to cleanup, no data modified'''
+        self.patch_items_all()
+        with mock.patch.object(self.task, 'data_mark_modified') as mocked:
+            self.task.items_cleanup_processed_list()
+            mocked.assert_not_called()
 
     def test_execute_does_cleanup_processed_list(self):
-        self.patch_items_all()
-        self.unused_item = self.get_item('unused')
-        self.task.item_mark_processed(self.unused_item)
+        unused_item = self.setup_item_to_cleanup()
 
         # Check the removal from the processed list through return value of
         # task.item_needs_processing()
-        self.assertFalse(self.task.item_needs_processing(self.unused_item))
+        self.assertFalse(self.task.item_needs_processing(unused_item))
         self.task.execute()
-        self.assertTrue(self.task.item_needs_processing(self.unused_item))
+        self.assertTrue(self.task.item_needs_processing(unused_item))
 
 
 class ProcessModelTests(TestCase):
