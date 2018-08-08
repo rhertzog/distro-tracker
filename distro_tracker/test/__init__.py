@@ -214,7 +214,8 @@ class DatabaseMixin(object):
                     'default': True if repo_shorthand == 'default' else False,
                 }
             )
-            srcpkg.repository_entries.create(repository=repository)
+            srcpkg.repository_entries.create(repository=repository,
+                                             component='main')
 
         srcpkg.save()
         return srcpkg

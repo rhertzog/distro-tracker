@@ -174,6 +174,11 @@ class DatabaseMixinTests(object):
         srcpkg = self.create_source_package(repository='foo')
         srcpkg.repository_entries.get(repository__shorthand='foo')
 
+    def test_create_source_package_with_repository_component_set_to_main(self):
+        srcpkg = self.create_source_package(repository='foo')
+        for entry in srcpkg.repository_entries.all():
+            self.assertEqual(entry.component, 'main')
+
     def test_create_source_package_repository_default_values(self):
         self.create_source_package(repository='default')
 
