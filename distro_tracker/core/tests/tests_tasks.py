@@ -21,6 +21,7 @@ from django.db.models.query import QuerySet
 from django.test.utils import override_settings
 
 from distro_tracker.core.models import (
+    Repository,
     SourcePackage,
     SourcePackageName,
     SourcePackageRepositoryEntry,
@@ -37,6 +38,7 @@ from distro_tracker.core.tasks.mixins import (
     ProcessItems,
     ProcessModel,
     ProcessSourcePackage,
+    ProcessMainRepoEntry,
     ProcessSrcRepoEntry,
     ProcessSrcRepoEntryInDefaultRepository,
 )
@@ -1028,3 +1030,118 @@ class ProcessSrcRepoEntryInDefaultRepositoryTests(TestCase):
         for item in self.task.items_all():
             self.assertNotEqual(item.source_package, self.pkg_other)
             self.assertEqual(item.repository.shorthand, 'default')
+
+
+class ProcessMainRepoEntryTests(TestCase):
+
+    def setUp(self):
+        def execute_main(self):
+            for item in self.items_to_process():
+                self.item_mark_processed(item)
+
+        self.cls = get_test_task_class('TestProcessMainRepoEntry',
+                                       (ProcessMainRepoEntry,),
+                                       {'execute_main': execute_main})
+        self.task = self.cls()
+
+    def get_item(self):
+        for item in self.task.items_all():
+            break
+        return item
+
+    def test_items_all_returns_entry_from_default_repository(self):
+        self.create_source_package(name='pkg-default', version='1',
+                                   repositories=['default', 'other'])
+        self.create_source_package(name='pkg-default', version='2',
+                                   repository='other2')
+
+        for entry in self.task.items_all():
+            self.assertEqual(entry.repository.shorthand, 'default')
+            self.assertEqual(entry.source_package.name, 'pkg-default')
+            self.assertEqual(entry.source_package.version, '1')
+        self.assertEqual(len(self.task.items_all()), 1)
+
+    def test_items_all_returns_max_version_from_non_default_repositories(self):
+        for version in ('2', '3', '1'):
+            self.create_source_package(name='pkg', version=version,
+                                       repository='repo%s' % version)
+
+        for entry in self.task.items_all():
+            self.assertEqual(entry.repository.shorthand, 'repo3')
+            self.assertEqual(entry.source_package.name, 'pkg')
+            self.assertEqual(entry.source_package.version, '3')
+        self.assertEqual(len(self.task.items_all()), 1)
+
+    def test_items_all_returns_max_version_from_default_repository(self):
+        for version in ('1', '3', '2'):
+            self.create_source_package(name='pkg-default', version=version,
+                                       repository='default')
+
+        for entry in self.task.items_all():
+            self.assertEqual(entry.repository.shorthand, 'default')
+            self.assertEqual(entry.source_package.name, 'pkg-default')
+            self.assertEqual(entry.source_package.version, '3')
+        self.assertEqual(len(self.task.items_all()), 1)
+
+    def test_items_all_uses_repository_position_to_disambiguate(self):
+        self.create_source_package(name='pkg', version='1',
+                                   repositories=['repo1', 'repo3', 'repo2'])
+        for i in range(1, 4):
+            repo = Repository.objects.get(shorthand='repo%d' % i)
+            repo.position = i
+            repo.save()
+        for entry in self.task.items_all():
+            self.assertEqual(entry.repository.shorthand, 'repo3')
+        self.assertEqual(len(self.task.items_all()), 1)
+
+    def test_item_to_key_uses_database_id(self):
+        self.create_source_package(repository='default')
+        item = self.get_item()
+
+        self.assertEqual(self.task.item_to_key(item), item.id)
+
+    def test_item_describe(self):
+        self.create_source_package(repository='default')
+        item = self.get_item()
+
+        self.assertDictEqual(
+            self.task.item_describe(item),
+            {
+                'name': item.source_package.name,
+                'version': item.source_package.version,
+                'repository': item.repository.shorthand
+            }
+        )
+
+    def test_items_to_process_returns_a_former_main_entry(self):
+        # Version 1 is the main entry
+        self.create_source_package(name='pkg', version='1', repository='other')
+        self.task.execute()
+        # Now version 2 is the main entry
+        pkg_2 = self.create_source_package(name='pkg', version='2',
+                                           repository='default')
+        self.task.execute()
+        # We drop v2, v1 should again be the main version
+        pkg_2.delete()
+
+        for entry in self.task.items_to_process():
+            self.assertEqual(entry.source_package.version, '1')
+        self.assertEqual(len(list(self.task.items_to_process())), 1)
+
+    def test_items_all_caches_results(self):
+        with self.assertNumQueries(2):
+            self.task.items_all()  # 2 queries here
+            self.task.items_all()  # none here
+
+    def test_clear_main_entries_cache(self):
+        with self.assertNumQueries(2):
+            self.task.items_all()  # 2 queries here
+        self.task.clear_main_entries_cache()
+        with self.assertNumQueries(2):
+            self.task.items_all()  # and 2 again here
+
+    def test_clear_main_entries_cached_called_during_execute(self):
+        with mock.patch.object(self.cls, 'clear_main_entries_cache') as mocked:
+            self.task = self.cls()
+            self.task.execute()
+            self.assertEqual(mocked.call_count, 2)

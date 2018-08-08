@@ -13,6 +13,8 @@ Mixins to combine to create powerful tasks.
 """
 import logging
 
+from debian.debian_support import version_compare
+
 from distro_tracker.core.models import (
     SourcePackage,
     SourcePackageRepositoryEntry,
@@ -236,6 +238,90 @@ class ProcessSrcRepoEntry(ProcessModel):
 
 
 class ProcessSrcRepoEntryInDefaultRepository(ProcessSrcRepoEntry):
+    """
+    Process
+    :class:`~distro_tracker.core.models.SourcePackageRepositoryEntry`.
+    from the default repository.
+    """
 
     def items_extend_queryset(self, queryset):
         return queryset.filter(repository__default=True)
+
+
+class ProcessMainRepoEntry(ProcessItems):
+    """
+    Process the main
+    :class:`~distro_tracker.core.models.SourcePackageRepositoryEntry`
+    for each package. The main entry is defined as being the one existing in the
+    default repository. If there's no default entry for a given package, then
+    it's the entry with the biggest version that is taken. If there are still
+    two entries, then we take the one in the repository with the biggest
+    "position".
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.main_entries = None
+        self.register_event_handler('execute-started',
+                                    self.clear_main_entries_cache)
+        self.register_event_handler('execute-finished',
+                                    self.clear_main_entries_cache)
+        self.register_event_handler('execute-failed',
+                                    self.clear_main_entries_cache)
+
+    def clear_main_entries_cache(self):
+        self.main_entries = None
+
+    def items_all(self):
+        if self.main_entries is not None:
+            return self.main_entries.values()
+
+        main_entries = {}
+
+        def register_entry(entry):
+            name = entry.source_package.name
+            version = entry.source_package.version
+            if name not in main_entries:
+                main_entries[name] = entry
+            else:
+                selected_version = main_entries[name].source_package.version
+                if version_compare(selected_version, version) < 0:
+                    main_entries[name] = entry
+                elif version_compare(selected_version, version) == 0:
+                    # If both versions are equal, we use the repository with the
+                    # biggest position
+                    if (entry.repository.position >
+                            main_entries[name].repository.position):
+                        main_entries[name] = entry
+
+        # First identify entries from the default repository
+        qs = SourcePackageRepositoryEntry.objects.filter(
+            repository__default=True).select_related(
+                'source_package__source_package_name',
+                'repository')
+
+        for entry in qs:
+            register_entry(entry)
+
+        # Then again for all the other remaining packages
+        qs = SourcePackageRepositoryEntry.objects.exclude(
+            source_package__source_package_name__name__in=main_entries.keys()
+        ).select_related(
+            'source_package__source_package_name',
+            'repository'
+        )
+        for entry in qs:
+            register_entry(entry)
+
+        self.main_entries = main_entries
+        return self.main_entries.values()
+
+    def item_to_key(self, item):
+        return item.id
+
+    def item_describe(self, item):
+        return {
+            'name': item.source_package.name,
+            'version': item.source_package.version,
+            'repository': item.repository.shorthand,
+        }
