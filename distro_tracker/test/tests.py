@@ -111,6 +111,8 @@ class DatabaseMixinTests(object):
         self.assertIsInstance(srcpkg, SourcePackage)
         self.assertEqual(srcpkg.name, 'test-package')
         self.assertEqual(srcpkg.version, '1')
+        self.assertEqual(srcpkg.dsc_file_name, 'test-package_1.dsc')
+        self.assertEqual(srcpkg.directory, 'pool/main/t/test-package')
 
     def test_create_source_package_is_saved(self):
         srcpkg = self.create_source_package()

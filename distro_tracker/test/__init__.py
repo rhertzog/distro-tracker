@@ -36,6 +36,7 @@ from distro_tracker.core.models import (
     SourcePackageName,
     Repository,
 )
+from distro_tracker.core.utils.packages import package_hashdir
 
 
 class TempDirsMixin(object):
@@ -172,9 +173,10 @@ class DatabaseMixin(object):
         fields['source_package_name'] = \
             SourcePackageName.objects.get_or_create(name=name)[0]
         fields['version'] = version
-        for field in ('directory', 'dsc_file_name'):
-            if field in kwargs:
-                fields[field] = kwargs.get(field)
+        fields['dsc_file_name'] = kwargs.get('dsc_file_name',
+                                             '%s_%s.dsc' % (name, version))
+        fields['directory'] = kwargs.get(
+            'directory', 'pool/main/%s/%s' % (package_hashdir(name), name))
 
         if 'maintainer' in kwargs:
             maintainer = kwargs['maintainer']
