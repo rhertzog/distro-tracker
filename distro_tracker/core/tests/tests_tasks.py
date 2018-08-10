@@ -39,6 +39,7 @@ from distro_tracker.core.tasks.mixins import (
     ProcessModel,
     ProcessSourcePackage,
     ProcessMainRepoEntry,
+    ProcessRepositoryUpdates,
     ProcessSrcRepoEntry,
     ProcessSrcRepoEntryInDefaultRepository,
 )
@@ -1005,12 +1006,21 @@ class ProcessSrcRepoEntryTests(TestCase):
             self.assertIsInstance(item, SourcePackageRepositoryEntry)
             self.assertIn(item.source_package, self.all_packages)
 
+    def test_items_all_select_related(self):
+        for item in self.task.items_all():
+            with self.assertNumQueries(0):
+                item.source_package.name
+                item.source_package.version
+                item.repository.id
+            break
+
     def test_item_describe_has_the_desired_fields(self):
         repo_entry = self.pkg1_1.repository_entries.first()
         data = self.task.item_describe(repo_entry)
         self.assertEqual(data['name'], repo_entry.source_package.name)
         self.assertEqual(data['version'], repo_entry.source_package.version)
         self.assertEqual(data['repository'], repo_entry.repository.shorthand)
+        self.assertEqual(data['repository_id'], repo_entry.repository.id)
 
 
 class ProcessSrcRepoEntryInDefaultRepositoryTests(TestCase):
@@ -1145,3 +1155,63 @@ class ProcessMainRepoEntryTests(TestCase):
             self.task = self.cls()
             self.task.execute()
             self.assertEqual(mocked.call_count, 2)
+
+
+class ProcessRepositoryUpdatesTests(TestCase):
+
+    def setUp(self):
+        def execute_main(self):
+            for item in self.items_to_process():
+                self.item_mark_processed(item)
+
+        self.cls = get_test_task_class('TestProcessRepositoryUpdates',
+                                       (ProcessRepositoryUpdates,),
+                                       {'execute_main': execute_main})
+        self.task = self.cls()
+
+    def test_compute_known_packages(self):
+        srcpkg = self.create_source_package(repository='repo')
+        repository = srcpkg.repository_entries.first()
+        self.task.execute()  # Updates processed list
+
+        self.task.compute_known_packages()
+
+        self.assertIn(srcpkg.name, self.task.pkglist['all'])
+        self.assertIn(srcpkg.name, self.task.pkglist[repository.id])
+        key = '%s_%s' % (srcpkg.name, srcpkg.version)
+        self.assertIn(key, self.task.srcpkglist['all'])
+        self.assertIn(key, self.task.srcpkglist[repository.id])
+
+    def test_compute_known_packages_called_before_execute(self):
+        with mock.patch.object(self.cls, 'compute_known_packages') as mocked:
+            self.task = self.cls()
+            self.task.handle_event('execute-started')
+            mocked.assert_called_once_with()
+
+    def test_is_new_source_package_case_new(self):
+        srcpkg = self.create_source_package(repository='repo')
+        self.task.compute_known_packages()
+
+        self.assertEqual(self.task.is_new_source_package(srcpkg), True)
+
+    def test_is_new_source_package_case_old(self):
+        srcpkg = self.create_source_package(repository='repo')
+        self.task.execute()
+        self.task.compute_known_packages()
+
+        self.assertEqual(self.task.is_new_source_package(srcpkg), False)
+
+    def test_iter_removals_by_repository(self):
+        srcpkg = self.create_source_package(repository='repo')
+        expected_repository = srcpkg.repository_entries.first().repository
+        self.task.execute()
+        srcpkg.repository_entries.all().delete()
+
+        self.task.compute_known_packages()
+
+        for name, repository in self.task.iter_removals_by_repository():
+            self.assertEqual(name, srcpkg.name)
+            self.assertEqual(repository, expected_repository)
+
+    # TODO: implement is_new_package_in_repository(), is_new_package(),
+    # iter_removals()

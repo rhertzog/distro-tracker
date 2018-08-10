@@ -16,6 +16,7 @@ import logging
 from debian.debian_support import version_compare
 
 from distro_tracker.core.models import (
+    Repository,
     SourcePackage,
     SourcePackageRepositoryEntry,
 )
@@ -229,11 +230,16 @@ class ProcessSrcRepoEntry(ProcessModel):
 
     model = SourcePackageRepositoryEntry
 
+    def items_extend_queryset(self, queryset):
+        return queryset.select_related(
+            'source_package__source_package_name', 'repository')
+
     def item_describe(self, item):
         data = super().item_describe(item)
         data['name'] = item.source_package.name
         data['version'] = item.source_package.version
         data['repository'] = item.repository.shorthand
+        data['repository_id'] = item.repository.id
         return data
 
 
@@ -245,6 +251,7 @@ class ProcessSrcRepoEntryInDefaultRepository(ProcessSrcRepoEntry):
     """
 
     def items_extend_queryset(self, queryset):
+        queryset = super().items_extend_queryset(queryset)
         return queryset.filter(repository__default=True)
 
 
@@ -325,3 +332,76 @@ class ProcessMainRepoEntry(ProcessItems):
             'version': item.source_package.version,
             'repository': item.repository.shorthand,
         }
+
+
+class ProcessRepositoryUpdates(ProcessSrcRepoEntry):
+    """
+    Watch repositories and generates updates operations to be processed.
+
+    :meth:`items_to_process` returns repository entries but you can query
+    :meth:`is_new_source_package` on the associated source package to know
+    if the source package was already present in another repository in the
+    previous run or not.
+
+    There's a new :meth:`iter_removals_by_repository` to find out packages
+    which have been dropped from the repository.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.register_event_handler('execute-started',
+                                    self.compute_known_packages)
+
+    def compute_known_packages(self):
+        """
+        Goes over the list of formerly processed items and builds lists to
+        quickly lookup wether a given package is new or not.
+        """
+        self.pkglist = {
+            'all': {},
+        }
+        self.srcpkglist = {
+            'all': {},
+        }
+        for data in self.data.get('processed', {}).values():
+            key = '%s_%s' % (data['name'], data['version'])
+            self.pkglist['all'][data['name']] = True
+            self.srcpkglist['all'][key] = True
+            repo_pkglist = self.pkglist.setdefault(data['repository_id'], {})
+            repo_srcpkglist = self.srcpkglist.setdefault(data['repository_id'],
+                                                         {})
+            repo_pkglist[data['name']] = True
+            repo_srcpkglist[key] = True
+
+    def is_new_source_package(self, srcpkg):
+        """
+        Returns True if the source package was not present in the former run,
+        False otherwise.
+
+        The existence of the source package is deducted from the list of already
+        processed entries (with the help of :meth:`compute_known_packages` which
+        is called at the start of the :meth:`execute` method.
+
+        :param srcpkg: the source package
+        :type srcpkg: :class:`~distro_tracker.core.models.SourcePackage`
+        :returns: True if never seen, False otherwise
+        :rtype: bool
+        """
+        key = '%s_%s' % (srcpkg.name, srcpkg.version)
+        return key not in self.srcpkglist['all']
+
+    def iter_removals_by_repository(self):
+        """
+        Returns an iterator to process all package removals that happened in all
+        the repositories. The iterator yields tuples with the package name (as
+        a string) and the repository object.
+        """
+        for repository in Repository.objects.all():
+            if repository.id not in self.pkglist:
+                continue
+            qs = repository.source_packages.all()
+            new_pkglist = set(
+                qs.values_list('source_package_name__name', flat=True))
+            for package in self.pkglist[repository.id]:
+                if package not in new_pkglist:
+                    yield (package, repository)
