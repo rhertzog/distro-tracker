@@ -308,18 +308,23 @@ class BasePackageTable(metaclass=PluginRegistry):
       <distro_tracker.vendor.skeleton.rules.get_table_fields>`
     """
 
-    def __init__(self, scope, limit=None):
+    def __init__(self, scope, title=None, limit=None, tag=None):
         """
         :param scope: a convenient object that can be used to define the list
         of packages to be displayed on the table. For instance, if you want
         to consider all the packages of a specific team, you must pass that
         team through the `scope` attribute to allow the function
+        :param title: a string to be displayed instead of the default title
         :param limit: an integer that can be used to define the limit number of
         packages to be displayed
+        :param tag: if defined, it is used to display only packages tagged with
+        the informed tag
         :func:`packages` to access it to define the packages to be presented.
         """
         self.scope = scope
+        self._title = title
         self.limit = limit
+        self.tag = tag
 
     def context(self):
         """
@@ -331,11 +336,21 @@ class BasePackageTable(metaclass=PluginRegistry):
         return {}
 
     @property
+    def default_title(self):
+        """
+        The default title of the table.
+        """
+        return ''
+
+    @property
     def title(self):
         """
         The title of the table.
         """
-        return ''
+        if self._title:
+            return self._title
+        else:
+            return self.default_title
 
     @property
     def slug(self):
@@ -401,7 +416,12 @@ class BasePackageTable(metaclass=PluginRegistry):
         Returns a list of default :class:`BaseTableField` that will compose the
         table
         """
-        return []
+        return [
+            GeneralInformationTableField,
+            VcsTableField,
+            ArchiveTableField,
+            BugStatsTableField,
+        ]
 
     @property
     def table_fields(self):
@@ -485,7 +505,7 @@ def get_tables_for_team(team, limit=None):
     tables = []
     for table_class in BasePackageTable.plugins:
         if table_class is not BasePackageTable:
-            table = table_class(team, limit)
+            table = table_class(team, limit=limit)
             tables.append(table)
 
     return tables
@@ -496,13 +516,7 @@ class GeneralTeamPackageTable(BasePackageTable):
     This table displays the packages information of a team in a simple fashion.
     It must receive a :class:`Team <distro_tracker.core.models.Team>` as scope
     """
-    default_fields = [
-        GeneralInformationTableField,
-        VcsTableField,
-        ArchiveTableField,
-        BugStatsTableField,
-    ]
-    title = "All team packages"
+    default_title = "All team packages"
     slug = 'general'
 
     @property

@@ -273,7 +273,7 @@ class TeamDetailsView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(TeamDetailsView, self).get_context_data(**kwargs)
-        context['tables'] = get_tables_for_team(self.object, self.table_limit)
+        context['tables'] = get_tables_for_team(self.object, limit=self.table_limit)
         if self.request.user.is_authenticated:
             context['user_member_of_team'] = self.object.user_is_member(
                 self.request.user)
