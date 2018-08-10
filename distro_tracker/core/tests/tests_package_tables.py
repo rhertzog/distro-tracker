@@ -26,6 +26,7 @@ from distro_tracker.core.models import (
 )
 from django_email_accounts.models import User
 from distro_tracker.core.package_tables import (
+    create_table,
     BasePackageTable,
     GeneralTeamPackageTable,
     GeneralInformationTableField,
@@ -342,3 +343,43 @@ class GeneralTeamPackageTableTests(TestCase, TemplateTestsMixin):
         # Get the the second row
         table_field = table.rows[1]
         self.assertIn(new_package.name, table_field)
+
+
+class CreateTableFunctionTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            main_email='paul@example.com', password='pw4paul')
+        self.team = Team.objects.create_with_slug(
+            owner=self.user, name="Team name", public=True)
+        self.team.packages.add(
+            create_source_package_with_data('dummy-package-1'))
+        self.team.packages.add(
+            create_source_package_with_data('dummy-package-2'))
+
+    def test_create_table_with_valid_params(self):
+        """
+        Tests table creation for general table and valid params
+        """
+        # Basic usage
+        table = create_table('general', self.team)
+        self.assertIsNotNone(table)
+        self.assertEqual(table.title, table.default_title)
+        self.assertEqual(len(table.rows), 2)
+
+        # With limit
+        table = create_table('general', self.team, limit=1)
+        self.assertIsNotNone(table)
+        self.assertEqual(len(table.rows), 1)
+
+        # With a new title
+        table = create_table('general', self.team, title="New title", limit=0)
+        self.assertIsNotNone(table)
+        self.assertEqual(table.title, "New title")
+
+    def test_create_table_with_invalid_slug(self):
+        """
+        Tests table creation for a non-existing slug
+        """
+        # Basic usage
+        table = create_table('does-not-exist', self.team)
+        self.assertIsNone(table)

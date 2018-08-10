@@ -45,7 +45,7 @@ from distro_tracker.core.models import (
 from distro_tracker.core.panels import get_panels_for_package
 from distro_tracker.core.package_tables import (
     GeneralTeamPackageTable,
-    get_tables_for_team,
+    create_table,
 )
 from distro_tracker.core.utils import (
     distro_tracker_render_to_string,
@@ -273,7 +273,10 @@ class TeamDetailsView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(TeamDetailsView, self).get_context_data(**kwargs)
-        context['tables'] = get_tables_for_team(self.object, limit=self.table_limit)
+        context['tables'] = [
+            create_table(
+                slug='general', scope=self.object, limit=self.table_limit)
+        ]
         if self.request.user.is_authenticated:
             context['user_member_of_team'] = self.object.user_is_member(
                 self.request.user)

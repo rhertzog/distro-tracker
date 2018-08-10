@@ -485,14 +485,15 @@ class BasePackageTable(metaclass=PluginRegistry):
         return Template(template)
 
 
-def get_tables_for_team(team, limit=None):
+def create_table(slug, scope, title=None, limit=None, tag=None):
     """
-    A convenience method which accesses a list of pre-defined
-    :class:`BasePackageTable`'s children and instantiates them for the given
-    team.
+    A helper function to create packages table. The table class is defined
+    through the `slug`. If no children class of
+    :class:`BasePackageTable` exists with the given slug, the function returns
+    `None`.
 
-    :returns: A list of Tables which should for the given team.
-    :rtype: list
+    :returns: an instance of the table created with the informed params
+    :rtype: :class:`BasePackageTable`
     """
     for app in settings.INSTALLED_APPS:
         try:
@@ -502,13 +503,13 @@ def get_tables_for_team(team, limit=None):
             # The app does not implement package tables.
             pass
 
-    tables = []
     for table_class in BasePackageTable.plugins:
         if table_class is not BasePackageTable:
-            table = table_class(team, limit=limit)
-            tables.append(table)
+            table = table_class(scope, title=title, limit=limit, tag=tag)
+            if table.slug == slug:
+                return table
 
-    return tables
+    return None
 
 
 class GeneralTeamPackageTable(BasePackageTable):
