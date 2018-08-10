@@ -18,6 +18,7 @@ import sys
 from unittest import mock
 
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.test.utils import override_settings
 
 from distro_tracker.accounts.models import User, UserEmail
@@ -25,6 +26,7 @@ from distro_tracker.core.models import (
     Architecture,
     BinaryPackage,
     BinaryPackageName,
+    PackageBugStats,
     PackageData,
     PackageName,
     PseudoPackageName,
@@ -41,6 +43,7 @@ from distro_tracker.core.retrieve_data import (
     UpdateRepositoriesTask,
     UpdateTeamPackagesTask,
     UpdateVersionInformation,
+    TagPackagesWithBugs,
     retrieve_repository_info
 )
 from distro_tracker.core.tasks import BaseTask, Event, Job, JobState, run_task
@@ -1344,3 +1347,99 @@ class UpdatePackageGeneralInformationTest(TestCase):
         self.assertEqual(pkgdata['version'], self.srcpkg.version)
         self.assertListEqual(pkgdata['architectures'], ['amd64', 'i386'])
         self.assertEqual(pkgdata['component'], self.component)
+
+
+class TagPackagesWithBugsTest(TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.core.retrieve_data.TagPackagesWithBugs`
+    task.
+    """
+
+    def setUp(self):
+        self.tag = 'tag:bugs'
+        self.package_with_bug = PackageName.objects.create(
+            name='package-with-bug')
+        self.package_without_bug = PackageName.objects.create(
+            name='package-without-bug')
+        self.bug_stats = PackageBugStats.objects.create(
+            package=self.package_with_bug,
+            stats=[{'bug_count': 1, 'merged_count': 0, 'category_name': 'rc'}]
+        )
+
+    def test_update_with_bugs_tag_task(self):
+        """
+        Tests the default behavior of TagPackagesWithBugs task
+        """
+        # ensure that there is no PackageData entries with 'tag:bugs' key
+        self.assertEqual(PackageData.objects.filter(key=self.tag).count(), 0)
+
+        # execute the task
+        task = TagPackagesWithBugs()
+        task.execute()
+
+        # check that the task worked as expected
+        self.assertEqual(PackageData.objects.filter(key=self.tag).count(), 1)
+        self.assertIsNotNone(
+            PackageData.objects.get(key=self.tag, package=self.package_with_bug)
+        )
+        self.assertIsNotNone(
+            PackageData.objects.get(key=self.tag, package=self.package_with_bug)
+        )
+        with self.assertRaises(ObjectDoesNotExist):
+            PackageData.objects.get(
+                key=self.tag, package=self.package_without_bug)
+
+    def test_task_remove_tag_from_package_without_no_more_bugs(self):
+        """
+        Tests the removing of 'tag:bugs' data from packages that no longer
+        have bugs.
+        """
+        # add bug tag previously
+        PackageData.objects.create(key=self.tag, package=self.package_with_bug)
+        # remove bugs from package
+        self.bug_stats.delete()
+
+        # check bug tag in package with bug
+        self.assertIsNotNone(
+            PackageData.objects.get(key=self.tag, package=self.package_with_bug)
+        )
+
+        # execute the task
+        task = TagPackagesWithBugs()
+        task.execute()
+
+        # check that the task removed the tag
+        self.assertEqual(PackageData.objects.filter(key=self.tag).count(), 0)
+        with self.assertRaises(ObjectDoesNotExist):
+            PackageData.objects.get(
+                key=self.tag, package=self.package_with_bug)
+        with self.assertRaises(ObjectDoesNotExist):
+            PackageData.objects.get(
+                key=self.tag, package=self.package_without_bug)
+
+    def test_task_keep_tag_for_package_that_still_have_bugs(self):
+        """
+        Tests the maintenance of 'tag:bugs' key for packages that still
+        have bugs.
+        """
+        # add bug tag previously
+        PackageData.objects.create(key=self.tag, package=self.package_with_bug)
+
+        # check bug tag in package with bug
+        self.assertIsNotNone(
+            PackageData.objects.get(key=self.tag, package=self.package_with_bug)
+        )
+
+        # execute the task
+        task = TagPackagesWithBugs()
+        task.execute()
+
+        # check that the task removed the tag
+        self.assertEqual(PackageData.objects.filter(key=self.tag).count(), 1)
+        self.assertIsNotNone(
+            PackageData.objects.get(key=self.tag, package=self.package_with_bug)
+        )
+        with self.assertRaises(ObjectDoesNotExist):
+            PackageData.objects.get(
+                key=self.tag, package=self.package_without_bug)

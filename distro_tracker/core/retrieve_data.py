@@ -25,6 +25,7 @@ from distro_tracker.core.models import (
     BinaryPackageName,
     BinaryPackageRepositoryEntry,
     ContributorName,
+    PackageBugStats,
     PackageData,
     PackageName,
     PseudoPackageName,
@@ -151,6 +152,73 @@ def retrieve_repository_info(sources_list_entry):
         repository_information[key] = release.get(key, default)
 
     return repository_information
+
+
+class PackageTaggingUpdateTask(BaseTask):
+    """
+    A subclass of the :class:`BaseTask <distro_tracker.core.tasks.BaseTask>`
+    providing a convenient way to define tasks to update a specific tag for
+    packages by untagging packages that no longer should be tagged and by
+    tagging packages that should.
+
+    Subclasses must define:
+    - `TAG_NAME`: defines the key for PackageData to be updated. One must define
+    keys matching `tag:.*`
+    - `TAG_DISPLAY_NAME`: defines the display name for the tag
+    - `TAG_COLOR_TYPE`: defines the color type to be used while rendering
+    content related to the tag. It must be defined based on the tag severity.
+    One may use one of the following options: success, danger, warning, or info.
+    - `TAG_DESCRIPTION`: defines a help text to be displayed with a 'title'
+    attribute
+
+    Also, subclasses must implement the :func:`packages` function to define the
+    list of packages that must be tagged.
+    """
+    TAG_NAME = None
+    TAG_DISPLAY_NAME = ''
+    TAG_COLOR_TYPE = ''
+    TAG_DESCRIPTION = ''
+    TAG_TABLE_TITLE = ''
+
+    def packages(self):
+        """
+        Subclasses must override this method to return the list of packages
+        that must be tagged with the tag defined by `TAG_NAME`
+        """
+        return []
+
+    def execute(self):
+        with transaction.atomic():
+            # Clear previous TaggedItems
+            PackageData.objects.filter(key=self.TAG_NAME).delete()
+
+            items = []
+            value = {
+                'display_name': self.TAG_DISPLAY_NAME,
+                'color_type': self.TAG_COLOR_TYPE,
+                'description': self.TAG_DESCRIPTION,
+                'table_title': self.TAG_TABLE_TITLE
+            }
+            for package in self.packages():
+                tag = PackageData(
+                    package=package, key=self.TAG_NAME, value=value)
+                items.append(tag)
+            PackageData.objects.bulk_create(items)
+
+
+class TagPackagesWithBugs(PackageTaggingUpdateTask):
+    """
+    Performs an update of 'bugs' tag for packages.
+    """
+    TAG_NAME = 'tag:bugs'
+    TAG_DISPLAY_NAME = 'bugs'
+    TAG_COLOR_TYPE = 'warning'
+    TAG_DESCRIPTION = 'The package has bugs'
+    TAG_TABLE_TITLE = 'Packages with bugs'
+
+    def packages(self):
+        return PackageName.objects.filter(
+            id__in=PackageBugStats.objects.all().values('package'))
 
 
 class PackageUpdateTask(BaseTask):
