@@ -31,6 +31,8 @@ class ProcessItems(object):
     """
 
     def __init__(self):
+        self.register_event_handler('execute-started',
+                                    self.handle_fake_update_parameter)
         self.register_event_handler('execute-finished',
                                     self.items_cleanup_processed_list)
         super().__init__()
@@ -163,6 +165,25 @@ class ProcessItems(object):
             modified = True
         if modified:
             self.data_mark_modified()
+
+    def items_fake_processed_list(self):
+        '''
+        This method goes over all items to process and marks them as processed.
+        This is useful to fake the whole update process and bootstrap an
+        iterative process where we don't want the initial run to process
+        all existing entries.
+        '''
+        for item in self.items_to_process():
+            self.item_mark_processed(item)
+
+    def handle_fake_update_parameter(self):
+        '''
+        This method is registered as an execute-started event handler and
+        marks all items as processed even before the task has a chance to
+        process them.
+        '''
+        if self.fake_update:
+            self.items_fake_processed_list()
 
 
 class ProcessModel(ProcessItems):

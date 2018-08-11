@@ -909,6 +909,24 @@ class ProcessItemsTests(TestCase):
         self.task.execute()
         self.assertTrue(self.task.item_needs_processing(unused_item))
 
+    def test_items_fake_processed_list(self):
+        '''Mark all unprocessed items as processed'''
+        items = self.patch_items_all()
+
+        self.task.items_fake_processed_list()
+
+        for item in items:
+            self.assertFalse(self.task.item_needs_processing(item))
+
+    def test_execute_with_fake_update_parameter(self):
+        self.task = self.cls(fake_update=True)
+        self.patch_items_all()
+
+        with mock.patch.object(self.task, 'items_fake_processed_list') \
+                as mocked:
+            self.task.execute()
+            mocked.assert_called_once_with()
+
 
 class ProcessModelTests(TestCase):
     def setUp(self):
