@@ -1,5 +1,6 @@
 {% load distro_tracker_extras %}
 
+{% if table.number_of_packages > 0 %}
 <div class="panel package-table">
   <div class="panel-heading">
     {{table.title}} ({{table.number_of_packages}})
@@ -29,3 +30,4 @@
   </div>
   {% endif %}
 </div>
+{% endif %}
