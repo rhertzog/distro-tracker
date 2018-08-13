@@ -87,6 +87,7 @@ from distro_tracker.vendor.debian.tracker_tasks import (
     DebianWatchFileScannerUpdate,
     RetrieveDebianMaintainersTask,
     RetrieveLowThresholdNmuTask,
+    TagPackagesWithNewUpstreamVersion,
     TagPackagesWithRcBugs,
     UpdateAppStreamStatsTask,
     UpdateAutoRemovalsStatsTask,
@@ -6223,4 +6224,100 @@ class TagPackagesWithRcBugsTest(TestCase):
         self.assertIsNotNone(
             PackageData.objects.get(
                 key=self.tag, package=self.package_with_rc_bug)
+        )
+
+
+class TagPackagesWithNewUpstreamVersionTest(TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.vendor.debian.tracker_tasks.TagPackagesWithNewUpstreamVersion`
+    task.
+    """
+
+    def setUp(self):
+        self.tag = 'tag:new-upstream-version'
+        self.outdated_package = PackageName.objects.create(
+            name='outdated-package')
+        self.updated_package = PackageName.objects.create(
+            name='updated-package')
+        self.ai_type = ActionItemType.objects.create(
+            type_name='new-upstream-version')
+        self.action_item = ActionItem.objects.create(
+            package=self.outdated_package,
+            item_type=self.ai_type
+        )
+
+    def test_update_new_upstream_version_tag_task(self):
+        """
+        Tests the default behavior of TagPackagesWithNewUpstreamVersion task
+        """
+        # ensure that there is no PackageData entries with
+        # 'tag:new-upstream-version' key
+        self.assertEqual(PackageData.objects.filter(key=self.tag).count(), 0)
+
+        # execute the task
+        task = TagPackagesWithNewUpstreamVersion()
+        task.execute()
+
+        # check that the task worked as expected
+        self.assertEqual(PackageData.objects.filter(key=self.tag).count(), 1)
+        self.assertIsNotNone(
+            PackageData.objects.get(
+                key=self.tag, package=self.outdated_package)
+        )
+        with self.assertRaises(ObjectDoesNotExist):
+            PackageData.objects.get(
+                key=self.tag, package=self.updated_package)
+
+    def test_task_remove_tag_from_updated_package(self):
+        """
+        Tests the removing of 'tag:new-upstream-version' data from packages
+        that is updated.
+        """
+        # creating tag previously
+        PackageData.objects.create(
+            key=self.tag, package=self.outdated_package)
+        # remove ai from outdated_package
+        self.outdated_package.action_items.all().delete()
+
+        # check tag in package
+        self.assertIsNotNone(
+            PackageData.objects.get(
+                key=self.tag, package=self.outdated_package)
+        )
+
+        # execute the task
+        task = TagPackagesWithNewUpstreamVersion()
+        task.execute()
+
+        # check that the task removed the tag
+        self.assertEqual(PackageData.objects.filter(key=self.tag).count(), 0)
+        with self.assertRaises(ObjectDoesNotExist):
+            PackageData.objects.get(
+                key=self.tag, package=self.updated_package)
+
+    def test_task_keep_tag_for_package_that_still_is_outdated(self):
+        """
+        Tests the maintenance of 'tag:new-upstream-version' key for packages
+        that still has a new upstream version.
+        """
+        # add tag previously
+        PackageData.objects.create(
+            key=self.tag, package=self.outdated_package)
+
+        # check tag in package with RC bug
+        self.assertIsNotNone(
+            PackageData.objects.get(
+                key=self.tag, package=self.outdated_package)
+        )
+
+        # execute the task
+        task = TagPackagesWithNewUpstreamVersion()
+        task.execute()
+
+        # check that the task kept the tag
+        self.assertEqual(PackageData.objects.filter(key=self.tag).count(), 1)
+        self.assertIsNotNone(
+            PackageData.objects.get(
+                key=self.tag, package=self.outdated_package)
         )

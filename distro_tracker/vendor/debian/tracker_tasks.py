@@ -3181,3 +3181,27 @@ class TagPackagesWithRcBugs(PackageTaggingUpdateTask):
                     if category['bug_count'] > 0:
                         packages_list.append(bug_stats.package)
         return packages_list
+
+
+class TagPackagesWithNewUpstreamVersion(PackageTaggingUpdateTask):
+    """
+    Performs an update of 'new-upstream-version' tag for packages.
+    """
+    TAG_NAME = 'tag:new-upstream-version'
+    TAG_DISPLAY_NAME = 'new upstream version'
+    TAG_COLOR_TYPE = 'warning'
+    TAG_DESCRIPTION = 'The upstream has a newer version available'
+    TAG_TABLE_TITLE = 'Newer upstream version'
+
+    def packages(self):
+        try:
+            action_type = ActionItemType.objects.get(
+                type_name='new-upstream-version')
+        except ActionItemType.DoesNotExist:
+            return []
+
+        packages_list = []
+        items = action_type.action_items.all().prefetch_related('package')
+        for item in items:
+            packages_list.append(item.package)
+        return packages_list
