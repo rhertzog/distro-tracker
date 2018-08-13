@@ -27,6 +27,7 @@ from distro_tracker.core.models import (
     BinaryPackageName,
     MembershipConfirmation,
     News,
+    PackageData,
     PackageName,
     PseudoPackageName,
     SourcePackage,
@@ -316,9 +317,11 @@ class TeamPackagesTableViewTest(TestCase, TemplateTestsMixin):
         self.package = SourcePackageName.objects.create(name='dummy-package')
         self.team.packages.add(self.package)
 
-    def get_table_page(self, slug='team-name',
+    def get_table_page(self, slug='team-name', table_slug='general', q=None,
                        url_name='dtracker-team-general-table'):
-        url = reverse(url_name, kwargs={'slug': slug})
+        url = reverse(url_name, kwargs={'slug': slug, 'table_slug': table_slug})
+        if q:
+            url = url + '?' + q
         return self.client.get(url)
 
     def test_table_page_content_for_general_table(self):
@@ -332,6 +335,27 @@ class TeamPackagesTableViewTest(TestCase, TemplateTestsMixin):
             isinstance(table, GeneralTeamPackageTable))
         self.assertIsNotNone(table.rows)
         self.assertTemplateUsed(response, 'core/team-packages-table.html')
+
+    def test_query_parameters(self):
+        """
+        Tests the return of a table page for GeneralTeamPackageTable
+        with limit and tag query paramenters
+        """
+        tag = 'tag:bugs'
+        new_package = SourcePackageName.objects.create(
+            name='dummy-package-2')
+        value = {
+            'table_title': 'Packages with bugs'
+        }
+        PackageData.objects.create(key=tag, package=self.package, value=value)
+        PackageData.objects.create(key=tag, package=new_package, value=value)
+        self.team.packages.add(new_package)
+
+        response = self.get_table_page(q='tag=bugs&limit=1')
+        self.assertEqual(response.status_code, 200)
+        table = response.context['table']
+        self.assertEqual(len(table.rows), 1)
+        self.assertEqual(table.title, "Packages with bugs")
 
     def test_team_not_found(self):
         """

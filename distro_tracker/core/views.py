@@ -44,7 +44,6 @@ from distro_tracker.core.models import (
 )
 from distro_tracker.core.panels import get_panels_for_package
 from distro_tracker.core.package_tables import (
-    GeneralTeamPackageTable,
     create_table,
 )
 from distro_tracker.core.utils import (
@@ -275,7 +274,11 @@ class TeamDetailsView(DetailView):
         context = super(TeamDetailsView, self).get_context_data(**kwargs)
         context['tables'] = [
             create_table(
-                slug='general', scope=self.object, limit=self.table_limit)
+                slug='general', scope=self.object, limit=self.table_limit),
+            create_table(
+                slug='general', scope=self.object,
+                limit=self.table_limit, tag='tag:bugs'
+            ),
         ]
         if self.request.user.is_authenticated:
             context['user_member_of_team'] = self.object.user_is_member(
@@ -724,11 +727,14 @@ class TeamPackagesTableView(View):
     in an HTML response.
     """
     template_name = 'core/team-packages-table.html'
-    table_class = GeneralTeamPackageTable
 
-    def get(self, request, slug):
+    def get(self, request, slug, table_slug):
         team = get_object_or_404(Team, slug=slug)
-        self.table = self.table_class(team)
+
+        tag = request.GET.get('tag', None)
+        limit = request.GET.get('limit', None)
+        self.table = create_table(
+            slug=table_slug, scope=team, limit=limit, tag=tag)
         return render(request, self.template_name, {
             'table': self.table,
             'team': team

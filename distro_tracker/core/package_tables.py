@@ -325,6 +325,8 @@ class BasePackageTable(metaclass=PluginRegistry):
         self._title = title
         self.limit = limit
         self.tag = tag
+        if tag and not tag.startswith('tag:'):
+            self.tag = 'tag:' + tag
 
     def context(self):
         """
@@ -349,8 +351,11 @@ class BasePackageTable(metaclass=PluginRegistry):
         """
         if self._title:
             return self._title
-        else:
-            return self.default_title
+        elif self.tag:
+            data = PackageData.objects.filter(key=self.tag).first()
+            if data and 'table_title' in data.value:
+                return data.value['table_title']
+        return self.default_title
 
     @property
     def slug(self):
@@ -364,7 +369,11 @@ class BasePackageTable(metaclass=PluginRegistry):
         """
         The relative url for the table.
         """
-        return '+table/' + self.slug
+        url = '+table/' + self.slug
+        if self.tag:
+            tag = self.tag[4:]
+            url = url + '?tag=' + tag
+        return url
 
     @property
     def packages_with_prefetch_related(self):
@@ -503,6 +512,8 @@ def create_table(slug, scope, title=None, limit=None, tag=None):
             # The app does not implement package tables.
             pass
 
+    if limit:
+        limit = int(limit)
     for table_class in BasePackageTable.plugins:
         if table_class is not BasePackageTable:
             table = table_class(scope, title=title, limit=limit, tag=tag)
@@ -525,4 +536,10 @@ class GeneralTeamPackageTable(BasePackageTable):
         """
         Returns the list of packages shown in the table of a team (scope)
         """
-        return self.scope.packages.all().order_by('name')
+        if self.tag:
+            return self.scope.packages.filter(
+                id__in=PackageData.objects.filter(
+                    key=self.tag).values('package_id')
+            ).order_by('name')
+        else:
+            return self.scope.packages.all().order_by('name')

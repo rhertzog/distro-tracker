@@ -42,9 +42,6 @@ from distro_tracker.accounts.views import (
     UserEmailsView
 )
 from distro_tracker.core.news_feed import PackageNewsFeed
-from distro_tracker.core.package_tables import (
-    GeneralTeamPackageTable,
-)
 from distro_tracker.core.views import (
     ActionItemJsonView,
     ActionItemView,
@@ -232,8 +229,8 @@ urlpatterns = [
     url(r'^teams/(?P<slug>.+)/\+manage-membership/$',
         EditMembershipView.as_view(),
         name='dtracker-team-manage-membership'),
-    url(r'^teams/(?P<slug>.+)/\+table/general/$',
-        TeamPackagesTableView.as_view(table_class=GeneralTeamPackageTable),
+    url(r'^teams/(?P<slug>.+)/\+table/(?P<table_slug>.+)/$',
+        TeamPackagesTableView.as_view(),
         name='dtracker-team-general-table'),
     url(r'^teams/(?P<slug>.+?)/$', TeamDetailsView.as_view(),
         name='dtracker-team-page'),

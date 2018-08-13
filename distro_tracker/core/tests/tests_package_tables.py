@@ -239,7 +239,7 @@ class GeneralTeamPackageTableTests(TestCase, TemplateTestsMixin):
     def get_team_page_response(self):
         return self.client.get(self.team.get_absolute_url())
 
-    def get_general_package_table(self, response):
+    def get_general_package_table(self, response, title='All team packages'):
         """
         Checks whether the general package table is found in
         the rendered HTML response.
@@ -247,7 +247,7 @@ class GeneralTeamPackageTableTests(TestCase, TemplateTestsMixin):
         html = soup(response.content, 'html.parser')
         tables = html.findAll("div", {'class': 'package-table'})
         for table in tables:
-            if 'All team packages' in str(table):
+            if title in str(table):
                 return table
         return False
 
@@ -343,6 +343,53 @@ class GeneralTeamPackageTableTests(TestCase, TemplateTestsMixin):
         # Get the the second row
         table_field = table.rows[1]
         self.assertIn(new_package.name, table_field)
+
+    def test_table_with_tag(self):
+        """
+        Tests table with tag
+        """
+        tag = 'tag:bugs'
+        new_package = create_source_package_with_data('dummy-package-2')
+        value = {
+            'table_title': 'Packages with bugs'
+        }
+        PackageData.objects.create(key=tag, package=new_package, value=value)
+        self.team.packages.add(new_package)
+
+        # Tag without prefix
+        table = GeneralTeamPackageTable(self.team, tag='bugs')
+        self.assertEqual(table.title, 'Packages with bugs')
+        self.assertTrue(table.relative_url.endswith('?tag=bugs'))
+
+        # Tag with tag prefix
+        table = GeneralTeamPackageTable(self.team, tag='tag:bugs')
+        self.assertEqual(table.title, 'Packages with bugs')
+        self.assertTrue(table.relative_url.endswith('?tag=bugs'))
+
+        # Non-existing tag name
+        table = GeneralTeamPackageTable(self.team, tag='does-not-exist')
+        self.assertEqual(table.title, table.default_title)
+        self.assertEqual(len(table.rows), 0)
+        self.assertTrue(table.relative_url.endswith('?tag=does-not-exist'))
+
+    def test_table_for_bugs_tag(self):
+        """
+        Tests table to display packages with bugs
+        """
+        tag = 'tag:bugs'
+        new_package = create_source_package_with_data('dummy-package-2')
+        value = {
+            'table_title': 'Packages with bugs'
+        }
+        PackageData.objects.create(key=tag, package=new_package, value=value)
+        self.team.packages.add(new_package)
+
+        response = self.get_team_page_response()
+        table = self.get_general_package_table(response, "Packages with bugs")
+
+        self.assertIn("Packages with bugs", str(table))
+        self.assertIn(new_package.name, str(table))
+        self.assertNotIn(self.package.name, str(table))
 
 
 class CreateTableFunctionTests(TestCase):
