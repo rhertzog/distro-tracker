@@ -14,6 +14,7 @@ import re
 
 import requests
 from django import forms
+from distro_tracker.core.package_tables import create_table
 from django.conf import settings
 from django.db.models import Prefetch
 from django.utils.http import urlencode, urlquote_plus
@@ -551,3 +552,26 @@ def get_vcs_data(package):
 
 def get_bug_display_manager_class():
     return DebianBugDisplayManager
+
+
+def get_tables_for_team_page(team, limit):
+    """
+    The function must return a list of :class:`BaseTableField` objects
+    to be displayed in the main page of teams
+
+    :param team: The team for which the tables must be added.
+    :type package: :class:`Team
+        <distro_tracker.core.models.Team>`
+    :param limit: The number of packages to be displayed in the tables
+    :type limit: Integer
+    """
+    return [
+        create_table(slug='general', scope=team, limit=limit),
+        create_table(
+            slug='general', scope=team, limit=limit, tag='tag:rc-bugs'),
+        create_table(
+            slug='general', scope=team, limit=limit,
+            tag='tag:new-upstream-version'),
+        create_table(
+            slug='general', scope=team, limit=limit, tag='tag:bugs'),
+    ]

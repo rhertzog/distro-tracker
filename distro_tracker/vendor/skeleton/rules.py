@@ -318,3 +318,17 @@ def get_bug_display_manager_class():
     interface defined by it.
     """
     pass
+
+
+def get_tables_for_team_page(team, limit):
+    """
+    The function must return a list of :class:`BaseTableField` objects
+    to be displayed in the main page of teams
+
+    :param team: The team for which the tables must be added.
+    :type package: :class:`Team
+        <distro_tracker.core.models.Team>`
+    :param limit: The number of packages to be displayed in the tables
+    :type limit: Integer
+    """
+    pass

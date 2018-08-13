@@ -25,6 +25,7 @@ from django.views.generic import DeleteView, ListView, TemplateView, View
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import FormView, UpdateView
 
+from distro_tracker import vendor
 from distro_tracker.accounts.models import UserEmail
 from distro_tracker.accounts.views import LoginRequiredMixin
 from distro_tracker.core.forms import AddTeamMemberForm, CreateTeamForm
@@ -270,9 +271,13 @@ class TeamDetailsView(DetailView):
     template_name = 'core/team.html'
     table_limit = 20
 
-    def get_context_data(self, **kwargs):
-        context = super(TeamDetailsView, self).get_context_data(**kwargs)
-        context['tables'] = [
+    def _create_tables(self):
+        result, implemented = vendor.call(
+            'get_tables_for_team_page', self.object, self.table_limit)
+        if implemented:
+            return result
+
+        return [
             create_table(
                 slug='general', scope=self.object, limit=self.table_limit),
             create_table(
@@ -280,6 +285,10 @@ class TeamDetailsView(DetailView):
                 limit=self.table_limit, tag='tag:bugs'
             ),
         ]
+
+    def get_context_data(self, **kwargs):
+        context = super(TeamDetailsView, self).get_context_data(**kwargs)
+        context['tables'] = self._create_tables()
         if self.request.user.is_authenticated:
             context['user_member_of_team'] = self.object.user_is_member(
                 self.request.user)
