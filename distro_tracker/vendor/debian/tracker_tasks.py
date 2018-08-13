@@ -46,6 +46,7 @@ from distro_tracker.core.models import (
     SourcePackageDeps,
     SourcePackageName
 )
+from distro_tracker.core.retrieve_data import PackageTaggingUpdateTask
 from distro_tracker.core.tasks import BaseTask
 from distro_tracker.core.utils.http import (
     HttpCache,
@@ -3153,3 +3154,30 @@ class UpdateVcsWatchTask(BaseTask):
                 action_item.save()
             for package_info in todo['update']['package_infos']:
                 package_info.save()
+
+
+class TagPackagesWithRcBugs(PackageTaggingUpdateTask):
+    """
+    Performs an update of 'rc-bugs' tag for packages.
+    """
+    TAG_NAME = 'tag:rc-bugs'
+    TAG_DISPLAY_NAME = 'rc bugs'
+    TAG_COLOR_TYPE = 'danger'
+    TAG_DESCRIPTION = 'The package has Release Critical bugs'
+    TAG_TABLE_TITLE = 'Packages with RC bugs'
+
+    def packages(self):
+        all_bug_stats = PackageBugStats.objects.all().prefetch_related(
+            'package')
+        packages_list = []
+        for bug_stats in all_bug_stats:
+            categories = bug_stats.stats
+            found = False
+            for category in categories:
+                if found:
+                    break
+                if category['category_name'] == 'rc':
+                    found = True
+                    if category['bug_count'] > 0:
+                        packages_list.append(bug_stats.package)
+        return packages_list

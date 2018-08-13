@@ -26,6 +26,7 @@ from unittest import mock
 
 from bs4 import BeautifulSoup as soup
 from django.core import mail
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.management import call_command
 from django.test.utils import override_settings
 from django.urls import reverse
@@ -47,7 +48,7 @@ from distro_tracker.core.models import (
     Repository,
     SourcePackage,
     SourcePackageName,
-    Subscription
+    Subscription,
 )
 from distro_tracker.core.package_tables import BugStatsTableField
 from distro_tracker.core.retrieve_data import UpdateRepositoriesTask
@@ -86,6 +87,7 @@ from distro_tracker.vendor.debian.tracker_tasks import (
     DebianWatchFileScannerUpdate,
     RetrieveDebianMaintainersTask,
     RetrieveLowThresholdNmuTask,
+    TagPackagesWithRcBugs,
     UpdateAppStreamStatsTask,
     UpdateAutoRemovalsStatsTask,
     UpdateBuildLogCheckStats,
@@ -6114,3 +6116,111 @@ class UpstreamTableFieldTests(TestCase):
             self.field.template_name,
             'debian/package-table-fields/upstream.html')
         self.assertEqual(len(self.field.prefetch_related_lookups), 1)
+
+
+class TagPackagesWithRcBugsTest(TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.vendor.debian.tracker_tasks.TagPackagesWithRcBugs`
+    task.
+    """
+
+    def setUp(self):
+        self.tag = 'tag:rc-bugs'
+        self.package_with_rc_bug = PackageName.objects.create(
+            name='package-with-rc-bug')
+        self.package_without_rc_bug = PackageName.objects.create(
+            name='package-without-rc-bug')
+        self.package_without_bug = PackageName.objects.create(
+            name='package-without-bug')
+        PackageBugStats.objects.create(
+            package=self.package_with_rc_bug,
+            stats=[
+                {'bug_count': 1, 'merged_count': 0, 'category_name': 'rc'},
+                {'bug_count': 2, 'merged_count': 0, 'category_name': 'normal'},
+            ]
+        )
+        PackageBugStats.objects.create(
+            package=self.package_without_rc_bug,
+            stats=[
+                {'bug_count': 0, 'merged_count': 0, 'category_name': 'rc'},
+                {'bug_count': 2, 'merged_count': 0, 'category_name': 'normal'},
+            ]
+        )
+
+    def test_update_rc_bugs_tag_task(self):
+        """
+        Tests the default behavior of TagPackagesWithRcBugs task
+        """
+        # ensure that there is no PackageData entries with 'tag:bugs' key
+        self.assertEqual(PackageData.objects.filter(key=self.tag).count(), 0)
+
+        # execute the task
+        task = TagPackagesWithRcBugs()
+        task.execute()
+
+        # check that the task worked as expected
+        self.assertEqual(PackageData.objects.filter(key=self.tag).count(), 1)
+        self.assertIsNotNone(
+            PackageData.objects.get(
+                key=self.tag, package=self.package_with_rc_bug)
+        )
+        with self.assertRaises(ObjectDoesNotExist):
+            PackageData.objects.get(
+                key=self.tag, package=self.package_without_rc_bug)
+        with self.assertRaises(ObjectDoesNotExist):
+            PackageData.objects.get(
+                key=self.tag, package=self.package_without_bug)
+
+    def test_task_remove_tag_from_package_without_no_more_rc_bugs(self):
+        """
+        Tests the removing of 'tag:rc-bugs' data from packages that no longer
+        have RC bugs.
+        """
+        # add bug tag previously
+        PackageData.objects.create(
+            key=self.tag, package=self.package_with_rc_bug)
+        # remove bugs from package
+        self.package_with_rc_bug.bug_stats.delete()
+
+        # check tag in package with rc bug
+        self.assertIsNotNone(
+            PackageData.objects.get(
+                key=self.tag, package=self.package_with_rc_bug)
+        )
+
+        # execute the task
+        task = TagPackagesWithRcBugs()
+        task.execute()
+
+        # check that the task removed the tag
+        self.assertEqual(PackageData.objects.filter(key=self.tag).count(), 0)
+        with self.assertRaises(ObjectDoesNotExist):
+            PackageData.objects.get(
+                key=self.tag, package=self.package_with_rc_bug)
+
+    def test_task_keep_tag_for_package_that_still_have_rc_bugs(self):
+        """
+        Tests the maintenance of 'tag:rc-bugs' key for packages that still
+        have RC bugs.
+        """
+        # add rc-bugs tag previously
+        PackageData.objects.create(
+            key=self.tag, package=self.package_with_rc_bug)
+
+        # check tag in package with RC bug
+        self.assertIsNotNone(
+            PackageData.objects.get(
+                key=self.tag, package=self.package_with_rc_bug)
+        )
+
+        # execute the task
+        task = TagPackagesWithRcBugs()
+        task.execute()
+
+        # check that the task kept the tag
+        self.assertEqual(PackageData.objects.filter(key=self.tag).count(), 1)
+        self.assertIsNotNone(
+            PackageData.objects.get(
+                key=self.tag, package=self.package_with_rc_bug)
+        )
