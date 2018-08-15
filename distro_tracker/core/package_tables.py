@@ -308,6 +308,10 @@ class BasePackageTable(metaclass=PluginRegistry):
       <distro_tracker.vendor.skeleton.rules.get_table_fields>`
     """
 
+    #: The slug of the table which is used to define its url.
+    #: Must be overriden and set to a unique non-empty value.
+    slug = None
+
     def __init__(self, scope, title=None, limit=None, tag=None):
         """
         :param scope: a convenient object that can be used to define the list
@@ -357,13 +361,6 @@ class BasePackageTable(metaclass=PluginRegistry):
             if data and 'table_title' in data.value:
                 return data.value['table_title']
         return self.default_title
-
-    @property
-    def slug(self):
-        """
-        The slug of the table which is used to define its url.
-        """
-        return ''
 
     @property
     def relative_url(self, **kwargs):
@@ -517,9 +514,8 @@ def create_table(slug, scope, title=None, limit=None, tag=None):
         limit = int(limit)
     for table_class in BasePackageTable.plugins:
         if table_class is not BasePackageTable:
-            table = table_class(scope, title=title, limit=limit, tag=tag)
-            if table.slug == slug:
-                return table
+            if table_class.slug == slug:
+                return table_class(scope, title=title, limit=limit, tag=tag)
 
     return None
 
