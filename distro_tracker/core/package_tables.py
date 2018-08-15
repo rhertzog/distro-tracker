@@ -352,6 +352,7 @@ class BasePackageTable(metaclass=PluginRegistry):
         if self._title:
             return self._title
         elif self.tag:
+            # TODO: need better design
             data = PackageData.objects.filter(key=self.tag).first()
             if data and 'table_title' in data.value:
                 return data.value['table_title']
@@ -538,8 +539,6 @@ class GeneralTeamPackageTable(BasePackageTable):
         """
         if self.tag:
             return self.scope.packages.filter(
-                id__in=PackageData.objects.filter(
-                    key=self.tag).values('package_id')
-            ).order_by('name')
+                data__key=self.tag).order_by('name')
         else:
             return self.scope.packages.all().order_by('name')

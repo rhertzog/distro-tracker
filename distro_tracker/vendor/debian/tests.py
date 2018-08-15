@@ -26,7 +26,6 @@ from unittest import mock
 
 from bs4 import BeautifulSoup as soup
 from django.core import mail
-from django.core.exceptions import ObjectDoesNotExist
 from django.core.management import call_command
 from django.test.utils import override_settings
 from django.urls import reverse
@@ -6166,10 +6165,10 @@ class TagPackagesWithRcBugsTest(TestCase):
             PackageData.objects.get(
                 key=self.tag, package=self.package_with_rc_bug)
         )
-        with self.assertRaises(ObjectDoesNotExist):
+        with self.assertRaises(PackageData.DoesNotExist):
             PackageData.objects.get(
                 key=self.tag, package=self.package_without_rc_bug)
-        with self.assertRaises(ObjectDoesNotExist):
+        with self.assertRaises(PackageData.DoesNotExist):
             PackageData.objects.get(
                 key=self.tag, package=self.package_without_bug)
 
@@ -6196,7 +6195,7 @@ class TagPackagesWithRcBugsTest(TestCase):
 
         # check that the task removed the tag
         self.assertEqual(PackageData.objects.filter(key=self.tag).count(), 0)
-        with self.assertRaises(ObjectDoesNotExist):
+        with self.assertRaises(PackageData.DoesNotExist):
             PackageData.objects.get(
                 key=self.tag, package=self.package_with_rc_bug)
 
@@ -6265,7 +6264,7 @@ class TagPackagesWithNewUpstreamVersionTest(TestCase):
             PackageData.objects.get(
                 key=self.tag, package=self.outdated_package)
         )
-        with self.assertRaises(ObjectDoesNotExist):
+        with self.assertRaises(PackageData.DoesNotExist):
             PackageData.objects.get(
                 key=self.tag, package=self.updated_package)
 
@@ -6292,7 +6291,7 @@ class TagPackagesWithNewUpstreamVersionTest(TestCase):
 
         # check that the task removed the tag
         self.assertEqual(PackageData.objects.filter(key=self.tag).count(), 0)
-        with self.assertRaises(ObjectDoesNotExist):
+        with self.assertRaises(PackageData.DoesNotExist):
             PackageData.objects.get(
                 key=self.tag, package=self.updated_package)
 

@@ -18,7 +18,6 @@ import sys
 from unittest import mock
 
 from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist
 from django.test.utils import override_settings
 
 from distro_tracker.accounts.models import User, UserEmail
@@ -1386,7 +1385,7 @@ class TagPackagesWithBugsTest(TestCase):
         self.assertIsNotNone(
             PackageData.objects.get(key=self.tag, package=self.package_with_bug)
         )
-        with self.assertRaises(ObjectDoesNotExist):
+        with self.assertRaises(PackageData.DoesNotExist):
             PackageData.objects.get(
                 key=self.tag, package=self.package_without_bug)
 
@@ -1411,10 +1410,10 @@ class TagPackagesWithBugsTest(TestCase):
 
         # check that the task removed the tag
         self.assertEqual(PackageData.objects.filter(key=self.tag).count(), 0)
-        with self.assertRaises(ObjectDoesNotExist):
+        with self.assertRaises(PackageData.DoesNotExist):
             PackageData.objects.get(
                 key=self.tag, package=self.package_with_bug)
-        with self.assertRaises(ObjectDoesNotExist):
+        with self.assertRaises(PackageData.DoesNotExist):
             PackageData.objects.get(
                 key=self.tag, package=self.package_without_bug)
 
@@ -1440,6 +1439,6 @@ class TagPackagesWithBugsTest(TestCase):
         self.assertIsNotNone(
             PackageData.objects.get(key=self.tag, package=self.package_with_bug)
         )
-        with self.assertRaises(ObjectDoesNotExist):
+        with self.assertRaises(PackageData.DoesNotExist):
             PackageData.objects.get(
                 key=self.tag, package=self.package_without_bug)

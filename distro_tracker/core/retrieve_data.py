@@ -25,7 +25,6 @@ from distro_tracker.core.models import (
     BinaryPackageName,
     BinaryPackageRepositoryEntry,
     ContributorName,
-    PackageBugStats,
     PackageData,
     PackageName,
     PseudoPackageName,
@@ -217,8 +216,7 @@ class TagPackagesWithBugs(PackageTaggingUpdateTask):
     TAG_TABLE_TITLE = 'Packages with bugs'
 
     def packages(self):
-        return PackageName.objects.filter(
-            id__in=PackageBugStats.objects.all().values('package'))
+        return PackageName.objects.filter(bug_stats__stats__isnull=False)
 
 
 class PackageUpdateTask(BaseTask):
