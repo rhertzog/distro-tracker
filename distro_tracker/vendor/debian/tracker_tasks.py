@@ -46,8 +46,8 @@ from distro_tracker.core.models import (
     SourcePackageDeps,
     SourcePackageName
 )
-from distro_tracker.core.retrieve_data import PackageTaggingUpdateTask
 from distro_tracker.core.tasks import BaseTask
+from distro_tracker.core.tasks.mixins import PackageTagging
 from distro_tracker.core.utils.http import (
     HttpCache,
     get_resource_content,
@@ -3156,7 +3156,7 @@ class UpdateVcsWatchTask(BaseTask):
                 package_info.save()
 
 
-class TagPackagesWithRcBugs(PackageTaggingUpdateTask):
+class TagPackagesWithRcBugs(BaseTask, PackageTagging):
     """
     Performs an update of 'rc-bugs' tag for packages.
     """
@@ -3166,7 +3166,7 @@ class TagPackagesWithRcBugs(PackageTaggingUpdateTask):
     TAG_DESCRIPTION = 'The package has Release Critical bugs'
     TAG_TABLE_TITLE = 'Packages with RC bugs'
 
-    def packages(self):
+    def packages_to_tag(self):
         all_bug_stats = PackageBugStats.objects.all().prefetch_related(
             'package')
         packages_list = []
@@ -3183,7 +3183,7 @@ class TagPackagesWithRcBugs(PackageTaggingUpdateTask):
         return packages_list
 
 
-class TagPackagesWithNewUpstreamVersion(PackageTaggingUpdateTask):
+class TagPackagesWithNewUpstreamVersion(BaseTask, PackageTagging):
     """
     Performs an update of 'new-upstream-version' tag for packages.
     """
@@ -3193,7 +3193,7 @@ class TagPackagesWithNewUpstreamVersion(PackageTaggingUpdateTask):
     TAG_DESCRIPTION = 'The upstream has a newer version available'
     TAG_TABLE_TITLE = 'Newer upstream version'
 
-    def packages(self):
+    def packages_to_tag(self):
         try:
             action_type = ActionItemType.objects.get(
                 type_name='new-upstream-version')

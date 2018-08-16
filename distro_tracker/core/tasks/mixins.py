@@ -14,8 +14,10 @@ Mixins to combine to create powerful tasks.
 import logging
 
 from debian.debian_support import version_compare
+from django.db import transaction
 
 from distro_tracker.core.models import (
+    PackageData,
     Repository,
     SourcePackage,
     SourcePackageRepositoryEntry,
@@ -426,3 +428,56 @@ class ProcessRepositoryUpdates(ProcessSrcRepoEntry):
             for package in self.pkglist[repository.id]:
                 if package not in new_pkglist:
                     yield (package, repository)
+
+
+class PackageTagging(object):
+    """
+    A task mixin that helps to maintain a set of package tags:
+    by untagging packages that no longer should be tagged and by
+    tagging packages that should.
+
+    Subclasses must define:
+    - `TAG_NAME`: defines the key for PackageData to be updated. One must define
+    keys matching `tag:.*`
+    - `TAG_DISPLAY_NAME`: defines the display name for the tag
+    - `TAG_COLOR_TYPE`: defines the color type to be used while rendering
+    content related to the tag. It must be defined based on the tag severity.
+    One may use one of the following options: success, danger, warning, or info.
+    - `TAG_DESCRIPTION`: defines a help text to be displayed with a 'title'
+    attribute
+    - `TAG_TABLE_TITLE`: the title of the table showing all the packages
+    with this tag
+
+    Also, subclasses must implement the :func:`packages_to_tag` function to
+    define the list of packages that must be tagged.
+    """
+    TAG_NAME = None
+    TAG_DISPLAY_NAME = ''
+    TAG_COLOR_TYPE = ''
+    TAG_DESCRIPTION = ''
+    TAG_TABLE_TITLE = ''
+
+    def packages_to_tag(self):
+        """
+        Subclasses must override this method to return the list of packages
+        that must be tagged with the tag defined by `TAG_NAME`
+        """
+        return []
+
+    def execute_package_tagging(self):
+        with transaction.atomic():
+            # Clear previous TaggedItems
+            PackageData.objects.filter(key=self.TAG_NAME).delete()
+
+            items = []
+            value = {
+                'display_name': self.TAG_DISPLAY_NAME,
+                'color_type': self.TAG_COLOR_TYPE,
+                'description': self.TAG_DESCRIPTION,
+                'table_title': self.TAG_TABLE_TITLE
+            }
+            for package in self.packages_to_tag():
+                tag = PackageData(
+                    package=package, key=self.TAG_NAME, value=value)
+                items.append(tag)
+            PackageData.objects.bulk_create(items)
