@@ -19,6 +19,7 @@ from django.core.files import File
 from distro_tracker.core.models import ExtractedSourceFile
 from distro_tracker.core.tasks import BaseTask
 from distro_tracker.core.tasks.mixins import ProcessSourcePackage
+from distro_tracker.core.tasks.schedulers import IntervalScheduler
 from distro_tracker.core.utils.packages import AptCache
 
 logger = logging.getLogger('distro_tracker.core.tasks')
@@ -35,6 +36,10 @@ class ExtractSourcePackageFiles(BaseTask, ProcessSourcePackage):
     - debian/control
     - debian/watch
     """
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600
+
     ALL_FILES_TO_EXTRACT = (
         'changelog',
         'copyright',

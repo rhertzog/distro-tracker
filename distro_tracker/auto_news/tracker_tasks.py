@@ -13,10 +13,14 @@ The Distro-Tracker-specific tasks for :mod:`distro_tracker.auto_news` app.
 from distro_tracker.core.models import News, SourcePackageName
 from distro_tracker.core.tasks import BaseTask
 from distro_tracker.core.tasks.mixins import ProcessRepositoryUpdates
+from distro_tracker.core.tasks.schedulers import IntervalScheduler
 from distro_tracker.core.utils.http import get_resource_content
 
 
 class GenerateNewsFromRepositoryUpdates(BaseTask, ProcessRepositoryUpdates):
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600
 
     def generate_accepted_news_content(self, srcpkg):
         """

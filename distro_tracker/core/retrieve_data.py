@@ -42,6 +42,7 @@ from distro_tracker.core.tasks.mixins import (
     ProcessSrcRepoEntry,
     ProcessSrcRepoEntryInDefaultRepository,
 )
+from distro_tracker.core.tasks.schedulers import IntervalScheduler
 from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.utils.packages import (
     AptCache,
@@ -163,6 +164,10 @@ class TagPackagesWithBugs(BaseTask, PackageTagging):
     """
     Performs an update of 'bugs' tag for packages.
     """
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600
+
     TAG_NAME = 'tag:bugs'
     TAG_DISPLAY_NAME = 'bugs'
     TAG_COLOR_TYPE = 'warning'
@@ -181,6 +186,9 @@ class UpdateRepositoriesTask(BaseTask):
     deleted. An event is emitted for each situation, allowing other tasks to
     perform updates based on updated package information.
     """
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600 * 4
 
     SOURCE_DEPENDENCY_TYPES = ('Build-Depends', 'Build-Depends-Indep')
     BINARY_DEPENDENCY_TYPES = ('Depends', 'Recommends', 'Suggests')
@@ -768,6 +776,10 @@ class UpdatePackageGeneralInformation(BaseTask, ProcessMainRepoEntry):
     """
     Updates the general information regarding packages.
     """
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600 * 4
+
     def _get_info_from_entry(self, entry):
         srcpkg = entry.source_package
         general_information = {
@@ -803,6 +815,9 @@ class UpdateVersionInformation(BaseTask, ProcessSrcRepoEntry):
     """
     Updates extracted version information about packages.
     """
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600 * 4
 
     def _extract_versions_for_package(self, package_name):
         """
@@ -873,6 +888,9 @@ class UpdateSourceToBinariesInformation(BaseTask, ProcessMainRepoEntry):
     source package's Web page.
     """
 
+    class Scheduler(IntervalScheduler):
+        interval = 3600 * 4
+
     def _get_all_binaries(self, entry):
         """
         Returns a list representing binary packages linked to the given
@@ -911,6 +929,9 @@ class UpdateTeamPackagesTask(BaseTask, ProcessSrcRepoEntryInDefaultRepository):
     updates teams to include new packages which are associated with its
     maintainer email.
     """
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600 * 4
 
     def add_package_to_maintainer_teams(self, package, maintainer):
         """

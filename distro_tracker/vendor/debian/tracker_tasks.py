@@ -48,6 +48,7 @@ from distro_tracker.core.models import (
 )
 from distro_tracker.core.tasks import BaseTask
 from distro_tracker.core.tasks.mixins import PackageTagging
+from distro_tracker.core.tasks.schedulers import IntervalScheduler
 from distro_tracker.core.utils.http import (
     HttpCache,
     get_resource_content,
@@ -77,6 +78,10 @@ class RetrieveDebianMaintainersTask(BaseTask):
     """
     Retrieves (and updates if necessary) a list of Debian Maintainers.
     """
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600 * 24
+
     def __init__(self, force_update=False, *args, **kwargs):
         super(RetrieveDebianMaintainersTask, self).__init__(*args, **kwargs)
         self.force_update = force_update
@@ -133,6 +138,10 @@ class RetrieveLowThresholdNmuTask(BaseTask):
     Updates the list of Debian Maintainers which agree with the lowthreshold
     NMU.
     """
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600 * 24
+
     def __init__(self, force_update=False, *args, **kwargs):
         super(RetrieveLowThresholdNmuTask, self).__init__(*args, **kwargs)
         self.force_update = force_update
@@ -196,6 +205,10 @@ class UpdatePackageBugStats(BaseTask, BugDisplayManagerMixin):
     Creates :class:`distro_tracker.core.ActionItem` instances for packages
     which have bugs tagged help or patch.
     """
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600
+
     PATCH_BUG_ACTION_ITEM_TYPE_NAME = 'debian-patch-bugs-warning'
     HELP_BUG_ACTION_ITEM_TYPE_NAME = 'debian-help-bugs-warning'
 
@@ -557,6 +570,10 @@ class UpdateLintianStatsTask(BaseTask):
     """
     Updates packages' lintian stats.
     """
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600 * 4
+
     ACTION_ITEM_TYPE_NAME = 'lintian-warnings-and-errors'
     ITEM_DESCRIPTION = 'lintian reports <a href="{url}">{report}</a>'
     ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/lintian-action-item.html'
@@ -701,6 +718,10 @@ class UpdateAppStreamStatsTask(BaseTask):
     """
     Updates packages' AppStream issue hints data.
     """
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600 * 6
+
     ACTION_ITEM_TYPE_NAME = 'appstream-issue-hints'
     ITEM_DESCRIPTION = 'AppStream hints: {report}'
     ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/appstream-action-item.html'
@@ -912,6 +933,10 @@ class UpdateAppStreamStatsTask(BaseTask):
 
 
 class UpdateTransitionsTask(BaseTask):
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600
+
     REJECT_LIST_URL = 'https://ftp-master.debian.org/transitions.yaml'
     PACKAGE_TRANSITION_LIST_URL = (
         'https://release.debian.org/transitions/export/packages.yaml')
@@ -999,6 +1024,10 @@ class UpdateTransitionsTask(BaseTask):
 
 
 class UpdateExcusesTask(BaseTask):
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600
+
     ACTION_ITEM_TYPE_NAME = 'debian-testing-migration'
     ITEM_DESCRIPTION = (
         "The package has not entered testing even though the delay is over")
@@ -1269,6 +1298,10 @@ class UpdateExcusesTask(BaseTask):
 
 
 class UpdateBuildLogCheckStats(BaseTask):
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600 * 6
+
     ACTION_ITEM_TYPE_NAME = 'debian-build-logcheck'
     ITEM_DESCRIPTION = 'Build log checks report <a href="{url}">{report}</a>'
     ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/logcheck-action-item.html'
@@ -1382,6 +1415,10 @@ class UpdateBuildLogCheckStats(BaseTask):
 
 
 class DebianWatchFileScannerUpdate(BaseTask):
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600 * 6
+
     ACTION_ITEM_TYPE_NAMES = (
         'new-upstream-version',
         'watch-failure',
@@ -1576,6 +1613,10 @@ class DebianWatchFileScannerUpdate(BaseTask):
 
 
 class UpdateSecurityIssuesTask(BaseTask):
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600 * 3
+
     ACTION_ITEM_TYPE_NAME = 'debian-security-issue-in-{}'
     ACTION_ITEM_TEMPLATE = 'debian/security-issue-action-item.html'
     ITEM_DESCRIPTION_TEMPLATE = {
@@ -1794,6 +1835,10 @@ class UpdatePiuPartsTask(BaseTask):
     Retrieves the piuparts stats for all the suites defined in the
     :data:`distro_tracker.project.local_settings.DISTRO_TRACKER_DEBIAN_PIUPARTS_SUITES`
     """
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600 * 3
+
     ACTION_ITEM_TYPE_NAME = 'debian-piuparts-test-fail'
     ACTION_ITEM_TEMPLATE = 'debian/piuparts-action-item.html'
     ITEM_DESCRIPTION = 'piuparts found (un)installation error(s)'
@@ -1878,6 +1923,10 @@ class UpdateUbuntuStatsTask(BaseTask):
     The task updates Ubuntu stats for packages. These stats are displayed in a
     separate panel.
     """
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600 * 3
+
     def __init__(self, force_update=False, *args, **kwargs):
         super(UpdateUbuntuStatsTask, self).__init__(*args, **kwargs)
         self.force_update = force_update
@@ -2001,6 +2050,9 @@ class UpdateDebianDuckTask(BaseTask):
     A task for updating upstream url issue information on all packages.
     """
 
+    class Scheduler(IntervalScheduler):
+        interval = 3600 * 3
+
     DUCK_LINK = 'http://duck.debian.net'
     # URL of the list of source packages with issues.
     DUCK_SP_LIST_URL = 'http://duck.debian.net/static/sourcepackages.txt'
@@ -2078,6 +2130,10 @@ class UpdateWnppStatsTask(BaseTask):
     """
     The task updates the WNPP bugs for all packages.
     """
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600 * 3
+
     ACTION_ITEM_TYPE_NAME = 'debian-wnpp-issue'
     ACTION_ITEM_TEMPLATE = 'debian/wnpp-action-item.html'
     ITEM_DESCRIPTION = '<a href="{url}">{wnpp_type}: {wnpp_msg}</a>'
@@ -2256,6 +2312,10 @@ class UpdateNewQueuePackages(BaseTask):
     """
     Updates the versions of source packages found in the NEW queue.
     """
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600
+
     DATA_KEY = 'debian-new-queue-info'
 
     def __init__(self, force_update=False, *args, **kwargs):
@@ -2342,6 +2402,10 @@ class UpdateDebciStatusTask(BaseTask):
     """
     Updates packages' debci status.
     """
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600
+
     ACTION_ITEM_TYPE_NAME = 'debci-failed-tests'
     ITEM_DESCRIPTION = (
         'Debci reports <a href="{debci_url}">failed tests</a> '
@@ -2449,6 +2513,10 @@ class UpdateAutoRemovalsStatsTask(BaseTask):
     """
     A task for updating autoremovals information on all packages.
     """
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600
+
     ACTION_ITEM_TYPE_NAME = 'debian-autoremoval'
     ACTION_ITEM_TEMPLATE = 'debian/autoremoval-action-item.html'
     ITEM_DESCRIPTION = ('Marked for autoremoval on {removal_date}' +
@@ -2547,6 +2615,10 @@ class UpdatePackageScreenshotsTask(BaseTask):
     Check if a screenshot exists on screenshots.debian.net, and add a
     key to PackageData if it does.
     """
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600 * 24
+
     DATA_KEY = 'screenshots'
 
     def __init__(self, force_update=False, *args, **kwargs):
@@ -2601,6 +2673,10 @@ class UpdatePackageScreenshotsTask(BaseTask):
 
 
 class UpdateBuildReproducibilityTask(BaseTask):
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600 * 6
+
     BASE_URL = 'https://tests.reproducible-builds.org'
     ACTION_ITEM_TYPE_NAME = 'debian-build-reproducibility'
     ACTION_ITEM_TEMPLATE = 'debian/build-reproducibility-action-item.html'
@@ -2697,6 +2773,10 @@ class UpdateBuildReproducibilityTask(BaseTask):
 
 
 class MultiArchHintsTask(BaseTask):
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600 * 6
+
     ACTIONS_WEB = 'https://wiki.debian.org/MultiArch/Hints'
     ACTIONS_URL = 'https://dedup.debian.net/static/multiarch-hints.yaml'
     ACTION_ITEM_TYPE_NAME = 'debian-multiarch-hints'
@@ -2778,6 +2858,10 @@ class UpdateVcsWatchTask(BaseTask):
     """
     Updates packages' vcswatch stats.
     """
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600
+
     ACTION_ITEM_TYPE_NAME = 'vcswatch-warnings-and-errors'
     ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/vcswatch-action-item.html'
     VCSWATCH_URL = 'https://qa.debian.org/cgi-bin/vcswatch?package=%(package)s'
@@ -3160,6 +3244,10 @@ class TagPackagesWithRcBugs(BaseTask, PackageTagging):
     """
     Performs an update of 'rc-bugs' tag for packages.
     """
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600
+
     TAG_NAME = 'tag:rc-bugs'
     TAG_DISPLAY_NAME = 'rc bugs'
     TAG_COLOR_TYPE = 'danger'
@@ -3187,6 +3275,10 @@ class TagPackagesWithNewUpstreamVersion(BaseTask, PackageTagging):
     """
     Performs an update of 'new-upstream-version' tag for packages.
     """
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600 * 3
+
     TAG_NAME = 'tag:new-upstream-version'
     TAG_DISPLAY_NAME = 'new upstream version'
     TAG_COLOR_TYPE = 'warning'

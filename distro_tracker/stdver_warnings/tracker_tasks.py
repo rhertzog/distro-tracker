@@ -25,6 +25,7 @@ from distro_tracker.core.tasks import BaseTask
 from distro_tracker.core.tasks.mixins import (
     ProcessSrcRepoEntryInDefaultRepository
 )
+from distro_tracker.core.tasks.schedulers import IntervalScheduler
 from distro_tracker.core.utils import get_or_none
 
 
@@ -34,6 +35,10 @@ class UpdateStandardsVersionWarnings(BaseTask,
     The task updates warnings for packages which have an outdated
     Standards-Version.
     """
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600
+
     ACTION_ITEM_TYPE = 'debian-std-ver-outdated'
     FULL_DESCRIPTION_TEMPLATE = \
         'stdver_warnings/standards-version-action-item.html'
