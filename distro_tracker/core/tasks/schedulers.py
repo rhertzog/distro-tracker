@@ -59,6 +59,8 @@ class IntervalScheduler(Scheduler):
         return int(self.interval)
 
     def needs_to_run(self):
-        next_try = self.task.last_attempted_run + timedelta(
-            seconds=self.get_interval())
+        last_try = self.task.last_attempted_run
+        if last_try is None:
+            return True
+        next_try = last_try + timedelta(seconds=self.get_interval())
         return now() >= next_try

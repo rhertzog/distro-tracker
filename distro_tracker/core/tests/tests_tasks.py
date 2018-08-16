@@ -560,6 +560,9 @@ class IntervalSchedulerTests(TestCase):
 
         self.assertFalse(self.scheduler.needs_to_run())
 
+    def test_needs_to_run_no_attempt_to_run_yet(self):
+        self.assertTrue(self.scheduler.needs_to_run())
+
 
 class TestRunTask(BaseTask):
     NAME = 'test_run_task'
