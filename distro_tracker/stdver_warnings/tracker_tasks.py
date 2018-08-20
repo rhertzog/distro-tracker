@@ -14,6 +14,7 @@ Distro Tracker tasks for the :mod:`distro_tracker.stdver_warnings` app.
 """
 
 from debian.debian_support import version_compare
+from django.db import transaction
 from django.db.models import Prefetch
 
 from distro_tracker.core.models import (
@@ -51,6 +52,7 @@ class UpdateStandardsVersionWarnings(BaseTask,
             full_description_template=self.FULL_DESCRIPTION_TEMPLATE)
 
     def items_extend_queryset(self, queryset):
+        queryset = super().items_extend_queryset(queryset)
         base_qs = ActionItem.objects.filter(item_type=self.action_type)
         return queryset.prefetch_related(
             Prefetch('source_package__source_package_name__action_items',
@@ -71,6 +73,7 @@ class UpdateStandardsVersionWarnings(BaseTask,
 
         return policy_version
 
+    @transaction.atomic
     def execute_main(self):
         # Get the current policy version
         policy_version = self.get_policy_version()

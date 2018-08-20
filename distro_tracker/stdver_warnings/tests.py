@@ -38,6 +38,13 @@ class StandardsVersionActionItemTests(TestCase):
         self.debian_policy.save()
         self.task = UpdateStandardsVersionWarnings()
 
+    def create_action_item(self):
+        action_type = self.get_action_type()
+        return ActionItem.objects.create(
+            package=self.package.source_package_name,
+            item_type=action_type,
+            short_description="Desc")
+
     def run_task(self):
         """
         Initiates the task run.
@@ -185,19 +192,14 @@ class StandardsVersionActionItemTests(TestCase):
         # Still no action items.
         self.assertEqual(0, ActionItem.objects.count())
 
-    def test_action_item_removed(self):
+    def test_action_item_removed_with_update(self):
         """
         Tests that an existing action item is removed when there is a new
         package version with a non-outdated Std-Ver.
         """
-        action_type = self.get_action_type()
-        ActionItem.objects.create(
-            package=self.package.source_package_name,
-            item_type=action_type,
-            short_description="Desc")
+        self.create_action_item()
         self.package.standards_version = '3.9.3'
-        for entry in self.package.repository_entries.all():
-            entry.delete()
+        self.package.repository_entries.all().delete()
         self.package.save()
 
         # Create a new package with a higher Std-Ver
@@ -211,8 +213,23 @@ class StandardsVersionActionItemTests(TestCase):
         self.run_task()
 
         # The action item has been removed.
-        self.assertEqual(0,
-                         self.package.source_package_name.action_items.count())
+        self.assertEqual(0, ActionItem.objects.count())
+
+    def test_action_item_removed_with_removal_from_default_repository(self):
+        """
+        Tests that an existing action item is removed when the
+        package is gone from the default repository.
+        """
+        self.create_action_item()
+        self.package.standards_version = '3.9.3'
+        self.package.save()
+        self.remove_from_repository(self.package, 'default')
+        self.add_to_repository(self.package, 'foobar')
+
+        self.run_task()
+
+        # The action item has been removed.
+        self.assertEqual(0, ActionItem.objects.count())
 
     def test_action_item_updated(self):
         """
@@ -224,9 +241,8 @@ class StandardsVersionActionItemTests(TestCase):
             package=self.package.source_package_name,
             item_type=action_type,
             short_description="Desc")
+        self.package.repository_entries.all().delete()
         self.package.standards_version = '3.9.2'
-        for entry in self.package.repository_entries.all():
-            entry.delete()
         self.package.save()
 
         # Create a new package with a higher Std-Ver
@@ -246,10 +262,10 @@ class StandardsVersionActionItemTests(TestCase):
         item = self.package.source_package_name.action_items.all()[0]
         self.assertEqual('3.9.3.0', item.extra_data['standards_version'])
 
-    def test_task_directly_called(self):
+    def test_task_run_with_force_update(self):
         """
-        Tests that when the task is directly called, the Standards-Version of
-        all packages is checked.
+        Tests that when the task is run with force_update, the Standards-Version
+        of all packages is checked.
         """
         self.package.standards_version = '3.9.3'
         self.package.save()
