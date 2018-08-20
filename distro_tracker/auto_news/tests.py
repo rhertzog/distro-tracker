@@ -1,4 +1,4 @@
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2018 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -39,41 +39,6 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
     def run_and_clear_news(self):
         self.run_task()
         News.objects.all().delete()
-
-    def add_source_package_to_repository(self, srcpkg, repository):
-        """
-        Helper method which adds a source package to the given repository
-        and makes sure the corresponding events are received by the
-        news generation task if the ``events`` flag is set.
-
-        :param name: The name of the source package
-        :param version: The version of the source package
-        :param repository: The repository to which to add the source package
-        """
-        repo, _ = Repository.objects.get_or_create(
-            shorthand=repository, defaults={
-                'name': 'Test repository %s' % repository,
-                'suite': repository,
-                'codename': repository,
-                'components': ['component'],
-                'uri': 'http://localhost/debian/',
-            }
-        )
-
-        entry = SourcePackageRepositoryEntry(repository=repo,
-                                             source_package=srcpkg)
-        entry.save()
-        return entry
-
-    def remove_source_package_from_repository(self, srcpkg, repository):
-        """
-        Helper method which removes the given source package version from the
-        given repository. It makes sure the corresponding events are received
-        by the news generation task if the ``events`` flag is set.
-        """
-        SourcePackageRepositoryEntry.objects.filter(
-            source_package=srcpkg,
-            repository__shorthand=repository).delete()
 
     def get_accepted_title(self, entry):
         title = '{pkg} {ver} has been added to {repo}'.format(
@@ -138,7 +103,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         srcpkg = self.create_source_package(repository='old')
         self.run_and_clear_news()
         # Add the package to another repository
-        entry = self.add_source_package_to_repository(srcpkg, 'repo')
+        entry = self.add_to_repository(srcpkg, 'repo')
 
         self.run_task()
 
@@ -160,7 +125,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         srcpkg = self.create_source_package(repository='repo1')
         self.run_and_clear_news()
         # Add the package to another hidden epository
-        entry = self.add_source_package_to_repository(srcpkg, 'repo2')
+        entry = self.add_to_repository(srcpkg, 'repo2')
         entry.repository.flags.create(name='hidden', value=True)
 
         self.run_task()
@@ -181,7 +146,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         # Now create the new version and make it replace the old version
         # in the repository
         self.create_source_package(version='2', repository='repo')
-        self.remove_source_package_from_repository(srcpkg1, 'repo')
+        self.remove_from_repository(srcpkg1, 'repo')
 
         self.run_task()
 
@@ -236,7 +201,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         srcpkg = self.create_source_package(repository='old')
         self.run_and_clear_news()
         for repository in repositories:
-            self.add_source_package_to_repository(srcpkg, repository)
+            self.add_to_repository(srcpkg, repository)
 
         self.run_task()
 
@@ -256,7 +221,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         self.run_and_clear_news()
 
         for repository in repositories:
-            self.add_source_package_to_repository(srcpkg, repository)
+            self.add_to_repository(srcpkg, repository)
         Repository.objects.get(shorthand='repo1').flags.create(name='hidden',
                                                                value=True)
         Repository.objects.get(shorthand='repo2').flags.create(name='hidden',
@@ -283,8 +248,8 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
 
         for repository in repositories:
             # Replace the old version with the new one
-            self.remove_source_package_from_repository(srcpkg_old, repository)
-            self.add_source_package_to_repository(srcpkg_new, repository)
+            self.remove_from_repository(srcpkg_old, repository)
+            self.add_to_repository(srcpkg_new, repository)
 
         self.run_task()
 
@@ -309,7 +274,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
 
         # Add the new package version to each repository
         for version, repository in zip(versions, repositories):
-            self.remove_source_package_from_repository(srcpkg_old, repository)
+            self.remove_from_repository(srcpkg_old, repository)
             self.create_source_package(version=version, repository=repository)
 
         self.run_task()
@@ -326,7 +291,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         self.run_and_clear_news()
 
         details = self.save_entry_details(srcpkg.repository_entries.first())
-        self.remove_source_package_from_repository(srcpkg, 'repo')
+        self.remove_from_repository(srcpkg, 'repo')
 
         self.run_task()
 
@@ -347,7 +312,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
                                                               value=True)
         self.run_and_clear_news()
 
-        self.remove_source_package_from_repository(srcpkg, 'repo')
+        self.remove_from_repository(srcpkg, 'repo')
 
         self.run_task()
 
@@ -365,7 +330,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         self.run_and_clear_news()
 
         # Add the version to another non-hidden repository
-        entry = self.add_source_package_to_repository(srcpkg, 'repo2')
+        entry = self.add_to_repository(srcpkg, 'repo2')
 
         self.run_task()
 
@@ -390,7 +355,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         details = self.save_entry_details(
             SourcePackageRepositoryEntry.objects.first())
         for srcpkg in src_packages:
-            self.remove_source_package_from_repository(srcpkg, 'repo')
+            self.remove_from_repository(srcpkg, 'repo')
 
         self.run_task()
 
@@ -411,7 +376,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
         self.run_and_clear_news()
 
         # Remove only one of the versions
-        self.remove_source_package_from_repository(srcpkg, 'repo')
+        self.remove_from_repository(srcpkg, 'repo')
 
         self.run_task()
 
@@ -429,9 +394,9 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
             srcpkg.repository_entries.first())
 
         # Add the version to one repository
-        entry_added = self.add_source_package_to_repository(srcpkg, 'repo2')
+        entry_added = self.add_to_repository(srcpkg, 'repo2')
         # Remove it from the one that already had it
-        self.remove_source_package_from_repository(srcpkg, 'repo1')
+        self.remove_from_repository(srcpkg, 'repo1')
 
         self.run_task()
 
@@ -480,7 +445,7 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
             # Remove the source package from the repository
             entry = srcpkg.repository_entries.first()
             details_all.append(self.save_entry_details(entry))
-            self.remove_source_package_from_repository(srcpkg, repository)
+            self.remove_from_repository(srcpkg, repository)
 
         self.run_task()
 
