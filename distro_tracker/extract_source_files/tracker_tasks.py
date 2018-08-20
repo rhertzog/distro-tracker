@@ -76,7 +76,7 @@ class ExtractSourcePackageFiles(BaseTask, ProcessSourcePackage):
             file_path = os.path.join(debian_directory, file_name)
             if not os.path.exists(file_path):
                 continue
-            with open(file_path, 'r') as f:
+            with open(file_path, 'rb') as f:
                 extracted_file = File(f)
                 ExtractedSourceFile.objects.create(
                     source_package=source_package,

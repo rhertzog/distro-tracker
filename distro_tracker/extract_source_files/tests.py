@@ -49,7 +49,7 @@ class ExtractSourcePackageFilesTest(TestCase):
         self.task.execute()
 
     def setup_debian_dir(self, pkg_directory, files_to_create=None,
-                         extra_files=[]):
+                         extra_files=[], contents=b'Contents'):
         debian_dir = os.path.join(pkg_directory, 'debian')
         os.makedirs(debian_dir)
         if files_to_create is None:
@@ -57,8 +57,8 @@ class ExtractSourcePackageFilesTest(TestCase):
 
         for file_name in itertools.chain(files_to_create, extra_files):
             file_path = os.path.join(debian_dir, file_name)
-            with open(file_path, 'w') as f:
-                f.write('Contents')
+            with open(file_path, 'wb') as f:
+                f.write(contents)
 
         return debian_dir
 
@@ -94,6 +94,20 @@ class ExtractSourcePackageFilesTest(TestCase):
             self.run_task()
 
         self.assertExtractedFilesInDB()
+
+    def test_create_extracted_files_with_non_utf8_content(self, mock_cache):
+        """
+        Tests that the task creates an
+        :class:`distro_tracker.core.models.ExtractedSourceFile` instance
+        even when the content of the file is not valid UTF-8.
+        """
+        with make_temp_directory('dtracker-pkg-dir') as pkg_directory:
+            mock_cache.return_value = pkg_directory
+            self.setup_debian_dir(pkg_directory, ['changelog'],
+                                  contents='Raphaël'.encode('latin1'))
+            self.run_task()
+
+        self.assertExtractedFilesInDB(['changelog'])
 
     def test_task_force_update_no_existing_files(self, mock_cache):
         """
