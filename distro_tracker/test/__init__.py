@@ -205,22 +205,51 @@ class DatabaseMixin(object):
         if 'repository' in kwargs:
             kwargs.setdefault('repositories', [kwargs['repository']])
         for repo_shorthand in kwargs.get('repositories', []):
-            repository, _ = Repository.objects.get_or_create(
-                shorthand=repo_shorthand,
-                defaults={
-                    'name': 'Test repository %s' % repo_shorthand,
-                    'uri': 'http://localhost/debian',
-                    'suite': repo_shorthand,
-                    'codename': repo_shorthand,
-                    'components': ['main', 'contrib', 'non-free'],
-                    'default': True if repo_shorthand == 'default' else False,
-                }
-            )
-            srcpkg.repository_entries.create(repository=repository,
-                                             component='main')
+            self.add_to_repository(srcpkg, repo_shorthand)
 
         srcpkg.save()
         return srcpkg
+
+    def add_to_repository(self, srcpkg, shorthand='default'):
+        """
+        Add a source package to a repository. Creates the repository if it
+        doesn't exist.
+
+        If the shorthand of the requested repository is 'default', then
+        its default field will be set to True.
+
+        :param srcpkg: the source package to add to the repository
+        :type srcpkg: :class:`~distro_tracker.core.models.SourcePackage`
+        :param str shorthand: the shorthand of the repository
+
+        :return: the repository entry that has been created
+        :rtype:
+            :class:`~distro_tracker.core.models.SourcePackageRepositoryEntry`
+        """
+        repository, _ = Repository.objects.get_or_create(
+            shorthand=shorthand,
+            defaults={
+                'name': 'Test repository %s' % shorthand,
+                'uri': 'http://localhost/debian',
+                'suite': shorthand,
+                'codename': shorthand,
+                'components': ['main', 'contrib', 'non-free'],
+                'default': True if shorthand == 'default' else False,
+            }
+        )
+        return srcpkg.repository_entries.create(repository=repository,
+                                                component='main')
+
+    def remove_from_repository(self, srcpkg, shorthand='default'):
+        """
+        Remove a source package from a repository.
+
+        :param srcpkg: the source package to add to the repository
+        :type srcpkg: :class:`~distro_tracker.core.models.SourcePackage`
+        :param str shorthand: the shorthand of the repository
+        """
+        return srcpkg.repository_entries.filter(
+            repository__shorthand=shorthand).delete()[0]
 
 
 class SimpleTestCase(TempDirsMixin, TestCaseHelpersMixin,

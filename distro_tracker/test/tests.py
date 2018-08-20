@@ -197,6 +197,39 @@ class DatabaseMixinTests(object):
         repository = Repository.objects.get(shorthand='foobar')
         self.assertFalse(repository.default)
 
+    def test_add_to_repository_creates_repository(self):
+        srcpkg = self.create_source_package()
+
+        self.add_to_repository(srcpkg, 'foobar')
+        Repository.objects.get(shorthand='foobar')
+
+    def test_add_to_repository_adds_the_package(self):
+        srcpkg = self.create_source_package()
+
+        entry = self.add_to_repository(srcpkg, 'foobar')
+
+        # Retrieve the entry through the source package to ensure it has been
+        # well associated and check it's the same than what was returned
+        entry2 = srcpkg.repository_entries.get(repository__shorthand='foobar')
+        self.assertEqual(entry, entry2)
+
+    def test_remove_from_repository(self):
+        srcpkg = self.create_source_package(repository='foobar')
+        entry = srcpkg.repository_entries.get(repository__shorthand='foobar')
+
+        result = self.remove_from_repository(srcpkg, 'foobar')
+
+        self.assertDoesNotExist(entry)
+        self.assertEqual(result, 1)
+
+    def test_remove_from_repository_when_repository_does_not_exist(self):
+        """remove_from_repository() should return 0 when nothing is removed"""
+        srcpkg = self.create_source_package(repository='foobar')
+
+        result = self.remove_from_repository(srcpkg, 'unknown')
+
+        self.assertEqual(result, 0)
+
 
 class TempDirsOnSimpleTestCase(TempDirsTests, TestCaseHelpersTests,
                                SimpleTestCase):
