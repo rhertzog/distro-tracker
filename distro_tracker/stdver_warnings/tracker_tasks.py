@@ -73,6 +73,14 @@ class UpdateStandardsVersionWarnings(BaseTask,
 
         return policy_version
 
+    def check_if_full_update_is_required(self, policy_version):
+        last_policy_version = self.data.get('policy_version')
+        if last_policy_version != policy_version:
+            # Force a full update when a new policy version is released
+            self.force_update = True
+            self.data['policy_version'] = policy_version
+            self.data_mark_modified()
+
     @transaction.atomic
     def execute_main(self):
         # Get the current policy version
@@ -80,6 +88,8 @@ class UpdateStandardsVersionWarnings(BaseTask,
         if policy_version is None:
             # Nothing to do if there is no ``debian-policy``
             return
+
+        self.check_if_full_update_is_required(policy_version)
 
         seen_packages = {}
         for entry in self.items_to_process():

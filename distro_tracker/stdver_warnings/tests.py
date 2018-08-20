@@ -295,3 +295,16 @@ class StandardsVersionActionItemTests(TestCase):
         self.assertEqual(1, outdated.source_package_name.action_items.count())
         self.assertEqual(
             1, self.package.source_package_name.action_items.count())
+
+    def test_action_item_created_when_new_policy_version_is_released(self):
+        # Initial run doesn't create any action item
+        self.package.standards_version = '3.9.4'
+        self.package.save()
+        self.run_task()
+        self.assertEqual(0, ActionItem.objects.count())
+
+        self.set_debian_policy_version('3.9.5.0')
+        self.run_task()
+
+        self.assertEqual(
+            1, self.package.source_package_name.action_items.count())
