@@ -2730,9 +2730,9 @@ class DebianWatchFileScannerUpdateTests(TestCase):
         # General data created
         self.assertEqual(1, self.package.data.count())
 
-        general = self.package.data.get(key='general').value
-        self.assertEqual(general['upstream']['version'], version)
-        self.assertEqual(general['upstream']['url'], url)
+        watch_data = self.package.data.get(key='upstream-watch-status').value
+        self.assertEqual(watch_data['upstream_version'], version)
+        self.assertEqual(watch_data['upstream_url'], url)
 
     def test_package_info_updated_with_upstream_data(self):
         """
@@ -2751,16 +2751,14 @@ class DebianWatchFileScannerUpdateTests(TestCase):
         ]
         self.set_upstream_status_content(dehs)
         PackageData.objects.create(
-            package=self.package, key='general', value={})
-        # No upstream data yet
-        self.assertNotIn('upstream', self.package.data.get(key='general').value)
+            package=self.package, key='upstream-watch-status', value={})
 
         self.run_task()
 
         # Upstream data updated
-        general = self.package.data.get(key='general').value
-        self.assertEqual(general['upstream']['version'], version)
-        self.assertEqual(general['upstream']['url'], url)
+        watch_status = self.package.data.get(key='upstream-watch-status').value
+        self.assertEqual(watch_status['upstream_version'], version)
+        self.assertEqual(watch_status['upstream_url'], url)
 
     def test_new_upstream_version_item_created(self):
         """
@@ -6087,16 +6085,15 @@ class BugStatsTableFieldTests(TestCase):
 class UpstreamTableFieldTests(TestCase):
     def setUp(self):
         self.package = SourcePackageName.objects.create(name='dummy-package')
-        self.data = PackageData(package=self.package, key='general')
+        self.data = PackageData(package=self.package,
+                                key='upstream-watch-status')
         self.data.value = {
-            'upstream': {
-                'url': 'https://www.dummy.org/dummy-2.17.1.tar.xz',
-                'version': '2.17.1'
-            }
+            'upstream_url': 'https://www.dummy.org/dummy-2.17.1.tar.xz',
+            'upstream_version': '2.17.1'
         }
         self.data.save()
-        self.package.general_data = self.package.data.filter(
-            key='general')
+        self.package.watch_status = list(self.package.data.filter(
+            key='upstream-watch-status'))
         self.field = UpstreamTableField()
 
     def test_field_context(self):
@@ -6104,8 +6101,8 @@ class UpstreamTableFieldTests(TestCase):
         Tests field contex content
         """
         context = self.field.context(self.package)
-        self.assertTrue(context['version'])
-        self.assertTrue(context['url'])
+        self.assertTrue(context['upstream_version'])
+        self.assertTrue(context['upstream_url'])
 
     def test_field_specific_properties(self):
         """

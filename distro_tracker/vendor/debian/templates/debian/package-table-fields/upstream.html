@@ -1,4 +1,4 @@
 {% load distro_tracker_extras %}
 <span class="text-success" id='upstream-field'>
-	<a href='{{ debian_upstream.url }}'>{{ debian_upstream.version|breakable }}</a>
+	<a href='{{ debian_upstream.upstream_url }}'>{{ debian_upstream.upstream_version|breakable }}</a>
 </span>

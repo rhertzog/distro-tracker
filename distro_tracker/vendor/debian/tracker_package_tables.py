@@ -30,16 +30,15 @@ class UpstreamTableField(BaseTableField):
     prefetch_related_lookups = [
         Prefetch(
             'data',
-            queryset=PackageData.objects.filter(key='general'),
-            to_attr='general_data'
+            queryset=PackageData.objects.filter(key='upstream-watch-status'),
+            to_attr='watch_status'
         ),
     ]
 
     def context(self, package):
         try:
-            info = package.general_data[0]
-            if 'upstream' in info.value:
-                return info.value['upstream']
+            watch_data = package.watch_status[0]
+            return watch_data.value
         except IndexError:
-            # There is no general info for the package
+            # There is no upstream watch data for the package
             return

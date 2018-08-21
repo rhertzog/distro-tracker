@@ -1527,21 +1527,15 @@ class DebianWatchFileScannerUpdate(BaseTask):
         :type stats: :class:`dict`
         """
         try:
-            package_info = package.data.all()[0]
+            watch_data = package.watch_status[0]
         except IndexError:
-            package_info = PackageData(
+            watch_data = PackageData(
                 package=package,
-                key='general',
+                key='upstream-watch-status',
             )
 
-        new_value = dict(package_info.value)
-        new_value['upstream'] = {
-            'version': stats['upstream_version'],
-            'url': stats['upstream_url'],
-        }
-
-        package_info.value = new_value
-        package_info.save()
+        watch_data.value = stats
+        watch_data.save()
 
     def update_action_item(self, item_type, package, stats):
         """
@@ -1593,12 +1587,10 @@ class DebianWatchFileScannerUpdate(BaseTask):
 
         packages = SourcePackageName.objects.filter(
             name__in=stats.keys())
+        filter_qs = PackageData.objects.filter(key='upstream-watch-status')
         packages = packages.prefetch_related(
             'action_items',
-            Prefetch(
-                'data',
-                queryset=PackageData.objects.filter(key='general'),
-            )
+            Prefetch('data', queryset=filter_qs, to_attr='watch_status')
         )
 
         # Update action items for each package
