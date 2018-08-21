@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2018 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -1138,7 +1138,7 @@ class ProcessMainRepoEntryTests(TestCase):
         self.create_source_package(repository='default')
         item = self.get_item()
 
-        self.assertEqual(self.task.item_to_key(item), item.id)
+        self.assertEqual(self.task.item_to_key(item), str(item.id))
 
     def test_item_describe(self):
         self.create_source_package(repository='default')
@@ -1167,6 +1167,13 @@ class ProcessMainRepoEntryTests(TestCase):
         for entry in self.task.items_to_process():
             self.assertEqual(entry.source_package.version, '1')
         self.assertEqual(len(list(self.task.items_to_process())), 1)
+
+    def test_items_to_process_after_save_reload(self):
+        self.create_source_package(name='pkg', version='1', repository='other')
+        self.task.execute()
+
+        self.task = self.cls()
+        self.assertEqual(len(list(self.task.items_to_process())), 0)
 
     def test_items_all_caches_results(self):
         with self.assertNumQueries(2):

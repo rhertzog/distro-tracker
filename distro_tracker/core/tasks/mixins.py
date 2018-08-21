@@ -359,7 +359,7 @@ class ProcessMainRepoEntry(ProcessItems):
         return self.main_entries.values()
 
     def item_to_key(self, item):
-        return item.id
+        return str(item.id)
 
     def item_describe(self, item):
         return {
