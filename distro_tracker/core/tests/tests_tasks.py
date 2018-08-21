@@ -960,7 +960,7 @@ class ProcessModelTests(TestCase):
     def test_item_to_key(self):
         '''item_to_key() uses the primary key'''
         srcpkgname = SourcePackageName.objects.create(name='dummy')
-        self.assertEqual(self.task.item_to_key(srcpkgname), srcpkgname.pk)
+        self.assertEqual(self.task.item_to_key(srcpkgname), str(srcpkgname.pk))
 
     def test_items_all_keys(self):
         '''items_all_keys() uses an optimized query'''
@@ -982,6 +982,15 @@ class ProcessModelTests(TestCase):
             mocked.assert_called_once_with()
         self.assertEqual(data['name'], srcpkgname.name)
         self.assertIs(data['get_absolute_url'], mock.sentinel.url)
+
+    def test_items_to_process_after_save_reload(self):
+        '''ensure we don't reprocess an item already seen'''
+        srcpkgname = SourcePackageName.objects.create(name='dummy')
+        self.task.item_mark_processed(srcpkgname)
+        self.task.save_data()
+
+        self.task = self.cls()
+        self.assertEqual(len(list(self.task.items_to_process())), 0)
 
 
 class ProcessSourcePackageTests(TestCase):

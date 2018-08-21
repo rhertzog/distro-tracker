@@ -201,6 +201,17 @@ class ProcessModel(ProcessItems):
     def items_all(self):
         return self.items_extend_queryset(self.model.objects.all())
 
+    def items_to_process(self):
+        items = self.items_all()
+        # Exclude the items already processed, unless --force-update tells us to
+        # reprocess all entries
+        if not self.force_update:
+            processed = self.data.setdefault('processed', {})
+            # XXX: might not be the right thing when primary key is not the id
+            processed_keys = list(map(lambda x: int(x), processed.keys()))
+            items = items.exclude(pk__in=processed_keys)
+        return items
+
     def items_extend_queryset(self, queryset):
         """
         This method can be overriden by sub-classes to customize the queryset
@@ -221,11 +232,12 @@ class ProcessModel(ProcessItems):
         :param item: an instance of the associated model
         :return: the value of its primary key
         """
-        return item.pk
+        return str(item.pk)
 
     def items_all_keys(self):
         # Better implementation with an optimized query
-        return set(self.items_all().values_list('pk', flat=True))
+        return set(map(lambda x: str(x),
+                       self.items_all().values_list('pk', flat=True)))
 
     def item_describe(self, item):
         data = super().item_describe(item)
