@@ -1,4 +1,4 @@
-# Copyright 2013-2016 The Distro Tracker Developers
+# Copyright 2013-2018 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -22,9 +22,10 @@ logger = logging.getLogger('distro_tracker.tasks')
 
 class Command(BaseCommand):
     """
-    A management command which starts all independent Distro Tracker tasks.
+    A management command which starts all Distro Tracker tasks that can
+    be run according to their scheduling policy.
     """
-    help = "Start all independent Distro Tracker tasks."
+    help = "Start all Distro Tracker tasks that can be run."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -57,3 +58,5 @@ class Command(BaseCommand):
         logger.info(
             'Starting all tasks (from ./manage.py tracker_run_all_tasks')
         run_all_tasks(**params)
+        logger.info(
+            'Finished to run all tasks (from ./manage.py tracker_run_all_tasks')
