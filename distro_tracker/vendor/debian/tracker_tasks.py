@@ -2208,11 +2208,12 @@ class UpdateWnppStatsTask(BaseTask):
         msgs = {
             'O': "This package has been orphaned and needs a maintainer.",
             'ITA': "Someone intends to adopt this package.",
-            'RFA': "The maintainer is looking for someone adopt this package.",
+            'RFA': "The maintainer wants to pass over package maintainance.",
             'RFH': "The maintainer is looking for help with this package.",
             'ITP': "Someone is planning to reintroduce this package.",
-            'RFP': "There is a request to reintroduced this package.",
+            'RFP': "There is a request to reintroduce this package.",
             'RM': "This package has been requested to be removed.",
+            'RFS': "A sponsor is needed to update this package.",
             '?': "The WNPP database contains an entry for this package."
         }
         wnpp_type = stats['wnpp_type']
