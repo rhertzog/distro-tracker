@@ -581,28 +581,30 @@ class UpdateRepositoriesTask(BaseTask):
         repository_files = self.group_files_by_repository(updated_packages)
 
         for repository, packages_files_data in repository_files.items():
-            self.log("Processing Packages files of %s repository",
-                     repository.shorthand)
-            # First update package information based on updated files
-            for packages_file, component in packages_files_data:
-                with open(packages_file) as packages_fd:
-                    self._update_packages_file(repository, packages_fd)
+            with transaction.atomic():
+                self.log("Processing Packages files of %s repository",
+                         repository.shorthand)
+                # First update package information based on updated files
+                for packages_file, component in packages_files_data:
+                    with open(packages_file) as packages_fd:
+                        self._update_packages_file(repository, packages_fd)
 
-            # Mark package versions found in un-updated files as still existing
-            all_sources = \
-                self.apt_cache.get_packages_files_for_repository(repository)
-            for packages_file in all_sources:
-                if not self.sources_file_in_sources_files_data(
-                        packages_file, packages_files_data):
-                    self._mark_file_not_processed(
-                        repository, packages_file,
-                        BinaryPackageRepositoryEntry.objects)
+                # Mark package versions found in un-updated files as still
+                # existing
+                all_sources = \
+                    self.apt_cache.get_packages_files_for_repository(repository)
+                for packages_file in all_sources:
+                    if not self.sources_file_in_sources_files_data(
+                            packages_file, packages_files_data):
+                        self._mark_file_not_processed(
+                            repository, packages_file,
+                            BinaryPackageRepositoryEntry.objects)
 
-            # When all the files for the repository are handled, update
-            # which packages are still found in it.
-            self._update_repository_entries(
-                BinaryPackageRepositoryEntry.objects.filter(
-                    repository=repository))
+                # When all the files for the repository are handled, update
+                # which packages are still found in it.
+                self._update_repository_entries(
+                    BinaryPackageRepositoryEntry.objects.filter(
+                        repository=repository))
 
     def _update_dependencies_for_source(self, stanza, dependency_types):
         """
