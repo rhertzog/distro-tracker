@@ -37,7 +37,11 @@ class UserEmailBackend(object):
         try:
             user = User.objects.get(emails__email=email)
         except User.DoesNotExist:
-            return None
+            try:
+                user = User.objects.get(main_email=email)
+                user.emails.create(email=email)
+            except User.DoesNotExist:
+                return None
 
         # Check if valid log in details were provided
         if user.check_password(password):
