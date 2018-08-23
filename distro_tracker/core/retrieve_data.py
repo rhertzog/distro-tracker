@@ -880,7 +880,7 @@ class UpdateVersionInformation(BaseTask, ProcessSrcRepoEntry):
                 continue
 
             self.process_package(package)
-            seen[name] = True
+            seen[data['name']] = True
 
 
 class UpdateSourceToBinariesInformation(BaseTask, ProcessMainRepoEntry):

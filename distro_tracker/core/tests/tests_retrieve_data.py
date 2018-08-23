@@ -931,13 +931,8 @@ class RetrieveSourcesInformationTest(TestCase):
 class UpdateVersionInformationTest(TestCase):
 
     def setUp(self):
-        self.repo1 = Repository.objects.create(
-            name='repo1', shorthand='repo1')
-        self.package = self.create_source_package(
-            name='dummy-package',
-            version='1.0.0',
-        )
-        self.repo1.add_source_package(self.package)
+        self.package = self.create_source_package(repository='repo1')
+        self.repo1 = Repository.objects.get(shorthand='repo1')
         self.update = UpdateVersionInformation()
 
     def test_extract_versions_if_no_hidden_flag(self):
@@ -958,6 +953,30 @@ class UpdateVersionInformationTest(TestCase):
         versions = self.update._extract_versions_for_package(
             self.package.source_package_name)
         self.assertFalse(versions['version_list'])
+
+    def test_task(self):
+        self.update.execute()
+
+        data = self.package.source_package_name.data.get(key='versions').value
+        self.assertIn('default_pool_url', data)
+        versions = data['version_list']
+        self.assertEqual(len(versions), 1)
+        self.assertEqual(versions[0]['version'], self.package.version)
+        self.assertEqual(versions[0]['repository']['shorthand'],
+                         self.repo1.shorthand)
+
+    def test_task_cleanup_only(self):
+        '''test the task when it only has to process a cleanup'''
+        self.update.execute()
+        package_name = self.package.source_package_name
+        self.package.delete()
+
+        self.update.execute()
+
+        # Check the we have an empty version list in that case
+        data = package_name.data.get(key='versions').value
+        self.assertListEqual([], data['version_list'])
+        self.assertIsNone(data['default_pool_url'])
 
 
 class UpdateSourceToBinariesInformationTests(TestCase):
