@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2018 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -12,6 +12,7 @@
 
 
 import contextlib
+import json as jsonmod
 import shutil
 import tempfile
 
@@ -29,7 +30,8 @@ def make_temp_directory(suffix=''):
         shutil.rmtree(temp_dir_name)
 
 
-def set_mock_response(mock_requests, text="", headers=None, status_code=200):
+def set_mock_response(mock_requests, text="", json=None, headers=None,
+                      status_code=200):
     """
     Helper method which sets a mock response to the given mock requests
     module.
@@ -48,6 +50,8 @@ def set_mock_response(mock_requests, text="", headers=None, status_code=200):
     mock_response.headers = headers
     mock_response.status_code = status_code
     mock_response.ok = status_code < 400
+    if json is not None:
+        text = jsonmod.dumps(json)
     mock_response.text = text
     mock_response.content = text.encode('utf-8')
     mock_response.iter_lines.return_value = text.splitlines()
