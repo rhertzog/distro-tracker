@@ -1,10 +1,11 @@
 {% extends 'core/panels/panel.html' %}
+{% load distro_tracker_extras %}
 
 {% block panel-body %}
 <ul class="list-group list-group-flush">
     {% for version in panel.context %}
     <li class="list-group-item">
-        <span class="list-item-key versioned-links-version"><b>{{ version.number }}:</b></span>
+        <span class="list-item-key versioned-links-version"><b>{{ version.number|breakable }}:</b></span>
 	{% for link in version.links %}
 	    {% if not link.url %}
 	    <span class="versioned-links-icon versioned-links-icon-inactive">{{ link.icon_html }}</span>
