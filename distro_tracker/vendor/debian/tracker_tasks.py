@@ -2758,32 +2758,32 @@ class UpdateVcsWatchTask(BaseTask):
     VCSWATCH_STATUS_DICT = {
         "NEW": {
             "description":
-                'A new version is <a href="{url}">available in the VCS</a>, '
-                'consider uploading it.',
+                '<a href="{vcswatch_url}">{commits} new commit{commits_s}</a> '
+                'since last upload, time to upload?',
             "severity": ActionItem.SEVERITY_NORMAL,
         },
         "COMMITS": {
             "description":
-                '<a href="{url}">{commits} new commit{commits_s}</a> '
-                'since last upload, time to release an update?',
+                '<a href="{vcswatch_url}">{commits} new commit{commits_s}</a> '
+                'since last upload, time to release?',
             "severity": ActionItem.SEVERITY_NORMAL,
         },
         "OLD": {
             'description':
-                'The <a href="{url}">VCS repository is not up to date</a>, '
-                'consider pushing the missing commits.',
+                'The <a href="{vcswatch_url}">VCS repository is not up to '
+                'date</a>, push the missing commits.',
             "severity": ActionItem.SEVERITY_HIGH,
         },
         "UNREL": {
             "description":
-                'The <a href="{url}">VCS repository is not up to date</a>, '
-                'consider pushing the missing commits.',
+                'The <a href="{vcswatch_url}">VCS repository is not up to '
+                'date</a>, push the missing commits.',
             "severity": ActionItem.SEVERITY_HIGH,
         },
         "ERROR": {
             "description":
-                '<a href="{url}">Error while accessing the VCS repository</a>. '
-                'Please troubleshoot and fix the issue.',
+                '<a href="{vcswatch_url}">Failed to analyze the VCS '
+                'repository</a>. Please troubleshoot and fix the issue.',
             "severity": ActionItem.SEVERITY_HIGH,
         },
         "DEFAULT": {
@@ -2846,7 +2846,7 @@ class UpdateVcsWatchTask(BaseTask):
         :rtype: bool or `None`
         """
 
-        package_status = vcswatch_data[u'status']
+        package_status = vcswatch_data['status']
 
         if package_status == "OK":
             # Everything is fine, let's purge the action item. Not the
@@ -2888,12 +2888,9 @@ class UpdateVcsWatchTask(BaseTask):
 
         # The new data
         new_extra_data = {
-            'name': package.name,
-            'status': package_status,
-            'error': vcswatch_data["error"],
-            'url': vcswatch_url,
-            'commits': nb_commits,
+            'vcswatch_url': vcswatch_url,
         }
+        new_extra_data.update(vcswatch_data)
 
         extra_data_match = all([
             new_extra_data[key] == extra_data.get(key, None)
@@ -2917,8 +2914,6 @@ class UpdateVcsWatchTask(BaseTask):
 
     def update_package_info(self, package, vcswatch_data, package_info, key,
                             todo):
-        """
-        """
         # Same thing with PackageData
         if package_info is None:
             package_info = PackageData(

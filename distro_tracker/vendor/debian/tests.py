@@ -5779,15 +5779,11 @@ class UpdateVcsWatchTaskTest(TestCase):
         """
         self.run_task()
 
-        theoretical_extra_data = {
-            'name': 'dummy',
-            'status': 'COMMITS',
-            'error': None,
-            'url': (
-                'https://qa.debian.org/cgi-bin/vcswatch?package=dummy'
-            ),
-            'commits': 46,
-        }
+        theoretical_extra_data = {}
+        theoretical_extra_data.update(self.vcswatch_data[0])
+        theoretical_extra_data['vcswatch_url'] = \
+            'https://qa.debian.org/cgi-bin/vcswatch?package=dummy'
+
         theoretical_vcs_extra_links_package_info = {
             "checksum": 'bb2db81183608a0f02853a0d1087cfef',
             "QA": 'https://qa.debian.org/cgi-bin/vcswatch?package=dummy',
