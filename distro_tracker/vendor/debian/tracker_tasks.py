@@ -82,14 +82,6 @@ class RetrieveDebianMaintainersTask(BaseTask):
     class Scheduler(IntervalScheduler):
         interval = 3600 * 24
 
-    def __init__(self, force_update=False, *args, **kwargs):
-        super(RetrieveDebianMaintainersTask, self).__init__(*args, **kwargs)
-        self.force_update = force_update
-
-    def set_parameters(self, parameters):
-        if 'force_update' in parameters:
-            self.force_update = parameters['force_update']
-
     def execute_main(self):
         cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         url = "https://ftp-master.debian.org/dm.txt"
@@ -141,14 +133,6 @@ class RetrieveLowThresholdNmuTask(BaseTask):
 
     class Scheduler(IntervalScheduler):
         interval = 3600 * 24
-
-    def __init__(self, force_update=False, *args, **kwargs):
-        super(RetrieveLowThresholdNmuTask, self).__init__(*args, **kwargs)
-        self.force_update = force_update
-
-    def set_parameters(self, parameters):
-        if 'force_update' in parameters:
-            self.force_update = parameters['force_update']
 
     def _retrieve_emails(self):
         """
@@ -229,9 +213,8 @@ class UpdatePackageBugStats(BaseTask, BugDisplayManagerMixin):
         'patch',
     )
 
-    def __init__(self, force_update=False, *args, **kwargs):
-        super(UpdatePackageBugStats, self).__init__(*args, **kwargs)
-        self.force_update = force_update
+    def initialize(self, *args, **kwargs):
+        super(UpdatePackageBugStats, self).initialize(*args, **kwargs)
         self.cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         # The :class:`distro_tracker.core.models.ActionItemType` instances which
         # this task can create.
@@ -578,16 +561,11 @@ class UpdateLintianStatsTask(BaseTask):
     ITEM_DESCRIPTION = 'lintian reports <a href="{url}">{report}</a>'
     ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/lintian-action-item.html'
 
-    def __init__(self, force_update=False, *args, **kwargs):
-        super(UpdateLintianStatsTask, self).__init__(*args, **kwargs)
-        self.force_update = force_update
+    def initialize(self, *args, **kwargs):
+        super(UpdateLintianStatsTask, self).initialize(*args, **kwargs)
         self.lintian_action_item_type = ActionItemType.objects.create_or_update(
             type_name=self.ACTION_ITEM_TYPE_NAME,
             full_description_template=self.ITEM_FULL_DESCRIPTION_TEMPLATE)
-
-    def set_parameters(self, parameters):
-        if 'force_update' in parameters:
-            self.force_update = parameters['force_update']
 
     def get_lintian_stats(self):
         url = 'https://lintian.debian.org/qa-list.txt'
@@ -726,18 +704,13 @@ class UpdateAppStreamStatsTask(BaseTask):
     ITEM_DESCRIPTION = 'AppStream hints: {report}'
     ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/appstream-action-item.html'
 
-    def __init__(self, force_update=False, *args, **kwargs):
-        super(UpdateAppStreamStatsTask, self).__init__(*args, **kwargs)
-        self.force_update = force_update
+    def initialize(self, *args, **kwargs):
+        super(UpdateAppStreamStatsTask, self).initialize(*args, **kwargs)
         self.appstream_action_item_type = \
             ActionItemType.objects.create_or_update(
                 type_name=self.ACTION_ITEM_TYPE_NAME,
                 full_description_template=self.ITEM_FULL_DESCRIPTION_TEMPLATE)
         self._tag_severities = {}
-
-    def set_parameters(self, parameters):
-        if 'force_update' in parameters:
-            self.force_update = parameters['force_update']
 
     def _load_tag_severities(self):
         url = 'https://appstream.debian.org/hints/asgen-hints.json'
@@ -941,14 +914,9 @@ class UpdateTransitionsTask(BaseTask):
     PACKAGE_TRANSITION_LIST_URL = (
         'https://release.debian.org/transitions/export/packages.yaml')
 
-    def __init__(self, force_update=False, *args, **kwargs):
-        super(UpdateTransitionsTask, self).__init__(*args, **kwargs)
-        self.force_update = force_update
+    def initialize(self, *args, **kwargs):
+        super(UpdateTransitionsTask, self).initialize(*args, **kwargs)
         self.cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
-
-    def set_parameters(self, parameters):
-        if 'force_update' in parameters:
-            self.force_update = parameters['force_update']
 
     def _get_yaml_resource(self, url):
         """
@@ -1039,17 +1007,12 @@ class UpdateExcusesTask(BaseTask):
         PKG_TOO_YOUNG = 2
         PKG_WO_POLICY = 3
 
-    def __init__(self, force_update=False, *args, **kwargs):
-        super(UpdateExcusesTask, self).__init__(*args, **kwargs)
-        self.force_update = force_update
+    def initialize(self, *args, **kwargs):
+        super(UpdateExcusesTask, self).initialize(*args, **kwargs)
         self.cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         self.action_item_type = ActionItemType.objects.create_or_update(
             type_name=self.ACTION_ITEM_TYPE_NAME,
             full_description_template=self.ITEM_FULL_DESCRIPTION_TEMPLATE)
-
-    def set_parameters(self, parameters):
-        if 'force_update' in parameters:
-            self.force_update = parameters['force_update']
 
     def _adapt_excuse_links(self, excuse):
         """
@@ -1306,16 +1269,11 @@ class UpdateBuildLogCheckStats(BaseTask):
     ITEM_DESCRIPTION = 'Build log checks report <a href="{url}">{report}</a>'
     ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/logcheck-action-item.html'
 
-    def __init__(self, force_update=False, *args, **kwargs):
-        super(UpdateBuildLogCheckStats, self).__init__(*args, **kwargs)
-        self.force_update = force_update
+    def initialize(self, *args, **kwargs):
+        super(UpdateBuildLogCheckStats, self).initialize(*args, **kwargs)
         self.action_item_type = ActionItemType.objects.create_or_update(
             type_name=self.ACTION_ITEM_TYPE_NAME,
             full_description_template=self.ITEM_FULL_DESCRIPTION_TEMPLATE)
-
-    def set_parameters(self, parameters):
-        if 'force_update' in parameters:
-            self.force_update = parameters['force_update']
 
     def _get_buildd_content(self):
         url = 'https://qa.debian.org/bls/logcheck.txt'
@@ -1441,9 +1399,8 @@ class DebianWatchFileScannerUpdate(BaseTask):
         'watch-failure': ActionItem.SEVERITY_HIGH,
     }
 
-    def __init__(self, force_update=False, *args, **kwargs):
-        super(DebianWatchFileScannerUpdate, self).__init__(*args, **kwargs)
-        self.force_update = force_update
+    def initialize(self, *args, **kwargs):
+        super(DebianWatchFileScannerUpdate, self).initialize(*args, **kwargs)
         self.action_item_types = {
             type_name: ActionItemType.objects.create_or_update(
                 type_name=type_name,
@@ -1451,10 +1408,6 @@ class DebianWatchFileScannerUpdate(BaseTask):
                     type_name, None))
             for type_name in self.ACTION_ITEM_TYPE_NAMES
         }
-
-    def set_parameters(self, parameters):
-        if 'force_update' in parameters:
-            self.force_update = parameters['force_update']
 
     def _get_upstream_status_content(self):
         url = 'https://udd.debian.org/cgi-bin/upstream-status.json.cgi'
@@ -1618,10 +1571,9 @@ class UpdateSecurityIssuesTask(BaseTask):
         'none': 'No known security issue in {release}',
     }
 
-    def __init__(self, force_update=False, *args, **kwargs):
-        super(UpdateSecurityIssuesTask, self).__init__(*args, **kwargs)
+    def initialize(self, *args, **kwargs):
+        super(UpdateSecurityIssuesTask, self).initialize(*args, **kwargs)
         self._action_item_type = {}
-        self.force_update = force_update
         self._content = None
 
     def action_item_type(self, release):
@@ -1629,10 +1581,6 @@ class UpdateSecurityIssuesTask(BaseTask):
             release, ActionItemType.objects.create_or_update(
                 type_name=self.ACTION_ITEM_TYPE_NAME.format(release),
                 full_description_template=self.ACTION_ITEM_TEMPLATE))
-
-    def set_parameters(self, parameters):
-        if 'force_update' in parameters:
-            self.force_update = parameters['force_update']
 
     def _get_issues_content(self):
         if self._content:
@@ -1835,16 +1783,11 @@ class UpdatePiuPartsTask(BaseTask):
     ACTION_ITEM_TEMPLATE = 'debian/piuparts-action-item.html'
     ITEM_DESCRIPTION = 'piuparts found (un)installation error(s)'
 
-    def __init__(self, force_update=False, *args, **kwargs):
-        super(UpdatePiuPartsTask, self).__init__(*args, **kwargs)
-        self.force_update = force_update
+    def initialize(self, *args, **kwargs):
+        super(UpdatePiuPartsTask, self).initialize(*args, **kwargs)
         self.action_item_type = ActionItemType.objects.create_or_update(
             type_name=self.ACTION_ITEM_TYPE_NAME,
             full_description_template=self.ACTION_ITEM_TEMPLATE)
-
-    def set_parameters(self, parameters):
-        if 'force_update' in parameters:
-            self.force_update = parameters['force_update']
 
     def _get_piuparts_content(self, suite):
         """
@@ -1919,14 +1862,9 @@ class UpdateUbuntuStatsTask(BaseTask):
     class Scheduler(IntervalScheduler):
         interval = 3600 * 3
 
-    def __init__(self, force_update=False, *args, **kwargs):
-        super(UpdateUbuntuStatsTask, self).__init__(*args, **kwargs)
-        self.force_update = force_update
+    def initialize(self, *args, **kwargs):
+        super(UpdateUbuntuStatsTask, self).initialize(*args, **kwargs)
         self.cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
-
-    def set_parameters(self, parameters):
-        if 'force_update' in parameters:
-            self.force_update = parameters['force_update']
 
     def _get_versions_content(self):
         url = 'https://udd.debian.org/cgi-bin/ubuntupackages.cgi'
@@ -2054,16 +1992,11 @@ class UpdateDebianDuckTask(BaseTask):
     ITEM_DESCRIPTION = 'The URL(s) for this package had some ' + \
         'recent persistent <a href="{issues_link}">issues</a>'
 
-    def __init__(self, force_update=False, *args, **kwargs):
-        super(UpdateDebianDuckTask, self).__init__(*args, **kwargs)
-        self.force_update = force_update
+    def initialize(self, *args, **kwargs):
+        super(UpdateDebianDuckTask, self).initialize(*args, **kwargs)
         self.action_item_type = ActionItemType.objects.create_or_update(
             type_name=self.ACTION_ITEM_TYPE_NAME,
             full_description_template=self.ACTION_ITEM_TEMPLATE)
-
-    def set_parameters(self, parameters):
-        if 'force_update' in parameters:
-            self.force_update = parameters['force_update']
 
     def _get_duck_urls_content(self):
         """
@@ -2130,16 +2063,11 @@ class UpdateWnppStatsTask(BaseTask):
     ACTION_ITEM_TEMPLATE = 'debian/wnpp-action-item.html'
     ITEM_DESCRIPTION = '<a href="{url}">{wnpp_type}: {wnpp_msg}</a>'
 
-    def __init__(self, force_update=False, *args, **kwargs):
-        super(UpdateWnppStatsTask, self).__init__(*args, **kwargs)
-        self.force_update = force_update
+    def initialize(self, *args, **kwargs):
+        super(UpdateWnppStatsTask, self).initialize(*args, **kwargs)
         self.action_item_type = ActionItemType.objects.create_or_update(
             type_name=self.ACTION_ITEM_TYPE_NAME,
             full_description_template=self.ACTION_ITEM_TEMPLATE)
-
-    def set_parameters(self, parameters):
-        if 'force_update' in parameters:
-            self.force_update = parameters['force_update']
 
     def get_wnpp_stats(self):
         """
@@ -2311,13 +2239,8 @@ class UpdateNewQueuePackages(BaseTask):
 
     DATA_KEY = 'debian-new-queue-info'
 
-    def __init__(self, force_update=False, *args, **kwargs):
-        super(UpdateNewQueuePackages, self).__init__(*args, **kwargs)
-        self.force_update = force_update
-
-    def set_parameters(self, parameters):
-        if 'force_update' in parameters:
-            self.force_update = parameters['force_update']
+    def initialize(self, *args, **kwargs):
+        super(UpdateNewQueuePackages, self).initialize(*args, **kwargs)
 
     def _get_new_content(self):
         """
@@ -2510,16 +2433,11 @@ class UpdateAutoRemovalsStatsTask(BaseTask):
     ITEM_DESCRIPTION = ('Marked for autoremoval on {removal_date}' +
                         '{dependencies}: {bugs}')
 
-    def __init__(self, force_update=False, *args, **kwargs):
-        super(UpdateAutoRemovalsStatsTask, self).__init__(*args, **kwargs)
-        self.force_update = force_update
+    def initialize(self, *args, **kwargs):
+        super(UpdateAutoRemovalsStatsTask, self).initialize(*args, **kwargs)
         self.action_item_type = ActionItemType.objects.create_or_update(
             type_name=self.ACTION_ITEM_TYPE_NAME,
             full_description_template=self.ACTION_ITEM_TEMPLATE)
-
-    def set_parameters(self, parameters):
-        if 'force_update' in parameters:
-            self.force_update = parameters['force_update']
 
     def get_autoremovals_stats(self):
         """
@@ -2609,14 +2527,6 @@ class UpdatePackageScreenshotsTask(BaseTask):
 
     DATA_KEY = 'screenshots'
 
-    def __init__(self, force_update=False, *args, **kwargs):
-        super(UpdatePackageScreenshotsTask, self).__init__(*args, **kwargs)
-        self.force_update = force_update
-
-    def set_parameters(self, parameters):
-        if 'force_update' in parameters:
-            self.force_update = parameters['force_update']
-
     def _get_screenshots(self):
         url = 'https://screenshots.debian.net/json/packages'
         cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
@@ -2680,16 +2590,11 @@ class UpdateBuildReproducibilityTask(BaseTask):
         'not for us': None,
     }
 
-    def __init__(self, force_update=False, *args, **kwargs):
-        super(UpdateBuildReproducibilityTask, self).__init__(*args, **kwargs)
-        self.force_update = force_update
+    def initialize(self, *args, **kwargs):
+        super(UpdateBuildReproducibilityTask, self).initialize(*args, **kwargs)
         self.action_item_type = ActionItemType.objects.create_or_update(
             type_name=self.ACTION_ITEM_TYPE_NAME,
             full_description_template=self.ACTION_ITEM_TEMPLATE)
-
-    def set_parameters(self, parameters):
-        if 'force_update' in parameters:
-            self.force_update = parameters['force_update']
 
     def get_build_reproducibility(self):
         url = '{}/debian/reproducible-tracker.json'.format(self.BASE_URL)
@@ -2772,19 +2677,14 @@ class MultiArchHintsTask(BaseTask):
     ACTION_ITEM_DESCRIPTION = \
         '<a href="{link}">Multiarch hinter</a> reports {count} issue(s)'
 
-    def __init__(self, force_update=False, *args, **kwargs):
-        super(MultiArchHintsTask, self).__init__(*args, **kwargs)
-        self.force_update = force_update
+    def initialize(self, *args, **kwargs):
+        super(MultiArchHintsTask, self).initialize(*args, **kwargs)
         self.action_item_type = ActionItemType.objects.create_or_update(
             type_name=self.ACTION_ITEM_TYPE_NAME,
             full_description_template=self.ACTION_ITEM_TEMPLATE)
         self.SEVERITIES = {}
         for value, name in ActionItem.SEVERITIES:
             self.SEVERITIES[name] = value
-
-    def set_parameters(self, parameters):
-        if 'force_update' in parameters:
-            self.force_update = parameters['force_update']
 
     def get_data(self):
         data = get_resource_content(self.ACTIONS_URL)
@@ -2894,17 +2794,12 @@ class UpdateVcsWatchTask(BaseTask):
         },
     }
 
-    def __init__(self, force_update=False, *args, **kwargs):
-        super(UpdateVcsWatchTask, self).__init__(*args, **kwargs)
-        self.force_update = force_update
+    def initialize(self, *args, **kwargs):
+        super(UpdateVcsWatchTask, self).initialize(*args, **kwargs)
         self.vcswatch_ai_type = ActionItemType.objects.create_or_update(
             type_name=self.ACTION_ITEM_TYPE_NAME,
             full_description_template=self.ITEM_FULL_DESCRIPTION_TEMPLATE
         )
-
-    def set_parameters(self, parameters):
-        if 'force_update' in parameters:
-            self.force_update = parameters['force_update']
 
     def get_vcswatch_data(self):
         text = get_resource_text(self.VCSWATCH_DATA_URL)
