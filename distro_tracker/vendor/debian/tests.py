@@ -5275,6 +5275,17 @@ class UpdateDebciStatusTaskTest(TestCase):
 
         self.assertEqual(0, self.package.action_items.count())
 
+    def test_no_action_item_for_neutral_test(self, mock_requests):
+        """
+        Tests that an ActionItem isn't created for a passing debci status.
+        """
+        self.json_data[0]['status'] = 'neutral'
+        set_mock_response(mock_requests, json=self.json_data)
+
+        self.run_task()
+
+        self.assertEqual(0, self.package.action_items.count())
+
     def test_no_action_item_for_unknown_package(self, mock_requests):
         """
         Tests that an ActionItem isn't created for an unknown package.

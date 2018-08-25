@@ -2406,16 +2406,11 @@ class UpdateDebciStatusTask(BaseTask):
     )
     ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/debci-action-item.html'
 
-    def __init__(self, force_update=False, *args, **kwargs):
-        super(UpdateDebciStatusTask, self).__init__(*args, **kwargs)
-        self.force_update = force_update
+    def initialize(self, *args, **kwargs):
+        super().initialize(*args, **kwargs)
         self.debci_action_item_type = ActionItemType.objects.create_or_update(
             type_name=self.ACTION_ITEM_TYPE_NAME,
             full_description_template=self.ITEM_FULL_DESCRIPTION_TEMPLATE)
-
-    def set_parameters(self, parameters):
-        if 'force_update' in parameters:
-            self.force_update = parameters['force_update']
 
     def get_debci_status(self):
         url = 'https://ci.debian.net/data/status/unstable/amd64/packages.json'
@@ -2435,7 +2430,7 @@ class UpdateDebciStatusTask(BaseTask):
         """
         debci_action_item = package.get_action_item_for_type(
             self.debci_action_item_type.type_name)
-        if debci_status.get('status') == 'pass':
+        if debci_status.get('status') in ('pass', 'neutral'):
             if debci_action_item:
                 debci_action_item.delete()
             return
