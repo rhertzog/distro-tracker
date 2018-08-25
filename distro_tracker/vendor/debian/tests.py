@@ -5249,7 +5249,7 @@ class UpdateDebciStatusTaskTest(TestCase):
                 "version": "1.0-1",
                 "date": "2014-07-05 14:55:57",
                 "status": "fail",
-                "blame": [ ],
+                "blame": [],
                 "previous_status": "pass",
                 "duration_seconds": "91",
                 "duration_human": "0h 1m 31s",
