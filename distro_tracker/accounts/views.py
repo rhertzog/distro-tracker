@@ -8,6 +8,7 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """Views for the :mod:`distro_tracker.accounts` app."""
+from django.db.models import Prefetch
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.http import Http404, HttpResponseBadRequest, HttpResponseForbidden
@@ -120,7 +121,19 @@ class SubscriptionsView(LoginRequiredMixin, View):
 
     def get(self, request):
         user = request.user
-        user_emails = UserEmail.objects.filter(user=user)
+        keyword_qs = Keyword.objects.order_by('name')
+        user_emails = UserEmail.objects.filter(user=user).order_by(
+            'email'
+        ).prefetch_related(
+            Prefetch(
+                'emailsettings__subscription_set___keywords',
+                queryset=keyword_qs
+            ),
+            Prefetch(
+                'emailsettings__default_keywords',
+                queryset=keyword_qs
+            )
+        )
         # Map users emails to the subscriptions of that email
         for user_email in user_emails:
             EmailSettings.objects.get_or_create(user_email=user_email)
