@@ -137,8 +137,9 @@ class SubscriptionsView(LoginRequiredMixin, View):
         # Map users emails to the subscriptions of that email
         for user_email in user_emails:
             EmailSettings.objects.get_or_create(user_email=user_email)
-        subscriptions = {
-            user_email: {
+        subscriptions = [
+            {
+                'email': user_email,
                 'subscriptions': sorted([
                     subscription for subscription
                     in user_email.emailsettings.subscription_set.all()
@@ -148,7 +149,7 @@ class SubscriptionsView(LoginRequiredMixin, View):
                 ], key=lambda m: m.team.name)
             }
             for user_email in user_emails
-        }
+        ]
         # Initializing session variable if not set.
         request.session.setdefault('selected_emails', [str(user_emails[0])])
         return render(request, self.template_name, {

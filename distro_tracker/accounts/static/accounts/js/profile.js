@@ -50,10 +50,11 @@ $(function() {
       * Shows a popup with options to modify keywords. It works for both user
       * default keywords and subscription-specific keywords.
       */
-     var modify_keywords_popup = function(existing_keywords, modify_options) {
+     var modify_keywords_popup = function(button, modify_options) {
 
         var subscription_has_keywords = [];
         var html = "";
+        var existing_keywords = $(button.data('details')).find('.keyword');
         existing_keywords.each(function(index, element) {
             keyword = element.textContent;
             subscription_has_keywords.push(keyword);
@@ -73,67 +74,23 @@ $(function() {
             $('#choose-keywords-list').html(html);
 
             var $modal = $('#choose-keywords-modal');
-            for (var key in modify_options) {
-                $modal.data(key, modify_options[key])
-            }
+            var data_to_forward = ['email', 'package', 'details', 'href'];
+            data_to_forward.forEach(function(key) {
+                if (button.data(key)) {
+                    $modal.data(key, button.data(key));
+                } else {
+                    $modal.removeData(key);
+                }
+            });
             $modal.modal('show');
         });
     };
 
-     $('.modify-subscription-keywords').click(function(evt) {
+    $('.modify-keywords').click(function(evt) {
         var $this = $(this);
-        modify_keywords_popup(
-            $this.closest('.accordion-inner').find('.keyword'), {
-                'email': $this.data('email'),
-                'package': $this.data('package'),
-                'update-id': $this.closest('.accordion-body').attr('id')
-            }
-        );
+        modify_keywords_popup($this);
         return false;
-     });
-
-     $('.modify-default-keywords').click(function(evt) {
-        var $this = $(this);
-        modify_keywords_popup(
-            $this.closest('.accordion-toggle').find('.keyword'), {
-                'email': $this.data('email'),
-                'update-id': $this.siblings('.default-keywords').attr('id'),
-            }
-        );
-        return false;
-     });
-
-     $('.modify-membership-keywords').click(function(evt) {
-        var $this = $(this);
-        modify_keywords_popup(
-            $this.closest('.accordion-inner').find('.keyword'), {
-                'href': $this.data('href'),
-                'email': $this.data('email'),
-                'update-id': $this.closest('.accordion-body').attr('id')
-            }
-        );
-        return false;
-     });
-
-     $('.modify-team-package-keywords').click(function(evt) {
-        var $this = $(this);
-        modify_keywords_popup(
-            $this.closest('.accordion-inner').find('.keyword'), {
-                'href': $this.data('href'),
-                'email': $this.data('email'),
-                'update-id': $this.closest('.accordion-body').attr('id')
-            }
-        );
-        modify_keywords_popup(
-            $this.closest('.accordion-inner').find('.keyword'), {
-                'href': $this.data('href'),
-                'email': $this.data('email'),
-                'package': $this.data('package'),
-                'update-id': $this.closest('accordion-body').attr('id')
-            }
-        );
-        return false;
-     });
+    });
 
     var update_subscription_keywords_url = $('#update-keywords-url').html();
     $('#save-keywords').click(function(evt) {
@@ -148,14 +105,14 @@ $(function() {
             var keyword = el.value;
             keywords.push(keyword);
             new_list_html += (
-                '<li class="keyword">' + keyword + '</li>');
+                '<span class="keyword label label-primary m-l-1">' + keyword + '</span> ');
         });
         $.post(update_keywords_url, {
             'package': $modal.data('package'),
             'email': $modal.data('email'),
             'keyword': keywords
         });
-        $('#' + $modal.data('update-id')).find('ul').html(new_list_html);
+        $($modal.data('details')).find('.keyword-list').html(new_list_html);
 
         $modal.modal('hide');
     });
@@ -167,12 +124,12 @@ $(function() {
 
     $('#package-subscribe-form').submit(function(){
         /* First check that the textbox is filled */
-	var input = $("#package-subscribe-form input[name='package']");
-	var form_group = input.parents('.form-group').first();
+        var input = $("#package-subscribe-form input[name='package']");
+        var form_group = input.parents('.form-group').first();
         var pkg_name = $.trim(input.val());
         if (pkg_name === '') {
-	    form_group.addClass('has-danger');
-	    input.addClass('form-control-danger');
+            form_group.addClass('has-danger');
+            input.addClass('form-control-danger');
             var helper = $('<span class="text-help">').text('This field is required.');
             input.parent().append(helper);
             return false;

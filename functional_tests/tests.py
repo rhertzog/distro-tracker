@@ -1,4 +1,4 @@
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2018 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -11,31 +11,38 @@
 """
 Functional tests for Distro Tracker.
 """
-from distro_tracker.test import LiveServerTestCase
+from unittest import mock
+import os
+import time
+
 from django.core.urlresolvers import reverse
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django_email_accounts.models import UserEmail
-from distro_tracker.core.models import SourcePackageName, BinaryPackageName
-from distro_tracker.accounts.models import UserRegistrationConfirmation
-from distro_tracker.accounts.models import ResetPasswordConfirmation
-from distro_tracker.accounts.models import AddEmailConfirmation
-from distro_tracker.accounts.models import MergeAccountConfirmation
-from distro_tracker.core.models import ContributorName
-from distro_tracker.core.models import Team
-from distro_tracker.core.models import SourcePackage
-from distro_tracker.core.models import PackageName
-from distro_tracker.core.models import Subscription
-from distro_tracker.core.models import TeamMembership
-from distro_tracker.core.panels import BasePanel
-
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
-import selenium.webdriver.support.ui as ui
 from selenium.webdriver.common.keys import Keys
-from unittest import mock
-import os
-import time
+from selenium.webdriver.support import expected_conditions as EC  # noqa
+from selenium.webdriver.support.ui import WebDriverWait
+
+from distro_tracker.accounts.models import (
+    AddEmailConfirmation,
+    MergeAccountConfirmation,
+    ResetPasswordConfirmation,
+    UserRegistrationConfirmation,
+)
+from distro_tracker.core.models import (
+    BinaryPackageName,
+    ContributorName,
+    PackageName,
+    SourcePackage,
+    SourcePackageName,
+    Subscription,
+    Team,
+    TeamMembership,
+)
+from distro_tracker.core.panels import BasePanel
+from distro_tracker.test import LiveServerTestCase
 
 
 class SeleniumTestCase(LiveServerTestCase):
@@ -166,6 +173,15 @@ class SeleniumTestCase(LiveServerTestCase):
         mock_response.text = text
         mock_requests.get.return_value = mock_response
         mock_requests.head.return_value = mock_response
+
+    def wait_until_url_changes(self):
+        """
+        Stop processing until the URL changes. Adding such a call
+        makes it easy to use the browser interactively at the place
+        of your choice and debug the content of the page currently
+        displayed.
+        """
+        self.wait(600).until(EC.url_changes(self.browser.current_url))
 
 
 def create_test_panel(panel_position):
@@ -495,6 +511,9 @@ class UserAccountsTestMixin(object):
         """
         self.browser.find_element_by_id("account-logout").click()
 
+    def wait(self, timeout=2):
+        return WebDriverWait(self.browser, timeout)
+
 
 class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
     """
@@ -798,8 +817,7 @@ class SubscribeToPackageTest(UserAccountsTestMixin, SeleniumTestCase):
         # The subscribe button is no longer found in the page
         button = self.get_element_by_id('subscribe-button')
         # === Give the page a chance to refresh ===
-        wait = ui.WebDriverWait(self.browser, 2)
-        wait.until(lambda browser: not button.is_displayed())
+        self.wait().until(lambda browser: not button.is_displayed())
         self.assertFalse(button.is_displayed())
 
         # It has been replaced by the unsubscribe button
@@ -1282,6 +1300,122 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         self.click_link('Account Emails')
         self.assert_in_page_body(self.user.main_email)
         self.assert_in_page_body(other_email)
+
+
+class ManageSubscriptionTest(UserAccountsTestMixin, SeleniumTestCase):
+    def setUp(self):
+        super().setUp()
+        self.package2 = SourcePackageName.objects.create(name='package2')
+        self.user.emails.create(email='xyz@domain.com')
+        self.email1 = self.user.emails.get(email='user@domain.com')
+        self.email2 = self.user.emails.get(email='xyz@domain.com')
+        self.team = Team.objects.create_with_slug(owner=self.user,
+                                                  name='Sample team')
+        self.membership = self.team.add_members([self.email2])[0]
+        self.team.packages.set([self.package, self.package2])
+        Subscription.objects.create_for('dummy-package', self.email1.email)
+        Subscription.objects.create_for('package2', self.email1.email)
+
+        # Go to the right page
+        self.log_in()
+        self.get_page(self.get_subscriptions_url())
+
+    def get_subscriptions_url(self):
+        return reverse('dtracker-accounts-subscriptions')
+
+    def _select_keywords(self, keywords):
+        checkboxes = self.browser.find_elements_by_css_selector(
+            '#choose-keywords-modal input.keyword-choice')
+        for checkbox in checkboxes:
+            keyword = checkbox.get_attribute('value')
+            if bool(checkbox.is_selected()) != (keyword in keywords):
+                checkbox.click()
+
+    def _get_selected_keywords(self):
+        checkboxes = self.browser.find_elements_by_css_selector(
+            '#choose-keywords-modal input.keyword-choice')
+        keywords = []
+        for checkbox in checkboxes:
+            keyword = checkbox.get_attribute('value')
+            if checkbox.is_selected():
+                keywords.append(keyword)
+        return keywords
+
+    def _get_keywords_from_entry(self, entry):
+        keyword_labels = entry.find_elements_by_css_selector(
+            '.keyword-list .keyword')
+        return [x.get_attribute('textContent') for x in keyword_labels]
+
+    def _test_modify_keyword(self, entry, keywords,
+                             check_initial_keywords=None, toggle=True):
+        # The user clicks on the button to show the details of the keywords
+        if toggle:
+            entry.find_element_by_class_name('toggle-details').click()
+        # The initial keywords are shown
+        initial_keywords = self._get_keywords_from_entry(entry)
+        self.assertTrue(initial_keywords)
+        if check_initial_keywords is not None:
+            self.assertSetEqual(set(initial_keywords),
+                                set(check_initial_keywords))
+        # The user clicks on the modify keyword button
+        button = entry.find_element_by_css_selector('.modify-keywords')
+        button.click()
+        # A modal window shows up and it contains the list of keywords
+        # correctly checked (matching the initial keywords displayed)
+        popup = self.browser.find_element_by_id('choose-keywords-modal')
+        self.wait().until(EC.visibility_of(popup))
+        selected_keywords = self._get_selected_keywords()
+        self.assertListEqual(initial_keywords, selected_keywords)
+        # They click on various checkboxes to make their choices
+        self._select_keywords(keywords)
+        # And confirm this with the "Save keywords" button
+        popup.find_element_by_id('save-keywords').click()
+        self.wait().until_not(EC.visibility_of(popup))
+        # The list of keywords has been updated in the main table
+        entry_keywords = self._get_keywords_from_entry(entry)
+        self.assertSetEqual(set(keywords), set(entry_keywords))
+
+    def test_modify_keywords(self):
+        # First package entry in first email, it's dummy_package in user@domain
+        entry = self.browser.find_element_by_css_selector('#pkg-1-1')
+        # We try to modify the keywords associated to the subscription
+        keywords = ['build', 'vcs']
+        subscription = self.email1.emailsettings.subscription_set.get(
+            package=self.package)
+        default_keywords = subscription.keywords.values_list('name', flat=True)
+        self._test_modify_keyword(entry, keywords,
+                                  check_initial_keywords=default_keywords)
+        subscription.refresh_from_db()
+        self.assertSetEqual(
+            set(keywords),
+            set(subscription.keywords.values_list('name', flat=True))
+        )
+
+        # We do the same on the team subscription (second email, first team)
+        entry = self.browser.find_element_by_css_selector('#team-2-1')
+        # We try to modify the keywords associated to the subscription
+        keywords = ['bts', 'bts-control']
+        default_keywords = self.membership.get_membership_keywords()
+        default_keywords = default_keywords.values_list('name', flat=True)
+        self._test_modify_keyword(entry, keywords,
+                                  check_initial_keywords=default_keywords)
+        self.assertSetEqual(
+            set(keywords),
+            set(self.membership.default_keywords.all().values_list(
+                'name', flat=True))
+        )
+
+        # Now let's try to modify the default keyword of email1
+        entry = self.browser.find_element_by_css_selector('#email-heading-1')
+        keywords = ['archive', 'build', 'bts', 'vcs']
+        db_keywords = self.email1.emailsettings.default_keywords.all()
+        default_keywords = db_keywords.values_list('name', flat=True)
+        self._test_modify_keyword(entry, keywords, toggle=False,
+                                  check_initial_keywords=default_keywords)
+        self.assertSetEqual(
+            set(keywords),
+            set(db_keywords.values_list('name', flat=True))
+        )
 
 
 class TeamTests(UserAccountsTestMixin, SeleniumTestCase):

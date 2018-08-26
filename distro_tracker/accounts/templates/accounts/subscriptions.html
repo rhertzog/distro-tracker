@@ -16,11 +16,13 @@
 {% include 'accounts/_choose-keywords-modal.html' %}
 {% include 'accounts/profile-navbar.html' with active_element='subscriptions' %}
 
-{% for email, email_subscriptions in subscriptions.items %}
+{% for email_subscriptions in subscriptions %}
+{% with email=email_subscriptions.email %}
+{% with email_number=forloop.counter|stringformat:"s" %}
 
 {# Group the subscriptions by email, if the account has multiple emails #}
-<div class="accordion-group row">
-<div class="accordion-heading col-xs-12 m-y-1">
+<div class="accordion-group row" class='email-group' data-email='{{ email }}'>
+<div id="email-heading-{{ forloop.counter }}" class="accordion-heading col-xs-12 m-y-1">
     <b>Subscriptions for {{ email }}</b>
     <button class="btn btn-sm btn-default" data-toggle="collapse" data-target="#emails-{{ forloop.counter }}">{% toggle_chevron %}</button>
     {% if email_subscriptions.subscriptions %}
@@ -31,12 +33,12 @@
     </form>
     {% endif %}
     <a href="{% url 'dtracker-accounts-profile-keywords' %}?email={{ email|urlencode:'' }}">
-        <button class="btn btn-sm btn-primary modify-default-keywords" data-email="{{ email }}">Modify keywords</button>
+        <button class="btn btn-sm btn-primary modify-keywords" data-email="{{ email }}" data-details="#default-keywords-{{ forloop.counter }}">Modify keywords</button>
     </a>
     <div class="default-keywords" style="display: none;" id="default-keywords-{{ forloop.counter }}">
-        <ul>
-            {% for keyword in email.default_keywords.all %}
-            <li class="keyword">{{ keyword }}</li>
+        <span class="keyword-list">
+            {% for keyword in email.emailsettings.default_keywords.all %}
+            <span class="keyword">{{ keyword }}</span>
             {% endfor %}
         </ul>
     </div>
@@ -50,19 +52,19 @@
     <em>No subscriptions!</em>
 {% else %}
 
-{% with email_number=forloop.counter|stringformat:"s" %}
-{% with accordion_id="subscriptions-accordion-"|add:email_number %}
+{% with accordion_id="email-accordion-"|add:email_number %}
 <div class="list-group" id="{{ accordion_id }}">
 
 {% for subscription in email_subscriptions.subscriptions %}
 {# Display each subscription in a list, with the details being hidden in a toggleable tray #}
-    {% with subscription_number=forloop.counter|stringformat:"s" %}
-    {% with details_id=accordion_id|add:"-details-"|add:subscription_number %}
-    <div class="panel list-group-item accordion-group subscription-group">
+    {% with loop_counter=forloop.counter|stringformat:"s" %}
+    {% with entry_id="pkg-"|add:email_number|add:"-"|add:loop_counter %}
+    {% with details_id="details-"|add:entry_id %}
+    <div id="{{ entry_id}}" class="panel list-group-item accordion-group subscription-group">
         <div class="accordion-heading">
             <div class="row">
 		<div class="col-md-6">
-		    <button class="btn btn-sm btn-default" data-toggle="collapse" data-parent="#{{ accordion_id }}" data-target="#{{ details_id }}">{% toggle_chevron %}</button>
+		    <button class="btn btn-sm btn-default toggle-details" data-toggle="collapse" data-parent="#{{ accordion_id }}" data-target="#{{ details_id }}">{% toggle_chevron %}</button>
 		    <span class='subscription-package'>
 		    {% if subscription.package.get_absolute_url %}
 		    <a href="{{ subscription.package.get_absolute_url }}">{{ subscription.package }}</a>
@@ -78,7 +80,7 @@
 		<div class="col-md-6">
 		    <div class="pull-xs-right">
 			<a href="{% url 'dtracker-accounts-profile-keywords' %}?package={{ subscription.package|urlencode:'' }}&email={{ email|urlencode:'' }}">
-			<div class="btn btn-sm btn-primary modify-subscription-keywords" data-email="{{ email }}" data-package="{{ subscription.package }}">Modify keywords</div></a>
+			<div class="btn btn-sm btn-primary modify-keywords" data-email="{{ email }}" data-package="{{ subscription.package }}" data-details="#{{ details_id }}">Modify keywords</div></a>
 			<form style="margin-bottom: 0px;display:inline;" action="{% url 'dtracker-api-accounts-unsubscribe' %}" method="POST">{% csrf_token %}
 			<input type="hidden" name="package" value="{{ subscription.package }}">
 			<input type="hidden" name="email" value="{{ email }}">
@@ -93,24 +95,28 @@
         <div class="accordion-body collapse" id="{{ details_id }}">
             <div class="accordion-inner">
 		<b>Subscription keywords:</b>
+		<span class="keyword-list">
                 {% for keyword in subscription.keywords.all %}
+		    {# Keep HTML in sync with accounts/js/profile.js #}
 		    <span class='keyword label label-primary m-l-1'>{{ keyword }}</span>
                 {% endfor %}
+		</span>
             </div>
         </div>
     </div>
-    {% endwith %}{% endwith %}
+    {% endwith %}{% endwith %}{% endwith %}
 {% endfor %}
 
 {% for membership in email_subscriptions.team_memberships %}
 {# Display each team that the email is a part of #}
-    {% with subscription_number=forloop.counter|stringformat:"s" %}
-    {% with details_id=accordion_id|add:"-team-details-"|add:subscription_number %}
-    <div class="panel list-group-item accordion-group team-group">
+    {% with loop_counter=forloop.counter|stringformat:"s" %}
+    {% with entry_id="team-"|add:email_number|add:"-"|add:loop_counter %}
+    {% with details_id="details-"|add:entry_id %}
+    <div id="{{ entry_id }}" class="panel list-group-item accordion-group team-group">
         <div class="accordion-heading">
             <div class="row">
 		<div class="col-md-6">
-		    <button class="btn btn-sm btn-default" data-toggle="collapse" data-parent="#{{ accordion_id }}" data-target="#{{ details_id }}">{% toggle_chevron %}</button>
+		    <button class="btn btn-sm btn-default toggle-details" data-toggle="collapse" data-parent="#{{ accordion_id }}" data-target="#{{ details_id }}">{% toggle_chevron %}</button>
 		    <span class='team-membership'>
 		    <a href="{{ membership.team.get_absolute_url }}">{{ membership.team }}</a>
 		    </span>
@@ -122,7 +128,7 @@
 
 		<div class="col-md-6">
 		    <div class="pull-xs-right">
-			<div class="btn btn-sm btn-primary modify-membership-keywords" data-email="{{ email }}" data-href="{% url 'dtracker-team-set-keywords' membership.team.slug %}">Modify keywords</div>
+			<div class="btn btn-sm btn-primary modify-keywords" data-email="{{ email }}" data-details="#{{ details_id }}" data-href="{% url 'dtracker-team-set-keywords' membership.team.slug %}">Modify keywords</div>
 			<a class="btn btn-sm btn-primary" href="{% url 'dtracker-team-manage-membership' membership.team.slug %}?email={{ email|urlencode:'' }}">Manage subscriptions</a>
 			{% if membership.muted %}
 			<form style="margin-bottom: 0px;display:inline;" action="{% url 'dtracker-team-unmute' membership.team.slug %}" method="POST">{% csrf_token %}
@@ -145,23 +151,27 @@
         <div class="accordion-body collapse" id="{{ details_id }}">
             <div class="accordion-inner">
 		<b>Team-specific keywords:</b>
-                {% for keyword in membership.default_keywords.all %}
-                <span class='keyword label label-primary m-l-1'>{{ keyword }}</span>
+		<span class="keyword-list">
+                {% for keyword in membership.get_membership_keywords %}
+		    {# Keep HTML in sync with accounts/js/profile.js #}
+                    <span class='keyword label label-primary m-l-1'>{{ keyword }}</span>
                 {% endfor %}
+		</span>
             </div>
         </div>
     </div>
-    {% endwith %}{% endwith %}
+    {% endwith %}{% endwith %}{% endwith %}
 {% endfor %}
 
 </div>
 
-{% endwith %}{% endwith %}
+{% endwith %}
 {% endif %}{# / has subscriptions #}
 
 </div></div>
 
-{% endfor %}
+{% endwith %}{% endwith %}
+{% endfor %}{# end of loop on emails #}
 
 <div class="row">
 <div class="col-xs-12 m-t-1">

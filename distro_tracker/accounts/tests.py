@@ -217,12 +217,14 @@ class SubscriptionsViewTests(TestCase):
         context_subscriptions = response.context['subscriptions']
         email = self.user.emails.all()[0]
         # The correct email is in the context
-        self.assertIn(email, context_subscriptions)
+        for entry in context_subscriptions:
+            if entry['email'] == email:
+                break
+        self.assertEqual(entry['email'], email)
         # The packages in the context are correct
         self.assertEqual(
             [self.package_name.name],
-            [sub.package.name for sub
-             in context_subscriptions[email]['subscriptions']])
+            [sub.package.name for sub in entry['subscriptions']])
 
     def test_multiple_emails(self):
         """
@@ -241,12 +243,14 @@ class SubscriptionsViewTests(TestCase):
         # All the emails are in the context?
         context_subscriptions = response.context['subscriptions']
         for email, package in zip(self.user.emails.all(), packages):
-            self.assertIn(email, context_subscriptions)
+            for entry in context_subscriptions:
+                if entry['email'] == email:
+                    break
+            self.assertEqual(entry['email'], email)
             # Each email has the correct package?
             self.assertEqual(
                 [package.name],
-                [sub.package.name for sub
-                 in context_subscriptions[email]['subscriptions']])
+                [sub.package.name for sub in entry['subscriptions']])
 
 
 class UserEmailsViewTests(TestCase):
