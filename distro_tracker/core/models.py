@@ -2362,6 +2362,13 @@ class TeamMembership(models.Model):
         self.has_membership_keywords = True
         self.save()
 
+    def get_membership_keywords(self):
+        if self.has_membership_keywords:
+            return self.default_keywords.order_by('name')
+        else:
+            return self.user_email.emailsettings.default_keywords.order_by(
+                'name')
+
     def get_keywords(self, package_name):
         """
         Returns the keywords that are associated to a particular package of

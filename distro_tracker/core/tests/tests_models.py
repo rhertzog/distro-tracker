@@ -1805,14 +1805,14 @@ class TeamTests(TestCase):
             EmailSettings.objects.create(user_email=self.user_email)
 
     def assert_keyword_sets_equal(self, set1, set2):
-        self.assertEqual(
-            [k.name for k in set1],
-            [k.name for k in set2])
+        self.assertSetEqual(
+            set([k.name for k in set1]),
+            set([k.name for k in set2]))
 
     def assert_keyword_sets_not_equal(self, set1, set2):
         self.assertNotEqual(
-            [k.name for k in set1],
-            [k.name for k in set2])
+            set([k.name for k in set1]),
+            set([k.name for k in set2]))
 
     def test_no_membership_keywords(self):
         """
@@ -1827,6 +1827,20 @@ class TeamTests(TestCase):
         self.assert_keyword_sets_equal(
             self.email_settings.default_keywords.all(),
             membership.get_keywords(self.package_name))
+
+    def test_get_membership_keywords_default(self):
+        membership = self.team.add_members([self.user_email])[0]
+        self.assert_keyword_sets_equal(
+            membership.get_membership_keywords(),
+            self.email_settings.default_keywords.all())
+
+    def test_get_membership_keywords_non_default(self):
+        membership = self.team.add_members([self.user_email])[0]
+        keywords = Keyword.objects.all()[:3]
+        membership.set_membership_keywords([k.name for k in keywords])
+        self.assert_keyword_sets_equal(
+            membership.get_membership_keywords(),
+            keywords)
 
     def test_set_membership_keywords(self):
         membership = self.team.add_members([self.user_email])[0]
