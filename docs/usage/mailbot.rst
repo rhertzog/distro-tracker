@@ -75,12 +75,6 @@ Mailbot Commands Reference
     * ``keyword user@example.net - bts bts-control``
     * ``keyword = default contact upload-source``
 
-:samp:`keywordall [{email}] +|-|= {list of keywords}`
-    Accept (``+``) or refuse (``-``) mails classified under the given
-    keyword(s).  Define the list (``=``) of accepted keywords. This
-    changes the set of accepted keywords of all the currently active
-    subscriptions of a user.
-
 :samp:`keyword {sourcepackage} [{email}] +|-|= {list of keywords}`
     Same as previous item but overrides the keywords list for the
     indicated source package.
