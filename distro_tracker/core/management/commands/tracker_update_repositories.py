@@ -30,9 +30,9 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--force',
+            '--force-update',
             action='store_true',
-            dest='force',
+            dest='force_update',
             default=False,
             help=(
                 'Force the update. '
@@ -41,9 +41,8 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
-        additional_arguments = None
-        if kwargs['force']:
-            additional_arguments = {
-                'force_update': True
-            }
-        run_task(UpdateRepositoriesTask, additional_arguments)
+        params = {}
+        if kwargs['force_update']:
+            params['force_update'] = True
+
+        run_task(UpdateRepositoriesTask, **params)
