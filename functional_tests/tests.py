@@ -1303,6 +1303,9 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
 
 
 class ManageSubscriptionTest(UserAccountsTestMixin, SeleniumTestCase):
+    # We need the Keyword objects, ask Django to re-load the initial data
+    serialized_rollback = True
+
     def setUp(self):
         super().setUp()
         self.package2 = SourcePackageName.objects.create(name='package2')

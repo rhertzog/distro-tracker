@@ -12,6 +12,10 @@ PASSWORD_HASHERS = [
 INSTALLED_APPS = defaults.INSTALLED_APPS.copy()
 MIDDLEWARE = defaults.MIDDLEWARE
 
+TEST_NON_SERIALIZED_APPS = [
+    'django.contrib.contenttypes'
+]
+
 # When running the test suite, enable all apps so that we have all the models
 INSTALLED_APPS.extend([
     'distro_tracker.auto_news',
