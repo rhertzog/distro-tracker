@@ -2,6 +2,6 @@
 <span>The package is severely out of date with respect to the Debian Policy.</span>
 {% endif %}
 <span>The package should be updated to follow the last version of <a href="https://www.debian.org/doc/debian-policy/">Debian Policy</a>
-(Standards-Version <a href="https://www.debian.org/doc/debian-policy/#version-{{ item.extra_data.lastsv_dashes|urlencode:'' }}">{{ item.extra_data.lastsv }}</a> instead of
-<a href="https://www.debian.org/doc/debian-policy/#version-{{ item.extra_data.standards_version_dashes|urlencode:'' }}">{{ item.extra_data.standards_version }}</a>).
+(Standards-Version <a href="https://www.debian.org/doc/debian-policy/upgrading-checklist.html#version-{{ item.extra_data.lastsv_dashes|urlencode:'' }}">{{ item.extra_data.lastsv }}</a> instead of
+<a href="https://www.debian.org/doc/debian-policy/upgrading-checklist.html#version-{{ item.extra_data.standards_version_dashes|urlencode:'' }}">{{ item.extra_data.standards_version }}</a>).
 </span>
