@@ -91,6 +91,11 @@ class ExtractSourcePackageFiles(BaseTask, ProcessSourcePackage):
 
         # Process pending items
         for srcpkg in self.items_to_process():
+            # Save what has been processed when it takes long enough that we
+            # had to extend the lock
+            if self.extend_lock():
+                self.save_data()
+
             extracted_files = [
                 extracted_file.name
                 for extracted_file in srcpkg.extracted_source_files.all()
