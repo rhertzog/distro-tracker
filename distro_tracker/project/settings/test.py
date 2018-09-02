@@ -1,7 +1,12 @@
 """Appropriate settings to run the test suite."""
 
+import os
+
 from . import defaults
 from .development import *  # noqa
+
+if 'USE_PG' in os.environ:
+    from .db_postgresql import DATABASES  # noqa
 
 # Don't use bcrypt to run tests (speed gain)
 PASSWORD_HASHERS = [
