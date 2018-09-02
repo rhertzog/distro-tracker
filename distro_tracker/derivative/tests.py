@@ -37,10 +37,10 @@ class GenerateComparatingListTest(TestCase):
 
     def setUp(self):
         self.derivative_repo = Repository.objects.create(
-            name='derivative_repo', shorthand='derivative_repo',
+            name='derivative_repo', shorthand='derivative',
             codename='derivative_codename', suite='derivative_suite')
         self.target_repo = Repository.objects.create(
-            name='target_repo', shorthand='target_repo',
+            name='target_repo', shorthand='target',
             codename='initial_codename', suite='initial_suite')
 
         self.relation = RepositoryRelation.objects.create(
