@@ -13,6 +13,7 @@ import os
 import random
 import re
 import string
+import warnings
 from datetime import timedelta
 from email.iterators import typed_subpart_iterator
 from email.utils import getaddresses, parseaddr
@@ -22,7 +23,7 @@ from debian.debian_support import AptPkgVersion
 from django.conf import settings
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.files.base import ContentFile
-from django.db import models
+from django.db import models, connection
 from django.db.models import Q
 from django.db.utils import IntegrityError
 from django.template.defaultfilters import slugify
@@ -2641,7 +2642,16 @@ class TaskData(models.Model):
         Extend the duration of the lock for the given delay. Calling this
         method when the lock is not yet acquired will raise an exception.
 
+        Note that you should always run this outside of any transaction so
+        that the new expiration time is immediately visible, otherwise
+        it might only be committed much later when the transaction ends.
+        The
+
         :param int delay: the number of seconds to add to lock expiration date
         """
+        if connection.in_atomic_block:
+            m = 'extend_run_lock() should be called outside of any transaction'
+            warnings.warn(RuntimeWarning(m))
+
         self.run_lock += timedelta(seconds=delay)
         self.save(update_fields=['run_lock'])

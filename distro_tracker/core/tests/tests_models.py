@@ -15,11 +15,12 @@ Tests for the Distro Tracker core module's models.
 """
 import email
 import itertools
+import warnings
 from datetime import timedelta
 
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.base import ContentFile
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.template.defaultfilters import slugify
 from django.test.utils import override_settings
 from django.urls import reverse
@@ -1960,6 +1961,10 @@ class TaskDataTests(TestCase):
         self.taskdata.save()
         self.sample_data = {'foo': 'bar'}
         self.sample_data_checksum = get_data_checksum(self.sample_data)
+        self.warning_re = \
+            r'extend_run_lock\(\) should be called outside of any transaction'
+        warnings.filterwarnings('ignore', message=self.warning_re,
+                                category=RuntimeWarning)
 
     def test_default_values(self):
         self.assertFalse(self.taskdata.task_is_pending)
@@ -2062,3 +2067,10 @@ class TaskDataTests(TestCase):
 
         # data has not been saved, after reload it's again the default value
         self.assertDictEqual(self.taskdata.data, {})
+
+    def test_extend_run_lock_warns_in_transaction(self):
+        self.taskdata.get_run_lock()
+
+        with self.assertWarnsRegex(RuntimeWarning, self.warning_re):
+            with transaction.atomic():
+                self.taskdata.extend_run_lock()

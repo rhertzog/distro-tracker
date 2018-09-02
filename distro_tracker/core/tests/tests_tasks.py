@@ -14,6 +14,7 @@
 Tests for the Distro Tracker core's tasks framework.
 """
 import logging
+import warnings
 from datetime import timedelta
 from unittest import mock
 
@@ -491,6 +492,54 @@ class BaseTaskTests(TestCase):
                 mocked.mock_calls,
                 [mock.call('execute-started'), mock.call('execute-failed')]
             )
+
+    def test_lock_expires_soon_when_it_is_true(self):
+        self.init_task_data(run_lock=now() + timedelta(seconds=120))
+
+        result = self.task.lock_expires_soon(delay=300)
+
+        self.assertEqual(result, True)
+
+    def test_lock_expires_soon_when_it_is_false(self):
+        self.init_task_data(run_lock=now() + timedelta(seconds=1800))
+
+        result = self.task.lock_expires_soon(delay=300)
+
+        self.assertEqual(result, False)
+
+    def test_lock_expires_soon_when_no_lock_acquired(self):
+        result = self.task.lock_expires_soon(delay=300)
+
+        self.assertEqual(result, False)
+
+    def test_lock_extend_when_lock_expires_soon(self):
+        initial_lock = now()
+        self.init_task_data(run_lock=initial_lock)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            with mock.patch.object(self.task, 'lock_expires_soon') as mocked:
+                mocked.return_value = True
+                result = self.task.extend_lock(delay=1800)
+
+        self.assertGreater(self.task.task_data.run_lock, initial_lock)
+        self.assertEqual(result, True)
+
+    def test_lock_extend_when_lock_does_not_expire_soon(self):
+        initial_lock = now()
+        self.init_task_data(run_lock=initial_lock)
+
+        with mock.patch.object(self.task, 'lock_expires_soon') as mocked:
+            mocked.return_value = False
+            result = self.task.extend_lock(delay=1800)
+
+        self.assertEqual(self.task.task_data.run_lock, initial_lock)
+        self.assertEqual(result, False)
+
+    def test_lock_extend_when_no_lock_acquired(self):
+        result = self.task.extend_lock(delay=1800)
+        self.assertIsNone(self.task.task_data.run_lock)
+        self.assertEqual(result, False)
 
 
 class SchedulerTests(TestCase):

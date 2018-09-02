@@ -15,6 +15,7 @@ to happen regularly to update distro-tracker's data.
 """
 import logging
 import importlib
+from datetime import timedelta
 
 from django.conf import settings
 
@@ -298,6 +299,33 @@ class BaseTask(metaclass=PluginRegistry):
         """
         for function in self.event_handlers.get(event, []):
             function(*args, **kwargs)
+
+    def lock_expires_soon(self, delay=600):
+        """
+        :param int delay: The number of seconds allowed before the lock is
+            considered to expire soon.
+        :return: True if the lock is about to expire in the given delay. Returns
+            False otherwise.
+        :rtype: bool
+        """
+        if self.task_data.run_lock is None:
+            return False
+        return self.task_data.run_lock <= now() + timedelta(seconds=delay)
+
+    def extend_lock(self, delay=1800, expire_delay=600):
+        """
+        Extends the duration of the lock with the given `delay` if it's
+        about to expire soon (as defined by the `expire_delay` parameter).
+
+        :param int expire_delay: The number of seconds allowed before the lock
+            is considered to expire soon.
+        :param int delay: The number of seconds to add the expiration time of
+            the lock.
+        """
+        if self.lock_expires_soon(delay=expire_delay):
+            self.task_data.extend_run_lock(delay=delay)
+            return True
+        return False
 
 
 def import_all_tasks():
