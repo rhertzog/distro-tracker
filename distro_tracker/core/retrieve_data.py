@@ -532,6 +532,7 @@ class UpdateRepositoriesTask(BaseTask):
         repository_files = self.group_files_by_repository(updated_sources)
 
         for repository, sources_files_data in repository_files.items():
+            self.extend_lock()
             with transaction.atomic():
                 self.log("Processing Sources files of %s repository",
                          repository.shorthand)
@@ -578,6 +579,8 @@ class UpdateRepositoriesTask(BaseTask):
         repository_files = self.group_files_by_repository(updated_packages)
 
         for repository, packages_files_data in repository_files.items():
+            # This operation is really slow, ensure we have one hour safety
+            self.extend_lock(expire_delay=3600, delay=3600)
             with transaction.atomic():
                 self.log("Processing Packages files of %s repository",
                          repository.shorthand)
@@ -681,6 +684,8 @@ class UpdateRepositoriesTask(BaseTask):
         Updates source-to-source package dependencies stemming from
         build bependencies and their binary packages' dependencies.
         """
+        self.extend_lock()
+
         # Build the dependency mapping
         try:
             default_repository = Repository.objects.get(default=True)
