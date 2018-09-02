@@ -1257,7 +1257,7 @@ class ProcessRepositoryUpdatesTests(TestCase):
 
     def test_compute_known_packages(self):
         srcpkg = self.create_source_package(repository='repo')
-        repository = srcpkg.repository_entries.first()
+        repository = srcpkg.repository_entries.first().repository
         self.task.execute()  # Updates processed list
 
         self.task.compute_known_packages()

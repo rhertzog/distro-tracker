@@ -197,7 +197,7 @@ class NewsFeedTests(TestCase):
 
     def test_news_feed_filters_out_control_characters(self):
         content = ('This is a test entry with control chars\n'
-                   '\x00\x01\x08 \x0B\x0C \x0E\x1F')
+                   '\x01\x08 \x0B\x0C \x0E\x1F')
         title = 'This is a title with control chars \x01'
         News.objects.create(
             title=title,

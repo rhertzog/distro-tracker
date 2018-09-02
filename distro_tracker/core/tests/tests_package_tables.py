@@ -120,7 +120,7 @@ class GeneralInformationTableFieldTests(TestCase):
 class VcsTableFieldTests(TestCase):
     def setUp(self):
         self.package = create_source_package_with_data('dummy-package')
-        self.package.general_data = self.package.data.all()
+        self.package.general_data = self.package.data.filter(key='general')
         self.field = VcsTableField()
 
     def test_field_context(self):
