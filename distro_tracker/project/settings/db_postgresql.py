@@ -2,13 +2,13 @@
 
 Defaults to unix socket with user auth.
 """
-import os
+import getpass
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'distro-tracker',
-        'USER': os.getlogin(),
+        'USER': getpass.getuser(),
         'PASSWORD': '',
         'HOST': '',
         'PORT': '',
