@@ -2029,3 +2029,36 @@ class TaskDataTests(TestCase):
         # Ensure the lock is unmodified
         self.taskdata.refresh_from_db()
         self.assertEqual(self.taskdata.run_lock, locked_until)
+
+    def test_extend_run_lock_no_lock(self):
+        with self.assertRaises(Exception):
+            self.taskdata.extend_run_lock()
+
+    def test_extend_run_lock_takes_delay_parameter(self):
+        self.taskdata.get_run_lock()
+        before = self.taskdata.run_lock
+
+        self.taskdata.extend_run_lock(delay=36)
+
+        expected = before + timedelta(seconds=36)
+        self.assertEqual(self.taskdata.run_lock, expected)
+
+    def test_extend_run_lock_saves_the_change_to_the_database(self):
+        self.taskdata.get_run_lock()
+        before = self.taskdata.run_lock
+
+        self.taskdata.extend_run_lock()
+        self.taskdata.refresh_from_db()
+
+        self.assertNotEqual(self.taskdata.run_lock, before)
+
+    def test_extend_run_lock_saves_only_run_lock(self):
+        self.taskdata.get_run_lock()
+        # Modify the data without committing it
+        self.taskdata.data = self.sample_data
+
+        self.taskdata.extend_run_lock()
+        self.taskdata.refresh_from_db()
+
+        # data has not been saved, after reload it's again the default value
+        self.assertDictEqual(self.taskdata.data, {})

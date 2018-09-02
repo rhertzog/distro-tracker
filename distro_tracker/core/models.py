@@ -2635,3 +2635,13 @@ class TaskData(models.Model):
         ).update(run_lock=locked_until)
         self.refresh_from_db(fields=['run_lock'])
         return True if updated else False
+
+    def extend_run_lock(self, delay=1800):
+        """
+        Extend the duration of the lock for the given delay. Calling this
+        method when the lock is not yet acquired will raise an exception.
+
+        :param int delay: the number of seconds to add to lock expiration date
+        """
+        self.run_lock += timedelta(seconds=delay)
+        self.save(update_fields=['run_lock'])
