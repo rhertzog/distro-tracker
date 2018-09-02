@@ -299,27 +299,6 @@ class BaseTask(metaclass=PluginRegistry):
         for function in self.event_handlers.get(event, []):
             function(*args, **kwargs)
 
-    # TO DROP LATER: kept only for temporary API compatibility
-    def is_initial_task(self):
-        # We force a full run
-        return True
-
-    def get_all_events(self):
-        return []
-
-    def raise_event(self, event_name, arguments=None):
-        pass
-
-    def set_parameters(self, parameters):
-        """
-        Allows clients to set additional task-specific parameters once a task
-        is already created.
-
-        :param parameters: The extra parameters.
-        :type parameters: dict
-        """
-        pass
-
 
 def import_all_tasks():
     """

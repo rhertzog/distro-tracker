@@ -234,9 +234,6 @@ class UpdateRepositoriesTask(BaseTask):
                     binary_package_name = BinaryPackageName.objects.get(
                         name=binary_name)
                     binaries.append(binary_package_name)
-                    self.raise_event('new-binary-package', {
-                        'name': binary_name,
-                    })
             entry['binary_packages'] = binaries
 
         if 'maintainer' in entry:
