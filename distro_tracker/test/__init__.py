@@ -262,6 +262,7 @@ class TestCase(TempDirsMixin, TestCaseHelpersMixin, DatabaseMixin,
     pass
 
 
+@django.test.tag('transaction')
 class TransactionTestCase(TempDirsMixin, TestCaseHelpersMixin,
                           DatabaseMixin, django.test.TransactionTestCase):
     pass
