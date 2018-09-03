@@ -669,6 +669,18 @@ class TaskUtilsTests(TestCase):
             result = run_task(TestRunTask)
             self.assertFalse(result)
 
+    def test_run_task_with_lock_error(self):
+        task_data = TaskData.objects.create(task_name='test_run_task')
+        self.assertTrue(task_data.get_run_lock())
+
+        with self.assertLogs('distro_tracker.tasks') as cm:
+            result = run_task(TestRunTask)
+            msg = 'Task test_run_task has been skipped due to its run lock'
+            self.assertIn('INFO:distro_tracker.tasks:%s' % msg, cm.output)
+
+        self.assertFalse(result)
+        self.assertEqual(len(TestRunTask.executed), 0)
+
     def test_build_all_tasks_returns_a_dict_of_all_tasks(self):
         result = build_all_tasks()
 

@@ -375,6 +375,10 @@ def run_task(task, *args, **kwargs):
     logger.info("Starting task %s", task.task_name())
     try:
         task.execute()
+    except task.LockError:
+        logger.info("Task %s has been skipped due to its run lock",
+                    task.task_name())
+        return False
     except Exception:
         logger.exception("Task %s failed with the following traceback.",
                          task.task_name())
