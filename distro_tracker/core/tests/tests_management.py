@@ -14,6 +14,7 @@
 Tests for the Distro Tracker core management commands.
 """
 
+import io
 from unittest import mock
 
 from django.core.management import call_command
@@ -45,6 +46,7 @@ class RunTaskManagementCommandTest(SimpleTestCase):
         :func:`run_task <distro_tracker.core.tasks.run_task>` function for each
         given task name.
         """
+        mock_run_task.return_value = True
         self.run_command(['TaskName1', 'TaskName2'])
 
         # The run task was called only for the given commands
@@ -58,6 +60,7 @@ class RunTaskManagementCommandTest(SimpleTestCase):
         Tests that the management command passes the force flag to the task
         invocations when it is given.
         """
+        mock_run_task.return_value = True
         self.run_command(['TaskName1'], force_update=True)
 
         mock_run_task.assert_called_once_with('TaskName1', force_update=True)
@@ -67,9 +70,19 @@ class RunTaskManagementCommandTest(SimpleTestCase):
         Tests that the management command passes the fake_update flag to the
         task invocations when it is given.
         """
+        mock_run_task.return_value = True
         self.run_command(['TaskName1'], fake_update=True)
 
         mock_run_task.assert_called_once_with('TaskName1', fake_update=True)
+
+    def test_outputs_to_stderr_when_fails(self, mock_run_task):
+        mock_run_task.return_value = False
+        stderr = io.StringIO()
+
+        self.run_command(['TaskName1'], stderr=stderr)
+
+        self.assertEqual(stderr.getvalue(),
+                         'Task TaskName1 failed to run.\n')
 
 
 @mock.patch('distro_tracker.core.management.commands.'

@@ -12,7 +12,6 @@ Implements a command to start a number of available Distro Tracker tasks.
 A task is a subclass of :class:`distro_tracker.core.tasks.BaseTask`.
 """
 import logging
-import traceback
 
 from django.core.management.base import BaseCommand
 
@@ -52,7 +51,6 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
-        verbose = int(kwargs.get('verbosity', 1)) > 0
         params = {}
         if kwargs['force_update']:
             params['force_update'] = True
@@ -61,12 +59,6 @@ class Command(BaseCommand):
         for task_name in kwargs['tasks']:
             if isinstance(task_name, bytes):
                 task_name = task_name.decode('utf-8')
-            logger.info("Starting task %s (from ./manage.py tracker_run_task)",
-                        task_name)
-            try:
-                run_task(task_name, **params)
-            except Exception:
-                logger.exception("Task %s failed:", task_name)
-                if verbose:
-                    self.stdout.write('Task {} failed:\n'.format(task_name))
-                    traceback.print_exc(file=self.stdout)
+            logger.info("./manage.py tracker_run_task %s", task_name)
+            if not run_task(task_name, **params):
+                self.stderr.write('Task {} failed to run.\n'.format(task_name))
