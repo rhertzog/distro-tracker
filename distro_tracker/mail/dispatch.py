@@ -53,6 +53,7 @@ def _get_logdata(msg, package, keyword, team):
         'msgid': msg.get('Message-ID', 'no-msgid-present@localhost'),
         'package': package or '<unknown>',
         'keyword': keyword or '<unknown>',
+        'team': team or '<unknown>',
     }
 
 

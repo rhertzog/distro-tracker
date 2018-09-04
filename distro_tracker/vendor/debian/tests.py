@@ -16,7 +16,6 @@ Tests for Debian-specific modules/functionality of Distro Tracker.
 
 import io
 import json
-import logging
 import os
 import yaml
 import gzip
@@ -106,8 +105,6 @@ from distro_tracker.vendor.debian.tracker_tasks import (
     UpdateWnppStatsTask
 )
 from distro_tracker.vendor.debian.views import CodeSearchView
-
-logging.disable(logging.CRITICAL)
 
 
 @override_settings(

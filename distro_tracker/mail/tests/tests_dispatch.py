@@ -13,7 +13,6 @@
 This module contains the tests for the dispatch functionality
 (:py:mod:`distro_tracker.mail.dispatch` module) of distro-tracker.
 """
-import logging
 from datetime import timedelta
 from email.message import Message
 from unittest import mock
@@ -38,8 +37,6 @@ from distro_tracker.test import TestCase
 
 DISTRO_TRACKER_CONTROL_EMAIL = settings.DISTRO_TRACKER_CONTROL_EMAIL
 DISTRO_TRACKER_FQDN = settings.DISTRO_TRACKER_FQDN
-
-logging.disable(logging.CRITICAL)
 
 
 class DispatchTestHelperMixin(object):
