@@ -2584,8 +2584,8 @@ class UpdateBuildReproducibilityTask(BaseTask):
         'FTBFS': '<a href="{url}">Fails to build</a> during reproducibility '
                  'testing',
         'reproducible': None,
-        'unreproducible': '<a href="{url}">Does not build reproducibly</a> '
-                          'during testing',
+        'FTBR': '<a href="{url}">Does not build reproducibly</a> '
+                'during testing',
         '404': None,
         'not for us': None,
     }
