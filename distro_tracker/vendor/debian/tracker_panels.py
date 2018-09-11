@@ -101,6 +101,15 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
         reproducibility_url = reproducibility_url.format(
             urlquote(self.package.name, safe=""))
 
+        try:
+            self.package.data.get(key='dependency_satisfaction')
+            has_debcheck = True
+        except PackageData.DoesNotExist:
+            has_debcheck = False
+        debcheck_url = \
+            "https://qa.debian.org/dose/debcheck/unstable_main/latest/src" \
+            "/{}.html".format(urlquote(self.package.name, safe=""))
+
         return [
             TemplatePanelItem('debian/logcheck-links.html', {
                 'package_query_string': query_string,
@@ -110,6 +119,8 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
                 'reproducibility_url': reproducibility_url,
                 'reproducibility_status': reproducibility_status,
                 'has_experimental': has_experimental,
+                'has_debcheck': has_debcheck,
+                'debcheck_url': debcheck_url,
             })
         ]
 

@@ -3175,3 +3175,116 @@ class TagPackagesWithNewUpstreamVersion(BaseTask, PackageTagging):
         for item in items:
             packages_list.append(item.package)
         return packages_list
+
+
+class UpdateDependencySatisfactionTask(BaseTask):
+    """
+    Fetches binary package installability results from qa.debian.org/dose
+    """
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600 * 24
+
+    BASE_URL = 'https://qa.debian.org/dose/debcheck/unstable_main/latest'
+    ACTION_ITEM_TYPE_NAME = 'debian-dependency-satisfaction'
+    ACTION_ITEM_TEMPLATE = 'debian/dependency-satisfaction-action-item.html'
+
+    def __init__(self, force_update=False, *args, **kwargs):
+        super(UpdateDependencySatisfactionTask, self).__init__(*args, **kwargs)
+        self.force_update = force_update
+        self.action_item_type = ActionItemType.objects.create_or_update(
+            type_name=self.ACTION_ITEM_TYPE_NAME,
+            full_description_template=self.ACTION_ITEM_TEMPLATE)
+
+    def set_parameters(self, parameters):
+        if 'force_update' in parameters:
+            self.force_update = parameters['force_update']
+
+    def get_dependency_satisfaction(self):
+        url = '{}/some.txt'.format(self.BASE_URL)
+        cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
+        if not self.force_update and not cache.is_expired(url):
+            return
+        response, updated = cache.update(url, force=self.force_update)
+        response.raise_for_status()
+        if not updated:
+            return
+        dep_sats = collections.defaultdict(set)
+        for i, line in enumerate(response.iter_lines(decode_unicode=True)):
+            binpkg_name, ver, isnative, anchor, expl, arches = line.split('#')
+            try:
+                bin_package = BinaryPackageName.objects.get(name=binpkg_name)
+                srcpkg_name = bin_package.main_source_package_name
+            except BinaryPackageName.DoesNotExist:
+                continue
+            arches = set([arch.strip() for arch in arches.split()])
+            # TODO: retrieve this list programmatically, either from
+            #       https://api.ftp-master.debian.org/suite/testing
+            #       or from the Architecture field in the Release file
+            #       for testing (both lists should be equal).
+            arches = arches.intersection(
+                {'amd64', 'arm64', 'armel', 'armhf', 'i386', 'mips',
+                 'mips64el', 'mipsel', 'ppc64el', 's390x'})
+            # only report problems for release architectures
+            if not arches:
+                continue
+            # if the package is arch:all, only report problems on amd64
+            if isnative != "True":
+                arches = arches.intersection({"amd64"})
+                if not arches:
+                    continue
+            dep_sats[srcpkg_name].add(
+                (binpkg_name, ver, tuple(arches), expl, anchor))
+        # turn sets into lists
+        dep_sats = dict([(k, list(v)) for k, v in dep_sats.items()])
+        return dep_sats
+
+    def update_action_item(self, package, unsats):
+        action_item = package.get_action_item_for_type(
+            self.action_item_type.type_name)
+        if action_item is None:
+            action_item = ActionItem(
+                package=package,
+                item_type=self.action_item_type,
+                severity=ActionItem.SEVERITY_NORMAL)
+        action_item.short_description = \
+            "{count} binary package{plural} {have} unsatisfiable " \
+            "dependencies".format(
+                count=len(unsats),
+                plural='' if len(unsats) == 1 else 's',
+                have='has' if len(unsats) == 1 else 'have',
+            )
+        action_item.extra_data = {
+            'unsats': unsats,
+            'base_url': '{}/packages/'.format(self.BASE_URL),
+        }
+        action_item.save()
+
+    def execute(self):
+        dep_sats = self.get_dependency_satisfaction()
+        if dep_sats is None:
+            return
+
+        with transaction.atomic():
+            PackageData.objects.filter(key='dependency_satisfaction').delete()
+
+            packages = []
+            pkgdata_list = []
+
+            for name, unsats in dep_sats.items():
+                try:
+                    package = SourcePackageName.objects.get(name=name)
+                    packages.append(package)
+                    self.update_action_item(package, unsats)
+                except SourcePackageName.DoesNotExist:
+                    continue
+
+                dep_sat_info = PackageData(
+                    key='dependency_satisfaction',
+                    package=package,
+                    value={'dependency_satisfaction': unsats})
+                pkgdata_list.append(dep_sat_info)
+
+            ActionItem.objects.delete_obsolete_items([self.action_item_type],
+                                                     packages)
+            PackageData.objects.bulk_create(pkgdata_list)
