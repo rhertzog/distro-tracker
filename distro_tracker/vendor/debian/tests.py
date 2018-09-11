@@ -5571,7 +5571,7 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
             [{
                 "package": "dummy",
                 "version": "1.2-3",
-                "status": "unreproducible",
+                "status": "FTBR",
                 "suite": "sid"
             }]
         """
@@ -5579,7 +5579,7 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
         [{
             "package": "other",
             "version": "1.2-3",
-            "status": "unreproducible",
+            "status": "FTBR",
             "suite": "sid"
         }]
         """
@@ -5638,7 +5638,7 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
 
         info = self.dummy_package.data.get(key='reproducibility')
 
-        self.assertEqual(info.value['reproducibility'], 'unreproducible')
+        self.assertEqual(info.value['reproducibility'], 'FTBR')
         action_items = self.dummy_package.action_items
         self.assertEqual(action_items.count(), 1)
         self.assertEqual(action_items.first().item_type.type_name,
