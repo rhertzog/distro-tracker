@@ -91,6 +91,7 @@ from distro_tracker.vendor.debian.tracker_tasks import (
     UpdateAutoRemovalsStatsTask,
     UpdateBuildLogCheckStats,
     UpdateBuildReproducibilityTask,
+    UpdateDependencySatisfactionTask,
     UpdateDebciStatusTask,
     UpdateDebianDuckTask,
     UpdateExcusesTask,
@@ -6255,3 +6256,151 @@ class TagPackagesWithNewUpstreamVersionTest(TestCase):
             PackageData.objects.get(
                 key=self.tag, package=self.outdated_package)
         )
+
+
+@mock.patch('distro_tracker.core.utils.http.requests')
+class UpdateDependencySatisfactionTaskTest(TestCase):
+    """
+    Tests for the:class:`distro_tracker.vendor.debian.tracker_tasks.
+    DependencySatisactionTask` task.
+    """
+    def setUp(self):
+        self.data1 = "dummy1#1.2-3#True#0123456789abcdef#" \
+                     "unsatisfied dependency on foobar#amd64 \n"
+        self.data2 = "dummy2#1.2-3#True#0123456789abcdef#" \
+                     "unsatisfied dependency on foobar#amd64 \n"
+        # arch:all problem on amd64
+        self.data3 = "dummy3#1.2-3#False#0123456789abcdef#" \
+                     "unsatisfied dependency on foobar#amd64 \n"
+        # arch:all problem on non-amd64
+        self.data4 = "dummy4#1.2-3#False#0123456789abcdef#" \
+                     "unsatisfied dependency on foobar#armhf \n"
+        # problem on non-release architecture
+        self.data5 = "dummy5#1.2-3#True#0123456789abcdef#" \
+                     "unsatisfied dependency on foobar#blub \n"
+        self.dummy_package1 = self.create_source_package(
+            name='srcpkg1', binary_packages=["dummy1"]
+        ).source_package_name
+        self.dummy_package3 = self.create_source_package(
+            name='srcpkg3', binary_packages=["dummy3"]
+        ).source_package_name
+        self.dummy_package4 = self.create_source_package(
+            name='srcpkg4', binary_packages=["dummy4"]
+        ).source_package_name
+        self.dummy_package5 = self.create_source_package(
+            name='srcpkg5', binary_packages=["dummy5"]
+        ).source_package_name
+
+    def run_task(self):
+        """
+        Runs the dependency satisfaction status update task.
+        """
+        task = UpdateDependencySatisfactionTask()
+        task.execute()
+
+    def test_packagedata_without_dep_sat(self, mock_requests):
+        """
+        Tests that packages without dependency satisfaction info don't claim to
+        have them.
+        """
+        set_mock_response(mock_requests, text=self.data1)
+        other_package = SourcePackageName.objects.create(name='other-package')
+
+        self.run_task()
+
+        with self.assertRaises(PackageData.DoesNotExist):
+            other_package.data.get(key='dependency_satisfaction')
+
+    def test_no_packagedata_for_unknown_package(self, mock_requests):
+        """
+        Tests that DependencySatisfactionTask doesn't fail with an unknown
+        package.
+        """
+        set_mock_response(mock_requests, text=self.data2)
+
+        self.run_task()
+
+        count = PackageData.objects.filter(
+            key='dependency_satisfaction').count()
+        self.assertEqual(0, count)
+
+    def test_packagedata_with_dep_sat(self, mock_requests):
+        """
+        Tests that PackageData for a package with dependency
+        satisfaction info is correct.
+        """
+        set_mock_response(mock_requests, text=self.data1)
+
+        self.run_task()
+
+        info = self.dummy_package1.data.get(key='dependency_satisfaction')
+
+        self.assertEqual(info.value['dependency_satisfaction'],
+                         [['dummy1', '1.2-3', ['amd64'],
+                           'unsatisfied dependency on foobar',
+                           '0123456789abcdef']])
+        action_items = self.dummy_package1.action_items
+        self.assertEqual(action_items.count(), 1)
+        self.assertEqual(
+            action_items.first().item_type.type_name,
+            UpdateDependencySatisfactionTask.ACTION_ITEM_TYPE_NAME)
+
+    def test_packagedata_is_dropped_when_data_is_gone(self, mock_requests):
+        """
+        Tests that PackageData is dropped if dependency satisfaction
+        info goes away.
+        """
+        set_mock_response(mock_requests, text=self.data1)
+        self.run_task()
+
+        set_mock_response(mock_requests, text=self.data2)
+        self.run_task()
+
+        with self.assertRaises(PackageData.DoesNotExist):
+            self.dummy_package1.data.get(key='dependency_satisfaction')
+        self.assertEqual(self.dummy_package1.action_items.count(), 0)
+
+    def test_packagedata_arch_all_on_amd64(self, mock_requests):
+        """
+        Tests that PackageData for an arch:all package with dependency
+        satisfaction info is correct on amd64.
+        """
+        set_mock_response(mock_requests, text=self.data3)
+
+        self.run_task()
+
+        info = self.dummy_package3.data.get(key='dependency_satisfaction')
+
+        self.assertEqual(info.value['dependency_satisfaction'],
+                         [['dummy3', '1.2-3', ['amd64'],
+                           'unsatisfied dependency on foobar',
+                           '0123456789abcdef']])
+        action_items = self.dummy_package3.action_items
+        self.assertEqual(action_items.count(), 1)
+        self.assertEqual(
+            action_items.first().item_type.type_name,
+            UpdateDependencySatisfactionTask.ACTION_ITEM_TYPE_NAME)
+
+    def test_packagedata_arch_all_on_non_amd64(self, mock_requests):
+        """
+        Tests that PackageData for an arch:all package with dependency
+        satisfaction info is not shown on a non-amd64 architecture.
+        """
+        set_mock_response(mock_requests, text=self.data4)
+        self.run_task()
+
+        with self.assertRaises(PackageData.DoesNotExist):
+            self.dummy_package4.data.get(key='dependency_satisfaction')
+        self.assertEqual(self.dummy_package4.action_items.count(), 0)
+
+    def test_packagedata_non_release_arch(self, mock_requests):
+        """
+        Tests that PackageData for a package with dependency
+        satisfaction info is not shown on a non-release architecture.
+        """
+        set_mock_response(mock_requests, text=self.data5)
+        self.run_task()
+
+        with self.assertRaises(PackageData.DoesNotExist):
+            self.dummy_package5.data.get(key='dependency_satisfaction')
+        self.assertEqual(self.dummy_package5.action_items.count(), 0)
