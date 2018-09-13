@@ -3183,7 +3183,7 @@ class UpdateDependencySatisfactionTask(BaseTask):
     """
 
     class Scheduler(IntervalScheduler):
-        interval = 3600 * 24
+        interval = 3600 * 3
 
     BASE_URL = 'https://qa.debian.org/dose/debcheck/unstable_main/latest'
     ACTION_ITEM_TYPE_NAME = 'debian-dependency-satisfaction'
