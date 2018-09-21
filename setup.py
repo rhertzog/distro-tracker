@@ -33,7 +33,7 @@ def find_package_data(basedir):
     return pkgdata
 
 
-with open('debian/changelog') as f:
+with open('debian/changelog', encoding='utf-8') as f:
     res = re.search(r'\((\d.*)\)', f.readline())
     version = res.group(1)
 
