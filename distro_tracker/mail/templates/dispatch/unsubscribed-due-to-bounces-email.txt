@@ -1,9 +1,11 @@
 The email {{ email }} bounces too much, it has been unsubscribed from the
 {{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracker.
+{% if packages %}
 Here's the list of subscriptions which have been removed:
-{% for package in packages %} 
-* {{ package }}
-{% endfor %}
-
+{% for package in packages %}* {{ package.name }} https://{{ DISTRO_TRACKER_SITE_DOMAIN }}{{ package.get_absolute_url }}
+{% endfor %}{% endif %}
+{% if teams %}Here's the list of team subscriptions that have been muted:
+{% for team in teams %}* {{ team.name }} https://{{ DISTRO_TRACKER_SITE_DOMAIN }}{{ team.get_absolute_url }}
+{% endfor %}{% endif %}
 --
 {{ DISTRO_TRACKER_VENDOR_NAME }} Package Tracker

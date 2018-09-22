@@ -468,8 +468,14 @@ class BounceMessagesTest(TestCase, DispatchTestHelperMixin):
         self.message = Message()
         self.message.add_header('Subject', 'bounce')
         PackageName.objects.create(name='dummy-package')
+        self.real_user = User.objects.create_user(
+            main_email='user@domain.com', password="1234",
+            first_name='', last_name='')
         self.subscribe_user_to_package('user@domain.com', 'dummy-package')
         self.user = UserEmailBounceStats.objects.get(email='user@domain.com')
+        self.team = Team.objects.create_with_slug(name="My Test Team",
+                                                  owner=self.real_user)
+        self.team.add_members([self.user])
 
     def create_bounce_address(self, to):
         """
@@ -552,10 +558,15 @@ Diagnostic-Code: smtp; 550-5.7.1 [....] Our system has detected
         self.add_sent(self.user, date)
         # Make sure there were at least some subscriptions
         packages_subscribed_to = [
-            subscription.package.name
+            subscription.package
             for subscription in self.user.emailsettings.subscription_set.all()
         ]
+        teams_subscribed_to = [
+            membership.team
+            for membership in self.user.membership_set.all()
+        ]
         self.assertTrue(len(packages_subscribed_to) > 0)
+        self.assertFalse(self.user.membership_set.first().muted)
 
         # Receive a bounce message.
         dispatch.handle_bounces(self.create_bounce_address(self.user.email),
@@ -563,6 +574,8 @@ Diagnostic-Code: smtp; 550-5.7.1 [....] Our system has detected
 
         # Assert that the user's subscriptions have been dropped.
         self.assertEqual(self.user.emailsettings.subscription_set.count(), 0)
+        # The team subscription has been muted
+        self.assertTrue(self.user.membership_set.first().muted)
         # A notification was sent to the user.
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn(self.user.email, mail.outbox[0].to)
@@ -570,7 +583,8 @@ Diagnostic-Code: smtp; 550-5.7.1 [....] Our system has detected
         self.assertEqual(mail.outbox[0].body, distro_tracker_render_to_string(
             'dispatch/unsubscribed-due-to-bounces-email.txt', {
                 'email': self.user.email,
-                'packages': packages_subscribed_to
+                'packages': packages_subscribed_to,
+                'teams': teams_subscribed_to,
             }
         ))
 

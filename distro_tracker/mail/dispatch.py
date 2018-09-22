@@ -485,11 +485,13 @@ def handle_bounces(sent_to_address, message):
     if user.has_too_many_bounces():
         logger.info('bounces => %s has too many bounces', user_email)
 
-        packages = [p.name for p in user.emailsettings.packagename_set.all()]
+        packages = list(user.emailsettings.packagename_set.all())
+        teams = [m.team for m in user.membership_set.all()]
         email_body = distro_tracker_render_to_string(
             'dispatch/unsubscribed-due-to-bounces-email.txt', {
                 'email': user_email,
                 'packages': packages,
+                'teams': teams,
             })
         EmailMessage(
             subject='All your package subscriptions have been cancelled',
@@ -504,4 +506,9 @@ def handle_bounces(sent_to_address, message):
 
         user.emailsettings.unsubscribe_all()
         for package in packages:
-            logger.info('bounces :: removed %s from %s', user_email, package)
+            logger.info('bounces :: removed %s from %s', user_email,
+                        package.name)
+        user.membership_set.all().update(muted=True)
+        for team in teams:
+            logger.info('bounces :: muted membership of %s in team %s',
+                        user_email, team.slug)
