@@ -5951,6 +5951,7 @@ class BugStatsTableFieldTests(TestCase):
             {'bug_count': 3, 'merged_count': 0, 'category_name': 'rc'},
             {'bug_count': 7, 'merged_count': 7, 'category_name': 'normal'},
             {'bug_count': 1, 'merged_count': 1, 'category_name': 'wishlist'},
+            {'bug_count': 2, 'merged_count': 2, 'category_name': 'patch'},
         ]
         PackageBugStats.objects.create(
             package=self.package, stats=stats['bugs'])
@@ -5963,7 +5964,7 @@ class BugStatsTableFieldTests(TestCase):
         context = self.field.context(self.package)
         self.assertTrue(context['all'])
         self.assertEqual(context['all'], 11)
-        self.assertEqual(len(context['bugs']), 4)
+        self.assertEqual(len(context['bugs']), 5)
         for bug in context['bugs']:
             self.assertIn('bug_count', bug)
             self.assertIn('category_name', bug)

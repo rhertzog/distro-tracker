@@ -330,7 +330,7 @@ class DebianBugDisplayManager(BugDisplayManager):
 
     def get_bugs_categories_list(self, stats, package):
         # Some bug categories should not be included in the count.
-        exclude_from_count = ('help', 'newcomer')
+        exclude_from_count = ('patch', 'help', 'newcomer')
 
         categories = []
         total, total_merged = 0, 0
