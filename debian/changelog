@@ -1,3 +1,83 @@
+distro-tracker (1.0.1) unstable; urgency=medium
+
+  [ Raphaël Hertzog ]
+  * Major refactoring of the tasks.
+  * Major overhaul of the documentation.
+  * Recognize X-GitLab-Project email header for mail classification
+    (Closes: #886114)
+  * mail: implement forward to team members for team+foo@ emails
+    (Closes: #891504)
+  * stdver_warnings: properly handle removal from default repository
+    (Closes: #904694)
+  * stdver_warnings: force full update when a new policy version is released
+    (Closes: #895393)
+  * debian: handle "neutral" like "pass" in Debci status field (Closes:
+    #907062)
+  * debian: improve the messages displayed by vcswatch (Closes: #906663)
+  * core: fix and improve management of keywords on subscription page
+    (Closes: #906963)
+  * docs: drop reference to non-existing "keywordall" command (Closes:
+    #907338)
+  * gitlab-ci: run unit-tests under PostgreSQL too
+  * mail: disable team membership for emails that bounce
+
+  [ James Cowgill ]
+  * debian: fix bug total counting bugs with patches twice (Closes: #904841)
+
+  [ Mattia Rizzolo ]
+  * Soften the wording of vcswatch messages, and mention a common cause for
+    the OLD status (Closes: #886283)
+
+  [ Pierre-Elliott Bécue ]
+  * Use HTML5 details tag for action-items in order to have them work without
+    JS
+  * UpdateAutoRemovalsStatsTask: import source package version in the
+    ActionItem (Closes: #893670)
+
+  [ Arthur Del Esposte ]
+  * Lots of work on the team feature to add a package overview.
+  * Make news' url more human friendly by using its title slug (Closes:
+    #766597)
+  * Improving autoremoval description by adding buggy dependencies links
+    (Closes: #893669)
+  * Show BugsPanel for a package even when the bug count is zero
+    (Closes: #787662)
+  * debian: fix UpdateVcsWatchTask to store vcswatch data in another
+    PackageData key (Closes: #902438)
+  * debian: Fix patch bug action item BTS urls (Closes: #904634)
+
+  [ Chirath R ]
+  * Remove leading and trailing spaces from package lookup search input
+    (Closes: #845697)
+  * Add component field and display component under general panel
+  * Improve UpdateRepositoriesTask to extract the source package's component
+    (Closes: #890895)
+  * Gitlab CI job for creating sample distro-tracker.sqlite database
+  * Script to download the latest database artifact from gitlab
+
+  [ Lucas Kanashiro ]
+  * Store debci related data in UpdateDebciStatusTask
+  * Create DebciLink in links panel (Closes: #766330)
+  * Display transitive rdeps that are getting removed (Closes: #792738)
+
+  [ Christophe Siraut ]
+  * Use excuses.yaml instead of parsing HTML. (Closes: #853189)
+
+  [ anapauladsmendes ]
+  * Resize ubuntu logo (Closes: #814491)
+  * Add title on images mouse hover (Closes: #758768)
+
+  [ Matthias Klumpp ]
+  * debian: List AppStream hints in package issue overview (Closes: #806740)
+
+  [ Lev Lazinskiy ]
+  * Some work on the documentation and a few small fixes.
+
+  [ Johannes 'josch' Schauer ]
+  * Add installability results from qa.debian.org/dose/debcheck
+
+ -- Raphaël Hertzog <hertzog@debian.org>  Fri, 16 Nov 2018 12:24:39 +0100
+
 distro-tracker (1.0.0) unstable; urgency=low
 
   * Initial release with Python 3 only.
