@@ -38,12 +38,12 @@ from distro_tracker.core.models import (
     Team
 )
 from distro_tracker.core.retrieve_data import (
+    TagPackagesWithBugs,
     UpdatePackageGeneralInformation,
     UpdateRepositoriesTask,
     UpdateSourceToBinariesInformation,
     UpdateTeamPackagesTask,
     UpdateVersionInformation,
-    TagPackagesWithBugs,
     retrieve_repository_info
 )
 from distro_tracker.test import TestCase

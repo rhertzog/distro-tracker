@@ -11,6 +11,7 @@
 # except according to the terms contained in the LICENSE file.
 
 from django.db.models import Prefetch
+
 from distro_tracker.core.models import (
     PackageData,
 )

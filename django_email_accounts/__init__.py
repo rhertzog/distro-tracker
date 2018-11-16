@@ -11,8 +11,9 @@
 This Django app implements a custom User authentication model which lets users
 log in using a set of different email addresses.
 """
-from django.conf import settings
 import importlib
+
+from django.conf import settings
 
 
 def run_hook(name, *args, **kwargs):

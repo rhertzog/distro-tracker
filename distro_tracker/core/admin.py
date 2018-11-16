@@ -11,11 +11,12 @@
 Settings for the admin panel for the models defined in the
 :mod:`distro_tracker.core` app.
 """
-import requests
 from django import forms
 from django.contrib import admin
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
+
+import requests
 
 from distro_tracker.core.models import (
     Architecture,

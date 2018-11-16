@@ -14,6 +14,7 @@ Mixins to combine to create powerful tasks.
 import logging
 
 from debian.debian_support import version_compare
+
 from django.db import transaction
 
 from distro_tracker.core.models import (

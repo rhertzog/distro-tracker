@@ -18,6 +18,7 @@ from distro_tracker.core.models import (
     ConfirmationManager,
     UserEmail
 )
+
 from django_email_accounts.models import UserEmailManager
 
 

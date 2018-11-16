@@ -14,22 +14,23 @@
 Tests for Debian-specific modules/functionality of Distro Tracker.
 """
 
+import gzip
 import io
 import json
 import os
-import yaml
-import gzip
-
 from email.message import Message
 from unittest import mock
 
 from bs4 import BeautifulSoup as soup
+
 from django.core import mail
 from django.core.management import call_command
 from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.functional import curry
+
+import yaml
 
 from distro_tracker.accounts.models import User, UserEmail
 from distro_tracker.core.models import (
@@ -69,12 +70,12 @@ from distro_tracker.vendor.debian.models import (
     UbuntuPackage
 )
 from distro_tracker.vendor.debian.rules import (
+    additional_prefetch_related_lookups,
     classify_message,
     get_developer_information_url,
     get_maintainer_extra,
     get_package_information_site_url,
     get_uploader_extra,
-    additional_prefetch_related_lookups,
     get_vcs_data,
 )
 from distro_tracker.vendor.debian.sso_auth import DebianSsoUserBackend
@@ -91,9 +92,9 @@ from distro_tracker.vendor.debian.tracker_tasks import (
     UpdateAutoRemovalsStatsTask,
     UpdateBuildLogCheckStats,
     UpdateBuildReproducibilityTask,
-    UpdateDependencySatisfactionTask,
     UpdateDebciStatusTask,
     UpdateDebianDuckTask,
+    UpdateDependencySatisfactionTask,
     UpdateExcusesTask,
     UpdateLintianStatsTask,
     UpdateNewQueuePackages,

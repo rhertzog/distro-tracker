@@ -12,10 +12,10 @@
 Defines and implements all Distro Tracker control commands.
 """
 
-from django.conf import settings
-
-import sys
 import inspect
+import sys
+
+from django.conf import settings
 
 from distro_tracker.core.utils import distro_tracker_render_to_string
 from distro_tracker.mail.control.commands.base import Command

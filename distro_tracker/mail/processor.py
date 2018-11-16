@@ -18,8 +18,9 @@ from datetime import timedelta
 from itertools import chain
 from multiprocessing import Pool
 
-import pyinotify
 from django.conf import settings
+
+import pyinotify
 
 import distro_tracker.mail.control
 import distro_tracker.mail.dispatch

@@ -8,9 +8,9 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """Views for the :mod:`distro_tracker.accounts` app."""
-from django.db.models import Prefetch
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.db.models import Prefetch
 from django.http import Http404, HttpResponseBadRequest, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
@@ -22,6 +22,7 @@ from distro_tracker.core.utils import (
     distro_tracker_render_to_string,
     render_to_json_response
 )
+
 from django_email_accounts import views as email_accounts_views
 from django_email_accounts.views import LoginRequiredMixin
 

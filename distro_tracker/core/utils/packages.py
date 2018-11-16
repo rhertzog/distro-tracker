@@ -15,12 +15,15 @@ import subprocess
 import tarfile
 
 import apt
+
+import apt_pkg
+
 from debian import deb822
+
 from django.conf import settings
 from django.urls import reverse
 from django.utils.encoding import force_bytes
 
-import apt_pkg
 from distro_tracker.core.utils.email_messages import \
     name_and_address_from_string as parse_address
 from distro_tracker.core.utils.email_messages import \

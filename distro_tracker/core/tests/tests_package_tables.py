@@ -13,28 +13,30 @@
 """
 Tests for the Distro Tracker core package tables.
 """
-from unittest.mock import patch, mock_open
+from unittest.mock import mock_open, patch
 
 from bs4 import BeautifulSoup as soup
+
 from django.template import Context
 
 from distro_tracker.core.models import (
-    PackageData,
     PackageBugStats,
+    PackageData,
+    SourcePackageName,
     Team,
-    SourcePackageName
 )
-from django_email_accounts.models import User
 from distro_tracker.core.package_tables import (
-    create_table,
-    BasePackageTable,
-    GeneralTeamPackageTable,
-    GeneralInformationTableField,
-    VcsTableField,
     ArchiveTableField,
-    BugStatsTableField
+    BasePackageTable,
+    BugStatsTableField,
+    GeneralInformationTableField,
+    GeneralTeamPackageTable,
+    VcsTableField,
+    create_table,
 )
 from distro_tracker.test import TemplateTestsMixin, TestCase
+
+from django_email_accounts.models import User
 
 
 class TestPackageTable(BasePackageTable):

@@ -181,13 +181,40 @@ Conventions
   2. Functions are documented using doctrings with `Sphinx markup
      <http://sphinx-doc.org/en/master/>`_.
 
-  3. Imports are sorted in 3 groups separated by one empty line: first the
-     Python standard modules, then the third-party modules and finally
-     the project modules. Each group is further split in two between
-     ``import foo`` statements and ``from foo import bar`` statements.
-     Within each group entries are alphabetically sorted. The isort
-     command used to implement the initial formatting was ``isort -m 3 -l
-     80 -rc django_email_accounts/ distro_tracker/``.
+  3. Imports are sorted in multiple groups separated by one empty line:
+     first a group for ``__future__`` imports, then a single group for all
+     the Python standard modules, then one group for each third-party
+     module (and groups are sorted between them as well), followed by
+     groups for the project modules (one group for ``distro_tracker`` and
+     one group for ``django_email_accounts``), and last, one group for
+     relative imports.
+
+     Within each group the ``import foo`` statements are grouped and
+     sorted at the top, while the ``from foo import bar`` statements
+     are grouped and sorted at the end.
+
+     Example:
+
+.. code-block:: python3
+
+   from __future__ import print_function
+
+   import datetime
+   import os
+   from datetime import timedelta
+   from email.utils import getaddresses, parseaddr
+
+   from django.conf import settings
+   from django.db import connection, models
+   from django.utils.safestring import mark_safe
+
+   import requests
+   from requests.structures import CaseInsensitiveDict
+
+   from distro_tracker.core.models import SourcePackage
+   from distro_tracker.core.utils import get_or_none
+
+   from django_email_accounts.models import User
 
 Git commit notices
 ~~~~~~~~~~~~~~~~~~

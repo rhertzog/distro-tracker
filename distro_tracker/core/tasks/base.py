@@ -13,8 +13,8 @@ Base class to implement Tasks.
 Tasks are used to execute (possibly long-running) operations that need
 to happen regularly to update distro-tracker's data.
 """
-import logging
 import importlib
+import logging
 from datetime import timedelta
 
 from django.conf import settings

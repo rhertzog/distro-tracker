@@ -14,6 +14,7 @@
 Tests for the Distro Tracker core panels.
 """
 from bs4 import BeautifulSoup as soup
+
 from django.conf import settings
 from django.urls import reverse
 

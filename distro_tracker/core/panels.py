@@ -13,6 +13,7 @@ import logging
 from collections import defaultdict
 
 from debian.debian_support import AptPkgVersion
+
 from django.conf import settings
 from django.utils.functional import cached_property
 from django.utils.safestring import mark_safe
@@ -29,8 +30,8 @@ from distro_tracker.core.models import (
 )
 from distro_tracker.core.templatetags.distro_tracker_extras import octicon
 from distro_tracker.core.utils import (
-    get_vcs_name,
-    add_developer_extras
+    add_developer_extras,
+    get_vcs_name
 )
 from distro_tracker.core.utils.plugins import PluginRegistry
 

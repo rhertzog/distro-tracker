@@ -16,10 +16,11 @@ import os
 import time
 from hashlib import md5
 
-import requests
 from django.conf import settings
 from django.utils import timezone
 from django.utils.http import parse_http_date
+
+import requests
 from requests.structures import CaseInsensitiveDict
 
 from .compression import get_uncompressed_stream, guess_compression_method

@@ -120,13 +120,14 @@ of those settings.
 
 More settings:
 """
-import django
-from django.core.exceptions import ImproperlyConfigured
-from os.path import dirname
-from django.contrib.messages import constants as message_constants
-
-import socket
 import os.path
+import socket
+from os.path import dirname
+
+import django
+from django.contrib.messages import constants as message_constants
+from django.core.exceptions import ImproperlyConfigured
+
 
 if django.VERSION < (1, 11):
     raise ImproperlyConfigured("Distro Tracker needs Django >= 1.11")

@@ -8,17 +8,16 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 
-
 import os.path
 import re
 
-import requests
 from django import forms
-from distro_tracker.core.package_tables import create_table
 from django.conf import settings
 from django.db.models import Prefetch
 from django.utils.http import urlencode, urlquote_plus
 from django.utils.safestring import mark_safe
+
+import requests
 
 from distro_tracker.core.models import (
     ActionItem,
@@ -28,13 +27,14 @@ from distro_tracker.core.models import (
     SourcePackageName,
     UserEmail
 )
+from distro_tracker.core.package_tables import create_table
 from distro_tracker.core.utils import get_decoded_message_payload, get_or_none
 from distro_tracker.core.utils.http import HttpCache
 from distro_tracker.mail import mail_news
 from distro_tracker.vendor.common import PluginProcessingError
 from distro_tracker.vendor.debian.tracker_tasks import UpdateNewQueuePackages
 
-from .models import DebianContributor, DebianBugDisplayManager
+from .models import DebianBugDisplayManager, DebianContributor
 from .tracker_package_tables import UpstreamTableField
 
 

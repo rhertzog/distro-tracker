@@ -21,15 +21,19 @@ import os
 import re
 from enum import Enum
 
-import debianbts
-import yaml
 from bs4 import BeautifulSoup as soup
+
 from debian import deb822, debian_support
 from debian.debian_support import AptPkgVersion
+
+import debianbts
+
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Prefetch
 from django.utils.http import urlencode
+
+import yaml
 
 from distro_tracker import vendor
 from distro_tracker.accounts.models import UserEmail
@@ -49,13 +53,13 @@ from distro_tracker.core.models import (
 from distro_tracker.core.tasks import BaseTask
 from distro_tracker.core.tasks.mixins import PackageTagging
 from distro_tracker.core.tasks.schedulers import IntervalScheduler
+from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.utils.http import (
     HttpCache,
     get_resource_content,
     get_resource_text
 )
 from distro_tracker.core.utils.misc import get_data_checksum
-from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.utils.packages import (
     html_package_list,
     package_hashdir,

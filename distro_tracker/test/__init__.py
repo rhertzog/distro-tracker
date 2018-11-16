@@ -14,29 +14,31 @@
 Distro Tracker test infrastructure.
 """
 
-import shutil
-import tempfile
+import inspect
 import os
 import os.path
-import inspect
+import shutil
+import tempfile
 
+from bs4 import BeautifulSoup as soup
+
+import django.test
 from django.conf import settings
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
-import django.test
 from django.test.signals import setting_changed
-from bs4 import BeautifulSoup as soup
-from django_email_accounts.models import User
 
 from distro_tracker.accounts.models import UserEmail
 from distro_tracker.core.models import (
     Architecture,
     BinaryPackageName,
     ContributorName,
+    Repository,
     SourcePackage,
     SourcePackageName,
-    Repository,
 )
 from distro_tracker.core.utils.packages import package_hashdir
+
+from django_email_accounts.models import User
 
 
 class TempDirsMixin(object):

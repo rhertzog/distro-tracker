@@ -19,7 +19,7 @@ import os.path
 
 from django.conf import settings
 
-from distro_tracker.core.models import PackageName, SourcePackage, Repository
+from distro_tracker.core.models import PackageName, Repository, SourcePackage
 from distro_tracker.test import (
     SimpleTestCase,
     TempDirsMixin,

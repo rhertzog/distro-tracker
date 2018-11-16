@@ -20,10 +20,11 @@ from email.utils import getaddresses, parseaddr
 
 from debian import changelog as debian_changelog
 from debian.debian_support import AptPkgVersion
+
 from django.conf import settings
-from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.base import ContentFile
-from django.db import models, connection
+from django.db import connection, models
 from django.db.models import Q
 from django.db.utils import IntegrityError
 from django.template.defaultfilters import slugify
@@ -34,6 +35,7 @@ from django.utils.encoding import force_text
 from django.utils.functional import cached_property
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
+
 from jsonfield import JSONField
 
 from distro_tracker import vendor
@@ -49,10 +51,11 @@ from distro_tracker.core.utils.email_messages import (
     get_decoded_message_payload,
     message_from_bytes
 )
-from distro_tracker.core.utils.misc import get_data_checksum
 from distro_tracker.core.utils.linkify import linkify
+from distro_tracker.core.utils.misc import get_data_checksum
 from distro_tracker.core.utils.packages import package_hashdir
 from distro_tracker.core.utils.plugins import PluginRegistry
+
 from django_email_accounts.models import UserEmail
 
 DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS = \

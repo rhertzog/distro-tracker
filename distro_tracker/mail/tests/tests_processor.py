@@ -19,10 +19,11 @@ from datetime import datetime, timedelta
 from email.message import Message
 from unittest import mock
 
-import pyinotify
 from django.conf import settings
 from django.test.utils import override_settings
 from django.utils.encoding import force_bytes
+
+import pyinotify
 
 from distro_tracker.core.utils.email_messages import message_from_bytes
 from distro_tracker.mail.processor import (

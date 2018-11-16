@@ -8,12 +8,12 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """Implements the core package tables shown on team pages."""
-import logging
 import importlib
+import logging
 
-from django.db.models import Prefetch
 from django.conf import settings
-from django.template import Template, Context
+from django.db.models import Prefetch
+from django.template import Context, Template
 from django.template.loader import get_template
 
 from distro_tracker import vendor
@@ -22,7 +22,7 @@ from distro_tracker.core.models import (
     PackageData,
     PackageName,
 )
-from distro_tracker.core.utils import get_vcs_name, add_developer_extras
+from distro_tracker.core.utils import add_developer_extras, get_vcs_name
 from distro_tracker.core.utils.plugins import PluginRegistry
 
 logger = logging.getLogger(__name__)

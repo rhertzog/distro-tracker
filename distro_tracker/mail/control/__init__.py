@@ -10,24 +10,23 @@
 """
 Module implementing the processing of email control messages.
 """
+import logging
+import re
 from email.iterators import typed_subpart_iterator
 
+from django.conf import settings
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
+
 from distro_tracker.core.utils import distro_tracker_render_to_string
 from distro_tracker.core.utils import extract_email_address_from_header
 from distro_tracker.core.utils import get_decoded_message_payload
 from distro_tracker.core.utils.email_messages import decode_header
 from distro_tracker.core.utils.email_messages import unfold_header
-
 from distro_tracker.mail.control.commands import CommandFactory
 from distro_tracker.mail.control.commands import CommandProcessor
 from distro_tracker.mail.models import CommandConfirmation
 
-import re
-import logging
-
-from django.conf import settings
 
 DISTRO_TRACKER_CONTACT_EMAIL = settings.DISTRO_TRACKER_CONTACT_EMAIL
 DISTRO_TRACKER_BOUNCES_EMAIL = settings.DISTRO_TRACKER_BOUNCES_EMAIL

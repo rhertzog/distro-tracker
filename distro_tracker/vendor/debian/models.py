@@ -19,6 +19,7 @@ import re
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.utils.http import urlencode
+
 from jsonfield import JSONField
 
 from distro_tracker.core.models import (

@@ -12,10 +12,12 @@ import itertools
 import logging
 import re
 
-import requests
 from debian import deb822
+
 from django.conf import settings
 from django.db import models, transaction
+
+import requests
 
 from distro_tracker import vendor
 from distro_tracker.accounts.models import UserEmail

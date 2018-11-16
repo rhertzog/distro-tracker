@@ -37,14 +37,14 @@ from distro_tracker.core.tasks.base import (
 )
 from distro_tracker.core.tasks.mixins import (
     ProcessItems,
-    ProcessModel,
-    ProcessSourcePackage,
     ProcessMainRepoEntry,
+    ProcessModel,
     ProcessRepositoryUpdates,
+    ProcessSourcePackage,
     ProcessSrcRepoEntry,
     ProcessSrcRepoEntryInDefaultRepository,
 )
-from distro_tracker.core.tasks.schedulers import Scheduler, IntervalScheduler
+from distro_tracker.core.tasks.schedulers import IntervalScheduler, Scheduler
 from distro_tracker.core.utils import now
 from distro_tracker.core.utils.misc import get_data_checksum
 from distro_tracker.test import TestCase

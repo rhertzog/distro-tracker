@@ -14,6 +14,7 @@ Distro Tracker tasks for the :mod:`distro_tracker.stdver_warnings` app.
 """
 
 from debian.debian_support import version_compare
+
 from django.db import transaction
 from django.db.models import Prefetch
 

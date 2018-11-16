@@ -43,10 +43,8 @@ from distro_tracker.core.models import (
     TeamMembership,
     get_web_package
 )
+from distro_tracker.core.package_tables import create_table
 from distro_tracker.core.panels import get_panels_for_package
-from distro_tracker.core.package_tables import (
-    create_table,
-)
 from distro_tracker.core.utils import (
     distro_tracker_render_to_string,
     get_or_none,

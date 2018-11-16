@@ -42,7 +42,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Distro Tracker'
-copyright = u'2013, The Distro Tracker Developers'
+copyright = u'2013-2018, The Distro Tracker Developers'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -85,6 +85,9 @@ exclude_patterns = ['_build']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
+
+# Format code blocks as Python code
+highlight_language = 'python'
 
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []

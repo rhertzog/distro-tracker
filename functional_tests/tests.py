@@ -11,14 +11,14 @@
 """
 Functional tests for Distro Tracker.
 """
-from unittest import mock
 import os
 import time
+from unittest import mock
 
-from django.core.urlresolvers import reverse
 from django.contrib.auth import get_user_model
 from django.core import mail
-from django_email_accounts.models import UserEmail
+from django.core.urlresolvers import reverse
+
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
@@ -43,6 +43,8 @@ from distro_tracker.core.models import (
 )
 from distro_tracker.core.panels import BasePanel
 from distro_tracker.test import LiveServerTestCase
+
+from django_email_accounts.models import UserEmail
 
 
 class SeleniumTestCase(LiveServerTestCase):

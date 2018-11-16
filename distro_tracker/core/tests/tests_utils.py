@@ -25,6 +25,7 @@ from email.mime.multipart import MIMEMultipart
 from unittest import mock
 
 from debian import deb822
+
 from django.core import mail
 from django.test.utils import override_settings
 from django.urls import reverse
