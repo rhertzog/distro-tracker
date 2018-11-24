@@ -50,6 +50,9 @@ from distro_tracker.core.utils import (
     get_or_none,
     render_to_json_response
 )
+from distro_tracker.core.utils.http import (
+    safe_redirect
+)
 
 
 def package_page(request, package_name):
@@ -580,10 +583,8 @@ class SetMuteTeamView(LoginRequiredMixin, View):
             membership.muted = mute
             membership.save()
 
-        if 'next' in request.POST:
-            return redirect(request.POST['next'])
-        else:
-            return redirect(team)
+        _next = request.POST.get('next', None)
+        return safe_redirect(_next, team)
 
 
 class SetMembershipKeywords(LoginRequiredMixin, View):
@@ -596,10 +597,8 @@ class SetMembershipKeywords(LoginRequiredMixin, View):
             return render_to_json_response({
                 'status': 'ok',
             })
-        if 'next' in self.request.POST:
-            return redirect(self.request.POST['next'])
-        else:
-            return redirect(self.team)
+        _next = self.request.POST.get('next', None)
+        return safe_redirect(_next, self.team)
 
     def post(self, request, slug):
         self.request = request

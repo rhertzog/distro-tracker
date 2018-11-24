@@ -27,6 +27,7 @@ from unittest import mock
 from debian import deb822
 
 from django.core import mail
+from django.http.response import HttpResponseRedirectBase
 from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils.functional import curry
@@ -56,7 +57,8 @@ from distro_tracker.core.utils.email_messages import (
 from distro_tracker.core.utils.http import (
     HttpCache,
     get_resource_content,
-    get_resource_text
+    get_resource_text,
+    safe_redirect
 )
 from distro_tracker.core.utils.linkify import (
     LinkifyCVELinks,
@@ -1575,6 +1577,53 @@ class UtilsTests(TestCase):
             'checksum': 'this key should be ignored for the checksum',
         })
         self.assertEqual(checksum, '99914b932bd37a50b983c5e7c90ae93b')
+
+    def test_safe_redirect_works(self):
+        """Tests the default safe_url"""
+
+        _ret = safe_redirect(
+            "/pkg/dummy",
+            "/",
+        )
+
+        self.assertIsInstance(_ret, HttpResponseRedirectBase)
+        self.assertEqual(_ret.url, "/pkg/dummy")
+
+    def test_safe_redirect_fallbacks_properly(self):
+        """Tests the default safe_url"""
+
+        _ret = safe_redirect(
+            "https://example.com",
+            "/",
+            allowed_hosts=None,
+        )
+
+        self.assertIsInstance(_ret, HttpResponseRedirectBase)
+        self.assertEqual(_ret.url, "/")
+
+    def test_safe_redirect_fallbacks_properly_again(self):
+        """Tests the default safe_url"""
+
+        _ret = safe_redirect(
+            "https://example.com",
+            "/",
+            allowed_hosts=[],
+        )
+
+        self.assertIsInstance(_ret, HttpResponseRedirectBase)
+        self.assertEqual(_ret.url, "/")
+
+    def test_safe_redirect_works_with_allowed_hosts(self):
+        """Tests the default safe_url"""
+
+        _ret = safe_redirect(
+            "https://example.com",
+            "/",
+            allowed_hosts=["example.com"],
+        )
+
+        self.assertIsInstance(_ret, HttpResponseRedirectBase)
+        self.assertEqual(_ret.url, "https://example.com")
 
 
 class CallMethodsTests(TestCase):

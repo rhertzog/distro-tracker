@@ -11,8 +11,12 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db.models import Prefetch
-from django.http import Http404, HttpResponseBadRequest, HttpResponseForbidden
-from django.shortcuts import get_object_or_404, redirect, render
+from django.http import (
+    Http404,
+    HttpResponseBadRequest,
+    HttpResponseForbidden
+)
+from django.shortcuts import get_object_or_404, render, resolve_url
 from django.urls import reverse_lazy
 from django.utils.html import format_html
 from django.views.generic.base import View
@@ -28,7 +32,9 @@ from distro_tracker.core.utils import (
     distro_tracker_render_to_string,
     render_to_json_response
 )
-
+from distro_tracker.core.utils.http import (
+    safe_redirect
+)
 from django_email_accounts import views as email_accounts_views
 from django_email_accounts.views import LoginRequiredMixin
 
@@ -265,10 +271,11 @@ class UnsubscribeUserView(LoginRequiredMixin, View):
                 'status': 'ok',
             })
         else:
-            if 'next' in request.POST:
-                return redirect(request.POST['next'])
-            else:
-                return redirect('dtracker-package-page', package_name=package)
+            _next = request.POST.get('next', None)
+            return safe_redirect(
+                _next,
+                resolve_url('dtracker-package-page', package_name=package),
+            )
 
 
 class UnsubscribeAllView(LoginRequiredMixin, View):
@@ -293,10 +300,11 @@ class UnsubscribeAllView(LoginRequiredMixin, View):
                 'status': 'ok',
             })
         else:
-            if 'next' in request.POST:
-                return redirect(request.POST['next'])
-            else:
-                return redirect('dtracker-index')
+            _next = request.POST.get('next', None)
+            return safe_redirect(
+                _next,
+                resolve_url('dtracker-index'),
+            )
 
 
 class ChooseSubscriptionEmailView(LoginRequiredMixin, View):
@@ -368,10 +376,11 @@ class ModifyKeywordsView(LoginRequiredMixin, View):
                 'status': 'ok',
             })
         else:
-            if 'next' in self.request.POST:
-                return redirect(self.request.POST['next'])
-            else:
-                return redirect('dtracker-index')
+            _next = self.request.POST.get('next', None)
+            return safe_redirect(
+                _next,
+                resolve_url('dtracker-index'),
+            )
 
     def post(self, request):
         if 'email' not in request.POST or 'keyword[]' not in request.POST:
