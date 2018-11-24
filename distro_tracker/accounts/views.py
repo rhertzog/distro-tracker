@@ -311,6 +311,9 @@ class ChooseSubscriptionEmailView(LoginRequiredMixin, View):
         if 'package' not in request.GET:
             raise Http404
 
+        if not get_web_package(request.GET['package']):
+            raise Http404
+
         return render(request, self.template_name, {
             'package': request.GET['package'],
             'emails': request.user.emails.all(),
