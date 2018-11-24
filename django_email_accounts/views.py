@@ -63,14 +63,17 @@ class LoginView(FormView):
             return super().get(request, *args, **kwargs)
 
     def form_valid(self, form):
-        self.success_url = self.request.GET.get(
+        redirect_url = self.request.GET.get(
             self.redirect_parameter, self.success_url)
-        if not is_safe_url(url=self.success_url, host=self.request.get_host()):
-            self.success_url = '/'
+        if not is_safe_url(
+            redirect_url,
+            allowed_hosts=set(self.request.get_host())
+        ):
+            redirect_url = self.success_url
 
         login(self.request, form.get_user())
 
-        return redirect(self.success_url)
+        return redirect(redirect_url)
 
 
 class LogoutView(View):
@@ -80,7 +83,14 @@ class LogoutView(View):
     def get(self, request):
         user = request.user
         logout(request)
+
         next_url = request.GET.get(self.redirect_parameter, self.success_url)
+        if not is_safe_url(
+            next_url,
+            allowed_hosts=set(self.request.get_host())
+        ):
+            next_url = self.success_url
+
         redirect_url = run_hook('post-logout-redirect', request, user, next_url)
         if redirect_url:
             return redirect(redirect_url)

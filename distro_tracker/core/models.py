@@ -33,7 +33,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.encoding import force_text
 from django.utils.functional import cached_property
-from django.utils.html import escape
+from django.utils.html import escape, format_html
 from django.utils.safestring import mark_safe
 
 from jsonfield import JSONField
@@ -320,7 +320,10 @@ class PackageName(models.Model):
 
     def save(self, *args, **kwargs):
         if not re.match('[0-9a-z][-+.0-9a-z]+$', self.name):
-            raise ValidationError('Invalid package name: {}'.format(self.name))
+            raise ValidationError(format_html(
+                'Invalid package name: {}',
+                self.name,
+            ))
         models.Model.save(self, *args, **kwargs)
 
 

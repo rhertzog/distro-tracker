@@ -19,6 +19,7 @@ from distro_tracker.core.models import (
     EmailSettings,
     Keyword,
     PackageName,
+    SourcePackageName,
     Subscription
 )
 from distro_tracker.test import TestCase
@@ -309,7 +310,7 @@ class SubscribeUserToPackageViewTests(TestCase):
         self.password = 'asdf'
         self.user = User.objects.create_user(
             main_email='user@domain.com', password=self.password)
-        self.package = PackageName.objects.create(name='dummy-package')
+        self.package = SourcePackageName.objects.create(name='dummy-package')
 
     def log_in_user(self):
         self.client.login(username=self.user.main_email, password=self.password)

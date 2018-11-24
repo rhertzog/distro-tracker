@@ -11,18 +11,30 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db.models import Prefetch
-from django.http import Http404, HttpResponseBadRequest, HttpResponseForbidden
-from django.shortcuts import get_object_or_404, redirect, render
+from django.http import (
+    Http404,
+    HttpResponseBadRequest,
+    HttpResponseForbidden
+)
+from django.shortcuts import get_object_or_404, render, resolve_url
 from django.urls import reverse_lazy
+from django.utils.html import format_html
 from django.views.generic.base import View
 
 from distro_tracker.accounts.models import UserEmail
-from distro_tracker.core.models import EmailSettings, Keyword, Subscription
+from distro_tracker.core.models import (
+    EmailSettings,
+    Keyword,
+    Subscription,
+    get_web_package
+)
 from distro_tracker.core.utils import (
     distro_tracker_render_to_string,
     render_to_json_response
 )
-
+from distro_tracker.core.utils.http import (
+    safe_redirect
+)
 from django_email_accounts import views as email_accounts_views
 from django_email_accounts.views import LoginRequiredMixin
 
@@ -192,26 +204,39 @@ class SubscribeUserToPackageView(LoginRequiredMixin, View):
             if email not in users_emails:
                 return HttpResponseForbidden()
 
-        # Create the subscriptions
-        json_result = {'status': 'ok'}
-        try:
-            for email in emails:
-                Subscription.objects.create_for(
-                    package_name=package,
-                    email=email)
-        except ValidationError as e:
-            json_result['status'] = 'failed'
-            json_result['error'] = e.message
+        _pkg = get_web_package(package)
+        _err = None
+
+        if _pkg:
+            try:
+                for email in emails:
+                    Subscription.objects.create_for(
+                        package_name=package,
+                        email=email)
+            except ValidationError as e:
+                _err = e.message
+        else:
+            _err = format_html(
+                "Package {pkg} does not exist.",
+                pkg=package,
+            )
 
         if request.is_ajax():
+            json_result = {'status': 'ok'}
+            if _err is not None:
+                json_result = {
+                    'status': 'failed',
+                    'error': _err,
+                }
             return render_to_json_response(json_result)
         else:
-            if 'error' in json_result:
-                return HttpResponseBadRequest(json_result['error'])
-            next = request.POST.get('next', None)
-            if not next:
-                return redirect('dtracker-package-page', package_name=package)
-            return redirect(next)
+            if _err:
+                return HttpResponseBadRequest(_err)
+            _next = request.POST.get('next', None)
+            return safe_redirect(
+                _next,
+                resolve_url('dtracker-package-page', package_name=package),
+            )
 
 
 class UnsubscribeUserView(LoginRequiredMixin, View):
@@ -246,10 +271,11 @@ class UnsubscribeUserView(LoginRequiredMixin, View):
                 'status': 'ok',
             })
         else:
-            if 'next' in request.POST:
-                return redirect(request.POST['next'])
-            else:
-                return redirect('dtracker-package-page', package_name=package)
+            _next = request.POST.get('next', None)
+            return safe_redirect(
+                _next,
+                resolve_url('dtracker-package-page', package_name=package),
+            )
 
 
 class UnsubscribeAllView(LoginRequiredMixin, View):
@@ -274,10 +300,11 @@ class UnsubscribeAllView(LoginRequiredMixin, View):
                 'status': 'ok',
             })
         else:
-            if 'next' in request.POST:
-                return redirect(request.POST['next'])
-            else:
-                return redirect('dtracker-index')
+            _next = request.POST.get('next', None)
+            return safe_redirect(
+                _next,
+                resolve_url('dtracker-index'),
+            )
 
 
 class ChooseSubscriptionEmailView(LoginRequiredMixin, View):
@@ -290,6 +317,9 @@ class ChooseSubscriptionEmailView(LoginRequiredMixin, View):
 
     def get(self, request):
         if 'package' not in request.GET:
+            raise Http404
+
+        if not get_web_package(request.GET['package']):
             raise Http404
 
         return render(request, self.template_name, {
@@ -346,10 +376,11 @@ class ModifyKeywordsView(LoginRequiredMixin, View):
                 'status': 'ok',
             })
         else:
-            if 'next' in self.request.POST:
-                return redirect(self.request.POST['next'])
-            else:
-                return redirect('dtracker-index')
+            _next = self.request.POST.get('next', None)
+            return safe_redirect(
+                _next,
+                resolve_url('dtracker-index'),
+            )
 
     def post(self, request):
         if 'email' not in request.POST or 'keyword[]' not in request.POST:
