@@ -188,7 +188,7 @@ class UserEmailManager(models.Manager):
 
     def get_or_create(self, *args, **kwargs):
         """
-        Replaces the default get_or_create() with one that matches
+        Replaces the default method with one that matches
         the email case-insensitively.
         """
         defaults = kwargs.get('defaults', {})

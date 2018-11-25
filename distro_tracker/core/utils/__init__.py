@@ -251,7 +251,7 @@ def verify_signature(content):
 
 def now(tz=datetime.timezone.utc):
     """
-    Returns datetime.datetime.now() in the requested timezone (UTC by default)
+    Returns the current timestamp in the requested timezone (UTC by default)
     and can be easily mocked out for tests.
     """
     return datetime.datetime.now(tz)
