@@ -19,7 +19,7 @@ class Command(BaseCommand):
     A Django management command which performs the update of available pseudo
     packages.
     """
-    help = "Update the available pseudo packages"
+    help = "Update the available pseudo packages"  # noqa
 
     def handle(self, *args, **kwargs):
         verbose = int(kwargs['verbosity']) > 1

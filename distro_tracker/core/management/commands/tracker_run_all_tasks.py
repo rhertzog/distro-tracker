@@ -25,7 +25,7 @@ class Command(BaseCommand):
     A management command which starts all Distro Tracker tasks that can
     be run according to their scheduling policy.
     """
-    help = "Start all Distro Tracker tasks that can be run."
+    help = "Start all Distro Tracker tasks that can be run."  # noqa
 
     def add_arguments(self, parser):
         parser.add_argument(

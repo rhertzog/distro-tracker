@@ -27,7 +27,7 @@ class Command(BaseCommand):
     A Django management command which outputs some statistics.
     """
 
-    help = (
+    help = (  # noqa
         "Get some statistics about the package tracker:\n"
         "- Total number of source packages with at least one subscription\n"
         "- Total number of subscriptions\n"

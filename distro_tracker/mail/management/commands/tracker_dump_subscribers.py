@@ -24,7 +24,7 @@ class Command(BaseCommand):
     packages or for all packages, depending on the input parameters.
     emails.
     """
-    help = ("Get the subscribers for the given packages.\n"
+    help = ("Get the subscribers for the given packages.\n"  # noqa
             "Outputs subscribers to all packges if no arguments are given")
 
     def add_arguments(self, parser):
@@ -71,13 +71,13 @@ class Command(BaseCommand):
                     self.warn("{package} does not exist.".format(
                         package=str(package_name)))
 
-        format = 'default'
+        output_format = 'default'
         if kwargs['json']:
-            format = 'json'
+            output_format = 'json'
         elif kwargs.get('udd_format', False):
-            format = 'udd'
+            output_format = 'udd'
 
-        return self.render_packages(format)
+        return self.render_packages(output_format)
 
     def output_package(self, package, inactive=False):
         """
@@ -95,7 +95,7 @@ class Command(BaseCommand):
             for sub in subscriptions
         ]
 
-    def render_packages(self, format):
+    def render_packages(self, output_format):
         """
         Prints the packages and their subscribers to the output stream.
 
@@ -103,9 +103,9 @@ class Command(BaseCommand):
             Otherwise, a legacy format is used.
         :type use_json: Boolean
         """
-        if format == 'json':
+        if output_format == 'json':
             self.stdout.write(json.dumps(self.out_packages))
-        elif format == 'udd':
+        elif output_format == 'udd':
             for package, subscribers in self.out_packages.items():
                 subscriber_out = ', '.join(str(email) for email in subscribers)
                 self.stdout.write("{}\t{}".format(package, subscriber_out))

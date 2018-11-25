@@ -26,7 +26,8 @@ class Command(BaseCommand):
     A management command which updates package information found in all
     registered repositories.
     """
-    help = "Update the package information found in registered repositories"
+    help = (  # noqa
+        "Update the package information found in registered repositories")
 
     def add_arguments(self, parser):
         parser.add_argument(

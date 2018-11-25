@@ -936,12 +936,12 @@ class UpdateTransitionsTask(BaseTask):
         given ``packages`` dict.
         """
         reject_list = self._get_yaml_resource(self.REJECT_LIST_URL)
-        for id, transition in reject_list.items():
+        for key, transition in reject_list.items():
             for package in transition['packages']:
                 packages.setdefault(package, {})
-                packages[package].setdefault(id, {})
-                packages[package][id]['reject'] = True
-                packages[package][id]['status'] = 'ongoing'
+                packages[package].setdefault(key, {})
+                packages[package][key]['reject'] = True
+                packages[package][key]['status'] = 'ongoing'
 
     def _add_package_transition_list(self, packages):
         """

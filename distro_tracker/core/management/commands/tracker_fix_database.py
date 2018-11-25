@@ -24,7 +24,7 @@ class Command(BaseCommand):
     A management command which updates package information found in all
     registered repositories.
     """
-    help = "Fix various database inconsistencies"
+    help = "Fix various database inconsistencies"  # noqa
 
     def handle(self, *args, **kwargs):
         self.verbose = int(kwargs.get('verbosity', 1)) > 1

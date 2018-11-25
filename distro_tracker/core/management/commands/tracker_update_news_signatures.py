@@ -24,7 +24,7 @@ class Command(BaseCommand):
     for :class:`News <distro_tracker.core.models.News>` instances which do not
     have any associated signatures.
     """
-    help = (
+    help = (  # noqa
         "Update the signature information related to News items which do not"
         " have any related signatures yet."
     )

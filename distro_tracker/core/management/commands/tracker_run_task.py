@@ -25,7 +25,7 @@ class Command(BaseCommand):
     A management command which starts a number of Distro Tracker tasks.
     A task is a subclass of :class:`distro_tracker.core.tasks.BaseTask`.
     """
-    help = "Start all the Distro Tracker tasks given by name."
+    help = "Start all the Distro Tracker tasks given by name."  # noqa
 
     def add_arguments(self, parser):
         parser.add_argument('tasks', nargs='+', help='Tasks to be run')

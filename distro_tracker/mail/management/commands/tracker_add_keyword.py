@@ -30,7 +30,7 @@ class Command(BaseCommand):
     their subscriptions or to automatically add it to users' lists that
     already contain a different keyword (given as a parameter to the command).
     """
-    help = ("Add a new keyword.\n."
+    help = ("Add a new keyword.\n."  # noqa
             "The command supports simply adding a new keyword and allowing"
             " users to add it to their subscriptions or to automatically add"
             " it to users' lists that already contain a different keyword"

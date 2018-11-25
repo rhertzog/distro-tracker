@@ -88,19 +88,19 @@ class SeleniumTestCase(LiveServerTestCase):
         """
         return self.live_server_url + relative
 
-    def input_to_element(self, id, text):
+    def input_to_element(self, tag_id, text):
         """
         Helper method which sends the text to the element with the given ID.
         """
-        element = self.browser.find_element_by_id(id)
+        element = self.browser.find_element_by_id(tag_id)
         element.send_keys(text)
 
-    def clear_element_text(self, id):
+    def clear_element_text(self, tag_id):
         """
         Helper method which removes any text already found in the element with
         the given ID.
         """
-        element = self.browser.find_element_by_id(id)
+        element = self.browser.find_element_by_id(tag_id)
         element.clear()
 
     def click_link(self, link_text):
@@ -110,12 +110,12 @@ class SeleniumTestCase(LiveServerTestCase):
         element = self.browser.find_element_by_link_text(link_text)
         element.click()
 
-    def send_enter(self, id):
+    def send_enter(self, tag_id):
         """
         Helper method which sends the enter key to the element with the given
         ID.
         """
-        element = self.browser.find_element_by_id(id)
+        element = self.browser.find_element_by_id(tag_id)
         element.send_keys(Keys.ENTER)
 
     def assert_in_page_body(self, text):
