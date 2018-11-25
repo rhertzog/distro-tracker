@@ -47,8 +47,9 @@ class Command(BaseCommand):
             help='Make the new keyword a default one'
         )
 
-    def warn(self, text):
+    def warning(self, msg, *args):
         if self.verbose > 1:
+            text = msg % args
             self.stdout.write("Warning: {text}".format(text=text))
 
     def add_keyword_to_user_defaults(self, keyword, user_set):
@@ -131,7 +132,7 @@ class Command(BaseCommand):
         )
 
         if not created:
-            self.warn("The given keyword already exists")
+            self.warning("The given keyword already exists")
             return
 
         if default:

@@ -51,9 +51,9 @@ class Command(BaseCommand):
             help='Output the result in a UDD compatible format'
         )
 
-    def warn(self, message):
+    def warning(self, msg, *args):
         if self.verbose:
-            self.stderr.write("Warning: {}".format(message))
+            self.stderr.write("Warning: {}".format(msg % args))
 
     def handle(self, *args, **kwargs):
         self.verbose = int(kwargs.get('verbosity', 1)) > 1
@@ -68,8 +68,7 @@ class Command(BaseCommand):
                 if package:
                     self.output_package(package, inactive)
                 else:
-                    self.warn("{package} does not exist.".format(
-                        package=str(package_name)))
+                    self.warning("%s does not exist.", str(package_name))
 
         output_format = 'default'
         if kwargs['json']:

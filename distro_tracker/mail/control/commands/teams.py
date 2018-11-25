@@ -42,19 +42,18 @@ class JoinTeam(Command):
     def get_team_and_user(self):
         team = get_or_none(Team, slug=self.team_slug)
         if not team:
-            self.error('Team with the slug "{}" does not exist.'.format(
-                self.team_slug))
+            self.error('Team with the slug "%s" does not exist.',
+                       self.team_slug)
             return
         if not team.public:
-            self.error(
-                "The given team is not public. "
-                "Please contact {} if you wish to join".format(
-                    team.owner.main_email))
+            self.error("The given team is not public. "
+                       "Please contact %s if you wish to join",
+                       team.owner.main_email)
             return
 
         user_email, _ = UserEmail.objects.get_or_create(email=self.user_email)
         if user_email in team.members.all():
-            self.warn("You are already a member of the team.")
+            self.warning("You are already a member of the team.")
             return
 
         return team, user_email
@@ -64,7 +63,7 @@ class JoinTeam(Command):
         if packed is None:
             return False
 
-        self.reply('A confirmation mail has been sent to ' + self.user_email)
+        self.reply('A confirmation mail has been sent to %s', self.user_email)
         return True
 
     def get_command_text(self):
@@ -77,7 +76,7 @@ class JoinTeam(Command):
             return
         team, user_email = packed
         team.add_members([user_email])
-        self.reply('You have successfully joined the team "{}"'.format(team))
+        self.reply('You have successfully joined the team "%s"', team)
 
 
 @needs_confirmation
@@ -104,12 +103,12 @@ class LeaveTeam(Command):
     def get_team_and_user(self):
         team = get_or_none(Team, slug=self.team_slug)
         if not team:
-            self.error('Team with the slug "{}" does not exist.'.format(
-                self.team_slug))
+            self.error('Team with the slug "%s" does not exist.',
+                       self.team_slug)
             return
         user_email, _ = UserEmail.objects.get_or_create(email=self.user_email)
         if user_email not in team.members.all():
-            self.warn("You are not a member of the team.")
+            self.warning("You are not a member of the team.")
             return
 
         return team, user_email
@@ -119,7 +118,7 @@ class LeaveTeam(Command):
         if packed is None:
             return False
 
-        self.reply('A confirmation mail has been sent to ' + self.user_email)
+        self.reply('A confirmation mail has been sent to %s', self.user_email)
         return True
 
     def get_command_text(self):
@@ -132,8 +131,8 @@ class LeaveTeam(Command):
             return
         team, user_email = packed
         team.remove_members([user_email])
-        self.reply('You have successfully left the team "{}" (slug: {})'.format(
-            team, team.slug))
+        self.reply('You have successfully left the team "%s" (slug: %s)',
+                   team, team.slug)
 
 
 class ListTeamPackages(Command):
@@ -163,8 +162,8 @@ class ListTeamPackages(Command):
     def get_team(self):
         team = get_or_none(Team, slug=self.team_slug)
         if not team:
-            self.error('Team with the slug "{}" does not exist.'.format(
-                self.team_slug))
+            self.error('Team with the slug "%s" does not exist.',
+                       self.team_slug)
             return
         return team
 
@@ -188,7 +187,7 @@ class ListTeamPackages(Command):
                     "Only team members can see its packages.")
                 return
 
-        self.reply("Packages found in team {}:".format(team))
+        self.reply("Packages found in team %s:", team)
         self.list_reply(package for package in
                         team.packages.all().order_by('name'))
 
@@ -219,9 +218,9 @@ class WhichTeams(Command):
         user_email = self.get_user_email()
 
         if user_email.teams.count() == 0:
-            self.warn("{} is not a member of any team.".format(self.user_email))
+            self.warning("%s is not a member of any team.", self.user_email)
         else:
-            self.reply("Teams that {} is a member of:".format(self.user_email))
+            self.reply("Teams that %s is a member of:", self.user_email)
             self.list_reply(
                 team.slug
                 for team in user_email.teams.all().order_by('name'))

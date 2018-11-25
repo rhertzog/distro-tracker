@@ -119,32 +119,32 @@ class Command(metaclass=MetaCommand):
         """
         return '\n'.join(self.out)
 
-    def reply(self, message):
+    def reply(self, message, *args):
         """
         Adds a message to the command's reply.
 
         :param message: Message to include in the reply
         :type message: string
         """
-        self.out.append(message)
+        self.out.append(message % args)
 
-    def warn(self, message):
+    def warning(self, message, *args):
         """
         Adds a warning to the command's reply.
 
         :param message: Message to include in the reply
         :type message: string
         """
-        self.out.append('Warning: ' + message)
+        self.out.append('Warning: ' + message % args)
 
-    def error(self, message):
+    def error(self, message, *args):
         """
         Adds an error message to the command's reply.
 
         :param message: Message to include in the reply
         :type message: string
         """
-        self.out.append("Error: " + message)
+        self.out.append("Error: " + message % args)
 
     def list_reply(self, items, bullet='*'):
         """

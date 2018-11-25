@@ -46,10 +46,8 @@ class KeywordCommandMixin(object):
         :param package_name: The name of the package the user is not subscribed
             to.
         """
-        self.error('{email} is not subscribed to the package {package}'.format(
-            email=email,
-            package=package_name)
-        )
+        self.error('%s is not subscribed to the package %s',
+                   email, package_name)
 
     def get_subscription(self, email, package_name):
         """
@@ -70,8 +68,7 @@ class KeywordCommandMixin(object):
 
         package = get_or_none(PackageName, name=package_name)
         if not package:
-            self.error('Package {package} does not exist'.format(
-                package=package_name))
+            self.error('Package %s does not exist', package_name)
             return
 
         subscription = get_or_none(Subscription,
@@ -95,8 +92,7 @@ class KeywordCommandMixin(object):
         """
         keyword = get_or_none(Keyword, name=keyword_name)
         if not keyword:
-            self.warn('{keyword} is not a valid keyword'.format(
-                keyword=keyword_name))
+            self.warning('%s is not a valid keyword', keyword_name)
         return keyword
 
     def add_keywords(self, keywords, manager):
@@ -196,9 +192,8 @@ class ViewDefaultKeywordsCommand(Command, KeywordCommandMixin):
         user_email, _ = UserEmail.objects.get_or_create(email=self.email)
         email_settings, _ = \
             EmailSettings.objects.get_or_create(user_email=user_email)
-        self.reply(
-            "Here's the default list of accepted keywords for {email}:".format(
-                email=self.email))
+        self.reply("Here's the default list of accepted keywords for %s:",
+                   self.email)
         self.list_reply(sorted(
             keyword.name for keyword in email_settings.default_keywords.all()))
 
@@ -241,8 +236,7 @@ class ViewPackageKeywordsCommand(Command, KeywordCommandMixin):
 
         self.reply(
             "Here's the list of accepted keywords associated to package")
-        self.reply('{package} for {user}'.format(package=self.package,
-                                                 user=self.email))
+        self.reply('%s for %s', self.package, self.email)
         self.list_reply(sorted(
             keyword.name for keyword in subscription.keywords.all()))
 
@@ -288,9 +282,8 @@ class SetDefaultKeywordsCommand(Command, KeywordCommandMixin):
         operation_method = self.OPERATIONS[self.operation]
         operation_method(self, keywords, email_settings.default_keywords)
 
-        self.reply(
-            "Here's the new default list of accepted keywords for "
-            "{user} :".format(user=self.email))
+        self.reply("Here's the new default list of accepted keywords for %s :",
+                   self.email)
         self.list_reply(sorted(
             keyword.name for keyword in email_settings.default_keywords.all()
         ))
@@ -345,8 +338,7 @@ class SetPackageKeywordsCommand(Command, KeywordCommandMixin):
         operation_method(self, keywords, subscription.keywords)
 
         self.reply(
-            "Here's the new list of accepted keywords associated to package")
-        self.reply('{package} for {user} :'.format(package=self.package,
-                                                   user=self.email))
+            "Here's the new list of accepted keywords associated to package\n"
+            "%s for %s :", self.package, self.email)
         self.list_reply(sorted(
             keyword.name for keyword in subscription.keywords.all()))

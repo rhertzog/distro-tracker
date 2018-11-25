@@ -74,32 +74,29 @@ class SubscribeCommand(Command):
         settings = get_or_none(EmailSettings,
                                user_email__email__iexact=self.user_email)
         if settings and settings.is_subscribed_to(self.package):
-            self.warn('{email} is already subscribed to {package}'.format(
-                email=self.user_email,
-                package=self.package))
+            self.warning('%s is already subscribed to %s',
+                         self.user_email, self.package)
             return False
 
         if not SourcePackageName.objects.exists_with_name(self.package):
             if BinaryPackageName.objects.exists_with_name(self.package):
                 binary_package = \
                     BinaryPackageName.objects.get_by_name(self.package)
-                self.warn('{package} is not a source package.'.format(
-                    package=self.package))
-                self.reply('{package} is the source package '
-                           'for the {binary} binary package'.format(
-                               package=binary_package.main_source_package_name,
-                               binary=binary_package.name))
+                self.warning('%s is not a source package.', self.package)
+                self.reply('%s is the source package '
+                           'for the %s binary package',
+                           binary_package.main_source_package_name,
+                           binary_package.name)
                 self.package = binary_package.main_source_package_name.name
             else:
-                self.warn(
-                    '{package} is neither a source package '
-                    'nor a binary package.'.format(package=self.package))
+                self.warning('%s is neither a source package '
+                             'nor a binary package.', self.package)
                 if PseudoPackageName.objects.exists_with_name(self.package):
-                    self.warn('Package {package} is a pseudo package.'.format(
-                        package=self.package))
+                    self.warning('Package %s is a pseudo package.',
+                                 self.package)
                 else:
-                    self.warn('Package {package} is not even a pseudo '
-                              'package.'.format(package=self.package))
+                    self.warning('Package %s is not even a pseudo package.',
+                                 self.package)
 
         try:
             Subscription.objects.create_for(
@@ -107,10 +104,10 @@ class SubscribeCommand(Command):
                 package_name=self.package,
                 active=False)
         except ValidationError as e:
-            self.warn(e.message)
+            self.warning('%s', e.message)
             return False
 
-        self.reply('A confirmation mail has been sent to ' + self.user_email)
+        self.reply('A confirmation mail has been sent to %s', self.user_email)
         return True
 
     def handle(self):
@@ -119,11 +116,11 @@ class SubscribeCommand(Command):
             email=self.user_email,
             active=True)
         if subscription:
-            self.reply('{email} has been subscribed to {package}'.format(
-                email=self.user_email, package=self.package))
+            self.reply('%s has been subscribed to %s', self.user_email,
+                       self.package)
         else:
-            self.error('Could not subscribe {email} to {package}'.format(
-                email=self.user_email, package=self.package))
+            self.error('Could not subscribe %s to %s', self.user_email,
+                       self.package)
 
     def get_confirmation_message(self):
         """
@@ -177,40 +174,34 @@ class UnsubscribeCommand(Command):
             if BinaryPackageName.objects.exists_with_name(self.package):
                 binary_package = \
                     BinaryPackageName.objects.get_by_name(self.package)
-                self.warn('{package} is not a source package.'.format(
-                    package=self.package))
-                self.reply('{package} is the source package '
-                           'for the {binary} binary package'.format(
-                               package=binary_package.main_source_package_name,
-                               binary=binary_package.name))
+                self.warning('%s is not a source package.', self.package)
+                self.reply('%s is the source package '
+                           'for the %s binary package',
+                           binary_package.main_source_package_name,
+                           binary_package.name)
                 self.package = binary_package.main_source_package_name.name
             else:
-                self.warn(
-                    '{package} is neither a source package '
-                    'nor a binary package.'.format(package=self.package))
+                self.warning('%s is neither a source package '
+                             'nor a binary package.', self.package)
         settings = get_or_none(EmailSettings,
                                user_email__email__iexact=self.user_email)
         if not settings or not settings.is_subscribed_to(self.package):
-            self.error(
-                "{email} is not subscribed, you can't unsubscribe.".format(
-                    email=self.user_email)
-            )
+            self.error("%s is not subscribed, you can't unsubscribe.",
+                       self.user_email)
             return False
 
-        self.reply('A confirmation mail has been sent to ' + self.user_email)
+        self.reply('A confirmation mail has been sent to %s', self.user_email)
         return True
 
     def handle(self):
         success = Subscription.objects.unsubscribe(self.package,
                                                    self.user_email)
         if success:
-            self.reply('{user} has been unsubscribed from {package}'.format(
-                user=self.user_email,
-                package=self.package))
+            self.reply('%s has been unsubscribed from %s', self.user_email,
+                       self.package)
         else:
-            self.error('Could not unsubscribe {email} from {package}'.format(
-                email=self.user_email,
-                package=self.package))
+            self.error('Could not unsubscribe %s from %s', self.user_email,
+                       self.package)
 
     def get_confirmation_message(self):
         """
@@ -284,19 +275,15 @@ class WhoCommand(Command):
     def handle(self):
         package = get_or_none(PackageName, name=self.package_name)
         if not package:
-            self.error('Package {package} does not exist'.format(
-                package=self.package_name))
+            self.error('Package %s does not exist', self.package_name)
             return
 
         if package.subscriptions.count() == 0:
-            self.reply(
-                'Package {package} does not have any subscribers'.format(
-                    package=package.name))
+            self.reply('Package %s does not have any subscribers', package.name)
             return
 
-        self.reply(
-            "Here's the list of subscribers to package {package}:".format(
-                package=self.package_name))
+        self.reply("Here's the list of subscribers to package %s:",
+                   self.package_name)
         self.list_reply(
             self.obfuscate(subscriber)
             for subscriber in package.subscriptions.all()
@@ -381,12 +368,11 @@ class UnsubscribeallCommand(Command):
         settings = get_or_none(EmailSettings,
                                user_email__email__iexact=self.user_email)
         if not settings or settings.subscription_set.count() == 0:
-            self.warn('User {email} is not subscribed to any packages'.format(
-                email=self.user_email))
+            self.warning('User %s is not subscribed to any packages',
+                         self.user_email)
             return False
 
-        self.reply('A confirmation mail has been sent to {email}'.format(
-            email=self.user_email))
+        self.reply('A confirmation mail has been sent to %s', self.user_email)
         return True
 
     def handle(self):

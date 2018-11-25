@@ -111,9 +111,8 @@ class ExtractSourcePackageFiles(BaseTask, ProcessSourcePackage):
                     self.item_mark_processed(srcpkg)
                 except Exception:
                     logger.exception(
-                        'Problem extracting source files for'
-                        ' {pkg} version {ver}'.format(
-                            pkg=srcpkg, ver=srcpkg.version))
+                        'Problem extracting source files for %s version %s',
+                        srcpkg, srcpkg.version)
             else:
                 self.item_mark_processed(srcpkg)
 
