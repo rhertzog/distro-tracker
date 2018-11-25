@@ -1,4 +1,4 @@
-""" SQLite database settings """
+"""SQLite database settings."""
 
 DATABASES = {
     'default': {

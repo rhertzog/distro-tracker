@@ -176,6 +176,12 @@ class MailProcessor(object):
 
 
 def run_mail_processor(mail_path, log_failure=False):
+    """
+    Run a :class:`MailProcessor` on a stored email.
+
+    :param str mail_path: path of the email
+    :param bool log_failure: indicates whether to log any failure
+    """
     try:
         processor = MailProcessor(mail_path)
         processor.process()

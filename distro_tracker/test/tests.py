@@ -10,9 +10,7 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 
-"""
-Tests for test functionalities of Distro Tracker.
-"""
+"""Tests for test functionalities of Distro Tracker."""
 
 import copy
 import os.path
@@ -45,19 +43,19 @@ class TempDirsTests(object):
         return TempDirsMixin.DISTRO_TRACKER_PATH_SETTINGS.keys()
 
     def test_setup_has_same_settings(self):
-        """ Test that .setUp() already has the overridden settings. """
+        """Test that .setUp() already has the overridden settings."""
         for name in self.get_settings_names():
             self.assertEqual(self._settings_during_setup[name],
                              getattr(settings, name))
 
     def test_temp_dirs_outside_of_base_path(self):
-        """ Test that the settings no longer point inside the base path. """
+        """Test that the settings no longer point inside the base path."""
         for name in self.get_settings_names():
             self.assertNotIn(os.path.join(getattr(settings, 'BASE_DIR'), ''),
                              getattr(settings, name))
 
     def test_temp_dirs_in_data_path(self):
-        """ Test that the settings point within DISTRO_TRACKER_DATA_PATH. """
+        """Test that the settings point within DISTRO_TRACKER_DATA_PATH."""
         for name in self.get_settings_names():
             self.assertIn(getattr(settings, 'DISTRO_TRACKER_DATA_PATH'),
                           getattr(settings, name))

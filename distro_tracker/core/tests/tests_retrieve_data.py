@@ -966,7 +966,7 @@ class UpdateVersionInformationTest(TestCase):
                          self.repo1.shorthand)
 
     def test_task_cleanup_only(self):
-        '''test the task when it only has to process a cleanup'''
+        """test the task when it only has to process a cleanup"""
         self.update.execute()
         package_name = self.package.source_package_name
         self.package.delete()

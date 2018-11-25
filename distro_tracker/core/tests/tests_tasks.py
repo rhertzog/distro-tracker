@@ -51,6 +51,7 @@ from distro_tracker.test import TestCase
 
 
 def get_test_task_class(name, mixins=None, attributes=None):
+    """Get and build on request some test classes deriving from BaseTask."""
     if not attributes:
         attributes = {}
     cls = BaseTask.get_task_class_by_name(attributes.get('NAME', name))
@@ -806,7 +807,7 @@ class ProcessItemsTests(TestCase):
         self.assertEqual(self.task.item_to_key(item), 'key')
 
     def test_item_describe(self):
-        '''item_describe() returns a dict describing the item'''
+        """item_describe() returns a dict describing the item"""
         item = self.get_item('key')
 
         self.assertIsInstance(self.task.item_describe(item), dict)
@@ -950,7 +951,7 @@ class ProcessItemsTests(TestCase):
         self.assertTrue(self.task.item_needs_processing(unused_item))
 
     def test_items_cleanup_processed_list_does_mark_data_modified(self):
-        '''when items are cleaned up, data is modified'''
+        """when items are cleaned up, data is modified"""
         self.setup_item_to_cleanup()
 
         with mock.patch.object(self.task, 'data_mark_modified') as mocked:
@@ -958,7 +959,7 @@ class ProcessItemsTests(TestCase):
             mocked.assert_called_once_with()
 
     def test_items_cleanup_processed_list_does_not_mark_data_modified(self):
-        '''nothing to cleanup, no data modified'''
+        """nothing to cleanup, no data modified"""
         self.patch_items_all()
         with mock.patch.object(self.task, 'data_mark_modified') as mocked:
             self.task.items_cleanup_processed_list()
@@ -974,7 +975,7 @@ class ProcessItemsTests(TestCase):
         self.assertTrue(self.task.item_needs_processing(unused_item))
 
     def test_items_fake_processed_list(self):
-        '''Mark all unprocessed items as processed'''
+        """Mark all unprocessed items as processed"""
         items = self.patch_items_all()
 
         self.task.items_fake_processed_list()
@@ -1005,7 +1006,7 @@ class ProcessModelTests(TestCase):
         self.assertEqual(queryset.model, self.cls.model)
 
     def test_items_all_allows_queryset_customizaton(self):
-        '''items_extend_queryset() is called by items_all() at the end'''
+        """items_extend_queryset() is called by items_all() at the end"""
         with mock.patch.object(self.task, 'items_extend_queryset') as mocked:
             mocked.return_value = mock.sentinel.extended_queryset
             queryset = self.task.items_all()
@@ -1013,18 +1014,18 @@ class ProcessModelTests(TestCase):
         self.assertIs(queryset, mock.sentinel.extended_queryset)
 
     def test_items_extend_queryset(self):
-        '''default items_extend_queryset() just forwards the queryset'''
+        """default items_extend_queryset() just forwards the queryset"""
         queryset = mock.sentinel.queryset
         self.assertEqual(self.task.items_extend_queryset(queryset),
                          queryset)
 
     def test_item_to_key(self):
-        '''item_to_key() uses the primary key'''
+        """item_to_key() uses the primary key"""
         srcpkgname = SourcePackageName.objects.create(name='dummy')
         self.assertEqual(self.task.item_to_key(srcpkgname), str(srcpkgname.pk))
 
     def test_items_all_keys(self):
-        '''items_all_keys() uses an optimized query'''
+        """items_all_keys() uses an optimized query"""
         # Better implementation does not call item_to_key() in a loop
         srcpkgname = SourcePackageName.objects.create(name='dummy')
         with mock.patch.object(self.task, 'item_to_key') as mock_item_to_key:
@@ -1045,7 +1046,7 @@ class ProcessModelTests(TestCase):
         self.assertIs(data['get_absolute_url'], mock.sentinel.url)
 
     def test_items_to_process_after_save_reload(self):
-        '''ensure we don't reprocess an item already seen'''
+        """ensure we don't reprocess an item already seen"""
         srcpkgname = SourcePackageName.objects.create(name='dummy')
         self.task.item_mark_processed(srcpkgname)
         self.task.save_data()

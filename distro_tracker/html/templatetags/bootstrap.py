@@ -49,18 +49,21 @@ register = template.Library()
 
 @register.filter
 def bootstrap(element):
+    """Apply normal bootstrap formatting to a form."""
     markup_classes = {'label': '', 'value': '', 'single_value': ''}
     return render(element, markup_classes)
 
 
 @register.filter
 def bootstrap_inline(element):
+    """Apply inline bootstrap formatting to a form."""
     markup_classes = {'label': 'sr-only', 'value': '', 'single_value': ''}
     return render(element, markup_classes)
 
 
 @register.filter
 def bootstrap_horizontal(element, label_cols=None):
+    """Apply horizontal bootstrap formatting to a form."""
     if not label_cols:
         label_cols = 'col-sm-2'
 
@@ -93,6 +96,7 @@ def bootstrap_horizontal(element, label_cols=None):
 
 
 def add_input_classes(field):
+    """Add bootstrap classes to a field."""
     if (not is_checkbox(field) and not is_multiple_checkbox(field) and
             not is_radio(field) and not is_file(field)):
         field_classes = field.field.widget.attrs.get('class', '')
@@ -101,6 +105,7 @@ def add_input_classes(field):
 
 
 def render(element, markup_classes):
+    """Render various elements with our custom templates."""
     element_type = element.__class__.__name__.lower()
 
     if element_type == 'boundfield':
@@ -128,19 +133,23 @@ def render(element, markup_classes):
 
 @register.filter
 def is_checkbox(field):
+    """Return True if the field is a Checkbox, False otherwise."""
     return isinstance(field.field.widget, forms.CheckboxInput)
 
 
 @register.filter
 def is_multiple_checkbox(field):
+    """Return True if the field is a MultipleCheckbox, False otherwise."""
     return isinstance(field.field.widget, forms.CheckboxSelectMultiple)
 
 
 @register.filter
 def is_radio(field):
+    """Return True if the field is a radio selector, False otherwise."""
     return isinstance(field.field.widget, forms.RadioSelect)
 
 
 @register.filter
 def is_file(field):
+    """Return True if the field is a file selector, False otherwise."""
     return isinstance(field.field.widget, forms.FileInput)

@@ -25,6 +25,7 @@ from distro_tracker.core.models import (
 
 
 def filter_control_chars(method):
+    """Filter out undesirable control characters."""
     # We have to filter out control chars otherwise the FeedGenerator
     # raises UnserializableContentError (see django/utils/xmlutils.py)
     def wrapped(self, obj):

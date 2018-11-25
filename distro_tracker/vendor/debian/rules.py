@@ -107,6 +107,7 @@ def _classify_dak_message(msg, package, keyword):
 
 
 def classify_message(msg, package, keyword):
+    """Classify incoming email messages with a package and a keyword."""
     # Default values for git commit notifications
     xgitrepo = msg.get('X-GitLab-Project', msg.get('X-Git-Repo'))
     if xgitrepo:
@@ -365,6 +366,7 @@ def allow_package(stanza):
 
 
 def create_dak_rm_news(message, package, body=None, version=''):
+    """Create a :class:`News` out of a removal email sent by DAK."""
     if not body:
         body = get_decoded_message_payload(message)
     suite = re.search(r"have been removed from (\S+):", body).group(1)
@@ -551,6 +553,7 @@ def get_vcs_data(package):
 
 
 def get_bug_display_manager_class():
+    """Return the class that knows how to display data about Debian bugs."""
     return DebianBugDisplayManager
 
 

@@ -1,4 +1,5 @@
-""" PostgreSQL settings
+"""
+PostgreSQL settings.
 
 Defaults to unix socket with user auth.
 """

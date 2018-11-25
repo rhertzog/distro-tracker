@@ -659,7 +659,7 @@ Diagnostic-Code: smtp; 550-5.7.1 [....] Our system has detected
             self.message)
 
     def test_bounce_handler_with_base_email_address(self):
-        '''Mail for bounces@domain should not generate errors'''
+        """Mail for bounces@domain should not generate errors"""
         dispatch.handle_bounces(
             'bounces@' + DISTRO_TRACKER_FQDN,
             self.message)

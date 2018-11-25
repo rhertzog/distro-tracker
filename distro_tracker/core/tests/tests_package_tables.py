@@ -44,6 +44,7 @@ class TestPackageTable(BasePackageTable):
 
 
 def create_source_package_with_data(name):
+    """Create a source package with some associated data."""
     package = SourcePackageName.objects.create(
         name=name)
     create_package_data(package)
@@ -51,6 +52,7 @@ def create_source_package_with_data(name):
 
 
 def create_package_data(package):
+    """Create some fake general PackageData for a given package."""
     PackageData.objects.create(
         package=package,
         key='general',
@@ -80,6 +82,7 @@ def create_package_data(package):
 
 
 def create_package_bug_stats(package):
+    """Create some sample bug statistics for a given package."""
     bug_stats = [
         {'bug_count': 3, 'merged_count': 3, 'category_name': 'rc'},
         {'bug_count': 7, 'merged_count': 7, 'category_name': 'normal'},
@@ -207,14 +210,14 @@ class BugStatsTableFieldTests(TestCase):
 class BasePackageTableTests(TestCase):
     @patch('distro_tracker.core.package_tables.get_template')
     def test_get_template_content(self, get_template):
-        '''get_template_content(t) returns the content of the underlying file'''
+        """get_template_content(t) returns the content of the underlying file"""
         get_template.return_value.origin.name = 'foobar'
         with patch('builtins.open', mock_open(read_data='YAY')):
             result = TestPackageTable.get_template_content('fake')
         self.assertEqual(result, 'YAY')
 
     def test_get_row_template(self):
-        '''get_row_template() returns a template concatenating all cells'''
+        """get_row_template() returns a template concatenating all cells"""
         table = TestPackageTable([])
         with patch.object(table, 'get_template_content') as get_content:
             get_content.side_effect = ['field1', 'field2']

@@ -16,12 +16,14 @@ from .utils import CATEGORIES_VERSION_COMPARISON, compare_repositories
 
 
 def index(request):
+    """Default view."""
     list_derivatives = get_list_or_404(RepositoryRelation, name='derivative')
     return render(request, 'derivative/index.html',
                   {'list_derivatives': list_derivatives})
 
 
 def comparison(request, distribution):
+    """View comparing a distribution with its parent distribution."""
     repository = get_object_or_404(Repository, shorthand=distribution)
     relation = get_object_or_404(repository.relations, name='derivative')
     pkglist = compare_repositories(repository, relation.target_repository)

@@ -8,7 +8,8 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 
-"""Default Django settings for the Distro Tracker project.
+"""
+Default Django settings for the Distro Tracker project.
 
 Most settings are documented in this file and they are initialized to some
 reasonable default values when possible.  They will be extended (and
@@ -119,6 +120,7 @@ of those settings.
     result of incoming spam.
 
 More settings:
+
 """
 import os.path
 import socket
@@ -453,6 +455,13 @@ _COMPUTE_DEFAULT_SETTINGS = (
 
 
 def compute_default_settings(target):
+    """
+    Dynamically generate some default settings.
+
+    There are many settings whose default value depends on another
+    setting. They are defined in the _COMPUTE_DEFAULT_SETTINGS dict
+    with a function that evaluates them.
+    """
     for setting, value in _COMPUTE_DEFAULT_SETTINGS:
         if setting in target:
             continue  # Settings is already defined
@@ -479,6 +488,7 @@ def compute_default_settings(target):
 
 
 def GET_INSTANCE_NAME():
+    """Return the name of the Package Tracker instance."""
     from django.conf import settings
     return "{vendor} Package Tracker".format(
         vendor=settings.DISTRO_TRACKER_VENDOR_NAME)

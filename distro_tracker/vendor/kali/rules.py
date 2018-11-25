@@ -18,6 +18,7 @@ from distro_tracker.mail import mail_news
 
 
 def classify_message(msg, package, keyword):
+    """Classify incoming email messages with a package and a keyword."""
     # Default values for git commit notifications
     xgitrepo = msg.get('X-Git-Repo')
     if xgitrepo:

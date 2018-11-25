@@ -1568,6 +1568,7 @@ class NewsManager(models.Manager):
 
 
 def news_upload_path(instance, filename):
+    """Compute the path where to store a news."""
     return '/'.join((
         'news',
         package_hashdir(instance.package.name),

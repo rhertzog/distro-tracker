@@ -707,6 +707,7 @@ class AptCache(object):
 
 
 def html_package_list(packages):
+    """Return a HTML-formatted list of packages."""
     packages_html = []
     for package in packages:
         if "/" in package:

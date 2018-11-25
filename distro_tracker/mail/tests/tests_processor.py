@@ -117,7 +117,7 @@ class MailProcessorTest(TestCase, HelperMixin):
 
     @override_settings(DISTRO_TRACKER_FQDN='domain.test')
     def test_find_addr_ignores_bad_domain(self):
-        """Headers pointing to domain that do not match the FQDN are ignored """
+        """Headers pointing to domain that do not match the FQDN are ignored."""
         to_addr = 'foo@{}'.format(self.DOMAIN)
         # Entirely different domain should be ignored
         self.msg.add_header('Envelope-To', to_addr)
@@ -177,51 +177,51 @@ class MailProcessorTest(TestCase, HelperMixin):
             func.assert_called_once_with(*args, **kwargs)
 
     def test_process_control(self):
-        '''control@ is processed by handle_control()'''
+        """control@ is processed by handle_control()"""
         self._test_process_for_addr('control', 'handle_control')
 
     def test_process_dispatch(self):
-        '''dispatch@ is processed by handle_dispatch(None, None)'''
+        """dispatch@ is processed by handle_dispatch(None, None)"""
         self._test_process_for_addr('dispatch', 'handle_dispatch', None, None)
 
     def test_process_dispatch_with_package(self):
-        '''dispatch+foo@ is processed by handle_dispatch(foo, None)'''
+        """dispatch+foo@ is processed by handle_dispatch(foo, None)"""
         self._test_process_for_addr('dispatch+foo', 'handle_dispatch',
                                     'foo', None)
 
     def test_process_dispatch_with_package_and_keyword(self):
-        '''dispatch+foo_bar@ is processed by handle_dispatch(foo, bar)'''
+        """dispatch+foo_bar@ is processed by handle_dispatch(foo, bar)"""
         self._test_process_for_addr('dispatch+foo_bar', 'handle_dispatch',
                                     'foo', 'bar')
 
     def test_process_bounces(self):
-        '''bounces+foo@ is processed by handle_bounces()'''
+        """bounces+foo@ is processed by handle_bounces()"""
         self._test_process_for_addr('bounces+foo', 'handle_bounces', 'foo')
 
     def test_process_team(self):
-        '''team+foo@ is processed by handle_team(foo)'''
+        """team+foo@ is processed by handle_team(foo)"""
         self._test_process_for_addr('team+foo', 'handle_team', 'foo')
 
     def test_process_without_delivery_address(self):
-        '''process() fails when no delivery address can be identified'''
+        """process() fails when no delivery address can be identified"""
         with self.assertRaises(MissingDeliveryAddress):
             self.processor.process()
 
     @override_settings(DISTRO_TRACKER_ACCEPT_UNQUALIFIED_EMAILS=False)
     def test_process_unknown_service_fails(self):
-        '''process() fails when delivery address is not a known service'''
+        """process() fails when delivery address is not a known service"""
         self.msg.add_header('Delivered-To', 'unknown@{}'.format(self.DOMAIN))
         with self.assertRaises(InvalidDeliveryAddress):
             self.processor.process()
 
     @override_settings(DISTRO_TRACKER_ACCEPT_UNQUALIFIED_EMAILS=True)
     def test_process_unknown_service_works_as_dispatch(self):
-        '''process() fails when delivery address is not a known service'''
+        """process() fails when delivery address is not a known service"""
         self._test_process_for_addr('unknown', 'handle_dispatch', 'unknown',
                                     None)
 
     def test_load_mail_from_file(self):
-        '''loads the mail to process from a file'''
+        """loads the mail to process from a file"""
         mail_path = os.path.join(settings.DISTRO_TRACKER_DATA_PATH, 'a-mail')
         self.create_mail(mail_path, subject='load_mail')
 
@@ -230,7 +230,7 @@ class MailProcessorTest(TestCase, HelperMixin):
         self.assertEqual(self.processor.message['Subject'], 'load_mail')
 
     def test_init_with_filename(self):
-        '''can create object with filename'''
+        """can create object with filename"""
         mail_path = os.path.join(settings.DISTRO_TRACKER_DATA_PATH, 'a-mail')
         self.create_mail(mail_path, subject='load_mail')
 
@@ -667,8 +667,8 @@ class MailQueueEntryTest(TestCase, QueueHelperMixin):
         self.assertInQueue(self.entry)
 
     def test_handle_processing_task_result_mail_processor_exception(self):
-        '''Task failing with a MailProcessorException result in
-        immediate failure and move to the failed subfolder'''
+        """Task failing with a MailProcessorException result in
+        immediate failure and move to the failed subfolder"""
         task_result = self._get_fake_task_result(
             side_effect=MailProcessorException)
         self.entry.set_data('task_result', task_result)
@@ -680,8 +680,8 @@ class MailQueueEntryTest(TestCase, QueueHelperMixin):
         self.assertNotInQueue(self.entry)
 
     def test_handle_processing_task_resulted_in_exception_no_tries_left(self):
-        '''Task failing with a generic exception result in failure when
-        the entry refuses to schedule a new try'''
+        """Task failing with a generic exception result in failure when
+        the entry refuses to schedule a new try"""
         task_result = self._get_fake_task_result(side_effect=Exception)
         self.entry.set_data('task_result', task_result)
         self.patch_methods(self.entry, move_to_subfolder=None,
@@ -693,8 +693,8 @@ class MailQueueEntryTest(TestCase, QueueHelperMixin):
         self.assertNotInQueue(self.entry)
 
     def test_handle_processing_task_resulted_in_exception_tries_left(self):
-        '''Task failing with a generic exception result in a new try when
-        allowed'''
+        """Task failing with a generic exception result in a new try when
+        allowed"""
         task_result = self._get_fake_task_result(side_effect=Exception)
         self.entry.set_data('task_result', task_result)
         self.patch_methods(self.entry, move_to_subfolder=None,
@@ -706,12 +706,12 @@ class MailQueueEntryTest(TestCase, QueueHelperMixin):
         self.assertInQueue(self.entry)
 
     def test_schedule_next_try_returns_true_a_few_times(self):
-        '''Accept to schedule a new try a few times'''
+        """Accept to schedule a new try a few times"""
         for i in range(4):
             self.assertTrue(self.entry.schedule_next_try())
 
     def test_schedule_next_try_eventually_returns_false(self):
-        '''Eventually decide that enough is enough'''
+        """Eventually decide that enough is enough"""
         count = 0
         while self.entry.schedule_next_try():
             count += 1
@@ -719,19 +719,19 @@ class MailQueueEntryTest(TestCase, QueueHelperMixin):
                 self.fail("schedule_next_try doesn't want to fail")
 
     def test_schedule_next_try_sets_log_failure_on_first_try(self):
-        '''Should not log failure on first try'''
+        """Should not log failure on first try"""
         self.entry.set_data('log_failure', True)
         self.entry.schedule_next_try()
         self.assertFalse(self.entry.get_data('log_failure'))
 
     def test_schedule_next_try_does_log_failure_on_last_try_only(self):
-        '''Should log failure on last try'''
+        """Should log failure on last try"""
         while not self.entry.get_data('log_failure'):
             self.assertTrue(self.entry.schedule_next_try())
         self.assertFalse(self.entry.schedule_next_try())
 
     def test_schedule_next_try_sets_next_try_time(self):
-        '''The scheduling is done via next_try_time data entry'''
+        """The scheduling is done via next_try_time data entry"""
         self.patch_now()
         for i in range(10):
             if not self.entry.schedule_next_try():

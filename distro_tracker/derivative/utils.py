@@ -62,6 +62,7 @@ def categorize_version_comparison(a, b):
 
 
 def compare_repositories(deriv_repository, parent_repository):
+    """Build a list with results of comparisons for each package."""
     # create a dict with all source packages and versions
     all_pkgs = collections.defaultdict(lambda: {})
     for name, version in deriv_repository.source_entries.values_list(
@@ -88,6 +89,7 @@ def compare_repositories(deriv_repository, parent_repository):
 
 
 def split_version(version):
+    """Split the version in its 3 components (epoch, version, revision)."""
     baseversion = BaseVersion(version)
     return (baseversion.epoch or '~', baseversion.upstream_version or '~',
             baseversion.debian_revision or '~')
