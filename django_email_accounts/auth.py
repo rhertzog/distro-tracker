@@ -7,6 +7,8 @@
 # distribution and at https://deb.li/DTLicense. No part of Distro Tracker,
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
+"""Django authentication backend based on the email address."""
+
 from django.contrib.auth import get_user_model
 
 User = get_user_model()

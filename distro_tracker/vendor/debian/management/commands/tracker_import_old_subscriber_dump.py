@@ -7,6 +7,7 @@
 # distribution and at https://deb.li/DTLicense. No part of Distro Tracker,
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
+"""Command to import subscribers from an old PTS dump."""
 import sys
 
 from django.core.management.base import BaseCommand

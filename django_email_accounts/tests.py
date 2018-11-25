@@ -7,6 +7,7 @@
 # distribution and at https://deb.li/DTLicense. No part of Distro Tracker,
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
+"""Unit tests for django_email_accounts."""
 
 from django.test import TestCase
 from django.urls import reverse

@@ -7,6 +7,8 @@
 # distribution and at https://deb.li/DTLicense. No part of Distro Tracker,
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
+"""Django views for django_email_accounts."""
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout

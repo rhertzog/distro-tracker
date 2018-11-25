@@ -7,6 +7,7 @@
 # distribution and at https://deb.li/DTLicense. No part of Distro Tracker,
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
+"""Debian specific rules for various Distro-Tracker hooks."""
 
 import os.path
 import re

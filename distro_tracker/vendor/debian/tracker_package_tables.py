@@ -9,6 +9,7 @@
 # distribution and at https://deb.li/DTLicense. No part of Distro Tracker,
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
+"""Debian specific fields for package tables."""
 
 from django.db.models import Prefetch
 

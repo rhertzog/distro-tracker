@@ -7,6 +7,8 @@
 # distribution and at https://deb.li/DTLicense. No part of Distro Tracker,
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
+"""Django forms for django_email_accounts."""
+
 from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model

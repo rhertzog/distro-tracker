@@ -7,6 +7,7 @@
 # distribution and at https://deb.li/DTLicense. No part of Distro Tracker,
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
+"""Django views for the distro_tracker.derivative application."""
 
 from django.shortcuts import get_list_or_404, get_object_or_404, render
 
