@@ -17,9 +17,9 @@ import time
 from hashlib import md5
 
 from django.conf import settings
-from django.utils import timezone
-from django.utils.http import parse_http_date, is_safe_url
 from django.shortcuts import redirect
+from django.utils import timezone
+from django.utils.http import is_safe_url, parse_http_date
 
 import requests
 from requests.structures import CaseInsensitiveDict

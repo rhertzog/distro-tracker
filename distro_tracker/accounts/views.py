@@ -32,9 +32,8 @@ from distro_tracker.core.utils import (
     distro_tracker_render_to_string,
     render_to_json_response
 )
-from distro_tracker.core.utils.http import (
-    safe_redirect
-)
+from distro_tracker.core.utils.http import safe_redirect
+
 from django_email_accounts import views as email_accounts_views
 from django_email_accounts.views import LoginRequiredMixin
 
