@@ -576,7 +576,7 @@ class ProcessMailTests(TestCase):
     @mock.patch('distro_tracker.mail.management.commands.tracker_process_mail.'
                 'MailQueue')
     def test_process_mail_command(self, mock_queue):
-        """command is a simple wrapper around MailQueue.process_loop()"""
+        """Command is a simple wrapper around MailQueue.process_loop()"""
         call_command('tracker_process_mail')
         mock_queue.assert_called_with()
         mock_queue.return_value.process_loop.assert_called_with()

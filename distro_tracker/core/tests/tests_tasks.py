@@ -941,7 +941,7 @@ class ProcessItemsTests(TestCase):
         self.assertEqual(count, 1)
 
     def test_items_cleanup_processed_list(self):
-        """drops keys not associated to any object from the processed list"""
+        """Drops keys not associated to any object from the processed list."""
         unused_item = self.setup_item_to_cleanup()
 
         # Check the removal from the processed list through return value of
@@ -951,7 +951,7 @@ class ProcessItemsTests(TestCase):
         self.assertTrue(self.task.item_needs_processing(unused_item))
 
     def test_items_cleanup_processed_list_does_mark_data_modified(self):
-        """when items are cleaned up, data is modified"""
+        """When items are cleaned up, data is modified."""
         self.setup_item_to_cleanup()
 
         with mock.patch.object(self.task, 'data_mark_modified') as mocked:
@@ -959,7 +959,7 @@ class ProcessItemsTests(TestCase):
             mocked.assert_called_once_with()
 
     def test_items_cleanup_processed_list_does_not_mark_data_modified(self):
-        """nothing to cleanup, no data modified"""
+        """Nothing to cleanup, no data modified."""
         self.patch_items_all()
         with mock.patch.object(self.task, 'data_mark_modified') as mocked:
             self.task.items_cleanup_processed_list()
@@ -1014,7 +1014,7 @@ class ProcessModelTests(TestCase):
         self.assertIs(queryset, mock.sentinel.extended_queryset)
 
     def test_items_extend_queryset(self):
-        """default items_extend_queryset() just forwards the queryset"""
+        """Default items_extend_queryset() just forwards the queryset."""
         queryset = mock.sentinel.queryset
         self.assertEqual(self.task.items_extend_queryset(queryset),
                          queryset)
@@ -1046,7 +1046,7 @@ class ProcessModelTests(TestCase):
         self.assertIs(data['get_absolute_url'], mock.sentinel.url)
 
     def test_items_to_process_after_save_reload(self):
-        """ensure we don't reprocess an item already seen"""
+        """Ensure we don't reprocess an item already seen."""
         srcpkgname = SourcePackageName.objects.create(name='dummy')
         self.task.item_mark_processed(srcpkgname)
         self.task.save_data()

@@ -221,7 +221,7 @@ class MailProcessorTest(TestCase, HelperMixin):
                                     None)
 
     def test_load_mail_from_file(self):
-        """loads the mail to process from a file"""
+        """Loads the mail to process from a file."""
         mail_path = os.path.join(settings.DISTRO_TRACKER_DATA_PATH, 'a-mail')
         self.create_mail(mail_path, subject='load_mail')
 
@@ -230,7 +230,7 @@ class MailProcessorTest(TestCase, HelperMixin):
         self.assertEqual(self.processor.message['Subject'], 'load_mail')
 
     def test_init_with_filename(self):
-        """can create object with filename"""
+        """Can create object with filename."""
         mail_path = os.path.join(settings.DISTRO_TRACKER_DATA_PATH, 'a-mail')
         self.create_mail(mail_path, subject='load_mail')
 
