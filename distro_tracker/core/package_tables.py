@@ -315,15 +315,16 @@ class BasePackageTable(metaclass=PluginRegistry):
     def __init__(self, scope, title=None, limit=None, tag=None):
         """
         :param scope: a convenient object that can be used to define the list
-        of packages to be displayed on the table. For instance, if you want
-        to consider all the packages of a specific team, you must pass that
-        team through the `scope` attribute to allow the function
+            of packages to be displayed on the table. For instance, if you want
+            to consider all the packages of a specific team, you must pass that
+            team through the `scope` attribute to allow the method
+            :meth:`packages` to access it to define the packages to be
+            presented.
         :param title: a string to be displayed instead of the default title
-        :param limit: an integer that can be used to define the limit number of
-        packages to be displayed
+        :param limit: an integer that can be used to define the max number of
+            packages to be displayed
         :param tag: if defined, it is used to display only packages tagged with
-        the informed tag
-        :func:`packages` to access it to define the packages to be presented.
+            the informed tag
         """
         self.scope = scope
         self._title = title

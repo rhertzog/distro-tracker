@@ -241,7 +241,7 @@ class BaseTask(metaclass=PluginRegistry):
 
         First records the timestamp of the run, stores it in the
         'last_attempted_run' field, then executes all the methods whose names
-        are starting with 'execute_', then updates the 'last_completed_run'
+        are starting with ``execute_``, then updates the 'last_completed_run'
         field with the same timestamp (thus documenting the success of the last
         run) and clears the 'task_is_pending' flag.
         """
@@ -277,10 +277,11 @@ class BaseTask(metaclass=PluginRegistry):
 
         There's no validation done on the event name. The following events are
         known to be in use:
-        - execute-started (at the start of the execute method)
-        - execute-finished (at the end of the execute method, in case of
+
+        * execute-started (at the start of the execute method)
+        * execute-finished (at the end of the execute method, in case of
           success)
-        - execute-failed (at the end of the execute method, in case of failure)
+        * execute-failed (at the end of the execute method, in case of failure)
 
         :param str event: the name of the event to handle
         :param function: a function or any callable object

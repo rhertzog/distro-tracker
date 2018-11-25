@@ -181,8 +181,8 @@ class GeneralInfoLinkPanelItemsTests(TestCase, TemplateTestsMixin):
 
     def test_panel_has_vcs_rel(self):
         """
-        Tests that the panel has proper vcs info including the rel='vcs-*'
-        tags on links
+        Tests that the panel has proper vcs info including the ``rel='vcs-*'``
+        tags on links.
         """
 
         response = self.get_package_page_response()

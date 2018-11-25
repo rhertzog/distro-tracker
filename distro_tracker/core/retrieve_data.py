@@ -492,8 +492,8 @@ class UpdateRepositoriesTask(BaseTask):
         """
         :param cached_files: A list of ``(repository, component, file_name)``
             pairs
-        :returns: A Two-Tuple (`repository_files`, component)
-            `repository_files is a dict mapping repositories to all
+        :returns: A Two-Tuple (repository_files, component).
+            repository_files is a dict mapping repositories to all
             file names found for that repository. component is a string
             pointing to the component of the repository.
         """
@@ -527,8 +527,8 @@ class UpdateRepositoriesTask(BaseTask):
         files.
 
         :param updated_sources: A list of ``(repository, component,
-        sources_file_name)`` giving the Sources files which were updated and
-        should be used to update the Distro Tracker tracked information too.
+            sources_file_name)`` giving the Sources files which were updated and
+            should be used to update the Distro Tracker tracked information too.
         """
         # Group all files by repository to which they belong
         repository_files = self.group_files_by_repository(updated_sources)

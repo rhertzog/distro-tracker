@@ -40,6 +40,7 @@ class ConfirmationManager(models.Manager):
     def generate_key(self, identifier):
         """
         Generates a random key for the given identifier.
+
         :param identifier: A string representation of an identifier for the
             confirmation instance.
         """

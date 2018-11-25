@@ -508,7 +508,7 @@ def get_table_fields(table):
 def additional_prefetch_related_lookups():
     """
     :returns: The list with additional lookups to be prefetched along with
-    default lookups defined by :class:`BaseTableField`
+        default lookups defined by :class:`BaseTableField`
     """
     return [
         Prefetch(
@@ -528,9 +528,9 @@ def additional_prefetch_related_lookups():
 def get_vcs_data(package):
     """
     :returns: The dictionary with VCS Watch data to be displayed in
-    the template defined by :data:`DISTRO_TRACKER_VCS_TABLE_FIELD_TEMPLATE
-    <distro_tracker.project.local_settings.DISTRO_TRACKER_VCS_TABLE_FIELD_TEMPLATE>`
-    settings.
+        the template defined by :data:`DISTRO_TRACKER_VCS_TABLE_FIELD_TEMPLATE
+        <distro_tracker.project.local_settings.DISTRO_TRACKER_VCS_TABLE_FIELD_TEMPLATE>`
+        settings.
     """
     data = {}
     try:

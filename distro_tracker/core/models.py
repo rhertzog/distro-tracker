@@ -2057,6 +2057,7 @@ class ConfirmationManager(models.Manager):
     def generate_key(self, identifier):
         """
         Generates a random key for the given identifier.
+
         :param identifier: A string representation of an identifier for the
             confirmation instance.
         """
@@ -2473,13 +2474,16 @@ class BugDisplayManager(object):
         to display the bug information for packages in tables.
 
         It should return a dict with the following keys:
-        - ``bugs`` - a list of dicts where each element describes a single
-            bug category for the given package. Each dict has to provide at
-            minimum the following keys:
-            - ``category_name`` - the name of the bug category
-            - ``bug_count`` - the number of known bugs for the given package and
-              category
-        - ``all`` - the total number of bugs for that package
+
+        * ``bugs`` - a list of dicts where each element describes a single
+          bug category for the given package. Each dict has to provide at
+          minimum the following keys:
+
+          * ``category_name`` - the name of the bug category
+          * ``bug_count`` - the number of known bugs for the given package and
+            category
+
+        * ``all`` - the total number of bugs for that package
         """
         stats = {}
         try:
@@ -2496,16 +2500,16 @@ class BugDisplayManager(object):
     def panel_context(self, package):
         """
         This function is used by the
-        :class:`BugsPanel
-        <distro_tracker.core.panels.BugsPanel>`
+        :class:`BugsPanel <distro_tracker.core.panels.BugsPanel>`
         to display the bug information for a given package.
 
         It should return a list of dicts where each element describes a
         single bug category for the given package. Each dict has to provide at
         minimum the following keys:
-        - ``category_name`` - the name of the bug category
-        - ``bug_count`` - the number of known bugs for the given package and
-              category
+
+        * ``category_name``: the name of the bug category
+        * ``bug_count``: the number of known bugs for the given package and
+          category
         """
         try:
             stats = package.bug_stats.stats

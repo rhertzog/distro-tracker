@@ -1167,9 +1167,9 @@ class UpdateExcusesTask(BaseTask):
         agter the necessary time has passed.
 
         :returns: A two-tuple  where the first element is a dict mapping
-        package names to a list of excuses. The second element is a dict
-        mapping packages names to a problem information. Problem information
-        is a dict with the keys ``age`` and ``limit``.
+            package names to a list of excuses. The second element is a dict
+            mapping packages names to a problem information. Problem information
+            is a dict with the keys ``age`` and ``limit``.
         """
         if 'sources' not in content:
             logger.warning("Invalid format of excuses file")
@@ -2264,6 +2264,7 @@ class UpdateNewQueuePackages(BaseTask):
     def extract_package_info(self, content):
         """
         Extracts the package information from the content of the NEW queue.
+
         :returns: A dict mapping package names to a dict mapping the
             distribution name in which the package is found to the version
             information for the most recent version of the package in the dist.

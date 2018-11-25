@@ -37,8 +37,8 @@ def get_uncompressed_stream(input_stream, compression="auto"):
 
     :param input_stream: The file-like object providing compressed data.
     :param compression: The compression type. Specify "auto" to let the function
-    guess it out of the associated filename (the input_stream needs to have
-    a name attribute, otherwise a ValueError is raised).
+        guess it out of the associated filename (the input_stream needs to have
+        a name attribute, otherwise a ValueError is raised).
     :type compression: str
     """
 

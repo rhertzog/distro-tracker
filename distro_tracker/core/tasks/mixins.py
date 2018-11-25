@@ -69,7 +69,7 @@ class ProcessItems(object):
         to the item in a ``processed`` dictionnary within the persistent
         data of the task.
 
-        :param *args: list of items to mark as having been processed
+        :param args: list of items to mark as having been processed
         """
         processed = self.data.setdefault('processed', {})
         for item in args:

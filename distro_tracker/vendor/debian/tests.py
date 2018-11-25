@@ -2690,6 +2690,7 @@ class DebianWatchFileScannerUpdateTests(TestCase):
     def set_upstream_status_content(self, content):
         """
         Sets the stub content returned to the task as UDD DEHS data.
+
         :param content: A list of dicts of information returned by UDD. The
             content given as a response to the task will be the YAML encoded
             representation of this list.
@@ -4174,6 +4175,7 @@ class UpdateWnppStatsTaskTests(TestCase):
     def set_wnpp_content(self, content):
         """
         Sets the stub wnpp content which the task will retrieve once it runs.
+
         :param content: A list of (package_name, issues) pairs. ``issues`` is
             a list of dicts describing the WNPP bugs the package has.
         """

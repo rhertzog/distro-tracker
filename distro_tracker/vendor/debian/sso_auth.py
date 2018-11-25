@@ -132,6 +132,7 @@ class DebianSsoUserBackend(RemoteUserBackend):
     def get_user_details(self, remote_user):
         """
         Gets the details of the given user from the Debian NM REST API.
+
         :return: Dict with the keys ``first_name``, ``last_name``
             ``None`` if the API lookup did not return anything.
         """

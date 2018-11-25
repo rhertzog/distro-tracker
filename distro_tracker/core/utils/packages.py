@@ -336,7 +336,7 @@ class AptCache(object):
         given cached ``Sources`` file and the ``component`` of the ``Source``.
 
         :rtype: (:class:`Repository <distro_tracker.core.models.Repository>`,
-        string)
+            string)
         """
         from distro_tracker.core.models import Repository
 

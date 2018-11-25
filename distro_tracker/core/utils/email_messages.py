@@ -102,9 +102,10 @@ def patch_message_for_django_compat(message):
     """
     Live patch the :py:class:`email.message.Message` object passed as
     parameter so that:
-    - the as_string() method return the same set of bytes it has been parsed
+
+    * the ``as_string()`` method return the same set of bytes it has been parsed
       from (to preserve as much as possible the original message)
-    - the as_bytes() is added too (this method is expected by Django's SMTP
+    * the ``as_bytes()`` is added too (this method is expected by Django's SMTP
       backend)
     """
     # Django expects patched versions of as_string/as_bytes, see

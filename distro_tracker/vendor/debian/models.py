@@ -393,8 +393,8 @@ class DebianBugDisplayManager(BugDisplayManager):
     def table_field_context(self, package):
         """
         :returns: The context data for package's bug stats with RC bugs data to
-        be highlighted in the template, as well as providing proper links for
-        Debian BTS.
+            be highlighted in the template, as well as providing proper links
+            for Debian BTS.
         """
         try:
             stats = package.bug_stats.stats

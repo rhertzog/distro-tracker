@@ -86,7 +86,7 @@ class TempDirsMixin(object):
 
 class TestCaseHelpersMixin(object):
     """
-    Helpers method injected into distro_tracker's *TestCase objects.
+    Helpers method injected into distro_tracker's ``*TestCase`` objects.
     """
 
     def get_test_data_path(self, name):
@@ -133,7 +133,7 @@ class TestCaseHelpersMixin(object):
 
 class DatabaseMixin(object):
     """
-    Database-related assertions injected into distro_tracker's *TestCase
+    Database-related assertions injected into distro_tracker's ``*TestCase``
     objects.
     """
 
