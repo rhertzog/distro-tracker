@@ -2458,7 +2458,7 @@ class LeaveTeamCommandTests(TeamCommandsMixin, EmailControlTest):
         return 'You are not a member of the team.'
 
     def get_no_exist_error(self, team):
-            return 'Team with the slug "{}" does not exist.'.format(team)
+        return 'Team with the slug "{}" does not exist.'.format(team)
 
     def test_leave_team(self):
         """
