@@ -7,11 +7,13 @@ this package seems to have a new changelog entry (version
 {{item.extra_data.changelog_distribution}}) and new commits
 in its VCS. You should consider whether it's time to make
 an upload.
+{% if item.extra_data.vcslog %}
 <br/><br/>
 Here are the relevant commit messages:
 <pre>
 {{item.extra_data.vcslog}}
 </pre>
+{% endif %}
 {% elif status == "COMMITS" %}
 this package seems to have new commits in its VCS but has
 not yet updated debian/changelog. You should consider updating

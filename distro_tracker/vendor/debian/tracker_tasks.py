@@ -2763,14 +2763,14 @@ class UpdateVcsWatchTask(BaseTask):
     VCSWATCH_STATUS_DICT = {
         "NEW": {
             "description":
-                '<a href="{vcswatch_url}">{commits} new commit{commits_s}</a> '
-                'since last upload, time to upload?',
+                '<a href="{vcswatch_url}">version in VCS is newer</a> than in '
+                'repository, is it time to upload?',
             "severity": ActionItem.SEVERITY_NORMAL,
         },
         "COMMITS": {
             "description":
                 '<a href="{vcswatch_url}">{commits} new commit{commits_s}</a> '
-                'since last upload, time to release?',
+                'since last upload, is it time to release?',
             "severity": ActionItem.SEVERITY_NORMAL,
         },
         "OLD": {
