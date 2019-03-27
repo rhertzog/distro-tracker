@@ -20,5 +20,9 @@
 <span>, </span>
 <span><a title="report about dependency satisfaction" href="{{ item.context.debcheck_url }}">debcheck</a></span>
 {% endif %}
+{% if item.context.has_crossqa %}
+<span>, </span>
+<span><a title="Cross build logs" href="http://crossqa.debian.net/src/{{ item.context.package_name }}">crossqa</a></span>
+{% endif %}
 {% endspaceless %}
 {% endwith %}

@@ -110,8 +110,19 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
             "https://qa.debian.org/dose/debcheck/unstable_main/latest/src" \
             "/{}.html".format(urlquote(self.package.name, safe=""))
 
+        try:
+            has_crossqa = False
+            arches = self.package.data.get(
+                key='general').value.get('architectures')
+            # might be wrong due to https://bugs.debian.org/920024
+            if arches is not None and arches != ['all']:
+                has_crossqa = True
+        except PackageData.DoesNotExist:
+            has_crossqa = False
+
         return [
             TemplatePanelItem('debian/logcheck-links.html', {
+                'package_name': urlquote(self.package.name),
                 'package_query_string': query_string,
                 'has_checks': has_checks,
                 'logcheck_url': logcheck_url,
@@ -121,6 +132,7 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
                 'has_experimental': has_experimental,
                 'has_debcheck': has_debcheck,
                 'debcheck_url': debcheck_url,
+                'has_crossqa': has_crossqa,
             })
         ]
 
