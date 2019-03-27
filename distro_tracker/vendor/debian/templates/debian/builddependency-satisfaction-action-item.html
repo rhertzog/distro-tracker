@@ -1,6 +1,6 @@
 <ul>
 {% for srcpkg, arches, expl, anchor in item.extra_data.unsats %}
-<li>Build dependencies cannot be satisfied on
+<li>Build dependencies in unstable cannot be satisfied on
 {% if arches|length == 1 %}
 {{ arches|first }}
 {% elif arches|length == 2 %}
