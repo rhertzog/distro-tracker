@@ -1,0 +1,17 @@
+<ul>
+{% for srcpkg, arches, expl, anchor in item.extra_data.unsats %}
+<li>Build dependencies cannot be satisfied on
+{% if arches|length == 1 %}
+{{ arches|first }}
+{% elif arches|length == 2 %}
+{{ arches|first }} and {{ arches|last }}
+{% else %}
+{% spaceless %}
+{% for arch in arches %}
+<span>{% if forloop.first %}{{ arch }}{% elif forloop.last %}, and {{ arch }}{% else %}, {{ arch }}{% endif %}</span>
+{% endfor %}
+{% endspaceless %}
+{% endif %}
+because: <a href="{{ item.extra_data.base_url }}{{ srcpkg }}.html#{{ anchor }}">{{ expl }}</a></li>
+{% endfor %}
+</ul>
