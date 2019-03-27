@@ -3365,9 +3365,9 @@ class UpdateBuildDependencySatisfactionTask(BaseTask):
                 severity=ActionItem.SEVERITY_NORMAL)
         action_item.short_description = \
             "source package has {count} unsatisfiable " \
-            "build dependencie{plural}".format(
+            "build dependenc{plural}".format(
                 count=len(unsats),
-                plural='' if len(unsats) == 1 else 's',
+                plural='y' if len(unsats) == 1 else 'ies',
             )
         action_item.extra_data = {
             'unsats': unsats,
