@@ -3206,7 +3206,7 @@ class UpdateDependencySatisfactionTask(BaseTask):
             self.force_update = parameters['force_update']
 
     def get_dependency_satisfaction(self):
-        url = '{}/some.txt'.format(self.BASE_URL)
+        url = '{}/each.txt'.format(self.BASE_URL)
         cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         if not self.force_update and not cache.is_expired(url):
             return
@@ -3251,7 +3251,7 @@ class UpdateDependencySatisfactionTask(BaseTask):
             action_item = ActionItem(
                 package=package,
                 item_type=self.action_item_type,
-                severity=ActionItem.SEVERITY_NORMAL)
+                severity=ActionItem.SEVERITY_HIGH)
         action_item.short_description = \
             "{count} binary package{plural} {have} unsatisfiable " \
             "dependencies".format(
@@ -3321,7 +3321,7 @@ class UpdateBuildDependencySatisfactionTask(BaseTask):
             self.force_update = parameters['force_update']
 
     def get_dependency_satisfaction(self):
-        url = '{}/some.txt'.format(self.BASE_URL)
+        url = '{}/each.txt'.format(self.BASE_URL)
         cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         if not self.force_update and not cache.is_expired(url):
             return
@@ -3362,7 +3362,7 @@ class UpdateBuildDependencySatisfactionTask(BaseTask):
             action_item = ActionItem(
                 package=package,
                 item_type=self.action_item_type,
-                severity=ActionItem.SEVERITY_NORMAL)
+                severity=ActionItem.SEVERITY_HIGH)
         action_item.short_description = \
             "source package has {count} unsatisfiable " \
             "build dependenc{plural}".format(

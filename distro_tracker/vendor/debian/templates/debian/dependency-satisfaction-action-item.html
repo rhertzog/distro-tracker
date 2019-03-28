@@ -1,6 +1,6 @@
 <ul>
 {% for pkg, ver, arches, expl, anchor in item.extra_data.unsats %}
-<li>The dependencies of <strong>{{ pkg }}</strong>={{ ver }} cannot be satisfied on
+<li>The dependencies of <strong>{{ pkg }}</strong>={{ ver }} cannot be satisfied in unstable on
 {% if arches|length == 1 %}
 {{ arches|first }}
 {% elif arches|length == 2 %}
