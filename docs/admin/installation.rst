@@ -26,6 +26,7 @@ Distro Tracker currently depends on the following Debian packages:
 - python3-selenium (for development only)
 - chromium-driver (for development only)
 - python3-sphinx (for development only, to build documentation)
+- python3-sphinx-rtd-theme (for development only, to build documentation)
 
 Here is the list of required packages for development on Debian Buster::
 
@@ -102,7 +103,7 @@ For this you must put “./manage.py tracker_run_all_tasks” in cron.
 Documentation
 -------------
 
-This project uses `Sphinx <http://www.sphinx-doc.org/en/master/index.html>`_ for documentation. If you want to improve the documentation or build the documentation locally, first be sure to have the python3-sphinx package installed. Then go to the docs subdirectory ``cd docs`` and run ``make html`` to build the documentation. 
+This project uses `Sphinx <http://www.sphinx-doc.org/en/master/index.html>`_ for documentation. If you want to improve the documentation or build the documentation locally, first be sure to have the packages *python3-sphinx* and *python3-sphinx-rtd-theme* installed. Then go to the docs subdirectory ``cd docs`` and run ``make html`` to build the documentation. 
 
 The output will be located in ``_build/html`` and you can preview the documentation in a web browser ``firefox _build/html/index.html``.
 
