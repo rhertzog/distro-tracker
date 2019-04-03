@@ -43,8 +43,9 @@ able to run on top of any database server. The only possible known issue is when
 using sqlite3 which has a limit on the number of query parameters of 999 on
 some systems.
 
-When you choose your database flavor, you must install the Python bindings,
-i.e. psycopg2 for PostgreSQL and MySQL-Python for MySQL, etc.
+When you choose your database flavor, you must also install the Python bindings,
+i.e. psycopg2 for PostgreSQL (*python3-psycopg2*) and mysqlclient for MySQL
+(*python3-mysqldb*), etc.
 
 To create the database you must run the following commands::
 
