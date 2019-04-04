@@ -48,8 +48,12 @@
         SSLEngine on
 
 	# Update certificates files here
-        SSLCertificateFile    /etc/ssl/certs/ssl-cert-snakeoil.pem
-        SSLCertificateKeyFile /etc/ssl/private/ssl-cert-snakeoil.key
+	# If you are using Let's Encrypt (certbot), you may use the following:
+	# SSLCertificateFile /etc/letsencrypt/live/domain_name.tld/fullchain.pem
+	# SSLCertificateKeyFile /etc/letsencrypt/live/domain_name.tld/privkey.pem
+	
+	SSLCertificateFile    /etc/ssl/certs/ssl-cert-snakeoil.pem
+	SSLCertificateKeyFile /etc/ssl/private/ssl-cert-snakeoil.key
 
 	Alias /static /var/lib/distro-tracker/static
 	Alias /media /var/lib/distro-tracker/media

@@ -1,18 +1,22 @@
 server {
 	listen   80;
-        listen   [::]:80 ipv6only=on;
-        listen   443 ssl;
-        listen   [::]:443 ssl ipv6only=on;
+	listen   [::]:80 ipv6only=on;
+	listen   443 ssl;
+	listen   [::]:443 ssl ipv6only=on;
 
 	# Replace distro-tracker by the correct FQDN here
 	server_name distro-tracker;
 
 	# Replace this SSL certificate by your own one
-        ssl_certificate         /etc/ssl/certs/ssl-cert-snakeoil.pem;
-        ssl_certificate_key     /etc/ssl/private/ssl-cert-snakeoil.key;
+	# If you are using Let's Encrypt (certbot), you may use the following:
+	# ssl_certificate /etc/letsencrypt/live/domain_name.tld/fullchain.pem;
+	# ssl_certificate_key /etc/letsencrypt/live/domain_name.tld/privkey.pem;
+	
+	ssl_certificate         /etc/ssl/certs/ssl-cert-snakeoil.pem;
+	ssl_certificate_key     /etc/ssl/private/ssl-cert-snakeoil.key;
 
-        access_log /var/log/nginx/distro-tracker-access.log;
-        error_log /var/log/nginx/distro-tracker-error.log error;
+	access_log /var/log/nginx/distro-tracker-access.log;
+	error_log /var/log/nginx/distro-tracker-error.log error;
 
 	location / {
 		proxy_set_header Host $http_host;
