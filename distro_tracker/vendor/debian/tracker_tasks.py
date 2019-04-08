@@ -2339,9 +2339,10 @@ class UpdateDebciStatusTask(BaseTask):
         self.debci_action_item_type = ActionItemType.objects.create_or_update(
             type_name=self.ACTION_ITEM_TYPE_NAME,
             full_description_template=self.ITEM_FULL_DESCRIPTION_TEMPLATE)
+        self.base_url = getattr(settings, 'DISTRO_TRACKER_DEBCI_URL')
 
     def get_debci_status(self):
-        url = 'https://ci.debian.net/data/status/unstable/amd64/packages.json'
+        url = self.base_url + '/data/status/' + getattr(settings, 'DISTRO_TRACKER_DEVEL_REPOSITORIES')[0] + '/amd64/packages.json'
         cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         response, updated = cache.update(url, force=self.force_update)
         response.raise_for_status()
@@ -2374,9 +2375,9 @@ class UpdateDebciStatusTask(BaseTask):
             log_dir = package_name[:4]
         else:
             log_dir = package_name[:1]
-        url = 'https://ci.debian.net/packages/' + log_dir + '/' + \
+        url = self.base_url + '/packages/' + log_dir + '/' + \
             package_name + '/'
-        log = 'https://ci.debian.net/data/packages/unstable/amd64/' + \
+        log = self.base_url + '/data/packages/unstable/amd64/' + \
             log_dir + "/" + package_name + '/latest-autopkgtest/log.gz'
         debci_action_item.short_description = self.ITEM_DESCRIPTION.format(
             debci_url=url,
