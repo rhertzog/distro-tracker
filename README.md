@@ -35,10 +35,13 @@ The lead developer is Raphaël Hertzog (buxy on IRC).
 
 We are using [GitLab's bug
 tracker](https://salsa.debian.org/qa/distro-tracker/issues) to manage bug
-reports. You should file new bugs there.
+reports which are related to the source code itself. You should file new bugs
+there.
 
-However we also use the Debian bug tracker with its `tracker.debian.org`
-pseudo-package. You should thus check [its list of open
+However, we also use the Debian bug tracker with its `tracker.debian.org`
+pseudo-package to manage bug reports which are related to the instance which is 
+currently running at [https://tracker.debian.org](https://tracker.debian.org). 
+You should thus check [its list of open
 issues](https://bugs.debian.org/tracker.debian.org) before filing a new
 bug to avoid duplicates. You can also have a look at all the [closed bug
 reports](https://bugs.debian.org/cgi-bin/pkgreport.cgi?archive=1;package=tracker.debian.org)
