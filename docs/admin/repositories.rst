@@ -10,10 +10,19 @@ be used in priority for package specific information.
 With the admin web interface
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The repositories can be configured from the admin web interface which
-is accessible as “/admin/” in the package tracker website. Make sure that
-you create repositories with "sources" enabled as almost everything is based
-on source packages.
+To access the admin web interface, you will first need to create an
+account:
+
+   $ ./manage.py createsuperuser
+
+You should now be able to configure the repositories from the admin web
+interface, which is accessible as “/admin/” in the package tracker
+website.
+
+Make sure that you create repositories with "sources" enabled as almost
+everything is based on source packages, and do not forget to check the
+"default repository" checkbox for one of the repositories you just
+added.
 
 With a fixture
 ~~~~~~~~~~~~~~
