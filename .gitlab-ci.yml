@@ -8,7 +8,7 @@ before_script:
   # Test dependencies
   - apt-get -y install python3-coverage python3-selenium chromium-driver xvfb python3-pip postgresql postgresql-client python3-psycopg2
   # Dependencies to build docs
-  - apt-get -y install make python3-sphinx
+  - apt-get -y install make python3-sphinx python3-sphinx-rtd-theme
   - export LANG=C
 
 flake8:
