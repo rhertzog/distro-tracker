@@ -2387,6 +2387,7 @@ class UpdateDebciStatusTask(BaseTask):
             'duration': debci_status.get('duration_human'),
             'previous_status': debci_status.get('previous_status'),
             'date': debci_status.get('date'),
+            'base_url': self.base_url,
             'url': url,
             'log': log,
         }

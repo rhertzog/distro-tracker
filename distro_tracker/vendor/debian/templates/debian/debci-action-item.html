@@ -1,7 +1,7 @@
 {% with duration=item.extra_data.duration %}
 {% with previous_status=item.extra_data.previous_status %}
 {% with date=item.extra_data.date %}
-<p><a href="https://ci.debian.net/">Debci</a> reports
+<p><a href="{{ item.extra_data.base_url }}">Debci</a> reports
 <a href="{{ item.extra_data.url }}">test failures</a> (<a href="{{ item.extra_data.log }}">log</a>).</p>
 <p>The tests ran in {{duration}}</p>
 <p>Last run: {{date}}</p>
