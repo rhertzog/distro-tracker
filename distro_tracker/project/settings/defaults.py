@@ -34,6 +34,11 @@ Here are the most important settings:
     Defaults to the "data" sub-directory in the distro-tracker
     base directory (where the code lives).
 
+:py:data:`DISTRO_TRACKER_DEBCI_URL`
+    The URL where debc lives.
+    Example: "https://ci.debian.net", "http://autopkgtest.kali.org"
+    Defaults to "https://ci.debian.net".
+
 :py:data:`MEDIA_URL`
     URL that handles the media served from MEDIA_ROOT. Make sure to use a
     trailing slash.
@@ -252,6 +257,7 @@ INSTALLED_APPS = [
     'distro_tracker.core',
     'distro_tracker.accounts',
     'distro_tracker.mail',
+    'distro_tracker.debci_status',
 ]
 
 # See http://docs.djangoproject.com/en/dev/topics/logging for
