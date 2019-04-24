@@ -160,14 +160,12 @@ class DebciLink(LinksPanel.ItemProvider):
 
     def get_panel_items(self):
         try:
-            self.package.data.get(key='debci')
+            debci_data = self.package.data.get(key='debci')
+            print(debci_data)
         except PackageData.DoesNotExist:
             return []
 
-        url = 'https://ci.debian.net/packages/{prefix}/{package}/'.format(
-            prefix=package_hashdir(self.package.name),
-            package=self.package.name)
-        return [LinksPanel.SimpleLinkItem('debci', url)]
+        return [LinksPanel.SimpleLinkItem('debci', debci_data.value['url'])]
 
 
 class SourceCodeSearchLinks(LinksPanel.ItemProvider):
