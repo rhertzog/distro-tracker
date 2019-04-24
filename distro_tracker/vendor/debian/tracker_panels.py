@@ -152,22 +152,6 @@ class PopconLink(LinksPanel.ItemProvider):
         ]
 
 
-class DebciLink(LinksPanel.ItemProvider):
-    """
-    If there are any debci report for the package, provides a link to the
-    debci page.
-    """
-
-    def get_panel_items(self):
-        try:
-            debci_data = self.package.data.get(key='debci')
-            print(debci_data)
-        except PackageData.DoesNotExist:
-            return []
-
-        return [LinksPanel.SimpleLinkItem('debci', debci_data.value['url'])]
-
-
 class SourceCodeSearchLinks(LinksPanel.ItemProvider):
     """
     Add links to sources.debian.org source code browser and the

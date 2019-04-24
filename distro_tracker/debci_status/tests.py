@@ -25,12 +25,12 @@ from distro_tracker.core.models import (
     ActionItem,
     ActionItemType,
     PackageData,
+    SourcePackage,
     SourcePackageName
 )
-
+from distro_tracker.core.utils.packages import package_url
 from distro_tracker.debci_status.tracker_tasks import UpdateDebciStatusTask
-
-from distro_tracker.test import TestCase
+from distro_tracker.test import TemplateTestsMixin, TestCase
 from distro_tracker.test.utils import set_mock_response
 
 @override_settings(
@@ -123,7 +123,7 @@ class UpdateDebciStatusTaskTest(TestCase):
         # Check that the ActionItem contains the correct contents.
         self.assertEqual(self.package.action_items.count(), 1)
         action_item = self.package.action_items.all()[0]
-        url = "https://ci.debian.net/packages/d/dummy-package/"
+        url = "https://ci.debian.net/packages/d/dummy-package"
         log = "https://ci.debian.net/data/packages/unstable/amd64/d/" + \
             "dummy-package/latest-autopkgtest/log.gz"
         self.assertIn(url, action_item.short_description)
@@ -183,3 +183,39 @@ class UpdateDebciStatusTaskTest(TestCase):
 
         self.assertEqual(action_item_log_url, log_url)
 
+
+class DebciLinkTest(TestCase, TemplateTestsMixin):
+
+    """
+    Tests that the debci link is added to source package pages.
+    """
+
+    def setUp(self):
+        self.package_name = SourcePackageName.objects.create(name='dummy')
+        self.package = SourcePackage.objects.create(
+            source_package_name=self.package_name,
+            version='1.0.0')
+
+    def get_package_page_response(self, package_name):
+        return self.client.get(package_url(package_name))
+
+    def test_package_with_debci_report(self):
+        PackageData.objects.create(
+            package=self.package_name,
+            key='debci',
+            value={'result': {'debci report': 'not null'},
+                   'url': 'https://ci.debian.net/packages/d/dummy'}
+        )
+
+        response = self.get_package_page_response(self.package.name)
+        self.assertLinkIsInResponse(
+            response,
+            'https://ci.debian.net/packages/d/dummy'
+        )
+
+    def test_package_without_debci_report(self):
+        response = self.get_package_page_response(self.package.name)
+        self.assertLinkIsNotInResponse(
+            response,
+            'https://ci.debian.net/packages/d/dummy'
+        )
