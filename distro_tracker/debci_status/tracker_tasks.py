@@ -50,7 +50,10 @@ class UpdateDebciStatusTask(BaseTask):
         self.debci_action_item_type = ActionItemType.objects.create_or_update(
             type_name=self.ACTION_ITEM_TYPE_NAME,
             full_description_template=self.ITEM_FULL_DESCRIPTION_TEMPLATE)
-        self.base_url = getattr(settings, 'DISTRO_TRACKER_DEBCI_URL')
+
+    @property
+    def base_url(self):
+        return getattr(settings, 'DISTRO_TRACKER_DEBCI_URL')
 
     def get_debci_status(self):
         url = self.base_url + '/data/status/' + getattr(settings, 'DISTRO_TRACKER_DEVEL_REPOSITORIES')[0] + '/amd64/packages.json'
