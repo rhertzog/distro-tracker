@@ -29,7 +29,6 @@ from distro_tracker.core.panels import (
     TemplatePanelItem
 )
 from distro_tracker.core.utils import get_or_none
-from distro_tracker.core.utils.packages import package_hashdir
 from distro_tracker.vendor.debian.models import (
     BuildLogCheckStats,
     LintianStats,

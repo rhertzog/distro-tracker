@@ -14,16 +14,12 @@
 Tests for Debci-specific modules/functionality of Distro Tracker.
 """
 
-import json
-import os
-from email.message import Message
 from unittest import mock
 
 from django.test.utils import override_settings
 
 from distro_tracker.core.models import (
     ActionItem,
-    ActionItemType,
     PackageData,
     SourcePackage,
     SourcePackageName
@@ -33,18 +29,17 @@ from distro_tracker.debci_status.tracker_tasks import UpdateDebciStatusTask
 from distro_tracker.test import TemplateTestsMixin, TestCase
 from distro_tracker.test.utils import set_mock_response
 
+
 @override_settings(
     DISTRO_TRACKER_DEBCI_URL='https://ci.debian.net',
     DISTRO_TRACKER_DEVEL_REPOSITORIES=['unstable'])
 @mock.patch('distro_tracker.core.utils.http.requests')
 class UpdateDebciStatusTaskTest(TestCase):
-
     """
     Tests for the
     :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateDebciStatusTask`
     task.
     """
-
     def setUp(self):
         self.source_package = self.create_source_package(name='dummy-package')
         self.package = self.source_package.source_package_name

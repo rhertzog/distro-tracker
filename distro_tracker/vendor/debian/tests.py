@@ -56,7 +56,7 @@ from distro_tracker.core.utils.email_messages import message_from_bytes
 from distro_tracker.core.utils.packages import package_url
 from distro_tracker.mail.mail_news import process
 from distro_tracker.mail.tests.tests_dispatch import DispatchTestHelperMixin
-from distro_tracker.test import SimpleTestCase, TemplateTestsMixin, TestCase
+from distro_tracker.test import SimpleTestCase, TestCase
 from distro_tracker.test.utils import make_temp_directory, set_mock_response
 from distro_tracker.vendor.debian.management.commands.\
     tracker_import_old_subscriber_dump \

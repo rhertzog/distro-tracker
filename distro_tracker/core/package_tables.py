@@ -281,7 +281,7 @@ class DebciTableField(BaseTableField):
 
     def context(self, package):
         try:
-            info = package.general_data[0]
+            package.general_data[0]
         except IndexError:
             # There is no general info for the package
             return

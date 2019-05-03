@@ -56,7 +56,8 @@ class UpdateDebciStatusTask(BaseTask):
         return getattr(settings, 'DISTRO_TRACKER_DEBCI_URL')
 
     def get_debci_status(self):
-        url = self.base_url + '/data/status/' + getattr(settings, 'DISTRO_TRACKER_DEVEL_REPOSITORIES')[0] + '/amd64/packages.json'
+        repo = getattr(settings, 'DISTRO_TRACKER_DEVEL_REPOSITORIES')[0]
+        url = self.base_url + '/data/status/' + repo + '/amd64/packages.json'
         cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         response, updated = cache.update(url, force=self.force_update)
         response.raise_for_status()
@@ -78,7 +79,7 @@ class UpdateDebciStatusTask(BaseTask):
                             self.__get_debci_dir(package_name))
 
     def __get_debci_url_logfile(self, package_name):
-        return os.path.join(self.base_url, 'data/packages/unstable/amd64', 
+        return os.path.join(self.base_url, 'data/packages/unstable/amd64',
                             self.__get_debci_dir(package_name),
                             'latest-autopkgtest/log.gz')
 
@@ -140,12 +141,13 @@ class UpdateDebciStatusTask(BaseTask):
                 except SourcePackageName.DoesNotExist:
                     continue
 
+                url = self.__get_debci_url_main(result['package'])
                 infos.append(
                     PackageData(
                         package=package,
                         key='debci',
                         value={'result': result,
-                               'url': self.__get_debci_url_main(result['package'])}
+                               'url': url}
                     )
                 )
 

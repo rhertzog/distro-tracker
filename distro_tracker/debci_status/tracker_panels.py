@@ -15,12 +15,12 @@ from distro_tracker.core.models import PackageData
 
 from distro_tracker.core.panels import LinksPanel
 
+
 class DebciLink(LinksPanel.ItemProvider):
     """
     If there are any debci report for the package, provides a link to the
     debci page.
     """
-
     def get_panel_items(self):
         try:
             debci_data = self.package.data.get(key='debci')
