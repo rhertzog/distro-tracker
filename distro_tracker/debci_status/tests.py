@@ -179,6 +179,11 @@ class UpdateDebciStatusTaskTest(TestCase):
         self.assertEqual(action_item_log_url, log_url)
 
 
+@override_settings(INSTALLED_APPS=['django.contrib.staticfiles',
+                                   'distro_tracker.core',
+                                   'distro_tracker.html',
+                                   'distro_tracker.accounts',
+                                   'distro_tracker.debci_status'])
 class DebciLinkTest(TestCase, TemplateTestsMixin):
 
     """

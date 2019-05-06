@@ -256,42 +256,6 @@ class ArchiveTableField(BaseTableField):
         return general
 
 
-class DebciTableField(BaseTableField):
-    """
-    This table field displays information regarding the Debci status for
-    this package.
-
-    It displays the package's Debci status
-    """
-    column_name = 'Tests'
-    slug = 'debci'
-    template_name = 'core/package-table-fields/debci.html'
-    prefetch_related_lookups = [
-        Prefetch(
-            'data',
-            queryset=PackageData.objects.filter(key='debci'),
-            to_attr='debci'
-        )
-    ]
-
-    def context(self, package):
-        ctx = {}
-
-        try:
-            debci = package.debci[0].value
-            ctx['status'] = debci['result']['status']
-            ctx['url'] = debci['url']
-            if ctx['status'] == 'pass':
-               ctx['label_type'] = 'success'
-            else:
-               ctx['label_type'] = 'danger'
-        except IndexError:
-            # There is no debci info for the package
-            ctx['url'] = None
-
-        return ctx
-
-
 class BugStatsTableField(BaseTableField, BugDisplayManagerMixin):
     """
     This table field displays bug statistics for the package.
@@ -463,7 +427,6 @@ class BasePackageTable(metaclass=PluginRegistry):
         return [
             GeneralInformationTableField,
             VcsTableField,
-            DebciTableField,
             ArchiveTableField,
             BugStatsTableField,
         ]

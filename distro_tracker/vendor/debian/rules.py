@@ -37,6 +37,7 @@ from distro_tracker.vendor.debian.tracker_tasks import UpdateNewQueuePackages
 
 from .models import DebianBugDisplayManager, DebianContributor
 from .tracker_package_tables import UpstreamTableField
+from distro_tracker.debci_status.tracker_package_tables import DebciTableField
 
 
 def _simplify_pkglist(pkglist, multi_allowed=True, default=None):
@@ -505,7 +506,7 @@ def get_table_fields(table):
     The function provides additional fields which should be displayed in
     the team's packages table
     """
-    return table.default_fields + [UpstreamTableField]
+    return table.default_fields + [DebciTableField, UpstreamTableField]
 
 
 def additional_prefetch_related_lookups():

@@ -319,12 +319,12 @@ class GeneralTeamPackageTableTests(TestCase, TemplateTestsMixin):
         queries regardless of the number of packages
         """
         table = GeneralTeamPackageTable(self.team)
-        self.assert_number_of_queries(table, 6)
+        self.assert_number_of_queries(table, 5)
 
         new_package = create_source_package_with_data('another-dummy-package')
         create_package_bug_stats(new_package)
         self.team.packages.add(new_package)
-        self.assert_number_of_queries(table, 6)
+        self.assert_number_of_queries(table, 5)
 
     def test_table_limit_of_packages(self):
         """
