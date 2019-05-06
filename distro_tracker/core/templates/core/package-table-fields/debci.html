@@ -1,4 +1,6 @@
 {% load distro_tracker_extras %}
-<span class="text-success" id='debci-field'>
+{% if debci.url != "#" %}
+<span class="label label-{{ debci.label_type }}" id='debci-field'>
 	<a href='{{ debci.url }}'>{{ debci.status|breakable }}</a>
 </span>
+{% endif %}

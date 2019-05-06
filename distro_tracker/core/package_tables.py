@@ -281,10 +281,13 @@ class DebciTableField(BaseTableField):
             debci = package.debci[0].value
             ctx['status'] = debci['result']['status']
             ctx['url'] = debci['url']
+            if ctx['status'] == 'pass':
+               ctx['label_type'] = 'success'
+            else:
+               ctx['label_type'] = 'danger'
         except IndexError:
             # There is no debci info for the package
-            ctx['status'] = '-'
-            ctx['url'] = '#'
+            ctx['url'] = None
 
         return ctx
 
