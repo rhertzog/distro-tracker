@@ -25,6 +25,9 @@ INSTALLED_APPS.extend([
 
     # Captcha support
     'captcha',
+
+    # Debci status
+    'distro_tracker.debci_status',
 ])
 
 # Official service name

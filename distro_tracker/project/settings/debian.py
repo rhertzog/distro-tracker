@@ -31,6 +31,8 @@ INSTALLED_APPS.extend([
     'distro_tracker.stdver_warnings',
     # Extract common files from the source package
     'distro_tracker.extract_source_files',
+    # Debci status
+    'distro_tracker.debci_status',
 ])
 
 # Official service name

@@ -256,8 +256,7 @@ INSTALLED_APPS = [
     'distro_tracker.html',
     'distro_tracker.core',
     'distro_tracker.accounts',
-    'distro_tracker.mail',
-    'distro_tracker.debci_status',
+    'distro_tracker.mail'
 ]
 
 # See http://docs.djangoproject.com/en/dev/topics/logging for
