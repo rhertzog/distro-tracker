@@ -269,23 +269,12 @@ class DebciTableField(BaseTableField):
     prefetch_related_lookups = [
         Prefetch(
             'data',
-            queryset=PackageData.objects.filter(key='general'),
-            to_attr='general_data'
-        ),
-        Prefetch(
-            'data',
             queryset=PackageData.objects.filter(key='debci'),
             to_attr='debci'
         )
     ]
 
     def context(self, package):
-        try:
-            package.general_data[0]
-        except IndexError:
-            # There is no general info for the package
-            return
-
         general = {}
 
         try:
