@@ -263,7 +263,7 @@ class DebciTableField(BaseTableField):
 
     It displays the package's Debci status
     """
-    column_name = 'Debci'
+    column_name = 'Tests'
     slug = 'debci'
     template_name = 'core/package-table-fields/debci.html'
     prefetch_related_lookups = [
