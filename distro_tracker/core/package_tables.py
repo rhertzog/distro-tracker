@@ -275,18 +275,18 @@ class DebciTableField(BaseTableField):
     ]
 
     def context(self, package):
-        general = {}
+        ctx = {}
 
         try:
             debci = package.debci[0].value
-            general['status'] = debci['result']['status']
-            general['url'] = debci['url']
+            ctx['status'] = debci['result']['status']
+            ctx['url'] = debci['url']
         except IndexError:
             # There is no debci info for the package
-            general['status'] = '-'
-            general['url'] = '#'
+            ctx['status'] = '-'
+            ctx['url'] = '#'
 
-        return general
+        return ctx
 
 
 class BugStatsTableField(BaseTableField, BugDisplayManagerMixin):
