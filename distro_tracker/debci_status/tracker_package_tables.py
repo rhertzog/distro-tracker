@@ -28,7 +28,7 @@ class DebciTableField(BaseTableField):
     """
     column_name = 'Tests'
     slug = 'debci'
-    template_name = 'core/package-table-fields/debci.html'
+    template_name = 'debci_status/debci.html'
     prefetch_related_lookups = [
         Prefetch(
             'data',

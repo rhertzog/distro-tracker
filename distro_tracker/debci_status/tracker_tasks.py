@@ -43,7 +43,7 @@ class UpdateDebciStatusTask(BaseTask):
         'Debci reports <a href="{debci_url}">failed tests</a> '
         '(<a href="{log_url}">log</a>)'
     )
-    ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/debci-action-item.html'
+    ITEM_FULL_DESCRIPTION_TEMPLATE = 'debci_status/debci-action-item.html'
 
     def initialize(self, *args, **kwargs):
         super().initialize(*args, **kwargs)
