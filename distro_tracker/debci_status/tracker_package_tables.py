@@ -41,8 +41,8 @@ class DebciTableField(BaseTableField):
         ctx = {}
 
         try:
-            debci = package.debci[0].value
-            ctx['status'] = debci['result']['status']
+            debci = package.debci[0].value[0]
+            ctx['status'] = debci['result']['status'] + '/' + package.debci[0].value[1]['result']['status']
             ctx['url'] = debci['url']
             if ctx['status'] == 'pass':
                 ctx['label_type'] = 'success'

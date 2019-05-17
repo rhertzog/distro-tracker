@@ -27,4 +27,4 @@ class DebciLink(LinksPanel.ItemProvider):
         except PackageData.DoesNotExist:
             return []
 
-        return [LinksPanel.SimpleLinkItem('debci', debci_data.value['url'])]
+        return [LinksPanel.SimpleLinkItem('debci', debci_data.value[0]['url'])]

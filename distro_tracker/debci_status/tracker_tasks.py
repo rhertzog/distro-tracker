@@ -21,6 +21,7 @@ from distro_tracker.core.models import (
     ActionItem,
     ActionItemType,
     PackageData,
+    Repository,
     SourcePackageName
 )
 
@@ -40,8 +41,8 @@ class UpdateDebciStatusTask(BaseTask):
 
     ACTION_ITEM_TYPE_NAME = 'debci-failed-tests'
     ITEM_DESCRIPTION = (
-        'Debci reports <a href="{debci_url}">failed tests</a> '
-        '(<a href="{log_url}">log</a>)'
+        '<a href="{base_url}">Debci</a> reports ' +
+        '<a href="{debci_url}">failed tests</a> '
     )
     ITEM_FULL_DESCRIPTION_TEMPLATE = 'debci_status/debci-action-item.html'
 
@@ -88,7 +89,7 @@ class UpdateDebciStatusTask(BaseTask):
                             self.__get_debci_dir(package_name),
                             'latest-autopkgtest/log.gz')
 
-    def update_action_item(self, package, repo, debci_status):
+    def update_action_item(self, package, debci_statuses):
         """
         Updates the :class:`ActionItem` for the given package based on the
         :class:`DebciStatus <distro_tracker.debci_status.DebciStatus`
@@ -96,7 +97,7 @@ class UpdateDebciStatusTask(BaseTask):
         """
         debci_action_item = package.get_action_item_for_type(
             self.debci_action_item_type.type_name)
-        if debci_status.get('status') in ('pass', 'neutral'):
+        if 'fail' not in [s['result']['status'] for s in debci_statuses]:
             if debci_action_item:
                 debci_action_item.delete()
             return
@@ -107,57 +108,79 @@ class UpdateDebciStatusTask(BaseTask):
                 item_type=self.debci_action_item_type,
                 severity=ActionItem.SEVERITY_HIGH)
 
-        package_name = debci_status.get('package')
-
+        package_name = package.name
         url = self.__get_debci_url_main(package_name)
-        log = self.__get_debci_url_logfile(package_name, repo)
 
         debci_action_item.short_description = self.ITEM_DESCRIPTION.format(
             debci_url=url,
-            log_url=log)
+            base_url=self.base_url)
 
-        debci_action_item.extra_data = {
-            'duration': debci_status.get('duration_human'),
-            'previous_status': debci_status.get('previous_status'),
-            'status': debci_status.get('status'),
-            'date': debci_status.get('date'),
-            'base_url': self.base_url,
-            'url': url,
-            'log': log,
-        }
+        debci_action_item.extra_data = []
+        for debci_status in debci_statuses:
+            repo_codename = debci_status['repository']
+
+            log = self.__get_debci_url_logfile(package_name, repo_codename)
+
+            result = debci_status['result']
+            debci_action_item.extra_data.append({
+                'duration': result['duration_human'],
+                'previous_status': result['previous_status'],
+                'status': result['status'],
+                'date': result['date'],
+                'base_url': self.base_url,
+                'url': url,
+                'log': log,
+                'repository': repo_codename
+            })
 
         debci_action_item.save()
 
     def execute_main(self):
-        repo = self.devel_repo
-        all_debci_status = self.get_debci_status(repo)
-        if all_debci_status is None:
-            return
+        all_debci_status = {}
+        for repo in Repository.objects.all():
+            repo_codename = repo.codename
+            for status in self.get_debci_status(repo_codename):
+                package = status['package']
+                if package not in all_debci_status:
+                    all_debci_status[package] = {repo_codename: status}
+                else:
+                    all_debci_status[package][repo_codename] = status
 
+        # import pprint
+        # pprint.pprint(all_debci_status)
         with transaction.atomic():
             # Delete obsolete data
             PackageData.objects.filter(key='debci').delete()
             packages = []
             infos = []
-            for result in all_debci_status:
+            for package_name in all_debci_status:
                 try:
                     package = SourcePackageName.objects.get(
-                        name=result['package'])
+                        name=package_name)
                     packages.append(package)
                 except SourcePackageName.DoesNotExist:
                     continue
 
-                url = self.__get_debci_url_main(result['package'])
+                value = []
+                items = all_debci_status[package_name].items()
+                for repo_codename, result in items:
+                    url = self.__get_debci_url_main(package_name)
+                    value.append({'result': result,
+                                  'repository': repo_codename,
+                                  'url': url})
+
+                if not value:
+                    continue
+
                 infos.append(
                     PackageData(
                         package=package,
                         key='debci',
-                        value={'result': result,
-                               'url': url}
+                        value=value
                     )
                 )
 
-                self.update_action_item(package, repo, result)
+                self.update_action_item(package, value)
 
             PackageData.objects.bulk_create(infos)
             ActionItem.objects.delete_obsolete_items(
