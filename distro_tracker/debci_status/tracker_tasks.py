@@ -91,7 +91,7 @@ class UpdateDebciStatusTask(BaseTask):
     def update_action_item(self, package, debci_status):
         """
         Updates the :class:`ActionItem` for the given package based on the
-        :class:`DebciStatus <distro_tracker.vendor.debian.models.DebciStatus`
+        :class:`DebciStatus <distro_tracker.debci_status.DebciStatus`
         If the package has test failures an :class:`ActionItem` is created.
         """
         debci_action_item = package.get_action_item_for_type(

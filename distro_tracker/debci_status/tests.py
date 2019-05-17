@@ -37,7 +37,7 @@ from distro_tracker.test.utils import set_mock_response
 class UpdateDebciStatusTaskTest(TestCase):
     """
     Tests for the
-    :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateDebciStatusTask`
+    :class:`distro_tracker.debci_status.tracker_tasks.UpdateDebciStatusTask`
     task.
     """
     def setUp(self):
