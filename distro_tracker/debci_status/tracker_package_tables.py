@@ -41,13 +41,29 @@ class DebciTableField(BaseTableField):
         ctx = {}
 
         try:
-            debci = package.debci[0].value[0]
-            ctx['status'] = debci['result']['status'] + '/' + package.debci[0].value[1]['result']['status']
+            # build list of status hashes, for popover
+            ctx['statuses'] = []
+            for debci in package.debci[0].value:
+                status = debci['result']['status']
+                repository = debci['repository']
+                ctx['statuses'].append({'repository': repository,
+                                        'status': status})
+
+            # url is per-package, not per repository, so re-using last value of
+            # loop variable is fine
             ctx['url'] = debci['url']
-            if ctx['status'] == 'pass':
-                ctx['label_type'] = 'success'
-            else:
+
+            # aggregated status to display in column
+            statuses = [e['status'] for e in ctx['statuses']]
+            ctx['aggregated_status'] = ' | '.join(statuses)
+
+            # success = all pass, danger = all fail, warning = mixed
+            if 'fail' in statuses and 'pass' in statuses:
+                ctx['label_type'] = 'warning'
+            elif 'fail' in statuses:
                 ctx['label_type'] = 'danger'
+            else:
+                ctx['label_type'] = 'success'
         except IndexError:
             # There is no debci info for the package
             ctx['url'] = None
