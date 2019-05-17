@@ -59,9 +59,9 @@ class UpdateDebciStatusTask(BaseTask):
     def devel_repo(self):
         return getattr(settings, 'DISTRO_TRACKER_DEVEL_REPOSITORIES')[0]
 
-    def get_debci_status(self):
+    def get_debci_status(self, repo):
         url = self.base_url + '/data/status/' + \
-            self.devel_repo + '/amd64/packages.json'
+            repo + '/amd64/packages.json'
         cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         response, updated = cache.update(url, force=self.force_update)
         response.raise_for_status()
@@ -82,13 +82,13 @@ class UpdateDebciStatusTask(BaseTask):
         return os.path.join(self.base_url, 'packages',
                             self.__get_debci_dir(package_name))
 
-    def __get_debci_url_logfile(self, package_name):
+    def __get_debci_url_logfile(self, package_name, repo):
         return os.path.join(self.base_url,
-                            'data/packages/' + self.devel_repo + '/amd64',
+                            'data/packages/' + repo + '/amd64',
                             self.__get_debci_dir(package_name),
                             'latest-autopkgtest/log.gz')
 
-    def update_action_item(self, package, debci_status):
+    def update_action_item(self, package, repo, debci_status):
         """
         Updates the :class:`ActionItem` for the given package based on the
         :class:`DebciStatus <distro_tracker.debci_status.DebciStatus`
@@ -110,7 +110,7 @@ class UpdateDebciStatusTask(BaseTask):
         package_name = debci_status.get('package')
 
         url = self.__get_debci_url_main(package_name)
-        log = self.__get_debci_url_logfile(package_name)
+        log = self.__get_debci_url_logfile(package_name, repo)
 
         debci_action_item.short_description = self.ITEM_DESCRIPTION.format(
             debci_url=url,
@@ -129,7 +129,8 @@ class UpdateDebciStatusTask(BaseTask):
         debci_action_item.save()
 
     def execute_main(self):
-        all_debci_status = self.get_debci_status()
+        repo = self.devel_repo
+        all_debci_status = self.get_debci_status(repo)
         if all_debci_status is None:
             return
 
@@ -156,7 +157,7 @@ class UpdateDebciStatusTask(BaseTask):
                     )
                 )
 
-                self.update_action_item(package, result)
+                self.update_action_item(package, repo, result)
 
             PackageData.objects.bulk_create(infos)
             ActionItem.objects.delete_obsolete_items(
