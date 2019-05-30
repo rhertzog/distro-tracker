@@ -10,6 +10,7 @@ __all__ = [
     'AUTHENTICATION_BACKENDS',
     'DATABASES',
     'DISTRO_TRACKER_CVE_URL',
+    'DISTRO_TRACKER_DEBCI_URL',
     'DISTRO_TRACKER_DEBIAN_PIUPARTS_SUITES',
     'DISTRO_TRACKER_DEVEL_REPOSITORIES',
     'DISTRO_TRACKER_FQDN',
@@ -30,6 +31,8 @@ INSTALLED_APPS.extend([
     'distro_tracker.stdver_warnings',
     # Extract common files from the source package
     'distro_tracker.extract_source_files',
+    # Debci status
+    'distro_tracker.debci_status',
 ])
 
 # Official service name
@@ -69,6 +72,9 @@ DISTRO_TRACKER_DEVEL_REPOSITORIES = ['unstable', 'experimental']
 
 #: URL for CVE tracker
 DISTRO_TRACKER_CVE_URL = 'https://security-tracker.debian.org/tracker/'
+
+#: URL for debci
+DISTRO_TRACKER_DEBCI_URL = 'https://ci.debian.net'
 
 # Various settings for sso.debian.org support
 MIDDLEWARE = defaults.MIDDLEWARE.copy()

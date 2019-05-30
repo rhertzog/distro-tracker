@@ -29,7 +29,6 @@ from distro_tracker.core.panels import (
     TemplatePanelItem
 )
 from distro_tracker.core.utils import get_or_none
-from distro_tracker.core.utils.packages import package_hashdir
 from distro_tracker.vendor.debian.models import (
     BuildLogCheckStats,
     LintianStats,
@@ -150,24 +149,6 @@ class PopconLink(LinksPanel.ItemProvider):
                 self.POPCON_URL.format(
                     package=urlquote_plus(self.package.name)))
         ]
-
-
-class DebciLink(LinksPanel.ItemProvider):
-    """
-    If there are any debci report for the package, provides a link to the
-    debci page.
-    """
-
-    def get_panel_items(self):
-        try:
-            self.package.data.get(key='debci')
-        except PackageData.DoesNotExist:
-            return []
-
-        url = 'https://ci.debian.net/packages/{prefix}/{package}/'.format(
-            prefix=package_hashdir(self.package.name),
-            package=self.package.name)
-        return [LinksPanel.SimpleLinkItem('debci', url)]
 
 
 class SourceCodeSearchLinks(LinksPanel.ItemProvider):

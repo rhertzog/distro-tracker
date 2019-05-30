@@ -15,6 +15,7 @@ import os.path
 import re
 
 from distro_tracker.mail import mail_news
+from distro_tracker.debci_status.tracker_package_tables import DebciTableField
 
 
 def classify_message(msg, package, keyword):
@@ -52,3 +53,11 @@ def approve_default_message(msg):
     :type msg: :py:class:`email.message.Message`
     """
     return False
+
+
+def get_table_fields(table):
+    """
+    The function provides additional fields which should be displayed in
+    the team's packages table
+    """
+    return table.default_fields + [DebciTableField]
