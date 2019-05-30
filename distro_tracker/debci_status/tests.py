@@ -37,11 +37,12 @@ from distro_tracker.test.utils import set_mock_response
 class UpdateDebciStatusTaskTest(TestCase):
     """
     Tests for the
-    :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateDebciStatusTask`
+    :class:`distro_tracker.debci_status.tracker_tasks.UpdateDebciStatusTask`
     task.
     """
     def setUp(self):
-        self.source_package = self.create_source_package(name='dummy-package')
+        self.source_package = self.create_source_package(name='dummy-package',
+                                                         repository='unstable')
         self.package = self.source_package.source_package_name
         self.json_data = [
             {
@@ -122,12 +123,12 @@ class UpdateDebciStatusTaskTest(TestCase):
         log = "https://ci.debian.net/data/packages/unstable/amd64/d/" + \
             "dummy-package/latest-autopkgtest/log.gz"
         self.assertIn(url, action_item.short_description)
-        self.assertIn(log, action_item.short_description)
-        self.assertEqual(action_item.extra_data['duration'], "0h 1m 31s")
-        self.assertEqual(action_item.extra_data['previous_status'], "pass")
-        self.assertEqual(action_item.extra_data['date'], "2014-07-05 14:55:57")
-        self.assertEqual(action_item.extra_data['url'], url)
-        self.assertEqual(action_item.extra_data['log'], log)
+        self.assertEqual(action_item.extra_data[0]['duration'], "0h 1m 31s")
+        self.assertEqual(action_item.extra_data[0]['previous_status'], "pass")
+        self.assertEqual(action_item.extra_data[0]['date'],
+                         "2014-07-05 14:55:57")
+        self.assertEqual(action_item.extra_data[0]['url'], url)
+        self.assertEqual(action_item.extra_data[0]['log'], log)
 
     @override_settings(
         DISTRO_TRACKER_DEBCI_URL='https://ci.debian.net')
@@ -165,14 +166,17 @@ class UpdateDebciStatusTaskTest(TestCase):
         """
         Tests that links to lib packages' log files are correct.
         """
-        libpackage = self.create_source_package(name='libpackage')
+        source_package = self.create_source_package(name='libpackage')
+        package = source_package.source_package_name
         self.json_data[0]['package'] = 'libpackage'
         set_mock_response(mock_requests, json=self.json_data)
 
         self.run_task()
 
-        action_item = libpackage.source_package_name.action_items.all()[0]
-        action_item_log_url = action_item.extra_data['log']
+        ai = package.action_items.all()
+        self.assertEqual(1, len(ai))
+        action_item = ai[0]
+        action_item_log_url = action_item.extra_data[0]['log']
         log_url = "https://ci.debian.net/data/packages/unstable/amd64/libp/" + \
             "libpackage/latest-autopkgtest/log.gz"
 
@@ -192,9 +196,11 @@ class DebciLinkTest(TestCase, TemplateTestsMixin):
 
     def setUp(self):
         self.package_name = SourcePackageName.objects.create(name='dummy')
+        self.url = 'https://ci.debian.net/packages/d/dummy'
         self.package = SourcePackage.objects.create(
             source_package_name=self.package_name,
-            version='1.0.0')
+            version='1.0.0',
+            repository='unstable')
 
     def get_package_page_response(self, package_name):
         return self.client.get(package_url(package_name))
@@ -203,19 +209,20 @@ class DebciLinkTest(TestCase, TemplateTestsMixin):
         PackageData.objects.create(
             package=self.package_name,
             key='debci',
-            value={'result': {'debci report': 'not null'},
-                   'url': 'https://ci.debian.net/packages/d/dummy'}
+            value=[{'result': {'status': 'fail'},
+                    'repository': 'unstable',
+                    'url': self.url}]
         )
 
         response = self.get_package_page_response(self.package.name)
         self.assertLinkIsInResponse(
             response,
-            'https://ci.debian.net/packages/d/dummy'
+            self.url
         )
 
     def test_package_without_debci_report(self):
         response = self.get_package_page_response(self.package.name)
         self.assertLinkIsNotInResponse(
             response,
-            'https://ci.debian.net/packages/d/dummy'
+            self.url
         )

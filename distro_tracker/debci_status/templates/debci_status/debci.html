@@ -1,6 +1,18 @@
 {% load distro_tracker_extras %}
 {% if debci.url != "#" %}
-<span class="label label-{{ debci.label_type }}" id='debci-field'>
-	<a href='{{ debci.url }}'>{{ debci.status|breakable }}</a>
+
+<span class="popover-hover cursor-pointer text-primary" id="debci-field" data-toggle="popover" data-placement="left" title="Tests" data-content='
+  <p>
+  {% for d in debci.statuses %}
+    <span class="font-weight-bold">{{ d.repository }}:</span> {{ d.status }}
+    <br>
+  {% endfor %}
+'>
+
+  <span class="label label-{{ debci.label_type }}" id='debci-field'>
+    <a href='{{ debci.url }}'>{{ debci.aggregated_status|breakable }}</a>
+  </span>
+
 </span>
+
 {% endif %}
