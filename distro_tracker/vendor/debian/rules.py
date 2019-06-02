@@ -31,13 +31,13 @@ from distro_tracker.core.models import (
 from distro_tracker.core.package_tables import create_table
 from distro_tracker.core.utils import get_decoded_message_payload, get_or_none
 from distro_tracker.core.utils.http import HttpCache
+from distro_tracker.debci_status.tracker_package_tables import DebciTableField
 from distro_tracker.mail import mail_news
 from distro_tracker.vendor.common import PluginProcessingError
 from distro_tracker.vendor.debian.tracker_tasks import UpdateNewQueuePackages
 
 from .models import DebianBugDisplayManager, DebianContributor
 from .tracker_package_tables import UpstreamTableField
-from distro_tracker.debci_status.tracker_package_tables import DebciTableField
 
 
 def _simplify_pkglist(pkglist, multi_allowed=True, default=None):

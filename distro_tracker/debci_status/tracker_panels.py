@@ -12,7 +12,6 @@
 """Debci specific panel on the package page."""
 
 from distro_tracker.core.models import PackageData
-
 from distro_tracker.core.panels import LinksPanel
 
 

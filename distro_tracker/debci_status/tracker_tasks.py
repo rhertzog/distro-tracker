@@ -24,10 +24,8 @@ from distro_tracker.core.models import (
     Repository,
     SourcePackageName
 )
-
 from distro_tracker.core.tasks import BaseTask
 from distro_tracker.core.tasks.schedulers import IntervalScheduler
-
 from distro_tracker.core.utils.http import HttpCache
 
 

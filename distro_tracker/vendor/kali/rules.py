@@ -14,8 +14,8 @@ Kali specific rules
 import os.path
 import re
 
-from distro_tracker.mail import mail_news
 from distro_tracker.debci_status.tracker_package_tables import DebciTableField
+from distro_tracker.mail import mail_news
 
 
 def classify_message(msg, package, keyword):
