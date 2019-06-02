@@ -623,11 +623,16 @@ class PanelItemProvider(metaclass=PluginRegistry):
         Makes it possible for each :class:`ListPanel` to have its own separate
         set of providers derived from its base ItemProvider.
         """
-        return [
-            item_provider
-            for item_provider in cls.plugins
-            if issubclass(item_provider, cls)
-        ]
+        result = []
+        for item_provider in cls.plugins:
+            if not issubclass(item_provider, cls):
+                continue
+            # Not returning items from non-installed apps
+            if not any([str(item_provider.__module__).startswith(a)
+                        for a in settings.INSTALLED_APPS]):
+                continue
+            result.append(item_provider)
+        return result
 
     def __init__(self, package):
         self.package = package
