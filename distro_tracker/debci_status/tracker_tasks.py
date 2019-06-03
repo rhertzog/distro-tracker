@@ -12,6 +12,7 @@ The Distro-Tracker-specific tasks for :mod:`distro_tracker.debci_status` app.
 """
 
 import json
+import logging
 import os.path
 
 from django.conf import settings
@@ -26,7 +27,9 @@ from distro_tracker.core.models import (
 )
 from distro_tracker.core.tasks import BaseTask
 from distro_tracker.core.tasks.schedulers import IntervalScheduler
-from distro_tracker.core.utils.http import HttpCache
+from distro_tracker.core.utils.http import get_resource_text
+
+logger = logging.getLogger(__name__)
 
 
 class UpdateDebciStatusTask(BaseTask):
@@ -61,12 +64,13 @@ class UpdateDebciStatusTask(BaseTask):
     def get_debci_status(self, repo):
         url = self.base_url + '/data/status/' + \
             repo + '/amd64/packages.json'
-        cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
-        response, updated = cache.update(url, force=self.force_update)
-        response.raise_for_status()
-        if not updated:
-            return
-        debci_status = json.loads(response.text)
+
+        content = get_resource_text(url, ignore_http_error=404)
+        if content is None:
+            logger.warning("Tried to fetch non-existing debci URL: %s", url)
+            return []
+
+        debci_status = json.loads(content)
         return debci_status
 
     def __get_debci_dir(self, package_name):

@@ -182,6 +182,20 @@ class UpdateDebciStatusTaskTest(TestCase):
 
         self.assertEqual(action_item_log_url, log_url)
 
+    @override_settings(
+        DISTRO_TRACKER_DEBCI_URL='https://ci.debian.net')
+    def test_no_exception_on_unavailable_repository(self, mock_requests):
+        """
+        Tests that no exception is raised when getting a 404 from debci
+        (for instance with a hidden repository), and that no ActionItem
+        is created
+        """
+        set_mock_response(mock_requests, status_code=404)
+
+        self.run_task()
+
+        self.assertEqual(0, self.package.action_items.count())
+
 
 @override_settings(INSTALLED_APPS=['django.contrib.staticfiles',
                                    'distro_tracker.core',
