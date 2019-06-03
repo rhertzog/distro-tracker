@@ -100,13 +100,19 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
         reproducibility_url = reproducibility_url.format(
             urlquote(self.package.name, safe=""))
 
-        try:
-            self.package.data.get(key='dependency_satisfaction')
-            has_debcheck = True
-        except PackageData.DoesNotExist:
-            has_debcheck = False
+        # display debcheck link if there is at least one kind of problem
+        has_debcheck = False
+        for k in ['dependency_satisfaction',
+                  'builddependency_satisfaction']:
+            try:
+                self.package.data.get(key=k)
+                has_debcheck = True
+                break
+            except PackageData.DoesNotExist:
+                pass
+
         debcheck_url = \
-            "https://qa.debian.org/dose/debcheck/unstable_main/latest/src" \
+            "https://qa.debian.org/dose/debcheck/src" \
             "/{}.html".format(urlquote(self.package.name, safe=""))
 
         try:
