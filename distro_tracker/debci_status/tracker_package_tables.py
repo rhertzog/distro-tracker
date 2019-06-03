@@ -43,7 +43,7 @@ class DebciTableField(BaseTableField):
         try:
             # build list of status hashes, for popover
             ctx['statuses'] = []
-            for debci in package.debci[0].value:
+            for debci in getattr(package, 'debci', [])[0].value:
                 status = debci['result']['status']
                 repository = debci['repository']
                 ctx['statuses'].append({'repository': repository,
