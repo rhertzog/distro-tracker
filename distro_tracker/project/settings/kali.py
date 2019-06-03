@@ -5,6 +5,7 @@ from .db_postgresql import DATABASES  # noqa
 
 __all__ = [
     'DATABASES',
+    'DISTRO_TRACKER_DEBCI_REPOSITORIES',
     'DISTRO_TRACKER_DEBCI_URL',
     'DISTRO_TRACKER_DEVEL_REPOSITORIES',
     'DISTRO_TRACKER_FQDN',
@@ -44,6 +45,9 @@ DISTRO_TRACKER_VENDOR_RULES = 'distro_tracker.vendor.kali.rules'
 
 #: A list of the repositories where new versions are uploaded
 DISTRO_TRACKER_DEVEL_REPOSITORIES = ['kali-dev']
+
+#: repositories to check for debci status
+DISTRO_TRACKER_DEBCI_REPOSITORIES = ['kali-dev', 'kali-rolling']
 
 #: URL for debci
 DISTRO_TRACKER_DEBCI_URL = 'http://autopkgtest.kali.org'

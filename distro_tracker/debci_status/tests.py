@@ -190,11 +190,30 @@ class UpdateDebciStatusTaskTest(TestCase):
         (for instance with a hidden repository), and that no ActionItem
         is created
         """
-        set_mock_response(mock_requests, status_code=404)
+        set_mock_response(mock_requests, json=self.json_data,
+                          status_code=404)
 
         self.run_task()
 
         self.assertEqual(0, self.package.action_items.count())
+
+    @override_settings(
+        DISTRO_TRACKER_DEBCI_URL='https://ci.debian.net',
+        DISTRO_TRACKER_DEBCI_REPOSITORIES=['debcirepo'],
+    )
+    def test_debci_repository_variable_enforced(self, mock_requests):
+        """
+        Tests that DISTRO_TRACKER_DEBCI_REPOSITORIES, when defined,
+        takes precedence over default "all repositories" behavior.
+        """
+        # make sure 'debcirepo' repo exists
+        self.add_to_repository(self.source_package, 'debcirepo')
+
+        with mock.patch.object(UpdateDebciStatusTask,
+                               'get_debci_status') as get_debci_status:
+            get_debci_status.return_value = self.json_data
+            self.run_task()
+            get_debci_status.assert_called_once_with('debcirepo')
 
 
 @override_settings(INSTALLED_APPS=['django.contrib.staticfiles',

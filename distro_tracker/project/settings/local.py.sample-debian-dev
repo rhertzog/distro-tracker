@@ -23,6 +23,9 @@ except ValueError:
 INSTALLED_APPS.append('debug_toolbar')
 MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
 
+# We only have a subset of the repositories in the sample database
+DISTRO_TRACKER_DEBCI_REPOSITORIES = ['unstable']
+
 # === Add your custom settings here ===
 
 # If you don't use the packaged version of Distro Tracker, put a random secret

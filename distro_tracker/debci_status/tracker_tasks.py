@@ -139,8 +139,12 @@ class UpdateDebciStatusTask(BaseTask):
 
     def execute_main(self):
         all_debci_status = {}
-        for repo in Repository.objects.all():
-            repo_codename = repo.codename
+
+        repos = getattr(settings, 'DISTRO_TRACKER_DEBCI_REPOSITORIES', None)
+        if repos is None:
+            repos = Repository.objects.all().values_list('suite', flat=True)
+
+        for repo_codename in repos:
             for status in self.get_debci_status(repo_codename):
                 package = status['package']
                 if package not in all_debci_status:

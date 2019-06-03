@@ -11,6 +11,7 @@ __all__ = [
     'DATABASES',
     'DISTRO_TRACKER_CVE_URL',
     'DISTRO_TRACKER_DEBCI_URL',
+    'DISTRO_TRACKER_DEBCI_REPOSITORIES',
     'DISTRO_TRACKER_DEBIAN_PIUPARTS_SUITES',
     'DISTRO_TRACKER_DEVEL_REPOSITORIES',
     'DISTRO_TRACKER_FQDN',
@@ -72,6 +73,9 @@ DISTRO_TRACKER_DEVEL_REPOSITORIES = ['unstable', 'experimental']
 
 #: URL for CVE tracker
 DISTRO_TRACKER_CVE_URL = 'https://security-tracker.debian.org/tracker/'
+
+#: repositories to check for debci status
+DISTRO_TRACKER_DEBCI_REPOSITORIES = ['unstable', 'testing', 'stable']
 
 #: URL for debci
 DISTRO_TRACKER_DEBCI_URL = 'https://ci.debian.net'
