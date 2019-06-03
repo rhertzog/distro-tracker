@@ -58,10 +58,6 @@ class UpdateDebciStatusTask(BaseTask):
     def base_url(self):
         return getattr(settings, 'DISTRO_TRACKER_DEBCI_URL')
 
-    @property
-    def devel_repo(self):
-        return getattr(settings, 'DISTRO_TRACKER_DEVEL_REPOSITORIES')[0]
-
     def get_debci_status(self, repo):
         url = self.base_url + '/data/status/' + \
             repo + '/amd64/packages.json'
