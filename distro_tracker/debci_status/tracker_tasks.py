@@ -11,6 +11,7 @@
 The Distro-Tracker-specific tasks for :mod:`distro_tracker.debci_status` app.
 """
 
+import collections
 import json
 import logging
 import os.path
@@ -138,7 +139,7 @@ class UpdateDebciStatusTask(BaseTask):
         debci_action_item.save()
 
     def execute_main(self):
-        all_debci_status = {}
+        all_debci_status = collections.defaultdict(lambda: {})
 
         repos = getattr(settings, 'DISTRO_TRACKER_DEBCI_REPOSITORIES', None)
         if repos is None:
@@ -147,10 +148,7 @@ class UpdateDebciStatusTask(BaseTask):
         for repo_codename in repos:
             for status in self.get_debci_status(repo_codename):
                 package = status['package']
-                if package not in all_debci_status:
-                    all_debci_status[package] = {repo_codename: status}
-                else:
-                    all_debci_status[package][repo_codename] = status
+                all_debci_status[package][repo_codename] = status
 
         # import pprint
         # pprint.pprint(all_debci_status)
