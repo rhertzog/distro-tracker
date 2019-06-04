@@ -1001,14 +1001,25 @@ class HttpCacheTest(SimpleTestCase):
                                  ignore_network_failures=False)
 
     @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_get_resource_content_with_http_error_404(self, mock_requests):
+    def test_get_resource_content_with_http_error(self, mock_requests):
         """
-        Ensures that an HTTP 404 error trickles up.
+        Ensures that an HTTP error trickles up.
         """
         self.set_mock_response(mock_requests, status_code=404)
 
         with self.assertRaises(HTTPError):
             get_resource_content(self.url)
+
+    @mock.patch('distro_tracker.core.utils.http.requests')
+    def test_get_resource_content_ignore_http_error(self, mock_requests):
+        """
+        Ensures that we can ignore a specific HTTP error code.
+        """
+        self.set_mock_response(mock_requests, status_code=404)
+
+        content = get_resource_content(self.url, ignore_http_error=404)
+
+        self.assertIsNone(content)
 
     def test_get_resource_content_utility_function_cached(self):
         """

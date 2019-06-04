@@ -189,7 +189,8 @@ class HttpCache(object):
 
 def get_resource_content(url, cache=None, compression="auto",
                          only_if_updated=False, force_update=False,
-                         ignore_network_failures=False):
+                         ignore_network_failures=False,
+                         ignore_http_error=None):
     """
     A helper function which returns the content of the resource found at the
     given URL.
@@ -223,6 +224,9 @@ def get_resource_content(url, cache=None, compression="auto",
     :param bool ignore_network_failures: if set to `True`, then the function
         will return `None` in case of network failures and not raise any
         exception.
+    :param int ignore_http_error: if the request results in an HTTP error
+        with the given status code, then the error is ignored and no exception
+        is raised. And `None` is returned.
 
     :returns: The bytes representation of the resource found at the given url
     :rtype: bytes
@@ -247,6 +251,8 @@ def get_resource_content(url, cache=None, compression="auto",
 
     if updated:
         # Check HTTP return code
+        if ignore_http_error and response.status_code == ignore_http_error:
+            return
         response.raise_for_status()
     else:  # not updated
         if only_if_updated:
