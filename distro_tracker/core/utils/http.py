@@ -188,7 +188,8 @@ class HttpCache(object):
 
 
 def get_resource_content(url, cache=None, compression="auto",
-                         only_if_updated=False, force_update=False):
+                         only_if_updated=False, force_update=False,
+                         ignore_network_failures=False):
     """
     A helper function which returns the content of the resource found at the
     given URL.
@@ -199,23 +200,29 @@ def get_resource_content(url, cache=None, compression="auto",
 
     If the resource is stale or not cached at all, it is from the Web.
 
-    :param url: The URL of the resource to be retrieved
+    If the HTTP request returned an error code, the requests module will
+    raise a :class:`requests.exceptions.HTTPError`.
+
+    In case of network failures, some `IOError` exception will be raised unless
+    `ignore_network_failures` is set to True.
+
+    :param str url: The URL of the resource to be retrieved
     :param cache: A cache object which should be used to look up and store
         the cached resource. If it is not provided, an instance of
         :class:`HttpCache` with a
         ``DISTRO_TRACKER_CACHE_DIRECTORY`` cache directory
         is used.
     :type cache: :class:`HttpCache` or an object with an equivalent interface
-    :param compression: Specifies the compression method used to generate the
-        resource, and thus the compression method one should use to decompress
-        it. If auto, then guess it from the url file extension.
-    :type compression: str
-    :param only_if_updated: if set to `True` returns None when no update is
-        done. Otherwise, returns the content in any case.
-    :type only_if_updated: bool
-    :param force_update: if set to `True` do a new HTTP request even if we
+    :param str compression: Specifies the compression method used to generate
+        the resource, and thus the compression method one should use to
+        decompress it. If auto, then guess it from the url file extension.
+    :param bool only_if_updated: if set to `True` returns None when no update
+        is done. Otherwise, returns the content in any case.
+    :param bool force_update: if set to `True` do a new HTTP request even if we
         non-expired data in the cache.
-    :type force_update: bool
+    :param bool ignore_network_failures: if set to `True`, then the function
+        will return `None` in case of network failures and not raise any
+        exception.
 
     :returns: The bytes representation of the resource found at the given url
     :rtype: bytes
@@ -229,11 +236,14 @@ def get_resource_content(url, cache=None, compression="auto",
         try:
             response, updated = cache.update(url, force=force_update)
         except IOError:
-            # Ignore network errors but log them
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.warning("Failed to update cache with data from %s", url,
-                           exc_info=1)
+            if ignore_network_failures:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning("Failed to update cache with data from %s",
+                               url, exc_info=1)
+                return
+            else:
+                raise
 
     if updated:
         # Check HTTP return code

@@ -974,6 +974,32 @@ class HttpCacheTest(SimpleTestCase):
         content = cache.get_content(url, compression=None)
         self.assertEqual(content, b"Hello world!")
 
+    def test_get_resource_content_ignore_network_failures(self):
+        """
+        Simulate a network failure and ensures it doen't trickle up
+        but that we get no data either.
+        """
+        mock_cache = self.get_mock_of_http_cache()
+        mock_cache.update.side_effect = IOError("Connection failure")
+
+        content = get_resource_content(self.url, cache=mock_cache,
+                                       ignore_network_failures=True)
+
+        self.assertIsNone(content)
+        self.assertFalse(mock_cache.get_content.called)
+
+    def test_get_resource_content_no_ignore_network_failures(self):
+        """
+        Simulate a network failure and ensures it trickles up
+        in some form by default.
+        """
+        mock_cache = self.get_mock_of_http_cache()
+        mock_cache.update.side_effect = IOError("Connection failure")
+
+        with self.assertRaises(IOError):
+            get_resource_content(self.url, cache=mock_cache,
+                                 ignore_network_failures=False)
+
     @mock.patch('distro_tracker.core.utils.http.requests')
     def test_get_resource_content_with_http_error_404(self, mock_requests):
         """
