@@ -33,6 +33,8 @@ from django.urls import reverse
 from django.utils.functional import curry
 from django.utils.http import http_date
 
+from requests.exceptions import HTTPError
+
 from distro_tracker.core.models import PackageName, Repository
 from distro_tracker.core.utils import (
     PrettyPrintList,
@@ -972,6 +974,16 @@ class HttpCacheTest(SimpleTestCase):
         content = cache.get_content(url, compression=None)
         self.assertEqual(content, b"Hello world!")
 
+    @mock.patch('distro_tracker.core.utils.http.requests')
+    def test_get_resource_content_with_http_error_404(self, mock_requests):
+        """
+        Ensures that an HTTP 404 error trickles up.
+        """
+        self.set_mock_response(mock_requests, status_code=404)
+
+        with self.assertRaises(HTTPError):
+            get_resource_content(self.url)
+
     def test_get_resource_content_utility_function_cached(self):
         """
         Tests the :func:`distro_tracker.core.utils.http.get_resource_content`
@@ -1003,7 +1015,7 @@ class HttpCacheTest(SimpleTestCase):
         # In this test, the cache is expired, and hence update has
         # to be called.
         mock_cache.is_expired.return_value = True
-        mock_cache.update.return_value = (None, True)
+        mock_cache.update.return_value = (mock.MagicMock(), True)
 
         content = get_resource_content(self.url, mock_cache)
 
@@ -1022,7 +1034,7 @@ class HttpCacheTest(SimpleTestCase):
         # In this test, the cache is expired, and hence update has
         # to be called.
         mock_cache.is_expired.return_value = False
-        mock_cache.update.return_value = (None, True)
+        mock_cache.update.return_value = (mock.MagicMock(), True)
 
         get_resource_content(self.url, mock_cache, force_update=True)
 
@@ -1040,7 +1052,7 @@ class HttpCacheTest(SimpleTestCase):
 
         # Cache expired and update request returns new data
         mock_cache.is_expired.return_value = True
-        mock_cache.update.return_value = (None, True)
+        mock_cache.update.return_value = (mock.MagicMock(), True)
 
         content = get_resource_content(self.url, cache=mock_cache,
                                        only_if_updated=True)

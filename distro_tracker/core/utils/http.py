@@ -227,7 +227,7 @@ def get_resource_content(url, cache=None, compression="auto",
     updated = False
     if force_update or cache.is_expired(url):
         try:
-            _, updated = cache.update(url, force=force_update)
+            response, updated = cache.update(url, force=force_update)
         except IOError:
             # Ignore network errors but log them
             import logging
@@ -235,8 +235,12 @@ def get_resource_content(url, cache=None, compression="auto",
             logger.warning("Failed to update cache with data from %s", url,
                            exc_info=1)
 
-    if not updated and only_if_updated:
-        return
+    if updated:
+        # Check HTTP return code
+        response.raise_for_status()
+    else:  # not updated
+        if only_if_updated:
+            return  # Stop without returning old data
 
     return cache.get_content(url, compression=compression)
 

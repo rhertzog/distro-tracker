@@ -16,6 +16,8 @@ import json as jsonmod
 import shutil
 import tempfile
 
+import requests
+
 
 @contextlib.contextmanager
 def make_temp_directory(suffix=''):
@@ -56,3 +58,6 @@ def set_mock_response(mock_requests, text="", json=None, headers=None,
     mock_response.content = text.encode('utf-8')
     mock_response.iter_lines.return_value = text.splitlines()
     mock_requests.get.return_value = mock_response
+    if status_code >= 400:
+        mock_response.raise_for_status.side_effect = (
+            requests.exceptions.HTTPError(response=mock_response))
