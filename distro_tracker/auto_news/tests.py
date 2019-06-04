@@ -32,6 +32,13 @@ class GenerateNewsFromRepositoryUpdatesTest(TestCase):
     """
     def setUp(self):
         self.generate_news_task = GenerateNewsFromRepositoryUpdates()
+        self.patcher = mock.patch(
+            'distro_tracker.auto_news.tracker_tasks.get_resource_content')
+        self.get_resource_content = self.patcher.start()
+        self.get_resource_content.return_value = None
+
+    def tearDown(self):
+        self.patcher.stop()
 
     def run_task(self):
         self.generate_news_task.execute()
