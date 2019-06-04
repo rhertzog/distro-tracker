@@ -1,3 +1,102 @@
+distro-tracker (1.1.0) unstable; urgency=medium
+
+  [ Raphaël Hertzog ]
+  * Disable "W504 line break after binary operator" in flake8
+  * Enable flake8 plugin flake8-import-order and document the convention
+  * Enable flake8 plugin forbidding shadowing of Python builtins
+  * Fix import ordering in recent changes
+  * Enable flake8 logging-format plugin
+  * Enable flake8 plugin flake8-rst-docstrings
+  * Enable flake8 plugin flake8-docstrings
+  * Add docstrings to public modules and packages
+  * Fix capitalization of docstrings
+  * Fix docstrings that embed their signature
+  * Improve the wording of the VcsWatch action items (Closes: #918793)
+  * flake8: fix some import ordering issues
+  * core: do not return item providers when not part of any installed app
+  * tox: update tests to use Django 2.2 (next LTS)
+  * auto_news: disable get_resource_content() during tests
+  * get_resource_content: do not ignore HTTP errors
+  * get_resource_content: do not ignore network failures
+  * get_resource_content: add an attribute to ignore a specific HTTP error
+    code
+
+  [ Pierre-Elliott Bécue ]
+  * Ignore canonical venv/ directory
+  * Rely on SourcePackageName for Subscription API tests
+  * Refactors SubscribeUserToPackageView.post
+  * Force the check of existence of a package in ChooseSubscriptionEmailView
+  * Implement a safe_redirect method
+  * Use the format_html tag to protect a user input
+  * Manually implement safe_redirect in django_email_accounts for login/logout
+
+  [ Paul Wise ]
+  * Add links to the Developers Reference section on reintroducing packages
+  * Fix indentation level of a return statement
+  * Replace crossqa link name with cross
+
+  [ Johannes 'josch' Schauer ]
+  * vendor/debian/templates/debian/logcheck-links.html: Add crossqa link
+  * add build dependency satisfiability results from
+    qa.debian.org/dose/debcheck
+  * distro_tracker/vendor/debian/tracker_tasks.py: fix singular dependencie
+    => dependency
+  * explicitly state that the (build-)dependency satisfaction action item is
+    for unstable
+  * Update(Build)DependencySatisfactionTask: avoid falls positives
+
+  [ Dylan Aïssi ]
+  * Add alioth-lists.debian.net to the list of known mailing list archives
+    (Closes: #903232)
+
+  [ Salman Mohammadi ]
+  * installation.rst: update python bindings for the databases and include the
+    specific names of the packages
+  * debian/{apache,ngnix}/distro-tracker: add Let's Encrypt (certbot)
+    commented lines (Closes: #926273)
+  * doc: change the sphinx theme from default to sphinx_rtd_theme
+    (Closes: #926336)
+  * README.md: update wordings in reporting bugs section
+
+  [ Sébastien Delafond ]
+  * Add documentation about creating a Django superuser
+  * Un-hardcode debci.debian.net, and instead rely on new
+    DISTRO_TRACKER_DEBCI_URL setting
+  * Use base_url in debci-action-item.html template
+  * Make debci_status a separate app
+  * Add DISTRO_TRACKER_DEBCI_URL to project/settings/defaults.py
+  * Move DebciLink and related tests under debci_status app
+  * Make base_url an attribute via a @property decorator
+  * Add debci status to team page
+  * flake8 fixes
+  * Get rid of unused general_data attribute
+  * Rename general attribute to context
+  * Change column display name to Tests
+  * Use proper label for displaying debci status in package table
+  * Update copyright notice
+  * Do not enable debci app by default, but instead only for Debian and Kali
+  * Move DebciTableField into debci_status, and use it in both Debian and Kali
+    vendors
+  * Move debci-related templates under debci_status/
+  * Do not hardcode "unstable" as development repository
+  * Update module path in documentation for debci-related tasks
+  * Make DebciStatusTask repository-aware
+  * Debci action item is now a list of debci statuses, and is rendered as such
+    on the main page
+  * Provide aggregated debci status in column, with detailed per-repository
+    popover view
+  * models: add a Repository.find() classmethod
+  * debci: gracefully handle unavailable repositories in UpdateDebciStatusTask
+  * debci: new DISTRO_TRACKER_DEBCI_REPOSITORIES project setting
+  * debci: use collections.defaultdict to simplify code in
+    UpdateDebciStatusTask
+  * debci: remove unused devel_repo property from UpdateDebciStatusTask
+
+  [ Lev Lazinskiy ]
+  * update copyright date in the footer
+
+ -- Raphaël Hertzog <hertzog@debian.org>  Tue, 04 Jun 2019 16:18:11 +0200
+
 distro-tracker (1.0.1) unstable; urgency=medium
 
   [ Raphaël Hertzog ]
