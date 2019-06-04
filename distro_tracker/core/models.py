@@ -22,7 +22,11 @@ from debian import changelog as debian_changelog
 from debian.debian_support import AptPkgVersion
 
 from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.exceptions import (
+    MultipleObjectsReturned,
+    ObjectDoesNotExist,
+    ValidationError
+)
 from django.core.files.base import ContentFile
 from django.db import connection, models
 from django.db.models import Q
@@ -797,6 +801,40 @@ class Repository(models.Model):
 
     def __str__(self):
         return self.name
+
+    @classmethod
+    def find(cls, identifier):
+        """
+        Looks up a repository, trying first with a match on "name"; if
+        that fails, sequentially try "shorthand", "codename" and "suite".
+
+        Matching by "codename" and "suite" will only be used if they return
+        a single match.
+
+        If no match is found, then raises a ValueError.
+        """
+        try:
+            return Repository.objects.get(name=identifier)
+        except ObjectDoesNotExist:
+            pass
+
+        try:
+            return Repository.objects.get(shorthand=identifier)
+        except ObjectDoesNotExist:
+            pass
+
+        try:
+            return Repository.objects.get(codename=identifier)
+        except (ObjectDoesNotExist, MultipleObjectsReturned):
+            pass
+
+        try:
+            return Repository.objects.get(suite=identifier)
+        except (ObjectDoesNotExist, MultipleObjectsReturned):
+            pass
+
+        raise ValueError("%s does not uniquely identifies a repository" %
+                         identifier)
 
     @property
     def sources_list_entry(self):

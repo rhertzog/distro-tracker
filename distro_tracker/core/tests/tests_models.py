@@ -646,10 +646,10 @@ class RepositoryTests(TestCase):
             version='1.0.0',
             source_package=self.source_package)
         self.repo1 = Repository.objects.create(
-            name='repo1', shorthand='repo1', codename='codename1',
+            name='Repository 1', shorthand='repo1', codename='codename1',
             suite='suite1')
         self.repo2 = Repository.objects.create(
-            name='repo2', shorthand='repo2', codename='codename2',
+            name='Repository 2', shorthand='repo2', codename='codename2',
             suite='suite2')
         self.component = 'main'
 
@@ -827,6 +827,46 @@ class RepositoryTests(TestCase):
         self.assertFalse(self.repository.is_development_repository())
         self.assertTrue(self.repo1.is_development_repository())
         self.assertTrue(self.repo2.is_development_repository())
+
+    def test_find_returns_a_repository(self):
+        repo = Repository.find('Repository 1')
+        self.assertIsInstance(repo, Repository)
+
+    def test_find_by_name(self):
+        repo = Repository.find('Repository 1')
+        self.assertEqual(repo.id, self.repo1.id)
+
+    def test_find_by_shorthand(self):
+        repo = Repository.find('repo2')
+        self.assertEqual(repo.id, self.repo2.id)
+
+    def test_find_by_codename(self):
+        repo = Repository.find('codename1')
+        self.assertEqual(repo.id, self.repo1.id)
+
+    def test_find_by_suite(self):
+        repo = Repository.find('suite2')
+        self.assertEqual(repo.id, self.repo2.id)
+
+    def test_find_non_existing(self):
+        with self.assertRaises(ValueError):
+            Repository.find('non-existing')
+
+    def test_find_with_non_unique_codenames_and_suites(self):
+        """Validate the various fallback methods of Repository.find"""
+        self.repo3 = Repository.objects.create(
+            name='Repository 3',
+            shorthand='repo3',
+            codename='codename2',  # reuse repo2's codename
+            suite='suite2'         # reuse repo2's suitename
+        )
+
+        # finding by suite and codename should not work when they
+        # are not unique
+        with self.assertRaises(ValueError):
+            Repository.find('codename2')
+        with self.assertRaises(ValueError):
+            Repository.find('suite2')
 
 
 class RepositoryFlagsTests(TestCase):
