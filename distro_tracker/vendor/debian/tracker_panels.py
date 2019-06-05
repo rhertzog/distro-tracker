@@ -67,18 +67,15 @@ class LintianLink(LinksPanel.ItemProvider):
 
 
 class BuildLogCheckLinks(LinksPanel.ItemProvider):
-    def get_panel_items(self):
-        if not isinstance(self.package, SourcePackageName):
-            # Only source packages can have build log check info
-            return
-
+    def get_experimental_context(self):
         has_experimental = False
         experimental_repo = get_or_none(Repository, suite='experimental')
         if experimental_repo:
             has_experimental = experimental_repo.has_source_package_name(
                 self.package.name)
+        return {'has_experimental': has_experimental}
 
-        query_string = urlencode({'p': self.package.name})
+    def get_logcheck_context(self):
         try:
             self.package.build_logcheck_stats
             has_checks = True
@@ -88,6 +85,9 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
             "https://qa.debian.org/bls/packages/{hash}/{pkg}.html".format(
                 hash=urlquote(self.package.name[0], safe=""),
                 pkg=urlquote(self.package.name, safe=""))
+        return {'has_checks': has_checks, 'logcheck_url': logcheck_url}
+
+    def get_reproducible_context(self):
         try:
             infos = self.package.data.get(key='reproducibility')
             has_reproducibility = True
@@ -99,16 +99,29 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
             "https://tests.reproducible-builds.org/debian/rb-pkg/{}.html"
         reproducibility_url = reproducibility_url.format(
             urlquote(self.package.name, safe=""))
+        return {'has_reproducibility': has_reproducibility,
+                'reproducibility_url': reproducibility_url,
+                'reproducibility_status': reproducibility_status,
+                }
 
-        try:
-            self.package.data.get(key='dependency_satisfaction')
-            has_debcheck = True
-        except PackageData.DoesNotExist:
-            has_debcheck = False
+    def get_debcheck_context(self):
+        # display debcheck link if there is at least one kind of problem
+        has_debcheck = False
+        for k in ['dependency_satisfaction',
+                  'builddependency_satisfaction']:
+            try:
+                self.package.data.get(key=k)
+                has_debcheck = True
+                break
+            except PackageData.DoesNotExist:
+                pass
+
         debcheck_url = \
-            "https://qa.debian.org/dose/debcheck/unstable_main/latest/src" \
+            "https://qa.debian.org/dose/debcheck/src" \
             "/{}.html".format(urlquote(self.package.name, safe=""))
+        return {'has_debcheck': has_debcheck, 'debcheck_url': debcheck_url}
 
+    def get_crossqa_context(self):
         try:
             has_crossqa = False
             arches = self.package.data.get(
@@ -118,20 +131,24 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
                 has_crossqa = True
         except PackageData.DoesNotExist:
             has_crossqa = False
+        return {'has_crossqa': has_crossqa}
+
+    def get_panel_items(self):
+        if not isinstance(self.package, SourcePackageName):
+            # Only source packages can have build log check info
+            return
+
+        query_string = urlencode({'p': self.package.name})
 
         return [
             TemplatePanelItem('debian/logcheck-links.html', {
                 'package_name': urlquote(self.package.name),
                 'package_query_string': query_string,
-                'has_checks': has_checks,
-                'logcheck_url': logcheck_url,
-                'has_reproducibility': has_reproducibility,
-                'reproducibility_url': reproducibility_url,
-                'reproducibility_status': reproducibility_status,
-                'has_experimental': has_experimental,
-                'has_debcheck': has_debcheck,
-                'debcheck_url': debcheck_url,
-                'has_crossqa': has_crossqa,
+                **self.get_logcheck_context(),
+                **self.get_reproducible_context(),
+                **self.get_experimental_context(),
+                **self.get_debcheck_context(),
+                **self.get_crossqa_context(),
             })
         ]
 
