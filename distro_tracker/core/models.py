@@ -2044,6 +2044,10 @@ class ActionItem(models.Model):
         })
 
     @property
+    def type_name(self):
+        return self.item_type.type_name
+
+    @property
     def full_description_template(self):
         return self.item_type.full_description_template
 
@@ -2066,6 +2070,7 @@ class ActionItem(models.Model):
                 'name': self.package.name,
                 'id': self.package.id,
             },
+            'type_name': self.item_type.type_name,
             'full_description': self.full_description,
             'severity': {
                 'name': self.get_severity_display(),

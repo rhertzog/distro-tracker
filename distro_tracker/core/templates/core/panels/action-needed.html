@@ -5,7 +5,7 @@
 {% block panel-body %}
 <div class="list-group list-group-flush" id="action-needed-list" role="list">
     {% for item in panel.context.items %}
-    <div class="card list-group-item" role="listitem">
+    <div class="card list-group-item action-item-{{ item.type_name }}" role="listitem">
         <details>
             <summary>
                 <span class="chevron">{% toggle_chevron %}</span>
