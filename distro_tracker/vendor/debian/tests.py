@@ -2682,7 +2682,7 @@ class DebianWatchFileScannerUpdateTests(TestCase):
         self.task = DebianWatchFileScannerUpdate()
         # Stub the data providing methods: no content by default
         self.task._get_upstream_status_content = mock.MagicMock(
-            return_value=b'')
+            return_value='')
 
     def run_task(self):
         self.task.execute()
@@ -2696,7 +2696,7 @@ class DebianWatchFileScannerUpdateTests(TestCase):
             representation of this list.
         """
         self.task._get_upstream_status_content.return_value = json.dumps(
-            content).encode('utf-8')
+            content)
 
     def get_item_type(self, type_name):
         """
