@@ -13,7 +13,6 @@ Debian-specific tasks.
 """
 
 import collections
-import io
 import itertools
 import json
 import logging
@@ -54,11 +53,7 @@ from distro_tracker.core.tasks import BaseTask
 from distro_tracker.core.tasks.mixins import PackageTagging
 from distro_tracker.core.tasks.schedulers import IntervalScheduler
 from distro_tracker.core.utils import get_or_none
-from distro_tracker.core.utils.http import (
-    HttpCache,
-    get_resource_content,
-    get_resource_text
-)
+from distro_tracker.core.utils.http import get_resource_text
 from distro_tracker.core.utils.misc import get_data_checksum
 from distro_tracker.core.utils.packages import (
     html_package_list,
@@ -87,19 +82,15 @@ class RetrieveDebianMaintainersTask(BaseTask):
         interval = 3600 * 24
 
     def execute_main(self):
-        cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         url = "https://ftp-master.debian.org/dm.txt"
-        if not self.force_update and not cache.is_expired(url):
-            # No need to do anything when the previously cached value is fresh
-            return
-        response, updated = cache.update(url, force=self.force_update)
-        response.raise_for_status()
-        if not updated:
+        content = get_resource_text(url, force_update=self.force_update,
+                                    only_if_updated=True)
+        if content is None:
             # No need to do anything if the cached item was still not updated
             return
 
         maintainers = {}
-        lines = response.iter_lines(decode_unicode=True)
+        lines = content.splitlines()
         for stanza in deb822.Deb822.iter_paragraphs(lines):
             if 'Uid' in stanza and 'Allow' in stanza:
                 # Allow is a comma-separated string of 'package (DD fpr)' items,
@@ -144,19 +135,16 @@ class RetrieveLowThresholdNmuTask(BaseTask):
         agree with the lowthreshold NMU.
         """
         url = 'https://wiki.debian.org/LowThresholdNmu?action=raw'
-        cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
-        if not self.force_update and not cache.is_expired(url):
-            return
-        response, updated = cache.update(url, force=self.force_update)
-        response.raise_for_status()
-        if not updated:
+        content = get_resource_text(url, force_update=self.force_update,
+                                    only_if_updated=True)
+        if content is None:
             return
 
         emails = []
         devel_php_RE = re.compile(
             r'https?://qa\.debian\.org/developer\.php\?login=([^\s&|]+)')
         word_RE = re.compile(r'^\w+$')
-        for line in response.iter_lines(decode_unicode=True):
+        for line in content.splitlines():
             match = devel_php_RE.search(line)
             while match:    # look for several matches on the same line
                 email = None
@@ -219,7 +207,6 @@ class UpdatePackageBugStats(BaseTask, BugDisplayManagerMixin):
 
     def initialize(self, *args, **kwargs):
         super(UpdatePackageBugStats, self).initialize(*args, **kwargs)
-        self.cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         # The :class:`distro_tracker.core.models.ActionItemType` instances which
         # this task can create.
         self.patch_item_type = ActionItemType.objects.create_or_update(
@@ -411,14 +398,14 @@ class UpdatePackageBugStats(BaseTask, BugDisplayManagerMixin):
 
     def _get_udd_bug_stats(self):
         url = 'https://udd.debian.org/cgi-bin/ddpo-bugs.cgi'
-        response_content = get_resource_content(url)
+        response_content = get_resource_text(url)
         if not response_content:
             return
 
         # Each line in the response should be bug stats for a single package
         bug_stats = {}
         for line in response_content.splitlines():
-            line = line.decode('utf-8', 'ignore').strip()
+            line = line.strip()
             try:
                 package_name, bug_counts = line, ''
                 if line.startswith('src:'):
@@ -506,14 +493,13 @@ class UpdatePackageBugStats(BaseTask, BugDisplayManagerMixin):
         Performs the update of bug statistics for binary packages.
         """
         url = 'https://udd.debian.org/cgi-bin/bugs-binpkgs-distro_tracker.cgi'
-        response_content = get_resource_content(url)
+        response_content = get_resource_text(url)
         if not response_content:
             return
 
         # Extract known binary package bug stats: each line is a separate pkg
         bug_stats = {}
         for line in response_content.splitlines():
-            line = line.decode('utf-8')
             package_name, bug_counts = line.split(None, 1)
             bug_counts = bug_counts.split()
             try:
@@ -573,10 +559,9 @@ class UpdateLintianStatsTask(BaseTask):
 
     def get_lintian_stats(self):
         url = 'https://lintian.debian.org/qa-list.txt'
-        cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
-        response, updated = cache.update(url, force=self.force_update)
-        response.raise_for_status()
-        if not updated:
+        content = get_resource_text(url, force_update=self.force_update,
+                                    only_if_updated=True)
+        if content is None:
             return
 
         all_stats = {}
@@ -587,7 +572,7 @@ class UpdateLintianStatsTask(BaseTask):
             'experimentals',
             'overriddens',
         )
-        for line in response.iter_lines(decode_unicode=True):
+        for line in content.splitlines():
             package, stats = line.split(None, 1)
             stats = stats.split()
             try:
@@ -918,17 +903,14 @@ class UpdateTransitionsTask(BaseTask):
     PACKAGE_TRANSITION_LIST_URL = (
         'https://release.debian.org/transitions/export/packages.yaml')
 
-    def initialize(self, *args, **kwargs):
-        super(UpdateTransitionsTask, self).initialize(*args, **kwargs)
-        self.cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
-
-    def _get_yaml_resource(self, url):
+    def _get_yaml_resource(self, url, **kwargs):
         """
         Gets the YAML resource at the given URL and returns it as a Python
         object.
         """
-        content = self.cache.get_content(url)
-        return yaml.safe_load(io.BytesIO(content))
+        content = get_resource_text(url, **kwargs)
+        if content:
+            return yaml.safe_load(content)
 
     def _add_reject_transitions(self, packages):
         """
@@ -965,12 +947,15 @@ class UpdateTransitionsTask(BaseTask):
 
     def execute_main(self):
         # Update the relevant resources first
-        _, updated_reject_list = self.cache.update(
-            self.REJECT_LIST_URL, force=self.force_update)
-        _, updated_package_transition_list = self.cache.update(
-            self.PACKAGE_TRANSITION_LIST_URL, force=self.force_update)
+        kwargs = {
+            'force_update': self.force_update,
+            'only_if_updated': True,
+        }
+        reject_list = self._get_yaml_resource(self.REJECT_LIST_URL, **kwargs)
+        package_transition_list = self._get_yaml_resource(
+            self.PACKAGE_TRANSITION_LIST_URL, **kwargs)
 
-        if not updated_reject_list and not updated_package_transition_list:
+        if reject_list is None and package_transition_list is None:
             # Nothing to do - at least one needs to be updated...
             return
 
@@ -1013,7 +998,6 @@ class UpdateExcusesTask(BaseTask):
 
     def initialize(self, *args, **kwargs):
         super(UpdateExcusesTask, self).initialize(*args, **kwargs)
-        self.cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
         self.action_item_type = ActionItemType.objects.create_or_update(
             type_name=self.ACTION_ITEM_TYPE_NAME,
             full_description_template=self.ITEM_FULL_DESCRIPTION_TEMPLATE)
@@ -1227,11 +1211,12 @@ class UpdateExcusesTask(BaseTask):
         cache is up to date.
         """
         url = 'https://release.debian.org/britney/excuses.yaml'
-        response, updated = self.cache.update(url, force=self.force_update)
-        if not updated:
+        content = get_resource_text(url, force_update=self.force_update,
+                                    only_if_updated=True)
+        if content is None:
             return
 
-        return yaml.load(response.text)
+        return yaml.load(content)
 
     def execute_main(self):
         content_lines = self._get_excuses_yaml()
@@ -1281,12 +1266,12 @@ class UpdateBuildLogCheckStats(BaseTask):
 
     def _get_buildd_content(self):
         url = 'https://qa.debian.org/bls/logcheck.txt'
-        return get_resource_content(url)
+        return get_resource_text(url)
 
     def get_buildd_stats(self):
         content = self._get_buildd_content()
         stats = {}
-        for line in content.decode('utf-8').splitlines():
+        for line in content.splitlines():
             pkg, errors, warnings = line.split("|")[:3]
             try:
                 errors, warnings = int(errors), int(warnings)
@@ -1415,7 +1400,7 @@ class DebianWatchFileScannerUpdate(BaseTask):
 
     def _get_upstream_status_content(self):
         url = 'https://udd.debian.org/cgi-bin/upstream-status.json.cgi'
-        return get_resource_content(url)
+        return get_resource_text(url)
 
     def _remove_obsolete_action_items(self, item_type_name,
                                       non_obsolete_packages):
@@ -1442,7 +1427,7 @@ class DebianWatchFileScannerUpdate(BaseTask):
         content = self._get_upstream_status_content()
         dehs_data = None
         if content:
-            dehs_data = json.loads(content.decode('utf-8'))
+            dehs_data = json.loads(content)
         if not dehs_data:
             return [], []
 
@@ -1590,9 +1575,9 @@ class UpdateSecurityIssuesTask(BaseTask):
         if self._content:
             return self._content
         url = 'https://security-tracker.debian.org/tracker/data/json'
-        content = get_resource_content(url)
+        content = get_resource_text(url)
         if content:
-            self._content = json.loads(content.decode('utf-8'))
+            self._content = json.loads(content)
             return self._content
 
     @staticmethod
@@ -1799,7 +1784,7 @@ class UpdatePiuPartsTask(BaseTask):
             or ``None`` if there is no data for the particular suite.
         """
         url = 'https://piuparts.debian.org/{suite}/sources.txt'
-        return get_resource_content(url.format(suite=suite))
+        return get_resource_text(url.format(suite=suite))
 
     def get_piuparts_stats(self):
         suites = getattr(settings, 'DISTRO_TRACKER_DEBIAN_PIUPARTS_SUITES', [])
@@ -1810,7 +1795,7 @@ class UpdatePiuPartsTask(BaseTask):
                 logger.info("There is no piuparts for suite: %s", suite)
                 continue
 
-            for line in content.decode('utf-8').splitlines():
+            for line in content.splitlines():
                 package_name, status = line.split(':', 1)
                 package_name, status = package_name.strip(), status.strip()
                 if status == 'fail':
@@ -1868,11 +1853,10 @@ class UpdateUbuntuStatsTask(BaseTask):
 
     def initialize(self, *args, **kwargs):
         super(UpdateUbuntuStatsTask, self).initialize(*args, **kwargs)
-        self.cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
 
     def _get_versions_content(self):
         url = 'https://udd.debian.org/cgi-bin/ubuntupackages.cgi'
-        return get_resource_content(url)
+        return get_resource_text(url)
 
     def get_ubuntu_versions(self):
         """
@@ -1883,7 +1867,7 @@ class UpdateUbuntuStatsTask(BaseTask):
         content = self._get_versions_content()
 
         package_versions = {}
-        for line in content.decode('utf-8').splitlines():
+        for line in content.splitlines():
             package, version = line.split(' ', 1)
             version = version.strip()
             package_versions[package] = version
@@ -1892,7 +1876,7 @@ class UpdateUbuntuStatsTask(BaseTask):
 
     def _get_bug_stats_content(self):
         url = 'https://udd.debian.org/cgi-bin/ubuntubugs.cgi'
-        return get_resource_content(url)
+        return get_resource_text(url)
 
     def get_ubuntu_bug_stats(self):
         """
@@ -1904,7 +1888,7 @@ class UpdateUbuntuStatsTask(BaseTask):
         content = self._get_bug_stats_content()
 
         bug_stats = {}
-        for line in content.decode('utf-8').splitlines():
+        for line in content.splitlines():
             package_name, bug_count, patch_count = line.split("|", 2)
             try:
                 bug_count, patch_count = int(bug_count), int(patch_count)
@@ -1919,7 +1903,7 @@ class UpdateUbuntuStatsTask(BaseTask):
 
     def _get_ubuntu_patch_diff_content(self):
         url = 'https://patches.ubuntu.com/PATCHES'
-        return get_resource_content(url)
+        return get_resource_text(url)
 
     def get_ubuntu_patch_diffs(self):
         """
@@ -1933,7 +1917,7 @@ class UpdateUbuntuStatsTask(BaseTask):
 
         patch_diffs = {}
         re_diff_version = re.compile(r'_(\S+)\.patch')
-        for line in content.decode('utf-8').splitlines():
+        for line in content.splitlines():
             package_name, diff_url = line.split(' ', 1)
             # Extract the version of the package from the diff url
             match = re_diff_version.search(diff_url)
@@ -2246,21 +2230,6 @@ class UpdateNewQueuePackages(BaseTask):
     def initialize(self, *args, **kwargs):
         super(UpdateNewQueuePackages, self).initialize(*args, **kwargs)
 
-    def _get_new_content(self):
-        """
-        :returns: The content of the deb822 formatted file giving the list of
-            packages found in NEW.
-            ``None`` if the cached resource is up to date.
-        """
-        url = 'https://ftp-master.debian.org/new.822'
-        cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
-        if not cache.is_expired(url):
-            return
-        response, updated = cache.update(url, force=self.force_update)
-        if not updated:
-            return
-        return response.content
-
     def extract_package_info(self, content):
         """
         Extracts the package information from the content of the NEW queue.
@@ -2296,8 +2265,15 @@ class UpdateNewQueuePackages(BaseTask):
 
         return packages
 
+    def _get_new_content(self):
+        url = 'https://ftp-master.debian.org/new.822'
+        return get_resource_text(url, force_update=self.force_update,
+                                 only_if_updated=True)
+
     def execute_main(self):
         content = self._get_new_content()
+        if content is None:
+            return
 
         all_package_info = self.extract_package_info(content)
 
@@ -2345,10 +2321,13 @@ class UpdateAutoRemovalsStatsTask(BaseTask):
 
         :returns: A dict mapping package names to autoremoval stats.
         """
-        content = get_resource_content(
-            'https://udd.debian.org/cgi-bin/autoremovals.yaml.cgi')
+        content = get_resource_text(
+            'https://udd.debian.org/cgi-bin/autoremovals.yaml.cgi',
+            force_update=self.force_update,
+            only_if_updated=True
+        )
         if content:
-            return yaml.safe_load(io.BytesIO(content))
+            return yaml.safe_load(content)
 
     def update_action_item(self, package, stats):
         """
@@ -2428,13 +2407,12 @@ class UpdatePackageScreenshotsTask(BaseTask):
 
     def _get_screenshots(self):
         url = 'https://screenshots.debian.net/json/packages'
-        cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
-        response, updated = cache.update(url, force=self.force_update)
-        response.raise_for_status()
-        if not updated:
+        content = get_resource_text(url, force_update=self.force_update,
+                                    only_if_updated=True)
+        if content is None:
             return
 
-        data = json.loads(response.text)
+        data = json.loads(content)
         return data
 
     def execute_main(self):
@@ -2497,14 +2475,12 @@ class UpdateBuildReproducibilityTask(BaseTask):
 
     def get_build_reproducibility(self):
         url = '{}/debian/reproducible-tracker.json'.format(self.BASE_URL)
-        cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
-        if not self.force_update and not cache.is_expired(url):
+        content = get_resource_text(url, force_update=self.force_update,
+                                    only_if_updated=True)
+        if content is None:
             return
-        response, updated = cache.update(url, force=self.force_update)
-        response.raise_for_status()
-        if not updated:
-            return
-        reproducibilities = json.loads(response.text)
+
+        reproducibilities = json.loads(content)
         packages = {}
         for item in reproducibilities:
             package = item['package']
@@ -2513,6 +2489,7 @@ class UpdateBuildReproducibilityTask(BaseTask):
             important = self.ITEM_DESCRIPTION.get(status) is not None
             if important or missing:
                 packages[package] = status
+
         return packages
 
     def update_action_item(self, package, status):
@@ -2586,12 +2563,14 @@ class MultiArchHintsTask(BaseTask):
             self.SEVERITIES[name] = value
 
     def get_data(self):
-        data = get_resource_content(self.ACTIONS_URL)
-        data = yaml.safe_load(data)
-        return data
+        data = get_resource_text(self.ACTIONS_URL)
+        if data:
+            return yaml.safe_load(data)
 
     def get_packages(self):
         data = self.get_data()
+        if data is None:
+            return
         if data['format'] != 'multiarch-hints-1.0':
             return None
         data = data['hints']
@@ -3101,15 +3080,13 @@ class UpdateDependencySatisfactionTask(BaseTask):
 
     def get_dependency_satisfaction(self):
         url = '{}/each.txt'.format(self.BASE_URL)
-        cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
-        if not self.force_update and not cache.is_expired(url):
+        content = get_resource_text(url, force_update=self.force_update,
+                                    only_if_updated=True)
+        if content is None:
             return
-        response, updated = cache.update(url, force=self.force_update)
-        response.raise_for_status()
-        if not updated:
-            return
+
         dep_sats = collections.defaultdict(set)
-        for i, line in enumerate(response.iter_lines(decode_unicode=True)):
+        for i, line in enumerate(content.splitlines()):
             binpkg_name, ver, isnative, anchor, expl, arches = line.split('#')
             try:
                 bin_package = BinaryPackageName.objects.get(name=binpkg_name)
@@ -3202,29 +3179,22 @@ class UpdateBuildDependencySatisfactionTask(BaseTask):
     ACTION_ITEM_TEMPLATE = \
         'debian/builddependency-satisfaction-action-item.html'
 
-    def __init__(self, force_update=False, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(UpdateBuildDependencySatisfactionTask, self).__init__(*args,
                                                                     **kwargs)
-        self.force_update = force_update
         self.action_item_type = ActionItemType.objects.create_or_update(
             type_name=self.ACTION_ITEM_TYPE_NAME,
             full_description_template=self.ACTION_ITEM_TEMPLATE)
 
-    def set_parameters(self, parameters):
-        if 'force_update' in parameters:
-            self.force_update = parameters['force_update']
-
     def get_dependency_satisfaction(self):
         url = '{}/each.txt'.format(self.BASE_URL)
-        cache = HttpCache(settings.DISTRO_TRACKER_CACHE_DIRECTORY)
-        if not self.force_update and not cache.is_expired(url):
+        content = get_resource_text(url, force_update=self.force_update,
+                                    only_if_updated=True)
+        if content is None:
             return
-        response, updated = cache.update(url, force=self.force_update)
-        response.raise_for_status()
-        if not updated:
-            return
+
         dep_sats = collections.defaultdict(set)
-        for i, line in enumerate(response.iter_lines(decode_unicode=True)):
+        for i, line in enumerate(content.splitlines()):
             srcpkg_name, ver, isnative, anchor, expl, arches = line.split('#')
             arches = set([arch.strip() for arch in arches.split()])
             # TODO: retrieve this list programmatically, either from

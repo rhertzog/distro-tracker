@@ -2503,7 +2503,7 @@ class UpdateBuildLogCheckStatsActionItemTests(TestCase):
             'errors': 1,
             'warnings': 2,
         }
-        self.set_buildd_content(b"dummy-package|1|2|0|0")
+        self.set_buildd_content("dummy-package|1|2|0|0")
         # Sanity check: no action item
         self.assertEqual(0, ActionItem.objects.count())
 
@@ -2529,7 +2529,7 @@ class UpdateBuildLogCheckStatsActionItemTests(TestCase):
         Tests that action items have low severity if the package only has
         warnings.
         """
-        self.set_buildd_content(b"dummy-package|0|1|0|0")
+        self.set_buildd_content("dummy-package|0|1|0|0")
 
         self.run_task()
 
@@ -2542,7 +2542,7 @@ class UpdateBuildLogCheckStatsActionItemTests(TestCase):
         Tests that action items have high severity if the package has only
         errors.
         """
-        self.set_buildd_content(b"dummy-package|1|0|0|0")
+        self.set_buildd_content("dummy-package|1|0|0|0")
 
         self.run_task()
 
@@ -2556,7 +2556,7 @@ class UpdateBuildLogCheckStatsActionItemTests(TestCase):
         have any errors or warnings.
         """
         # Package has some buildd stats, but no warnings or errors
-        self.set_buildd_content(b"dummy-package|0|0|1|1")
+        self.set_buildd_content("dummy-package|0|0|1|1")
         # Sanity check: no action item
         self.assertEqual(0, ActionItem.objects.count())
 
@@ -2580,7 +2580,7 @@ class UpdateBuildLogCheckStatsActionItemTests(TestCase):
             'errors': 1,
             'warnings': 2,
         }
-        self.set_buildd_content(b"dummy-package|1|2|1|1")
+        self.set_buildd_content("dummy-package|1|2|1|1")
 
         self.run_task()
 
@@ -2608,7 +2608,7 @@ class UpdateBuildLogCheckStatsActionItemTests(TestCase):
             short_description="Desc",
             extra_data=expected_data)
         old_timestamp = old_item.last_updated_timestamp
-        self.set_buildd_content(b"dummy-package|1|2|1|1")
+        self.set_buildd_content("dummy-package|1|2|1|1")
 
         self.run_task()
 
@@ -2627,7 +2627,7 @@ class UpdateBuildLogCheckStatsActionItemTests(TestCase):
             package=self.package_name,
             item_type=self.get_action_item_type(),
             short_description="Desc")
-        self.set_buildd_content(b"dummy-package|0|0|1|1")
+        self.set_buildd_content("dummy-package|0|0|1|1")
 
         self.run_task()
 
@@ -2643,7 +2643,7 @@ class UpdateBuildLogCheckStatsActionItemTests(TestCase):
             package=self.package_name,
             item_type=self.get_action_item_type(),
             short_description="Desc")
-        self.set_buildd_content(b"other-package|0|1|1|1")
+        self.set_buildd_content("other-package|0|1|1|1")
 
         self.run_task()
 
@@ -2657,8 +2657,8 @@ class UpdateBuildLogCheckStatsActionItemTests(TestCase):
         """
         other_package = SourcePackageName.objects.create(name='other-package')
         self.set_buildd_content(
-            b"other-package|0|1|1|1\n"
-            b"dummy-package|1|1|0|0")
+            "other-package|0|1|1|1\n"
+            "dummy-package|1|1|0|0")
 
         self.run_task()
 
@@ -3481,7 +3481,7 @@ class UpdatePiupartsTaskTests(TestCase):
         content = '\n'.join('{}: fail'.format(pkg) for pkg in fail_packages)
         content += '\n'.join('{}: pass'.format(pkg) for pkg in pass_packages)
 
-        self.return_content[suite] = content.encode('utf-8')
+        self.return_content[suite] = content
 
     def assert_get_piuparts_called_with(self, suites):
         """
@@ -3712,7 +3712,7 @@ class UpdateUbuntuStatsTaskTests(TestCase):
         """
         self.task._get_versions_content.return_value = '\n'.join(
             '{pkg} {ver}'.format(pkg=pkg, ver=ver)
-            for pkg, ver in versions).encode('utf-8')
+            for pkg, ver in versions)
 
     def set_bugs_content(self, bugs):
         """
@@ -3723,7 +3723,7 @@ class UpdateUbuntuStatsTaskTests(TestCase):
         """
         self.task._get_bug_stats_content.return_value = '\n'.join(
             '{pkg}|{cnt}|{merged}'.format(pkg=pkg, cnt=cnt, merged=merged)
-            for pkg, cnt, merged in bugs).encode('utf-8')
+            for pkg, cnt, merged in bugs)
 
     def set_diff_content(self, diffs):
         """
@@ -3734,7 +3734,7 @@ class UpdateUbuntuStatsTaskTests(TestCase):
         """
         self.task._get_ubuntu_patch_diff_content.return_value = '\n'.join(
             '{pkg} {url}'.format(pkg=pkg, url=url)
-            for pkg, url in diffs).encode('utf-8')
+            for pkg, url in diffs)
 
     def run_task(self):
         self.task.execute()
