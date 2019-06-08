@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2013-2018 The Distro Tracker Developers
+# Copyright 2013-2019 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -19,6 +19,8 @@ from django.conf import settings
 from django.urls import reverse
 
 from distro_tracker.core.models import (
+    BinaryPackageBugStats,
+    PackageData,
     PackageName,
     PseudoPackageName,
     Repository,
@@ -27,8 +29,8 @@ from distro_tracker.core.models import (
     SourcePackageRepositoryEntry
 )
 from distro_tracker.core.panels import (
+    BinariesInformationPanel,
     DeadPackageWarningPanel,
-    PackageData,
     VersionedLinks
 )
 from distro_tracker.core.utils.packages import package_url
@@ -298,3 +300,39 @@ class NewsPanelTests(TestCase, TemplateTestsMixin):
             created_by="Author {}".format(self.NEWS_LIMIT))
         response = self.get_package_page_response()
         self.assertLinkIsInResponse(response, self.news_link + "?page=2")
+
+
+class BinariesInformationPanelTests(TestCase, TemplateTestsMixin):
+    def setUp(self):
+        self.srcpkg = self.create_source_package(
+            binary_packages=['pkg-binary'])
+        self.pkgname = self.srcpkg.source_package_name
+        self.binpkg = self.srcpkg.binary_packages.first()
+        self.stats = [
+            {
+                'category_name': 'rc',
+                'bug_count': 0,
+            },
+        ]
+        self.bug_stats = BinaryPackageBugStats.objects.create(
+            package=self.binpkg, stats=self.stats)
+        binaries = [
+            {
+                'name': self.binpkg.name,
+            },
+        ]
+        PackageData.objects.create(package=self.pkgname,
+                                   key='binaries', value=binaries)
+
+    def test_panel_context(self):
+        panel = BinariesInformationPanel(self.srcpkg.source_package_name, None)
+        ctx = panel.context
+        self.assertIsInstance(ctx, list)
+        item = ctx[0]
+        self.assertIsInstance(item, dict)
+        self.assertEqual(item['name'], 'pkg-binary')
+        stats = item['bug_stats']
+        self.assertIsInstance(stats, dict)
+        self.assertIsInstance(stats['total_count'], int)
+        self.assertIsInstance(stats['categories'], list)
+        self.assertEqual(stats['categories'], self.stats)

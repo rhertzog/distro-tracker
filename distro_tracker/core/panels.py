@@ -508,13 +508,13 @@ class BinariesInformationPanel(BasePanel, BugDisplayManagerMixin):
             return
         # Try to get the URL to the bug tracker for the given categories
         for category in bug_stats:
-            url, implemented = self.bug_manager.get_bug_tracker_url(
+            url = self.bug_manager.get_bug_tracker_url(
                 binary_name, 'binary', category['category_name'])
-            if not implemented:
+            if not url:
                 continue
             category['url'] = url
         # Include the total bug count and corresponding tracker URL
-        all_bugs_url, implemented = self.bug_manager.get_bug_tracker_url(
+        all_bugs_url = self.bug_manager.get_bug_tracker_url(
             binary_name, 'binary', 'all')
         return {
             'total_count': sum(

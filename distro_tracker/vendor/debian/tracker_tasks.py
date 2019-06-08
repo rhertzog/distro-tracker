@@ -34,7 +34,6 @@ from django.utils.http import urlencode
 
 import yaml
 
-from distro_tracker import vendor
 from distro_tracker.accounts.models import UserEmail
 from distro_tracker.core.models import (
     ActionItem,
@@ -360,8 +359,8 @@ class UpdatePackageBugStats(BaseTask, BugDisplayManagerMixin):
 
         bug_count = bug_stats['help']['bug_count']
         # Include the URL in the short description
-        url, _ = vendor.call('get_bug_tracker_url', package.name, 'source',
-                             'help')
+        url = self.bug_manager.get_bug_tracker_url(
+            package.name, 'source', 'help')
         if not url:
             url = ''
         # Include the bug count in the short description
@@ -492,7 +491,7 @@ class UpdatePackageBugStats(BaseTask, BugDisplayManagerMixin):
         """
         Performs the update of bug statistics for binary packages.
         """
-        url = 'https://udd.debian.org/cgi-bin/bugs-binpkgs-distro_tracker.cgi'
+        url = 'https://udd.debian.org/cgi-bin/bugs-binpkgs-pts.cgi'
         response_content = get_resource_text(url)
         if not response_content:
             return
