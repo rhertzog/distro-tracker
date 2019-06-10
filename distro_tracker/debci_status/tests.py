@@ -18,13 +18,7 @@ from unittest import mock
 
 from django.test.utils import modify_settings, override_settings
 
-from distro_tracker.core.models import (
-    ActionItem,
-    PackageData,
-    PackageName,
-    SourcePackage,
-    SourcePackageName
-)
+from distro_tracker.core.models import ActionItem, PackageName
 from distro_tracker.core.utils.packages import package_url
 from distro_tracker.debci_status.tracker_package_tables import DebciTableField
 from distro_tracker.debci_status.tracker_tasks import UpdateDebciStatusTask
@@ -205,37 +199,29 @@ class DebciLinkTest(TestCase, TemplateTestsMixin):
     """
 
     def setUp(self):
-        self.package_name = SourcePackageName.objects.create(name='dummy')
+        self.srcpkg = self.create_source_package(name='dummy',
+                                                 repository='unstable')
         self.url = 'https://ci.debian.net/packages/d/dummy'
-        self.package = SourcePackage.objects.create(
-            source_package_name=self.package_name,
-            version='1.0.0',
-            repository='unstable')
+        self.debci_data = [{
+            'result': {'status': 'fail'},
+            'repository': 'unstable',
+            'url': self.url
+        }]
 
     def get_package_page_response(self, package_name):
         return self.client.get(package_url(package_name))
 
     def test_package_with_debci_report(self):
-        PackageData.objects.create(
-            package=self.package_name,
-            key='debci',
-            value=[{'result': {'status': 'fail'},
-                    'repository': 'unstable',
-                    'url': self.url}]
-        )
+        self.add_package_data(self.srcpkg.name, debci=self.debci_data)
 
-        response = self.get_package_page_response(self.package.name)
-        self.assertLinkIsInResponse(
-            response,
-            self.url
-        )
+        response = self.get_package_page_response(self.srcpkg.name)
+
+        self.assertLinkIsInResponse(response, self.url)
 
     def test_package_without_debci_report(self):
-        response = self.get_package_page_response(self.package.name)
-        self.assertLinkIsNotInResponse(
-            response,
-            self.url
-        )
+        response = self.get_package_page_response(self.srcpkg.name)
+
+        self.assertLinkIsNotInResponse(response, self.url)
 
 
 @modify_settings(INSTALLED_APPS={'append': 'distro_tracker.debci_status'})
@@ -248,55 +234,46 @@ class DebciTableFieldTest(TestCase):
     """
 
     def setUp(self):
-        self.package_name = SourcePackageName.objects.create(name='dummy')
-        self.url = 'https://ci.debian.net/packages/d/dummy'
-        self.package = SourcePackage.objects.create(
-            source_package_name=self.package_name,
-            version='1.0.0',
-            repository='unstable')
+        # Package with a fail result
+        self.src1 = self.create_source_package(
+            name='dummy', repository='unstable',
+            data={'debci': [self.debci_data('fail')]}
+        )
 
-        self.package_name2 = SourcePackageName.objects.create(name='package')
-        self.url2 = 'https://ci.debian.net/packages/p/package'
-        self.package2 = SourcePackage.objects.create(
-            source_package_name=self.package_name2,
-            version='1.0.0',
-            repository='unstable')
+        # Package without debci data
+        self.src2 = self.create_source_package(
+            name='package', repository='unstable')
 
-        self.package_name3 = SourcePackageName.objects.create(name='other')
-        self.url3 = 'https://ci.debian.net/packages/o/other'
-        self.package3 = SourcePackage.objects.create(
-            source_package_name=self.package_name3,
-            version='1.0.0',
-            repository='unstable')
-
-        PackageData.objects.create(
-            package=self.package_name,
-            key='debci',
-            value=[{'result': {'status': 'fail'},
-                    'repository': 'unstable',
-                    'url': self.url}])
-
-        PackageData.objects.create(
-            package=self.package_name3,
-            key='debci',
-            value=[{'result': {'status': 'fail'},
-                    'repository': 'unstable',
-                    'url': self.url3},
-                   {'result': {'status': 'pass'},
-                    'repository': 'stable',
-                    'url': self.url3}])
+        # Package with 2 different results in two repositories
+        self.src3 = self.create_source_package(
+            name='other', repositories=['unstable', 'stable'],
+            data={'debci': [
+                self.debci_data('fail', 'unstable'),
+                self.debci_data('pass', 'stable'),
+            ]}
+        )
 
         self.field = DebciTableField()
 
-        packages = PackageName.objects.filter(name=self.package_name)
+        packages = PackageName.objects.filter(name=self.src1.name)
         for prefetch in self.field.prefetch_related_lookups:
             packages = packages.prefetch_related(prefetch)
         self.package = packages[0]
 
-        packages = PackageName.objects.filter(name=self.package_name3)
+        self.package2 = self.src2.source_package_name
+
+        packages = PackageName.objects.filter(name=self.src3.name)
         for prefetch in self.field.prefetch_related_lookups:
             packages = packages.prefetch_related(prefetch)
         self.package3 = packages[0]
+
+    @staticmethod
+    def debci_data(result='pass', repository='unstable'):
+        return {
+            'result': {'status': result},
+            'repository': repository,
+            'url': 'https://ci.debian.net/packages/p/package',
+        }
 
     def test_field_specific_properties(self):
         """
@@ -312,7 +289,7 @@ class DebciTableFieldTest(TestCase):
         Tests field context content when debci data is present
         """
         context = self.field.context(self.package)
-        self.assertTrue(context['statuses'])
+        self.assertIn('statuses', context)
         expectedStatus = [{'repository': 'unstable',
                            'status': 'fail'}]
         self.assertEqual(context['statuses'], expectedStatus)
