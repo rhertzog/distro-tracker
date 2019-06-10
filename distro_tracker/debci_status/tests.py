@@ -270,7 +270,7 @@ class DebciLinkTest(TestCase, TemplateTestsMixin):
                     'distro_tracker.accounts',
                     'distro_tracker.debci_status',
                     'distro_tracker.vendor.kali'],
-    DISTRO_TRACKER_DEBCI_REPOSITORIES=['unstable'],
+    DISTRO_TRACKER_DEBCI_REPOSITORIES=['unstable', 'stable'],
     DISTRO_TRACKER_DEBCI_URL='https://ci.debian.net',
     DISTRO_TRACKER_DEVEL_REPOSITORIES=['unstable'])
 class DebciTableFieldTest(TestCase):
@@ -287,6 +287,20 @@ class DebciTableFieldTest(TestCase):
             version='1.0.0',
             repository='unstable')
 
+        self.package_name2 = SourcePackageName.objects.create(name='package')
+        self.url2 = 'https://ci.debian.net/packages/p/package'
+        self.package2 = SourcePackage.objects.create(
+            source_package_name=self.package_name2,
+            version='1.0.0',
+            repository='unstable')
+
+        self.package_name3 = SourcePackageName.objects.create(name='other')
+        self.url3 = 'https://ci.debian.net/packages/o/other'
+        self.package3 = SourcePackage.objects.create(
+            source_package_name=self.package_name3,
+            version='1.0.0',
+            repository='unstable')
+
         PackageData.objects.create(
             package=self.package_name,
             key='debci',
@@ -294,12 +308,15 @@ class DebciTableFieldTest(TestCase):
                     'repository': 'unstable',
                     'url': self.url}])
 
-        self.package_name2 = SourcePackageName.objects.create(name='package')
-        self.url2 = 'https://ci.debian.net/packages/p/package'
-        self.package2 = SourcePackage.objects.create(
-            source_package_name=self.package_name2,
-            version='1.0.0',
-            repository='unstable')
+        PackageData.objects.create(
+            package=self.package_name3,
+            key='debci',
+            value=[{'result': {'status': 'fail'},
+                    'repository': 'unstable',
+                    'url': self.url3},
+                   {'result': {'status': 'pass'},
+                    'repository': 'stable',
+                    'url': self.url3}])
 
         self.field = DebciTableField()
 
@@ -308,10 +325,10 @@ class DebciTableFieldTest(TestCase):
             packages = packages.prefetch_related(prefetch)
         self.package = packages[0]
 
-        packages = PackageName.objects.filter(name=self.package_name2)
+        packages = PackageName.objects.filter(name=self.package_name3)
         for prefetch in self.field.prefetch_related_lookups:
-            packages.prefetch_related(prefetch)
-        self.package2 = packages[0]
+            packages = packages.prefetch_related(prefetch)
+        self.package3 = packages[0]
 
     def test_field_specific_properties(self):
         """
@@ -328,10 +345,31 @@ class DebciTableFieldTest(TestCase):
         """
         context = self.field.context(self.package)
         self.assertTrue(context['statuses'])
+        expectedStatus = [{'repository': 'unstable',
+                           'status': 'fail'}]
+        self.assertEqual(context['statuses'], expectedStatus)
 
     def test_package_without_debci_report(self):
         """
         Tests field context content when debci data is not present
         """
         context = self.field.context(self.package2)
-        self.assertFalse(context['statuses'])
+        self.assertEqual(len(context['statuses']), 0)
+
+    def test_deterministic_order_in_context(self):
+        """
+        Make sure the order in the context's statuses array is "stable,unstable"
+        """
+        context = self.field.context(self.package3)
+        expectedStatus = [{'repository': 'stable',
+                          'status': 'pass'},
+                          {'repository': 'unstable',
+                          'status': 'fail'}]
+        self.assertEqual(context['statuses'], expectedStatus)
+
+    def test_label_warning_for_mixed_results(self):
+        """
+        Make sure the label is correct when some tests pass while others fail
+        """
+        context = self.field.context(self.package3)
+        self.assertEqual(context['label_type'], 'warning')
