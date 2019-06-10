@@ -16,7 +16,7 @@ Tests for Debci-specific modules/functionality of Distro Tracker.
 
 from unittest import mock
 
-from django.test.utils import override_settings
+from django.test.utils import modify_settings, override_settings
 
 from distro_tracker.core.models import (
     ActionItem,
@@ -32,9 +32,7 @@ from distro_tracker.test import TemplateTestsMixin, TestCase
 from distro_tracker.test.utils import set_mock_response
 
 
-@override_settings(
-    DISTRO_TRACKER_DEBCI_URL='https://ci.debian.net',
-    DISTRO_TRACKER_DEVEL_REPOSITORIES=['unstable'])
+@override_settings(DISTRO_TRACKER_DEBCI_URL='https://ci.debian.net')
 @mock.patch('distro_tracker.core.utils.http.requests')
 class UpdateDebciStatusTaskTest(TestCase):
     """
@@ -68,8 +66,6 @@ class UpdateDebciStatusTaskTest(TestCase):
         task = UpdateDebciStatusTask()
         task.execute()
 
-    @override_settings(
-        DISTRO_TRACKER_DEBCI_URL='https://ci.debian.net')
     def test_no_action_item_for_passing_test(self, mock_requests):
         """
         Tests that an ActionItem isn't created for a passing debci status.
@@ -81,8 +77,6 @@ class UpdateDebciStatusTaskTest(TestCase):
 
         self.assertEqual(0, self.package.action_items.count())
 
-    @override_settings(
-        DISTRO_TRACKER_DEBCI_URL='https://ci.debian.net')
     def test_no_action_item_for_neutral_test(self, mock_requests):
         """
         Tests that an ActionItem isn't created for a passing debci status.
@@ -94,8 +88,6 @@ class UpdateDebciStatusTaskTest(TestCase):
 
         self.assertEqual(0, self.package.action_items.count())
 
-    @override_settings(
-        DISTRO_TRACKER_DEBCI_URL='https://ci.debian.net')
     def test_no_action_item_for_unknown_package(self, mock_requests):
         """
         Tests that an ActionItem isn't created for an unknown package.
@@ -107,8 +99,6 @@ class UpdateDebciStatusTaskTest(TestCase):
 
         self.assertEqual(0, ActionItem.objects.count())
 
-    @override_settings(
-        DISTRO_TRACKER_DEBCI_URL='https://ci.debian.net')
     def test_action_item_for_failing_test(self, mock_requests):
         """
         Tests that a proper ActionItem is created for a failing test
@@ -132,8 +122,6 @@ class UpdateDebciStatusTaskTest(TestCase):
         self.assertEqual(action_item.extra_data[0]['url'], url)
         self.assertEqual(action_item.extra_data[0]['log'], log)
 
-    @override_settings(
-        DISTRO_TRACKER_DEBCI_URL='https://ci.debian.net')
     def test_action_item_is_dropped_when_test_passes_again(self, mock_requests):
         """
         Tests that ActionItems are dropped when the test passes again.
@@ -147,8 +135,6 @@ class UpdateDebciStatusTaskTest(TestCase):
 
         self.assertEqual(self.package.action_items.count(), 0)
 
-    @override_settings(
-        DISTRO_TRACKER_DEBCI_URL='https://ci.debian.net')
     def test_action_item_is_dropped_when_info_vanishes(self, mock_requests):
         """
         Tests that ActionItems are dropped when the debci report doesn't
@@ -162,8 +148,6 @@ class UpdateDebciStatusTaskTest(TestCase):
 
         self.assertEqual(ActionItem.objects.count(), 0)
 
-    @override_settings(
-        DISTRO_TRACKER_DEBCI_URL='https://ci.debian.net')
     def test_lib_package_link(self, mock_requests):
         """
         Tests that links to lib packages' log files are correct.
@@ -184,8 +168,6 @@ class UpdateDebciStatusTaskTest(TestCase):
 
         self.assertEqual(action_item_log_url, log_url)
 
-    @override_settings(
-        DISTRO_TRACKER_DEBCI_URL='https://ci.debian.net')
     def test_no_exception_on_unavailable_repository(self, mock_requests):
         """
         Tests that no exception is raised when getting a 404 from debci
@@ -199,10 +181,7 @@ class UpdateDebciStatusTaskTest(TestCase):
 
         self.assertEqual(0, self.package.action_items.count())
 
-    @override_settings(
-        DISTRO_TRACKER_DEBCI_URL='https://ci.debian.net',
-        DISTRO_TRACKER_DEBCI_REPOSITORIES=['debcirepo'],
-    )
+    @override_settings(DISTRO_TRACKER_DEBCI_REPOSITORIES=['debcirepo'])
     def test_debci_repository_variable_enforced(self, mock_requests):
         """
         Tests that DISTRO_TRACKER_DEBCI_REPOSITORIES, when defined,
@@ -218,11 +197,7 @@ class UpdateDebciStatusTaskTest(TestCase):
             get_debci_status.assert_called_once_with('debcirepo')
 
 
-@override_settings(INSTALLED_APPS=['django.contrib.staticfiles',
-                                   'distro_tracker.core',
-                                   'distro_tracker.html',
-                                   'distro_tracker.accounts',
-                                   'distro_tracker.debci_status'])
+@modify_settings(INSTALLED_APPS={'append': 'distro_tracker.debci_status'})
 class DebciLinkTest(TestCase, TemplateTestsMixin):
 
     """
@@ -263,18 +238,11 @@ class DebciLinkTest(TestCase, TemplateTestsMixin):
         )
 
 
+@modify_settings(INSTALLED_APPS={'append': 'distro_tracker.debci_status'})
 @override_settings(
-    INSTALLED_APPS=['django.contrib.staticfiles',
-                    'distro_tracker.core',
-                    'distro_tracker.html',
-                    'distro_tracker.accounts',
-                    'distro_tracker.debci_status',
-                    'distro_tracker.vendor.kali'],
     DISTRO_TRACKER_DEBCI_REPOSITORIES=['unstable', 'stable'],
-    DISTRO_TRACKER_DEBCI_URL='https://ci.debian.net',
-    DISTRO_TRACKER_DEVEL_REPOSITORIES=['unstable'])
+    DISTRO_TRACKER_DEBCI_URL='https://ci.debian.net')
 class DebciTableFieldTest(TestCase):
-
     """
     Tests that the debci field behaves as expected, with the proper content.
     """
