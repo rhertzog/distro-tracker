@@ -32,6 +32,8 @@ from distro_tracker.core.models import (
     Architecture,
     BinaryPackageName,
     ContributorName,
+    PackageData,
+    PackageName,
     Repository,
     SourcePackage,
     SourcePackageName,
@@ -161,6 +163,7 @@ class DatabaseMixin(object):
         - binary_packages (list of package names)
         - repository (shorthand of a repository)
         - repositories (list of repositories' shorthand)
+        - data (dict used to generate associated PackageData)
 
         If the shorthand of the requested repository is 'default', then
         its default field will be set to True.
@@ -209,6 +212,9 @@ class DatabaseMixin(object):
         for repo_shorthand in kwargs.get('repositories', []):
             self.add_to_repository(srcpkg, repo_shorthand)
 
+        if 'data' in kwargs:
+            self.add_package_data(srcpkg.source_package_name, **kwargs['data'])
+
         srcpkg.save()
         return srcpkg
 
@@ -252,6 +258,22 @@ class DatabaseMixin(object):
         """
         return srcpkg.repository_entries.filter(
             repository__shorthand=shorthand).delete()[0]
+
+    def add_package_data(self, pkgname, **kwargs):
+        """
+        Creates PackageData objects associated to the package indicated
+        in pkgname. Each named parameter results in PackageData instance
+        with the `key` being the name of the parameter and the `value`
+        being the value of the named parameter.
+
+        :param pkgname: the name of the package to which we want to associate
+            data
+        :type pkgname: `str` or :class:`~distro_tracker.core.models.PackageName`
+        """
+        if not isinstance(pkgname, PackageName):
+            pkgname, _ = PackageName.objects.get_or_create(name=str(pkgname))
+        for key, value in kwargs.items():
+            PackageData.objects.create(package=pkgname, key=key, value=value)
 
 
 class SimpleTestCase(TempDirsMixin, TestCaseHelpersMixin,

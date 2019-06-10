@@ -17,7 +17,12 @@ import os.path
 
 from django.conf import settings
 
-from distro_tracker.core.models import PackageName, Repository, SourcePackage
+from distro_tracker.core.models import (
+    PackageData,
+    PackageName,
+    Repository,
+    SourcePackage
+)
 from distro_tracker.test import (
     SimpleTestCase,
     TempDirsMixin,
@@ -195,6 +200,21 @@ class DatabaseMixinTests(object):
         repository = Repository.objects.get(shorthand='foobar')
         self.assertFalse(repository.default)
 
+    def test_create_source_package_with_data(self):
+        data = {
+            'key1': {'sample': 'data'},
+            'key2': ['sample', 'data']
+        }
+
+        srcpkg = self.create_source_package(data=data)
+
+        pkgdata1 = PackageData.objects.get(package__name=srcpkg.name,
+                                           key='key1')
+        self.assertEqual(pkgdata1.value, data['key1'])
+        pkgdata2 = PackageData.objects.get(package__name=srcpkg.name,
+                                           key='key2')
+        self.assertEqual(pkgdata2.value, data['key2'])
+
     def test_add_to_repository_creates_repository(self):
         srcpkg = self.create_source_package()
 
@@ -227,6 +247,26 @@ class DatabaseMixinTests(object):
         result = self.remove_from_repository(srcpkg, 'unknown')
 
         self.assertEqual(result, 0)
+
+    def test_add_package_data_with_name(self):
+        data1 = {'sample': 'data'}
+        data2 = ['sample', 'data']
+
+        self.add_package_data('dpkg', key1=data1, key2=data2)
+
+        pkgdata1 = PackageData.objects.get(package__name='dpkg', key='key1')
+        self.assertEqual(pkgdata1.value, data1)
+        pkgdata2 = PackageData.objects.get(package__name='dpkg', key='key2')
+        self.assertEqual(pkgdata2.value, data2)
+
+    def test_add_package_data_with_PackageName(self):
+        pkgname, _ = PackageName.objects.get_or_create(name='sample')
+        data = ['foo']
+
+        self.add_package_data(pkgname, key1=data)
+
+        pkgdata = PackageData.objects.get(package=pkgname, key='key1')
+        self.assertEqual(pkgdata.value, data)
 
 
 class TempDirsOnSimpleTestCase(TempDirsTests, TestCaseHelpersTests,
