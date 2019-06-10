@@ -5918,82 +5918,51 @@ class TagPackagesWithRcBugsTest(TestCase):
             ]
         )
 
+    @staticmethod
+    def run_task():
+        task = TagPackagesWithRcBugs()
+        task.execute()
+
     def test_update_rc_bugs_tag_task(self):
         """
         Tests the default behavior of TagPackagesWithRcBugs task
         """
-        # ensure that there is no PackageData entries with 'tag:bugs' key
-        self.assertEqual(PackageData.objects.filter(key=self.tag).count(), 0)
-
-        # execute the task
-        task = TagPackagesWithRcBugs()
-        task.execute()
+        self.run_task()
 
         # check that the task worked as expected
-        self.assertEqual(PackageData.objects.filter(key=self.tag).count(), 1)
-        self.assertIsNotNone(
-            PackageData.objects.get(
-                key=self.tag, package=self.package_with_rc_bug)
-        )
+        tagdata = self.package_with_rc_bug.data.get(key=self.tag)
+        self.assertDoesExist(tagdata)
+
         with self.assertRaises(PackageData.DoesNotExist):
-            PackageData.objects.get(
-                key=self.tag, package=self.package_without_rc_bug)
+            self.package_without_rc_bug.data.get(key=self.tag)
         with self.assertRaises(PackageData.DoesNotExist):
-            PackageData.objects.get(
-                key=self.tag, package=self.package_without_bug)
+            self.package_without_bug.data.get(key=self.tag)
 
     def test_task_remove_tag_from_package_without_no_more_rc_bugs(self):
         """
         Tests the removing of 'tag:rc-bugs' data from packages that no longer
         have RC bugs.
         """
-        # add bug tag previously
-        PackageData.objects.create(
-            key=self.tag, package=self.package_with_rc_bug)
-        # remove bugs from package
-        self.package_with_rc_bug.bug_stats.delete()
+        self.run_task()  # first run creates the tag
+        self.package_with_rc_bug.bug_stats.delete()  # remove bugs
 
-        # check tag in package with rc bug
-        self.assertIsNotNone(
-            PackageData.objects.get(
-                key=self.tag, package=self.package_with_rc_bug)
-        )
-
-        # execute the task
-        task = TagPackagesWithRcBugs()
-        task.execute()
+        self.run_task()  # second run should drop the tag
 
         # check that the task removed the tag
-        self.assertEqual(PackageData.objects.filter(key=self.tag).count(), 0)
         with self.assertRaises(PackageData.DoesNotExist):
-            PackageData.objects.get(
-                key=self.tag, package=self.package_with_rc_bug)
+            self.package_with_rc_bug.data.get(key=self.tag)
 
     def test_task_keep_tag_for_package_that_still_have_rc_bugs(self):
         """
         Tests the maintenance of 'tag:rc-bugs' key for packages that still
         have RC bugs.
         """
-        # add rc-bugs tag previously
-        PackageData.objects.create(
-            key=self.tag, package=self.package_with_rc_bug)
-
-        # check tag in package with RC bug
-        self.assertIsNotNone(
-            PackageData.objects.get(
-                key=self.tag, package=self.package_with_rc_bug)
-        )
-
-        # execute the task
-        task = TagPackagesWithRcBugs()
-        task.execute()
+        self.run_task()
+        self.run_task()
 
         # check that the task kept the tag
-        self.assertEqual(PackageData.objects.filter(key=self.tag).count(), 1)
-        self.assertIsNotNone(
-            PackageData.objects.get(
-                key=self.tag, package=self.package_with_rc_bug)
-        )
+        tagdata = self.package_with_rc_bug.data.get(key=self.tag)
+        self.assertDoesExist(tagdata)
 
 
 class TagPackagesWithNewUpstreamVersionTest(TestCase):
@@ -6016,80 +5985,48 @@ class TagPackagesWithNewUpstreamVersionTest(TestCase):
             item_type=self.ai_type
         )
 
+    @staticmethod
+    def run_task():
+        task = TagPackagesWithNewUpstreamVersion()
+        task.execute()
+
     def test_update_new_upstream_version_tag_task(self):
         """
         Tests the default behavior of TagPackagesWithNewUpstreamVersion task
         """
-        # ensure that there is no PackageData entries with
-        # 'tag:new-upstream-version' key
-        self.assertEqual(PackageData.objects.filter(key=self.tag).count(), 0)
+        self.run_task()
 
-        # execute the task
-        task = TagPackagesWithNewUpstreamVersion()
-        task.execute()
+        tagdata = self.outdated_package.data.get(key=self.tag)
+        self.assertDoesExist(tagdata)
 
-        # check that the task worked as expected
-        self.assertEqual(PackageData.objects.filter(key=self.tag).count(), 1)
-        self.assertIsNotNone(
-            PackageData.objects.get(
-                key=self.tag, package=self.outdated_package)
-        )
         with self.assertRaises(PackageData.DoesNotExist):
-            PackageData.objects.get(
-                key=self.tag, package=self.updated_package)
+            self.updated_package.data.get(key=self.tag)
 
     def test_task_remove_tag_from_updated_package(self):
         """
         Tests the removing of 'tag:new-upstream-version' data from packages
         that is updated.
         """
-        # creating tag previously
-        PackageData.objects.create(
-            key=self.tag, package=self.outdated_package)
-        # remove ai from outdated_package
+        self.run_task()  # first run creates the tag
         self.outdated_package.action_items.all().delete()
 
-        # check tag in package
-        self.assertIsNotNone(
-            PackageData.objects.get(
-                key=self.tag, package=self.outdated_package)
-        )
-
-        # execute the task
-        task = TagPackagesWithNewUpstreamVersion()
-        task.execute()
+        self.run_task()  # this one should delete the tag
 
         # check that the task removed the tag
-        self.assertEqual(PackageData.objects.filter(key=self.tag).count(), 0)
         with self.assertRaises(PackageData.DoesNotExist):
-            PackageData.objects.get(
-                key=self.tag, package=self.updated_package)
+            self.outdated_package.data.get(key=self.tag)
 
     def test_task_keep_tag_for_package_that_still_is_outdated(self):
         """
         Tests the maintenance of 'tag:new-upstream-version' key for packages
         that still has a new upstream version.
         """
-        # add tag previously
-        PackageData.objects.create(
-            key=self.tag, package=self.outdated_package)
-
-        # check tag in package with RC bug
-        self.assertIsNotNone(
-            PackageData.objects.get(
-                key=self.tag, package=self.outdated_package)
-        )
-
-        # execute the task
-        task = TagPackagesWithNewUpstreamVersion()
-        task.execute()
+        self.run_task()
+        self.run_task()
 
         # check that the task kept the tag
-        self.assertEqual(PackageData.objects.filter(key=self.tag).count(), 1)
-        self.assertIsNotNone(
-            PackageData.objects.get(
-                key=self.tag, package=self.outdated_package)
-        )
+        tagdata = self.outdated_package.data.get(key=self.tag)
+        self.assertDoesExist(tagdata)
 
 
 @mock.patch('distro_tracker.core.utils.http.requests')

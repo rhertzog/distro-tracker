@@ -3010,8 +3010,7 @@ class TagPackagesWithRcBugs(BaseTask, PackageTagging):
     TAG_TABLE_TITLE = 'Packages with RC bugs'
 
     def packages_to_tag(self):
-        all_bug_stats = PackageBugStats.objects.all().prefetch_related(
-            'package')
+        all_bug_stats = PackageBugStats.objects.prefetch_related('package')
         packages_list = []
         for bug_stats in all_bug_stats:
             categories = bug_stats.stats
@@ -3048,7 +3047,7 @@ class TagPackagesWithNewUpstreamVersion(BaseTask, PackageTagging):
             return []
 
         packages_list = []
-        items = action_type.action_items.all().prefetch_related('package')
+        items = action_type.action_items.prefetch_related('package')
         for item in items:
             packages_list.append(item.package)
         return packages_list
