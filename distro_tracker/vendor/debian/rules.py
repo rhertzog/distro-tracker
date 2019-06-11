@@ -577,4 +577,7 @@ def get_tables_for_team_page(team, limit):
             tag='tag:new-upstream-version'),
         create_table(
             slug='general', scope=team, limit=limit, tag='tag:bugs'),
+        create_table(
+            slug='general', scope=team, limit=limit,
+            tag='tag:debci-failures')
     ]

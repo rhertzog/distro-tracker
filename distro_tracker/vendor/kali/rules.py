@@ -14,6 +14,7 @@ Kali specific rules
 import os.path
 import re
 
+from distro_tracker.core.package_tables import create_table
 from distro_tracker.debci_status.tracker_package_tables import DebciTableField
 from distro_tracker.mail import mail_news
 
@@ -61,3 +62,20 @@ def get_table_fields(table):
     the team's packages table
     """
     return table.default_fields + [DebciTableField]
+
+
+def get_tables_for_team_page(team, limit):
+    """
+    The function must return a list of :class:`BasePackageTable` objects
+    to be displayed in the main page of teams.
+
+    :param team: The team for which the tables must be added.
+    :type package: :class:`Team <distro_tracker.core.models.Team>`
+    :param int limit: The number of packages to be displayed in the tables
+    """
+    return [
+        create_table(slug='general', scope=team, limit=limit),
+        create_table(
+            slug='general', scope=team, limit=limit,
+            tag='tag:debci-failures')
+    ]
