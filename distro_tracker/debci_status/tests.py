@@ -52,6 +52,7 @@ class UpdateDebciStatusTaskTest(TestCase):
                 "message": "Tests failed"
             }
         ]
+        self.url = "https://ci.debian.net/packages/d/dummy-package"
 
     def run_task(self):
         """
@@ -105,16 +106,27 @@ class UpdateDebciStatusTaskTest(TestCase):
         # Check that the ActionItem contains the correct contents.
         self.assertEqual(self.package.action_items.count(), 1)
         action_item = self.package.action_items.all()[0]
-        url = "https://ci.debian.net/packages/d/dummy-package"
         log = "https://ci.debian.net/data/packages/unstable/amd64/d/" + \
             "dummy-package/latest-autopkgtest/log.gz"
-        self.assertIn(url, action_item.short_description)
+        self.assertIn(self.url, action_item.short_description)
         self.assertEqual(action_item.extra_data[0]['duration'], "0h 1m 31s")
         self.assertEqual(action_item.extra_data[0]['previous_status'], "pass")
         self.assertEqual(action_item.extra_data[0]['date'],
                          "2014-07-05 14:55:57")
-        self.assertEqual(action_item.extra_data[0]['url'], url)
+        self.assertEqual(action_item.extra_data[0]['url'], self.url)
         self.assertEqual(action_item.extra_data[0]['log'], log)
+
+    def test_action_item_is_updated(self, mock_requests):
+        """Ensure a pre-existing action item gets its attributes reset"""
+        set_mock_response(mock_requests, json=self.json_data)
+        self.run_task()
+        self.package.action_items.update(extra_data=[], short_description='')
+
+        self.run_task()
+
+        action_item = self.package.action_items.all()[0]
+        self.assertIn(self.url, action_item.short_description)
+        self.assertEqual(action_item.extra_data[0]['url'], self.url)
 
     def test_action_item_is_dropped_when_test_passes_again(self, mock_requests):
         """
@@ -253,19 +265,24 @@ class DebciTableFieldTest(TestCase):
             ]}
         )
 
+        # Package with a pass result
+        self.src4 = self.create_source_package(
+            name='good', repository='unstable',
+            data={'debci': [self.debci_data('pass')]}
+        )
+
         self.field = DebciTableField()
 
-        packages = PackageName.objects.filter(name=self.src1.name)
-        for prefetch in self.field.prefetch_related_lookups:
-            packages = packages.prefetch_related(prefetch)
-        self.package = packages[0]
+        def enhance_with_prefetch(variable, pkgname):
+            packages = PackageName.objects.filter(name=pkgname)
+            for prefetch in self.field.prefetch_related_lookups:
+                packages = packages.prefetch_related(prefetch)
+            setattr(self, variable, packages[0])
 
-        self.package2 = self.src2.source_package_name
-
-        packages = PackageName.objects.filter(name=self.src3.name)
-        for prefetch in self.field.prefetch_related_lookups:
-            packages = packages.prefetch_related(prefetch)
-        self.package3 = packages[0]
+        enhance_with_prefetch('package', self.src1.name)
+        enhance_with_prefetch('package2', self.src2.name)
+        enhance_with_prefetch('package3', self.src3.name)
+        enhance_with_prefetch('package4', self.src4.name)
 
     @staticmethod
     def debci_data(result='pass', repository='unstable'):
@@ -318,3 +335,8 @@ class DebciTableFieldTest(TestCase):
         """
         context = self.field.context(self.package3)
         self.assertEqual(context['label_type'], 'warning')
+
+    def test_label_warning_for_success_results(self):
+        """Make sure the label is correct when all test pass."""
+        context = self.field.context(self.package4)
+        self.assertEqual(context['label_type'], 'success')

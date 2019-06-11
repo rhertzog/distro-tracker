@@ -169,9 +169,6 @@ class UpdateDebciStatusTask(BaseTask):
                                   'repository': repo_codename,
                                   'url': url})
 
-                if not value:
-                    continue
-
                 infos.append(
                     PackageData(
                         package=package,
