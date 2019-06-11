@@ -18,10 +18,18 @@ from unittest import mock
 
 from django.test.utils import modify_settings, override_settings
 
-from distro_tracker.core.models import ActionItem, PackageName
+from distro_tracker.core.models import (
+    ActionItem,
+    ActionItemType,
+    PackageData,
+    PackageName
+)
 from distro_tracker.core.utils.packages import package_url
 from distro_tracker.debci_status.tracker_package_tables import DebciTableField
-from distro_tracker.debci_status.tracker_tasks import UpdateDebciStatusTask
+from distro_tracker.debci_status.tracker_tasks import (
+    TagPackagesWithDebciFailures,
+    UpdateDebciStatusTask
+)
 from distro_tracker.test import TemplateTestsMixin, TestCase
 from distro_tracker.test.utils import set_mock_response
 
@@ -340,3 +348,66 @@ class DebciTableFieldTest(TestCase):
         """Make sure the label is correct when all test pass."""
         context = self.field.context(self.package4)
         self.assertEqual(context['label_type'], 'success')
+
+
+class TagPackagesWithDebciFailuresTest(TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.debci_status.tracker_tasks.TagPackagesWithDebciFailures`
+    task.
+    """
+
+    def setUp(self):
+        self.tag = 'tag:debci-failures'
+        self.package_with_failed_tests = PackageName.objects.create(
+            name='dummy')
+        self.ai_type = ActionItemType.objects.create(
+            type_name='debci-failed-tests')
+        self.action_item = ActionItem.objects.create(
+            package=self.package_with_failed_tests,
+            item_type=self.ai_type
+        )
+        self.package_without_failed_tests = PackageName.objects.create(
+            name='package')
+
+    def run_task(self):
+        """
+        Runs the debci tag packages task.
+        """
+        task = TagPackagesWithDebciFailures()
+        task.execute()
+
+    def test_update_debci_failures_tag_task(self):
+        """
+        Tests the default behavior of TagPackagesWithDebciFailures task
+        """
+        self.run_task()
+
+        tagdata = self.package_with_failed_tests.data.get(key=self.tag)
+        self.assertDoesExist(tagdata)
+
+        with self.assertRaises(PackageData.DoesNotExist):
+            self.package_without_failed_tests.data.get(key=self.tag)
+
+    def test_task_remove_tag_from_package_with_failed_tests(self):
+        """
+        Tests the removing of 'tag:package_with_failed_tests'
+        """
+        self.run_task()
+        self.package_with_failed_tests.action_items.all().delete()
+
+        self.run_task()
+        with self.assertRaises(PackageData.DoesNotExist):
+            self.package_without_failed_tests.data.get(key=self.tag)
+
+    def test_task_keep_tag_for_package_that_still_has_failures(self):
+        """
+        Tests that 'tag:new-upstream-version' remains when a package still
+        has test failures
+        """
+        self.run_task()
+        self.run_task()
+
+        # check that the task kept the tag
+        tagdata = self.package_with_failed_tests.data.get(key=self.tag)
+        self.assertDoesExist(tagdata)

@@ -27,6 +27,7 @@ from distro_tracker.core.models import (
     SourcePackageName
 )
 from distro_tracker.core.tasks import BaseTask
+from distro_tracker.core.tasks.mixins import PackageTagging
 from distro_tracker.core.tasks.schedulers import IntervalScheduler
 from distro_tracker.core.utils.http import get_resource_text
 
@@ -182,3 +183,28 @@ class UpdateDebciStatusTask(BaseTask):
             PackageData.objects.bulk_create(infos)
             ActionItem.objects.delete_obsolete_items(
                 [self.debci_action_item_type], packages)
+
+
+class TagPackagesWithDebciFailures(BaseTask, PackageTagging):
+    """
+    Performs an update of 'debci-failures' tag for packages.
+    """
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600
+
+    TAG_NAME = 'tag:debci-failures'
+    TAG_DISPLAY_NAME = 'debci failures'
+    TAG_COLOR_TYPE = 'danger'
+    TAG_DESCRIPTION = 'The package has test failures'
+    TAG_TABLE_TITLE = 'Packages with test failures'
+
+    def packages_to_tag(self):
+        try:
+            action_type = ActionItemType.objects.get(
+                type_name='debci-failed-tests')
+        except ActionItemType.DoesNotExist:
+            return []
+
+        items = action_type.action_items.all().prefetch_related('package')
+        return [item.package for item in items]
