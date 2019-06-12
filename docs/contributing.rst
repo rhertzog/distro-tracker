@@ -102,8 +102,13 @@ Usual workflow
 
        $ tox
 
-     This basically runs “./manage.py test” with multiple versions
-     of Django and Python.
+     This basically runs ``./manage.py test django_email_accounts
+     distro_tracker`` with multiple versions of Django and Python.
+
+     .. note::
+        If you get errors like ``OSError: [Errno 38] Function not
+        implemented``, then it means that you are lacking /dev/shm
+        with proper permissions.
 
   9. Push your branch to your repository::
 
