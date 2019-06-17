@@ -38,7 +38,7 @@
 	    {% endif %}
 	    {% for extra in developer.extra %}
 		<small>
-		[<a href="{{ extra.link }}" title="{{ extra.description }}">{{ extra.display }}</a>]
+		(<a href="{{ extra.link }}" title="{{ extra.description }}">{{ extra.display }}</a>)
 		</small>
 	    {% endfor %}
 	{% endwith %}
