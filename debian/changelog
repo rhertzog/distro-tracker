@@ -1,3 +1,37 @@
+distro-tracker (1.1.1) unstable; urgency=medium
+
+  [ Johannes 'josch' Schauer ]
+  * link to common per-source page of qa.d.o/dose/debcheck
+  * distro_tracker/vendor/debian/tracker_panels.py: simplify get_panel_items()
+
+  [ Raphaël Hertzog ]
+  * debian: add python3-sphinx-rtd-theme as Build-Depends
+  * vendor/debian: use get_resource_text() in a consistent way
+  * vendor/debian: json.loads() on Python 3.5 really wants strings not bytes
+  * debian: fix URL for binary package bug stats
+  * test: new add_package_data() helper method
+  * debci/tests: improve management of settings override
+  * debci/tests: use helper methods to make tests shorter and more readable
+  * vendor/debian: simplify some tests
+  * vendor: fix documentation of get_tables_for_team_page()
+  * tox: run coverage report with Python 3.7
+  * debci: add missing tests to get to 100% coverage
+  * docs: document requirement to have working /dev/shm for unit tests
+
+  [ Paul Wise ]
+  * Expose the action item type name in HTML and JSON views
+
+  [ Sébastien Delafond ]
+  * Add tests for DebciTableField, and make its context() method a bit more
+    resilient to failure
+  * Improve tests for debci-table, and make sure the order in the context's
+    statuses array is deterministic
+
+  [ Sebastien Delafond ]
+  * debci: add package table listing packages with failed tests
+
+ -- Raphaël Hertzog <hertzog@debian.org>  Tue, 25 Jun 2019 09:34:10 +0200
+
 distro-tracker (1.1.0) unstable; urgency=medium
 
   [ Raphaël Hertzog ]
