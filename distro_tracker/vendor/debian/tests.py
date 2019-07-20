@@ -694,7 +694,13 @@ class DebianContributorExtraTest(TestCase):
         self.assertSequenceEqual(expected,
                                  get_maintainer_extra('dummy@debian.org'))
         # With a package name an extra item is in the response.
-        expected.append({'display': 'dm'})
+        expected.append(
+            {
+                'display': 'DM',
+                'description': 'Debian Maintainer upload allowed',
+                'link': 'https://ftp-master.debian.org/dm.txt'
+            }
+        )
         self.assertSequenceEqual(
             expected,
             get_maintainer_extra('dummy@debian.org', 'package-name')
@@ -723,7 +729,13 @@ class DebianContributorExtraTest(TestCase):
         self.assertSequenceEqual(expected,
                                  get_uploader_extra('dummy@debian.org'))
         # With a package name an extra item is in the response.
-        expected.append({'display': 'dm'})
+        expected.append(
+            {
+                'display': 'DM',
+                'description': 'Debian Maintainer upload allowed',
+                'link': 'https://ftp-master.debian.org/dm.txt'
+            }
+        )
         self.assertSequenceEqual(
             expected,
             get_uploader_extra('dummy@debian.org', 'package-name')

@@ -349,7 +349,13 @@ def _add_dmd_entry(extra, email):
 def _add_dm_entry(extra, developer, package_name):
     if package_name and developer and developer.is_debian_maintainer:
         if package_name in developer.allowed_packages:
-            extra.append({'display': 'dm'})
+            extra.append(
+                {
+                    'display': 'DM',
+                    'description': 'Debian Maintainer upload allowed',
+                    'link': 'https://ftp-master.debian.org/dm.txt'
+                }
+            )
 
 
 def allow_package(stanza):
