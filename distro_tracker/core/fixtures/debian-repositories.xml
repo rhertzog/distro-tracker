@@ -6,7 +6,7 @@
         <field type="CharField" name="uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="suite">oldstable</field>
-        <field type="CharField" name="codename">jessie</field>
+        <field type="CharField" name="codename">stretch</field>
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">True</field>
@@ -21,7 +21,7 @@
         <field type="CharField" name="uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="suite">stable</field>
-        <field type="CharField" name="codename">stretch</field>
+        <field type="CharField" name="codename">buster</field>
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">False</field>
@@ -66,7 +66,7 @@
         <field type="CharField" name="uri">http://security.debian.org</field>
         <field type="CharField" name="public_uri">http://security.debian.org/</field>
         <field type="CharField" name="suite">oldstable/updates</field>
-        <field type="CharField" name="codename">jessie/updates</field>
+        <field type="CharField" name="codename">stretch/updates</field>
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">True</field>
@@ -81,7 +81,7 @@
         <field type="CharField" name="uri">http://security.debian.org</field>
         <field type="CharField" name="public_uri">http://security.debian.org/</field>
         <field type="CharField" name="suite">stable/updates</field>
-        <field type="CharField" name="codename">stretch/updates</field>
+        <field type="CharField" name="codename">buster/updates</field>
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">False</field>
@@ -96,7 +96,7 @@
         <field type="CharField" name="uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="suite">testing</field>
-        <field type="CharField" name="codename">buster</field>
+        <field type="CharField" name="codename">bullseye</field>
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">False</field>
@@ -110,8 +110,8 @@
         <field type="CharField" name="shorthand">test-sec</field>
         <field type="CharField" name="uri">http://security.debian.org</field>
         <field type="CharField" name="public_uri">http://security.debian.org/</field>
-        <field type="CharField" name="suite">testing/updates</field>
-        <field type="CharField" name="codename">buster/updates</field>
+        <field type="CharField" name="suite">testing-security</field>
+        <field type="CharField" name="codename">buster-security</field>
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">False</field>
@@ -125,8 +125,8 @@
         <field type="CharField" name="shorthand">old-bpo</field>
         <field type="CharField" name="uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
-        <field type="CharField" name="suite">jessie-backports</field>
-        <field type="CharField" name="codename">jessie-backports</field>
+        <field type="CharField" name="suite">stretch-backports</field>
+        <field type="CharField" name="codename">stretch-backports</field>
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">True</field>
@@ -140,8 +140,8 @@
         <field type="CharField" name="shorthand">stable-bpo</field>
         <field type="CharField" name="uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
-        <field type="CharField" name="suite">stretch-backports</field>
-        <field type="CharField" name="codename">stretch-backports</field>
+        <field type="CharField" name="suite">buster-backports</field>
+        <field type="CharField" name="codename">buster-backports</field>
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">False</field>
@@ -156,7 +156,7 @@
         <field type="CharField" name="uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="suite">oldstable-proposed-updates</field>
-        <field type="CharField" name="codename">jessie-proposed-updates</field>
+        <field type="CharField" name="codename">stretch-proposed-updates</field>
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">True</field>
@@ -171,7 +171,7 @@
         <field type="CharField" name="uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="suite">proposed-updates</field>
-        <field type="CharField" name="codename">stretch-proposed-updates</field>
+        <field type="CharField" name="codename">buster-proposed-updates</field>
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">False</field>
@@ -186,7 +186,7 @@
         <field type="CharField" name="uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="suite">testing-proposed-updates</field>
-        <field type="CharField" name="codename">buster-proposed-updates</field>
+        <field type="CharField" name="codename">bullseye-proposed-updates</field>
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">False</field>
@@ -201,7 +201,7 @@
         <field type="CharField" name="uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="suite">oldstable-updates</field>
-        <field type="CharField" name="codename">jessie-updates</field>
+        <field type="CharField" name="codename">stretch-updates</field>
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">True</field>
@@ -216,7 +216,7 @@
         <field type="CharField" name="uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="suite">stable-updates</field>
-        <field type="CharField" name="codename">stretch-updates</field>
+        <field type="CharField" name="codename">buster-updates</field>
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">False</field>
@@ -230,8 +230,8 @@
         <field type="CharField" name="shorthand">old-bpo-sl</field>
         <field type="CharField" name="uri">http://deb.debian.org/debian</field>
         <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
-        <field type="CharField" name="suite">jessie-backports-sloppy</field>
-        <field type="CharField" name="codename">jessie-backports-sloppy</field>
+        <field type="CharField" name="suite">stretch-backports-sloppy</field>
+        <field type="CharField" name="codename">stretch-backports-sloppy</field>
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">True</field>
