@@ -189,6 +189,10 @@ class ViewDefaultKeywordsCommand(Command, KeywordCommandMixin):
             self.email)
 
     def handle(self):
+        if not self.validate_email(self.email):
+            self.warning('%s is not a valid email.', self.email)
+            return
+
         user_email, _ = UserEmail.objects.get_or_create(email=self.email)
         email_settings, _ = \
             EmailSettings.objects.get_or_create(user_email=user_email)
@@ -274,6 +278,10 @@ class SetDefaultKeywordsCommand(Command, KeywordCommandMixin):
             self.keywords)
 
     def handle(self):
+        if not self.validate_email(self.email):
+            self.warning('%s is not a valid email.', self.email)
+            return
+
         keywords = re.split(r'[,\s]+', self.keywords)
         user_email, _ = UserEmail.objects.get_or_create(email=self.email)
         email_settings, _ = \

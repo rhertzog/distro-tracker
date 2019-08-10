@@ -13,6 +13,7 @@ commands.
 """
 
 import re
+from email.utils import parseaddr
 
 from django.conf import settings
 
@@ -157,3 +158,14 @@ class Command(metaclass=MetaCommand):
         """
         for item in items:
             self.reply(bullet + ' ' + str(item))
+
+    @staticmethod
+    def validate_email(email):
+        _, sane_email = parseaddr(email)
+        if sane_email != email:
+            return False
+
+        if not re.match(r'[^@\s]+@[^@\s]+\.[^@\s]+$', email):
+            return False
+
+        return True

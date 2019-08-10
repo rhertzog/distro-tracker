@@ -71,6 +71,11 @@ class SubscribeCommand(Command):
         Implementation of a hook method which is executed instead of
         :py:meth:`handle` when the command is not confirmed.
         """
+
+        if not self.validate_email(self.user_email):
+            self.warning('%s is not a valid email', self.user_email)
+            return False
+
         settings = get_or_none(EmailSettings,
                                user_email__email__iexact=self.user_email)
         if settings and settings.is_subscribed_to(self.package):

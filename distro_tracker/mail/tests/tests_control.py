@@ -44,6 +44,7 @@ from distro_tracker.core.utils import (
 )
 from distro_tracker.mail import control
 from distro_tracker.mail.control.commands import UNIQUE_COMMANDS
+from distro_tracker.mail.control.commands.base import Command
 from distro_tracker.mail.models import CommandConfirmation
 from distro_tracker.test import TestCase
 
@@ -326,6 +327,24 @@ class EmailControlTest(TestCase):
         Helper method which performs a regex search in a response.
         """
         return regexp.search(mail.outbox[response_number].body)
+
+
+class CommandHelperMethods(TestCase):
+    def test_validate_email(self):
+        self.assertTrue(Command.validate_email('foo@example.net'))
+
+    def test_validate_email_refuses_brackets(self):
+        self.assertFalse(Command.validate_email('<foo@example.net>'))
+
+    def test_validate_email_refuses_html_transcode(self):
+        self.assertFalse(Command.validate_email(
+            'foo@example.net<mailto:foo@example.net>'))
+
+    def test_validate_email_two_arobase(self):
+        self.assertFalse(Command.validate_email('foo@example@example.net'))
+
+    def test_validate_email_no_dot(self):
+        self.assertFalse(Command.validate_email('foo@example'))
 
 
 class ControlBotBasic(EmailControlTest):
@@ -1443,6 +1462,20 @@ class KeywordCommandModifyDefault(EmailControlTest, KeywordCommandHelperMixin):
             self.get_new_default_list_output_message(new_user))
         self.assert_keywords_in_response(keywords + all_default_keywords)
 
+    def test_user_invalid_email(self):
+        """
+        Tests adding a keyword to a user that does not exist and has
+        an invalid email.
+        """
+        new_user = 'bad@email@domain.com'
+        keywords = [Keyword.objects.filter(default=False)[0].name]
+        self.add_keyword_command('+', keywords, new_user)
+
+        self.control_process()
+
+        self.assert_warning_in_response(
+            'bad@email@domain.com is not a valid email.')
+
 
 class KeywordCommandShowDefault(EmailControlTest, KeywordCommandHelperMixin):
     def setUp(self):
@@ -1513,6 +1546,19 @@ class KeywordCommandShowDefault(EmailControlTest, KeywordCommandHelperMixin):
             keyword.name for keyword in
             user.emailsettings.default_keywords.all()
         )
+
+    def test_show_default_keywords_with_invalid_email(self):
+        """
+        Tests that the keyword command doesn't do anything if the
+        email submitted is invalid.
+        """
+        email = 'bad@email@domain.com'
+        self.set_input_lines(['keyword ' + email])
+
+        self.control_process()
+
+        self.assert_warning_in_response(
+            'bad@email@domain.com is not a valid email.')
 
     def test_tag_alias_for_keyword(self):
         """
@@ -1840,6 +1886,19 @@ class SubscribeToPackageTest(EmailControlTest):
         self.add_subscribe_command(self.package.name, self.user_email_address)
 
         self.control_process()  # Must not raise anything
+
+    def test_subscribe_with_invalid_email(self):
+        """
+        Non-regression test for invalid subscriptions that users managed
+        to create.
+        """
+        bad_email = 'foo@example.net<mailto:foo@example.net>'
+        self.add_subscribe_command(self.package.name, bad_email)
+
+        self.control_process()
+
+        self.assertEqual(UserEmail.objects.filter(email=bad_email).count(), 0)
+        self.assert_in_response('is not a valid email')
 
 
 class UnsubscribeFromPackageTest(EmailControlTest):
@@ -2437,6 +2496,18 @@ class JoinTeamCommandsTests(TeamCommandsMixin, EmailControlTest):
         self.control_process()
 
         self.assert_warning_in_response(self.get_is_member_warning())
+
+    def test_join_team_with_invalid_email(self):
+        """
+        Tests that a user gets a warning when trying to join a team
+        with an invalid email.
+        """
+        self.set_input_lines([self.get_join_command(
+            self.team.slug, 'foo@bad@example.net')])
+
+        self.control_process()
+        self.assert_warning_in_response(
+            'foo@bad@example.net is not a valid email.')
 
 
 class LeaveTeamCommandTests(TeamCommandsMixin, EmailControlTest):

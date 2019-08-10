@@ -59,6 +59,10 @@ class JoinTeam(Command):
         return team, user_email
 
     def pre_confirm(self):
+        if not self.validate_email(self.user_email):
+            self.warning('%s is not a valid email.', self.user_email)
+            return False
+
         packed = self.get_team_and_user()
         if packed is None:
             return False
@@ -106,8 +110,8 @@ class LeaveTeam(Command):
             self.error('Team with the slug "%s" does not exist.',
                        self.team_slug)
             return
-        user_email, _ = UserEmail.objects.get_or_create(email=self.user_email)
-        if user_email not in team.members.all():
+        user_email = get_or_none(UserEmail, email=self.user_email)
+        if not user_email or user_email not in team.members.all():
             self.warning("You are not a member of the team.")
             return
 
@@ -167,10 +171,6 @@ class ListTeamPackages(Command):
             return
         return team
 
-    def get_user_email(self):
-        user_email, _ = UserEmail.objects.get_or_create(email=self.user_email)
-        return user_email
-
     def get_command_text(self):
         return super(ListTeamPackages, self).get_command_text(
             self.team_slug)
@@ -180,8 +180,8 @@ class ListTeamPackages(Command):
         if not team:
             return
         if not team.public:
-            user_email = self.get_user_email()
-            if user_email not in team.members.all():
+            user_email = get_or_none(UserEmail, email=self.user_email)
+            if not user_email or user_email not in team.members.all():
                 self.error(
                     "The team is private. "
                     "Only team members can see its packages.")
@@ -210,14 +210,10 @@ class WhichTeams(Command):
         super(WhichTeams, self).__init__()
         self.user_email = email
 
-    def get_user_email(self):
-        user_email, _ = UserEmail.objects.get_or_create(email=self.user_email)
-        return user_email
-
     def handle(self):
-        user_email = self.get_user_email()
+        user_email = get_or_none(UserEmail, email=self.user_email)
 
-        if user_email.teams.count() == 0:
+        if not user_email or user_email.teams.count() == 0:
             self.warning("%s is not a member of any team.", self.user_email)
         else:
             self.reply("Teams that %s is a member of:", self.user_email)
