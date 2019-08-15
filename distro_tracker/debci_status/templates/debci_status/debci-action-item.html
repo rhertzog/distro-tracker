@@ -1,7 +1,7 @@
 <ul>
 {% for data in item.extra_data %}
 <li>
-<b>{{ data.repository }}</b>: <b>test failures</b> (<a href="{{ data.log }}">log</a>)
+<b>{{ data.repository }}</b>: <b class='alert-{% if 'fail' in data.status %}danger{% else %}info{% endif %}'>{{ data.status }}</b> (<a href="{{ data.log }}">log</a>)
 <br/>The tests ran in {{ data.duration }}
 <br/>Last run: {{ data.date }}
 <br/>Previous status: <b>{{ data.previous_status }}</b>
