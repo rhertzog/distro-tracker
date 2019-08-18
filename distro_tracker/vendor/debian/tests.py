@@ -2360,7 +2360,7 @@ class UpdateExcusesTaskActionItemTest(TestCase):
         Sets the stub content of the update_excuses.yaml that the task will
         have access to.
         """
-        self.task._get_excuses_yaml.return_value = yaml.load(content)
+        self.task._get_excuses_yaml.return_value = yaml.safe_load(content)
 
     def set_update_excuses_content_from_file(self, file_name):
         """

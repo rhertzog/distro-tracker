@@ -1215,7 +1215,7 @@ class UpdateExcusesTask(BaseTask):
         if content is None:
             return
 
-        return yaml.load(content)
+        return yaml.safe_load(content)
 
     def execute_main(self):
         content_lines = self._get_excuses_yaml()
