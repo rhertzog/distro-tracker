@@ -60,7 +60,11 @@ pages:
     paths:
       - public
   only:
-    - master
+    refs:
+      - master
+    variables:
+      # Build the documentation only in the official repository, not in forks
+      - $CI_PROJECT_PATH == "qa/distro-tracker"
   except:
     - schedules
 
