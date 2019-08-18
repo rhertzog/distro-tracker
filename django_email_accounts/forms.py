@@ -58,10 +58,13 @@ class UserCreationForm(forms.ModelForm):
         # email address.
         try:
             user_email = UserEmail.objects.get(email=main_email)
+            if user_email.user is not None:
+                raise forms.ValidationError(
+                    'The email address is already in use')
         except UserEmail.DoesNotExist:
-            return main_email
+            pass
 
-        if user_email.user is not None:
+        if User.objects.filter(main_email__iexact=main_email).exists():
             raise forms.ValidationError('The email address is already in use')
 
         return main_email
