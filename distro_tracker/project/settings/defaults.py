@@ -475,7 +475,7 @@ def compute_default_settings(target):
     target['TEMPLATES'][0]['DIRS'].append(
         target['DISTRO_TRACKER_TEMPLATE_DIRECTORY'])
     # Update LOGGING with full paths
-    for handler in target['LOGGING']['handlers'].values():
+    for handler in target['LOGGING'].get('handlers', {}).values():
         if 'filename' not in handler or "/" in handler['filename']:
             continue
         handler['filename'] = os.path.join(

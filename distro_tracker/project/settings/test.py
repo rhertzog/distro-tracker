@@ -13,6 +13,22 @@ PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.SHA1PasswordHasher',
 ]
 
+# Disable logging entirely
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'null': {
+            'class': 'logging.NullHandler',
+        },
+    },
+    'loggers': {
+        'distro_tracker': {
+            'handlers': ['null'],
+        }
+    }
+}
+
 # Restore INSTALLED_APPS and MIDDLEWARE from defaults to disable debug_toolbar
 INSTALLED_APPS = defaults.INSTALLED_APPS.copy()
 MIDDLEWARE = defaults.MIDDLEWARE
