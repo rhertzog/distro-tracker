@@ -9,6 +9,7 @@
 # except according to the terms contained in the LICENSE file.
 """Unit tests for django_email_accounts."""
 
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
 
@@ -23,6 +24,19 @@ class UserEmailTests(TestCase):
             email='myemail@example.net')
         self.assertFalse(created)
         self.assertEqual(orig_user_email.pk, user_email.pk)
+
+    def test_user_email_save_does_validation(self):
+        user_email = UserEmail(email='foobar')
+        with self.assertRaises(ValidationError):
+            user_email.save()
+
+    def test_user_email_create_does_validation(self):
+        with self.assertRaises(ValidationError):
+            UserEmail.objects.create(email='foobar')
+
+    def test_user_email_get_or_create_does_validation(self):
+        with self.assertRaises(ValidationError):
+            UserEmail.objects.get_or_create(email='foobar')
 
 
 class LoginViewTests(TestCase):

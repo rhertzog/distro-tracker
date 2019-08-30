@@ -202,7 +202,7 @@ class UserEmailManager(models.Manager):
 
 class UserEmail(models.Model):
     email = models.EmailField(max_length=244, unique=True)
-    user = models.ForeignKey(User, related_name='emails', null=True,
+    user = models.ForeignKey(User, related_name='emails', blank=True, null=True,
                              on_delete=models.CASCADE)
 
     objects = UserEmailManager()
@@ -210,6 +210,10 @@ class UserEmail(models.Model):
 
     def __str__(self):
         return self.email
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super(UserEmail, self).save(*args, **kwargs)
 
 
 class UserRegistrationConfirmation(Confirmation):
