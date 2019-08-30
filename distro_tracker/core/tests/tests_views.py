@@ -158,6 +158,14 @@ class PackageViewTest(TestCase):
                              package_url(lib_package),
                              status_code=301)
 
+    def test_legacy_url_redirects_handles_bad_url(self):
+        """
+        Non regression test for a traceback generated with unexpected URL.
+        """
+        url = '/e/extend/index.html'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
     def test_catchall_redirect(self):
         """
         Tests that requests made to the root domain are redirected to a package

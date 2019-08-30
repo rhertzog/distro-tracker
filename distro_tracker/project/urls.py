@@ -81,11 +81,11 @@ admin.autodiscover()
 
 urlpatterns = [
     # Redirects for the old PTS package page URLs
-    url(r'^(?P<package_hash>(lib)?.)/(?P<package_name>(\1).+)\.html$',
+    url(r'^(?P<package_hash>(lib)?.)/(?P<package_name>(\1)[^/]+)\.html$',
         legacy_package_url_redirect),
 
     # Permanent redirect for the old RSS URL
-    url(r'^(?P<package_hash>(lib)?.)/(?P<package_name>(\1).+)'
+    url(r'^(?P<package_hash>(lib)?.)/(?P<package_name>(\1)[^/]+)'
         r'/news\.rss20\.xml$',
         legacy_rss_redirect),
 
