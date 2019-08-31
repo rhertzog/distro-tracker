@@ -559,6 +559,23 @@ class RetrieveLowThresholdNmuTest(TestCase):
         # The Debian developer is no longer in the list of low threshold nmu
         self.assertFalse(d.agree_with_low_threshold_nmu)
 
+    @mock.patch('distro_tracker.core.utils.http.requests')
+    def test_developer_bad_email(self, mock_requests):
+        """
+        Ensure the task deals properly with a bad input email.
+        """
+        set_mock_response(mock_requests,
+                          "Text text text\n"
+                          "text more text...\n"
+                          " 1. [[DeveloperName|Name]] - "
+                          "([[https://qa.debian.org/developer.php?"
+                          "login=foobar@|all packages]])\n")
+
+        self.assertTrue(run_task(RetrieveLowThresholdNmuTask))
+
+        # Nothing created due to bad data
+        self.assertEqual(DebianContributor.objects.count(), 0)
+
 
 class RetrieveDebianMaintainersTest(TestCase):
 
@@ -662,6 +679,23 @@ class RetrieveDebianMaintainersTest(TestCase):
         d = DebianContributor.objects.get(email__email='dummy@debian.org')
         # The developer is no longer a debian maintainer
         self.assertFalse(d.is_debian_maintainer)
+
+    @mock.patch('distro_tracker.core.utils.http.requests')
+    def test_bad_developer_email(self, mock_requests):
+        """
+        Ensure that the task deals properly with invalid emails
+        in the input data.
+        """
+        set_mock_response(
+            mock_requests,
+            "Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
+            "Uid: Dummy Developer <bad-email>\n"
+            "Allow: dummy-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E),\n"
+            " second-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E)\n")
+
+        self.assertTrue(run_task(RetrieveDebianMaintainersTask))
+
+        self.assertFalse(UserEmail.objects.filter(email='bad-email').exists())
 
 
 class DebianContributorExtraTest(TestCase):
@@ -5118,6 +5152,11 @@ class DebianSsoLoginTests(TestCase):
         auth_backend = DebianSsoUserBackend()
         user = auth_backend.authenticate(remote_user=self.DD_EMAIL)
         self.assertIsInstance(user, User)  # from distro_tracker.accounts.models
+
+    def test_authenticate_handles_invalid_email(self, get_user_details):
+        auth_backend = DebianSsoUserBackend()
+        user = auth_backend.authenticate(remote_user='foobar')
+        self.assertIsNone(user)
 
 
 class DebianSsoLoginWithSSLClientCertificateTests(DebianSsoLoginTests):

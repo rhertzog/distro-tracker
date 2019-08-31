@@ -15,6 +15,7 @@ import re
 from debian import deb822
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models, transaction
 
 import requests
@@ -53,6 +54,7 @@ from distro_tracker.core.utils.packages import (
 )
 
 logger = logging.getLogger('distro_tracker.tasks')
+logger_input = logging.getLogger('distro_tracker.input')
 
 
 class InvalidRepositoryException(Exception):
@@ -239,44 +241,61 @@ class UpdateRepositoriesTask(BaseTask):
             entry['binary_packages'] = binaries
 
         if 'maintainer' in entry:
-            maintainer_email, _ = UserEmail.objects.get_or_create(
-                email=entry['maintainer']['email'])
-            maintainer = ContributorName.objects.get_or_create(
-                contributor_email=maintainer_email,
-                name=entry['maintainer'].get('name', ''))[0]
-            entry['maintainer'] = maintainer
+            try:
+                maintainer_email, _ = UserEmail.objects.get_or_create(
+                    email=entry['maintainer']['email'])
+                maintainer = ContributorName.objects.get_or_create(
+                    contributor_email=maintainer_email,
+                    name=entry['maintainer'].get('name', ''))[0]
+                entry['maintainer'] = maintainer
+            except ValidationError:
+                email = entry['maintainer']['email']
+                logger_input.warning(
+                    'Invalid email in maintainer field of %s: %s',
+                    src_pkg, email)
+                del entry['maintainer']
 
         if 'uploaders' in entry:
-            uploader_emails = [
-                uploader['email']
-                for uploader in entry['uploaders']
-            ]
-            uploader_names = [
-                uploader.get('name', '')
-                for uploader in entry['uploaders']
-            ]
-            existing_contributor_emails_qs = UserEmail.objects.filter(
-                email__in=uploader_emails)
-            existing_contributor_emails = {
-                contributor.email: contributor
-                for contributor in existing_contributor_emails_qs
-            }
-            uploaders = []
-            for email, name in zip(uploader_emails, uploader_names):
-                if email not in existing_contributor_emails:
+            self._process_uploaders(entry, src_pkg)
+
+        return entry
+
+    def _process_uploaders(self, entry, src_pkg):
+        uploader_emails = [
+            uploader['email']
+            for uploader in entry['uploaders']
+        ]
+        uploader_names = [
+            uploader.get('name', '')
+            for uploader in entry['uploaders']
+        ]
+        existing_contributor_emails_qs = UserEmail.objects.filter(
+            email__in=uploader_emails)
+        existing_contributor_emails = {
+            contributor.email: contributor
+            for contributor in existing_contributor_emails_qs
+        }
+        uploaders = []
+        for email, name in zip(uploader_emails, uploader_names):
+            if email not in existing_contributor_emails:
+                try:
                     contributor_email, _ = UserEmail.objects.get_or_create(
                         email=email)
                     existing_contributor_emails[email] = contributor_email
-                else:
-                    contributor_email = existing_contributor_emails[email]
+                except ValidationError:
+                    contributor_email = None
+                    logger_input.warning(
+                        'Bad email in uploaders in %s for %s: %s',
+                        src_pkg, name, email)
+            else:
+                contributor_email = existing_contributor_emails[email]
+            if contributor_email:
                 uploaders.append(ContributorName.objects.get_or_create(
                     contributor_email=contributor_email,
                     name=name)[0]
                 )
 
-            entry['uploaders'] = uploaders
-
-        return entry
+        entry['uploaders'] = uploaders
 
     def _extract_information_from_packages_entry(self, bin_pkg, stanza):
         entry = extract_information_from_packages_entry(stanza)

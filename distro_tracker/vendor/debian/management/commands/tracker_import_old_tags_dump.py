@@ -11,6 +11,7 @@
 
 import sys
 
+from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
@@ -67,13 +68,19 @@ class Command(BaseCommand):
                         package__name=package,
                         email_settings__user_email__email=email)
                 except Subscription.DoesNotExist:
+                    self.write(f'Skip non-existing subscription '
+                               f'({email} to {package}).\n')
                     continue
                 subscription.keywords.clear()
                 for keyword in keywords:
                     subscription.keywords.add(keyword)
             else:
                 # User default keywords
-                user_email, _ = UserEmail.objects.get_or_create(email=email)
+                try:
+                    user_email, _ = UserEmail.objects.get_or_create(email=email)
+                except ValidationError:
+                    self.write(f'Skip invalid email {email}.\n')
+                    continue
                 email_settings, _ = \
                     EmailSettings.objects.get_or_create(user_email=user_email)
                 email_settings.default_keywords.set(keywords)

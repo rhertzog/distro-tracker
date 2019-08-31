@@ -9,6 +9,7 @@
 # except according to the terms contained in the LICENSE file.
 """Models for the :mod:`distro_tracker.core` app."""
 import hashlib
+import logging
 import os
 import random
 import re
@@ -64,6 +65,8 @@ from django_email_accounts.models import UserEmail
 
 DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS = \
     settings.DISTRO_TRACKER_CONFIRMATION_EXPIRATION_DAYS
+
+logger_input = logging.getLogger('distro_tracker.input')
 
 
 class Keyword(models.Model):
@@ -1662,12 +1665,16 @@ class News(models.Model):
 
         signed_by = []
         for name, email in signers:
-            signer_email, _ = UserEmail.objects.get_or_create(
-                email=email)
-            signer_name, _ = ContributorName.objects.get_or_create(
-                name=name,
-                contributor_email=signer_email)
-            signed_by.append(signer_name)
+            try:
+                signer_email, _ = UserEmail.objects.get_or_create(
+                    email=email)
+                signer_name, _ = ContributorName.objects.get_or_create(
+                    name=name,
+                    contributor_email=signer_email)
+                signed_by.append(signer_name)
+            except ValidationError:
+                logger_input.warning('News "%s" has signature with '
+                                     'invalid email (%s).', self.title, email)
 
         self.signed_by.set(signed_by)
 

@@ -10,15 +10,18 @@
 """Authentication with the Debian SSO service."""
 
 import json
+import logging
 
 from django.contrib import auth
 from django.contrib.auth.backends import RemoteUserBackend
 from django.contrib.auth.middleware import RemoteUserMiddleware
-from django.core.exceptions import ImproperlyConfigured
+from django.core.exceptions import ImproperlyConfigured, ValidationError
 from django.utils.http import urlencode
 
 from distro_tracker.accounts.models import User, UserEmail
 from distro_tracker.core.utils.http import get_resource_content
+
+logger = logging.getLogger(__name__)
 
 
 class DebianSsoUserMiddleware(RemoteUserMiddleware):
@@ -111,7 +114,13 @@ class DebianSsoUserBackend(RemoteUserBackend):
 
         email = remote_user
 
-        user_email, _ = UserEmail.objects.get_or_create(email=email)
+        try:
+            user_email, _ = UserEmail.objects.get_or_create(email=email)
+        except ValidationError:
+            logger.error('remote_user="%s" is not a valid email.',
+                         remote_user)
+            return
+
         if not user_email.user:
             kwargs = {}
             names = self.get_user_details(remote_user)

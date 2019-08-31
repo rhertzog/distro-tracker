@@ -1,4 +1,4 @@
-# Copyright 2013-2018 The Distro Tracker Developers
+# Copyright 2013-2019 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -28,6 +28,7 @@ from debian.debian_support import AptPkgVersion
 import debianbts
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Prefetch
 from django.utils.http import urlencode
@@ -70,6 +71,7 @@ from distro_tracker.vendor.debian.models import (
 from .models import DebianContributor
 
 logger = logging.getLogger(__name__)
+logger_input = logging.getLogger('distro_tracker.input')
 
 
 class RetrieveDebianMaintainersTask(BaseTask):
@@ -110,9 +112,15 @@ class RetrieveDebianMaintainersTask(BaseTask):
             qs.update(is_debian_maintainer=False)
 
             for email, packages in maintainers.items():
-                email, _ = UserEmail.objects.get_or_create(email=email)
+                try:
+                    user_email, _ = UserEmail.objects.get_or_create(email=email)
+                except ValidationError:
+                    logger_input.info('%s refers to invalid email "%s".',
+                                      url, email)
+                    continue
+
                 contributor, _ = DebianContributor.objects.get_or_create(
-                    email=email)
+                    email=user_email)
 
                 contributor.is_debian_maintainer = True
                 contributor.allowed_packages = packages
@@ -165,8 +173,15 @@ class RetrieveLowThresholdNmuTask(BaseTask):
             qs = DebianContributor.objects.filter(
                 agree_with_low_threshold_nmu=True)
             qs.update(agree_with_low_threshold_nmu=False)
+
             for email in emails:
-                email, _ = UserEmail.objects.get_or_create(email=email)
+                try:
+                    email, _ = UserEmail.objects.get_or_create(email=email)
+                except ValidationError:
+                    logger_input.info(
+                        'LowThresholdNmu refers to invalid email "%s".', email)
+                    continue
+
                 contributor, _ = DebianContributor.objects.get_or_create(
                     email=email)
 
