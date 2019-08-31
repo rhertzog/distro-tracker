@@ -351,7 +351,7 @@ class RepositoryAdminTest(SeleniumTestCase):
         super(RepositoryAdminTest, self).setUp()
         # Create a superuser which will be used for the tests
         User.objects.create_superuser(
-            main_email='admin',
+            main_email='admin@example.net',
             password='admin'
         )
 
