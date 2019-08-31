@@ -374,6 +374,9 @@ MESSAGE_TAGS = {message_constants.ERROR: 'danger'}
 
 # The fully qualified domain name for the Distro Tracker deployment
 DISTRO_TRACKER_FQDN = socket.getfqdn()
+if '.' not in DISTRO_TRACKER_FQDN:
+    # We need a fully qualified name with a domain... at least for the tests.
+    DISTRO_TRACKER_FQDN = 'tracker.example.net'
 
 #: This file is the trusted.gpg main file to hand out to APT
 DISTRO_TRACKER_TRUSTED_GPG_MAIN_FILE = '/etc/apt/trusted.gpg'
