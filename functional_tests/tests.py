@@ -355,7 +355,7 @@ class RepositoryAdminTest(SeleniumTestCase):
             password='admin'
         )
 
-    def login_to_admin(self, username='admin', password='admin'):
+    def login_to_admin(self, username='admin@example.net', password='admin'):
         """
         Helper method which logs the user with the given credentials to the
         admin console.
