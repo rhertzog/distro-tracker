@@ -13,9 +13,10 @@ commands.
 """
 
 import re
-from email.utils import parseaddr
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import EmailValidator
 
 DISTRO_TRACKER_CONTROL_EMAIL = settings.DISTRO_TRACKER_CONTROL_EMAIL
 
@@ -161,11 +162,9 @@ class Command(metaclass=MetaCommand):
 
     @staticmethod
     def validate_email(email):
-        _, sane_email = parseaddr(email)
-        if sane_email != email:
+        validate = EmailValidator()
+        try:
+            validate(email)
+            return True
+        except ValidationError:
             return False
-
-        if not re.match(r'[^@\s]+@[^@\s]+\.[^@\s]+$', email):
-            return False
-
-        return True
