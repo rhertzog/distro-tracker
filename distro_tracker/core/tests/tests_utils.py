@@ -1225,6 +1225,51 @@ class VerifySignatureTest(SimpleTestCase):
             content = f.read().decode('utf-8')
             self.assertEqual(expected, verify_signature(content))
 
+    @override_settings(DISTRO_TRACKER_FQDN='random.unrelated.domain')
+    def test_uid_with_invalid_email_is_skipped(self):
+        """
+        Among all the available UID, make sure we skip those without email
+        or with invalid emails.
+        """
+        # The invalid UID have been put first in the list of UIDs on that key
+        self.import_key_into_keyring('key2.pub')
+        file_path = self.get_test_data_path('signed-message-with-key2')
+        expected = [
+            ('John Doe', 'test@ouaza.com')
+        ]
+
+        with open(file_path, 'rb') as f:
+            self.assertEqual(expected, verify_signature(f.read()))
+
+    @override_settings(DISTRO_TRACKER_FQDN='tracker.debian.org')
+    def test_uid_with_project_domain_is_preferred(self):
+        """
+        If we have an UID using the same domain name as this instance,
+        then prefer that UID.
+        """
+        self.import_key_into_keyring('key2.pub')
+        file_path = self.get_test_data_path('signed-message-with-key2')
+        expected = [
+            ('John Debian', 'test@debian.org')
+        ]
+
+        with open(file_path, 'rb') as f:
+            self.assertEqual(expected, verify_signature(f.read()))
+
+    @override_settings(DISTRO_TRACKER_FQDN='tracker.revoked.net')
+    def test_skip_revoked_uid_with_project_domain(self):
+        """Ensure that we ignore invalid and revoked UIDs."""
+        self.import_key_into_keyring('key2.pub')
+        file_path = self.get_test_data_path('signed-message-with-key2')
+        # We do have an UID in @revoked.net but it's not selected, instead
+        # we get the first key with a valid email.
+        expected = [
+            ('John Doe', 'test@ouaza.com')
+        ]
+
+        with open(file_path, 'rb') as f:
+            self.assertEqual(expected, verify_signature(f.read()))
+
 
 class DecodeHeaderTest(SimpleTestCase):
     """

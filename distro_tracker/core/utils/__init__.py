@@ -1,4 +1,4 @@
-# Copyright 2013-2018 The Distro Tracker Developers
+# Copyright 2013-2019 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -13,6 +13,8 @@ import json
 import os
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import EmailValidator
 from django.db import models
 from django.http import HttpResponse
 from django.template.loader import render_to_string
@@ -244,9 +246,41 @@ def verify_signature(content):
                 continue
 
             key = ctx.get_key(signature.fpr)
-            signers.append((key.uids[0].name, key.uids[0].email))
+            preferred_domain = "".join(
+                settings.DISTRO_TRACKER_FQDN.split(".", 1)[1:2])
+
+            selected_uid = _select_uid_in_key(key, domain=preferred_domain)
+            if not selected_uid:
+                selected_uid = _select_uid_in_key(key)
+
+            signers.append((selected_uid.name, selected_uid.email))
 
     return signers
+
+
+def _select_uid_in_key(key, domain=None):
+    """
+    Select the desired UID among all the available UIDs.
+    """
+    selected_uid = None
+    validate_email = EmailValidator()
+
+    for uid in key.uids:
+        if uid.revoked or uid.invalid:
+            continue
+        try:
+            validate_email(uid.email)
+            if domain:
+                if uid.email.endswith('@' + domain):
+                    selected_uid = uid
+                    break
+            else:
+                selected_uid = uid
+                break
+        except ValidationError:
+            continue
+
+    return selected_uid
 
 
 def now(tz=datetime.timezone.utc):
