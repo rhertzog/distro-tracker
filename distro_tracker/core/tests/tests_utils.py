@@ -1270,6 +1270,19 @@ class VerifySignatureTest(SimpleTestCase):
         with open(file_path, 'rb') as f:
             self.assertEqual(expected, verify_signature(f.read()))
 
+    @mock.patch('distro_tracker.core.utils.logger_input')
+    def test_key_without_any_email(self, logger):
+        """Ensure that we deal properly with keys without emails."""
+        self.import_key_into_keyring('key3.pub')
+        file_path = self.get_test_data_path('signed-message-with-key3')
+
+        # No identity is returned
+        with open(file_path, 'rb') as f:
+            self.assertEqual([], verify_signature(f.read()))
+
+        # A message is logged about this bad key
+        self.assertTrue(logger.warning.called)
+
 
 class DecodeHeaderTest(SimpleTestCase):
     """

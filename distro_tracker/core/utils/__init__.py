@@ -10,6 +10,7 @@
 """Various utilities for the distro-tracker project."""
 import datetime
 import json
+import logging
 import os
 
 from django.conf import settings
@@ -27,6 +28,8 @@ from distro_tracker import vendor
 from .email_messages import extract_email_address_from_header  # noqa
 from .email_messages import get_decoded_message_payload        # noqa
 from .email_messages import message_from_bytes                 # noqa
+
+logger_input = logging.getLogger('distro_tracker.input')
 
 
 def get_or_none(model, **kwargs):
@@ -253,7 +256,12 @@ def verify_signature(content):
             if not selected_uid:
                 selected_uid = _select_uid_in_key(key)
 
-            signers.append((selected_uid.name, selected_uid.email))
+            if selected_uid:
+                signers.append((selected_uid.name, selected_uid.email))
+            else:
+                logger_input.warning(
+                    'Key %s has no valid UID (name=%s email=%s)', signature.fpr,
+                    key.uids[0].name, key.uids[0].email)
 
     return signers
 
