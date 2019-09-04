@@ -260,8 +260,8 @@ def verify_signature(content):
                 signers.append((selected_uid.name, selected_uid.email))
             else:
                 logger_input.warning(
-                    'Key %s has no valid UID (name=%s email=%s)', signature.fpr,
-                    key.uids[0].name, key.uids[0].email)
+                    'Key %s has no UID with a valid email (name=%s email=%s)',
+                    signature.fpr, key.uids[0].name, key.uids[0].email)
 
     return signers
 
