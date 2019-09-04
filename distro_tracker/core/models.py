@@ -1142,7 +1142,7 @@ class SourcePackage(models.Model):
         SourcePackageName,
         related_name='source_package_versions',
         on_delete=models.CASCADE)
-    version = models.CharField(max_length=100)
+    version = models.CharField(max_length=200)
 
     standards_version = models.CharField(max_length=550, blank=True)
     architectures = models.ManyToManyField(Architecture, blank=True)
@@ -1272,7 +1272,7 @@ class BinaryPackage(models.Model):
         related_name='binary_package_versions',
         on_delete=models.CASCADE
     )
-    version = models.CharField(max_length=100)
+    version = models.CharField(max_length=200)
     source_package = models.ForeignKey(SourcePackage, on_delete=models.CASCADE)
 
     short_description = models.CharField(max_length=300, blank=True)
