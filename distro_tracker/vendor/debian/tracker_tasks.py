@@ -1106,30 +1106,6 @@ class UpdateExcusesTask(BaseTask):
 
         return addendum
 
-    def _make_excuses_check_age(self, source):
-        """Checks how old is the package and builds an excuses message
-        depending on the result."""
-
-        addendum = []
-
-        verdict, age, limit = self._check_age(source)
-
-        if verdict in [
-            self.AgeVerdict.PKG_TOO_OLD,
-            self.AgeVerdict.PKG_OF_AGE
-        ]:
-            addendum.append("%d days old (%d needed)" % (
-                age,
-                limit,
-            ))
-        elif verdict == self.AgeVerdict.PKG_TOO_YOUNG:
-            addendum.append("Too young, only %d of %d days old" % (
-                age,
-                limit,
-            ))
-
-        return addendum
-
     def _make_excuses(self, source):
         """Make the excuses list for a source item using the yaml data it
         contains"""
@@ -1145,7 +1121,6 @@ class UpdateExcusesTask(BaseTask):
 
         addendum.extend(self._make_excuses_check_verdict(source))
         addendum.extend(self._make_excuses_check_dependencies(source))
-        addendum.extend(self._make_excuses_check_age(source))
 
         excuses = addendum + excuses
 
