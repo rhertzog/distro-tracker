@@ -282,5 +282,5 @@ It uses Javascript to call an HTTP endpoint implemented by one of the views.
 
 The HTML of the pages uses the HTML5 standard.
 
-The `Bootstrap <http://twitter.github.io/bootstrap/>`_ front-end framework is
+The `Bootstrap <https://getbootstrap.com/>`_ front-end framework is
 used for the GUI.

@@ -35,7 +35,7 @@ DISTRO_TRACKER_DEBCI_REPOSITORIES = ['unstable']
 # DJANGO_EMAIL_ACCOUNTS_USE_CAPTCHA = True
 # DISTRO_TRACKER_FQDN = "tracker.debian.org"
 # DISTRO_TRACKER_VENDOR_NAME = "Debian"
-# DISTRO_TRACKER_VENDOR_URL = "http://www.debian.org"
+# DISTRO_TRACKER_VENDOR_URL = "https://www.debian.org"
 # DISTRO_TRACKER_VENDOR_RULES = "distro_tracker.vendor.debian.rules"
 # DISTRO_TRACKER_CONTACT_EMAIL = 'owner@' + DISTRO_TRACKER_FQDN
 

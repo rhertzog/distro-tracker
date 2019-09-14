@@ -34,7 +34,7 @@ INSTALLED_APPS.extend([
 # Official service name
 DISTRO_TRACKER_FQDN = "pkg.kali.org"
 DISTRO_TRACKER_VENDOR_NAME = "Kali Linux"
-DISTRO_TRACKER_VENDOR_URL = "http://www.kali.org"
+DISTRO_TRACKER_VENDOR_URL = "https://www.kali.org"
 
 # Captcha support
 DJANGO_EMAIL_ACCOUNTS_USE_CAPTCHA = True

@@ -139,7 +139,7 @@ Test Driven Development
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Have a look at `Test-Driven Web Development with Python
-<http://www.obeythetestinggoat.com/>`_ if you don't know yet about this
+<https://www.obeythetestinggoat.com/>`_ if you don't know yet about this
 development methodology.
 
 The suggested workflow looks like this:
@@ -181,10 +181,10 @@ Conventions
 ~~~~~~~~~~~
 
   1. In regard to coding style, we observe `PEP8\
-     <http://legacy.python.org/dev/peps/pep-0008/>`_ with a few exceptions.
+     <https://www.python.org/dev/peps/pep-0008/>`_ with a few exceptions.
 
   2. Functions are documented using doctrings with `Sphinx markup
-     <http://sphinx-doc.org/en/master/>`_.
+     <https://www.sphinx-doc.org/en/master/>`_.
 
   3. Imports are sorted in multiple groups separated by one empty line:
      first a group for ``__future__`` imports, then a single group for all

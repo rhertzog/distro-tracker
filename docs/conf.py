@@ -256,10 +256,10 @@ texinfo_documents = [
 
 # Add Django's docs to intersphinx
 intersphinx_mapping = {
-    'http://docs.python.org/': None,
+    'https://docs.python.org/': None,
     'django': (
-        'http://docs.djangoproject.com/en/dev/',
-        'http://docs.djangoproject.com/en/dev/_objects/'
+        'https://docs.djangoproject.com/en/dev/',
+        'https://docs.djangoproject.com/en/dev/_objects/'
     ),
 }
 

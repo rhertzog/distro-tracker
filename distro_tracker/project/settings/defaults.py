@@ -146,7 +146,7 @@ BASE_DIR = dirname(dirname(dirname(dirname(__file__))))
 DISTRO_TRACKER_DATA_PATH = os.path.join(BASE_DIR, 'data')
 
 # Local time zone for this installation. Choices can be found here:
-# http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
+# https://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.
 # In a Windows environment this must be set to your system time zone.
 TIME_ZONE = 'UTC'
@@ -259,7 +259,7 @@ INSTALLED_APPS = [
     'distro_tracker.mail'
 ]
 
-# See http://docs.djangoproject.com/en/dev/topics/logging for
+# See https://docs.djangoproject.com/en/dev/topics/logging for
 # more details on how to customize your logging configuration.
 LOGGING = {
     'version': 1,

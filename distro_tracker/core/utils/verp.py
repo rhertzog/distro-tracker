@@ -12,8 +12,8 @@
 Module for encoding and decoding Variable Envelope Return Path addresses.
 
 It is implemented following the recommendations laid out in
-`VERP <http://cr.yp.to/proto/verp.txt>`_ and
-`<http://www.courier-mta.org/draft-varshavchik-verp-smtpext.txt>`_
+`VERP <https://cr.yp.to/proto/verp.txt>`_ and
+`<https://www.courier-mta.org/draft-varshavchik-verp-smtpext.txt>`_
 
 
 >>> from distro_tracker.core.utils import verp

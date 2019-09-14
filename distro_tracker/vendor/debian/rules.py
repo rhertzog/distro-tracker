@@ -291,7 +291,7 @@ def get_external_version_information_urls(package_name):
             'description': 'more versions can be listed by madison',
         },
         {
-            'url': 'http://snapshot.debian.org/package/{package}/'.format(
+            'url': 'https://snapshot.debian.org/package/{package}/'.format(
                 package=package_name),
             'description': 'old versions available from snapshot.debian.org',
         }

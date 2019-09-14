@@ -62,6 +62,6 @@ mail [Raphaël Hertzog](mailto:hertzog@debian.org) privately.
 ### Known distro-tracker deployments
 
 * https://tracker.debian.org
-* http://pkg.kali.org
+* https://pkg.kali.org
 
 
