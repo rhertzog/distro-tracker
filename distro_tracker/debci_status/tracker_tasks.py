@@ -144,8 +144,9 @@ class UpdateDebciStatusTask(BaseTask):
 
         for repo_codename in repos:
             for status in self.get_debci_status(repo_codename):
-                package = status['package']
-                all_debci_status[package][repo_codename] = status
+                if status and 'package' in status:
+                    package = status['package']
+                    all_debci_status[package][repo_codename] = status
 
         # import pprint
         # pprint.pprint(all_debci_status)
