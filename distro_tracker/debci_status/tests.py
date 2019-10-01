@@ -56,7 +56,6 @@ class UpdateDebciStatusTaskTest(TestCase):
                 "blame": [],
                 "previous_status": "pass",
                 "duration_seconds": "91",
-                "duration_human": "0h 1m 31s",
                 "message": "Tests failed"
             }
         ]
@@ -117,7 +116,7 @@ class UpdateDebciStatusTaskTest(TestCase):
         log = "https://ci.debian.net/data/packages/unstable/amd64/d/" + \
             "dummy-package/latest-autopkgtest/log.gz"
         self.assertIn(self.url, action_item.short_description)
-        self.assertEqual(action_item.extra_data[0]['duration'], "0h 1m 31s")
+        self.assertEqual(action_item.extra_data[0]['duration'], "0:01:31")
         self.assertEqual(action_item.extra_data[0]['previous_status'], "pass")
         self.assertEqual(action_item.extra_data[0]['date'],
                          "2014-07-05 14:55:57")
@@ -194,6 +193,26 @@ class UpdateDebciStatusTaskTest(TestCase):
         self.run_task()
 
         self.assertEqual(0, self.package.action_items.count())
+
+    def test_no_exception_on_null_entry(self, mock_requests):
+        """
+        Tests that no exception is raised when getting a null entry
+        is present in the JSON data.
+        """
+        self.json_data.append(None)
+        set_mock_response(mock_requests, json=self.json_data)
+
+        self.run_task()
+
+    def test_no_exception_on_null_duration(self, mock_requests):
+        """
+        Tests that no exception is raised when getting a null duration
+        in the JSON data.
+        """
+        self.json_data[0]['duration_seconds'] = None
+        set_mock_response(mock_requests, json=self.json_data)
+
+        self.run_task()
 
     @override_settings(DISTRO_TRACKER_DEBCI_REPOSITORIES=['debcirepo'])
     def test_debci_repository_variable_enforced(self, mock_requests):

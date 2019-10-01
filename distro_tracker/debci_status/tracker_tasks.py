@@ -12,6 +12,7 @@ The Distro-Tracker-specific tasks for :mod:`distro_tracker.debci_status` app.
 """
 
 import collections
+import datetime
 import json
 import logging
 import os.path
@@ -122,8 +123,14 @@ class UpdateDebciStatusTask(BaseTask):
             log = self.__get_debci_url_logfile(package_name, repo_codename)
 
             result = debci_status['result']
+            try:
+                duration = str(datetime.timedelta(
+                    seconds=int(result['duration_seconds'])))
+            except TypeError:
+                duration = 'an unknown time'
+
             debci_action_item.extra_data.append({
-                'duration': result['duration_human'],
+                'duration': duration,
                 'previous_status': result['previous_status'],
                 'status': result['status'],
                 'date': result['date'],
