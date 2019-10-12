@@ -1,3 +1,35 @@
+distro-tracker (1.1.2) unstable; urgency=medium
+
+  [ Raphaël Hertzog ]
+  * Update codenames for Debian releases after stable release of buster
+    (Closes: #931516)
+  * mail: harden bot to not create UserEmail with invalid emails
+  * debci_status: display exact status for each repository
+  * django_email_accounts: harden the register form
+  * gitlab-ci: build docs only in the official repository
+  * settings: disable logging during tests
+  * Use yaml.safe_load() instead of yaml.load()
+  * Avoid traceback generated with unexpected URL like /e/extend/index.html
+  * django_email_accounts: validate email on UserEmail.save()
+  * mail: rely on EmailValidator instead of our own custom validation code
+  * Properly handle ValidationError where we create UserEmail objects
+  * utils: improve verify_signature() to return better user identities
+  * Fix syntax error with Python 3.5
+  * settings: ensure we have a domain in the FQDN
+  * functional_tests: use a valid email to avoid a test failure
+  * functional_tests: update admin email in another place
+  * verify_signature: deals with keys without any email at all
+  * Increase max length on version field from 100 to 200
+  * Improve a log message
+  * debci: work-around bad input data from ci.debian.net
+  * debci: no longer rely on duration_human, compute our own
+
+  [ Paul Wise ]
+  * Drop excuses aging information
+  * Update links from http to https
+
+ -- Raphaël Hertzog <hertzog@debian.org>  Sat, 12 Oct 2019 06:59:45 +0200
+
 distro-tracker (1.1.1) unstable; urgency=medium
 
   [ Johannes 'josch' Schauer ]
