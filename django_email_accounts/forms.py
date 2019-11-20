@@ -57,7 +57,7 @@ class UserCreationForm(forms.ModelForm):
         # Check whether a different user is already associated with this
         # email address.
         try:
-            user_email = UserEmail.objects.get(email=main_email)
+            user_email = UserEmail.objects.get(email__iexact=main_email)
             if user_email.user is not None:
                 raise forms.ValidationError(
                     'The email address is already in use')
@@ -71,7 +71,10 @@ class UserCreationForm(forms.ModelForm):
 
     def save(self, *args, **kwargs):
         user = super(UserCreationForm, self).save(commit=True)
-        email, _ = UserEmail.objects.get_or_create(email=user.main_email)
+        email, _ = UserEmail.objects.get_or_create(
+            email__iexact=user.main_email,
+            defaults={'email': user.main_email}
+        )
         user.emails.add(email)
         user.save()
 
@@ -118,7 +121,7 @@ class ForgotPasswordForm(forms.Form):
 
     def clean_email(self):
         email = self.cleaned_data['email']
-        if User.objects.filter(emails__email=email).count() == 0:
+        if User.objects.filter(emails__email__iexact=email).count() == 0:
             raise forms.ValidationError(
                 "No user with the given email is registered")
 

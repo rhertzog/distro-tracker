@@ -141,7 +141,10 @@ class UserManager(BaseUserManager):
 
         # Match the email with a UserEmail instance and add it to the set of
         # associated emails for the user.
-        email_user, _ = UserEmail.objects.get_or_create(email=main_email)
+        email_user, _ = UserEmail.objects.get_or_create(
+            email__iexact=main_email,
+            defaults={'email': main_email}
+        )
         user.emails.add(email_user)
 
         return user

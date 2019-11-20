@@ -328,7 +328,10 @@ class ManageAccountEmailsView(LoginRequiredMixin, MessageMixin, FormView):
 
     def form_valid(self, form):
         email = form.cleaned_data['email']
-        user_email, _ = UserEmail.objects.get_or_create(email=email)
+        user_email, _ = UserEmail.objects.get_or_create(
+            email__iexact=email,
+            defaults={'email': email}
+        )
         if not user_email.user:
             # The email is not associated with an account yet.
             # Ask for confirmation to add it to this account.
@@ -374,7 +377,7 @@ class AccountMergeConfirmView(LoginRequiredMixin, View):
         if 'email' not in query_dict:
             raise Http404
         email = query_dict['email']
-        user_email = get_object_or_404(UserEmail, email=email)
+        user_email = get_object_or_404(UserEmail, email__iexact=email)
         return user_email
 
     def get(self, request):
@@ -453,7 +456,7 @@ class AccountMergeConfirmedView(TemplateView):
         if 'email' not in self.request.GET:
             raise Http404
         email = self.request.GET['email']
-        user_email = get_object_or_404(UserEmail, email=email)
+        user_email = get_object_or_404(UserEmail, email__iexact=email)
         context = super(AccountMergeConfirmedView,
                         self).get_context_data(**kwargs)
         context['email'] = user_email
