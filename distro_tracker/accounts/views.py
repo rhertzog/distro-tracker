@@ -134,6 +134,9 @@ class SubscriptionsView(LoginRequiredMixin, View):
     def get(self, request):
         user = request.user
         keyword_qs = Keyword.objects.order_by('name')
+        # Ensure we have EmailSettings for all emails
+        for user_email in UserEmail.objects.filter(user=user):
+            EmailSettings.objects.get_or_create(user_email=user_email)
         user_emails = UserEmail.objects.filter(user=user).order_by(
             'email'
         ).prefetch_related(
@@ -147,8 +150,6 @@ class SubscriptionsView(LoginRequiredMixin, View):
             )
         )
         # Map users emails to the subscriptions of that email
-        for user_email in user_emails:
-            EmailSettings.objects.get_or_create(user_email=user_email)
         subscriptions = [
             {
                 'email': user_email,
