@@ -1138,6 +1138,7 @@ class SourcePackage(models.Model):
     pair which is independent from the repository in which the package is
     found.
     """
+    id = models.BigAutoField(primary_key=True)  # noqa
     source_package_name = models.ForeignKey(
         SourcePackageName,
         related_name='source_package_versions',
@@ -1267,6 +1268,7 @@ class BinaryPackage(models.Model):
     All information regarding a (binary-package-name, version) which is
     independent from the repository in which the package is found.
     """
+    id = models.BigAutoField(primary_key=True)  # noqa
     binary_package_name = models.ForeignKey(
         BinaryPackageName,
         related_name='binary_package_versions',
@@ -1319,6 +1321,7 @@ class BinaryPackageRepositoryEntry(models.Model):
     It links a :class:`BinaryPackage` instance with the :class:`Repository`
     instance.
     """
+    id = models.BigAutoField(primary_key=True)  # noqa
     binary_package = models.ForeignKey(
         BinaryPackage,
         related_name='repository_entries',
@@ -1373,6 +1376,7 @@ class SourcePackageRepositoryEntry(models.Model):
     It links a :class:`SourcePackage` instance with the :class:`Repository`
     instance.
     """
+    id = models.BigAutoField(primary_key=True)  # noqa
     source_package = models.ForeignKey(
         SourcePackage,
         related_name='repository_entries',
@@ -1451,6 +1455,7 @@ class ExtractedSourceFile(models.Model):
     """
     Model representing a single file extracted from a source package archive.
     """
+    id = models.BigAutoField(primary_key=True)  # noqa
     source_package = models.ForeignKey(
         SourcePackage,
         related_name='extracted_source_files',
@@ -1474,6 +1479,7 @@ class PackageData(models.Model):
     extracted from other models in order to speed up its rendering on
     Web pages.
     """
+    id = models.BigAutoField(primary_key=True)  # noqa
     package = models.ForeignKey(PackageName,
                                 on_delete=models.CASCADE,
                                 related_name="data")
@@ -1622,6 +1628,7 @@ class News(models.Model):
     """
     A model used to describe a news item regarding a package.
     """
+    id = models.BigAutoField(primary_key=True)  # noqa
     package = models.ForeignKey(PackageName, on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
     content_type = models.CharField(max_length=100, default='text/plain')
@@ -1915,6 +1922,7 @@ class PackageBugStats(models.Model):
     Model for bug statistics of source and pseudo packages (packages modelled
     by the :class:`PackageName` model).
     """
+    id = models.BigAutoField(primary_key=True)  # noqa
     package = models.OneToOneField(PackageName, related_name='bug_stats',
                                    on_delete=models.CASCADE)
     stats = JSONField(blank=True)
@@ -1928,6 +1936,7 @@ class BinaryPackageBugStats(models.Model):
     """
     Model for bug statistics of binary packages (:class:`BinaryPackageName`).
     """
+    id = models.BigAutoField(primary_key=True)  # noqa
     package = models.OneToOneField(BinaryPackageName,
                                    related_name='binary_bug_stats',
                                    on_delete=models.CASCADE)
@@ -2024,6 +2033,7 @@ class ActionItem(models.Model):
         (SEVERITY_HIGH, 'high'),
         (SEVERITY_CRITICAL, 'critical'),
     )
+    id = models.BigAutoField(primary_key=True)  # noqa
     package = models.ForeignKey(PackageName, related_name='action_items',
                                 on_delete=models.CASCADE)
     item_type = models.ForeignKey(ActionItemType, related_name='action_items',
@@ -2188,6 +2198,7 @@ class Confirmation(models.Model):
 
 
 class SourcePackageDeps(models.Model):
+    id = models.BigAutoField(primary_key=True)  # noqa
     source = models.ForeignKey(SourcePackageName,
                                related_name='source_dependencies',
                                on_delete=models.CASCADE)
