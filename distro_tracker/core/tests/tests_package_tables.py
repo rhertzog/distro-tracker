@@ -76,7 +76,7 @@ def create_package_data(package):
         key='versions',
         value={
             'version_list': [],
-            'default_pool_url': 'http://deb.debian.org/debian/pool/main/'
+            'default_pool_url': 'https://deb.debian.org/debian/pool/main/'
         }
     )
 

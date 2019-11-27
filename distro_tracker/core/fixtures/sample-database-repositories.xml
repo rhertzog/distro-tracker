@@ -3,8 +3,8 @@
     <object pk="1" model="core.repository">
         <field type="CharField" name="name">Debian Unstable</field>
         <field type="CharField" name="shorthand">unstable</field>
-        <field type="CharField" name="uri">http://deb.debian.org/debian</field>
-        <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
+        <field type="CharField" name="uri">https://deb.debian.org/debian</field>
+        <field type="CharField" name="public_uri">https://deb.debian.org/debian</field>
         <field type="CharField" name="suite">unstable</field>
         <field type="CharField" name="codename">sid</field>
         <field type="TextField" name="components">main contrib non-free</field>
@@ -18,8 +18,8 @@
     <object pk="2" model="core.repository">
         <field type="CharField" name="name">Debian Experimental</field>
         <field type="CharField" name="shorthand">exp</field>
-        <field type="CharField" name="uri">http://deb.debian.org/debian</field>
-        <field type="CharField" name="public_uri">http://deb.debian.org/debian</field>
+        <field type="CharField" name="uri">https://deb.debian.org/debian</field>
+        <field type="CharField" name="public_uri">https://deb.debian.org/debian</field>
         <field type="CharField" name="suite">experimental</field>
         <field type="CharField" name="codename">experimental</field>
         <field type="TextField" name="components">main contrib non-free</field>
