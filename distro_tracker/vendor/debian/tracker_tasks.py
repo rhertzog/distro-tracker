@@ -754,11 +754,14 @@ class UpdateAppStreamStatsTask(BaseTask):
             for cid, h in hint['hints'].items():
                 for e in h:
                     severity = self._tag_severities[e['tag']]
-                    sevkey = "errors"
-                    if severity == "warning":
+                    if severity == "error":
+                        sevkey = "errors"
+                    elif severity == "warning":
                         sevkey = "warnings"
                     elif severity == "info":
                         sevkey = "infos"
+                    else:
+                        continue
                     if sevkey not in all_stats[src_pkgname][package_name]:
                         all_stats[src_pkgname][package_name][sevkey] = 1
                     else:
