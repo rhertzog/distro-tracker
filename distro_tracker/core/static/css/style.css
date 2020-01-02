@@ -147,7 +147,7 @@ button, input, optgroup, select, textarea {
 .panel-heading {
   padding: 5px 5px;
   margin: -15px -15px 0px;
-  font-size: 17.5px;
+  font-size: 1.2em;
   font-weight: 500;
   color: #ffffff;
   background-color: #d70751;
