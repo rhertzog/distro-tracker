@@ -2032,6 +2032,57 @@ class UpdateAppStreamStatsTaskTest(TestCase):
         self.assert_action_item_error_and_warning_count(item,
                                                         errors=0, warnings=2)
 
+    @mock.patch('distro_tracker.core.utils.http.requests')
+    def test_action_item_updated_errors_to_warnings(self, mock_requests):
+        """
+        Tests that an existing action item is correctly updated from an high
+        severity item to a normal one when there are no longer errors.
+        """
+
+        # Sanity check: there were no action items in the beginning
+        self.assertEqual(0, ActionItem.objects.count())
+
+        test_entry = self._create_hint_entry(package='dummy-package',
+                                             n_errors=2, n_warnings=1)
+        test_data = json.dumps([test_entry]).encode('utf-8')
+
+        self._set_mock_response(mock_requests, text=test_data)
+        self.run_task()
+
+        # An action item is created.
+        self.assertEqual(1, ActionItem.objects.count())
+        # The correct number of errors and warnings is stored in the item
+        item = ActionItem.objects.all()[0]
+        self.assert_action_item_error_and_warning_count(item,
+                                                        errors=2, warnings=1)
+        # It has the correct type
+        self.assertEqual(
+            item.item_type.type_name,
+            UpdateAppStreamStatsTask.ACTION_ITEM_TYPE_NAME)
+        # It is a high severity issue
+        self.assertEqual('high', item.get_severity_display())
+        old_timestamp = item.last_updated_timestamp
+
+        # Update the package
+        test_entry = self._create_hint_entry(package='dummy-package',
+                                             n_errors=0, n_warnings=2)
+        test_data = json.dumps([test_entry]).encode('utf-8')
+
+        self._set_mock_response(mock_requests, text=test_data)
+        self.run_task()
+
+        # Still there is an action item.
+        self.assertEqual(1, ActionItem.objects.count())
+        # Extra data updated?
+        item = ActionItem.objects.all()[0]
+        # The timestamp is updated
+        self.assertNotEqual(old_timestamp, item.last_updated_timestamp)
+        # The correct number of errors and warnings is stored in the item
+        self.assert_action_item_error_and_warning_count(item,
+                                                        errors=0, warnings=2)
+        # It is a normal severity issue
+        self.assertEqual('normal', item.get_severity_display())
+
 
 @override_settings(
     DISTRO_TRACKER_VENDOR_RULES='distro_tracker.vendor.debian.rules')
