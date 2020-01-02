@@ -754,11 +754,14 @@ class UpdateAppStreamStatsTask(BaseTask):
             for cid, h in hint['hints'].items():
                 for e in h:
                     severity = self._tag_severities[e['tag']]
-                    sevkey = "errors"
-                    if severity == "warning":
+                    if severity == "error":
+                        sevkey = "errors"
+                    elif severity == "warning":
                         sevkey = "warnings"
                     elif severity == "info":
                         sevkey = "infos"
+                    else:
+                        continue
                     if sevkey not in all_stats[src_pkgname][package_name]:
                         all_stats[src_pkgname][package_name][sevkey] = 1
                     else:
@@ -864,9 +867,13 @@ class UpdateAppStreamStatsTask(BaseTask):
         appstream_action_item.short_description = \
             self.ITEM_DESCRIPTION.format(report=short_report)
 
-        # If there are errors make the item a high severity issue
+        # If there are errors make the item a high severity issue;
+        # otherwise, make sure to set the severity as normal in case the item
+        # existed already
         if total_errors:
             appstream_action_item.severity = ActionItem.SEVERITY_HIGH
+        else:
+            appstream_action_item.severity = ActionItem.SEVERITY_NORMAL
 
         appstream_action_item.save()
 
