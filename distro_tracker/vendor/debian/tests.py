@@ -1499,7 +1499,8 @@ class UpdateAppStreamStatsTaskTest(TestCase):
         self.package = SourcePackage(
             source_package_name=self.package_name, version='1.0.0')
 
-        self._tagdef_url = 'https://appstream.debian.org/hints/asgen-hints.json'
+        self._tagdef_url = \
+            'https://appstream.debian.org/hints/sid/hint-definitions.json'
         self._hints_url_template = ('https://appstream.debian.org/hints/sid/'
                                     '{section}/Hints-{arch}.json.gz')
 
