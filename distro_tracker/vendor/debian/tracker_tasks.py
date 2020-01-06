@@ -716,7 +716,7 @@ class UpdateAppStreamStatsTask(BaseTask):
         self._tag_severities = {}
 
     def _load_tag_severities(self):
-        url = 'https://appstream.debian.org/hints/asgen-hints.json'
+        url = 'https://appstream.debian.org/hints/sid/hint-definitions.json'
         json_data = get_resource_text(url, force_update=True)
 
         data = json.loads(json_data)
