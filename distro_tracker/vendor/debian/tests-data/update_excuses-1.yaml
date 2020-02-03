@@ -1,7 +1,12 @@
 generated-date: 2017-02-01 06:47:18.195464
 sources:
-- excuses:
+- dependencies:
+    migrate-after:
+      - ppxlib/amd64
+      - ppxlib/i386
+  excuses:
   - Some excuses
+  - 'Depends: ppx-compare <a href="#ppxlib/amd64">ppxlib/amd64</a>'
   policy_info:
       age:
           current-age: 20

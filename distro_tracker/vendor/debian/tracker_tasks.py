@@ -1035,7 +1035,7 @@ class UpdateExcusesTask(BaseTask):
             match = re_anchor_href.match(href)
             if not match:
                 continue
-            package = match.group(1)
+            package = match.group(1).split('/')[0]
             a_tag['href'] = package_url(package)
 
         return str(html)
