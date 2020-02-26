@@ -3274,7 +3274,8 @@ class UpdateDl10nStatsTask(BaseTask):
         interval = 3600 * 6
 
     ACTION_ITEM_TYPE_NAME = 'dl10n'
-    ITEM_DESCRIPTION = 'Some strings of this package need translation'
+    ITEM_DESCRIPTION = \
+        '<a href="{url}">Issues</a> found with some translations'
     ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/dl10n-action-item.html'
 
     def initialize(self, *args, **kwargs):
@@ -3354,7 +3355,8 @@ class UpdateDl10nStatsTask(BaseTask):
             l10n_action_item = ActionItem(
                 package=package,
                 item_type=self.l10n_action_item_type)
-            l10n_action_item.short_description = self.ITEM_DESCRIPTION
+            l10n_action_item.short_description = self.ITEM_DESCRIPTION.format(
+                url=package_stats['link'])
 
         if l10n_action_item.extra_data:
             old_extra_data = l10n_action_item.extra_data
