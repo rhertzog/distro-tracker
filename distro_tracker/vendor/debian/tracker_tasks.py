@@ -3352,11 +3352,12 @@ class UpdateDl10nStatsTask(BaseTask):
 
         # The item didn't previously have an action item: create it now
         if l10n_action_item is None:
+            desc = self.ITEM_DESCRIPTION.format(url=package_stats['link'])
             l10n_action_item = ActionItem(
                 package=package,
-                item_type=self.l10n_action_item_type)
-            l10n_action_item.short_description = self.ITEM_DESCRIPTION.format(
-                url=package_stats['link'])
+                item_type=self.l10n_action_item_type,
+                severity=ActionItem.SEVERITY_LOW,
+                short_description=desc)
 
         if l10n_action_item.extra_data:
             old_extra_data = l10n_action_item.extra_data
