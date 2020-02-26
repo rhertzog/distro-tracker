@@ -354,3 +354,20 @@ class BackToOldPTS(BasePanel):
         return "packages.qa.debian.org" in \
             force_text(self.request.META.get('HTTP_REFERER', ''),
                        encoding='latin1', errors='replace')
+
+
+class Dl10nLinks(LinksPanel.ItemProvider):
+    def get_panel_items(self):
+        if not isinstance(self.package, SourcePackageName):
+            return
+
+        try:
+            dl10n_stats = self.package.data.get(key='dl10n').value
+        except PackageData.DoesNotExist:
+            return
+
+        return [
+            TemplatePanelItem('debian/dl10n-links.html', {
+                'dl10n_stats': dl10n_stats,
+            })
+        ]

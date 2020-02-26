@@ -1,0 +1,6 @@
+{% with dl10n_stats=item.context.dl10n_stats %}
+<span><a title="translation status" href="{{ dl10n_stats.link }}">l10n</a></span>
+<small>(<span title="completeness of Debian string translation">{{ dl10n_stats.score_debian|default:"-" }}</span>,
+<span title="completeness of non-Debian string translation">{{ dl10n_stats.score_other|default:"-" }}</span>)
+</small>
+{% endwith %}

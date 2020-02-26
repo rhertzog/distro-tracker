@@ -95,6 +95,7 @@ from distro_tracker.vendor.debian.tracker_tasks import (
     UpdateBuildReproducibilityTask,
     UpdateDebianDuckTask,
     UpdateDependencySatisfactionTask,
+    UpdateDl10nStatsTask,
     UpdateExcusesTask,
     UpdateLintianStatsTask,
     UpdateNewQueuePackages,
@@ -6426,3 +6427,252 @@ class UpdateBuildDependencySatisfactionTaskTest(TestCase):
         with self.assertRaises(PackageData.DoesNotExist):
             self.dummy_package5.data.get(key='builddependency_satisfaction')
         self.assertEqual(self.dummy_package5.action_items.count(), 0)
+
+
+class UpdateDl10nStatsTaskTest(TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateDl10nStatsTask`
+    task.
+    """
+
+    def setUp(self):
+        self.package_name = SourcePackageName.objects.create(
+            name='dummy-package')
+        self.package = SourcePackage(
+            source_package_name=self.package_name, version='1.0.0')
+
+    def _create_stat(self, score_debian=None, score_other=None, todo=False):
+        entry = {'score_debian': score_debian, 'score_other': score_other,
+                 'link': 'http://url', 'todo': todo}
+        return entry
+
+    def _create_pkglist_entry(self, score_debian=None, score_other=None,
+                              todo=False):
+        def score_to_string(score):
+            if not score:
+                return '-'
+            return str(score)
+
+        if todo:
+            text_todo = '1'
+        else:
+            text_todo = '0'
+        text = (
+            "{pkg} {version} ({score_debian},{score_other}) {url} {todo}"
+        ).format(pkg=self.package_name.name,
+                 version=self.package.version,
+                 score_debian=score_to_string(score_debian),
+                 score_other=score_to_string(score_other),
+                 url='http://url',
+                 todo=text_todo)
+        return text
+
+    def run_task(self):
+        """
+        Runs the dl10n update task.
+        """
+        task = UpdateDl10nStatsTask()
+        task.execute()
+
+    def _set_mock_response(self, mock_requests, text="", status_code=200):
+        """
+        Helper method which sets a mock response to the given mock requests
+        module.
+        """
+
+        mock_response = mock_requests.models.Response()
+        mock_response.status_code = status_code
+        mock_response.ok = status_code < 400
+
+        def build_response(*args, **kwargs):
+            data = bytes(text, 'utf-8')
+            mock_response.text = data
+            mock_response.content = data
+            return mock_response
+
+        mock_requests.get.side_effect = build_response
+
+    def get_action_item_type(self):
+        return ActionItemType.objects.get_or_create(
+            type_name=UpdateDl10nStatsTask.ACTION_ITEM_TYPE_NAME)[0]
+
+    def assert_correct_stats(self, stats, expected_stats):
+        """
+        Helper method which asserts that the given stats match the expected
+        stats.
+        """
+        for key in ['score_debian', 'score_other', 'todo']:
+            # Use get() on expected_stats so missing values are handled as None
+            self.assertEqual(stats[key], expected_stats.get(key))
+
+    @mock.patch('distro_tracker.core.utils.http.requests')
+    def test_stats_created(self, mock_requests):
+        """
+        Tests that stats are created for a package that previously did not have
+        any dl10n stats.
+        """
+
+        text = self._create_pkglist_entry(score_other=10, todo=True)
+        self._set_mock_response(mock_requests, text)
+
+        self.run_task()
+
+        # The stats have been created
+        self.assertEqual(1, PackageData.objects.filter(key='dl10n').count())
+        # They are associated with the correct package.
+        data = PackageData.objects.filter(key='dl10n').all()[0]
+        self.assertEqual(data.package.name, 'dummy-package')
+        # The category counts themselves are correct
+        self.assert_correct_stats(data.value,
+                                  {'score_other': 10,
+                                   'todo': True})
+
+    @mock.patch('distro_tracker.core.utils.http.requests')
+    def test_stats_updated(self, mock_requests):
+        """
+        Tests that when a package already had associated dl10n stats,
+        they are correctly updated after running the task.
+        """
+
+        # Create the pre-existing stats for the package
+        PackageData.objects.create(package=self.package_name,
+                                   key='dl10n',
+                                   value=self._create_stat(score_other=10))
+
+        text = self._create_pkglist_entry(score_debian=10, todo=True)
+        self._set_mock_response(mock_requests, text)
+
+        self.run_task()
+
+        # Still only one AppStream stats object
+        self.assertEqual(1, PackageData.objects.filter(key='dl10n').count())
+        # The package is still correct
+        data = PackageData.objects.filter(key='dl10n').all()[0]
+        self.assertEqual(data.package.name, 'dummy-package')
+        # The stats have been updated
+        self.assert_correct_stats(data.value,
+                                  {'score_debian': 10,
+                                   'todo': True})
+
+    @mock.patch('distro_tracker.core.utils.http.requests')
+    def test_unknown_package(self, mock_requests):
+        """
+        Tests that when an unknown package is encountered, no stats are created.
+        """
+
+        text = 'nonexistant 1.0.0 (-,10) http://url 0'
+        self._set_mock_response(mock_requests, text)
+        self.run_task()
+
+        # There are no stats
+        self.assertEqual(0, PackageData.objects.filter(key='dl10n').count())
+
+    @mock.patch('distro_tracker.core.utils.http.requests')
+    def test_action_item_updated(self, mock_requests):
+        """
+        Tests that an existing action item is updated with new data.
+        """
+        # Create an existing action item
+        old_item = ActionItem.objects.create(
+            package=self.package_name,
+            item_type=self.get_action_item_type(),
+            short_description="Short description...",
+            extra_data=self._create_stat(score_other=10, todo=True))
+        old_timestamp = old_item.last_updated_timestamp
+
+        text = self._create_pkglist_entry(score_debian=10, todo=True)
+        self._set_mock_response(mock_requests, text)
+
+        self.run_task()
+
+        # An action item is created.
+        self.assertEqual(1, ActionItem.objects.count())
+        # Extra data updated?
+        item = ActionItem.objects.all()[0]
+        self.assert_correct_stats(item.extra_data,
+                                  {'score_debian': 10,
+                                   'todo': True})
+
+        # The timestamp is updated
+        self.assertNotEqual(old_timestamp, item.last_updated_timestamp)
+
+    @mock.patch('distro_tracker.core.utils.http.requests')
+    def test_action_item_created(self, mock_requests):
+        """
+        Tests that an action item is created when the package has errors.
+        """
+
+        # Sanity check: there were no action items in the beginning
+        self.assertEqual(0, ActionItem.objects.count())
+
+        text = self._create_pkglist_entry(score_debian=10, todo=True)
+        self._set_mock_response(mock_requests, text)
+        self.run_task()
+
+        # An action item is created.
+        self.assertEqual(1, ActionItem.objects.count())
+        # The item is linked to the correct package
+        item = ActionItem.objects.all()[0]
+        self.assertEqual(item.package.name, self.package_name.name)
+        self.assert_correct_stats(item.extra_data,
+                                  {'score_debian': 10,
+                                   'todo': True})
+
+    @mock.patch('distro_tracker.core.utils.http.requests')
+    def test_action_item_not_created(self, mock_requests):
+        """
+        Tests that no action item is created when the package has no errors or
+        warnings.
+        """
+
+        # Sanity check: there were no action items in the beginning
+        self.assertEqual(0, ActionItem.objects.count())
+
+        text = self._create_pkglist_entry(score_debian=10, todo=False)
+        self._set_mock_response(mock_requests, text)
+        self.run_task()
+
+        # Still no action items.
+        self.assertEqual(0, ActionItem.objects.count())
+
+    @mock.patch('distro_tracker.core.utils.http.requests')
+    def test_action_item_removed(self, mock_requests):
+        """
+        Tests that a previously existing action item is removed if the updated
+        hints no longer contain errors or warnings.
+        """
+        # Make sure an item exists for the package
+        ActionItem.objects.create(
+            package=self.package_name,
+            item_type=self.get_action_item_type(),
+            short_description="Short description...",
+            extra_data=self._create_stat(score_other=10, todo=True))
+
+        text = self._create_pkglist_entry(score_debian=10, todo=False)
+        self._set_mock_response(mock_requests, text)
+        self.run_task()
+
+        # There are no action items any longer.
+        self.assertEqual(0, self.package_name.action_items.count())
+        self.assertEqual(0, ActionItem.objects.count())
+
+    @mock.patch('distro_tracker.core.utils.http.requests')
+    def test_action_item_removed_no_data(self, mock_requests):
+        """
+        Tests that a previously existing action item is removed when the
+        updated hints no longer contain any information for the package.
+        """
+        ActionItem.objects.create(
+            package=self.package_name,
+            item_type=self.get_action_item_type(),
+            short_description="Short description...",
+            extra_data=self._create_stat(score_other=10, todo=True))
+
+        text = 'nonexistant 1.0.0 (-,10) http://url 0'
+        self._set_mock_response(mock_requests, text)
+        self.run_task()
+
+        # There are no action items any longer.
+        self.assertEqual(0, self.package_name.action_items.count())
+        self.assertEqual(0, ActionItem.objects.count())

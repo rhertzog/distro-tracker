@@ -3263,3 +3263,137 @@ class UpdateBuildDependencySatisfactionTask(BaseTask):
             ActionItem.objects.delete_obsolete_items([self.action_item_type],
                                                      packages)
             PackageData.objects.bulk_create(pkgdata_list)
+
+
+class UpdateDl10nStatsTask(BaseTask):
+    """
+    Updates packages' l10n statistics.
+    """
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600 * 6
+
+    ACTION_ITEM_TYPE_NAME = 'dl10n'
+    ITEM_DESCRIPTION = \
+        '<a href="{url}">Issues</a> found with some translations'
+    ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/dl10n-action-item.html'
+
+    def initialize(self, *args, **kwargs):
+        super(UpdateDl10nStatsTask, self).initialize(*args, **kwargs)
+        self.l10n_action_item_type = \
+            ActionItemType.objects.create_or_update(
+                type_name=self.ACTION_ITEM_TYPE_NAME,
+                full_description_template=self.ITEM_FULL_DESCRIPTION_TEMPLATE)
+
+    def _load_l10n_stats(self):
+        url = 'https://i18n.debian.org/l10n-pkg-status/pkglist'
+        content = get_resource_text(url, force_update=self.force_update,
+                                    only_if_updated=True)
+        if content is None:
+            return
+
+        def parse_score(score):
+            if score == '-':
+                return None
+            return int(score)
+
+        all_stats = {}
+
+        # The format of the file is (copied from its header):
+        # <package> <version> (<comma sperated scores>) <link> <todo>
+        line_re = re.compile(
+            r'^([^\s]+) ([^\s]+) \(([^)]+)\) ([^\s]+) ([^\s]+)')
+        for line in content.splitlines():
+            if not line or line.startswith('#'):
+                continue
+            match = line_re.search(line)
+            if not match:
+                logger.warning('Failed to parse l10n pkglist line: %s', line)
+                continue
+
+            src_pkgname = match.group(1)
+            try:
+                scores = match.group(3).split(',')
+                score_debian = parse_score(scores[0])
+                score_other = parse_score(scores[1])
+                # <todo> is a "0" or "1" string, so convert through int to get
+                # a proper bool
+                todo = bool(int(match.group(5)))
+            except (IndexError, ValueError):
+                logger.warning(
+                    'Failed to parse l10n scores: %s',
+                    line, exc_info=1)
+                continue
+            link = match.group(4)
+            if not score_debian and not score_other:
+                continue
+
+            all_stats[src_pkgname] = {
+                'score_debian': score_debian,
+                'score_other': score_other,
+                'link': link,
+                'todo': todo,
+            }
+
+        return all_stats
+
+    def update_action_item(self, package, package_stats):
+        todo = package_stats['todo']
+
+        # Get the old action item, if it exists.
+        l10n_action_item = package.get_action_item_for_type(
+            self.l10n_action_item_type.type_name)
+        if not todo:
+            if l10n_action_item:
+                # If the item previously existed, delete it now since there
+                # are no longer any warnings/errors.
+                l10n_action_item.delete()
+            return
+
+        # The item didn't previously have an action item: create it now
+        if l10n_action_item is None:
+            desc = self.ITEM_DESCRIPTION.format(url=package_stats['link'])
+            l10n_action_item = ActionItem(
+                package=package,
+                item_type=self.l10n_action_item_type,
+                severity=ActionItem.SEVERITY_LOW,
+                short_description=desc)
+
+        if l10n_action_item.extra_data:
+            old_extra_data = l10n_action_item.extra_data
+            if old_extra_data == package_stats:
+                # No need to update
+                return
+
+        l10n_action_item.extra_data = package_stats
+
+        l10n_action_item.save()
+
+    def execute_main(self):
+        stats = self._load_l10n_stats()
+        if not stats:
+            return
+
+        with transaction.atomic():
+            PackageData.objects.filter(key='dl10n').delete()
+
+            packages = []
+            pkgdata_list = []
+
+            for name, stat in stats.items():
+                try:
+                    package = SourcePackageName.objects.get(name=name)
+                    packages.append(package)
+                    self.update_action_item(package, stat)
+                except SourcePackageName.DoesNotExist:
+                    continue
+
+                dl10n_stat = PackageData(
+                    key='dl10n',
+                    package=package,
+                    value=stat)
+                pkgdata_list.append(dl10n_stat)
+
+            ActionItem.objects.delete_obsolete_items(
+                [self.l10n_action_item_type], packages)
+            PackageData.objects.bulk_create(pkgdata_list)
