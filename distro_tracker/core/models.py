@@ -1735,6 +1735,7 @@ class EmailNews(News):
         msg = message_from_bytes(self.content)
         return get_decoded_message_payload(msg)
 
+    @staticmethod
     def get_from_email(message):
         """
         Analyzes the content of the message in order to get the name
@@ -1745,7 +1746,7 @@ class EmailNews(News):
         from_email = decode_header(message.get('From', 'unknown'))
         if x_dak == 'dak process-upload':
             search_result = re.search(
-                r'^Changed-by: (.*)$',
+                r'^Changed-By: (.*)$',
                 message.get_payload(),
                 re.MULTILINE | re.IGNORECASE,
             )
