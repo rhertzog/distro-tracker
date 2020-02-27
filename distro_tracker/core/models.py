@@ -1735,6 +1735,25 @@ class EmailNews(News):
         msg = message_from_bytes(self.content)
         return get_decoded_message_payload(msg)
 
+    def get_from_email(message):
+        """
+        Analyzes the content of the message in order to get the name
+        of the person that triggered the news event. The function
+        returns the mail in "Changed-By" if possible.
+        """
+        x_dak = decode_header(message.get('X-DAK', 'unknown'))
+        from_email = decode_header(message.get('From', 'unknown'))
+        if x_dak == 'dak process-upload':
+            from_email_regex = re.search(
+                r'^Changed-by: (.*)$',
+                message.get_payload(),
+                re.MULTILINE | re.IGNORECASE,
+            )
+            if isinstance(from_email_regex, type(re.search('', ''))):
+                from_email = from_email_regex.group(0)[len("Changed-By: "):]
+
+        return from_email
+
     @staticmethod
     def get_email_news_parameters(message):
         """
@@ -1742,7 +1761,7 @@ class EmailNews(News):
         fields based on the given email message.
         """
         kwargs = {}
-        from_email = decode_header(message.get('From', 'unknown'))
+        from_email = EmailNews.get_from_email(message)
 
         kwargs['created_by'], _ = parseaddr(from_email)
         if 'Subject' in message:

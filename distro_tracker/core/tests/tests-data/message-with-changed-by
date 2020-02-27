@@ -1,0 +1,31 @@
+From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>
+X-DAK: dak process-upload
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Format: 1.8
+Distribution: unstable
+Urgency: medium
+Changed-By: John Doe <john@example.com>
+Changes:
+ There are some changes.
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCgAdFiEEAxkNfn0I1/8fM5/DGbYJgR8GqZQFAl5ThM8ACgkQGbYJgR8G
+qZRrahAAkPrkC0A2zxo2Xw00xxgoI2hY8CBwHz85tzqPD+FxYKo5wG26MXMJQi+f
+pkAAfuOeJv1fcU/ykh6jGoDH/hRBIwQ2l2qpmi1SrC987FNIqALZWCAoTJ1W6DzN
+fkH+a3PYyNFfmQUGXgjRDM1HlHdQFtNdnLHIcqQQELdiB8iJ0jP4xxbfuKa4VAX/
+ayZyGoFXwZqHBxTU03oSPxi1xr7gmCKTB4yLVcBHO5Och1k/b5XoIbUzURPow2So
+uEbxryR8YbUg/7HM+uXxQTM1ODZ7HfaJ3J7VVCdHmQpIlW0zkjNVTTLZY/yu+hEC
+SYk1AmQJ2PwS7eG1CNfCjeoGZu10rX9+zDrIFCOozDnm+2M/jTWoiuPXctJuNtHG
+HjaAa4sfOl6BA6oE9p9ZHHg8S9/r/ZYbsWG5SDSgNmzcoFjf+fnvlJWAav88iEIN
+YECfnsilT4OZamJm2VaWp7BX+Us5xH7mC6Bigl0sJUGxyQCAeyIwjFv/G2YHWSrI
+lCkCRb2DJKI6f/LRfxRtsy3VgEXmS/3Psji/l9v5FcMOCEi6iYQ4gProBH9qzTpe
+fD5pxMWcUYLCw+03cX6C2xgeCmsphM6hg7Kkb9rYzlqcxeG9Qk9k/d5myi/3+N0L
+ZrpmyV7ev38IB7vt/FdQ33hoDLNCLvcGz8EOjJ31ROzak6Afw54=
+=dt3O
+-----END PGP SIGNATURE-----
