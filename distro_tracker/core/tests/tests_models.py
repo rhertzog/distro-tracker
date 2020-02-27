@@ -1592,6 +1592,28 @@ class NewsTests(TestCase):
         # email
         self.assertEqual(sender_name, news.created_by)
 
+    def test_create_email_news_changed_by(self):
+        """
+        Tests that the 'created_by' field is obtained from the 'Changed-By'
+        field in the message body. There's no no need to check what happens
+        if the field is missing as it is done by the previous test
+        'test_create_email_news_signature(self)'.
+        """
+        # The content of the test news item is found in a file
+        file_path = self.get_test_data_path(
+            'message-with-changed-by')
+        with open(file_path, 'rb') as f:
+            content = f.read()
+        expected_name = 'John Doe'
+
+        news = EmailNews.objects.create_email_news(
+            message=message_from_bytes(content),
+            package=self.package)
+
+        # The created by field is set, but in this case to
+        # the name in "Changed-By".
+        self.assertEqual(expected_name, news.created_by)
+
     def test_create_email_news_unknown_encoding_utf8(self):
         """
         Tests that creating an email news item from a message which does not
