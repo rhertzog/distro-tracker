@@ -1744,13 +1744,13 @@ class EmailNews(News):
         x_dak = decode_header(message.get('X-DAK', 'unknown'))
         from_email = decode_header(message.get('From', 'unknown'))
         if x_dak == 'dak process-upload':
-            from_email_regex = re.search(
+            search_result = re.search(
                 r'^Changed-by: (.*)$',
                 message.get_payload(),
                 re.MULTILINE | re.IGNORECASE,
             )
-            if isinstance(from_email_regex, type(re.search('', ''))):
-                from_email = from_email_regex.group(0)[len("Changed-By: "):]
+            if search_result:
+                from_email = search_result.group(1)
 
         return from_email
 
