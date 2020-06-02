@@ -27,7 +27,6 @@ from django.core import mail
 from django.core.management import call_command
 from django.test.utils import override_settings
 from django.urls import reverse
-from django.utils.encoding import force_bytes
 from django.utils.functional import curry
 
 import yaml
@@ -54,7 +53,6 @@ from distro_tracker.core.retrieve_data import UpdateRepositoriesTask
 from distro_tracker.core.tasks import run_task
 from distro_tracker.core.utils.email_messages import message_from_bytes
 from distro_tracker.core.utils.packages import package_url
-from distro_tracker.mail.mail_news import process
 from distro_tracker.mail.tests.tests_dispatch import DispatchTestHelperMixin
 from distro_tracker.test import SimpleTestCase, TestCase
 from distro_tracker.test.utils import make_temp_directory, set_mock_response
@@ -876,7 +874,7 @@ class DebianNewsFromEmailTest(TestCase):
         self.message.set_payload(content)
 
     def process_mail(self):
-        process(force_bytes(self.message.as_string(), 'utf-8'))
+        classify_message(self.message, None, None)
 
     def get_accepted_subject(self, pkg, version):
         """
@@ -901,6 +899,8 @@ class DebianNewsFromEmailTest(TestCase):
         self.set_subject(subject)
         content = b'Content'
         self.set_message_content(content)
+        self.add_header('X-Debian-Package', self.package.name)
+        self.add_header('X-Debian', 'DAK')
 
         self.process_mail()
 
@@ -920,6 +920,8 @@ class DebianNewsFromEmailTest(TestCase):
         self.set_subject(subject)
         content = 'Content'
         self.set_message_content(content)
+        self.add_header('X-Debian-Package', 'no-exist')
+        self.add_header('X-Debian', 'DAK')
 
         self.process_mail()
 
@@ -997,32 +999,6 @@ class DebianNewsFromEmailTest(TestCase):
         self.process_mail()
 
         self.assertEqual(0, News.objects.count())
-
-    def test_multiple_removes(self):
-        """
-        Tests that multiple news items are created when the dak rm message
-        contains multiple remove notifications.
-        """
-        subject = 'Removed package(s) from unstable'
-        self.set_subject(subject)
-        content = (
-            'We believe that the bug you reported is now fixed; the following\n'
-            'package(s) have been removed from unstable:\n\n')
-        content += (
-            '{pkg} |  {ver} | source, all\n'
-        ).format(pkg=self.package_name, ver=self.package.version)
-        content += (
-            '{pkg} |  {ver} | source, all\n'
-        ).format(pkg=self.package_name, ver='2.0.0')
-        self.set_message_content(content)
-        self.add_header('X-DAK', 'dak rm')
-        self.add_header('X-Debian', 'DAK')
-        sender = 'Some Sender <email@domain.com>'
-        self.add_header('Sender', sender)
-
-        self.process_mail()
-
-        self.assertEqual(2, News.objects.count())
 
     def test_testing_watch_news(self):
         """

@@ -100,30 +100,13 @@ this up, refer to the :ref:`mailbot setup <mailbot>`.
 
 The function that performs the processing of a received package message is
 :func:`distro_tracker.mail.dispatch.process`. In order to tag the received message
-with a keyword, it uses a vendor-provided function
-:func:`get_keyword <distro_tracker.vendor.skeleton.rules.get_keyword>`. In case a vendor
-has not implemented this function, the message is tagged as ``default``.
+with a package and a keyword, it uses a vendor-provided function
+:func:`classify_message <distro_tracker.vendor.skeleton.rules.classify_message>`. 
+In case a vendor has not implemented this function, the message is tagged
+with the ``default`` keyword.
 
-News from Email Messages
-++++++++++++++++++++++++
-
-Distro Tracker allows for automatic news creation based on received emails. It is necessary
-to set up the MTA so it pipes received emails which should potentially be turned into
-news items, to the management command
-:mod:`distro_tracker.mail.management.commands.tracker_receive_news`.
-
-News are created as :class:`distro_tracker.core.models.News` objects and each of the
-model's instances associated with a particular package is displayed in the
-:class:`NewsPanel <distro_tracker.core.panels.NewsPanel>`.
-
-By default, any messages given to the management command which contains the
-``X-Distro-Tracker-Package`` header are turned into news items with the content type of
-the news item being ``message/rfc822`` and the content the entire message.
-
-However, it is also possible to implement a vendor-specific function
-:func:`distro_tracker.vendor.skeleton.rules.create_news_from_email_message` which will be
-given the received email message object and can create custom news items based
-on vendor-specific rules.
+The same function is also used to transform some of the incoming emails
+into permanent news items that are displayed on each package page.
 
 .. _tasks_design:
 
