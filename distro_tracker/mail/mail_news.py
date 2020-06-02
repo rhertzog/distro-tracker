@@ -11,11 +11,8 @@
 Module implementing the processing of received emails which could be turned
 into news items.
 """
-from django.utils.html import escape
-
-from distro_tracker import vendor
-from distro_tracker.core.models import EmailNews, News, PackageName
-from distro_tracker.core.utils import get_or_none, message_from_bytes
+from distro_tracker.core.models import EmailNews, PackageName
+from distro_tracker.core.utils import get_or_none
 
 
 def create_news(message, package, create_package=False, **kwargs):

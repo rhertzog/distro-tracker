@@ -22,10 +22,7 @@ import requests
 
 from distro_tracker.core.models import (
     ActionItem,
-    EmailNews,
     PackageData,
-    PackageName,
-    SourcePackageName,
     UserEmail
 )
 from distro_tracker.core.package_tables import create_table
