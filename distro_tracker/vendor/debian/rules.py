@@ -99,11 +99,16 @@ def _classify_dak_message(msg, package, keyword):
         # Find all lines giving information about removed source packages
         re_rmline = re.compile(r"^\s*(\S+)\s*\|\s*(\S+)\s*\|.*source", re.M)
         source_removals = re_rmline.findall(body)
-        pkglist = []
+        removed_pkgver = {}
         for pkgname, version in source_removals:
-            pkglist.append(pkgname)
-            create_dak_rm_news(msg, pkgname, version=version, body=body)
-        package = _simplify_pkglist(pkglist, default=package)
+            removed_pkgver[pkgname] = version
+        if package not in removed_pkgver:
+            package = _simplify_pkglist(list(removed_pkgver.keys()),
+                                        multi_allowed=False,
+                                        default=package)
+        if package:
+            create_dak_rm_news(msg, package, version=removed_pkgver[package],
+                               body=body)
 
     return (package, keyword)
 

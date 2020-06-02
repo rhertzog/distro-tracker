@@ -317,16 +317,29 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
         self.assertEqual(pkg, 'pkg-a')
         self.assertEqual(keyword, 'archive')
 
-    def test_classify_dak_rm_mail_multiple_sources(self):
+    def test_classify_dak_rm_mail_multiple_sources_no_hint(self):
         self.define_dak_rm_mail(packages=['pkg-a', 'pkg-b'])
         pkg, keyword = self.run_classify()
-        self.assertEqual(pkg, ['pkg-a', 'pkg-b'])
+        self.assertIsNone(pkg)
         self.assertEqual(keyword, 'archive')
+
+    def test_classify_dak_rm_mail_multiple_sources_follows_hint(self):
+        self.define_dak_rm_mail(packages=['pkg-a', 'pkg-b'])
+        pkg, keyword = self.run_classify(package='pkg-b')
+        self.assertEqual(pkg, 'pkg-b')
 
     def test_classify_generates_news_with_dak_rm_mail(self):
         self.define_dak_rm_mail()
         self.assertEqual(self.package.news_set.count(), 0)
         pkg, keyword = self.run_classify()
+        self.assertEqual(self.package.news_set.count(), 1)
+
+    def test_classify_generates_single_news_with_multiple_dak_rm_mail(self):
+        self.define_dak_rm_mail(packages=['dummy-package', 'pkg-b'])
+        self.assertEqual(self.package.news_set.count(), 0)
+        pkg, keyword = self.run_classify(package='pkg-b')
+        self.assertEqual(self.package.news_set.count(), 0)
+        pkg, keyword = self.run_classify(package='dummy-package')
         self.assertEqual(self.package.news_set.count(), 1)
 
     def test_classify_testing_watch_mail(self):
