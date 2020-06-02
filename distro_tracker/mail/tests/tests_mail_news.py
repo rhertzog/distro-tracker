@@ -141,9 +141,15 @@ class MailNewsManagementCommandTest(SimpleTestCase):
     management command calls the correct function.
     """
     @mock.patch(
-        'distro_tracker.mail.management.commands.tracker_receive_news.process')
-    def test_calls_process(self, mock_process):
+        'distro_tracker.mail.management.commands.tracker_receive_news.'
+        'classify_message')
+    def test_calls_process(self, mock_classify):
+        mock_classify.return_value = ('package', 'keyword')
         cmd = MailNewsCommand()
-        cmd.input_file = mock.create_autospec(io.BytesIO)
+        cmd.input_file = io.TextIOWrapper(io.BytesIO(b'''From: test@example.net
+Subject: foo
+
+bla
+                                    '''))
         cmd.handle()
-        self.assertTrue(mock_process.called)
+        self.assertTrue(mock_classify.called)

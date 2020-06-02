@@ -1,4 +1,4 @@
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2020 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -18,7 +18,8 @@ import sys
 
 from django.core.management.base import BaseCommand
 
-from distro_tracker.mail.mail_news import process
+from distro_tracker.core.utils import message_from_bytes
+from distro_tracker.mail.dispatch import classify_message
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,8 @@ class Command(BaseCommand):
         # Make sure to read binary data.
         input_data = self.input_file.detach().read()
 
-        process(input_data)
+        msg = message_from_bytes(input_data)
+        pkg, keyword = classify_message(msg)
 
-        logger.info('Completed processing a received message')
+        logger.info('Completed processing a received message for %s/%s',
+                    pkg, keyword)
