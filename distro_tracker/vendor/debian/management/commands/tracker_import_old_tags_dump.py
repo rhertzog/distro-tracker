@@ -70,7 +70,7 @@ class Command(BaseCommand):
                 except Subscription.DoesNotExist:
                     self.write('Skip non-existing subscription '
                                '({email} to {package}).\n'.format(
-                                   email, package))
+                                   email=email, package=package))
                     continue
                 subscription.keywords.clear()
                 for keyword in keywords:
@@ -80,7 +80,8 @@ class Command(BaseCommand):
                 try:
                     user_email, _ = UserEmail.objects.get_or_create(email=email)
                 except ValidationError:
-                    self.write('Skip invalid email {email}.\n'.format(email))
+                    self.write('Skip invalid email {email}.\n'.format(
+                        email=email))
                     continue
                 email_settings, _ = \
                     EmailSettings.objects.get_or_create(user_email=user_email)

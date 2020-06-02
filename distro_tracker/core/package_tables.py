@@ -383,20 +383,20 @@ class BasePackageTable(metaclass=PluginRegistry):
         attributes_name = set()
         package_query_set = self.packages
         for field in self.table_fields:
-            for l in field.prefetch_related_lookups:
-                if isinstance(l, Prefetch):
-                    if l.to_attr in attributes_name:
+            for lookup in field.prefetch_related_lookups:
+                if isinstance(lookup, Prefetch):
+                    if lookup.to_attr in attributes_name:
                         continue
                     else:
-                        attributes_name.add(l.to_attr)
-                package_query_set = package_query_set.prefetch_related(l)
+                        attributes_name.add(lookup.to_attr)
+                package_query_set = package_query_set.prefetch_related(lookup)
 
         additional_data, implemented = vendor.call(
             'additional_prefetch_related_lookups'
         )
         if implemented and additional_data:
-            for l in additional_data:
-                package_query_set = package_query_set.prefetch_related(l)
+            for lookup in additional_data:
+                package_query_set = package_query_set.prefetch_related(lookup)
         return package_query_set
 
     @property
