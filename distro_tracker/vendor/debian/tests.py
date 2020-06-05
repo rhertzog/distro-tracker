@@ -91,7 +91,6 @@ from distro_tracker.vendor.debian.tracker_tasks import (
     UpdateBuildDependencySatisfactionTask,
     UpdateBuildLogCheckStats,
     UpdateBuildReproducibilityTask,
-    UpdateDebianDuckTask,
     UpdateDependencySatisfactionTask,
     UpdateDl10nStatsTask,
     UpdateExcusesTask,
@@ -5222,70 +5221,6 @@ class DebianSsoLoginWithSSLClientCertificateTests(DebianSsoLoginTests):
         # This test does not make sense here, there are no invalid
         # values
         pass
-
-
-@mock.patch('distro_tracker.core.utils.http.requests')
-class UpdateDebianDuckTaskTest(TestCase):
-
-    """
-    Tests for the
-    :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateDebianDuckTask`
-    task.
-    """
-
-    def setUp(self):
-        self.dummy_package = SourcePackageName.objects.create(
-            name='dummy-package')
-        self.other_package = SourcePackageName.objects.create(
-            name='other-package')
-        self.duck_data = """
-        dummy-package
-        dummy-package2
-        """
-
-    def run_task(self):
-        """
-        Runs the Duck status update task.
-        """
-        task = UpdateDebianDuckTask()
-        task.execute()
-
-    def test_action_item_when_in_list(self, mock_requests):
-        """
-        Tests that an ActionItem is created for a package reported by duck.
-        """
-        set_mock_response(mock_requests, text=self.duck_data)
-
-        self.run_task()
-        self.assertEqual(1, self.dummy_package.action_items.count())
-
-    def test_no_action_item_when_not_in_list(self, mock_requests):
-        """
-        Tests that no ActionItem is created for a package not reported by duck.
-        """
-        set_mock_response(mock_requests, text=self.duck_data)
-
-        self.run_task()
-        self.assertEqual(0, self.other_package.action_items.count())
-
-    def test_action_item_is_dropped_when_duck_reports_nothing_again(
-            self,
-            mock_requests):
-        """
-        Tests that ActionItems are dropped when a package was previousy reported
-        but is now not reported anymore.
-        """
-        set_mock_response(mock_requests, text=self.duck_data)
-        self.run_task()
-        self.assertEqual(1, self.dummy_package.action_items.count())
-
-        duck_data = """
-        yet-another-package
-        """
-        set_mock_response(mock_requests, text=duck_data)
-
-        self.run_task()
-        self.assertEqual(0, self.dummy_package.action_items.count())
 
 
 @mock.patch('distro_tracker.core.utils.http.requests')
