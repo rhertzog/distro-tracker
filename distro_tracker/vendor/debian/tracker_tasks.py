@@ -57,7 +57,6 @@ from distro_tracker.core.utils.http import get_resource_text
 from distro_tracker.core.utils.misc import get_data_checksum
 from distro_tracker.core.utils.packages import (
     html_package_list,
-    package_hashdir,
     package_url
 )
 from distro_tracker.vendor.debian.models import (
