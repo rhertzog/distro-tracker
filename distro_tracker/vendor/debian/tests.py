@@ -298,6 +298,7 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
     def define_dak_rm_mail(self, **kwargs):
         subject = 'Bug#123: Removed package(s) from unstable'
         packages = kwargs.pop('packages', [self.package_name])
+        archlist = kwargs.pop('archlist', 'source, amd64')
         self.define_dak_mail(dak_cmd='dak rm', subject=subject, package=None,
                              **kwargs)
         content = (
@@ -305,11 +306,28 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
             'package(s) have been removed from unstable:\n\n'
         )
         for pkg in packages:
-            content += '{pkg} |  1.2-1 | source, amd64\n'.format(pkg=pkg)
+            content += '{pkg} |  1.2-1 | {archlist}\n'.format(pkg=pkg,
+                                                              archlist=archlist)
         self.set_message_content(content)
 
     def test_classify_dak_rm_mail(self):
         self.define_dak_rm_mail(packages=['pkg-a'])
+        pkg, keyword = self.run_classify()
+        self.assertEqual(pkg, 'pkg-a')
+        self.assertEqual(keyword, 'archive')
+
+    def test_classify_dak_rm_mail_no_news_for_binary_removals(self):
+        """
+        The mail documents removal of binaries on some architectures only.
+        It should not generate any news.
+        """
+        self.define_dak_rm_mail(archlist='armel, armhf, arm64')
+        pkg, keyword = self.run_classify(package=self.package_name)
+        self.assertEqual(self.package.news_set.count(), 0)
+
+    def test_classify_dak_rm_mail_result_for_binary_removals(self):
+        self.define_dak_rm_mail(packages=['pkg-a'],
+                                archlist='armel, armhf, arm64')
         pkg, keyword = self.run_classify()
         self.assertEqual(pkg, 'pkg-a')
         self.assertEqual(keyword, 'archive')
