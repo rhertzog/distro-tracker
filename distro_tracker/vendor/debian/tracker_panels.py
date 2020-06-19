@@ -49,13 +49,7 @@ class LintianLink(LinksPanel.ItemProvider):
             return []
 
         if sum(lintian_stats.stats.values()):
-            warnings, errors = (
-                lintian_stats.stats.get('warnings', 0),
-                lintian_stats.stats.get('errors', 0))
-            has_errors_or_warnings = warnings or errors
-            # Get the full URL only if the package does not have any errors or
-            # warnings
-            url = lintian_stats.get_lintian_url(full=not has_errors_or_warnings)
+            url = lintian_stats.get_lintian_url()
             return [
                 TemplatePanelItem('debian/lintian-link.html', {
                     'lintian_stats': lintian_stats.stats,

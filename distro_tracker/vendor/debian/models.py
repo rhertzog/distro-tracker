@@ -14,8 +14,6 @@
 Debian-specific models.
 """
 
-import re
-
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.utils.http import urlencode
@@ -59,37 +57,18 @@ class LintianStats(models.Model):
         return 'Lintian stats for package {package}'.format(
             package=self.package)
 
-    def get_lintian_url(self, full=False):
+    def get_lintian_url(self):
         """
         Returns the lintian URL for the package matching the
         :class:`LintianStats
         <distro_tracker.vendor.debian.models.LintianStats>`.
-
-        :param full: Whether the URL should include the full lintian report or
-            only the errors and warnings.
-        :type full: Boolean
         """
         package = get_or_none(SourcePackageName, pk=self.package.pk)
         if not package:
             return ''
-        maintainer_email = ''
-        if package.main_version:
-            maintainer = package.main_version.maintainer
-            if maintainer:
-                maintainer_email = maintainer.email
-        # Adapt the maintainer URL to the form expected by lintian.debian.org
-        lintian_maintainer_email = re.sub(
-            r"""[àáèéëêòöøîìùñ~/\(\)" ']""",
-            '_',
-            maintainer_email)
-
-        report = 'full' if full else 'maintainer'
 
         return (
-            'https://lintian.debian.org/{report}/'
-            '{maintainer}.html#{pkg}'.format(
-                report=report,
-                maintainer=lintian_maintainer_email,
+            'https://lintian.debian.org/sources/{pkg}.html'.format(
                 pkg=self.package)
         )
 
