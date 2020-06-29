@@ -120,46 +120,21 @@ information, this information needs to be updated, as well. In order to avoid
 recalculating everything after each update, a framework for executing such
 tasks is implemented in :mod:`distro_tracker.core.tasks`.
 
-Each task defines a list of "events" which it produces and a list of "events"
-it depends on. An event is any change of shared information or anything else
-a task would like to inform other tasks of happening. Knowing this, the
-framework can build a graph of dependencies between tasks.
-
-When running a single task, all other tasks which are dependent on that one
-are automatically run afterwards, in the correct order and ensuring a task runs
-only once all the tasks it depends on are completed. It also makes sure not to
-initiate any task for which no events were raised.
-
 In order to implement a task, the :class:`distro_tracker.core.tasks.BaseTask` class should
-be subclassed. Its attributes
-:attr:`PRODUCES_EVENTS <distro_tracker.core.tasks.BaseTask.PRODUCES_EVENTS>` and
-:attr:`DEPENDS_ON_EVENTS <distro_tracker.core.tasks.BaseTask.DEPENDS_ON_EVENTS>` are lists
-of strings giving names of events which the task produces and depends on,
-respectively. The :meth:`execute() <distro_tracker.core.tasks.BaseTask.execute>` method
-implements the task's functionality.
+be subclassed and mixed together with schedulers to define when the task
+should be run. Various mixins exist in
+:mod:`distro_tracker.core.tasks.mixins` to help build task processing some
+common entities.
 
 .. note::
    All task classes should be placed in a module called ``tracker_tasks`` found at
    the top level of an installed Django app. Tasks in apps which are not
    installed will never be run.
 
-When running a task, a :class:`distro_tracker.core.tasks.Job` instance is created which
-keeps track of raised events, completed tasks and the order in which the tasks
-should run. It stores its state using the :class:`distro_tracker.core.tasks.JobState`
-class which is in charge of making sure the job state is persistent, so that
-even if a job were to fail, it is still possible to reconstruct it and continue
-its execution.
-
 .. note::
    Each task's operation must be idempotent to ensure that if an error does occur
    before being able to save the state of the job, rerunning the task will not
    cause any inconsistencies.
-
-A task has access to the :class:`Job <distro_tracker.core.tasks.Job>` instance it is a
-part of and can access all events raised during its processing. A convenience
-method :meth:`get_all_events <distro_tracker.core.tasks.BaseTask.get_all_events>` is
-provided which returns only the events the class has indicated in the
-:attr:`DEPENDS_ON_EVENTS <distro_tracker.core.tasks.BaseTask.DEPENDS_ON_EVENTS>` list.
 
 For more information see the documentation on the :mod:`distro_tracker.core.tasks` module.
 
