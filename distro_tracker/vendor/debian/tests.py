@@ -404,6 +404,13 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
         self.assertEqual(pkg, 'foobar')
         self.assertEqual(keyword, 'build')
 
+    def test_classify_autoremovals_mail(self):
+        self.set_header('X-Debian', 'release.debian.org/autoremovals')
+        self.set_header('X-Debian-Package', 'foobar')
+        pkg, keyword = self.run_classify()
+        self.assertEqual(pkg, 'foobar')
+        self.assertEqual(keyword, 'summary')
+
 
 class GetPseudoPackageListTest(TestCase):
 
