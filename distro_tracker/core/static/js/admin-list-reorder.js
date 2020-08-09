@@ -1,3 +1,4 @@
+// @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&dn=gpl-2.0.txt GPL-2.0-or-later
 $(document).ready(function() {
     // Set this to the name of the column holding the position
     pos_field = 'position';
@@ -69,7 +70,8 @@ $(document).ready(function() {
     });
 
     $('#content h1').after(
-        "<div>You can drag and drop repositories in the list bellow to modify their order.</div>" +
+        "<div>You can drag and drop repositories in the list below to modify their order.</div>" +
         "<div>Don't forget to click save when you're done.</div>"
     );
 });
+// @license-end

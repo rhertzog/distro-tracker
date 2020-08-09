@@ -1,7 +1,7 @@
-/**!
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&dn=expat.txt Expat
+ * @source: https://github.com/popperjs/popper-core/archive/v1.14.3.tar.gz
  * @fileOverview Kickass library to create and place poppers near their reference elements.
  * @version 1.14.3
- * @license
  * Copyright (c) 2016 Federico Zivolo and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -2526,3 +2526,4 @@ return Popper;
 
 })));
 //# sourceMappingURL=popper.js.map
+// @license-end

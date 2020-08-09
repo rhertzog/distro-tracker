@@ -1,3 +1,4 @@
+// @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&dn=gpl-2.0.txt GPL-2.0-or-later
 $(function() {
      var unsubscribe_url = $('#unsubscribe-url').html();
      var unsubscribe_all_url = $('#unsubscribe-all-url').html();
@@ -155,3 +156,4 @@ $(function() {
         }
     });
 });
+// @license-end
