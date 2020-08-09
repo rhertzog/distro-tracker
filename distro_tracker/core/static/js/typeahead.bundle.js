@@ -1,4 +1,5 @@
-/*!
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&dn=expat.txt Expat
+ * @source: https://github.com/twitter/typeahead.js/archive/v0.11.1.tar.gz
  * typeahead.js 0.11.1
  * https://github.com/twitter/typeahead.js
  * Copyright 2013-2015 Twitter, Inc. and other contributors; Licensed MIT
@@ -2449,3 +2450,4 @@
         }
     })();
 });
+// @license-end

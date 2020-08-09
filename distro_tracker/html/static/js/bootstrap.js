@@ -1,4 +1,5 @@
-/*!
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&dn=expat.txt Expat
+ * @source: https://github.com/twbs/bootstrap/archive/v4.0.0-alpha.2.tar.gz
  * Bootstrap v4.0.0-alpha.2 (http://getbootstrap.com)
  * Copyright 2011-2015 Twitter, Inc.
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
@@ -3558,3 +3559,4 @@ var Popover = (function ($) {
 })(jQuery);
 
 }(jQuery);
+// @license-end

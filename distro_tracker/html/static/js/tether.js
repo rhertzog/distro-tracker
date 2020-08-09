@@ -1,4 +1,6 @@
-/*! tether 1.1.0 */
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&dn=expat.txt Expat
+ * @source: https://github.com/shipshapecode/tether/archive/v1.1.0.tar.gz
+ * tether 1.1.0 */
 
 (function(root, factory) {
   if (typeof define === 'function' && define.amd) {
@@ -1713,3 +1715,4 @@ TetherBase.modules.push({
 return Tether;
 
 }));
+// @license-end

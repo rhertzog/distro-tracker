@@ -1,11 +1,10 @@
-/*!
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&dn=expat.txt Expat
+ * @source: https://github.com/js-cookie/js-cookie/archive/v1.3.0.tar.gz
  * jQuery Cookie Plugin v1.3
  * https://github.com/carhartl/jquery-cookie
  *
  * Copyright 2011, Klaus Hartl
- * Dual licensed under the MIT or GPL Version 2 licenses.
  * http://www.opensource.org/licenses/mit-license.php
- * http://www.opensource.org/licenses/GPL-2.0
  */
 (function ($, document, undefined) {
 
@@ -70,3 +69,4 @@
 	};
 
 })(jQuery, document);
+// @license-end
