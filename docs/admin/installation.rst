@@ -10,7 +10,7 @@ Requirements
 
 Distro Tracker currently depends on the following Debian packages:
 
-- python3-django (>= 1.11)
+- python3-django (>= 2.2)
 - python3-requests
 - python3-django-jsonfield (>= 1.0.0)
 - python3-django-debug-toolbar (in development mode only)
@@ -28,11 +28,11 @@ Distro Tracker currently depends on the following Debian packages:
 - python3-sphinx (for development only, to build documentation)
 - python3-sphinx-rtd-theme (for development only, to build documentation)
 
-Here is the list of required packages for development on Debian Buster::
+Here is the list of required packages for development on Debian Bullseye::
 
- $ sudo apt install python3-django python3-requests python3-django-jsonfield python3-django-debug-toolbar python3-debian python3-debianbts python3-apt python3-gpg python3-yaml python3-bs4 python3-pyinotify python3-selenium chromium-driver
+ $ sudo apt install python3-django/buster-backports python3-requests python3-django-jsonfield python3-django-debug-toolbar python3-debian python3-debianbts python3-apt python3-gpg python3-yaml python3-bs4 python3-pyinotify python3-selenium chromium-driver
 
-If you are using Debian Stretch, you will need to `enable stretch-backports <https://backports.debian.org/Instructions/>`_ before attempting to do local development of Distro Tracker. 
+If you are using Debian Buster, you will need to `enable buster-backports <https://backports.debian.org/Instructions/>`_ before attempting to do local development of Distro Tracker.
 
 .. _database_setup:
 
