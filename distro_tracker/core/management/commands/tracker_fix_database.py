@@ -16,7 +16,7 @@ from django.core.management.base import BaseCommand
 from django.db.models import Count
 from django.db.models.functions import Lower
 
-from distro_tracker.core.models import EmailSettings, UserEmail
+from distro_tracker.core.models import EmailSettings, News, UserEmail
 
 
 class Command(BaseCommand):
@@ -29,10 +29,25 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         self.verbose = int(kwargs.get('verbosity', 1)) > 1
         self.drop_duplicate_user_emails()
+        self.drop_duplicate_news()
 
     def write(self, message):
         if self.verbose:
             self.stdout.write(message)
+
+    def drop_duplicate_news(self):
+        qs = News.objects.values('package__name', 'datetime_created__date',
+                                 'title')
+        qs = qs.annotate(count=Count('pk')).filter(count__gt=1)
+        for news in qs:
+            pk_to_delete = list(News.objects.filter(
+                package__name=news['package__name'],
+                datetime_created__date=news['datetime_created__date'],
+                title=news['title']
+            )[1:].values_list('pk', flat=True))
+            self.write('Dropping duplicate news on package {}: {}'.format(
+                news['package__name'], pk_to_delete))
+            News.objects.filter(pk__in=pk_to_delete).delete()
 
     def drop_duplicate_user_emails(self):
         qs = UserEmail.objects.annotate(lower_email=Lower('email'))

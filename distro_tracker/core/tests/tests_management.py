@@ -15,9 +15,11 @@ Tests for the Distro Tracker core management commands.
 """
 
 import io
+from datetime import timedelta
 from unittest import mock
 
 from django.core.management import call_command
+from django.utils import timezone
 
 from distro_tracker.accounts.models import User, UserEmail
 from distro_tracker.core.models import (
@@ -275,3 +277,49 @@ class FixDatabaseCommandTests(TestCase):
         self.user_email.emailsettings.delete()
         self.alt_user_email.emailsettings.delete()
         call_command('tracker_fix_database')
+
+    def test_management_command_drops_duplicate_news_multiple_packages(self):
+        src1 = self.create_source_package(name='src1').source_package_name
+        src2 = self.create_source_package(name='src2').source_package_name
+        src3 = self.create_source_package(name='src3').source_package_name
+        for src in (src1, src2, src3):
+            for i in range(5):
+                News.objects.create(package=src, title='Duplicate title',
+                                    content='Nothing interesting',
+                                    created_by='Test Suite')
+        self.assertEqual(src1.news_set.count(), 5)
+        self.assertEqual(src2.news_set.count(), 5)
+        self.assertEqual(src3.news_set.count(), 5)
+
+        call_command('tracker_fix_database')
+
+        self.assertEqual(src1.news_set.count(), 1)
+        self.assertEqual(src2.news_set.count(), 1)
+        self.assertEqual(src3.news_set.count(), 1)
+
+    def test_management_command_drops_duplicate_news_multiple_titles(self):
+        src1 = self.create_source_package(name='src1').source_package_name
+        for i in range(5):
+            News.objects.create(package=src1, title='Title %i' % i,
+                                content='Nothing interesting',
+                                created_by='Test Suite')
+        self.assertEqual(src1.news_set.count(), 5)
+
+        call_command('tracker_fix_database')
+
+        self.assertEqual(src1.news_set.count(), 5)
+
+    def test_management_command_drops_duplicate_news_multiple_days(self):
+        src1 = self.create_source_package(name='src1').source_package_name
+        now = timezone.now()
+        for i in range(5):
+            news = News.objects.create(
+                package=src1, title='Duplicate title',
+                content='Nothing interesting', created_by='Test Suite')
+            news.datetime_created = now - timedelta(days=i)
+            news.save()
+        self.assertEqual(src1.news_set.count(), 5)
+
+        call_command('tracker_fix_database')
+
+        self.assertEqual(src1.news_set.count(), 5)
