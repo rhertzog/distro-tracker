@@ -144,7 +144,7 @@ class SpaceDelimitedTextField(models.TextField):
 
     description = "Stores a space delimited list of strings"
 
-    def from_db_value(self, value, expression, connection, context):
+    def from_db_value(self, value, expression, connection):
         return self.to_python(value)
 
     def to_python(self, value):
