@@ -19,6 +19,7 @@ import io
 import json
 import os
 from email.message import Message
+from functools import partial
 from unittest import mock
 
 from bs4 import BeautifulSoup as soup
@@ -27,7 +28,6 @@ from django.core import mail
 from django.core.management import call_command
 from django.test.utils import override_settings
 from django.urls import reverse
-from django.utils.functional import curry
 
 import yaml
 
@@ -2128,7 +2128,7 @@ class DebianBugActionItemsTests(TestCase):
         self.task._get_udd_bug_stats = mock.MagicMock(
             return_value=self.udd_bugs)
         self.task._get_tagged_bug_stats = mock.MagicMock(
-            side_effect=curry(
+            side_effect=partial(
                 DebianBugActionItemsTests.stub_tagged_bugs,
                 help_bugs=self.help_bugs,
                 newcomer_bugs=self.newcomer_bugs))
@@ -3564,7 +3564,7 @@ class UpdatePiupartsTaskTests(TestCase):
         # Stub the data providing methods
         self.return_content = {}
         self.task._get_piuparts_content = mock.MagicMock(
-            side_effect=curry(
+            side_effect=partial(
                 UpdatePiupartsTaskTests.stub_get_piuparts_content,
                 stub_data=self.return_content))
 

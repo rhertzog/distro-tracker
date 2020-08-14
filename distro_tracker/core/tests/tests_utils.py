@@ -22,6 +22,7 @@ from email import encoders
 from email.header import Header
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
+from functools import partial
 from unittest import mock
 
 from debian import deb822
@@ -30,7 +31,6 @@ from django.core import mail
 from django.http.response import HttpResponseRedirectBase
 from django.test.utils import override_settings
 from django.urls import reverse
-from django.utils.functional import curry
 from django.utils.http import http_date
 
 from requests.exceptions import HTTPError
@@ -1352,7 +1352,7 @@ class AptCacheTests(TestCase):
         Helper method which sets the content of a file which is created by the
         cache instance when retrieve_source is called.
         """
-        self.cache._apt_acquire_package = mock.MagicMock(side_effect=curry(
+        self.cache._apt_acquire_package = mock.MagicMock(side_effect=partial(
             AptCacheTests.stub_acquire, content=content))
 
     def set_stub_cached_files_for_repository(self, repository, files):
