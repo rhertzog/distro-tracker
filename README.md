@@ -57,11 +57,7 @@ mail [Raphaël Hertzog](mailto:hertzog@debian.org) privately.
 
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/1440/badge)](https://bestpractices.coreinfrastructure.org/projects/1440)
 
-[![Code Health](https://landscape.io/github/rhertzog/distro-tracker/master/landscape.svg?style=flat)](https://landscape.io/github/rhertzog/distro-tracker/master)
-
 ### Known distro-tracker deployments
 
 * https://tracker.debian.org
 * https://pkg.kali.org
-
-
