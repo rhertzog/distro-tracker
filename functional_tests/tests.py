@@ -34,6 +34,7 @@ from distro_tracker.accounts.models import (
 from distro_tracker.core.models import (
     BinaryPackageName,
     ContributorName,
+    Keyword,
     PackageName,
     SourcePackage,
     SourcePackageName,
@@ -175,6 +176,9 @@ class SeleniumTestCase(LiveServerTestCase):
         mock_response.text = text
         mock_requests.get.return_value = mock_response
         mock_requests.head.return_value = mock_response
+
+    def wait(self, timeout=2):
+        return WebDriverWait(self.browser, timeout)
 
     def wait_until_url_changes(self):
         """
@@ -373,6 +377,7 @@ class RepositoryAdminTest(SeleniumTestCase):
         """
         # The user first logs in to the admin panel with their credentials.
         self.login_to_admin()
+        self.wait_response(1)
 
         # They expect the log in to succeed, responding with the
         # administration page.
@@ -512,9 +517,6 @@ class UserAccountsTestMixin(object):
         Helper method which logs the user out.
         """
         self.browser.find_element_by_id("account-logout").click()
-
-    def wait(self, timeout=2):
-        return WebDriverWait(self.browser, timeout)
 
 
 class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
@@ -1305,11 +1307,28 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
 
 
 class ManageSubscriptionTest(UserAccountsTestMixin, SeleniumTestCase):
-    # We need the Keyword objects, ask Django to re-load the initial data
-    serialized_rollback = True
 
     def setUp(self):
         super().setUp()
+
+        # Ensure we have the default keywords
+        if Keyword.objects.count() == 0:
+            Keyword.objects.bulk_create([
+                Keyword(name='default', default=True),
+                Keyword(name='bts', default=True),
+                Keyword(name='bts-control', default=True),
+                Keyword(name='summary', default=True),
+                Keyword(name='upload-source', default=True),
+                Keyword(name='archive', default=True),
+                Keyword(name='contact', default=True),
+                Keyword(name='build', default=True),
+                Keyword(name='vcs', default=False),
+                Keyword(name='translation', default=False),
+                Keyword(name='upload-binary', default=False),
+                Keyword(name='derivatives', default=False),
+                Keyword(name='derivatives-bugs', default=False),
+            ])
+
         self.package2 = SourcePackageName.objects.create(name='package2')
         self.user.emails.create(email='xyz@domain.com')
         self.email1 = self.user.emails.get(email='user@domain.com')
