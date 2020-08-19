@@ -112,6 +112,12 @@ class TestCaseHelpersMixin(object):
 
         self.addCleanup(cleanup_test_template_dir)
 
+    def get_temporary_directory(self, prefix=None, suffix=None):
+        tempdir = tempfile.mkdtemp(prefix=prefix, suffix=suffix)
+        self.addCleanup(shutil.rmtree, tempdir, ignore_errors=True)
+
+        return tempdir
+
     def import_key_into_keyring(self, filename):
         """
         Imports a key from an ascii armored file located in tests-data/keys/

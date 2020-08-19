@@ -623,14 +623,10 @@ class HttpCacheTest(SimpleTestCase):
     # Tests constructors
     #
     def setUp(self):
-        self.cache_directory = tempfile.mkdtemp(suffix='test-cache')
+        self.cache_directory = self.get_temporary_directory(suffix='test-cache')
         self.response_content = 'Simple response'.encode('utf-8')
         self.url = 'http://some.url.com'
         self.cache = HttpCache(self.cache_directory)
-
-    def tearDown(self):
-        import shutil
-        shutil.rmtree(self.cache_directory)
 
     #
     # Tests helper functions, to avoid code redundancy

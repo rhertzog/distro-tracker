@@ -74,6 +74,22 @@ class TempDirsTests(object):
             self.assertNotEqual(getattr(settings, name),
                                 getattr(settings_copy, name))
 
+    def test_get_temporary_directory(self):
+        tempdir = self.get_temporary_directory()
+
+        self.assertTrue(os.path.isdir(tempdir))
+        self.doCleanups()  # Ensure a cleanup function is added
+        self.assertFalse(os.path.isdir(tempdir))
+
+    def test_get_temporary_directory_with_prefix_suffix(self):
+        tempdir = self.get_temporary_directory(prefix='foo', suffix='bar')
+
+        dirname = os.path.basename(tempdir)
+        self.assertTrue(dirname.startswith('foo'),
+                        "%s does not start with foo" % dirname)
+        self.assertTrue(dirname.endswith('bar'),
+                        "%s does not end with bar" % dirname)
+
 
 class TestCaseHelpersTests(object):
     def test_get_test_data_path(self):
