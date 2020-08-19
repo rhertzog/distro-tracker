@@ -55,7 +55,7 @@ from distro_tracker.core.utils.email_messages import message_from_bytes
 from distro_tracker.core.utils.packages import package_url
 from distro_tracker.mail.tests.tests_dispatch import DispatchTestHelperMixin
 from distro_tracker.test import SimpleTestCase, TestCase
-from distro_tracker.test.utils import make_temp_directory, set_mock_response
+from distro_tracker.test.utils import set_mock_response
 from distro_tracker.vendor.debian.management.commands.\
     tracker_import_old_subscriber_dump \
     import Command as ImportOldSubscribersCommand
@@ -850,25 +850,25 @@ Extra-Source-Only: yes
 Files:
  227ffeabc4357876f45968aeee39cdb1 3041 file.dsc
 """)
-        with make_temp_directory('-mock-repo-cache') as temp_dir_name:
-            sources_file_path = os.path.join(temp_dir_name, 'Sources')
-            with open(sources_file_path, 'w') as f:
-                f.write(sources_contents)
-            mock_update_repositories.return_value = (
-                [(self.repository, self.component, sources_file_path)],
-                []
-            )
-            # Sanity check - no source packages before running the task
-            self.assertEqual(0, SourcePackageName.objects.count())
+        temp_dir_name = self.get_temporary_directory(suffix='-mock-repo-cache')
+        sources_file_path = os.path.join(temp_dir_name, 'Sources')
+        with open(sources_file_path, 'w') as f:
+            f.write(sources_contents)
+        mock_update_repositories.return_value = (
+            [(self.repository, self.component, sources_file_path)],
+            []
+        )
+        # Sanity check - no source packages before running the task
+        self.assertEqual(0, SourcePackageName.objects.count())
 
-            run_task(UpdateRepositoriesTask)
+        run_task(UpdateRepositoriesTask)
 
-            # Only one package exists
-            self.assertEqual(1, SourcePackageName.objects.count())
-            # It is the one without the Extra-Source-Only: yes
-            self.assertEqual(
-                'dummy-package',
-                SourcePackageName.objects.all()[0].name)
+        # Only one package exists
+        self.assertEqual(1, SourcePackageName.objects.count())
+        # It is the one without the Extra-Source-Only: yes
+        self.assertEqual(
+            'dummy-package',
+            SourcePackageName.objects.all()[0].name)
 
 
 @override_settings(
@@ -4813,47 +4813,48 @@ class ImportOldNewsTests(TestCase):
         content_template = "Hello Öäüßčćž한글{}"
         date = 'Mon, 28 Nov 2005 15:47:11 -0800'
 
-        with make_temp_directory('old-pts') as old_distro_tracker_root:
-            # Make the expected directory structure and add some news
-            for package in packages:
-                PackageName.objects.create(name=package, source=True)
-                news_dir = os.path.join(
-                    old_distro_tracker_root, package[0], package, 'news')
-                os.makedirs(news_dir)
+        old_distro_tracker_root = self.get_temporary_directory(
+            suffix='-old-pts')
+        # Make the expected directory structure and add some news
+        for package in packages:
+            PackageName.objects.create(name=package, source=True)
+            news_dir = os.path.join(
+                old_distro_tracker_root, package[0], package, 'news')
+            os.makedirs(news_dir)
 
-                # Add a news for this package
-                msg = self.create_message(
-                    subject_template.format(package),
-                    email,
-                    date,
-                    content_template.format(package))
-                with open(os.path.join(news_dir, 'news.txt'), 'wb') as f:
-                    if hasattr(msg, 'as_bytes'):
-                        content = msg.as_bytes()
-                    else:
-                        content = msg.as_string()
-                    f.write(content)
+            # Add a news for this package
+            msg = self.create_message(
+                subject_template.format(package),
+                email,
+                date,
+                content_template.format(package))
+            with open(os.path.join(news_dir, 'news.txt'), 'wb') as f:
+                if hasattr(msg, 'as_bytes'):
+                    content = msg.as_bytes()
+                else:
+                    content = msg.as_string()
+                f.write(content)
 
-            call_command('tracker_import_old_news', old_distro_tracker_root)
+        call_command('tracker_import_old_news', old_distro_tracker_root)
 
-            # All news items created
-            self.assertEqual(len(packages), News.objects.count())
-            # All news item have the correct associated content
-            for package in packages:
-                news = News.objects.get(package__name=package)
-                subject = subject_template.format(package)
-                content = content_template.format(package).encode('utf-8')
-                self.assertEqual(subject, news.title)
-                # The date of the news item is correctly set to the old item's
-                # date?
-                self.assertEqual(
-                    '2005 11 28',
-                    news.datetime_created.strftime('%Y %m %d'))
-                # The news item's content can be seamlessly transformed back to
-                # an email Message object.
-                msg = message_from_bytes(news.content)
-                self.assertEqual(subject, msg['Subject'])
-                self.assertEqual(content, msg.get_payload(decode=True))
+        # All news items created
+        self.assertEqual(len(packages), News.objects.count())
+        # All news item have the correct associated content
+        for package in packages:
+            news = News.objects.get(package__name=package)
+            subject = subject_template.format(package)
+            content = content_template.format(package).encode('utf-8')
+            self.assertEqual(subject, news.title)
+            # The date of the news item is correctly set to the old item's
+            # date?
+            self.assertEqual(
+                '2005 11 28',
+                news.datetime_created.strftime('%Y %m %d'))
+            # The news item's content can be seamlessly transformed back to
+            # an email Message object.
+            msg = message_from_bytes(news.content)
+            self.assertEqual(subject, msg['Subject'])
+            self.assertEqual(content, msg.get_payload(decode=True))
 
 
 class ImportOldSubscribersTests(TestCase):

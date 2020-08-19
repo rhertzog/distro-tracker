@@ -82,7 +82,7 @@ from distro_tracker.core.utils.packages import (
     package_url
 )
 from distro_tracker.test import SimpleTestCase, TestCase
-from distro_tracker.test.utils import make_temp_directory, set_mock_response
+from distro_tracker.test.utils import set_mock_response
 
 
 class VerpModuleTest(SimpleTestCase):
@@ -1457,134 +1457,121 @@ class AptCacheTests(TestCase):
         Tests that the cache correctly increases its size after acquiring new
         files.
         """
-        with make_temp_directory('-dtracker-cache') as cache_directory:
-            with self.settings(
-                    DISTRO_TRACKER_CACHE_DIRECTORY=cache_directory,
-                    DISTRO_TRACKER_APT_CACHE_MAX_SIZE=10):
-                self.create_cache()
-                # Sanity check: old size is 0 as nothing was ever cached in the
-                # brand new directory
-                self.assert_cache_size_equal(0)
-                content = b'a' * 5  # 5 bytes
-                self.set_stub_acquire_content(content)
+        with self.settings(DISTRO_TRACKER_APT_CACHE_MAX_SIZE=10):
+            self.create_cache()
+            # Sanity check: old size is 0 as nothing was ever cached in the
+            # brand new directory
+            self.assert_cache_size_equal(0)
+            content = b'a' * 5  # 5 bytes
+            self.set_stub_acquire_content(content)
 
-                self.cache.retrieve_source('dummy-package', '1.0.0')
+            self.cache.retrieve_source('dummy-package', '1.0.0')
 
-                self.assert_cache_size_equal(5)
+            self.assert_cache_size_equal(5)
 
     def test_cache_multiple_insert_no_remove(self):
         """
         Tests that the cache does not remove packages unless the size limit is
         exceeded.
         """
-        with make_temp_directory('-dtracker-cache') as cache_directory:
-            with self.settings(
-                    DISTRO_TRACKER_CACHE_DIRECTORY=cache_directory,
-                    DISTRO_TRACKER_APT_CACHE_MAX_SIZE=10):
-                self.create_cache()
-                # Sanity check: old size is 0 as nothing was ever cached in the
-                # brand new directory
-                self.assert_cache_size_equal(0)
-                content = b'a' * 5  # 5 bytes
-                self.set_stub_acquire_content(content)
-                # Add one file.
-                self.cache.retrieve_source('dummy-package', '1.0.0')
-                self.assert_cache_size_equal(5)
-                # Same content in another file
-                self.set_stub_acquire_content(content)
+        with self.settings(DISTRO_TRACKER_APT_CACHE_MAX_SIZE=10):
+            self.create_cache()
+            # Sanity check: old size is 0 as nothing was ever cached in the
+            # brand new directory
+            self.assert_cache_size_equal(0)
+            content = b'a' * 5  # 5 bytes
+            self.set_stub_acquire_content(content)
+            # Add one file.
+            self.cache.retrieve_source('dummy-package', '1.0.0')
+            self.assert_cache_size_equal(5)
+            # Same content in another file
+            self.set_stub_acquire_content(content)
 
-                self.cache.retrieve_source('package', '1.0.0')
+            self.cache.retrieve_source('package', '1.0.0')
 
-                # Both files are now saved.
-                self.assert_cache_size_equal(10)
+            # Both files are now saved.
+            self.assert_cache_size_equal(10)
 
     def test_clear_cache(self):
         """
         Tests that the cache removes packages when it exceeds its allocated
         size.
         """
-        with make_temp_directory('-dtracker-cache') as cache_directory:
-            with self.settings(
-                    DISTRO_TRACKER_CACHE_DIRECTORY=cache_directory,
-                    DISTRO_TRACKER_APT_CACHE_MAX_SIZE=10):
-                self.create_cache()
-                # Sanity check: old size is 0 as nothing was ever cached in the
-                # brand new directory
-                self.assert_cache_size_equal(0)
-                initial_content = b'a' * 11
-                self.set_stub_acquire_content(initial_content)
-                # Set initial source content
-                self.cache.retrieve_source('dummy-package', '1.0.0')
-                self.assert_cache_size_equal(11)
-                content = b'a' * 7
-                self.set_stub_acquire_content(content)
+        with self.settings(DISTRO_TRACKER_APT_CACHE_MAX_SIZE=10):
+            self.create_cache()
+            # Sanity check: old size is 0 as nothing was ever cached in the
+            # brand new directory
+            self.assert_cache_size_equal(0)
+            initial_content = b'a' * 11
+            self.set_stub_acquire_content(initial_content)
+            # Set initial source content
+            self.cache.retrieve_source('dummy-package', '1.0.0')
+            self.assert_cache_size_equal(11)
+            content = b'a' * 7
+            self.set_stub_acquire_content(content)
 
-                self.cache.retrieve_source('package', '1.0.0')
+            self.cache.retrieve_source('package', '1.0.0')
 
-                # Only the second content is found in the package
-                self.assert_cache_size_equal(7)
+            # Only the second content is found in the package
+            self.assert_cache_size_equal(7)
 
     def test_get_sources_for_repository(self):
         """
         Tests that the cache correctly returns a list of cached Sources files
         for a given repository.
         """
-        with make_temp_directory('-dtracker-cache') as cache_directory:
-            with self.settings(DISTRO_TRACKER_CACHE_DIRECTORY=cache_directory):
-                self.create_cache()
-                repository = Repository.objects.create(
-                    name='stable',
-                    shorthand='stable',
-                    uri='https://deb.debian.org/debian/dists',
-                    suite='stable')
-                expected_source_files = [
-                    'main_source_Sources',
-                    'contrib_source_Sources',
-                ]
-                files = expected_source_files + [
-                    'Release',
-                    'main_binary-amd64_Packages',
-                ]
-                self.set_stub_cached_files_for_repository(repository, files)
+        self.create_cache()
+        repository = Repository.objects.create(
+            name='stable',
+            shorthand='stable',
+            uri='https://deb.debian.org/debian/dists',
+            suite='stable')
+        expected_source_files = [
+            'main_source_Sources',
+            'contrib_source_Sources',
+        ]
+        files = expected_source_files + [
+            'Release',
+            'main_binary-amd64_Packages',
+        ]
+        self.set_stub_cached_files_for_repository(repository, files)
 
-                sources = \
-                    self.cache.get_sources_files_for_repository(repository)
+        sources = \
+            self.cache.get_sources_files_for_repository(repository)
 
-                self.assertEqual(len(expected_source_files), len(sources))
-                for expected_source, returned_source in zip(
-                        expected_source_files, sources):
-                    self.assertTrue(returned_source.endswith(expected_source))
+        self.assertEqual(len(expected_source_files), len(sources))
+        for expected_source, returned_source in zip(
+                expected_source_files, sources):
+            self.assertTrue(returned_source.endswith(expected_source))
 
     def test_get_packages_for_repository(self):
         """
         Tests that the cache correctly returns a list of cached Packages files
         for a given repository.
         """
-        with make_temp_directory('-dtracker-cache') as cache_directory:
-            with self.settings(DISTRO_TRACKER_CACHE_DIRECTORY=cache_directory):
-                self.create_cache()
-                repository = Repository.objects.create(
-                    name='stable',
-                    shorthand='stable',
-                    uri='https://deb.debian.org/debian/dists',
-                    suite='stable')
-                expected_packages_files = [
-                    'main_binary-amd64_Packages',
-                    'main_binary-i386_Packages',
-                ]
-                files = expected_packages_files + [
-                    'Release',
-                    'main_source_Sources',
-                ]
-                self.set_stub_cached_files_for_repository(repository, files)
+        self.create_cache()
+        repository = Repository.objects.create(
+            name='stable',
+            shorthand='stable',
+            uri='https://deb.debian.org/debian/dists',
+            suite='stable')
+        expected_packages_files = [
+            'main_binary-amd64_Packages',
+            'main_binary-i386_Packages',
+        ]
+        files = expected_packages_files + [
+            'Release',
+            'main_source_Sources',
+        ]
+        self.set_stub_cached_files_for_repository(repository, files)
 
-                packages = \
-                    self.cache.get_packages_files_for_repository(repository)
+        packages = \
+            self.cache.get_packages_files_for_repository(repository)
 
-                self.assertEqual(len(expected_packages_files), len(packages))
-                for expected, returned in zip(
-                        expected_packages_files, packages):
-                    self.assertTrue(returned.endswith(expected))
+        self.assertEqual(len(expected_packages_files), len(packages))
+        for expected, returned in zip(
+                expected_packages_files, packages):
+            self.assertTrue(returned.endswith(expected))
 
 
 class LinkifyTests(TestCase):

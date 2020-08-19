@@ -11,25 +11,9 @@
 # except according to the terms contained in the LICENSE file.
 """Helper functions that can be useful when writing tests."""
 
-import contextlib
 import json as jsonmod
-import shutil
-import tempfile
 
 import requests
-
-
-@contextlib.contextmanager
-def make_temp_directory(suffix=''):
-    """
-    Helper context manager which creates a temporary directory on enter and
-    cleans it up on exit.
-    """
-    temp_dir_name = tempfile.mkdtemp(suffix=suffix)
-    try:
-        yield temp_dir_name
-    finally:
-        shutil.rmtree(temp_dir_name)
 
 
 def set_mock_response(mock_requests, text="", json=None, headers=None,

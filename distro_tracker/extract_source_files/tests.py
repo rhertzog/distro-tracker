@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2020 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -24,7 +24,6 @@ from distro_tracker.extract_source_files.tracker_tasks import (
     ExtractSourcePackageFiles
 )
 from distro_tracker.test import TestCase
-from distro_tracker.test.utils import make_temp_directory
 
 
 @mock.patch('distro_tracker.extract_source_files.tracker_tasks.'
@@ -37,6 +36,8 @@ class ExtractSourcePackageFilesTest(TestCase):
     def setUp(self):
         self.task = ExtractSourcePackageFiles()
         self.srcpkg = self.create_source_package()
+        self.pkg_directory = self.get_temporary_directory(
+            prefix='dtracker-pkg-dir-')
 
     def run_task(self, force_update=False):
         """
@@ -76,10 +77,9 @@ class ExtractSourcePackageFilesTest(TestCase):
         Tests that the task creates an
         :class:`distro_tracker.core.models.ExtractedSourceFile` instance.
         """
-        with make_temp_directory('dtracker-pkg-dir') as pkg_directory:
-            mock_cache.return_value = pkg_directory
-            self.setup_debian_dir(pkg_directory, ['changelog'])
-            self.run_task()
+        mock_cache.return_value = self.pkg_directory
+        self.setup_debian_dir(self.pkg_directory, ['changelog'])
+        self.run_task()
 
         self.assertExtractedFilesInDB(['changelog'])
 
@@ -88,10 +88,9 @@ class ExtractSourcePackageFilesTest(TestCase):
         Tests that the task creates an
         :class:`distro_tracker.core.models.ExtractedSourceFile` instance.
         """
-        with make_temp_directory('dtracker-pkg-dir') as pkg_directory:
-            mock_cache.return_value = pkg_directory
-            self.setup_debian_dir(pkg_directory, extra_files=['other-file'])
-            self.run_task()
+        mock_cache.return_value = self.pkg_directory
+        self.setup_debian_dir(self.pkg_directory, extra_files=['other-file'])
+        self.run_task()
 
         self.assertExtractedFilesInDB()
 
@@ -101,11 +100,10 @@ class ExtractSourcePackageFilesTest(TestCase):
         :class:`distro_tracker.core.models.ExtractedSourceFile` instance
         even when the content of the file is not valid UTF-8.
         """
-        with make_temp_directory('dtracker-pkg-dir') as pkg_directory:
-            mock_cache.return_value = pkg_directory
-            self.setup_debian_dir(pkg_directory, ['changelog'],
-                                  contents='Raphaël'.encode('latin1'))
-            self.run_task()
+        mock_cache.return_value = self.pkg_directory
+        self.setup_debian_dir(self.pkg_directory, ['changelog'],
+                              contents='Raphaël'.encode('latin1'))
+        self.run_task()
 
         self.assertExtractedFilesInDB(['changelog'])
 
@@ -116,10 +114,9 @@ class ExtractSourcePackageFilesTest(TestCase):
         """
         self.task.item_mark_processed(self.srcpkg)
 
-        with make_temp_directory('dtracker-pkg-dir') as pkg_directory:
-            mock_cache.return_value = pkg_directory
-            self.setup_debian_dir(pkg_directory)
-            self.run_task(force_update=True)
+        mock_cache.return_value = self.pkg_directory
+        self.setup_debian_dir(self.pkg_directory)
+        self.run_task(force_update=True)
 
         self.assertExtractedFilesInDB()
 
@@ -134,10 +131,9 @@ class ExtractSourcePackageFilesTest(TestCase):
             name='changelog',
             extracted_file=ContentFile(original_content, name='changelog'))
 
-        with make_temp_directory('dtracker-pkg-dir') as pkg_directory:
-            mock_cache.return_value = pkg_directory
-            self.setup_debian_dir(pkg_directory)
-            self.run_task()
+        mock_cache.return_value = self.pkg_directory
+        self.setup_debian_dir(self.pkg_directory)
+        self.run_task()
 
         self.assertExtractedFilesInDB()
 
@@ -157,9 +153,8 @@ class ExtractSourcePackageFilesTest(TestCase):
             name='we-dont-want-this-any-more',
             extracted_file=ContentFile(original_content, name='changelog'))
 
-        with make_temp_directory('dtracker-pkg-dir') as pkg_directory:
-            mock_cache.return_value = pkg_directory
-            self.setup_debian_dir(pkg_directory)
-            self.run_task()
+        mock_cache.return_value = self.pkg_directory
+        self.setup_debian_dir(self.pkg_directory)
+        self.run_task()
 
         self.assertExtractedFilesInDB()
