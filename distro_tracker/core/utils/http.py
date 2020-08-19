@@ -13,6 +13,7 @@ Utilities for handling HTTP resource access.
 
 import json
 import os
+import re
 import time
 from hashlib import md5
 
@@ -53,8 +54,10 @@ class HttpCache(object):
     """
     A class providing an interface to a cache of HTTP responses.
     """
-    def __init__(self, cache_directory_path):
+    def __init__(self, cache_directory_path,
+                 url_to_cache_path=None):
         self.cache_directory_path = cache_directory_path
+        self.custom_url_to_cache_path = url_to_cache_path
 
     def __contains__(self, item):
         cache_file_name = self._content_cache_file_path(item)
@@ -175,16 +178,74 @@ class HttpCache(object):
 
         return response, response.status_code != 304
 
+    def _prepare_path(self, cache_path):
+        path = self.cache_directory_path
+        dirname = os.path.dirname(cache_path)
+
+        # Check the directory tree, create missing directories
+        check_dir = path
+        for component in dirname.split(os.path.sep):
+            check_dir = os.path.join(check_dir, component)
+            if os.path.isdir(check_dir):
+                continue  # Expected case, avoid further checks
+            elif os.path.exists(check_dir):
+                # Handle conflicting file by renaming it
+                target_directory = '{}?'.format(check_dir)
+                if not os.path.exists(target_directory):
+                    os.mkdir(target_directory)
+                os.rename(check_dir, os.path.join(target_directory, 'index'))
+                # Also rename the associated headers file if possible
+                headers_file = check_dir + '?headers'
+                if os.path.exists(headers_file):
+                    os.rename(headers_file,
+                              os.path.join(target_directory, 'index?headers'))
+            os.mkdir(check_dir)
+
+        return os.path.join(self.cache_directory_path, cache_path)
+
     def _content_cache_file_path(self, url):
-        return os.path.join(self.cache_directory_path, self._url_hash(url))
+        path = self._prepare_path(self.url_to_cache_path(url))
+        return path
 
     def _header_cache_file_path(self, url):
-        url_hash = self._url_hash(url)
-        header_file_name = url_hash + '.headers'
-        return os.path.join(self.cache_directory_path, header_file_name)
+        header_cache_path = self.url_to_cache_path(url) + '?headers'
+        path = self._prepare_path(header_cache_path)
+        return path
 
-    def _url_hash(self, url):
-        return md5(url.encode('utf-8')).hexdigest()
+    def url_to_cache_path(self, url):
+        """
+        Transforms an arbitrary URL into a relative path within the
+        cache directory. Can be overridden by the user by supplying
+        its own implementation in the ``url_to_cache_path`` attribute
+        of the ``__init__()`` method.
+
+        :param url: The URL to be cached.
+        :type url: str
+
+        :returns: A relative path within the cache directory, used to store a
+            copy of the resource.
+        """
+        # Let the user supply its own naming logic
+        if self.custom_url_to_cache_path:
+            return self.custom_url_to_cache_path(url)
+
+        # Normalizes URL into a sane path
+        path = re.sub(r'^https?://', '', url, count=1, flags=re.IGNORECASE)
+        path = re.sub(r'\?$', '', path)
+        path = re.sub(r'/+', '/', path)
+        path = re.sub(r'/+$', '', path)
+
+        # Handle URL with GET parameters to allow caching of multiple versions
+        # of the same path
+        if '?' in path:
+            (url, args) = path.split('?', maxsplit=1)
+            path = url + '?/' + md5(args.encode('utf-8')).hexdigest()
+
+        # Hande conflicting directory that will forbid save of the cache file
+        if os.path.isdir(os.path.join(self.cache_directory_path, path)):
+            path += '?/index'
+
+        return path
 
 
 def get_resource_content(url, cache=None, compression="auto",

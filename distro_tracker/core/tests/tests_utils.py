@@ -626,6 +626,7 @@ class HttpCacheTest(SimpleTestCase):
         self.cache_directory = tempfile.mkdtemp(suffix='test-cache')
         self.response_content = 'Simple response'.encode('utf-8')
         self.url = 'http://some.url.com'
+        self.cache = HttpCache(self.cache_directory)
 
     def tearDown(self):
         import shutil
@@ -674,6 +675,80 @@ class HttpCacheTest(SimpleTestCase):
         self.assertIn('private', d)
         self.assertIn('max-age', d)
         self.assertEqual(d['max-age'], '0')
+
+    def test_url_to_cache_path_simple_url_without_args(self):
+        path = self.cache.url_to_cache_path('http://localhost/foo/bar.txt')
+        self.assertEqual(path, 'localhost/foo/bar.txt')
+
+        path = self.cache.url_to_cache_path('https://localhost/foo/bar.txt')
+        self.assertEqual(path, 'localhost/foo/bar.txt')
+
+    def test_url_to_cache_path_normalizes_path(self):
+        path = self.cache.url_to_cache_path('https://localhost//foo///bar.txt?')
+        self.assertEqual(path, 'localhost/foo/bar.txt')
+
+        path = self.cache.url_to_cache_path('https://localhost/foo//')
+        self.assertEqual(path, 'localhost/foo')
+
+    def test_url_to_cache_path_url_with_args(self):
+        path = self.cache.url_to_cache_path('http://localhost/foo?foobar')
+        self.assertEqual(path,
+                         'localhost/foo?/3858f62230ac3c915f300c664312c63f')
+
+        # Ensure we split only on first question mark
+        path = self.cache.url_to_cache_path('http://localhost/foo?foo?bar')
+        self.assertEqual(path,
+                         'localhost/foo?/1a361f6f00e5f0864ce353da93da2c08')
+
+    def test_url_to_cache_path_with_conflicting_directory(self):
+        """
+        Ensure we can store a cache entry even with a conflicting directory.
+
+        When an already fetched URL created a directory in the place where
+        we want to store something, we consider that we have a directory
+        index and we store it in the special path ending '<path>?/index'.
+        This is the same directory structure as the URL with GET arguments
+        except that it doesn't use any md5sum and thus avoids any conflict
+        with that case.
+        """
+        os.makedirs(os.path.join(self.cache_directory, 'localhost/foo'))
+        path = self.cache.url_to_cache_path('http://localhost/foo')
+        self.assertEqual(path, 'localhost/foo?/index')
+
+    def test_url_to_cache_path_can_be_overriden(self):
+        mock_url_to_cache_path = mock.MagicMock()
+        mock_url_to_cache_path.return_value = mock.sentinel.cache_path
+
+        cache = HttpCache(self.cache_directory,
+                          url_to_cache_path=mock_url_to_cache_path)
+        answer = cache.url_to_cache_path('http://localhost/foo')
+
+        self.assertEqual(answer, mock.sentinel.cache_path)
+        mock_url_to_cache_path.assert_called_with('http://localhost/foo')
+
+    @mock.patch('distro_tracker.core.utils.http.requests')
+    def test_update_clears_conflicting_files(self, mock_requests):
+        """
+        Ensure that a file is replaced by a directory when needed.
+
+        When a previous resource created a file that now needs to be
+        a directory, we want the file to leave its place for the directory.
+        The file is kept as a directory index.
+        """
+        conflicting_path = os.path.join(self.cache_directory, 'localhost/foo')
+        new_path = os.path.join(self.cache_directory, 'localhost/foo?/index')
+        # Fetch a first file
+        self.set_mock_response(mock_requests)
+        self.cache.update('http://localhost/foo')
+        self.assertTrue(os.path.isfile(conflicting_path))
+        self.assertFalse(os.path.isdir(conflicting_path))
+        self.assertFalse(os.path.isfile(new_path))
+        # Fetch a resource that conflicts with the previous file
+        self.cache.update('http://localhost/foo/bar')
+        self.assertTrue(os.path.isdir(conflicting_path))
+        self.assertFalse(os.path.isfile(conflicting_path))
+        self.assertTrue(os.path.isfile(new_path))
+        self.assertTrue(os.path.isfile(new_path + '?headers'))
 
     @mock.patch('distro_tracker.core.utils.http.requests')
     def test_update_cache_new_item(self, mock_requests):
