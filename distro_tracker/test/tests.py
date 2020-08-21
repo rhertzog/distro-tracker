@@ -13,6 +13,7 @@
 """Tests for test functionalities of Distro Tracker."""
 
 import copy
+import gzip
 import json
 import os.path
 from unittest import mock
@@ -161,6 +162,37 @@ class TestCaseHelpersTests(object):
 
         response = self._call_requests_get()
         self.assertEqual(data, json.loads(response.text))
+
+    def test_set_http_get_response_compressed_text_with_gzip(self):
+        self.mock_http_request()
+        text = 'Hello world!'
+        self.set_http_get_response(text=text, compress_with='gzip')
+
+        response = self._call_requests_get()
+        self.assertEqual(gzip.decompress(response.content),
+                         bytes(text, 'utf-8'))
+
+    def test_set_http_get_response_compressed_content_with_gzip(self):
+        self.mock_http_request()
+        content = b'\x01\x02\x03'
+        self.set_http_get_response(content=content, compress_with='gzip')
+
+        response = self._call_requests_get()
+        self.assertEqual(gzip.decompress(response.content), content)
+
+    def test_set_http_get_response_compressed_json_with_gzip(self):
+        self.mock_http_request()
+        data = {'foo': 'bar'}
+        self.set_http_get_response(json_data=data, compress_with='gzip')
+
+        response = self._call_requests_get()
+        json_text = gzip.decompress(response.content).decode('utf-8')
+        self.assertEqual(json.loads(json_text), data)
+
+    def test_set_http_get_response_compress_with_invalid_method(self):
+        self.mock_http_request()
+        with self.assertRaises(NotImplementedError):
+            self.set_http_get_response(text='Foobar', compress_with='bad')
 
     def test_mocked_requests_get_no_answer_set(self):
         self.mock_http_request()

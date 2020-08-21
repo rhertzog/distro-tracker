@@ -14,7 +14,6 @@
 Tests for Debian-specific modules/functionality of Distro Tracker.
 """
 
-import gzip
 import io
 import json
 import os
@@ -1486,22 +1485,37 @@ class UpdateAppStreamStatsTaskTest(TestCase):
         self._hints_url_template = ('https://appstream.debian.org/hints/sid/'
                                     '{section}/Hints-{arch}.json.gz')
 
-        tag_definitions_dict = {'tag-mock-error': {
-                                'text': 'Mocking an error tag.',
-                                'severity': 'error'},
-                                'tag-mock-warning': {
-                                'text': 'Mocking a warning tag.',
-                                'severity': 'warning'},
-                                'tag-mock-info': {
-                                'text': 'Mocking an info tag.',
-                                'severity': 'info'}
-                                }
-        self._tag_definitions = json.dumps(tag_definitions_dict)
+        tag_definitions_dict = {
+            'tag-mock-error': {
+                'text': 'Mocking an error tag.',
+                'severity': 'error'
+            },
+            'tag-mock-warning': {
+                'text': 'Mocking a warning tag.',
+                'severity': 'warning'
+            },
+            'tag-mock-info': {
+                'text': 'Mocking an info tag.',
+                'severity': 'info'
+            }
+        }
 
         self._repository = Repository.objects.create(
             name='Debian Unstable', codename='sid', suite='unstable',
             shorthand='unstable', components=['main', 'contrib', 'non-free'],
             default=True)
+
+        # Set some standard HTTP responses
+        self.mock_http_request()
+        self.set_http_get_response(self._tagdef_url,
+                                   json_data=tag_definitions_dict)
+        # contrib/non-free have files without any entry, the file for the main
+        # section is the one that we tweak in each test
+        for section in ('contrib', 'non-free'):
+            hints_url = self._hints_url_template.format(section=section,
+                                                        arch='amd64')
+            self.set_http_get_response(hints_url, json_data=[],
+                                       compress_with='gzip')
 
     def _create_hint_entry(self, package, version=1.0,
                            n_errors=0, n_warnings=0, n_infos=0):
@@ -1527,48 +1541,6 @@ class UpdateAppStreamStatsTaskTest(TestCase):
         """
         task = UpdateAppStreamStatsTask()
         task.execute()
-
-    def _set_mock_response(self, mock_requests, text="", status_code=200):
-        """
-        Helper method which sets a mock response to the given mock requests
-        module.
-        """
-
-        mock_response = mock_requests.models.Response()
-        mock_response.status_code = status_code
-        mock_response.ok = status_code < 400
-
-        def compress_text(s):
-            """
-            Helper to GZip-compress a string.
-            """
-            if isinstance(s, bytes):
-                src_data = s
-            else:
-                src_data = bytes(s, 'utf-8')
-            return gzip.compress(src_data)
-
-        def build_response(*args, **kwargs):
-            if args[0] == self._tagdef_url:
-                # the tag definitions are requested
-                mock_response.content = self._tag_definitions.encode('utf-8')
-                mock_response.json.return_value = \
-                    json.loads(self._tag_definitions)
-            elif args[0] == self._hints_url_template.format(
-                    section='main', arch='amd64'):
-                # hint data was requested
-                data = compress_text(text)
-                mock_response.text = data
-                mock_response.content = data
-            else:
-                # return a compressed, but empty hints document as default
-                data = compress_text('[]')
-                mock_response.text = data
-                mock_response.content = data
-
-            return mock_response
-
-        mock_requests.get.side_effect = build_response
 
     def get_action_item_type(self):
         return ActionItemType.objects.get_or_create(
@@ -1597,8 +1569,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
             self.assertEqual(info.get('errors', 0), errors)
             self.assertEqual(info.get('warnings', 0), warnings)
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_hint_stats_created(self, mock_requests):
+    def test_hint_stats_created(self):
         """
         Tests that stats are created for a package that previously did not have
         any AppStream stats.
@@ -1611,9 +1582,8 @@ class UpdateAppStreamStatsTaskTest(TestCase):
               'tag': 'tag-mock-error'},
              {'vars': {},
               'tag': 'tag-mock-warning'}]
-        test_data = json.dumps([test_entry]).encode('utf-8')
 
-        self._set_mock_response(mock_requests, text=test_data)
+        self.set_http_get_response(json_data=[test_entry], compress_with='gzip')
 
         self.run_task()
 
@@ -1628,8 +1598,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
                                             'warnings': 1,
                                             'infos': 0})
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_hint_stats_updated(self, mock_requests):
+    def test_hint_stats_updated(self):
         """
         Tests that when a package already had associated AppStream stats,
         they are correctly updated after running the task.
@@ -1642,9 +1611,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
 
         test_entry = self._create_hint_entry(package='dummy-package',
                                              n_errors=2)
-        test_data = json.dumps([test_entry]).encode('utf-8')
-
-        self._set_mock_response(mock_requests, text=test_data)
+        self.set_http_get_response(json_data=[test_entry], compress_with='gzip')
 
         self.run_task()
 
@@ -1659,8 +1626,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
                                             'warnings': 0,
                                             'infos': 0})
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_stats_created_multiple_packages(self, mock_requests):
+    def test_stats_created_multiple_packages(self):
         """
         Tests that stats are correctly creatd when there are stats for
         multiple packages in the response.
@@ -1673,9 +1639,9 @@ class UpdateAppStreamStatsTaskTest(TestCase):
         test_entry2 = self._create_hint_entry(package='other-package',
                                               version='1.2',
                                               n_errors=1, n_warnings=1)
-        test_data = json.dumps([test_entry1, test_entry2]).encode('utf-8')
+        test_data = [test_entry1, test_entry2]
+        self.set_http_get_response(json_data=test_data, compress_with='gzip')
 
-        self._set_mock_response(mock_requests, text=test_data)
         self.run_task()
 
         # Stats created for both packages
@@ -1685,8 +1651,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
         self.assertIn('dummy-package', all_names)
         self.assertIn('other-package', all_names)
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_stats_associated_with_source(self, mock_requests):
+    def test_stats_associated_with_source(self):
         """
         Tests that we correctly map the binary packages to source packages,
         and the stats are accurate.
@@ -1718,9 +1683,9 @@ class UpdateAppStreamStatsTaskTest(TestCase):
                                               version='1.2',
                                               n_errors=2)
         hints_list = [test_entry1, test_entry2, test_entry3]
-        test_data = json.dumps(hints_list).encode('utf-8')
 
-        self._set_mock_response(mock_requests, text=test_data)
+        self.set_http_get_response(json_data=hints_list, compress_with='gzip')
+
         self.run_task()
 
         # Stats created for two source packages
@@ -1753,23 +1718,20 @@ class UpdateAppStreamStatsTaskTest(TestCase):
                                             'warnings': 0,
                                             'infos': 0})
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_unknown_package(self, mock_requests):
+    def test_unknown_package(self):
         """
         Tests that when an unknown package is encountered, no stats are created.
         """
 
         test_entry = self._create_hint_entry(package='nonexistant', n_errors=1)
-        test_data = json.dumps([test_entry]).encode('utf-8')
+        self.set_http_get_response(json_data=[test_entry], compress_with='gzip')
 
-        self._set_mock_response(mock_requests, text=test_data)
         self.run_task()
 
         # There are no stats
         self.assertEqual(0, PackageData.objects.filter(key='appstream').count())
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_action_item_updated(self, mock_requests):
+    def test_action_item_updated(self):
         """
         Tests that an existing action item is updated with new data.
         """
@@ -1783,9 +1745,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
 
         test_entry = self._create_hint_entry(package='dummy-package',
                                              n_errors=2)
-        test_data = json.dumps([test_entry]).encode('utf-8')
-
-        self._set_mock_response(mock_requests, text=test_data)
+        self.set_http_get_response(json_data=[test_entry], compress_with='gzip')
 
         self.run_task()
 
@@ -1798,8 +1758,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
         # The timestamp is updated
         self.assertNotEqual(old_timestamp, item.last_updated_timestamp)
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_action_item_not_updated(self, mock_requests):
+    def test_action_item_not_updated(self):
         """
         Tests that an existing action item is left unchanged when the update
         shows unchanged stats.
@@ -1817,9 +1776,8 @@ class UpdateAppStreamStatsTaskTest(TestCase):
 
         test_entry = self._create_hint_entry(package='dummy-package',
                                              n_errors=errors)
-        test_data = json.dumps([test_entry]).encode('utf-8')
+        self.set_http_get_response(json_data=[test_entry], compress_with='gzip')
 
-        self._set_mock_response(mock_requests, text=test_data)
         self.run_task()
 
         # An action item is created.
@@ -1828,8 +1786,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
         item = ActionItem.objects.all()[0]
         self.assertEqual(old_timestamp, item.last_updated_timestamp)
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_action_item_created(self, mock_requests):
+    def test_action_item_created(self):
         """
         Tests that an action item is created when the package has errors and
         warnings.
@@ -1840,9 +1797,8 @@ class UpdateAppStreamStatsTaskTest(TestCase):
 
         test_entry = self._create_hint_entry(package='dummy-package',
                                              n_errors=1, n_warnings=1)
-        test_data = json.dumps([test_entry]).encode('utf-8')
+        self.set_http_get_response(json_data=[test_entry], compress_with='gzip')
 
-        self._set_mock_response(mock_requests, text=test_data)
         self.run_task()
 
         # An action item is created.
@@ -1856,8 +1812,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
         # It is a high severity issue
         self.assertEqual('high', item.get_severity_display())
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_action_item_not_created(self, mock_requests):
+    def test_action_item_not_created(self):
         """
         Tests that no action item is created when the package has no errors or
         warnings.
@@ -1867,16 +1822,14 @@ class UpdateAppStreamStatsTaskTest(TestCase):
         self.assertEqual(0, ActionItem.objects.count())
 
         test_entry = self._create_hint_entry(package='dummy-package', n_infos=1)
-        test_data = json.dumps([test_entry]).encode('utf-8')
+        self.set_http_get_response(json_data=[test_entry], compress_with='gzip')
 
-        self._set_mock_response(mock_requests, text=test_data)
         self.run_task()
 
         # Still no action items.
         self.assertEqual(0, ActionItem.objects.count())
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_action_item_created_errors(self, mock_requests):
+    def test_action_item_created_errors(self):
         """
         Tests that an action item is created when the package has errors.
         """
@@ -1886,9 +1839,8 @@ class UpdateAppStreamStatsTaskTest(TestCase):
 
         test_entry = self._create_hint_entry(package='dummy-package',
                                              n_errors=2)
-        test_data = json.dumps([test_entry]).encode('utf-8')
+        self.set_http_get_response(json_data=[test_entry], compress_with='gzip')
 
-        self._set_mock_response(mock_requests, text=test_data)
         self.run_task()
 
         # An action item is created.
@@ -1908,8 +1860,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
             item.full_description_template,
             UpdateAppStreamStatsTask.ITEM_FULL_DESCRIPTION_TEMPLATE)
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_action_item_created_warnings(self, mock_requests):
+    def test_action_item_created_warnings(self):
         """
         Tests that an action item is created when the package has warnings.
         """
@@ -1919,9 +1870,8 @@ class UpdateAppStreamStatsTaskTest(TestCase):
 
         test_entry = self._create_hint_entry(package='dummy-package',
                                              n_warnings=2)
-        test_data = json.dumps([test_entry]).encode('utf-8')
+        self.set_http_get_response(json_data=[test_entry], compress_with='gzip')
 
-        self._set_mock_response(mock_requests, text=test_data)
         self.run_task()
 
         # An action item is created.
@@ -1933,8 +1883,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
         # It should be a normal severity issue
         self.assertEqual('normal', item.get_severity_display())
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_action_item_removed(self, mock_requests):
+    def test_action_item_removed(self):
         """
         Tests that a previously existing action item is removed if the updated
         hints no longer contain errors or warnings.
@@ -1947,16 +1896,14 @@ class UpdateAppStreamStatsTaskTest(TestCase):
             extra_data={'errors': 1, 'warnings': 2})
 
         test_entry = self._create_hint_entry(package='dummy-package', n_infos=1)
-        test_data = json.dumps([test_entry]).encode('utf-8')
+        self.set_http_get_response(json_data=[test_entry], compress_with='gzip')
 
-        self._set_mock_response(mock_requests, text=test_data)
         self.run_task()
 
         # There are no action items any longer.
         self.assertEqual(0, self.package_name.action_items.count())
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_action_item_removed_no_data(self, mock_requests):
+    def test_action_item_removed_no_data(self):
         """
         Tests that a previously existing action item is removed when the
         updated hints no longer contain any information for the package.
@@ -1969,16 +1916,14 @@ class UpdateAppStreamStatsTaskTest(TestCase):
 
         test_entry = self._create_hint_entry(package='some-unrelated-package',
                                              n_errors=1)
-        test_data = json.dumps([test_entry]).encode('utf-8')
+        self.set_http_get_response(json_data=[test_entry], compress_with='gzip')
 
-        self._set_mock_response(mock_requests, text=test_data)
         self.run_task()
 
         # There are no action items any longer.
         self.assertEqual(0, self.package_name.action_items.count())
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_action_item_created_multiple_packages(self, mock_requests):
+    def test_action_item_created_multiple_packages(self):
         """
         Tests that action items are created correctly when there are stats
         for multiple different packages in the response.
@@ -1998,9 +1943,8 @@ class UpdateAppStreamStatsTaskTest(TestCase):
         test_entry3 = self._create_hint_entry(package='some-package',
                                               n_errors=1)
         hints_list = [test_entry1, test_entry2, test_entry3]
-        test_data = json.dumps(hints_list).encode('utf-8')
+        self.set_http_get_response(json_data=hints_list, compress_with='gzip')
 
-        self._set_mock_response(mock_requests, text=test_data)
         self.run_task()
 
         # Action items are created for two packages.
@@ -2015,8 +1959,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
         self.assert_action_item_error_and_warning_count(item,
                                                         errors=0, warnings=2)
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_action_item_updated_errors_to_warnings(self, mock_requests):
+    def test_action_item_updated_errors_to_warnings(self):
         """
         Tests that an existing action item is correctly updated from an high
         severity item to a normal one when there are no longer errors.
@@ -2027,9 +1970,8 @@ class UpdateAppStreamStatsTaskTest(TestCase):
 
         test_entry = self._create_hint_entry(package='dummy-package',
                                              n_errors=2, n_warnings=1)
-        test_data = json.dumps([test_entry]).encode('utf-8')
+        self.set_http_get_response(json_data=[test_entry], compress_with='gzip')
 
-        self._set_mock_response(mock_requests, text=test_data)
         self.run_task()
 
         # An action item is created.
@@ -2049,9 +1991,8 @@ class UpdateAppStreamStatsTaskTest(TestCase):
         # Update the package
         test_entry = self._create_hint_entry(package='dummy-package',
                                              n_errors=0, n_warnings=2)
-        test_data = json.dumps([test_entry]).encode('utf-8')
+        self.set_http_get_response(json_data=[test_entry], compress_with='gzip')
 
-        self._set_mock_response(mock_requests, text=test_data)
         self.run_task()
 
         # Still there is an action item.

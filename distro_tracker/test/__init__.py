@@ -15,6 +15,7 @@ Distro Tracker test infrastructure.
 """
 
 import codecs
+import gzip
 import inspect
 import json
 import os
@@ -182,17 +183,33 @@ class TestCaseHelpersMixin(object):
             self.set_http_get_response(**kwargs)
 
     def set_http_get_response(self, url=None, text='', status_code=200,
-                              headers=None, json_data=None, content=None):
+                              headers=None, json_data=None, content=None,
+                              compress_with=None):
         response_data = {
             'status_code': status_code,
             'headers': headers,
         }
+        if json_data is not None:
+            text = json.dumps(json_data)
+
+        def compress(data):
+            if compress_with == 'gzip':
+                return gzip.compress(data)
+            else:
+                raise NotImplementedError(
+                    'set_http_get_response does not support {} as '
+                    'compression method'.format(compress_with))
+
         if content:
-            response_data['content'] = content
-        elif json_data is not None:
-            response_data['text'] = json.dumps(json_data)
+            if compress_with:
+                response_data['content'] = compress(content)
+            else:
+                response_data['content'] = content
         else:
-            response_data['text'] = text
+            if compress_with:
+                response_data['content'] = compress(text.encode('utf-8'))
+            else:
+                response_data['text'] = text
 
         self._http_responses[url] = response_data
 
