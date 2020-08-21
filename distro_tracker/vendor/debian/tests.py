@@ -529,16 +529,20 @@ class GetDeveloperInformationSiteUrlTest(SimpleTestCase):
 
 class RetrieveLowThresholdNmuTest(TestCase):
 
+    def set_wiki_source(self, login):
+        text = ("Text text text\n"
+                "text more text...\n"
+                " 1. [[DeveloperName|Name]] - "
+                "([[https://qa.debian.org/developer.php?"
+                "login={login}|all packages]])\n".format(login=login))
+        self.mock_http_request(text=text)
+
     def test_developer_did_not_exist(self):
         """
         Tests updating the list of developers that allow the low threshold
         NMU when the developer did not previously exist in the database.
         """
-        self.mock_http_request(text="Text text text\n"
-                               "text more text...\n"
-                               " 1. [[DeveloperName|Name]] - "
-                               "([[https://qa.debian.org/developer.php?"
-                               "login=dummy|all packages]])\n")
+        self.set_wiki_source('dummy')
 
         run_task(RetrieveLowThresholdNmuTask)
 
@@ -553,12 +557,7 @@ class RetrieveLowThresholdNmuTest(TestCase):
         NMU when the developer was previously registered in the database.
         """
         UserEmail.objects.create(email='dummy@debian.org')
-        self.mock_http_request(
-            text="Text text text\n"
-            "text more text...\n"
-            " 1. [[DeveloperName|Name]] - "
-            "([[https://qa.debian.org/developer.php?"
-            "login=dummy|all packages]])\n")
+        self.set_wiki_source('dummy')
 
         run_task(RetrieveLowThresholdNmuTask)
 
@@ -576,11 +575,7 @@ class RetrieveLowThresholdNmuTest(TestCase):
         email = UserEmail.objects.create(email='dummy@debian.org')
         DebianContributor.objects.create(email=email,
                                          agree_with_low_threshold_nmu=True)
-        self.mock_http_request(text="Text text text\n"
-                               "text more text...\n"
-                               " 1. [[DeveloperName|Name]] - "
-                               "([[https://qa.debian.org/developer.php?"
-                               "login=other|all packages]])\n")
+        self.set_wiki_source('other')
 
         run_task(RetrieveLowThresholdNmuTask)
 
@@ -592,11 +587,7 @@ class RetrieveLowThresholdNmuTest(TestCase):
         """
         Ensure the task deals properly with a bad input email.
         """
-        self.mock_http_request(text="Text text text\n"
-                               "text more text...\n"
-                               " 1. [[DeveloperName|Name]] - "
-                               "([[https://qa.debian.org/developer.php?"
-                               "login=foobar@|all packages]])\n")
+        self.set_wiki_source('foobar@')
 
         self.assertTrue(run_task(RetrieveLowThresholdNmuTask))
 
