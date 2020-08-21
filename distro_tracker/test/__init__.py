@@ -14,11 +14,14 @@
 Distro Tracker test infrastructure.
 """
 
+import codecs
 import inspect
+import json
 import os
 import os.path
 import shutil
 import tempfile
+from unittest import mock
 
 from bs4 import BeautifulSoup as soup
 
@@ -26,6 +29,8 @@ import django.test
 from django.conf import settings
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.test.signals import setting_changed
+
+import requests
 
 from distro_tracker.accounts.models import UserEmail
 from distro_tracker.core.models import (
@@ -117,6 +122,79 @@ class TestCaseHelpersMixin(object):
         self.addCleanup(shutil.rmtree, tempdir, ignore_errors=True)
 
         return tempdir
+
+    def mock_http_request(
+            self, requests_location='distro_tracker.core.utils.http.requests',
+            **kwargs):
+        patcher = mock.patch(requests_location)
+        self._mocked_requests = patcher.start()
+        self._http_responses = {}
+
+        def mocked_get(url, params=None, **kwargs):
+            response = self._mocked_requests.models.Response()
+            if url in self._http_responses:
+                response_data = self._http_responses[url]
+            elif None in self._http_responses:
+                response_data = self._http_responses[None]
+            else:
+                response_data = {
+                    'text': '',
+                    'status_code': 404,
+                    'headers': None,
+                }
+
+            if 'content' in response_data:
+                content = response_data['content']
+                text = codecs.encode(content, 'base64').decode('ascii')
+                encoding = 'base64'
+            else:
+                text = response_data['text']
+                content = text.encode('utf-8')
+                encoding = 'utf-8'
+
+            response.text = text
+            response.content = content
+            response.encoding = encoding
+            response.headers = response_data['headers'] or {}
+            response.status_code = response_data['status_code']
+            response.iter_lines.return_value = text.splitlines()
+            response.ok = response_data['status_code'] < 400
+            response.__bool__.return_value = response.ok
+
+            if response_data['status_code'] >= 400:
+                response.raise_for_status.side_effect = (
+                    requests.exceptions.HTTPError(response=response))
+            else:
+                response.raise_for_status.return_value = None
+
+            response.iter_content.side_effect = NotImplementedError()
+            response.json.side_effect = NotImplementedError()
+
+            # Avoid automatic creation of new attributes during tests
+            mock.seal(response)
+
+            return response
+
+        self._mocked_requests.get.side_effect = mocked_get
+        self.addCleanup(patcher.stop)
+
+        if kwargs:
+            self.set_http_get_response(**kwargs)
+
+    def set_http_get_response(self, url=None, text='', status_code=200,
+                              headers=None, json_data=None, content=None):
+        response_data = {
+            'status_code': status_code,
+            'headers': headers,
+        }
+        if content:
+            response_data['content'] = content
+        elif json_data is not None:
+            response_data['text'] = json.dumps(json_data)
+        else:
+            response_data['text'] = text
+
+        self._http_responses[url] = response_data
 
     def import_key_into_keyring(self, filename):
         """
