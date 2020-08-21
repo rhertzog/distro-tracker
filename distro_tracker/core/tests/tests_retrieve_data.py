@@ -47,7 +47,6 @@ from distro_tracker.core.retrieve_data import (
     retrieve_repository_info
 )
 from distro_tracker.test import TestCase
-from distro_tracker.test.utils import set_mock_response
 
 
 @override_settings(
@@ -232,10 +231,10 @@ class RetrievePseudoPackagesTest(TestCase):
 
 
 class RetrieveRepositoryInfoTests(TestCase):
-    @mock.patch('distro_tracker.core.admin.requests')
-    def test_sources_list_entry_validation(self, mock_requests):
+    def test_sources_list_entry_validation(self):
         from distro_tracker.core.admin import validate_sources_list_entry
         from django.core.exceptions import ValidationError
+        self.mock_http_request('distro_tracker.core.admin.requests')
         # Not enough parts in the entry is an exception
         with self.assertRaises(ValidationError):
             validate_sources_list_entry('texthere')
@@ -246,14 +245,13 @@ class RetrieveRepositoryInfoTests(TestCase):
         with self.assertRaises(ValidationError):
             validate_sources_list_entry('deb thisisnotaurl part3 part4')
         # Make sure requests returns 404
-        set_mock_response(mock_requests, status_code=404)
+        self.set_http_get_response(status_code=404)
         # There is no Release file at the given URL
         with self.assertRaises(ValidationError):
             validate_sources_list_entry(
                 'deb http://does-not-matter.com/ part3 part4')
 
-    @mock.patch('distro_tracker.core.retrieve_data.requests')
-    def test_retrieve_repository_info_correct(self, mock_requests):
+    def test_retrieve_repository_info_correct(self):
         """
         Tests that the function returns correct data when it is all found in
         the Release file.
@@ -271,7 +269,8 @@ class RetrieveRepositoryInfoTests(TestCase):
             'Version: 7.1\n'
             'Description: Debian 7.1 Released 15 June 2013\n'
         )
-        set_mock_response(mock_requests, mock_response_text)
+        self.mock_http_request('distro_tracker.core.retrieve_data.requests')
+        self.set_http_get_response(text=mock_response_text)
 
         repository_info = retrieve_repository_info(
             'deb http://repository.com/ stable')
@@ -288,8 +287,7 @@ class RetrieveRepositoryInfoTests(TestCase):
 
         self.assertDictEqual(expected_info, repository_info)
 
-    @mock.patch('distro_tracker.core.retrieve_data.requests')
-    def test_retrieve_repository_info_missing_required(self, mock_requests):
+    def test_retrieve_repository_info_missing_required(self):
         """
         Tests that the function raises an exception when some required keys are
         missing from the Release file.
@@ -301,14 +299,14 @@ class RetrieveRepositoryInfoTests(TestCase):
             'Version: 7.1\n'
             'Description: Debian 7.1 Released 15 June 2013\n'
         )
-        set_mock_response(mock_requests, mock_response_text)
+        self.mock_http_request('distro_tracker.core.retrieve_data.requests')
+        self.set_http_get_response(text=mock_response_text)
 
         from distro_tracker.core.retrieve_data import InvalidRepositoryException
         with self.assertRaises(InvalidRepositoryException):
             retrieve_repository_info('deb http://repository.com/ stable')
 
-    @mock.patch('distro_tracker.core.retrieve_data.requests')
-    def test_retrieve_repository_info_missing_non_required(self, mock_requests):
+    def test_retrieve_repository_info_missing_non_required(self):
         """
         Tests the function when some non-required keys are missing from the
         Release file.
@@ -319,7 +317,8 @@ class RetrieveRepositoryInfoTests(TestCase):
             'Version: 7.1\n'
             'Description: Debian 7.1 Released 15 June 2013\n'
         )
-        set_mock_response(mock_requests, mock_response_text)
+        self.mock_http_request('distro_tracker.core.retrieve_data.requests')
+        self.set_http_get_response(text=mock_response_text)
 
         repository_info = retrieve_repository_info(
             'deb http://repository.com/ stable')

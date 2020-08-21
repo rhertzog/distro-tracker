@@ -82,7 +82,6 @@ from distro_tracker.core.utils.packages import (
     package_url
 )
 from distro_tracker.test import SimpleTestCase, TestCase
-from distro_tracker.test.utils import set_mock_response
 
 
 class VerpModuleTest(SimpleTestCase):
@@ -631,15 +630,6 @@ class HttpCacheTest(SimpleTestCase):
     #
     # Tests helper functions, to avoid code redundancy
     #
-    def set_mock_response(self, mock_requests, headers=None, status_code=200):
-        """Defines a mock response for the cases where http.requests is
-        patched via mock."""
-        set_mock_response(
-            mock_requests,
-            text=self.response_content.decode('utf-8'),
-            headers=headers,
-            status_code=status_code)
-
     def get_mock_of_http_cache(self, get_content=b"Some content"):
         """
         Common setup function for the get_resource function tests
@@ -722,8 +712,7 @@ class HttpCacheTest(SimpleTestCase):
         self.assertEqual(answer, mock.sentinel.cache_path)
         mock_url_to_cache_path.assert_called_with('http://localhost/foo')
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_update_clears_conflicting_files(self, mock_requests):
+    def test_update_clears_conflicting_files(self):
         """
         Ensure that a file is replaced by a directory when needed.
 
@@ -734,7 +723,7 @@ class HttpCacheTest(SimpleTestCase):
         conflicting_path = os.path.join(self.cache_directory, 'localhost/foo')
         new_path = os.path.join(self.cache_directory, 'localhost/foo?/index')
         # Fetch a first file
-        self.set_mock_response(mock_requests)
+        self.mock_http_request(text='Some content')
         self.cache.update('http://localhost/foo')
         self.assertTrue(os.path.isfile(conflicting_path))
         self.assertFalse(os.path.isdir(conflicting_path))
@@ -746,8 +735,7 @@ class HttpCacheTest(SimpleTestCase):
         self.assertTrue(os.path.isfile(new_path))
         self.assertTrue(os.path.isfile(new_path + '?headers'))
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_update_cache_new_item(self, mock_requests):
+    def test_update_cache_new_item(self):
         """
         Tests the simple case of updating the cache with a new URL's response.
         """
@@ -755,7 +743,7 @@ class HttpCacheTest(SimpleTestCase):
             'Connection': 'Keep-Alive',
             'Content-Type': 'text/plain',
         }
-        self.set_mock_response(mock_requests, headers=headers)
+        self.mock_http_request(text='Some content', headers=headers)
         cache = HttpCache(self.cache_directory)
         url = 'http://example.com'
         # The URL cannot be found in the cache at this point
@@ -764,27 +752,26 @@ class HttpCacheTest(SimpleTestCase):
         response, updated = cache.update(url)
 
         # The returned response is correct
-        self.assertEqual(self.response_content, response.content)
+        self.assertEqual(b'Some content', response.content)
         self.assertEqual(200, response.status_code)
         # The return value indicates the cache has been updated
         self.assertTrue(updated)
         # The URL is now found in the cache
         self.assertTrue(url in cache)
         # The content is accessible through the cache
-        self.assertEqual(self.response_content, cache.get_content(url))
+        self.assertEqual(b'Some content', cache.get_content(url))
         # The returned headers are accessible through the cache
         cached_headers = cache.get_headers(url)
         for key, value in headers.items():
             self.assertIn(key, cached_headers)
             self.assertEqual(value, cached_headers[key])
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_cache_not_expired(self, mock_requests):
+    def test_cache_not_expired(self):
         """
         Tests that the cache knows a response is not expired based on its
         Cache-Control header.
         """
-        self.set_mock_response(mock_requests, headers={
+        self.mock_http_request(headers={
             'Cache-Control': 'must-revalidate, max-age=3600',
         })
         cache = HttpCache(self.cache_directory)
@@ -795,13 +782,12 @@ class HttpCacheTest(SimpleTestCase):
         self.assertTrue(url in cache)
         self.assertFalse(cache.is_expired(url))
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_cache_expired(self, mock_requests):
+    def test_cache_expired(self):
         """
         Tests that the cache knows when an entry with a stale Cache-Control
         header is expired.
         """
-        self.set_mock_response(mock_requests, headers={
+        self.mock_http_request(headers={
             'Cache-Control': 'must-revalidate, max-age=0',
         })
         cache = HttpCache(self.cache_directory)
@@ -812,41 +798,38 @@ class HttpCacheTest(SimpleTestCase):
         self.assertTrue(url in cache)
         self.assertTrue(cache.is_expired(url))
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_cache_conditional_get_last_modified(self, mock_requests):
+    def test_cache_conditional_get_last_modified(self):
         """
         Tests that the cache performs a conditional GET request when asked to
         update the response for a URL with a Last-Modified header.
         """
         last_modified = http_date(time.time())
-        self.set_mock_response(mock_requests, headers={
+        self.mock_http_request(headers={
             'Last-Modified': last_modified
         })
         cache = HttpCache(self.cache_directory)
         url = 'http://example.com'
         cache.update(url)
 
-        self.response_content = b''
-        self.set_mock_response(mock_requests, status_code=304)
+        self.set_http_get_response(text='', status_code=304)
         # Run the update again
         response, updated = cache.update(url)
 
         self.assertFalse(updated)
-        mock_requests.get.assert_called_with(
+        self._mocked_requests.get.assert_called_with(
             url, verify=mock.ANY, allow_redirects=True,
             headers={'If-Modified-Since': last_modified})
         # The actual server's response is returned
         self.assertEqual(response.status_code, 304)
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_cache_conditional_get_last_modified_expired(self, mock_requests):
+    def test_cache_conditional_get_last_modified_expired(self):
         """
         Tests that the cache performs a conditional GET request when asked to
         update the response for a URL with a Last-Modified header, which has
         since expired.
         """
         last_modified = http_date(time.time() - 3600)
-        self.set_mock_response(mock_requests, headers={
+        self.mock_http_request(headers={
             'Last-Modified': last_modified
         })
         cache = HttpCache(self.cache_directory)
@@ -854,8 +837,7 @@ class HttpCacheTest(SimpleTestCase):
         cache.update(url)
         # Set a new Last-Modified and content value
         new_last_modified = http_date(time.time())
-        self.response_content = b'Response'
-        self.set_mock_response(mock_requests, headers={
+        self.mock_http_request(text='Response', headers={
             'Last-Modified': new_last_modified
         })
 
@@ -865,21 +847,20 @@ class HttpCacheTest(SimpleTestCase):
         self.assertTrue(updated)
         self.assertEqual(200, response.status_code)
         # The new content is found in the cache
-        self.assertEqual(self.response_content, cache.get_content(url))
+        self.assertEqual(b'Response', cache.get_content(url))
         # The new Last-Modified is found in the headers cache
         self.assertEqual(
             new_last_modified,
             cache.get_headers(url)['Last-Modified']
         )
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_cache_expires_header(self, mock_requests):
+    def test_cache_expires_header(self):
         """
         Tests that the cache knows that a cached response is not expired based
         on its Expires header.
         """
         expires = http_date(time.time() + 3600)
-        self.set_mock_response(mock_requests, headers={
+        self.mock_http_request(headers={
             'Expires': expires
         })
         cache = HttpCache(self.cache_directory)
@@ -889,14 +870,13 @@ class HttpCacheTest(SimpleTestCase):
 
         self.assertFalse(cache.is_expired(url))
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_cache_expires_header_expired(self, mock_requests):
+    def test_cache_expires_header_expired(self):
         """
         Tests that the cache knows that a cached response is expired based
         on its Expires header.
         """
         expires = http_date(time.time() - 3600)
-        self.set_mock_response(mock_requests, headers={
+        self.mock_http_request(headers={
             'Expires': expires
         })
         cache = HttpCache(self.cache_directory)
@@ -908,12 +888,11 @@ class HttpCacheTest(SimpleTestCase):
     #
     # Proper tests - Caching behaviour
     #
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_cache_remove_url(self, mock_requests):
+    def test_cache_remove_url(self):
         """
         Tests removing a cached response.
         """
-        self.set_mock_response(mock_requests)
+        self.mock_http_request(text='Some content')
         cache = HttpCache(self.cache_directory)
         url = 'http://example.com'
         cache.update(url)
@@ -927,41 +906,38 @@ class HttpCacheTest(SimpleTestCase):
     #
     # Proper tests - ETags
     #
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_conditional_get_etag(self, mock_requests):
+    def test_conditional_get_etag(self):
         """
         Tests that the cache performs a conditional GET request when asked to
         update the response for a URL with an ETag header
         """
         etag = '"466010a-11bf9-4e17efa8afb81"'
-        self.set_mock_response(mock_requests, headers={
+        self.mock_http_request(headers={
             'ETag': etag,
         })
         cache = HttpCache(self.cache_directory)
         url = 'http://example.com'
         cache.update(url)
 
-        self.response_content = b''
-        self.set_mock_response(mock_requests, status_code=304)
+        self.mock_http_request(status_code=304)
         # Run the update again
         response, updated = cache.update(url)
 
         self.assertFalse(updated)
-        mock_requests.get.assert_called_with(
+        self._mocked_requests.get.assert_called_with(
             url, verify=mock.ANY, allow_redirects=True,
             headers={'If-None-Match': etag, })
         # The actual server's response is returned
         self.assertEqual(response.status_code, 304)
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_conditional_get_etag_expired(self, mock_requests):
+    def test_conditional_get_etag_expired(self):
         """
         Tests that the cache performs a conditional GET request when asked to
         update the response for a URL with an ETag header, which has since
         expired.
         """
         etag = '"466010a-11bf9-4e17efa8afb81"'
-        self.set_mock_response(mock_requests, headers={
+        self.mock_http_request(headers={
             'ETag': etag,
         })
         cache = HttpCache(self.cache_directory)
@@ -969,8 +945,7 @@ class HttpCacheTest(SimpleTestCase):
         cache.update(url)
         # Set a new ETag and content value
         new_etag = '"57ngfhty11bf9-9t831116kn1qw1'
-        self.response_content = b'Response'
-        self.set_mock_response(mock_requests, headers={
+        self.mock_http_request(text='Response', headers={
             'ETag': new_etag
         })
 
@@ -980,21 +955,20 @@ class HttpCacheTest(SimpleTestCase):
         self.assertTrue(updated)
         self.assertEqual(200, response.status_code)
         # The new content is found in the cache
-        self.assertEqual(self.response_content, cache.get_content(url))
+        self.assertEqual(b'Response', cache.get_content(url))
         # The new Last-Modified is found in the headers cache
         self.assertEqual(
             new_etag,
             cache.get_headers(url)['ETag']
         )
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_conditional_force_unconditional_get(self, mock_requests):
+    def test_conditional_force_unconditional_get(self):
         """
         Tests that the users can force the cache to perform an unconditional
         GET when updating a cached resource.
         """
         last_modified = http_date(time.time())
-        self.set_mock_response(mock_requests, headers={
+        self.mock_http_request(headers={
             'Last-Modified': last_modified
         })
         cache = HttpCache(self.cache_directory)
@@ -1005,7 +979,7 @@ class HttpCacheTest(SimpleTestCase):
         response, updated = cache.update(url, force=True)
 
         # Make sure that we ask for a non-cached version
-        mock_requests.get.assert_called_with(
+        self._mocked_requests.get.assert_called_with(
             url, verify=mock.ANY, allow_redirects=True,
             headers={'Cache-Control': 'no-cache'})
         self.assertTrue(updated)
@@ -1013,17 +987,15 @@ class HttpCacheTest(SimpleTestCase):
     #
     # Proper tests - Compression utilities
     #
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_get_content_detects_compression(self, mock_requests):
+    def test_get_content_detects_compression(self):
         """
         Ensures cache.get_content() detects compression out of the
         file extension embedded in the URL.
         """
-        self.set_mock_response(mock_requests)
-        mock_requests.get().content = (
-            b"\x1f\x8b\x08\x08\xca\xaa\x14Z\x00\x03helloworld\x00\xf3H"
-            b"\xcd\xc9\xc9W(\xcf/\xcaIQ\x04\x00\x95\x19\x85\x1b\x0c\x00"
-            b"\x00\x00"
+        self.mock_http_request(
+            content=b"\x1f\x8b\x08\x08\xca\xaa\x14Z\x00\x03helloworld\x00\xf3H"
+                    b"\xcd\xc9\xc9W(\xcf/\xcaIQ\x04\x00\x95\x19\x85\x1b\x0c\x00"
+                    b"\x00\x00"
         )
         cache = HttpCache(self.cache_directory)
         url = "http://example.com/foo.gz"
@@ -1031,14 +1003,12 @@ class HttpCacheTest(SimpleTestCase):
         content = cache.get_content(url)
         self.assertEqual(content, b"Hello world!")
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_get_content_with_compression_parameter(self, mock_requests):
+    def test_get_content_with_compression_parameter(self):
         """
         Ensures the compression parameter passed to cache.get_content()
         is used and overrides whatever can be detected in the URL.
         """
-        self.response_content = b"Hello world!"
-        self.set_mock_response(mock_requests)
+        self.mock_http_request(text="Hello world!")
         cache = HttpCache(self.cache_directory)
         url = "http://example.com/foo.gz"
         cache.update(url)
@@ -1071,22 +1041,20 @@ class HttpCacheTest(SimpleTestCase):
             get_resource_content(self.url, cache=mock_cache,
                                  ignore_network_failures=False)
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_get_resource_content_with_http_error(self, mock_requests):
+    def test_get_resource_content_with_http_error(self):
         """
         Ensures that an HTTP error trickles up.
         """
-        self.set_mock_response(mock_requests, status_code=404)
+        self.mock_http_request(status_code=404)
 
         with self.assertRaises(HTTPError):
             get_resource_content(self.url)
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_get_resource_content_ignore_http_error(self, mock_requests):
+    def test_get_resource_content_ignore_http_error(self):
         """
         Ensures that we can ignore a specific HTTP error code.
         """
-        self.set_mock_response(mock_requests, status_code=404)
+        self.mock_http_request(status_code=404)
 
         content = get_resource_content(self.url, ignore_http_error=404)
 

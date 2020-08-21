@@ -55,7 +55,6 @@ from distro_tracker.core.utils.email_messages import message_from_bytes
 from distro_tracker.core.utils.packages import package_url
 from distro_tracker.mail.tests.tests_dispatch import DispatchTestHelperMixin
 from distro_tracker.test import SimpleTestCase, TestCase
-from distro_tracker.test.utils import set_mock_response
 from distro_tracker.vendor.debian.management.commands.\
     tracker_import_old_subscriber_dump \
     import Command as ImportOldSubscribersCommand
@@ -531,18 +530,16 @@ class GetDeveloperInformationSiteUrlTest(SimpleTestCase):
 
 class RetrieveLowThresholdNmuTest(TestCase):
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_developer_did_not_exist(self, mock_requests):
+    def test_developer_did_not_exist(self):
         """
         Tests updating the list of developers that allow the low threshold
         NMU when the developer did not previously exist in the database.
         """
-        set_mock_response(mock_requests,
-                          "Text text text\n"
-                          "text more text...\n"
-                          " 1. [[DeveloperName|Name]] - "
-                          "([[https://qa.debian.org/developer.php?"
-                          "login=dummy|all packages]])\n")
+        self.mock_http_request(text="Text text text\n"
+                               "text more text...\n"
+                               " 1. [[DeveloperName|Name]] - "
+                               "([[https://qa.debian.org/developer.php?"
+                               "login=dummy|all packages]])\n")
 
         run_task(RetrieveLowThresholdNmuTask)
 
@@ -551,19 +548,18 @@ class RetrieveLowThresholdNmuTest(TestCase):
         d = DebianContributor.objects.all()[0]
         self.assertTrue(d.agree_with_low_threshold_nmu)
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_developer_existed(self, mock_requests):
+    def test_developer_existed(self):
         """
         Tests updating the list of developers that allow the low threshold
         NMU when the developer was previously registered in the database.
         """
         UserEmail.objects.create(email='dummy@debian.org')
-        set_mock_response(mock_requests,
-                          "Text text text\n"
-                          "text more text...\n"
-                          " 1. [[DeveloperName|Name]] - "
-                          "([[https://qa.debian.org/developer.php?"
-                          "login=dummy|all packages]])\n")
+        self.mock_http_request(
+            text="Text text text\n"
+            "text more text...\n"
+            " 1. [[DeveloperName|Name]] - "
+            "([[https://qa.debian.org/developer.php?"
+            "login=dummy|all packages]])\n")
 
         run_task(RetrieveLowThresholdNmuTask)
 
@@ -572,8 +568,7 @@ class RetrieveLowThresholdNmuTest(TestCase):
         d = DebianContributor.objects.all()[0]
         self.assertTrue(d.agree_with_low_threshold_nmu)
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_developer_remove_nmu(self, mock_requests):
+    def test_developer_remove_nmu(self):
         """
         Tests updating the list of NMU developers when one of them needs to be
         removed from the list.
@@ -582,12 +577,11 @@ class RetrieveLowThresholdNmuTest(TestCase):
         email = UserEmail.objects.create(email='dummy@debian.org')
         DebianContributor.objects.create(email=email,
                                          agree_with_low_threshold_nmu=True)
-        set_mock_response(mock_requests,
-                          "Text text text\n"
-                          "text more text...\n"
-                          " 1. [[DeveloperName|Name]] - "
-                          "([[https://qa.debian.org/developer.php?"
-                          "login=other|all packages]])\n")
+        self.mock_http_request(text="Text text text\n"
+                               "text more text...\n"
+                               " 1. [[DeveloperName|Name]] - "
+                               "([[https://qa.debian.org/developer.php?"
+                               "login=other|all packages]])\n")
 
         run_task(RetrieveLowThresholdNmuTask)
 
@@ -595,17 +589,15 @@ class RetrieveLowThresholdNmuTest(TestCase):
         # The Debian developer is no longer in the list of low threshold nmu
         self.assertFalse(d.agree_with_low_threshold_nmu)
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_developer_bad_email(self, mock_requests):
+    def test_developer_bad_email(self):
         """
         Ensure the task deals properly with a bad input email.
         """
-        set_mock_response(mock_requests,
-                          "Text text text\n"
-                          "text more text...\n"
-                          " 1. [[DeveloperName|Name]] - "
-                          "([[https://qa.debian.org/developer.php?"
-                          "login=foobar@|all packages]])\n")
+        self.mock_http_request(text="Text text text\n"
+                               "text more text...\n"
+                               " 1. [[DeveloperName|Name]] - "
+                               "([[https://qa.debian.org/developer.php?"
+                               "login=foobar@|all packages]])\n")
 
         self.assertTrue(run_task(RetrieveLowThresholdNmuTask))
 
@@ -615,14 +607,12 @@ class RetrieveLowThresholdNmuTest(TestCase):
 
 class RetrieveDebianMaintainersTest(TestCase):
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_developer_did_not_exist(self, mock_requests):
+    def test_developer_did_not_exist(self):
         """
         Tests updating the DM list when a new developer is to be added.
         """
-        set_mock_response(
-            mock_requests,
-            "Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
+        self.mock_http_request(
+            text="Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
             "Uid: Dummy Developer <dummy@debian.org>\n"
             "Allow: dummy-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E),\n"
             " second-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E)\n")
@@ -638,16 +628,14 @@ class RetrieveDebianMaintainersTest(TestCase):
             d.allowed_packages
         )
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_developer_existed(self, mock_requests):
+    def test_developer_existed(self):
         """
         Tests updating the DM list when the developer was previously registered
         in the database.
         """
         UserEmail.objects.create(email='dummy@debian.org')
-        set_mock_response(
-            mock_requests,
-            "Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
+        self.mock_http_request(
+            text="Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
             "Uid: Dummy Developer <dummy@debian.org>\n"
             "Allow: dummy-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E),\n"
             " second-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E)\n")
@@ -663,8 +651,7 @@ class RetrieveDebianMaintainersTest(TestCase):
             d.allowed_packages
         )
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_developer_update_dm_list(self, mock_requests):
+    def test_developer_update_dm_list(self):
         """
         Tests updating the DM list when one of the developers has changes in
         the allowed packages list.
@@ -675,9 +662,8 @@ class RetrieveDebianMaintainersTest(TestCase):
                                          is_debian_maintainer=True,
                                          allowed_packages=['one'])
 
-        set_mock_response(
-            mock_requests,
-            "Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
+        self.mock_http_request(
+            text="Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
             "Uid: Dummy Developer <dummy@debian.org>\n"
             "Allow: dummy-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E),\n"
             " second-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E)\n")
@@ -691,8 +677,7 @@ class RetrieveDebianMaintainersTest(TestCase):
             d.allowed_packages
         )
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_developer_delete_from_dm_list(self, mock_requests):
+    def test_developer_delete_from_dm_list(self):
         """
         Tests updating the DM list when one of the developers has changes in
         the allowed packages list.
@@ -703,9 +688,8 @@ class RetrieveDebianMaintainersTest(TestCase):
                                          is_debian_maintainer=True,
                                          allowed_packages=['one'])
 
-        set_mock_response(
-            mock_requests,
-            "Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
+        self.mock_http_request(
+            text="Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
             "Uid: Dummy Developer <different-developer@debian.org>\n"
             "Allow: dummy-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E),\n"
             " second-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E)\n")
@@ -716,15 +700,13 @@ class RetrieveDebianMaintainersTest(TestCase):
         # The developer is no longer a debian maintainer
         self.assertFalse(d.is_debian_maintainer)
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_bad_developer_email(self, mock_requests):
+    def test_bad_developer_email(self):
         """
         Ensure that the task deals properly with invalid emails
         in the input data.
         """
-        set_mock_response(
-            mock_requests,
-            "Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
+        self.mock_http_request(
+            text="Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
             "Uid: Dummy Developer <bad-email>\n"
             "Allow: dummy-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E),\n"
             " second-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E)\n")
@@ -1083,6 +1065,7 @@ class UpdateLintianStatsTaskTest(TestCase):
             name='dummy-package')
         self.package = SourcePackage(
             source_package_name=self.package_name, version='1.0.0')
+        self.mock_http_request()
 
     def run_task(self):
         """
@@ -1129,13 +1112,12 @@ class UpdateLintianStatsTaskTest(TestCase):
         return ActionItemType.objects.get_or_create(
             type_name=UpdateLintianStatsTask.ACTION_ITEM_TYPE_NAME)[0]
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_stats_created(self, mock_requests):
+    def test_stats_created(self):
         """
         Tests that stats are created for a package that previously did not have
         any lintian stats.
         """
-        set_mock_response(mock_requests, text="dummy-package 1 2 3 4 5 6")
+        self.set_http_get_response(text="dummy-package 1 2 3 4 5 6")
 
         self.run_task()
 
@@ -1147,13 +1129,12 @@ class UpdateLintianStatsTaskTest(TestCase):
         # The category counts themselves are correct
         self.assert_correct_category_stats(stats.stats, [1, 2, 3, 4, 5, 6])
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_stats_updated(self, mock_requests):
+    def test_stats_updated(self):
         """
         Tests that when a package already had associated linian stats, they are
         correctly updated after running the task.
         """
-        set_mock_response(mock_requests, text="dummy-package 6 5 4 3 2 1")
+        self.set_http_get_response(text="dummy-package 6 5 4 3 2 1")
         # Create the pre-existing stats for the package
         LintianStats.objects.create(
             package=self.package_name, stats=[1, 2, 3, 4, 5, 6])
@@ -1168,8 +1149,7 @@ class UpdateLintianStatsTaskTest(TestCase):
         # The stats have been updated
         self.assert_correct_category_stats(stats.stats, [6, 5, 4, 3, 2, 1])
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_stats_created_multiple_packages(self, mock_requests):
+    def test_stats_created_multiple_packages(self):
         """
         Tests that stats are correctly creatd when there are stats for
         multiple packages in the response.
@@ -1180,7 +1160,7 @@ class UpdateLintianStatsTaskTest(TestCase):
             "dummy-package 6 5 4 3 2 1\n"
             "other-package 1 2 3 4 5 6"
         )
-        set_mock_response(mock_requests, text=response)
+        self.set_http_get_response(text=response)
 
         self.run_task()
 
@@ -1191,20 +1171,18 @@ class UpdateLintianStatsTaskTest(TestCase):
         self.assertIn('dummy-package', all_names)
         self.assertIn('other-package', all_names)
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_unknown_package(self, mock_requests):
+    def test_unknown_package(self):
         """
         Tests that when an unknown package is encountered, no stats are created.
         """
-        set_mock_response(mock_requests, text="no-exist 1 2 3 4 5 6")
+        self.set_http_get_response(text="no-exist 1 2 3 4 5 6")
 
         self.run_task()
 
         # There are no stats
         self.assertEqual(0, LintianStats.objects.count())
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_parse_error(self, mock_requests):
+    def test_parse_error(self):
         """
         Tests that when a parse error is encountered for a single package, it
         is skipped without affected the rest of the packages in the response.
@@ -1215,7 +1193,7 @@ class UpdateLintianStatsTaskTest(TestCase):
             "dummy-package 6 5 4 3 2 1\n"
             "other-package 1 2 a 4 5 6"
         )
-        set_mock_response(mock_requests, text=response)
+        self.set_http_get_response(text=response)
 
         self.run_task()
 
@@ -1224,27 +1202,26 @@ class UpdateLintianStatsTaskTest(TestCase):
         stats = LintianStats.objects.all()[0]
         self.assertEqual(stats.package.name, 'dummy-package')
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_correct_url_used(self, mock_requests):
+    def test_correct_url_used(self):
         """
         Tests that lintian stats are retrieved from the correct URL.
         """
+        self.set_http_get_response()
         self.run_task()
 
         # We only care about the URL used, not the headers or other arguments
         self.assertEqual(
-            mock_requests.get.call_args[0][0],
+            self._mocked_requests.get.call_args[0][0],
             'https://lintian.debian.org/qa-list.txt')
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_action_item_created_errors(self, mock_requests):
+    def test_action_item_created_errors(self):
         """
         Tests that an action item is created when the package has errors.
         """
         errors, warnings = 2, 0
         response = "dummy-package {err} {warn} 0 0 0 0".format(
             err=errors, warn=warnings)
-        set_mock_response(mock_requests, text=response)
+        self.set_http_get_response(text=response)
         # Sanity check: there were no action items in the beginning
         self.assertEqual(0, ActionItem.objects.count())
 
@@ -1269,8 +1246,7 @@ class UpdateLintianStatsTaskTest(TestCase):
             item.full_description_template,
             UpdateLintianStatsTask.ITEM_FULL_DESCRIPTION_TEMPLATE)
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_action_item_updated(self, mock_requests):
+    def test_action_item_updated(self):
         """
         Tests that an existing action item is updated with new data.
         """
@@ -1284,7 +1260,7 @@ class UpdateLintianStatsTaskTest(TestCase):
         errors, warnings = 2, 0
         response = "dummy-package {err} {warn} 0 0 0 0".format(
             err=errors, warn=warnings)
-        set_mock_response(mock_requests, text=response)
+        self.set_http_get_response(text=response)
 
         self.run_task()
 
@@ -1299,8 +1275,7 @@ class UpdateLintianStatsTaskTest(TestCase):
         # The timestamp is updated
         self.assertNotEqual(old_timestamp, item.last_updated_timestamp)
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_action_item_not_updated(self, mock_requests):
+    def test_action_item_not_updated(self):
         """
         Tests that an existing action item is left unchanged when the update
         shows unchanged lintian stats.
@@ -1315,7 +1290,7 @@ class UpdateLintianStatsTaskTest(TestCase):
         old_timestamp = old_item.last_updated_timestamp
         response = "dummy-package {err} {warn} 0 0 0 0".format(
             err=errors, warn=warnings)
-        set_mock_response(mock_requests, text=response)
+        self.set_http_get_response(text=response)
 
         self.run_task()
 
@@ -1325,15 +1300,14 @@ class UpdateLintianStatsTaskTest(TestCase):
         item = ActionItem.objects.all()[0]
         self.assertEqual(old_timestamp, item.last_updated_timestamp)
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_action_item_created_warnings(self, mock_requests):
+    def test_action_item_created_warnings(self):
         """
         Tests that an action item is created when the package has warnings.
         """
         errors, warnings = 0, 2
         response = "dummy-package {err} {warn} 0 0 0 0".format(
             err=errors, warn=warnings)
-        set_mock_response(mock_requests, text=response)
+        self.set_http_get_response(text=response)
         # Sanity check: there were no action items in the beginning
         self.assertEqual(0, ActionItem.objects.count())
 
@@ -1350,8 +1324,7 @@ class UpdateLintianStatsTaskTest(TestCase):
         # It is a normal severity issue
         self.assertEqual('normal', item.get_severity_display())
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_action_item_created_errors_and_warnings(self, mock_requests):
+    def test_action_item_created_errors_and_warnings(self):
         """
         Tests that an action item is created when the package has errors and
         warnings.
@@ -1359,7 +1332,7 @@ class UpdateLintianStatsTaskTest(TestCase):
         errors, warnings = 2, 2
         response = "dummy-package {err} {warn} 0 0 0 0".format(
             err=errors, warn=warnings)
-        set_mock_response(mock_requests, text=response)
+        self.set_http_get_response(text=response)
         # Sanity check: there were no action items in the beginning
         self.assertEqual(0, ActionItem.objects.count())
 
@@ -1379,14 +1352,13 @@ class UpdateLintianStatsTaskTest(TestCase):
         # warnings
         self.assertEqual('high', item.get_severity_display())
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_action_item_not_created(self, mock_requests):
+    def test_action_item_not_created(self):
         """
         Tests that no action item is created when the package has no errors or
         warnings.
         """
         response = "dummy-package 0 0 5 4 3 2"
-        set_mock_response(mock_requests, text=response)
+        self.set_http_get_response(text=response)
         # Sanity check: there were no action items in the beginning
         self.assertEqual(0, ActionItem.objects.count())
 
@@ -1395,8 +1367,7 @@ class UpdateLintianStatsTaskTest(TestCase):
         # Still no action items.
         self.assertEqual(0, ActionItem.objects.count())
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_action_item_removed(self, mock_requests):
+    def test_action_item_removed(self):
         """
         Tests that a previously existing action item is removed if the updated
         stats no longer contain errors or warnings.
@@ -1408,15 +1379,14 @@ class UpdateLintianStatsTaskTest(TestCase):
             short_description="Short description...",
             extra_data={'errors': 1, 'warnings': 2})
         response = "dummy-package 0 0 5 4 3 2"
-        set_mock_response(mock_requests, text=response)
+        self.set_http_get_response(text=response)
 
         self.run_task()
 
         # There are no action items any longer.
         self.assertEqual(0, self.package_name.action_items.count())
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_action_item_removed_no_data(self, mock_requests):
+    def test_action_item_removed_no_data(self):
         """
         Tests that a previously existing action item is removed when the
         updated stats no longer contain any information for the package.
@@ -1429,15 +1399,14 @@ class UpdateLintianStatsTaskTest(TestCase):
             short_description="Short description...",
             extra_data={'errors': 1, 'warnings': 2})
         response = "some-package 0 0 5 4 3 2"
-        set_mock_response(mock_requests, text=response)
+        self.set_http_get_response(text=response)
 
         self.run_task()
 
         # There are no action items any longer.
         self.assertEqual(0, self.package_name.action_items.count())
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_action_item_created_multiple_packages(self, mock_requests):
+    def test_action_item_created_multiple_packages(self):
         """
         Tests that action items are created correctly when there are stats
         for multiple different packages in the response.
@@ -1453,7 +1422,7 @@ class UpdateLintianStatsTaskTest(TestCase):
                 err1=errors[0], warn1=warnings[0],
                 err2=errors[1], warn2=warnings[1])
         )
-        set_mock_response(mock_requests, text=response)
+        self.set_http_get_response(text=response)
         # Sanity check: there were no action items in the beginning
         self.assertEqual(0, ActionItem.objects.count())
 
@@ -1474,8 +1443,7 @@ class UpdateLintianStatsTaskTest(TestCase):
             errors[1],
             warnings[1])
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_update_does_not_affect_other_item_types(self, mock_requests):
+    def test_update_does_not_affect_other_item_types(self):
         """
         Tests that running an update of lintian stats does not cause other
         package categories to be removed.
@@ -1489,7 +1457,7 @@ class UpdateLintianStatsTaskTest(TestCase):
         errors, warnings = 2, 0
         response = "dummy-package {err} {warn} 0 0 0 0".format(
             err=errors, warn=warnings)
-        set_mock_response(mock_requests, text=response)
+        self.set_http_get_response(text=response)
         # Sanity check: exactly one action item in the beginning
         self.assertEqual(1, ActionItem.objects.count())
 
@@ -4228,7 +4196,6 @@ class UbuntuPanelTests(TestCase):
         self.assertIn(ubuntu_version, response_content)
 
 
-@mock.patch('distro_tracker.core.utils.http.requests')
 class UpdateWnppStatsTaskTests(TestCase):
 
     """
@@ -4243,6 +4210,7 @@ class UpdateWnppStatsTaskTests(TestCase):
         self.task = UpdateWnppStatsTask()
         # Stub the data providing method
         self.task._get_wnpp_content = mock.MagicMock(return_value='')
+        self.mock_http_request()
 
     def get_action_item_type(self):
         return ActionItemType.objects.get_or_create(
@@ -4268,7 +4236,7 @@ class UpdateWnppStatsTaskTests(TestCase):
     def run_task(self):
         self.task.execute()
 
-    def test_action_item_created(self, mock_requests):
+    def test_action_item_created(self):
         """
         Tests that an :class:`ActionItem
         <distro_tracker.core.models.ActionItem>` instance is created when the
@@ -4281,7 +4249,7 @@ class UpdateWnppStatsTaskTests(TestCase):
                 'bug_id': bug_id,
             }]
         )])
-        set_mock_response(mock_requests, text=content)
+        self.set_http_get_response(text=content)
 
         self.run_task()
 
@@ -4306,7 +4274,7 @@ class UpdateWnppStatsTaskTests(TestCase):
                ' been orphaned and needs a maintainer.</a>')
         self.assertEqual(dsc, item.short_description)
 
-    def test_action_item_created_unknown_type(self, mock_requests):
+    def test_action_item_created_unknown_type(self):
         """
         Tests that an :class:`ActionItem
         <distro_tracker.core.models.ActionItem>` instance is created when the
@@ -4319,7 +4287,7 @@ class UpdateWnppStatsTaskTests(TestCase):
                 'bug_id': bug_id,
             }]
         )])
-        set_mock_response(mock_requests, text=content)
+        self.set_http_get_response(text=content)
 
         self.run_task()
 
@@ -4344,7 +4312,7 @@ class UpdateWnppStatsTaskTests(TestCase):
                ' contains an entry for this package.</a>')
         self.assertEqual(dsc, item.short_description)
 
-    def test_action_item_updated(self, mock_requests):
+    def test_action_item_updated(self):
         """
         Tests that an existing :class:`ActionItem
         <distro_tracker.core.models.ActionItem>` instance is updated when there
@@ -4370,7 +4338,7 @@ class UpdateWnppStatsTaskTests(TestCase):
                 'bug_id': bug_id,
             }]
         )])
-        set_mock_response(mock_requests, text=content)
+        self.set_http_get_response(text=content)
 
         self.run_task()
 
@@ -4386,7 +4354,7 @@ class UpdateWnppStatsTaskTests(TestCase):
         }
         self.assertEqual(expected_data, item.extra_data['wnpp_info'])
 
-    def test_action_item_not_updated(self, mock_requests):
+    def test_action_item_not_updated(self):
         """
         Tests that an existing :class:`ActionItem
         <distro_tracker.core.models.ActionItem>` instance is not updated when
@@ -4411,7 +4379,7 @@ class UpdateWnppStatsTaskTests(TestCase):
                 'bug_id': bug_id,
             }]
         )])
-        set_mock_response(mock_requests, text=content)
+        self.set_http_get_response(text=content)
 
         self.run_task()
 
@@ -4421,7 +4389,7 @@ class UpdateWnppStatsTaskTests(TestCase):
         item = ActionItem.objects.all()[0]
         self.assertEqual(old_timestamp, item.last_updated_timestamp)
 
-    def test_action_item_removed(self, mock_requests):
+    def test_action_item_removed(self):
         """
         Tests that an existing :class:`ActionItem
         <distro_tracker.core.models.ActionItem>` instance is removed when there
@@ -4439,7 +4407,7 @@ class UpdateWnppStatsTaskTests(TestCase):
                 },
             })
         # Set "new" WNPP info
-        set_mock_response(mock_requests, text="")
+        self.set_http_get_response(text="")
 
         self.run_task()
 
@@ -4447,7 +4415,7 @@ class UpdateWnppStatsTaskTests(TestCase):
         # No more actino items
         self.assertEqual(0, ActionItem.objects.count())
 
-    def test_action_item_not_created(self, mock_requests):
+    def test_action_item_not_created(self):
         """
         Tests that an :class:`ActionItem
         <distro_tracker.core.models.ActionItem>` instance is not created for non
@@ -4460,14 +4428,14 @@ class UpdateWnppStatsTaskTests(TestCase):
                 'bug_id': bug_id,
             }]
         )])
-        set_mock_response(mock_requests, text=content)
+        self.set_http_get_response(text=content)
 
         self.run_task()
 
         # No action items
         self.assertEqual(0, ActionItem.objects.count())
 
-    def test_action_item_multiple_packages(self, mock_requests):
+    def test_action_item_multiple_packages(self):
         """
         Tests that an :class:`ActionItem
         <distro_tracker.core.models.ActionItem>` instance is created for
@@ -4491,7 +4459,7 @@ class UpdateWnppStatsTaskTests(TestCase):
             (package.name, [wnpp_item])
             for package, wnpp_item in zip(packages, wnpp)
         ])
-        set_mock_response(mock_requests, text=content)
+        self.set_http_get_response(text=content)
 
         self.run_task()
 
@@ -5249,7 +5217,6 @@ class DebianSsoLoginWithSSLClientCertificateTests(DebianSsoLoginTests):
         pass
 
 
-@mock.patch('distro_tracker.core.utils.http.requests')
 class UpdateAutoRemovalsStatsTaskTest(TestCase):
 
     """
@@ -5272,6 +5239,7 @@ class UpdateAutoRemovalsStatsTaskTest(TestCase):
             - '123456'
             removal_date: 2014-08-25 12:00:00
         """
+        self.mock_http_request()
 
     def run_task(self):
         """
@@ -5280,33 +5248,33 @@ class UpdateAutoRemovalsStatsTaskTest(TestCase):
         task = UpdateAutoRemovalsStatsTask()
         task.execute()
 
-    def test_action_item_when_in_list(self, mock_requests):
+    def test_action_item_when_in_list(self):
         """
         Tests that an ActionItem is created for a package reported by
         autoremovals.
         """
-        set_mock_response(mock_requests, text=self.autoremovals_data)
+        self.set_http_get_response(text=self.autoremovals_data)
 
         self.run_task()
         self.assertEqual(1, self.dummy_package.action_items.count())
 
-    def test_no_action_item_when_not_in_list(self, mock_requests):
+    def test_no_action_item_when_not_in_list(self):
         """
         Tests that no ActionItem is created for a package not reported by
         autoremovals.
         """
-        set_mock_response(mock_requests, text=self.autoremovals_data)
+        self.set_http_get_response(text=self.autoremovals_data)
 
         self.run_task()
         self.assertEqual(0, self.other_package.action_items.count())
 
     def test_action_item_is_dropped_when_autoremovals_reports_nothing_again(
-            self, mock_requests):
+            self):
         """
         Tests that ActionItems are dropped when a package was previousy
         reported but is now not reported anymore.
         """
-        set_mock_response(mock_requests, text=self.autoremovals_data)
+        self.set_http_get_response(text=self.autoremovals_data)
         self.run_task()
         self.assertEqual(1, self.dummy_package.action_items.count())
 
@@ -5316,13 +5284,12 @@ class UpdateAutoRemovalsStatsTaskTest(TestCase):
             - '1234567'
             removal_date: 2014-08-22 12:21:00
         """
-        set_mock_response(mock_requests, text=autoremovals_data)
+        self.set_http_get_response(text=autoremovals_data)
 
         self.run_task()
         self.assertEqual(0, self.dummy_package.action_items.count())
 
 
-@mock.patch('distro_tracker.core.utils.http.requests')
 class UpdatePackageScreenshotsTaskTest(TestCase):
     """
     Tests for the:class:`distro_tracker.vendor.debian.tracker_tasks.
@@ -5362,6 +5329,7 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
                 "description": "yet another game that you can play"
             }]}
         """
+        self.mock_http_request()
 
     def run_task(self):
         """
@@ -5370,11 +5338,11 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
         task = UpdatePackageScreenshotsTask()
         task.execute()
 
-    def test_packagedata_item_for_without_screenshot(self, mock_requests):
+    def test_packagedata_item_for_without_screenshot(self):
         """
         Tests that packages without screenshots don't claim to have them.
         """
-        set_mock_response(mock_requests, text=self.json_data)
+        self.set_http_get_response(text=self.json_data)
         other_package = SourcePackageName.objects.create(name='other-package')
 
         self.run_task()
@@ -5382,7 +5350,7 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
         with self.assertRaises(PackageData.DoesNotExist):
             other_package.data.get(key='screenshots')
 
-    def test_no_packagedata_for_unknown_package(self, mock_requests):
+    def test_no_packagedata_for_unknown_package(self):
         """
         Tests that UpdatePackageScreenshotsTask doesn't fail with an unknown
         package.
@@ -5398,19 +5366,19 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
                 "description": "yet another game that you can play"
             }]}
         """
-        set_mock_response(mock_requests, text=data)
+        self.set_http_get_response(text=data)
 
         self.run_task()
 
         count = PackageData.objects.filter(key='screenshots').count()
         self.assertEqual(0, count)
 
-    def test_packagedata_for_package_with_screenshots(self, mock_requests):
+    def test_packagedata_for_package_with_screenshots(self):
         """
         Tests that PackageData for a package with a screenshot is
         correct.
         """
-        set_mock_response(mock_requests, text=self.json_data)
+        self.set_http_get_response(text=self.json_data)
 
         self.run_task()
 
@@ -5418,29 +5386,28 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
 
         self.assertEqual(info.value['screenshots'], 'true')
 
-    def test_packagedata_is_dropped_when_no_more_screenshot(self,
-                                                            mock_requests):
+    def test_packagedata_is_dropped_when_no_more_screenshot(self):
         """
         Tests that PackageData is dropped if screenshot goes away.
         """
-        set_mock_response(mock_requests, text=self.json_data)
+        self.set_http_get_response(text=self.json_data)
         self.run_task()
 
-        set_mock_response(mock_requests, text=self.other_json_data)
+        self.set_http_get_response(text=self.other_json_data)
         self.run_task()
 
         with self.assertRaises(PackageData.DoesNotExist):
             self.dummy_package.data.get(key='screenshots')
 
-    def test_other_packagedata_keys_not_dropped(self, mock_requests):
+    def test_other_packagedata_keys_not_dropped(self):
         """
         Ensure that other PackageData keys are not dropped when
         deleting the screenshot key.
         """
-        set_mock_response(mock_requests, text=self.json_data)
+        self.set_http_get_response(text=self.json_data)
         self.run_task()
 
-        set_mock_response(mock_requests, text=self.other_json_data)
+        self.set_http_get_response(text=self.other_json_data)
         self.run_task()
 
         info = self.dummy_package.data.get(key='general')
@@ -5448,7 +5415,6 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
         self.assertEqual(info.value['name'], 'dummy')
 
 
-@mock.patch('distro_tracker.core.utils.http.requests')
 class UpdateBuildReproducibilityTaskTest(TestCase):
     """
     Tests for the:class:`distro_tracker.vendor.debian.tracker_tasks.
@@ -5482,6 +5448,7 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
                 }
             }
         )
+        self.mock_http_request()
 
     def run_task(self):
         """
@@ -5490,12 +5457,12 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
         task = UpdateBuildReproducibilityTask()
         task.execute()
 
-    def test_packagedata_without_reproducibility(self, mock_requests):
+    def test_packagedata_without_reproducibility(self):
         """
         Tests that packages without reproducibility info don't claim to have
         them.
         """
-        set_mock_response(mock_requests, text=self.json_data)
+        self.set_http_get_response(text=self.json_data)
         other_package = SourcePackageName.objects.create(name='other-package')
 
         self.run_task()
@@ -5503,24 +5470,24 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
         with self.assertRaises(PackageData.DoesNotExist):
             other_package.data.get(key='reproducibility')
 
-    def test_no_packagedata_for_unknown_package(self, mock_requests):
+    def test_no_packagedata_for_unknown_package(self):
         """
         Tests that BuildReproducibilityTask doesn't fail with an unknown
         package.
         """
-        set_mock_response(mock_requests, text=self.other_json_data)
+        self.set_http_get_response(text=self.other_json_data)
 
         self.run_task()
 
         count = PackageData.objects.filter(key='reproducibility').count()
         self.assertEqual(0, count)
 
-    def test_packagedata_with_reproducibility(self, mock_requests):
+    def test_packagedata_with_reproducibility(self):
         """
         Tests that PackageData for a package with reproducibility info
         is correct.
         """
-        set_mock_response(mock_requests, text=self.json_data)
+        self.set_http_get_response(text=self.json_data)
 
         self.run_task()
 
@@ -5532,28 +5499,27 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
         self.assertEqual(action_items.first().item_type.type_name,
                          UpdateBuildReproducibilityTask.ACTION_ITEM_TYPE_NAME)
 
-    def test_packagedata_is_dropped_when_data_is_gone(self, mock_requests):
+    def test_packagedata_is_dropped_when_data_is_gone(self):
         """
         Tests that PackageData is dropped if reproducibility info
         goes away.
         """
-        set_mock_response(mock_requests, text=self.json_data)
+        self.set_http_get_response(text=self.json_data)
         self.run_task()
 
-        set_mock_response(mock_requests, text=self.other_json_data)
+        self.set_http_get_response(text=self.other_json_data)
         self.run_task()
 
         with self.assertRaises(PackageData.DoesNotExist):
             self.dummy_package.data.get(key='reproducibility')
         self.assertEqual(self.dummy_package.action_items.count(), 0)
 
-    def test_action_item_is_dropped_when_status_is_reproducible(self,
-                                                                mock_requests):
+    def test_action_item_is_dropped_when_status_is_reproducible(self):
         """
         Ensure the action item is dropped when status switches from
         unreproducible to reproducible.
         """
-        set_mock_response(mock_requests, text=self.json_data)
+        self.set_http_get_response(text=self.json_data)
         self.run_task()
         self.assertEqual(self.dummy_package.action_items.count(), 1)
         json_data = """
@@ -5564,20 +5530,20 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
                 "suite": "sid"
             }]
         """
-        set_mock_response(mock_requests, text=json_data)
+        self.set_http_get_response(text=json_data)
         self.run_task()
 
         self.assertEqual(self.dummy_package.action_items.count(), 0)
 
-    def test_other_packagedata_keys_not_dropped(self, mock_requests):
+    def test_other_packagedata_keys_not_dropped(self):
         """
         Ensure that other PackageData keys are not dropped when
         deleting the reproducibility key.
         """
-        set_mock_response(mock_requests, text=self.json_data)
+        self.set_http_get_response(text=self.json_data)
         self.run_task()
 
-        set_mock_response(mock_requests, text=self.other_json_data)
+        self.set_http_get_response(text=self.other_json_data)
         self.run_task()
 
         info = self.dummy_package.data.get(key='general')
@@ -6083,7 +6049,6 @@ class TagPackagesWithNewUpstreamVersionTest(TestCase):
         self.assertDoesExist(tagdata)
 
 
-@mock.patch('distro_tracker.core.utils.http.requests')
 class UpdateDependencySatisfactionTaskTest(TestCase):
     """
     Tests for the:class:`distro_tracker.vendor.debian.tracker_tasks.
@@ -6115,6 +6080,7 @@ class UpdateDependencySatisfactionTaskTest(TestCase):
         self.dummy_package5 = self.create_source_package(
             name='srcpkg5', binary_packages=["dummy5"]
         ).source_package_name
+        self.mock_http_request()
 
     def run_task(self):
         """
@@ -6123,12 +6089,12 @@ class UpdateDependencySatisfactionTaskTest(TestCase):
         task = UpdateDependencySatisfactionTask()
         task.execute()
 
-    def test_packagedata_without_dep_sat(self, mock_requests):
+    def test_packagedata_without_dep_sat(self):
         """
         Tests that packages without dependency satisfaction info don't claim to
         have them.
         """
-        set_mock_response(mock_requests, text=self.data1)
+        self.set_http_get_response(text=self.data1)
         other_package = SourcePackageName.objects.create(name='other-package')
 
         self.run_task()
@@ -6136,12 +6102,12 @@ class UpdateDependencySatisfactionTaskTest(TestCase):
         with self.assertRaises(PackageData.DoesNotExist):
             other_package.data.get(key='dependency_satisfaction')
 
-    def test_no_packagedata_for_unknown_package(self, mock_requests):
+    def test_no_packagedata_for_unknown_package(self):
         """
         Tests that DependencySatisfactionTask doesn't fail with an unknown
         package.
         """
-        set_mock_response(mock_requests, text=self.data2)
+        self.set_http_get_response(text=self.data2)
 
         self.run_task()
 
@@ -6149,12 +6115,12 @@ class UpdateDependencySatisfactionTaskTest(TestCase):
             key='dependency_satisfaction').count()
         self.assertEqual(0, count)
 
-    def test_packagedata_with_dep_sat(self, mock_requests):
+    def test_packagedata_with_dep_sat(self):
         """
         Tests that PackageData for a package with dependency
         satisfaction info is correct.
         """
-        set_mock_response(mock_requests, text=self.data1)
+        self.set_http_get_response(text=self.data1)
 
         self.run_task()
 
@@ -6170,27 +6136,27 @@ class UpdateDependencySatisfactionTaskTest(TestCase):
             action_items.first().item_type.type_name,
             UpdateDependencySatisfactionTask.ACTION_ITEM_TYPE_NAME)
 
-    def test_packagedata_is_dropped_when_data_is_gone(self, mock_requests):
+    def test_packagedata_is_dropped_when_data_is_gone(self):
         """
         Tests that PackageData is dropped if dependency satisfaction
         info goes away.
         """
-        set_mock_response(mock_requests, text=self.data1)
+        self.set_http_get_response(text=self.data1)
         self.run_task()
 
-        set_mock_response(mock_requests, text=self.data2)
+        self.set_http_get_response(text=self.data2)
         self.run_task()
 
         with self.assertRaises(PackageData.DoesNotExist):
             self.dummy_package1.data.get(key='dependency_satisfaction')
         self.assertEqual(self.dummy_package1.action_items.count(), 0)
 
-    def test_packagedata_arch_all_on_amd64(self, mock_requests):
+    def test_packagedata_arch_all_on_amd64(self):
         """
         Tests that PackageData for an arch:all package with dependency
         satisfaction info is correct on amd64.
         """
-        set_mock_response(mock_requests, text=self.data3)
+        self.set_http_get_response(text=self.data3)
 
         self.run_task()
 
@@ -6206,24 +6172,24 @@ class UpdateDependencySatisfactionTaskTest(TestCase):
             action_items.first().item_type.type_name,
             UpdateDependencySatisfactionTask.ACTION_ITEM_TYPE_NAME)
 
-    def test_packagedata_arch_all_on_non_amd64(self, mock_requests):
+    def test_packagedata_arch_all_on_non_amd64(self):
         """
         Tests that PackageData for an arch:all package with dependency
         satisfaction info is not shown on a non-amd64 architecture.
         """
-        set_mock_response(mock_requests, text=self.data4)
+        self.set_http_get_response(text=self.data4)
         self.run_task()
 
         with self.assertRaises(PackageData.DoesNotExist):
             self.dummy_package4.data.get(key='dependency_satisfaction')
         self.assertEqual(self.dummy_package4.action_items.count(), 0)
 
-    def test_packagedata_non_release_arch(self, mock_requests):
+    def test_packagedata_non_release_arch(self):
         """
         Tests that PackageData for a package with dependency
         satisfaction info is not shown on a non-release architecture.
         """
-        set_mock_response(mock_requests, text=self.data5)
+        self.set_http_get_response(text=self.data5)
         self.run_task()
 
         with self.assertRaises(PackageData.DoesNotExist):
@@ -6231,7 +6197,6 @@ class UpdateDependencySatisfactionTaskTest(TestCase):
         self.assertEqual(self.dummy_package5.action_items.count(), 0)
 
 
-@mock.patch('distro_tracker.core.utils.http.requests')
 class UpdateBuildDependencySatisfactionTaskTest(TestCase):
     """
     Tests for the:class:`distro_tracker.vendor.debian.tracker_tasks.
@@ -6263,6 +6228,7 @@ class UpdateBuildDependencySatisfactionTaskTest(TestCase):
         self.dummy_package5 = self.create_source_package(
             name='srcpkg5', binary_packages=["dummy5"]
         ).source_package_name
+        self.mock_http_request()
 
     def run_task(self):
         """
@@ -6271,12 +6237,12 @@ class UpdateBuildDependencySatisfactionTaskTest(TestCase):
         task = UpdateBuildDependencySatisfactionTask()
         task.execute()
 
-    def test_packagedata_without_dep_sat(self, mock_requests):
+    def test_packagedata_without_dep_sat(self):
         """
         Tests that packages without build dependency satisfaction info don't
         claim to have them.
         """
-        set_mock_response(mock_requests, text=self.data1)
+        self.set_http_get_response(text=self.data1)
         other_package = SourcePackageName.objects.create(name='other-package')
 
         self.run_task()
@@ -6284,12 +6250,12 @@ class UpdateBuildDependencySatisfactionTaskTest(TestCase):
         with self.assertRaises(PackageData.DoesNotExist):
             other_package.data.get(key='builddependency_satisfaction')
 
-    def test_no_packagedata_for_unknown_package(self, mock_requests):
+    def test_no_packagedata_for_unknown_package(self):
         """
         Tests that BuildDependencySatisfactionTask doesn't fail with an unknown
         package.
         """
-        set_mock_response(mock_requests, text=self.data2)
+        self.set_http_get_response(text=self.data2)
 
         self.run_task()
 
@@ -6297,12 +6263,12 @@ class UpdateBuildDependencySatisfactionTaskTest(TestCase):
             key='builddependency_satisfaction').count()
         self.assertEqual(0, count)
 
-    def test_packagedata_with_dep_sat(self, mock_requests):
+    def test_packagedata_with_dep_sat(self):
         """
         Tests that PackageData for a package with build dependency
         satisfaction info is correct.
         """
-        set_mock_response(mock_requests, text=self.data1)
+        self.set_http_get_response(text=self.data1)
 
         self.run_task()
 
@@ -6318,27 +6284,27 @@ class UpdateBuildDependencySatisfactionTaskTest(TestCase):
             action_items.first().item_type.type_name,
             UpdateBuildDependencySatisfactionTask.ACTION_ITEM_TYPE_NAME)
 
-    def test_packagedata_is_dropped_when_data_is_gone(self, mock_requests):
+    def test_packagedata_is_dropped_when_data_is_gone(self):
         """
         Tests that PackageData is dropped if build dependency satisfaction
         info goes away.
         """
-        set_mock_response(mock_requests, text=self.data1)
+        self.set_http_get_response(text=self.data1)
         self.run_task()
 
-        set_mock_response(mock_requests, text=self.data2)
+        self.set_http_get_response(text=self.data2)
         self.run_task()
 
         with self.assertRaises(PackageData.DoesNotExist):
             self.dummy_package1.data.get(key='builddependency_satisfaction')
         self.assertEqual(self.dummy_package1.action_items.count(), 0)
 
-    def test_packagedata_arch_all_on_amd64(self, mock_requests):
+    def test_packagedata_arch_all_on_amd64(self):
         """
         Tests that PackageData for an arch:all package with build dependency
         satisfaction info is correct on amd64.
         """
-        set_mock_response(mock_requests, text=self.data3)
+        self.set_http_get_response(text=self.data3)
 
         self.run_task()
 
@@ -6354,24 +6320,24 @@ class UpdateBuildDependencySatisfactionTaskTest(TestCase):
             action_items.first().item_type.type_name,
             UpdateBuildDependencySatisfactionTask.ACTION_ITEM_TYPE_NAME)
 
-    def test_packagedata_arch_all_on_non_amd64(self, mock_requests):
+    def test_packagedata_arch_all_on_non_amd64(self):
         """
         Tests that PackageData for an arch:all package with build dependency
         satisfaction info is not shown on a non-amd64 architecture.
         """
-        set_mock_response(mock_requests, text=self.data4)
+        self.set_http_get_response(text=self.data4)
         self.run_task()
 
         with self.assertRaises(PackageData.DoesNotExist):
             self.dummy_package4.data.get(key='builddependency_satisfaction')
         self.assertEqual(self.dummy_package4.action_items.count(), 0)
 
-    def test_packagedata_non_release_arch(self, mock_requests):
+    def test_packagedata_non_release_arch(self):
         """
         Tests that PackageData for a package with build dependency
         satisfaction info is not shown on a non-release architecture.
         """
-        set_mock_response(mock_requests, text=self.data5)
+        self.set_http_get_response(text=self.data5)
         self.run_task()
 
         with self.assertRaises(PackageData.DoesNotExist):
@@ -6425,24 +6391,6 @@ class UpdateDl10nStatsTaskTest(TestCase):
         task = UpdateDl10nStatsTask()
         task.execute()
 
-    def _set_mock_response(self, mock_requests, text="", status_code=200):
-        """
-        Helper method which sets a mock response to the given mock requests
-        module.
-        """
-
-        mock_response = mock_requests.models.Response()
-        mock_response.status_code = status_code
-        mock_response.ok = status_code < 400
-
-        def build_response(*args, **kwargs):
-            data = bytes(text, 'utf-8')
-            mock_response.text = data
-            mock_response.content = data
-            return mock_response
-
-        mock_requests.get.side_effect = build_response
-
     def get_action_item_type(self):
         return ActionItemType.objects.get_or_create(
             type_name=UpdateDl10nStatsTask.ACTION_ITEM_TYPE_NAME)[0]
@@ -6456,15 +6404,14 @@ class UpdateDl10nStatsTaskTest(TestCase):
             # Use get() on expected_stats so missing values are handled as None
             self.assertEqual(stats[key], expected_stats.get(key))
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_stats_created(self, mock_requests):
+    def test_stats_created(self):
         """
         Tests that stats are created for a package that previously did not have
         any dl10n stats.
         """
 
         text = self._create_pkglist_entry(score_other=10, todo=True)
-        self._set_mock_response(mock_requests, text)
+        self.mock_http_request(text=text)
 
         self.run_task()
 
@@ -6478,8 +6425,7 @@ class UpdateDl10nStatsTaskTest(TestCase):
                                   {'score_other': 10,
                                    'todo': True})
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_stats_updated(self, mock_requests):
+    def test_stats_updated(self):
         """
         Tests that when a package already had associated dl10n stats,
         they are correctly updated after running the task.
@@ -6491,7 +6437,7 @@ class UpdateDl10nStatsTaskTest(TestCase):
                                    value=self._create_stat(score_other=10))
 
         text = self._create_pkglist_entry(score_debian=10, todo=True)
-        self._set_mock_response(mock_requests, text)
+        self.mock_http_request(text=text)
 
         self.run_task()
 
@@ -6505,21 +6451,19 @@ class UpdateDl10nStatsTaskTest(TestCase):
                                   {'score_debian': 10,
                                    'todo': True})
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_unknown_package(self, mock_requests):
+    def test_unknown_package(self):
         """
         Tests that when an unknown package is encountered, no stats are created.
         """
 
         text = 'nonexistant 1.0.0 (-,10) http://url 0'
-        self._set_mock_response(mock_requests, text)
+        self.mock_http_request(text=text)
         self.run_task()
 
         # There are no stats
         self.assertEqual(0, PackageData.objects.filter(key='dl10n').count())
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_action_item_updated(self, mock_requests):
+    def test_action_item_updated(self):
         """
         Tests that an existing action item is updated with new data.
         """
@@ -6532,7 +6476,7 @@ class UpdateDl10nStatsTaskTest(TestCase):
         old_timestamp = old_item.last_updated_timestamp
 
         text = self._create_pkglist_entry(score_debian=10, todo=True)
-        self._set_mock_response(mock_requests, text)
+        self.mock_http_request(text=text)
 
         self.run_task()
 
@@ -6547,8 +6491,7 @@ class UpdateDl10nStatsTaskTest(TestCase):
         # The timestamp is updated
         self.assertNotEqual(old_timestamp, item.last_updated_timestamp)
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_action_item_created(self, mock_requests):
+    def test_action_item_created(self):
         """
         Tests that an action item is created when the package has errors.
         """
@@ -6557,7 +6500,7 @@ class UpdateDl10nStatsTaskTest(TestCase):
         self.assertEqual(0, ActionItem.objects.count())
 
         text = self._create_pkglist_entry(score_debian=10, todo=True)
-        self._set_mock_response(mock_requests, text)
+        self.mock_http_request(text=text)
         self.run_task()
 
         # An action item is created.
@@ -6569,8 +6512,7 @@ class UpdateDl10nStatsTaskTest(TestCase):
                                   {'score_debian': 10,
                                    'todo': True})
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_action_item_not_created(self, mock_requests):
+    def test_action_item_not_created(self):
         """
         Tests that no action item is created when the package has no errors or
         warnings.
@@ -6580,14 +6522,13 @@ class UpdateDl10nStatsTaskTest(TestCase):
         self.assertEqual(0, ActionItem.objects.count())
 
         text = self._create_pkglist_entry(score_debian=10, todo=False)
-        self._set_mock_response(mock_requests, text)
+        self.mock_http_request(text=text)
         self.run_task()
 
         # Still no action items.
         self.assertEqual(0, ActionItem.objects.count())
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_action_item_removed(self, mock_requests):
+    def test_action_item_removed(self):
         """
         Tests that a previously existing action item is removed if the updated
         hints no longer contain errors or warnings.
@@ -6600,15 +6541,14 @@ class UpdateDl10nStatsTaskTest(TestCase):
             extra_data=self._create_stat(score_other=10, todo=True))
 
         text = self._create_pkglist_entry(score_debian=10, todo=False)
-        self._set_mock_response(mock_requests, text)
+        self.mock_http_request(text=text)
         self.run_task()
 
         # There are no action items any longer.
         self.assertEqual(0, self.package_name.action_items.count())
         self.assertEqual(0, ActionItem.objects.count())
 
-    @mock.patch('distro_tracker.core.utils.http.requests')
-    def test_action_item_removed_no_data(self, mock_requests):
+    def test_action_item_removed_no_data(self):
         """
         Tests that a previously existing action item is removed when the
         updated hints no longer contain any information for the package.
@@ -6620,7 +6560,7 @@ class UpdateDl10nStatsTaskTest(TestCase):
             extra_data=self._create_stat(score_other=10, todo=True))
 
         text = 'nonexistant 1.0.0 (-,10) http://url 0'
-        self._set_mock_response(mock_requests, text)
+        self.mock_http_request(text=text)
         self.run_task()
 
         # There are no action items any longer.

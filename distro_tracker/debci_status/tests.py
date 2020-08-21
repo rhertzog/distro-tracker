@@ -31,11 +31,9 @@ from distro_tracker.debci_status.tracker_tasks import (
     UpdateDebciStatusTask
 )
 from distro_tracker.test import TemplateTestsMixin, TestCase
-from distro_tracker.test.utils import set_mock_response
 
 
 @override_settings(DISTRO_TRACKER_DEBCI_URL='https://ci.debian.net')
-@mock.patch('distro_tracker.core.utils.http.requests')
 class UpdateDebciStatusTaskTest(TestCase):
     """
     Tests for the
@@ -60,6 +58,7 @@ class UpdateDebciStatusTaskTest(TestCase):
             }
         ]
         self.url = "https://ci.debian.net/packages/d/dummy-package"
+        self.mock_http_request()
 
     def run_task(self):
         """
@@ -68,45 +67,45 @@ class UpdateDebciStatusTaskTest(TestCase):
         task = UpdateDebciStatusTask()
         task.execute()
 
-    def test_no_action_item_for_passing_test(self, mock_requests):
+    def test_no_action_item_for_passing_test(self):
         """
         Tests that an ActionItem isn't created for a passing debci status.
         """
         self.json_data[0]['status'] = 'pass'
-        set_mock_response(mock_requests, json=self.json_data)
+        self.set_http_get_response(json_data=self.json_data)
 
         self.run_task()
 
         self.assertEqual(0, self.package.action_items.count())
 
-    def test_no_action_item_for_neutral_test(self, mock_requests):
+    def test_no_action_item_for_neutral_test(self):
         """
         Tests that an ActionItem isn't created for a passing debci status.
         """
         self.json_data[0]['status'] = 'neutral'
-        set_mock_response(mock_requests, json=self.json_data)
+        self.set_http_get_response(json_data=self.json_data)
 
         self.run_task()
 
         self.assertEqual(0, self.package.action_items.count())
 
-    def test_no_action_item_for_unknown_package(self, mock_requests):
+    def test_no_action_item_for_unknown_package(self):
         """
         Tests that an ActionItem isn't created for an unknown package.
         """
         self.json_data[0]['package'] = 'unknown-package'
-        set_mock_response(mock_requests, json=self.json_data)
+        self.set_http_get_response(json_data=self.json_data)
 
         self.run_task()
 
         self.assertEqual(0, ActionItem.objects.count())
 
-    def test_action_item_for_failing_test(self, mock_requests):
+    def test_action_item_for_failing_test(self):
         """
         Tests that a proper ActionItem is created for a failing test
         on a known package.
         """
-        set_mock_response(mock_requests, json=self.json_data)
+        self.set_http_get_response(json_data=self.json_data)
 
         self.run_task()
 
@@ -123,9 +122,9 @@ class UpdateDebciStatusTaskTest(TestCase):
         self.assertEqual(action_item.extra_data[0]['url'], self.url)
         self.assertEqual(action_item.extra_data[0]['log'], log)
 
-    def test_action_item_is_updated(self, mock_requests):
+    def test_action_item_is_updated(self):
         """Ensure a pre-existing action item gets its attributes reset"""
-        set_mock_response(mock_requests, json=self.json_data)
+        self.set_http_get_response(json_data=self.json_data)
         self.run_task()
         self.package.action_items.update(extra_data=[], short_description='')
 
@@ -135,40 +134,40 @@ class UpdateDebciStatusTaskTest(TestCase):
         self.assertIn(self.url, action_item.short_description)
         self.assertEqual(action_item.extra_data[0]['url'], self.url)
 
-    def test_action_item_is_dropped_when_test_passes_again(self, mock_requests):
+    def test_action_item_is_dropped_when_test_passes_again(self):
         """
         Tests that ActionItems are dropped when the test passes again.
         """
-        set_mock_response(mock_requests, json=self.json_data)
+        self.set_http_get_response(json_data=self.json_data)
         self.run_task()
         self.json_data[0]['status'] = 'pass'
-        set_mock_response(mock_requests, json=self.json_data)
+        self.set_http_get_response(json_data=self.json_data)
 
         self.run_task()
 
         self.assertEqual(self.package.action_items.count(), 0)
 
-    def test_action_item_is_dropped_when_info_vanishes(self, mock_requests):
+    def test_action_item_is_dropped_when_info_vanishes(self):
         """
         Tests that ActionItems are dropped when the debci report doesn't
         mention the package.
         """
-        set_mock_response(mock_requests, json=self.json_data)
+        self.set_http_get_response(json_data=self.json_data)
         self.run_task()
-        set_mock_response(mock_requests, json=[])
+        self.set_http_get_response(json_data=[])
 
         self.run_task()
 
         self.assertEqual(ActionItem.objects.count(), 0)
 
-    def test_lib_package_link(self, mock_requests):
+    def test_lib_package_link(self):
         """
         Tests that links to lib packages' log files are correct.
         """
         source_package = self.create_source_package(name='libpackage')
         package = source_package.source_package_name
         self.json_data[0]['package'] = 'libpackage'
-        set_mock_response(mock_requests, json=self.json_data)
+        self.set_http_get_response(json_data=self.json_data)
 
         self.run_task()
 
@@ -181,41 +180,40 @@ class UpdateDebciStatusTaskTest(TestCase):
 
         self.assertEqual(action_item_log_url, log_url)
 
-    def test_no_exception_on_unavailable_repository(self, mock_requests):
+    def test_no_exception_on_unavailable_repository(self):
         """
         Tests that no exception is raised when getting a 404 from debci
         (for instance with a hidden repository), and that no ActionItem
         is created
         """
-        set_mock_response(mock_requests, json=self.json_data,
-                          status_code=404)
+        self.set_http_get_response(json_data=self.json_data, status_code=404)
 
         self.run_task()
 
         self.assertEqual(0, self.package.action_items.count())
 
-    def test_no_exception_on_null_entry(self, mock_requests):
+    def test_no_exception_on_null_entry(self):
         """
         Tests that no exception is raised when getting a null entry
         is present in the JSON data.
         """
         self.json_data.append(None)
-        set_mock_response(mock_requests, json=self.json_data)
+        self.set_http_get_response(json_data=self.json_data)
 
         self.run_task()
 
-    def test_no_exception_on_null_duration(self, mock_requests):
+    def test_no_exception_on_null_duration(self):
         """
         Tests that no exception is raised when getting a null duration
         in the JSON data.
         """
         self.json_data[0]['duration_seconds'] = None
-        set_mock_response(mock_requests, json=self.json_data)
+        self.set_http_get_response(json_data=self.json_data)
 
         self.run_task()
 
     @override_settings(DISTRO_TRACKER_DEBCI_REPOSITORIES=['debcirepo'])
-    def test_debci_repository_variable_enforced(self, mock_requests):
+    def test_debci_repository_variable_enforced(self):
         """
         Tests that DISTRO_TRACKER_DEBCI_REPOSITORIES, when defined,
         takes precedence over default "all repositories" behavior.
