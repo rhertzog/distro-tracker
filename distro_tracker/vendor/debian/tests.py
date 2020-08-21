@@ -2692,9 +2692,7 @@ class DebianWatchFileScannerUpdateTests(TestCase):
         self.package = SourcePackageName.objects.create(name='dummy-package')
 
         self.task = DebianWatchFileScannerUpdate()
-        # Stub the data providing methods: no content by default
-        self.task._get_upstream_status_content = mock.MagicMock(
-            return_value='')
+        self.mock_http_request(text='')
 
     def run_task(self):
         self.task.execute()
@@ -2707,8 +2705,7 @@ class DebianWatchFileScannerUpdateTests(TestCase):
             content given as a response to the task will be the YAML encoded
             representation of this list.
         """
-        self.task._get_upstream_status_content.return_value = json.dumps(
-            content)
+        self.set_http_get_response(json_data=content)
 
     def get_item_type(self, type_name):
         """
@@ -4141,7 +4138,6 @@ class UpdateWnppStatsTaskTests(TestCase):
 
         self.task = UpdateWnppStatsTask()
         # Stub the data providing method
-        self.task._get_wnpp_content = mock.MagicMock(return_value='')
         self.mock_http_request()
 
     def get_action_item_type(self):
@@ -5229,7 +5225,7 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
     """
     def setUp(self):
         self.dummy_package = SourcePackageName.objects.create(name='dummy')
-        self.json_data = """{
+        self.json_data = {
             "packages": [{
                 "maintainer": "Jane Doe",
                 "name": "dummy",
@@ -5238,8 +5234,8 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
                 "maintainer_email": "jane@example.com",
                 "homepage": "http://example.com/packages/dummy",
                 "description": "a game that you can play"
-            }]}
-        """
+            }]
+        }
         PackageData.objects.create(
             package=self.dummy_package,
             key='general',
@@ -5250,7 +5246,7 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
                 }
             }
         )
-        self.other_json_data = """{
+        self.other_json_data = {
             "packages": [{
                 "maintainer": "John Doe",
                 "name": "other",
@@ -5259,8 +5255,8 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
                 "maintainer_email": "john@example.com",
                 "homepage": "http://example.com/packages/other",
                 "description": "yet another game that you can play"
-            }]}
-        """
+            }]
+        }
         self.mock_http_request()
 
     def run_task(self):
@@ -5274,7 +5270,7 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
         """
         Tests that packages without screenshots don't claim to have them.
         """
-        self.set_http_get_response(text=self.json_data)
+        self.set_http_get_response(json_data=self.json_data)
         other_package = SourcePackageName.objects.create(name='other-package')
 
         self.run_task()
@@ -5287,7 +5283,7 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
         Tests that UpdatePackageScreenshotsTask doesn't fail with an unknown
         package.
         """
-        data = """{
+        data = {
             "packages": [{
                 "maintainer": "John Doe",
                 "name": "other",
@@ -5296,9 +5292,9 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
                 "maintainer_email": "john@example.com",
                 "homepage": "http://example.com/packages/other",
                 "description": "yet another game that you can play"
-            }]}
-        """
-        self.set_http_get_response(text=data)
+            }]
+        }
+        self.set_http_get_response(json_data=data)
 
         self.run_task()
 
@@ -5310,7 +5306,7 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
         Tests that PackageData for a package with a screenshot is
         correct.
         """
-        self.set_http_get_response(text=self.json_data)
+        self.set_http_get_response(json_data=self.json_data)
 
         self.run_task()
 
@@ -5322,10 +5318,10 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
         """
         Tests that PackageData is dropped if screenshot goes away.
         """
-        self.set_http_get_response(text=self.json_data)
+        self.set_http_get_response(json_data=self.json_data)
         self.run_task()
 
-        self.set_http_get_response(text=self.other_json_data)
+        self.set_http_get_response(json_data=self.other_json_data)
         self.run_task()
 
         with self.assertRaises(PackageData.DoesNotExist):
@@ -5336,10 +5332,10 @@ class UpdatePackageScreenshotsTaskTest(TestCase):
         Ensure that other PackageData keys are not dropped when
         deleting the screenshot key.
         """
-        self.set_http_get_response(text=self.json_data)
+        self.set_http_get_response(json_data=self.json_data)
         self.run_task()
 
-        self.set_http_get_response(text=self.other_json_data)
+        self.set_http_get_response(json_data=self.other_json_data)
         self.run_task()
 
         info = self.dummy_package.data.get(key='general')
@@ -5353,22 +5349,18 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
     UpdateBuildReproducibilityTask` task.
     """
     def setUp(self):
-        self.json_data = """
-            [{
-                "package": "dummy",
-                "version": "1.2-3",
-                "status": "FTBR",
-                "suite": "sid"
-            }]
-        """
-        self.other_json_data = """
-        [{
+        self.json_data = [{
+            "package": "dummy",
+            "version": "1.2-3",
+            "status": "FTBR",
+            "suite": "sid"
+        }]
+        self.other_json_data = [{
             "package": "other",
             "version": "1.2-3",
             "status": "FTBR",
             "suite": "sid"
         }]
-        """
         self.dummy_package = SourcePackageName.objects.create(name='dummy')
         PackageData.objects.create(
             package=self.dummy_package,
@@ -5394,7 +5386,7 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
         Tests that packages without reproducibility info don't claim to have
         them.
         """
-        self.set_http_get_response(text=self.json_data)
+        self.set_http_get_response(json_data=self.json_data)
         other_package = SourcePackageName.objects.create(name='other-package')
 
         self.run_task()
@@ -5407,7 +5399,7 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
         Tests that BuildReproducibilityTask doesn't fail with an unknown
         package.
         """
-        self.set_http_get_response(text=self.other_json_data)
+        self.set_http_get_response(json_data=self.other_json_data)
 
         self.run_task()
 
@@ -5419,7 +5411,7 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
         Tests that PackageData for a package with reproducibility info
         is correct.
         """
-        self.set_http_get_response(text=self.json_data)
+        self.set_http_get_response(json_data=self.json_data)
 
         self.run_task()
 
@@ -5436,10 +5428,10 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
         Tests that PackageData is dropped if reproducibility info
         goes away.
         """
-        self.set_http_get_response(text=self.json_data)
+        self.set_http_get_response(json_data=self.json_data)
         self.run_task()
 
-        self.set_http_get_response(text=self.other_json_data)
+        self.set_http_get_response(json_data=self.other_json_data)
         self.run_task()
 
         with self.assertRaises(PackageData.DoesNotExist):
@@ -5451,18 +5443,12 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
         Ensure the action item is dropped when status switches from
         unreproducible to reproducible.
         """
-        self.set_http_get_response(text=self.json_data)
+        self.set_http_get_response(json_data=self.json_data)
         self.run_task()
         self.assertEqual(self.dummy_package.action_items.count(), 1)
-        json_data = """
-            [{
-                "package": "dummy",
-                "version": "1.2-3",
-                "status": "reproducible",
-                "suite": "sid"
-            }]
-        """
-        self.set_http_get_response(text=json_data)
+
+        self.json_data[0]['status'] = 'reproducible'
+        self.set_http_get_response(json_data=self.json_data)
         self.run_task()
 
         self.assertEqual(self.dummy_package.action_items.count(), 0)
@@ -5472,10 +5458,10 @@ class UpdateBuildReproducibilityTaskTest(TestCase):
         Ensure that other PackageData keys are not dropped when
         deleting the reproducibility key.
         """
-        self.set_http_get_response(text=self.json_data)
+        self.set_http_get_response(json_data=self.json_data)
         self.run_task()
 
-        self.set_http_get_response(text=self.other_json_data)
+        self.set_http_get_response(json_data=self.other_json_data)
         self.run_task()
 
         info = self.dummy_package.data.get(key='general')
@@ -5489,14 +5475,7 @@ class UpdateVcsWatchTaskTest(TestCase):
     UpdateVcsWatchTask` task.
     """
     def setUp(self):
-        # Patch get_resource_content() to return our vcswatch_data
-        def compute_json(*args, **kwargs):
-            return json.dumps(self.vcswatch_data).encode('utf-8')
-        patcher = mock.patch(
-            'distro_tracker.core.utils.http.get_resource_content')
-        get_resource_content = patcher.start()
-        get_resource_content.side_effect = compute_json
-        self.addCleanup(patcher.stop)
+        self.mock_http_request()
 
         # Setup default data
         self.vcswatch_data = [
@@ -5510,6 +5489,7 @@ class UpdateVcsWatchTaskTest(TestCase):
                 "changelog_distribution": "unstable",
             },
         ]
+        self.update_http_response()
 
         self.dummy_package = SourcePackageName.objects.create(name='dummy')
         self.other_dummy_package = SourcePackageName.objects.create(
@@ -5526,6 +5506,10 @@ class UpdateVcsWatchTaskTest(TestCase):
                 }
             }
         )
+
+    def update_http_response(self):
+        self.set_http_get_response(json_data=self.vcswatch_data,
+                                   compress_with='gzip')
 
     def run_task(self):
         task = UpdateVcsWatchTask()
@@ -5549,6 +5533,7 @@ class UpdateVcsWatchTaskTest(TestCase):
         Tests that the task doesn't fail with an unknown package.
         """
         self.vcswatch_data[0]['package'] = 'unknown'
+        self.update_http_response()
 
         self.run_task()
 
@@ -5607,6 +5592,7 @@ class UpdateVcsWatchTaskTest(TestCase):
         # Now it should be good.
         initial_data = self.vcswatch_data
         self.vcswatch_data = []
+        self.update_http_response()
 
         self.run_task()
 
@@ -5617,6 +5603,8 @@ class UpdateVcsWatchTaskTest(TestCase):
         # This part will test another part of the code.
         self.vcswatch_data = initial_data
         self.vcswatch_data[0]['changelog_version'] = "0.12.1-3"
+        self.update_http_response()
+
         self.run_task()
 
         dummy_pi = self.dummy_package.data.get(key='vcs_extra_links').value
@@ -5637,6 +5625,8 @@ class UpdateVcsWatchTaskTest(TestCase):
         self.run_task()
 
         self.vcswatch_data = []
+        self.update_http_response()
+
         self.run_task()
 
         with self.assertRaises(PackageData.DoesNotExist):
@@ -5651,8 +5641,9 @@ class UpdateVcsWatchTaskTest(TestCase):
         self.assertEqual(self.dummy_package.action_items.count(), 1)
 
         self.vcswatch_data[0]['status'] = 'OK'
-        self.run_task()
+        self.update_http_response()
 
+        self.run_task()
         self.assertEqual(self.dummy_package.action_items.count(), 0)
 
     def test_action_item_is_updated_when_extra_data_changes(self):
@@ -5665,6 +5656,8 @@ class UpdateVcsWatchTaskTest(TestCase):
         self.assertEqual(ai.extra_data['commits'], 46)
 
         self.vcswatch_data[0]['commits'] += 1
+        self.update_http_response()
+
         self.run_task()
 
         ai = self.dummy_package.action_items.first()
@@ -5678,6 +5671,7 @@ class UpdateVcsWatchTaskTest(TestCase):
         self.run_task()
 
         self.vcswatch_data = []
+        self.update_http_response()
         self.run_task()
 
         info = self.dummy_package.data.get(key='general')
