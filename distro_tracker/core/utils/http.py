@@ -95,6 +95,23 @@ class HttpCache(object):
         # If there is no cache freshness date consider the item expired
         return True
 
+    def get_content_stream(self, url, compression="auto", text=False):
+        """
+        Returns a file-like object that reads the cached copy of the given URL.
+
+        If the file is compressed, the file-like object will read the
+        decompressed stream.
+        """
+        if url in self:
+            if compression == "auto":
+                compression = guess_compression_method(url)
+
+            # XXX: we leak temp_file... cf skipped test in test suite
+            # of get_uncompressed_stream
+            temp_file = open(self._content_cache_file_path(url), 'rb')
+            return get_uncompressed_stream(temp_file, compression=compression,
+                                           text=text)
+
     def get_content(self, url, compression="auto"):
         """
         Returns the content of the cached response for the given URL.
@@ -111,12 +128,8 @@ class HttpCache(object):
 
         """
         if url in self:
-            if compression == "auto":
-                compression = guess_compression_method(url)
-
-            with open(self._content_cache_file_path(url), 'rb') as temp_file:
-                with get_uncompressed_stream(temp_file, compression) as f:
-                    return f.read()
+            with self.get_content_stream(url, compression=compression) as f:
+                return f.read()
 
     def get_headers(self, url):
         """

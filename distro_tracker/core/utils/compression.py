@@ -10,6 +10,7 @@
 """
 Utilities for handling compression
 """
+import io
 
 
 def guess_compression_method(filepath):
@@ -30,7 +31,8 @@ def guess_compression_method(filepath):
     return None
 
 
-def get_uncompressed_stream(input_stream, compression="auto"):
+def get_uncompressed_stream(input_stream, compression="auto",
+                            text=False, encoding='utf-8'):
     """
     Returns a file-like object (aka stream) providing an uncompressed
     version of the content read on the input stream provided.
@@ -40,6 +42,10 @@ def get_uncompressed_stream(input_stream, compression="auto"):
         guess it out of the associated filename (the input_stream needs to have
         a name attribute, otherwise a ValueError is raised).
     :type compression: str
+    :param text: If True, open the stream as a text stream.
+    :type text: boolean
+    :param encoding: Encoding to use to decode the text.
+    :type encoding: str
     """
 
     if compression == "auto":  # Try to guess compression method if possible
@@ -48,17 +54,25 @@ def get_uncompressed_stream(input_stream, compression="auto"):
         else:
             raise ValueError("Can't retrieve a name out of %r" % input_stream)
 
+    if text:
+        kwargs = {'mode': 'rt', 'encoding': encoding}
+    else:
+        kwargs = {'mode': 'rb'}
+
     if compression == "gzip":
         import gzip
-        return gzip.open(filename=input_stream, mode="rb")
+        return gzip.open(filename=input_stream, **kwargs)
     elif compression == "bzip2":
         import bz2
-        return bz2.open(filename=input_stream, mode="rb")
+        return bz2.open(filename=input_stream, **kwargs)
     elif compression == "xz":
         import lzma
-        return lzma.open(filename=input_stream, mode="rb")
+        return lzma.open(filename=input_stream, **kwargs)
     elif compression is None:
-        return input_stream
+        if text:
+            return io.TextIOWrapper(input_stream, encoding=encoding)
+        else:
+            return input_stream
     else:
         raise NotImplementedError(
             "Unknown compression method: %r" % compression)

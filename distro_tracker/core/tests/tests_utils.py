@@ -23,7 +23,7 @@ from email.header import Header
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from functools import partial
-from unittest import mock
+from unittest import mock, skip
 
 from debian import deb822
 
@@ -764,6 +764,26 @@ class HttpCacheTest(SimpleTestCase):
         for key, value in headers.items():
             self.assertIn(key, cached_headers)
             self.assertEqual(value, cached_headers[key])
+
+    def test_get_content_stream(self):
+        url = 'http://example.com'
+        self.mock_http_request(text='Some content')
+        self.cache.update(url)
+
+        stream = self.cache.get_content_stream(url)
+        data = stream.read()
+
+        self.assertEqual(data, b'Some content')
+
+    def test_get_content_stream_as_text(self):
+        url = 'http://example.com'
+        self.mock_http_request(text='Some content')
+        self.cache.update(url)
+
+        stream = self.cache.get_content_stream(url, text=True)
+        data = stream.readline()
+
+        self.assertEqual(data, 'Some content')
 
     def test_cache_not_expired(self):
         """
@@ -1797,44 +1817,56 @@ class CompressionTests(TestCase):
         os.write(_handler, b"Hello world!")
         os.close(_handler)
 
+        self.sample_files = [
+            ('gzip', self.temporary_gzip_file),
+            ('bzip2', self.temporary_bzip2_file),
+            ('xz', self.temporary_xz_file),
+            (None, self.temporary_plain_file),
+        ]
+
     def tearDown(self):
         os.unlink(self.temporary_bzip2_file)
         os.unlink(self.temporary_gzip_file)
         os.unlink(self.temporary_xz_file)
         os.unlink(self.temporary_plain_file)
 
-    def get_uncompressed_text(self, file_path, compression):
+    def get_uncompressed_content(self, file_path, compression):
         """Calls to the uncompress function and does the redundant jobs for
         each subtest"""
 
         with open(file_path, 'rb') as compressed_stream:
             with get_uncompressed_stream(compressed_stream,
                                          compression) as handler:
-                return handler.read().decode('ascii')
+                return handler.read()
 
-    def test_bzip2_file(self):
-        """Tests the decompression of a bzip2 file"""
-        output = self.get_uncompressed_text(
-            self.temporary_bzip2_file, compression="bzip2")
-        self.assertEqual(output, "Hello world!")
+    def test_uncompress_file(self):
+        """Tests the decompression with all compression methods"""
+        for compression, path in self.sample_files:
+            with self.subTest(compression=compression):
+                output = self.get_uncompressed_content(path, compression)
+                self.assertEqual(output, b"Hello world!")
 
-    def test_gzip_file(self):
-        """Tests the decompression of a gzip file"""
-        output = self.get_uncompressed_text(
-            self.temporary_gzip_file, compression="gzip")
-        self.assertEqual(output, "Hello world!")
+    def test_uncompress_file_as_text_stream(self):
+        """Tests the decompression with all compression methods"""
+        for compression, path in self.sample_files:
+            with self.subTest(compression=compression):
+                with open(path, 'rb') as compressed_stream:
+                    with get_uncompressed_stream(compressed_stream,
+                                                 text=True) as f:
+                        line = f.readline()
+                        self.assertEqual(line, 'Hello world!')
 
-    def test_xz_file(self):
-        """Tests the decompression of a lzma-xz file"""
-        output = self.get_uncompressed_text(
-            self.temporary_xz_file, compression="xz")
-        self.assertEqual(output, "Hello world!")
-
-    def test_no_compression_file(self):
-        """Tests if a non-compressed file is correctly handled."""
-        output = self.get_uncompressed_text(
-            self.temporary_plain_file, compression=None)
-        self.assertEqual(output, "Hello world!")
+    @skip('Known to fail, would be nice to fix')
+    def test_uncompress_closes_intermediary_file_object(self):
+        for compression, path in self.sample_files:
+            with self.subTest(compression=compression):
+                for text in (True, False):
+                    with self.subTest(text=text):
+                        compressed_stream = open(path, 'rb')
+                        with get_uncompressed_stream(compressed_stream,
+                                                     text=text) as f:
+                            f.readline()
+                        self.assertTrue(compressed_stream.closed)
 
     def test_uncompress_with_unnamed_file(self):
         """Ensure we can deal with file objects that have no name attribute"""
