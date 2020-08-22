@@ -744,12 +744,11 @@ class HttpCacheTest(SimpleTestCase):
             'Content-Type': 'text/plain',
         }
         self.mock_http_request(text='Some content', headers=headers)
-        cache = HttpCache(self.cache_directory)
         url = 'http://example.com'
         # The URL cannot be found in the cache at this point
-        self.assertFalse(url in cache)
+        self.assertFalse(url in self.cache)
 
-        response, updated = cache.update(url)
+        response, updated = self.cache.update(url)
 
         # The returned response is correct
         self.assertEqual(b'Some content', response.content)
@@ -757,11 +756,11 @@ class HttpCacheTest(SimpleTestCase):
         # The return value indicates the cache has been updated
         self.assertTrue(updated)
         # The URL is now found in the cache
-        self.assertTrue(url in cache)
+        self.assertTrue(url in self.cache)
         # The content is accessible through the cache
-        self.assertEqual(b'Some content', cache.get_content(url))
+        self.assertEqual(b'Some content', self.cache.get_content(url))
         # The returned headers are accessible through the cache
-        cached_headers = cache.get_headers(url)
+        cached_headers = self.cache.get_headers(url)
         for key, value in headers.items():
             self.assertIn(key, cached_headers)
             self.assertEqual(value, cached_headers[key])
@@ -774,13 +773,12 @@ class HttpCacheTest(SimpleTestCase):
         self.mock_http_request(headers={
             'Cache-Control': 'must-revalidate, max-age=3600',
         })
-        cache = HttpCache(self.cache_directory)
         url = 'http://example.com'
 
-        cache.update(url)
+        self.cache.update(url)
 
-        self.assertTrue(url in cache)
-        self.assertFalse(cache.is_expired(url))
+        self.assertTrue(url in self.cache)
+        self.assertFalse(self.cache.is_expired(url))
 
     def test_cache_expired(self):
         """
@@ -790,13 +788,12 @@ class HttpCacheTest(SimpleTestCase):
         self.mock_http_request(headers={
             'Cache-Control': 'must-revalidate, max-age=0',
         })
-        cache = HttpCache(self.cache_directory)
         url = 'http://example.com'
 
-        cache.update(url)
+        self.cache.update(url)
 
-        self.assertTrue(url in cache)
-        self.assertTrue(cache.is_expired(url))
+        self.assertTrue(url in self.cache)
+        self.assertTrue(self.cache.is_expired(url))
 
     def test_cache_conditional_get_last_modified(self):
         """
@@ -804,16 +801,13 @@ class HttpCacheTest(SimpleTestCase):
         update the response for a URL with a Last-Modified header.
         """
         last_modified = http_date(time.time())
-        self.mock_http_request(headers={
-            'Last-Modified': last_modified
-        })
-        cache = HttpCache(self.cache_directory)
+        self.mock_http_request(headers={'Last-Modified': last_modified})
         url = 'http://example.com'
-        cache.update(url)
+        self.cache.update(url)
 
         self.set_http_get_response(text='', status_code=304)
         # Run the update again
-        response, updated = cache.update(url)
+        response, updated = self.cache.update(url)
 
         self.assertFalse(updated)
         self._mocked_requests.get.assert_called_with(
@@ -829,12 +823,9 @@ class HttpCacheTest(SimpleTestCase):
         since expired.
         """
         last_modified = http_date(time.time() - 3600)
-        self.mock_http_request(headers={
-            'Last-Modified': last_modified
-        })
-        cache = HttpCache(self.cache_directory)
+        self.mock_http_request(headers={'Last-Modified': last_modified})
         url = 'http://example.com'
-        cache.update(url)
+        self.cache.update(url)
         # Set a new Last-Modified and content value
         new_last_modified = http_date(time.time())
         self.mock_http_request(text='Response', headers={
@@ -842,16 +833,16 @@ class HttpCacheTest(SimpleTestCase):
         })
 
         # Run the update again
-        response, updated = cache.update(url)
+        response, updated = self.cache.update(url)
 
         self.assertTrue(updated)
         self.assertEqual(200, response.status_code)
         # The new content is found in the cache
-        self.assertEqual(b'Response', cache.get_content(url))
+        self.assertEqual(b'Response', self.cache.get_content(url))
         # The new Last-Modified is found in the headers cache
         self.assertEqual(
             new_last_modified,
-            cache.get_headers(url)['Last-Modified']
+            self.cache.get_headers(url)['Last-Modified']
         )
 
     def test_cache_expires_header(self):
@@ -860,15 +851,12 @@ class HttpCacheTest(SimpleTestCase):
         on its Expires header.
         """
         expires = http_date(time.time() + 3600)
-        self.mock_http_request(headers={
-            'Expires': expires
-        })
-        cache = HttpCache(self.cache_directory)
+        self.mock_http_request(headers={'Expires': expires})
         url = 'http://example.com'
 
-        cache.update(url)
+        self.cache.update(url)
 
-        self.assertFalse(cache.is_expired(url))
+        self.assertFalse(self.cache.is_expired(url))
 
     def test_cache_expires_header_expired(self):
         """
@@ -876,14 +864,11 @@ class HttpCacheTest(SimpleTestCase):
         on its Expires header.
         """
         expires = http_date(time.time() - 3600)
-        self.mock_http_request(headers={
-            'Expires': expires
-        })
-        cache = HttpCache(self.cache_directory)
+        self.mock_http_request(headers={'Expires': expires})
         url = 'http://example.com'
-        cache.update(url)
+        self.cache.update(url)
 
-        self.assertTrue(cache.is_expired(url))
+        self.assertTrue(self.cache.is_expired(url))
 
     #
     # Proper tests - Caching behaviour
@@ -893,15 +878,14 @@ class HttpCacheTest(SimpleTestCase):
         Tests removing a cached response.
         """
         self.mock_http_request(text='Some content')
-        cache = HttpCache(self.cache_directory)
         url = 'http://example.com'
-        cache.update(url)
+        self.cache.update(url)
         # Sanity check - the url is cached
-        self.assertTrue(url in cache)
+        self.assertTrue(url in self.cache)
 
-        cache.remove(url)
+        self.cache.remove(url)
 
-        self.assertFalse(url in cache)
+        self.assertFalse(url in self.cache)
 
     #
     # Proper tests - ETags
@@ -912,16 +896,13 @@ class HttpCacheTest(SimpleTestCase):
         update the response for a URL with an ETag header
         """
         etag = '"466010a-11bf9-4e17efa8afb81"'
-        self.mock_http_request(headers={
-            'ETag': etag,
-        })
-        cache = HttpCache(self.cache_directory)
+        self.mock_http_request(headers={'ETag': etag})
         url = 'http://example.com'
-        cache.update(url)
+        self.cache.update(url)
 
         self.mock_http_request(status_code=304)
         # Run the update again
-        response, updated = cache.update(url)
+        response, updated = self.cache.update(url)
 
         self.assertFalse(updated)
         self._mocked_requests.get.assert_called_with(
@@ -937,30 +918,22 @@ class HttpCacheTest(SimpleTestCase):
         expired.
         """
         etag = '"466010a-11bf9-4e17efa8afb81"'
-        self.mock_http_request(headers={
-            'ETag': etag,
-        })
-        cache = HttpCache(self.cache_directory)
+        self.mock_http_request(headers={'ETag': etag})
         url = 'http://example.com'
-        cache.update(url)
+        self.cache.update(url)
         # Set a new ETag and content value
         new_etag = '"57ngfhty11bf9-9t831116kn1qw1'
-        self.mock_http_request(text='Response', headers={
-            'ETag': new_etag
-        })
+        self.mock_http_request(text='Response', headers={'ETag': new_etag})
 
         # Run the update again
-        response, updated = cache.update(url)
+        response, updated = self.cache.update(url)
 
         self.assertTrue(updated)
         self.assertEqual(200, response.status_code)
         # The new content is found in the cache
-        self.assertEqual(b'Response', cache.get_content(url))
+        self.assertEqual(b'Response', self.cache.get_content(url))
         # The new Last-Modified is found in the headers cache
-        self.assertEqual(
-            new_etag,
-            cache.get_headers(url)['ETag']
-        )
+        self.assertEqual(new_etag, self.cache.get_headers(url)['ETag'])
 
     def test_conditional_force_unconditional_get(self):
         """
@@ -968,15 +941,12 @@ class HttpCacheTest(SimpleTestCase):
         GET when updating a cached resource.
         """
         last_modified = http_date(time.time())
-        self.mock_http_request(headers={
-            'Last-Modified': last_modified
-        })
-        cache = HttpCache(self.cache_directory)
+        self.mock_http_request(headers={'Last-Modified': last_modified})
         url = 'http://example.com'
-        cache.update(url)
+        self.cache.update(url)
 
         # Run the update again
-        response, updated = cache.update(url, force=True)
+        response, updated = self.cache.update(url, force=True)
 
         # Make sure that we ask for a non-cached version
         self._mocked_requests.get.assert_called_with(
@@ -997,10 +967,9 @@ class HttpCacheTest(SimpleTestCase):
                     b"\xcd\xc9\xc9W(\xcf/\xcaIQ\x04\x00\x95\x19\x85\x1b\x0c\x00"
                     b"\x00\x00"
         )
-        cache = HttpCache(self.cache_directory)
         url = "http://example.com/foo.gz"
-        cache.update(url)
-        content = cache.get_content(url)
+        self.cache.update(url)
+        content = self.cache.get_content(url)
         self.assertEqual(content, b"Hello world!")
 
     def test_get_content_with_compression_parameter(self):
@@ -1009,10 +978,9 @@ class HttpCacheTest(SimpleTestCase):
         is used and overrides whatever can be detected in the URL.
         """
         self.mock_http_request(text="Hello world!")
-        cache = HttpCache(self.cache_directory)
         url = "http://example.com/foo.gz"
-        cache.update(url)
-        content = cache.get_content(url, compression=None)
+        self.cache.update(url)
+        content = self.cache.get_content(url, compression=None)
         self.assertEqual(content, b"Hello world!")
 
     def test_get_resource_content_ignore_network_failures(self):
