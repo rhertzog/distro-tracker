@@ -15,6 +15,7 @@
 import copy
 import gzip
 import json
+import lzma
 import os.path
 from unittest import mock
 
@@ -188,6 +189,15 @@ class TestCaseHelpersTests(object):
         response = self._call_requests_get()
         json_text = gzip.decompress(response.content).decode('utf-8')
         self.assertEqual(json.loads(json_text), data)
+
+    def test_set_http_get_response_compressed_text_with_xz(self):
+        self.mock_http_request()
+        text = 'Hello world!'
+        self.set_http_get_response(text=text, compress_with='xz')
+
+        response = self._call_requests_get()
+        self.assertEqual(lzma.decompress(response.content),
+                         bytes(text, 'utf-8'))
 
     def test_set_http_get_response_compress_with_invalid_method(self):
         self.mock_http_request()

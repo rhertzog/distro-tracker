@@ -18,6 +18,7 @@ import codecs
 import gzip
 import inspect
 import json
+import lzma
 import os
 import os.path
 import shutil
@@ -195,6 +196,8 @@ class TestCaseHelpersMixin(object):
         def compress(data):
             if compress_with == 'gzip':
                 return gzip.compress(data)
+            elif compress_with == 'xz':
+                return lzma.compress(data)
             else:
                 raise NotImplementedError(
                     'set_http_get_response does not support {} as '
