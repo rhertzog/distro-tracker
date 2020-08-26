@@ -25,10 +25,10 @@ if ! dpkg-query -W $packages >/dev/null; then
     sudo apt install $packages
 fi
 version=$(dpkg-query -W -f'${Version}' python3-django)
-if dpkg --compare-versions $version lt 1:1.11; then
-    echo "WARNING: you need python3-django >= 1:1.11"
-    echo "Trying to install it from stretch-backports"
-    sudo apt install python3-django/stretch-backports
+if dpkg --compare-versions $version lt 2:2.2; then
+    echo "WARNING: you need python3-django >= 2:2.2"
+    echo "Trying to install it from buster-backports"
+    sudo apt install python3-django/buster-backports
 fi
 
 echo ">>> Installing a configuration file"
@@ -38,10 +38,14 @@ echo ">>> Downloading a pre-built sample database file"
 # Note: when https://gitlab.com/gitlab-org/gitlab-ce/issues/45697 will be
 # fixed, we should be able to use 
 # https://salsa.debian.org/qa/distro-tracker/-/jobs/artifacts/master/raw/data/distro-tracker.sqlite?job=sample-database
-url=$(bin/sample-database-url)
-if [ -n "$url" ]; then
-    wget "$url" -O data/distro-tracker.sqlite
-else
-    echo "ERROR: unable to find sample database url (bin/sample-database-url returned nothing)"
-    exit 1
-fi
+#url=$(bin/sample-database-url)
+#if [ -n "$url" ]; then
+#    wget "$url" -O data/distro-tracker.sqlite
+#else
+#    echo "ERROR: unable to find sample database url (bin/sample-database-url returned nothing)"
+#    exit 1
+#fi
+echo "WARNING: there's currently no pre-built database to download, generating a new one, it might take a long time..."
+./manage.py migrate
+./manage.py loaddata distro_tracker/core/fixtures/sample-database-repositories.xml
+./manage.py tracker_update_repositories

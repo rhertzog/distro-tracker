@@ -73,7 +73,7 @@ Usual workflow
   4. For a quick startup, run this command::
 
        $ bin/quick-setup.sh
-       
+
      It will install required packages with apt, put a sample
      configuration file in place and download a pre-built database file to
      save you some setup time.
@@ -81,6 +81,12 @@ Usual workflow
      If you have more time and want to learn more about the configuration
      of distro tracker, follow the steps in the sections :ref:`setting-up`
      and :ref:`repositories`.
+
+     .. warning::
+        Due to limitations of salsa.debian.org not allowing CI jobs taking
+        longer than 3h, the pre-built database is no longer being
+        generated. The script has thus been modified to run the commands
+        to initialize the database and it will take a long time to run.
 
   5. Start a local test server::
 
