@@ -6,10 +6,11 @@ import re
 
 from distutils.core import setup
 
+
 def find_package_data(basedir):
     pkgdata = {}
     pkgdir = {}
-    EXCLUDE_FROM_DATA=('.py', '.pyc', '.pyo')
+    EXCLUDE_FROM_DATA = ('.py', '.pyc', '.pyo')
     for directory, _, files in os.walk(basedir):
         package = '.'.join(directory.split(os.sep))
         if '__init__.py' in files:
@@ -44,9 +45,9 @@ setup(name='DistroTracker',
       author_email='debian-qa@lists.debian.org',
       url='https://wiki.debian.org/qa.debian.org/distro-tracker',
       packages=[
-        '.'.join(directory.split(os.sep))
-        for directory, _, files in os.walk('distro_tracker')
-        if '__init__.py' in files
+          '.'.join(directory.split(os.sep))
+          for directory, _, files in os.walk('distro_tracker')
+          if '__init__.py' in files
       ],
       package_data=find_package_data('distro_tracker'),
       classifiers=[
@@ -61,7 +62,7 @@ setup(name='DistroTracker',
           "Framework :: Django",
           "Topic :: Software Development",
       ],
-     )
+      )
 setup(name='DjangoEmailAccounts',
       version=version,
       description='User registration app for Django',
@@ -69,9 +70,9 @@ setup(name='DjangoEmailAccounts',
       author_email='debian-qa@lists.debian.org',
       url='https://wiki.debian.org/qa.debian.org/distro-tracker',
       packages=[
-        '.'.join(directory.split(os.sep))
-        for directory, _, files in os.walk('django_email_accounts')
-        if '__init__.py' in files
+          '.'.join(directory.split(os.sep))
+          for directory, _, files in os.walk('django_email_accounts')
+          if '__init__.py' in files
       ],
       package_data=find_package_data('django_email_accounts'),
       classifiers=[
@@ -85,4 +86,4 @@ setup(name='DjangoEmailAccounts',
           "Programming Language :: Python :: 3",
           "Framework :: Django",
       ],
-     )
+      )
