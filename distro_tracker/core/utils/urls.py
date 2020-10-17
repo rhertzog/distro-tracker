@@ -13,6 +13,7 @@ Utilities for generating URLs of various kinds
 
 from django.utils.http import urlencode
 
+
 def RepologyUrl(target_page, repo, package):
     query = urlencode({
         'name_type': 'srcname',
@@ -23,8 +24,10 @@ def RepologyUrl(target_page, repo, package):
     })
     return 'https://repology.org/tools/project-by?' + query
 
+
 def RepologyVersionsUrl(repo, package):
     return RepologyUrl('project_versions', repo, package)
+
 
 def RepologyPackagesUrl(repo, package):
     return RepologyUrl('project_packages', repo, package)
