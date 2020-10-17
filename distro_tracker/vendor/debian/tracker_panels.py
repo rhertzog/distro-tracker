@@ -29,6 +29,7 @@ from distro_tracker.core.panels import (
     TemplatePanelItem
 )
 from distro_tracker.core.utils import get_or_none
+from distro_tracker.core.utils.urls import RepologyPackagesUrl
 from distro_tracker.vendor.debian.models import (
     BuildLogCheckStats,
     LintianStats,
@@ -231,6 +232,44 @@ class DebtagsLink(LinksPanel.ItemProvider):
                 self.SOURCES_URL_TEMPLATE.format(
                     package=urlquote(self.package.name, safe=""),
                     maint=urlquote(maintainer, safe=""))
+            )
+        ]
+
+
+class RepologyLink(LinksPanel.ItemProvider):
+    """
+    Add a link to the Repology service.
+    """
+    ALLOWED_REPOSITORIES = (
+        'unstable',
+        'experimental',
+        'testing',
+        'stable-backports',
+        'stable',
+        'oldstable',
+    )
+
+    def get_panel_items(self):
+        if not isinstance(self.package, SourcePackageName):
+            # Only source packages can have these links
+            return
+
+        suite = None
+        repos = [repo.suite for repo in self.package.repositories]
+        for repo in self.ALLOWED_REPOSITORIES:
+            if repo in repos:
+                suite = repo.replace('-', '_')
+                break
+        if suite is None:
+            return
+        return [
+            LinksPanel.SimpleLinkItem(
+                'other distros',
+                RepologyPackagesUrl(
+                    'debian_{suite}'.format(suite=suite),
+                    self.package.name
+                ),
+                'provided by Repology'
             )
         ]
 

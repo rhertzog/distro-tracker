@@ -3404,6 +3404,36 @@ class DebtagsLinkTest(TestCase):
         self.assertNotIn('edit tags', response_content)
 
 
+class RepologyLinkTest(TestCase):
+
+    """
+    Tests that the Repology link is added to source package pages.
+    """
+    def get_package_page_response(self, package_name):
+        return self.client.get(package_url(package_name))
+
+    def test_source_package(self):
+        package_name = SourcePackageName.objects.create(name='dummy')
+        package = SourcePackage.objects.create(
+            source_package_name=package_name,
+            version='1.0.0')
+        repository = Repository.objects.create(suite='unstable')
+        repository.add_source_package(package)
+
+        response = self.get_package_page_response(package.name)
+
+        response_content = response.content.decode('utf8')
+        self.assertIn('other distros', response_content)
+
+    def test_pseudo_package(self):
+        package = PseudoPackageName.objects.create(name='somepackage')
+
+        response = self.get_package_page_response(package.name)
+
+        response_content = response.content.decode('utf-8')
+        self.assertNotIn('other distros', response_content)
+
+
 class ScreenshotsLinkTest(TestCase):
     """
     Tests that the screenshots link is added to source package pages.
