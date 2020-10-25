@@ -113,7 +113,7 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
     Tests Debian-specific keyword classification.
     """
 
-    GIT_HEADERS = ('X-Git-Repo', 'X-GitLab-Project')
+    GIT_HEADERS = ('X-Git-Repo', 'X-GitLab-Project-Path')
 
     def setUp(self):
         self.clear_message()
