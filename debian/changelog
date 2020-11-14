@@ -1,3 +1,84 @@
+distro-tracker (1.1.3) unstable; urgency=medium
+
+  [ Raphaël Hertzog ]
+  * Don't create a duplicate UserEmail on user registration
+  * Switch to BigAutoField to avoid triggering limits
+  * Fix an error case when a user has UserEmail without EmailSettings
+  * Fix handling of excuses links pointing to a binary-only migration item
+  * Improve wording of l10n action item
+  * Reduce severity of l10n action item to low
+  * Simplify code parsing "Changed-by"
+  * models: more cleanups in the EmailNews model
+  * debian: better handle 'dak rm' mails (Closes: #962000)
+  * mail: update tracker_receive_news to rely on classify_message
+  * mail: get rid of unused mail_news.process()
+  * Fix flake8 warnings
+  * More flake8 fixes
+  * debian: duck.debian.net is gone, drop associated task
+  * debian: don't import unused package_hashdir (flake8 fix)
+  * debian: don't fail on dak mails reporting binary-only removals
+  * Drop outdated task documentation
+  * debian: properly classify autoremovals mails
+  * core: add code to cleanup duplicate news entries
+  * Bump Django's minimal version to 2.2
+  * Fix SpaceDelimitedTextField to be compatible with Django 3.0
+  * Fix many templates to be compatible with Django 3.0
+  * tox: tweak the list of python versions
+  * Import reverse() from django.urls for compatibility with Django 2.2
+  * Get rid of django.utils.functional.curry for compatibility with Django 3.0
+  * Work around two failures in functional tests
+  * Drop badge for landscape.io which no longer exists
+  * core: change default structure of the HttpCache
+  * test: add new get_temporary_directory() helper method
+  * Replace make_temp_directory() with new test case helper
+  * test: new framework to mock HTTP requests
+  * Convert all uses of set_mock_response() to the new test framework
+  * test: support mocking HTTP responses with compressed content
+  * debian: factorize logic to define the LowThresholdNMU wiki page
+  * debian: avoid usage of JSON encoded strings in tests
+  * core: simplify some tests by using the pre-created HttpCache object
+  * core: improve HttpCache to return a file object to get the content
+  * test: support xz compression of content of HTTP responses
+  * Fix quick-setup script to work around the lack of pre-built database
+  * Use X-GitLab-Project-Path instead of X-GitLab-Project
+
+  [ Louis-Philippe Véronneau ]
+  * use HTTPS links when possible
+
+  [ Aurélien COUDERC ]
+  * Improve the "VCS not up to date" message
+
+  [ Pino Toscano ]
+  * Do not hardcode .panel-heading font size
+  * appstream: fix sorting of hints by severity
+  * appstream: properly reset normal action item severity
+  * debian: add a dl10n update task
+  * debian: add a dl10n side link
+
+  [ Matthias Klumpp ]
+  * appstream: Update hint definition URL
+
+  [ Aniol Marti ]
+  * news: retrieve author identity from "Changed-By" in DAK messages
+    (Closes: #950327)
+
+  [ Felix Lechner ]
+  * Adjust to new package URLs for lintian.d.o.
+
+  [ John Scott ]
+  * Add license metadata to JavaScript files
+
+  [ Salman Mohammadi ]
+  * tox.ini: add manage.py and setup.py to the style guide checker
+  * manage.py: Fix flake8 warning by breaking lines longer than 80
+  * setup.py: fix various flake8 warnings about code styling
+
+  [ Paul Wise ]
+  * Add an other distros link to the Repology service
+  * Fix flake8 warnings
+
+ -- Raphaël Hertzog <raphael@offensive-security.com>  Sat, 14 Nov 2020 10:27:28 +0100
+
 distro-tracker (1.1.2) unstable; urgency=medium
 
   [ Raphaël Hertzog ]
