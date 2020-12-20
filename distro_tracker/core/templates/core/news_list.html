@@ -11,7 +11,7 @@
         {% spaceless %}
             <span>(signed by: </span>
             {% for signer in signers %}
-            <span class="news-signer">{{ signer.name }}</span>
+            <span class="news-signer">{{ signer.name|default:signer.email }}</span>
             {% if not forloop.last %}<span>, </span>{% endif %}
             {% endfor %}
             <span>)</span>
