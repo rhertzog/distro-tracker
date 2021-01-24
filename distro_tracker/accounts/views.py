@@ -59,7 +59,7 @@ class RegisterUser(ConfirmationRenderMixin, email_accounts_views.RegisterUser):
 
     confirmation_email_subject = '{name} Registration Confirmation'.format(
         name=settings.GET_INSTANCE_NAME())
-    confirmation_email_from_address = settings.DISTRO_TRACKER_CONTACT_EMAIL
+    confirmation_email_from_address = settings.DISTRO_TRACKER_NOREPLY_EMAIL
 
 
 class RegistrationConfirmation(email_accounts_views.RegistrationConfirmation):

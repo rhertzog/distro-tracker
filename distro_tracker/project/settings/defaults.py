@@ -434,6 +434,8 @@ _COMPUTE_DEFAULT_SETTINGS = (
      lambda t: 'control@' + t['DISTRO_TRACKER_FQDN']),
     ('DISTRO_TRACKER_CONTACT_EMAIL',
      lambda t: 'owner@' + t['DISTRO_TRACKER_FQDN']),
+    ('DISTRO_TRACKER_NOREPLY_EMAIL',
+     lambda t: 'noreply@' + t['DISTRO_TRACKER_FQDN']),
     ('DISTRO_TRACKER_BOUNCES_EMAIL',
      lambda t: 'bounces@' + t['DISTRO_TRACKER_FQDN']),
     ('DISTRO_TRACKER_BOUNCES_LIKELY_SPAM_EMAIL',
