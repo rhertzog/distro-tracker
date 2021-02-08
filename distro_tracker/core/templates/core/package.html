@@ -1,7 +1,7 @@
 {% extends "core/base.html" %}
 {% load static %}
 
-{% block title %}{{ block.super }} - {{ package }}{% endblock %}
+{% block title %}{{ package}} - {{ block.super }}{% endblock %}
 
 {% block extra-css %}
 <link href="{% static 'css/dense.css' %}" rel="stylesheet" media="screen">
