@@ -1,0 +1,12 @@
+<ul>
+    {% for issue, issue_information in issue_list.items %}
+        <li><a href="{{ security_tracker_url }}/{{ issue }}">{{ issue }}</a>:
+            {% if issue_information.needs_triaging %}
+                <i>(needs triaging)</i>
+            {% elif issue_information.fixed_via_stable_update %}
+                <i>(postponed; to be fixed through a stable update)</i>
+            {% endif %}
+            {{ issue_information.description|default:issue_information }}
+        </li>
+    {% endfor %}
+</ul>

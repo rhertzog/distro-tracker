@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2013-2018 The Distro Tracker Developers
+# Copyright 2013-2019, 2021 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -22,7 +22,6 @@ from functools import partial
 from unittest import mock
 
 from bs4 import BeautifulSoup as soup
-
 from django.core import mail
 from django.core.management import call_command
 from django.test.utils import override_settings
@@ -54,10 +53,10 @@ from distro_tracker.core.utils.email_messages import message_from_bytes
 from distro_tracker.core.utils.packages import package_url
 from distro_tracker.mail.tests.tests_dispatch import DispatchTestHelperMixin
 from distro_tracker.test import SimpleTestCase, TestCase
-from distro_tracker.vendor.debian.management.commands.\
+from distro_tracker.vendor.debian.management.commands. \
     tracker_import_old_subscriber_dump \
     import Command as ImportOldSubscribersCommand
-from distro_tracker.vendor.debian.management.commands.\
+from distro_tracker.vendor.debian.management.commands. \
     tracker_import_old_tags_dump \
     import Command as ImportOldTagsCommand
 from distro_tracker.vendor.debian.models import (
@@ -3025,6 +3024,31 @@ class UpdateSecurityIssuesTaskTests(TestCase):
         self.assertEqual(stats['jessie']['unimportant'], 0)
         self.assertEqual(stats['sid']['unimportant'], 0)
 
+    def test_get_issues_summary_next_point_update(self):
+        data = self.load_test_json('next_point_update')['dummy-package']
+        stats = self.task.get_issues_summary(data)
+        self.assertEqual(stats['jessie']['open'], 0)
+        self.assertEqual(stats['jessie']['unimportant'], 0)
+        self.assertEqual(stats['jessie']['nodsa'], 0)
+
+        self.assertDictEqual(
+            stats['jessie']['next_point_update_details'],
+            {
+                'CVE-2015-0233': 'Description of the minor issue CVE-2015-0233',
+            }
+        )
+
+        self.assertEqual(stats['sid']['open'], 0)
+        self.assertEqual(stats['sid']['nodsa'], 0)
+        self.assertEqual(stats['sid']['unimportant'], 0)
+
+        self.assertDictEqual(
+            stats['sid']['next_point_update_details'],
+            {
+                'CVE-2015-0233': 'Description of the minor issue CVE-2015-0233',
+            }
+        )
+
     def test_get_issues_summary_with_open(self):
         data = self.load_test_json('open')['dummy-package']
         stats = self.task.get_issues_summary(data)
@@ -3049,9 +3073,13 @@ class UpdateSecurityIssuesTaskTests(TestCase):
             }
         )
         self.assertDictEqual(
-            stats['jessie']['nodsa_details'],
+            stats['jessie']['nodsa_maintainer_to_handle_details'],
             {
-                'CVE-2015-0233': 'Description of CVE-2015-0233',
+                'CVE-2015-0233': {'description': 'Description of CVE-2015-0233',
+                                  'needs_triaging': True,
+                                  'nodsa': 'Minor issue',
+                                  'nodsa_reason': '',
+                                  }
             }
         )
 
@@ -3142,9 +3170,31 @@ class UpdateSecurityIssuesTaskTests(TestCase):
         stats = self.task.get_issues_summary(data)['jessie']
         self.task.update_action_item(stats, action_item)
         self.assertEqual(action_item.severity, ActionItem.SEVERITY_LOW)
-        self.assertIn('ignored security issue</a> in jessie',
+        self.assertIn('low-priority security issue</a> in jessie',
                       action_item.short_description)
         self.assertEqual(action_item.extra_data['security_issues_count'], 1)
+
+    def test_update_action_item_ignored_issues_only(self):
+        action_item = ActionItem(extra_data={'release': 'jessie'},
+                                 package=self.package)
+        data = self.load_test_json('nodsa-ignored')['dummy-package']
+        stats = self.task.get_issues_summary(data)['jessie']
+        self.task.update_action_item(stats, action_item)
+        # First case, only one ignored issue: it doesn't create the section
+        self.assertEqual(action_item.short_description,
+                         'No known security issue in jessie')
+        # Second case, there is an issue that the maintainer needs to handle
+        # it shows 2 issues
+        stats.update({'nodsa': 2,
+                      'nodsa_maintainer_to_handle_details':
+                          {
+                              'CVE-2020-2020': {'description': 'Test '
+                                                'description for a test CVE',
+                                                'nodsa': ''}
+                          }})
+        self.task.update_action_item(stats, action_item)
+        self.assertIn('2 low-priority security issues</a> in jessie',
+                      action_item.short_description)
 
     def test_action_item_created(self):
         """
@@ -3189,7 +3239,7 @@ class UpdateSecurityIssuesTaskTests(TestCase):
             item_type__type_name='debian-security-issue-in-jessie')
         self.assertEqual(ai.extra_data['security_issues_count'], 1)
         self.assertEqual(ai.severity, ActionItem.SEVERITY_LOW)
-        self.assertIn("1 ignored security issue", ai.short_description)
+        self.assertIn("1 low-priority security issue", ai.short_description)
 
         self.mock_json_data('open')
         self.run_task()
@@ -3211,7 +3261,6 @@ class UpdateSecurityIssuesTaskTests(TestCase):
 
 
 class CodeSearchLinksTest(TestCase):
-
     """
     Tests that the code search links are shown in the package page.
     """
