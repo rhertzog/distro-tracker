@@ -13,7 +13,7 @@
 <span>{{ nodsa_maintainer_to_handle_count }} issue{{ nodsa_maintainer_to_handle_count|pluralize }} left for the package maintainer to handle:</span>
 {% include 'debian/security-issue-list.html' with issue_list=item.extra_data.nodsa_maintainer_to_handle_details security_tracker_url=security_tracker_url only %}
 </div>
-<p>You might find information about handling {{ nodsa_maintainer_to_handle_count|pluralize:"this,these" }} issue{{ nodsa_maintainer_to_handle_count|pluralize }} in the <a href="https://security-team.debian.org/security_tracker.html#issues-not-warranting-a-security-advisory">security-team.debian.org</a>.</p>
+<p>You can find information about how to handle {{ nodsa_maintainer_to_handle_count|pluralize:"this,these" }} issue{{ nodsa_maintainer_to_handle_count|pluralize }} in the <a href="https://security-team.debian.org/security_tracker.html#issues-not-warranting-a-security-advisory">security team's documentation</a>.</p>
 {% endif %}
 
 {% if nodsa_ignored_count %}
