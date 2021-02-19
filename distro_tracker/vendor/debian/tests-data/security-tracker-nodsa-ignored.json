@@ -1,0 +1,18 @@
+{
+ "dummy-package": {
+  "CVE-2015-0233": {
+   "description": "Description of the minor issue CVE-2015-0233",
+   "releases": {
+    "jessie": {
+     "nodsa": "Minor issue",
+     "nodsa_reason": "ignored",
+     "repositories": {
+      "jessie": "1.1.35-2"
+     },
+     "status": "open",
+     "urgency": "low"
+    }
+   }
+  }
+ }
+}

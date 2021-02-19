@@ -1,4 +1,4 @@
-# Copyright 2013-2019 The Distro Tracker Developers
+# Copyright 2013-2021 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -1551,7 +1551,8 @@ class UpdateSecurityIssuesTask(BaseTask):
     ITEM_DESCRIPTION_TEMPLATE = {
         'open': '<a href="{url}">{count} security {issue}</a> in {release}',
         'nodsa':
-            '<a href="{url}">{count} ignored security {issue}</a> in {release}',
+            '<a href="{url}">{count} low-priority security {issue}</a> '
+            'in {release}',
         'none': 'No known security issue in {release}',
     }
 
@@ -1575,8 +1576,30 @@ class UpdateSecurityIssuesTask(BaseTask):
             self._content = json.loads(content)
             return self._content
 
-    @staticmethod
-    def get_issues_summary(issues):
+    @classmethod
+    def _update_stats_with_nodsa_entry(cls, stats, nodsa_entry,
+                                       entry_id, description):
+        stats['nodsa'] += 1
+
+        nodsa_details = {'description': description,
+                         'nodsa': nodsa_entry.get('nodsa', ''),
+                         'nodsa_reason': nodsa_entry.get('nodsa_reason', '')
+                         }
+
+        nodsa_reason = nodsa_details['nodsa_reason']
+        if nodsa_reason == '':
+            nodsa_details['needs_triaging'] = True
+            stats['nodsa_maintainer_to_handle_details'][entry_id] = \
+                nodsa_details
+        elif nodsa_reason == 'postponed':
+            nodsa_details['fixed_via_stable_update'] = True
+            stats['nodsa_maintainer_to_handle_details'][entry_id] = \
+                nodsa_details
+        elif nodsa_reason == 'ignored':
+            stats['nodsa_ignored_details'][entry_id] = nodsa_details
+
+    @classmethod
+    def get_issues_summary(cls, issues):
         result = {}
         for issue_id, issue_data in issues.items():
             for release, data in issue_data['releases'].items():
@@ -1584,22 +1607,30 @@ class UpdateSecurityIssuesTask(BaseTask):
                     'open': 0,
                     'open_details': {},
                     'nodsa': 0,
-                    'nodsa_details': {},
                     'unimportant': 0,
+                    'next_point_update_details': {},
+                    'nodsa_maintainer_to_handle_details': {},
+                    'nodsa_ignored_details': {},
                 })
                 if (data.get('status', '') == 'resolved' or
                         data.get('urgency', '') == 'end-of-life'):
                     continue
                 elif data.get('urgency', '') == 'unimportant':
                     stats['unimportant'] += 1
-                elif data.get('nodsa', False):
-                    stats['nodsa'] += 1
-                    stats['nodsa_details'][issue_id] = \
+                elif data.get('next_point_update', False):
+                    stats['next_point_update_details'][issue_id] = \
                         issue_data.get('description', '')
+                elif data.get('nodsa', False) is not False:
+                    cls._update_stats_with_nodsa_entry(stats,
+                                                       data, issue_id,
+                                                       issue_data.get(
+                                                           'description', '')
+                                                       )
                 else:
                     stats['open'] += 1
                     stats['open_details'][issue_id] = \
                         issue_data.get('description', '')
+
         return result
 
     @classmethod
@@ -1624,18 +1655,33 @@ class UpdateSecurityIssuesTask(BaseTask):
 
     def update_action_item(self, stats, action_item):
         """
-        Updates the ``debian-security-issue`` action item based on the count of
+        Updates the ``debian-security-issue`` action item based on the
         security issues.
         """
+
         security_issues_count = stats['open'] + stats['nodsa']
         action_item.extra_data['security_issues_count'] = security_issues_count
-        action_item.extra_data['open_details'] = stats['open_details']
-        action_item.extra_data['nodsa_details'] = stats['nodsa_details']
+
+        for base_key in ['open',
+                         'next_point_update',
+                         'nodsa_maintainer_to_handle',
+                         'nodsa_ignored']:
+            details_key = base_key + '_details'
+            count_key = base_key + '_count'
+
+            action_item.extra_data[details_key] = stats[details_key]
+            action_item.extra_data[count_key] = len(stats[details_key])
+
+        # nodsa_next_point_update / nodsa_ignored_details are displayed
+        # only if there is anything else to show
+        nodsa_create_action = (stats['nodsa'] -
+                               len(stats['nodsa_ignored_details'])) > 0
+
         if stats['open']:
             action_item.severity = ActionItem.SEVERITY_HIGH
             action_item.short_description = \
                 self._get_short_description('open', action_item)
-        elif stats['nodsa']:
+        elif nodsa_create_action:
             action_item.severity = ActionItem.SEVERITY_LOW
             action_item.short_description = \
                 self._get_short_description('nodsa', action_item)
