@@ -3,7 +3,7 @@
 {% if open_count > 0 %}
 <div>
 {{ open_count }} important issue{{ open_count|pluralize }}:
-{% include 'debian/issue-list.html' with issue_list=item.extra_data.open_details security_tracker_url=security_tracker_url only %}
+{% include 'debian/security-issue-list.html' with issue_list=item.extra_data.open_details security_tracker_url=security_tracker_url only %}
 </div>
 {% else %}
 {% endif %}
@@ -11,7 +11,7 @@
 {% if nodsa_maintainer_to_handle_count %}
 <div>
 <span>{{ nodsa_maintainer_to_handle_count }} issue{{ nodsa_maintainer_to_handle_count|pluralize }} left for the package maintainer to handle:</span>
-{% include 'debian/issue-list.html' with issue_list=item.extra_data.nodsa_maintainer_to_handle_details security_tracker_url=security_tracker_url only %}
+{% include 'debian/security-issue-list.html' with issue_list=item.extra_data.nodsa_maintainer_to_handle_details security_tracker_url=security_tracker_url only %}
 </div>
 <p>You might find information about handling {{ nodsa_maintainer_to_handle_count|pluralize:"this,these" }} issue{{ nodsa_maintainer_to_handle_count|pluralize }} in the <a href="https://security-team.debian.org/security_tracker.html#issues-not-warranting-a-security-advisory">security-team.debian.org</a>.</p>
 {% endif %}
@@ -19,14 +19,14 @@
 {% if nodsa_ignored_count %}
 <div>
 <span>{{ nodsa_ignored_count }} ignored issue{{ nodsa_ignored_count|pluralize }}:</span>
-{% include 'debian/issue-list.html' with issue_list=item.extra_data.nodsa_ignored_details security_tracker_url=security_tracker_url only %}
+{% include 'debian/security-issue-list.html' with issue_list=item.extra_data.nodsa_ignored_details security_tracker_url=security_tracker_url only %}
 </div>
 {% endif %}
 
 {% if next_point_update_count %}
 <div>
 <span>{{ next_point_update_count }} issue{{ next_point_update_count|pluralize }} that should be fixed with the next stable update:</span>
-{% include 'debian/issue-list.html' with issue_list=item.extra_data.next_point_update_details security_tracker_url=security_tracker_url only %}
+{% include 'debian/security-issue-list.html' with issue_list=item.extra_data.next_point_update_details security_tracker_url=security_tracker_url only %}
 </div>
 {% endif %}
 {% endwith %}
