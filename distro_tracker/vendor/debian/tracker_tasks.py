@@ -1612,6 +1612,7 @@ class UpdateSecurityIssuesTask(BaseTask):
                     'nodsa_maintainer_to_handle_details': {},
                     'nodsa_ignored_details': {},
                 })
+                description = issue_data.get('description', '')
                 if (data.get('status', '') == 'resolved' or
                         data.get('urgency', '') == 'end-of-life'):
                     continue
@@ -1619,17 +1620,16 @@ class UpdateSecurityIssuesTask(BaseTask):
                     stats['unimportant'] += 1
                 elif data.get('next_point_update', False):
                     stats['next_point_update_details'][issue_id] = \
-                        issue_data.get('description', '')
+                        {'description': description}
                 elif data.get('nodsa', False) is not False:
                     cls._update_stats_with_nodsa_entry(stats,
                                                        data, issue_id,
-                                                       issue_data.get(
-                                                           'description', '')
+                                                       description
                                                        )
                 else:
                     stats['open'] += 1
                     stats['open_details'][issue_id] = \
-                        issue_data.get('description', '')
+                        {'description': description}
 
         return result
 

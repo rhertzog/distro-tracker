@@ -3034,7 +3034,9 @@ class UpdateSecurityIssuesTaskTests(TestCase):
         self.assertDictEqual(
             stats['jessie']['next_point_update_details'],
             {
-                'CVE-2015-0233': 'Description of the minor issue CVE-2015-0233',
+                'CVE-2015-0233':
+                    {'description':
+                     'Description of the minor issue CVE-2015-0233'},
             }
         )
 
@@ -3045,7 +3047,9 @@ class UpdateSecurityIssuesTaskTests(TestCase):
         self.assertDictEqual(
             stats['sid']['next_point_update_details'],
             {
-                'CVE-2015-0233': 'Description of the minor issue CVE-2015-0233',
+                'CVE-2015-0233':
+                    {'description':
+                     'Description of the minor issue CVE-2015-0233'},
             }
         )
 
@@ -3068,8 +3072,9 @@ class UpdateSecurityIssuesTaskTests(TestCase):
         self.assertDictEqual(
             stats['jessie']['open_details'],
             {
-                'CVE-2015-0234': 'Description of CVE-2015-0234',
-                'CVE-2015-0235': '',
+                'CVE-2015-0234': {'description':
+                                  'Description of CVE-2015-0234'},
+                'CVE-2015-0235': {'description': ''},
             }
         )
         self.assertDictEqual(
