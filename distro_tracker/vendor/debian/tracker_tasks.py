@@ -1752,7 +1752,8 @@ class UpdateSecurityIssuesTask(BaseTask):
             if pkgname in all_data:
                 # Check if we need to update the existing data
                 checksum = get_data_checksum(issues)
-                if all_data[pkgname].value.get('checksum', '') == checksum:
+                if not self.force_update and \
+                        all_data[pkgname].value.get('checksum', '') == checksum:
                     continue
                 # Update the data
                 pkgdata = all_data[pkgname]
