@@ -3220,7 +3220,19 @@ class UpdateSecurityIssuesTaskTests(TestCase):
         self.run_task()
         self.assertEqual(0, ActionItem.objects.count())
 
-    def test_update_action_item(self):
+    def test_update_action_item_updates_support_status(self):
+        action_item = ActionItem(
+            extra_data={'release': 'jessie', 'support_status': 'none'},
+            package=self.package
+        )
+
+        data = self.load_test_json('open')['dummy-package']
+        stats = self.task.get_issues_summary(data)['jessie']
+        self.task.update_action_item(stats, action_item)
+
+        self.assertEqual(action_item.extra_data['support_status'], 'security')
+
+    def test_update_action_item_normal_issue(self):
         action_item = ActionItem(extra_data={'release': 'jessie'},
                                  package=self.package)
         # First case, normal issue
@@ -3231,6 +3243,10 @@ class UpdateSecurityIssuesTaskTests(TestCase):
         self.assertIn('security issues</a> in jessie',
                       action_item.short_description)
         self.assertEqual(action_item.extra_data['security_issues_count'], 3)
+
+    def test_update_action_item_nodsa_issue_only(self):
+        action_item = ActionItem(extra_data={'release': 'jessie'},
+                                 package=self.package)
         # Second case, nodsa issue only
         data = self.load_test_json('nodsa')['dummy-package']
         stats = self.task.get_issues_summary(data)['jessie']
@@ -3277,6 +3293,7 @@ class UpdateSecurityIssuesTaskTests(TestCase):
             self.assertTrue(item.item_type.type_name.startswith(
                 'debian-security-issue-in'))
             self.assertTrue('release' in item.extra_data)
+            self.assertTrue('support_status' in item.extra_data)
             self.assertTrue('security_issues_count' in item.extra_data)
 
     def test_action_item_removed(self):

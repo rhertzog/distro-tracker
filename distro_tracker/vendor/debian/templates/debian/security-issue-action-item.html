@@ -1,4 +1,4 @@
-{% with count=item.extra_data.security_issues_count open_count=item.extra_data.open_count nodsa_maintainer_to_handle_count=item.extra_data.nodsa_maintainer_to_handle_count nodsa_ignored_count=item.extra_data.nodsa_ignored_count next_point_update_count=item.extra_data.next_point_update_count security_tracker_url='https://security-tracker.debian.org/tracker' %}
+{% with count=item.extra_data.security_issues_count open_count=item.extra_data.open_count nodsa_maintainer_to_handle_count=item.extra_data.nodsa_maintainer_to_handle_count nodsa_ignored_count=item.extra_data.nodsa_ignored_count next_point_update_count=item.extra_data.next_point_update_count security_tracker_url='https://security-tracker.debian.org/tracker' support_status=item.extra_data.support_status %}
 <p>There {{ count|pluralize:"is,are" }} <a href="{{ security_tracker_url }}/source-package/{{ item.package.name }}">{{ count }} open security issue{{ count|pluralize }}</a> in {{ item.extra_data.release }}.</p>
 {% if open_count > 0 %}
 <div>
@@ -10,10 +10,16 @@
 
 {% if nodsa_maintainer_to_handle_count %}
 <div>
+{% if support_status == "security" %}
 <span>{{ nodsa_maintainer_to_handle_count }} issue{{ nodsa_maintainer_to_handle_count|pluralize }} left for the package maintainer to handle:</span>
+{% else %}
+<span>{{ nodsa_maintainer_to_handle_count }} issue{{ nodsa_maintainer_to_handle_count|pluralize }} postponed or untriaged:</span>
+{% endif %}
 {% include 'debian/security-issue-list.html' with issue_list=item.extra_data.nodsa_maintainer_to_handle_details security_tracker_url=security_tracker_url only %}
 </div>
+{% if support_status == "security" %}
 <p>You can find information about how to handle {{ nodsa_maintainer_to_handle_count|pluralize:"this,these" }} issue{{ nodsa_maintainer_to_handle_count|pluralize }} in the <a href="https://security-team.debian.org/triage.html">security team's documentation</a>.</p>
+{% endif %}
 {% endif %}
 
 {% if nodsa_ignored_count %}

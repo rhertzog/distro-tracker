@@ -1679,6 +1679,9 @@ class UpdateSecurityIssuesTask(BaseTask):
 
         security_issues_count = stats['open'] + stats['nodsa']
         action_item.extra_data['security_issues_count'] = security_issues_count
+        action_item.extra_data['support_status'] = (
+            self._get_support_status(action_item.extra_data['release'])
+        )
 
         for base_key in ['open',
                          'next_point_update',
