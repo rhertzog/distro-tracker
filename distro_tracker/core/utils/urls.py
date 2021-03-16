@@ -15,6 +15,7 @@ from django.utils.http import urlencode
 
 
 def RepologyUrl(target_page, repo, package):
+    """Build a repology.org URL"""
     query = urlencode({
         'name_type': 'srcname',
         'noautoresolve': 'on',
@@ -26,8 +27,10 @@ def RepologyUrl(target_page, repo, package):
 
 
 def RepologyVersionsUrl(repo, package):
+    """Build a repology.org URL for the project_versions page"""
     return RepologyUrl('project_versions', repo, package)
 
 
 def RepologyPackagesUrl(repo, package):
+    """Build a repology.org URL for the project_packages page"""
     return RepologyUrl('project_packages', repo, package)

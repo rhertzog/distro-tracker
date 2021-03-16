@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-
+"""
+Standard Django management script.
+"""
 # Copyright 2013 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
@@ -14,10 +16,12 @@ import os
 import sys
 
 if __name__ == "__main__":
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE",
-                          "distro_tracker.project.settings")
-    os.environ.setdefault("DJANGO_LIVE_TEST_SERVER_ADDRESS",
-                          "localhost:8081-8085")
+    os.environ.setdefault(
+        "DJANGO_SETTINGS_MODULE", "distro_tracker.project.settings"
+    )
+    os.environ.setdefault(
+        "DJANGO_LIVE_TEST_SERVER_ADDRESS", "localhost:8081-8085"
+    )
 
     from django.core.management import execute_from_command_line
 
