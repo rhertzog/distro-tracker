@@ -17,6 +17,7 @@ Build-Depends: debhelper (>= 10),
     python3-django-captcha,
     python3-gpg,
     python3-requests (>= 2),
+    python3-responses,
     python3-yaml,
     python3-pyinotify,
 Standards-Version: 4.1.2
