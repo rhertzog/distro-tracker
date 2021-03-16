@@ -1555,6 +1555,7 @@ class UpdateSecurityIssuesTask(BaseTask):
             'in {release}',
         'none': 'No known security issue in {release}',
     }
+    CVE_DATA_URL = 'https://security-tracker.debian.org/tracker/data/json'
 
     def initialize(self, *args, **kwargs):
         super(UpdateSecurityIssuesTask, self).initialize(*args, **kwargs)
@@ -1570,8 +1571,7 @@ class UpdateSecurityIssuesTask(BaseTask):
     def _get_issues_content(self):
         if self._content:
             return self._content
-        url = 'https://security-tracker.debian.org/tracker/data/json'
-        content = get_resource_text(url)
+        content = get_resource_text(self.CVE_DATA_URL)
         if content:
             self._content = json.loads(content)
             return self._content

@@ -27,6 +27,8 @@ from django.core.management import call_command
 from django.test.utils import override_settings
 from django.urls import reverse
 
+import responses
+
 import yaml
 
 from distro_tracker.accounts.models import User, UserEmail
@@ -2976,8 +2978,12 @@ class UpdateSecurityIssuesTaskTests(TestCase):
     def setUp(self):
         self.package = SourcePackageName.objects.create(name='dummy-package')
         self.task = UpdateSecurityIssuesTask()
-        # Stub the data providing methods: no content by default
-        self.task._get_issues_content = mock.MagicMock(return_value='')
+        # Setup mocking of requests
+        self.responses = responses.RequestsMock()
+        self.responses.start()
+        self.responses.add(responses.GET, self.task.CVE_DATA_URL, json={})
+        self.addCleanup(self.responses.stop)
+        self.addCleanup(self.responses.reset)
 
     def load_test_json(self, key):
         datafn = 'security-tracker-{}.json'.format(key)
@@ -2988,10 +2994,14 @@ class UpdateSecurityIssuesTaskTests(TestCase):
     def mock_json_data(self, key=None, content={}):
         if key:
             content = self.load_test_json(key)
-        self.task._get_issues_content = mock.MagicMock(return_value=content)
+        self.responses.replace(
+            responses.GET, self.task.CVE_DATA_URL, json=content
+        )
         return content
 
     def run_task(self):
+        # Rebuild from scratch each time to avoid caching issues
+        self.task = UpdateSecurityIssuesTask()
         self.task.execute()
 
     def get_item_type(self):
