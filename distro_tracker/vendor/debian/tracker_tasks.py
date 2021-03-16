@@ -1698,6 +1698,17 @@ class UpdateSecurityIssuesTask(BaseTask):
             'checksum': get_data_checksum(issues)
         }
 
+    def want_action_item(self, pkgdata, release):
+        stats = pkgdata.value.get('stats', {}).get(release)
+        if stats is None:
+            return False
+
+        count = stats.get('open', 0) + stats.get('nodsa', 0)
+        if count == 0:
+            return False
+
+        return True
+
     def process_pkg_action_items(self, pkgdata, existing_action_items):
         release_ai = {}
         to_add = []
@@ -1707,23 +1718,24 @@ class UpdateSecurityIssuesTask(BaseTask):
         for ai in existing_action_items:
             release = ai.extra_data['release']
             release_ai[release] = ai
-            if release not in global_stats:
-                to_drop.append(ai)
         for release, stats in global_stats.items():
-            count = stats.get('open', 0) + stats.get('nodsa', 0)
-            if release in release_ai:
-                ai = release_ai[release]
-                if count == 0:
-                    to_drop.append(ai)
-                else:
-                    self.update_action_item(stats, ai)
+            ai = release_ai.get(release)
+
+            if self.want_action_item(pkgdata, release):
+                if ai:
                     to_update.append(ai)
-            elif count > 0:
-                new_ai = ActionItem(item_type=self.action_item_type(release),
-                                    package=pkgdata.package,
-                                    extra_data={'release': release})
-                self.update_action_item(stats, new_ai)
-                to_add.append(new_ai)
+                else:
+                    ai = ActionItem(
+                        item_type=self.action_item_type(release),
+                        package=pkgdata.package,
+                        extra_data={'release': release}
+                    )
+                    to_add.append(ai)
+                self.update_action_item(stats, ai)
+            else:
+                if ai:
+                    to_drop.append(ai)
+
         return to_add, to_update, to_drop
 
     def execute_main(self):
