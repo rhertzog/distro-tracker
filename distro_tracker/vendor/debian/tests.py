@@ -3205,6 +3205,13 @@ class UpdateSecurityIssuesTaskTests(TestCase):
         after = self.package.data.get(key='debian-security')
         self.assertDictEqual(after.value, initial_value)
 
+    def test_no_action_item_created_in_eol_release(self):
+        # The fixture only has open CVE in the squeeze release
+        # which is marked as end-of-life in distributions.json
+        self.mock_json_data('open-in-eol-release')
+        self.run_task()
+        self.assertEqual(0, ActionItem.objects.count())
+
     def test_update_action_item(self):
         action_item = ActionItem(extra_data={'release': 'jessie'},
                                  package=self.package)

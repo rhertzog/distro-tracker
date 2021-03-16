@@ -1721,6 +1721,10 @@ class UpdateSecurityIssuesTask(BaseTask):
         if stats is None:
             return False
 
+        supported_by = self._get_support_status(release)
+        if supported_by == "end-of-life":
+            return False
+
         count = stats.get('open', 0) + stats.get('nodsa', 0)
         if count == 0:
             return False
