@@ -3212,6 +3212,14 @@ class UpdateSecurityIssuesTaskTests(TestCase):
         self.run_task()
         self.assertEqual(0, ActionItem.objects.count())
 
+    def test_no_action_item_for_nodsa_in_release_not_managed_by_secteam(self):
+        # The fixture only has open CVE tagged nodsa and only in releases
+        # not managed by the security team. Thus no action item should be
+        # created.
+        self.mock_json_data('nodsa-non-security')
+        self.run_task()
+        self.assertEqual(0, ActionItem.objects.count())
+
     def test_update_action_item(self):
         action_item = ActionItem(extra_data={'release': 'jessie'},
                                  package=self.package)
