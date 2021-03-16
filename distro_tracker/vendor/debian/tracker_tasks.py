@@ -1556,11 +1556,15 @@ class UpdateSecurityIssuesTask(BaseTask):
         'none': 'No known security issue in {release}',
     }
     CVE_DATA_URL = 'https://security-tracker.debian.org/tracker/data/json'
+    DISTRIBUTIONS_URL = (
+        'https://security-tracker.debian.org/tracker/distributions.json'
+    )
 
     def initialize(self, *args, **kwargs):
         super(UpdateSecurityIssuesTask, self).initialize(*args, **kwargs)
         self._action_item_type = {}
-        self._content = None
+        self._issues = None
+        self._distributions = None
 
     def action_item_type(self, release):
         return self._action_item_type.setdefault(
@@ -1568,13 +1572,27 @@ class UpdateSecurityIssuesTask(BaseTask):
                 type_name=self.ACTION_ITEM_TYPE_NAME.format(release),
                 full_description_template=self.ACTION_ITEM_TEMPLATE))
 
+    def _get_distributions(self):
+        if not self._distributions:
+            content = get_resource_text(self.DISTRIBUTIONS_URL)
+            self._distributions = json.loads(content)
+        return self._distributions
+
+    def _get_support_status(self, release):
+        """
+        Return support status of a given release as documented by the
+        security team in the security tracker.
+        """
+        return self._get_distributions().get(release, {}).get('support',
+                                                              'unknown')
+
     def _get_issues_content(self):
-        if self._content:
-            return self._content
+        if self._issues:
+            return self._issues
         content = get_resource_text(self.CVE_DATA_URL)
         if content:
-            self._content = json.loads(content)
-            return self._content
+            self._issues = json.loads(content)
+            return self._issues
 
     @classmethod
     def _update_stats_with_nodsa_entry(cls, stats, nodsa_entry,

@@ -2982,6 +2982,32 @@ class UpdateSecurityIssuesTaskTests(TestCase):
         self.responses = responses.RequestsMock()
         self.responses.start()
         self.responses.add(responses.GET, self.task.CVE_DATA_URL, json={})
+        self.responses.add(
+            responses.GET,
+            self.task.DISTRIBUTIONS_URL,
+            json={
+                "squeeze": {
+                    "major-version": "6",
+                    "support": "end-of-life",
+                    "contact": "",
+                },
+                "wheezy": {
+                    "major-version": "7",
+                    "support": "lts",
+                    "contact": "debian-lts@lists.debian.org",
+                },
+                "jessie": {
+                    "major-version": "8",
+                    "support": "security",
+                    "contact": "team@security.debian.org",
+                },
+                "stretch": {
+                    "major-version": "9",
+                    "support": "none",
+                    "contact": "",
+                },
+            }
+        )
         self.addCleanup(self.responses.stop)
         self.addCleanup(self.responses.reset)
 
@@ -3007,6 +3033,16 @@ class UpdateSecurityIssuesTaskTests(TestCase):
     def get_item_type(self):
         return ActionItemType.objects.get_or_create(
             type_name='debian-security-issue')[0]
+
+    def test_get_support_status_usual_values(self):
+        self.assertEqual(self.task._get_support_status("squeeze"),
+                         "end-of-life")
+        self.assertEqual(self.task._get_support_status("wheezy"), "lts")
+        self.assertEqual(self.task._get_support_status("jessie"), "security")
+        self.assertEqual(self.task._get_support_status("stretch"), "none")
+
+    def test_get_support_status_unknown_distribution(self):
+        self.assertEqual(self.task._get_support_status("fakedistro"), "unknown")
 
     def test_get_issues_summary_with_eol(self):
         data = self.load_test_json('eol')['dummy-package']
