@@ -3008,6 +3008,11 @@ class UpdateSecurityIssuesTaskTests(TestCase):
                 },
             }
         )
+
+        # To initialize the distributions_checksum task data and avoid
+        # force_update runs in tests
+        self.task.execute()
+
         self.addCleanup(self.responses.stop)
         self.addCleanup(self.responses.reset)
 
@@ -3330,6 +3335,34 @@ class UpdateSecurityIssuesTaskTests(TestCase):
         self.assertEqual(ai.extra_data['security_issues_count'], 3)
         self.assertEqual(ai.severity, ActionItem.SEVERITY_HIGH)
         self.assertIn("3 security issues", ai.short_description)
+
+    def test_action_item_updated_when_distributions_json_is_updated(self):
+        # First run fetches initial data
+        self.mock_json_data('open')
+        self.run_task()
+        ai = ActionItem.objects.get(
+            item_type__type_name='debian-security-issue-in-jessie'
+        )
+        self.assertEqual(ai.extra_data["support_status"], "security")
+
+        # Update distributions.json
+        self.responses.replace(
+            responses.GET,
+            self.task.DISTRIBUTIONS_URL,
+            json={
+                'jessie': {
+                    'major-version': '8',
+                    'support': 'lts',
+                    'contact': 'debian-lts@lists.debian.org',
+                },
+            }
+        )
+
+        # Second run should update the action_item to reflect the
+        # changed support_status even though the list of CVE is unchanged
+        self.run_task()
+        ai = ActionItem.objects.get(id=ai.id)
+        self.assertEqual(ai.extra_data["support_status"], "lts")
 
     def test_get_template_action_item(self):
         self.mock_json_data('nodsa')

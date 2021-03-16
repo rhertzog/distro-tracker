@@ -1777,6 +1777,7 @@ class UpdateSecurityIssuesTask(BaseTask):
         for pkgdata in all_pkgdata:
             all_data[pkgdata.package.name] = pkgdata
             packages[pkgdata.package.name] = pkgdata.package
+
         # Fetch all debian-security ActionItems
         pkg_action_items = collections.defaultdict(lambda: [])
         all_action_items = ActionItem.objects.select_related(
@@ -1784,6 +1785,14 @@ class UpdateSecurityIssuesTask(BaseTask):
                 item_type__type_name__startswith='debian-security-issue-in-')
         for action_item in all_action_items:
             pkg_action_items[action_item.package.name].append(action_item)
+
+        # Check for changes on distributions.json
+        distributions_checksum = get_data_checksum(self._get_distributions())
+        if self.data.get('distributions_checksum') != distributions_checksum:
+            # New distributions.json, force update all action items
+            self.force_update = True
+            self.data['distributions_checksum'] = distributions_checksum
+
         # Scan the security tracker data
         content = self._get_issues_content()
         to_add = []
