@@ -68,7 +68,7 @@ class LintianStats(models.Model):
             return ''
 
         return (
-            'https://lintian.debian.org/sources/{pkg}.html'.format(
+            'https://lintian.debian.net/sources/{pkg}'.format(
                 pkg=self.package)
         )
 
