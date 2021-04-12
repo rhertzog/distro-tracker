@@ -41,6 +41,7 @@ DISTRO_TRACKER_FQDN = "tracker.debian.org"
 ALLOWED_HOSTS = [
     DISTRO_TRACKER_FQDN,
     "2qlvvvnhqyda2ahd.onion",
+    "7fgb4sq435vg7slw3u7m2ayze3imybpe7qm3htdklreoag3l6n2mtkyd.onion",
 ]
 
 # Custom data path (used only if it exists, so that we can reuse
