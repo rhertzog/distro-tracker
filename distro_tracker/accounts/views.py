@@ -76,9 +76,9 @@ class ResetPasswordView(ConfirmationRenderMixin,
 class ForgotPasswordView(ConfirmationRenderMixin,
                          email_accounts_views.ForgotPasswordView):
     success_url = reverse_lazy('dtracker-accounts-password-reset-success')
-    email_subject = '{name} Password Reset Confirmation'.format(
+    confirmation_email_subject = '{name} Password Reset Confirmation'.format(
         name=settings.GET_INSTANCE_NAME())
-    email_from_address = settings.DISTRO_TRACKER_CONTACT_EMAIL
+    confirmation_email_from_address = settings.DISTRO_TRACKER_CONTACT_EMAIL
 
 
 class ChangePersonalInfoView(email_accounts_views.ChangePersonalInfoView):
