@@ -78,7 +78,7 @@ class ForgotPasswordView(ConfirmationRenderMixin,
     success_url = reverse_lazy('dtracker-accounts-password-reset-success')
     confirmation_email_subject = '{name} Password Reset Confirmation'.format(
         name=settings.GET_INSTANCE_NAME())
-    confirmation_email_from_address = settings.DISTRO_TRACKER_CONTACT_EMAIL
+    confirmation_email_from_address = settings.DISTRO_TRACKER_NOREPLY_EMAIL
 
 
 class ChangePersonalInfoView(email_accounts_views.ChangePersonalInfoView):
@@ -100,7 +100,7 @@ class ManageAccountEmailsView(ConfirmationRenderMixin,
 
     confirmation_email_subject = 'Add Email To {name} Account'.format(
         name=settings.GET_INSTANCE_NAME())
-    confirmation_email_from_address = settings.DISTRO_TRACKER_CONTACT_EMAIL
+    confirmation_email_from_address = settings.DISTRO_TRACKER_NOREPLY_EMAIL
 
 
 class AccountMergeConfirmView(ConfirmationRenderMixin,
@@ -108,7 +108,7 @@ class AccountMergeConfirmView(ConfirmationRenderMixin,
     success_url = reverse_lazy('dtracker-accounts-merge-confirmed')
     confirmation_email_subject = 'Merge {name} Accounts'.format(
         name=settings.GET_INSTANCE_NAME())
-    confirmation_email_from_address = settings.DISTRO_TRACKER_CONTACT_EMAIL
+    confirmation_email_from_address = settings.DISTRO_TRACKER_NOREPLY_EMAIL
 
 
 class AccountMergeFinalize(email_accounts_views.AccountMergeFinalize):
