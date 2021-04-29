@@ -1223,25 +1223,26 @@ class UpdateExcusesTask(BaseTask):
             return
         package_excuses, problematic = result
 
-        # Remove stale excuses data and action items which are not still
-        # problematic.
-        self._remove_obsolete_action_items(problematic)
-        PackageExcuses.objects.all().delete()
+        with transaction.atomic():
+            # Remove stale excuses data and action items which are not still
+            # problematic.
+            self._remove_obsolete_action_items(problematic)
+            PackageExcuses.objects.all().delete()
 
-        excuses = []
-        packages = SourcePackageName.objects.filter(
-            name__in=package_excuses.keys())
-        packages.prefetch_related('action_items')
-        for package in packages:
-            excuse = PackageExcuses(
-                package=package,
-                excuses=package_excuses[package.name])
-            excuses.append(excuse)
-            if package.name in problematic:
-                self._create_action_item(package, problematic[package.name])
+            excuses = []
+            packages = SourcePackageName.objects.filter(
+                name__in=package_excuses.keys())
+            packages.prefetch_related('action_items')
+            for package in packages:
+                excuse = PackageExcuses(
+                    package=package,
+                    excuses=package_excuses[package.name])
+                excuses.append(excuse)
+                if package.name in problematic:
+                    self._create_action_item(package, problematic[package.name])
 
-        # Create all excuses in a single query
-        PackageExcuses.objects.bulk_create(excuses)
+            # Create all excuses in a single query
+            PackageExcuses.objects.bulk_create(excuses)
 
 
 class UpdateBuildLogCheckStats(BaseTask):
