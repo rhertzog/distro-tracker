@@ -1204,7 +1204,7 @@ class UpdateLintianStatsTaskTest(TestCase):
         # We only care about the URL used, not the headers or other arguments
         self.assertEqual(
             self._mocked_requests.get.call_args[0][0],
-            'https://lintian.debian.net/qa-list.txt')
+            'https://lintian.debian.org/static/qa-list.txt')
 
     def test_action_item_created_errors(self):
         """
