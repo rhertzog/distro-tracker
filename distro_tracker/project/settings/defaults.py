@@ -240,6 +240,8 @@ AUTHENTICATION_BACKENDS = [
 
 AUTH_USER_MODEL = 'accounts.User'
 
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 ROOT_URLCONF = 'distro_tracker.project.urls'
 
 # Python dotted path to the WSGI application used by Django's runserver.
