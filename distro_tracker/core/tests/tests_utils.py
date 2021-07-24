@@ -45,6 +45,7 @@ from distro_tracker.core.utils import (
     verp
 )
 from distro_tracker.core.utils.compression import (
+    get_compressor_factory,
     get_uncompressed_stream,
     guess_compression_method
 )
@@ -1900,3 +1901,19 @@ class CompressionTests(TestCase):
 
         # Ensure we check for ".gz" and not "gz" only
         self.assertIsNone(guess_compression_method("bugz"))
+
+    def test_get_compressor_factory(self):
+        # Recreate the sample compressed files and check them
+        for compression, path in self.sample_files:
+            with self.subTest(compression=compression):
+                os.unlink(path)
+                factory = get_compressor_factory(compression)
+                compressor = factory(path, mode="wb")
+                compressor.write(b"Hello world!")
+                compressor.close()
+                output = self.get_uncompressed_content(path, compression)
+                self.assertEqual(output, b"Hello world!")
+
+    def test_get_compressor_factory_unknown(self):
+        with self.assertRaises(NotImplementedError):
+            get_compressor_factory("extrazip")

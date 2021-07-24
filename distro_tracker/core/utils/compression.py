@@ -76,3 +76,34 @@ def get_uncompressed_stream(input_stream, compression="auto",
     else:
         raise NotImplementedError(
             "Unknown compression method: %r" % compression)
+
+
+def get_compressor_factory(compression):
+    """
+    Returns a function that can create a file-like object used to compress
+    data. The returned function has actually the same API as gzip.open,
+    lzma.open and bz2.open. You have to pass mode='wb' or mode='wt' to
+    the returned function to use it in write mode.
+
+        compressor_factory = get_compressor_factory("xz")
+        compressor = compressor_factory(path, mode="wb")
+        compressor.write(b"Test")
+        compressor.close()
+
+    :param compression: The compression method to use.
+    :type compression: str
+    """
+    if compression == "gzip":
+        import gzip
+        return gzip.open
+    elif compression == "bzip2":
+        import bz2
+        return bz2.open
+    elif compression == "xz":
+        import lzma
+        return lzma.open
+    elif compression is None:
+        return open
+    else:
+        raise NotImplementedError(
+            "Unknown compression method: %r" % compression)
