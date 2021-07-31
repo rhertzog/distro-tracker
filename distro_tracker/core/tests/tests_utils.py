@@ -908,6 +908,28 @@ class HttpCacheTest(SimpleTestCase):
 
         self.assertFalse(url in self.cache)
 
+    def test_http_404_remove_old_cache(self):
+        url = 'http://example.com'
+        self.mock_http_request(url=url, text='Some content')
+        self.cache.update(url)
+        self.assertTrue(url in self.cache)
+
+        self.set_http_get_response(url=url, status_code=404)
+        self.cache.update(url)
+
+        self.assertFalse(url in self.cache)
+
+    def test_http_404_does_not_remove_old_cache(self):
+        url = 'http://example.com'
+        self.mock_http_request(url=url, text='Some content')
+        self.cache.update(url)
+        self.assertTrue(url in self.cache)
+
+        self.set_http_get_response(url=url, status_code=404)
+        self.cache.update(url, invalidate_cache=False)
+
+        self.assertTrue(url in self.cache)
+
     #
     # Proper tests - ETags
     #

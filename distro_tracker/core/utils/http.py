@@ -151,7 +151,7 @@ class HttpCache(object):
             os.remove(self._content_cache_file_path(url))
             os.remove(self._header_cache_file_path(url))
 
-    def update(self, url, force=False):
+    def update(self, url, force=False, invalidate_cache=True):
         """
         Performs an update of the cached resource. This means that it validates
         that its most current version is found in the cache by doing a
@@ -181,7 +181,8 @@ class HttpCache(object):
 
         # Invalidate previously cached value if the response is not valid now
         if not response.ok:
-            self.remove(url)
+            if invalidate_cache:
+                self.remove(url)
         elif response.status_code == 200:
             # Dump the content and headers only if a new response is generated
             with open(self._content_cache_file_path(url), 'wb') as content_file:
