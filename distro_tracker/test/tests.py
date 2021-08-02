@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2014 The Distro Tracker Developers
+# Copyright 2014-2021 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -113,31 +113,21 @@ class TestCaseHelpersTests(object):
         self.doCleanups()  # Ensure a cleanup function is added
         self.assertNotIn(template_dir, settings.TEMPLATES[0]['DIRS'])
 
-    def test_mock_http_request(self):
-        self.mock_http_request()
-
-        import distro_tracker.core.utils.http
-        self.assertEqual(self._mocked_requests,
-                         distro_tracker.core.utils.http.requests)
-
-        self.doCleanups()  # Ensure a cleanup function is added
-        self.assertNotEqual(self._mocked_requests,
-                            distro_tracker.core.utils.http.requests)
-
     def _call_requests_get(self, url='http://localhost'):
-        return self._mocked_requests.get(url)
+        return requests.get(url)
 
     def test_set_http_get_response_stores_answers_to_send(self):
         self.mock_http_request()
         sample_headers = {'foo': 'bar'}
         url = 'http://localhost'
+
         self.set_http_get_response(url, text='foobar', status_code=222,
                                    headers=sample_headers)
+        response = self._call_requests_get(url)
 
-        response = self._call_requests_get()
         self.assertEqual(response.text, 'foobar')
         self.assertEqual(response.status_code, 222)
-        self.assertEqual(response.headers, sample_headers)
+        self.assertEqual(response.headers["foo"], "bar")
 
     def test_set_http_get_response_default_answer_values(self):
         self.mock_http_request()
@@ -146,7 +136,7 @@ class TestCaseHelpersTests(object):
         response = self._call_requests_get()
         self.assertEqual(response.text, '')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.headers, {})
+        self.assertEqual(response.headers, {"Content-Type": "text/plain"})
 
     def test_set_http_get_response_json_data(self):
         self.mock_http_request()
@@ -207,10 +197,8 @@ class TestCaseHelpersTests(object):
     def test_mocked_requests_get_no_answer_set(self):
         self.mock_http_request()
 
-        response = self._call_requests_get()
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.text, '')
-        self.assertEqual(response.content, b'')
+        with self.assertRaises(requests.exceptions.ConnectionError):
+            self._call_requests_get()
 
     def test_mocked_requests_get_response_has_all_attributes(self):
         self.mock_http_request()
@@ -224,11 +212,22 @@ class TestCaseHelpersTests(object):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.text, 'This is\nthe answer')
         self.assertEqual(response.content, b'This is\nthe answer')
-        self.assertEqual(response.encoding, 'utf-8')
+        self.assertEqual(response.encoding, 'ISO-8859-1')
         self.assertEqual(response.ok, True)
         self.assertEqual(bool(response), True)
-        self.assertEqual(response.headers, sample_headers)
-        self.assertEqual(list(response.iter_lines()), ['This is', 'the answer'])
+        self.assertEqual(response.headers['foo'], 'bar')
+        self.assertEqual(
+            list(response.iter_lines()),
+            [b'This is', b'the answer']
+        )
+
+    def test_mocked_requests_announces_utf8_when_required(self):
+        self.mock_http_request()
+        self.set_http_get_response(text='With Unicode characters: € ±')
+
+        response = self._call_requests_get()
+
+        self.assertEqual(response.encoding, 'utf-8')
 
     def test_mocked_requests_get_binary_response(self):
         self.mock_http_request()
@@ -237,9 +236,9 @@ class TestCaseHelpersTests(object):
 
         response = self._call_requests_get()
 
-        self.assertEqual(response.text, 'AQID\n')
+        self.assertEqual(response.text, '\x01\x02\x03')
         self.assertEqual(response.content, binary_content)
-        self.assertEqual(response.encoding, 'base64')
+        self.assertEqual(response.encoding, 'ISO-8859-1')
 
     def test_mocked_requests_get_error_response(self):
         self.mock_http_request()
@@ -253,26 +252,6 @@ class TestCaseHelpersTests(object):
         with self.assertRaises(requests.exceptions.HTTPError):
             response.raise_for_status()
 
-    def test_mocked_requests_get_unimplemented_attributes(self):
-        self.mock_http_request()
-        self.set_http_get_response()
-
-        response = self._call_requests_get()
-
-        with self.assertRaises(NotImplementedError):
-            response.iter_content()
-        with self.assertRaises(NotImplementedError):
-            response.json()
-
-        # The following are attributes that we can't mock with a side effect
-        # so we sealed them away and they give back AttributeError
-        with self.assertRaises(AttributeError):
-            response.apparent_encoding
-        with self.assertRaises(AttributeError):
-            response.is_redirect
-        with self.assertRaises(AttributeError):
-            response.is_permanent_redirect
-
     def test_mocked_requests_get_two_different_urls(self):
         """Ensure we get the answer corresponding to the requested URL"""
         self.mock_http_request()
@@ -284,9 +263,6 @@ class TestCaseHelpersTests(object):
 
         response = self._call_requests_get('http://localhost/1')
         self.assertEqual(response.text, 'one')
-
-        response = self._call_requests_get()
-        self.assertEqual(response.status_code, 404)
 
     def test_mocked_requests_get_two_different_urls_with_default_answer(self):
         self.mock_http_request()

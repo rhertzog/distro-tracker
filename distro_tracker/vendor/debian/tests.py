@@ -1202,9 +1202,10 @@ class UpdateLintianStatsTaskTest(TestCase):
         self.run_task()
 
         # We only care about the URL used, not the headers or other arguments
-        self.assertEqual(
-            self._mocked_requests.get.call_args[0][0],
-            'https://lintian.debian.org/static/qa-list.txt')
+        responses.assert_call_count(
+            'https://lintian.debian.org/static/qa-list.txt',
+            1,
+        )
 
     def test_action_item_created_errors(self):
         """
@@ -1510,6 +1511,16 @@ class UpdateAppStreamStatsTaskTest(TestCase):
             self.set_http_get_response(hints_url, json_data=[],
                                        compress_with='gzip')
 
+    def set_hints(self, json_data):
+        hints_url = self._hints_url_template.format(
+            section='main', arch='amd64'
+        )
+        self.set_http_get_response(
+            hints_url,
+            json_data=json_data,
+            compress_with='gzip',
+        )
+
     def _create_hint_entry(self, package, version=1.0,
                            n_errors=0, n_warnings=0, n_infos=0):
         entry = {'package': '{}/{}/amd64'.format(package, version),
@@ -1576,7 +1587,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
              {'vars': {},
               'tag': 'tag-mock-warning'}]
 
-        self.set_http_get_response(json_data=[test_entry], compress_with='gzip')
+        self.set_hints([test_entry])
 
         self.run_task()
 
@@ -1604,7 +1615,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
 
         test_entry = self._create_hint_entry(package='dummy-package',
                                              n_errors=2)
-        self.set_http_get_response(json_data=[test_entry], compress_with='gzip')
+        self.set_hints([test_entry])
 
         self.run_task()
 
@@ -1632,8 +1643,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
         test_entry2 = self._create_hint_entry(package='other-package',
                                               version='1.2',
                                               n_errors=1, n_warnings=1)
-        test_data = [test_entry1, test_entry2]
-        self.set_http_get_response(json_data=test_data, compress_with='gzip')
+        self.set_hints([test_entry1, test_entry2])
 
         self.run_task()
 
@@ -1675,9 +1685,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
         test_entry3 = self._create_hint_entry(package='beta-common',
                                               version='1.2',
                                               n_errors=2)
-        hints_list = [test_entry1, test_entry2, test_entry3]
-
-        self.set_http_get_response(json_data=hints_list, compress_with='gzip')
+        self.set_hints([test_entry1, test_entry2, test_entry3])
 
         self.run_task()
 
@@ -1717,7 +1725,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
         """
 
         test_entry = self._create_hint_entry(package='nonexistant', n_errors=1)
-        self.set_http_get_response(json_data=[test_entry], compress_with='gzip')
+        self.set_hints([test_entry])
 
         self.run_task()
 
@@ -1738,7 +1746,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
 
         test_entry = self._create_hint_entry(package='dummy-package',
                                              n_errors=2)
-        self.set_http_get_response(json_data=[test_entry], compress_with='gzip')
+        self.set_hints([test_entry])
 
         self.run_task()
 
@@ -1769,7 +1777,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
 
         test_entry = self._create_hint_entry(package='dummy-package',
                                              n_errors=errors)
-        self.set_http_get_response(json_data=[test_entry], compress_with='gzip')
+        self.set_hints([test_entry])
 
         self.run_task()
 
@@ -1790,7 +1798,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
 
         test_entry = self._create_hint_entry(package='dummy-package',
                                              n_errors=1, n_warnings=1)
-        self.set_http_get_response(json_data=[test_entry], compress_with='gzip')
+        self.set_hints([test_entry])
 
         self.run_task()
 
@@ -1815,7 +1823,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
         self.assertEqual(0, ActionItem.objects.count())
 
         test_entry = self._create_hint_entry(package='dummy-package', n_infos=1)
-        self.set_http_get_response(json_data=[test_entry], compress_with='gzip')
+        self.set_hints([test_entry])
 
         self.run_task()
 
@@ -1832,7 +1840,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
 
         test_entry = self._create_hint_entry(package='dummy-package',
                                              n_errors=2)
-        self.set_http_get_response(json_data=[test_entry], compress_with='gzip')
+        self.set_hints([test_entry])
 
         self.run_task()
 
@@ -1863,7 +1871,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
 
         test_entry = self._create_hint_entry(package='dummy-package',
                                              n_warnings=2)
-        self.set_http_get_response(json_data=[test_entry], compress_with='gzip')
+        self.set_hints([test_entry])
 
         self.run_task()
 
@@ -1889,7 +1897,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
             extra_data={'errors': 1, 'warnings': 2})
 
         test_entry = self._create_hint_entry(package='dummy-package', n_infos=1)
-        self.set_http_get_response(json_data=[test_entry], compress_with='gzip')
+        self.set_hints([test_entry])
 
         self.run_task()
 
@@ -1909,7 +1917,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
 
         test_entry = self._create_hint_entry(package='some-unrelated-package',
                                              n_errors=1)
-        self.set_http_get_response(json_data=[test_entry], compress_with='gzip')
+        self.set_hints([test_entry])
 
         self.run_task()
 
@@ -1935,8 +1943,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
                                               n_warnings=2)
         test_entry3 = self._create_hint_entry(package='some-package',
                                               n_errors=1)
-        hints_list = [test_entry1, test_entry2, test_entry3]
-        self.set_http_get_response(json_data=hints_list, compress_with='gzip')
+        self.set_hints([test_entry1, test_entry2, test_entry3])
 
         self.run_task()
 
@@ -1963,7 +1970,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
 
         test_entry = self._create_hint_entry(package='dummy-package',
                                              n_errors=2, n_warnings=1)
-        self.set_http_get_response(json_data=[test_entry], compress_with='gzip')
+        self.set_hints([test_entry])
 
         self.run_task()
 
@@ -1984,7 +1991,7 @@ class UpdateAppStreamStatsTaskTest(TestCase):
         # Update the package
         test_entry = self._create_hint_entry(package='dummy-package',
                                              n_errors=0, n_warnings=2)
-        self.set_http_get_response(json_data=[test_entry], compress_with='gzip')
+        self.set_hints([test_entry])
 
         self.run_task()
 

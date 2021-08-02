@@ -234,7 +234,7 @@ class RetrieveRepositoryInfoTests(TestCase):
     def test_sources_list_entry_validation(self):
         from distro_tracker.core.admin import validate_sources_list_entry
         from django.core.exceptions import ValidationError
-        self.mock_http_request('distro_tracker.core.admin.requests')
+        self.mock_http_request()
         # Not enough parts in the entry is an exception
         with self.assertRaises(ValidationError):
             validate_sources_list_entry('texthere')
@@ -269,7 +269,7 @@ class RetrieveRepositoryInfoTests(TestCase):
             'Version: 7.1\n'
             'Description: Debian 7.1 Released 15 June 2013\n'
         )
-        self.mock_http_request('distro_tracker.core.retrieve_data.requests')
+        self.mock_http_request()
         self.set_http_get_response(text=mock_response_text)
 
         repository_info = retrieve_repository_info(
@@ -299,7 +299,7 @@ class RetrieveRepositoryInfoTests(TestCase):
             'Version: 7.1\n'
             'Description: Debian 7.1 Released 15 June 2013\n'
         )
-        self.mock_http_request('distro_tracker.core.retrieve_data.requests')
+        self.mock_http_request()
         self.set_http_get_response(text=mock_response_text)
 
         from distro_tracker.core.retrieve_data import InvalidRepositoryException
@@ -317,7 +317,7 @@ class RetrieveRepositoryInfoTests(TestCase):
             'Version: 7.1\n'
             'Description: Debian 7.1 Released 15 June 2013\n'
         )
-        self.mock_http_request('distro_tracker.core.retrieve_data.requests')
+        self.mock_http_request()
         self.set_http_get_response(text=mock_response_text)
 
         repository_info = retrieve_repository_info(

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2014-2018 The Distro Tracker Developers
+# Copyright 2014-2021 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -14,16 +14,15 @@
 Distro Tracker test infrastructure.
 """
 
-import codecs
 import gzip
 import inspect
 import json
 import lzma
 import os
 import os.path
+import re
 import shutil
 import tempfile
-from unittest import mock
 
 from bs4 import BeautifulSoup as soup
 
@@ -32,7 +31,7 @@ from django.conf import settings
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.test.signals import setting_changed
 
-import requests
+import responses
 
 from distro_tracker.accounts.models import UserEmail
 from distro_tracker.core.models import (
@@ -125,96 +124,64 @@ class TestCaseHelpersMixin(object):
 
         return tempdir
 
-    def mock_http_request(
-            self, requests_location='distro_tracker.core.utils.http.requests',
-            **kwargs):
-        patcher = mock.patch(requests_location)
-        self._mocked_requests = patcher.start()
-        self._http_responses = {}
-
-        def mocked_get(url, params=None, **kwargs):
-            response = self._mocked_requests.models.Response()
-            if url in self._http_responses:
-                response_data = self._http_responses[url]
-            elif None in self._http_responses:
-                response_data = self._http_responses[None]
-            else:
-                response_data = {
-                    'text': '',
-                    'status_code': 404,
-                    'headers': None,
-                }
-
-            if 'content' in response_data:
-                content = response_data['content']
-                text = codecs.encode(content, 'base64').decode('ascii')
-                encoding = 'base64'
-            else:
-                text = response_data['text']
-                content = text.encode('utf-8')
-                encoding = 'utf-8'
-
-            response.text = text
-            response.content = content
-            response.encoding = encoding
-            response.headers = response_data['headers'] or {}
-            response.status_code = response_data['status_code']
-            response.iter_lines.return_value = text.splitlines()
-            response.ok = response_data['status_code'] < 400
-            response.__bool__.return_value = response.ok
-
-            if response_data['status_code'] >= 400:
-                response.raise_for_status.side_effect = (
-                    requests.exceptions.HTTPError(response=response))
-            else:
-                response.raise_for_status.return_value = None
-
-            response.iter_content.side_effect = NotImplementedError()
-            response.json.side_effect = NotImplementedError()
-
-            # Avoid automatic creation of new attributes during tests
-            mock.seal(response)
-
-            return response
-
-        self._mocked_requests.get.side_effect = mocked_get
-        self.addCleanup(patcher.stop)
+    def mock_http_request(self, **kwargs):
+        responses.start()
+        self.addCleanup(responses.stop)
+        self.addCleanup(responses.reset)
 
         if kwargs:
             self.set_http_get_response(**kwargs)
 
-    def set_http_get_response(self, url=None, text='', status_code=200,
-                              headers=None, json_data=None, content=None,
-                              compress_with=None):
-        response_data = {
-            'status_code': status_code,
-            'headers': headers,
-        }
-        if json_data is not None:
-            text = json.dumps(json_data)
-
-        def compress(data):
-            if compress_with == 'gzip':
-                return gzip.compress(data)
-            elif compress_with == 'xz':
-                return lzma.compress(data)
-            else:
-                raise NotImplementedError(
-                    'set_http_get_response does not support {} as '
-                    'compression method'.format(compress_with))
-
-        if content:
-            if compress_with:
-                response_data['content'] = compress(content)
-            else:
-                response_data['content'] = content
+    @staticmethod
+    def compress(data, compression='gzip'):
+        if compression == 'gzip':
+            return gzip.compress(data)
+        elif compression == 'xz':
+            return lzma.compress(data)
         else:
-            if compress_with:
-                response_data['content'] = compress(text.encode('utf-8'))
-            else:
-                response_data['text'] = text
+            raise NotImplementedError(
+                'compress() does not support {} as '
+                'compression method'.format(compression))
 
-        self._http_responses[url] = response_data
+    def set_http_get_response(self, url=None, body=None, text='', content=None,
+                              status_code=200, headers=None, json_data=None,
+                              compress_with=None):
+        # Default URL is the catch-all pattern
+        if url is None:
+            url = re.compile(".*")
+
+        if headers is None:
+            headers = {}
+
+        if compress_with:
+            if json_data is not None:
+                body = self.compress(
+                    json.dumps(json_data).encode('utf-8'),
+                    compress_with,
+                )
+                # Don't forward parameter
+                json_data = None
+            elif body is not None:
+                body = self.compress(body, compress_with)
+            elif content is not None:
+                body = self.compress(content, compress_with)
+            elif text is not None:
+                body = self.compress(text.encode('utf-8'), compress_with)
+        else:
+            if content is not None:
+                body = content
+            elif text is not None:
+                body = text
+
+        responses.remove(responses.GET, url)
+        responses.add(
+            method=responses.GET,
+            url=url,
+            body=body,
+            json=json_data,
+            status=status_code,
+            headers=headers,
+        )
 
     def import_key_into_keyring(self, filename):
         """

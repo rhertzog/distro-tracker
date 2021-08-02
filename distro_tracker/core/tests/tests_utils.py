@@ -35,6 +35,8 @@ from django.utils.http import http_date
 
 from requests.exceptions import HTTPError
 
+import responses
+
 from distro_tracker.core.models import PackageName, Repository
 from distro_tracker.core.utils import (
     PrettyPrintList,
@@ -742,7 +744,7 @@ class HttpCacheTest(SimpleTestCase):
         """
         headers = {
             'Connection': 'Keep-Alive',
-            'Content-Type': 'text/plain',
+            'X-Custom-Field': 'some value',
         }
         self.mock_http_request(text='Some content', headers=headers)
         url = 'http://example.com'
@@ -823,7 +825,7 @@ class HttpCacheTest(SimpleTestCase):
         """
         last_modified = http_date(time.time())
         self.mock_http_request(headers={'Last-Modified': last_modified})
-        url = 'http://example.com'
+        url = 'http://example.com/'
         self.cache.update(url)
 
         self.set_http_get_response(text='', status_code=304)
@@ -831,9 +833,12 @@ class HttpCacheTest(SimpleTestCase):
         response, updated = self.cache.update(url)
 
         self.assertFalse(updated)
-        self._mocked_requests.get.assert_called_with(
-            url, verify=mock.ANY, allow_redirects=True,
-            headers={'If-Modified-Since': last_modified})
+
+        # Ensure the second request matches our expectations
+        request = responses.calls[1].request
+        self.assertEqual(request.url, url)
+        self.assertEqual(request.headers["If-Modified-Since"], last_modified)
+
         # The actual server's response is returned
         self.assertEqual(response.status_code, 304)
 
@@ -843,15 +848,18 @@ class HttpCacheTest(SimpleTestCase):
         update the response for a URL with a Last-Modified header, which has
         since expired.
         """
-        last_modified = http_date(time.time() - 3600)
-        self.mock_http_request(headers={'Last-Modified': last_modified})
+        self.mock_http_request()
         url = 'http://example.com'
+        last_modified = http_date(time.time() - 3600)
+        self.set_http_get_response(
+            url, text='First', headers={'Last-Modified': last_modified}
+        )
         self.cache.update(url)
         # Set a new Last-Modified and content value
         new_last_modified = http_date(time.time())
-        self.mock_http_request(text='Response', headers={
-            'Last-Modified': new_last_modified
-        })
+        self.set_http_get_response(
+            url, text='Response', headers={'Last-Modified': new_last_modified}
+        )
 
         # Run the update again
         response, updated = self.cache.update(url)
@@ -938,19 +946,21 @@ class HttpCacheTest(SimpleTestCase):
         Tests that the cache performs a conditional GET request when asked to
         update the response for a URL with an ETag header
         """
+        self.mock_http_request()
         etag = '"466010a-11bf9-4e17efa8afb81"'
-        self.mock_http_request(headers={'ETag': etag})
         url = 'http://example.com'
+        self.set_http_get_response(url, headers={'ETag': etag})
         self.cache.update(url)
 
-        self.mock_http_request(status_code=304)
+        self.set_http_get_response(url, status_code=304)
         # Run the update again
         response, updated = self.cache.update(url)
 
+        # Ensure the request contained the etag check header
+        request = responses.calls[1].request
+        self.assertEqual(request.headers["If-None-Match"], etag)
+        # Nothing has been updated
         self.assertFalse(updated)
-        self._mocked_requests.get.assert_called_with(
-            url, verify=mock.ANY, allow_redirects=True,
-            headers={'If-None-Match': etag, })
         # The actual server's response is returned
         self.assertEqual(response.status_code, 304)
 
@@ -960,13 +970,16 @@ class HttpCacheTest(SimpleTestCase):
         update the response for a URL with an ETag header, which has since
         expired.
         """
+        self.mock_http_request()
         etag = '"466010a-11bf9-4e17efa8afb81"'
-        self.mock_http_request(headers={'ETag': etag})
         url = 'http://example.com'
+        self.set_http_get_response(url, text='First', headers={'ETag': etag})
         self.cache.update(url)
         # Set a new ETag and content value
         new_etag = '"57ngfhty11bf9-9t831116kn1qw1'
-        self.mock_http_request(text='Response', headers={'ETag': new_etag})
+        self.set_http_get_response(
+            url, text='Response', headers={'ETag': new_etag}
+        )
 
         # Run the update again
         response, updated = self.cache.update(url)
@@ -985,16 +998,15 @@ class HttpCacheTest(SimpleTestCase):
         """
         last_modified = http_date(time.time())
         self.mock_http_request(headers={'Last-Modified': last_modified})
-        url = 'http://example.com'
+        url = 'http://example.com/'
         self.cache.update(url)
 
         # Run the update again
         response, updated = self.cache.update(url, force=True)
 
         # Make sure that we ask for a non-cached version
-        self._mocked_requests.get.assert_called_with(
-            url, verify=mock.ANY, allow_redirects=True,
-            headers={'Cache-Control': 'no-cache'})
+        request = responses.calls[1].request
+        self.assertEqual(request.headers["Cache-Control"], "no-cache")
         self.assertTrue(updated)
 
     #
