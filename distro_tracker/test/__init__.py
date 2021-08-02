@@ -143,9 +143,8 @@ class TestCaseHelpersMixin(object):
                 'compress() does not support {} as '
                 'compression method'.format(compression))
 
-    def set_http_get_response(self, url=None, body=None, text='', content=None,
-                              status_code=200, headers=None, json_data=None,
-                              compress_with=None):
+    def set_http_get_response(self, url=None, body=None, status_code=200,
+                              headers=None, json_data=None, compress_with=None):
         # Default URL is the catch-all pattern
         if url is None:
             url = re.compile(".*")
@@ -162,16 +161,13 @@ class TestCaseHelpersMixin(object):
                 # Don't forward parameter
                 json_data = None
             elif body is not None:
-                body = self.compress(body, compress_with)
-            elif content is not None:
-                body = self.compress(content, compress_with)
-            elif text is not None:
-                body = self.compress(text.encode('utf-8'), compress_with)
-        else:
-            if content is not None:
-                body = content
-            elif text is not None:
-                body = text
+                if isinstance(body, str):
+                    body = self.compress(body.encode("utf-8"), compress_with)
+                else:
+                    body = self.compress(body, compress_with)
+
+        if body is None:
+            body = ""
 
         responses.remove(responses.GET, url)
         responses.add(

@@ -726,7 +726,7 @@ class HttpCacheTest(SimpleTestCase):
         conflicting_path = os.path.join(self.cache_directory, 'localhost/foo')
         new_path = os.path.join(self.cache_directory, 'localhost/foo?/index')
         # Fetch a first file
-        self.mock_http_request(text='Some content')
+        self.mock_http_request(body='Some content')
         self.cache.update('http://localhost/foo')
         self.assertTrue(os.path.isfile(conflicting_path))
         self.assertFalse(os.path.isdir(conflicting_path))
@@ -746,7 +746,7 @@ class HttpCacheTest(SimpleTestCase):
             'Connection': 'Keep-Alive',
             'X-Custom-Field': 'some value',
         }
-        self.mock_http_request(text='Some content', headers=headers)
+        self.mock_http_request(body='Some content', headers=headers)
         url = 'http://example.com'
         # The URL cannot be found in the cache at this point
         self.assertFalse(url in self.cache)
@@ -770,7 +770,7 @@ class HttpCacheTest(SimpleTestCase):
 
     def test_get_content_stream(self):
         url = 'http://example.com'
-        self.mock_http_request(text='Some content')
+        self.mock_http_request(body='Some content')
         self.cache.update(url)
 
         stream = self.cache.get_content_stream(url)
@@ -780,7 +780,7 @@ class HttpCacheTest(SimpleTestCase):
 
     def test_get_content_stream_as_text(self):
         url = 'http://example.com'
-        self.mock_http_request(text='Some content')
+        self.mock_http_request(body='Some content')
         self.cache.update(url)
 
         stream = self.cache.get_content_stream(url, text=True)
@@ -828,7 +828,7 @@ class HttpCacheTest(SimpleTestCase):
         url = 'http://example.com/'
         self.cache.update(url)
 
-        self.set_http_get_response(text='', status_code=304)
+        self.set_http_get_response(body='', status_code=304)
         # Run the update again
         response, updated = self.cache.update(url)
 
@@ -852,13 +852,13 @@ class HttpCacheTest(SimpleTestCase):
         url = 'http://example.com'
         last_modified = http_date(time.time() - 3600)
         self.set_http_get_response(
-            url, text='First', headers={'Last-Modified': last_modified}
+            url, body='First', headers={'Last-Modified': last_modified}
         )
         self.cache.update(url)
         # Set a new Last-Modified and content value
         new_last_modified = http_date(time.time())
         self.set_http_get_response(
-            url, text='Response', headers={'Last-Modified': new_last_modified}
+            url, body='Response', headers={'Last-Modified': new_last_modified}
         )
 
         # Run the update again
@@ -906,7 +906,7 @@ class HttpCacheTest(SimpleTestCase):
         """
         Tests removing a cached response.
         """
-        self.mock_http_request(text='Some content')
+        self.mock_http_request(body='Some content')
         url = 'http://example.com'
         self.cache.update(url)
         # Sanity check - the url is cached
@@ -918,7 +918,7 @@ class HttpCacheTest(SimpleTestCase):
 
     def test_http_404_remove_old_cache(self):
         url = 'http://example.com'
-        self.mock_http_request(url=url, text='Some content')
+        self.mock_http_request(url=url, body='Some content')
         self.cache.update(url)
         self.assertTrue(url in self.cache)
 
@@ -929,7 +929,7 @@ class HttpCacheTest(SimpleTestCase):
 
     def test_http_404_does_not_remove_old_cache(self):
         url = 'http://example.com'
-        self.mock_http_request(url=url, text='Some content')
+        self.mock_http_request(url=url, body='Some content')
         self.cache.update(url)
         self.assertTrue(url in self.cache)
 
@@ -973,12 +973,12 @@ class HttpCacheTest(SimpleTestCase):
         self.mock_http_request()
         etag = '"466010a-11bf9-4e17efa8afb81"'
         url = 'http://example.com'
-        self.set_http_get_response(url, text='First', headers={'ETag': etag})
+        self.set_http_get_response(url, body='First', headers={'ETag': etag})
         self.cache.update(url)
         # Set a new ETag and content value
         new_etag = '"57ngfhty11bf9-9t831116kn1qw1'
         self.set_http_get_response(
-            url, text='Response', headers={'ETag': new_etag}
+            url, body='Response', headers={'ETag': new_etag}
         )
 
         # Run the update again
@@ -1018,9 +1018,9 @@ class HttpCacheTest(SimpleTestCase):
         file extension embedded in the URL.
         """
         self.mock_http_request(
-            content=b"\x1f\x8b\x08\x08\xca\xaa\x14Z\x00\x03helloworld\x00\xf3H"
-                    b"\xcd\xc9\xc9W(\xcf/\xcaIQ\x04\x00\x95\x19\x85\x1b\x0c\x00"
-                    b"\x00\x00"
+            body=b"\x1f\x8b\x08\x08\xca\xaa\x14Z\x00\x03helloworld\x00\xf3H"
+                 b"\xcd\xc9\xc9W(\xcf/\xcaIQ\x04\x00\x95\x19\x85\x1b\x0c\x00"
+                 b"\x00\x00"
         )
         url = "http://example.com/foo.gz"
         self.cache.update(url)
@@ -1032,7 +1032,7 @@ class HttpCacheTest(SimpleTestCase):
         Ensures the compression parameter passed to cache.get_content()
         is used and overrides whatever can be detected in the URL.
         """
-        self.mock_http_request(text="Hello world!")
+        self.mock_http_request(body="Hello world!")
         url = "http://example.com/foo.gz"
         self.cache.update(url)
         content = self.cache.get_content(url, compression=None)

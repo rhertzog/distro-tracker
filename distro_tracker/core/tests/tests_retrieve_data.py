@@ -270,7 +270,7 @@ class RetrieveRepositoryInfoTests(TestCase):
             'Description: Debian 7.1 Released 15 June 2013\n'
         )
         self.mock_http_request()
-        self.set_http_get_response(text=mock_response_text)
+        self.set_http_get_response(body=mock_response_text)
 
         repository_info = retrieve_repository_info(
             'deb http://repository.com/ stable')
@@ -300,7 +300,7 @@ class RetrieveRepositoryInfoTests(TestCase):
             'Description: Debian 7.1 Released 15 June 2013\n'
         )
         self.mock_http_request()
-        self.set_http_get_response(text=mock_response_text)
+        self.set_http_get_response(body=mock_response_text)
 
         from distro_tracker.core.retrieve_data import InvalidRepositoryException
         with self.assertRaises(InvalidRepositoryException):
@@ -318,7 +318,7 @@ class RetrieveRepositoryInfoTests(TestCase):
             'Description: Debian 7.1 Released 15 June 2013\n'
         )
         self.mock_http_request()
-        self.set_http_get_response(text=mock_response_text)
+        self.set_http_get_response(body=mock_response_text)
 
         repository_info = retrieve_repository_info(
             'deb http://repository.com/ stable')

@@ -537,7 +537,7 @@ class RetrieveLowThresholdNmuTest(TestCase):
                 " 1. [[DeveloperName|Name]] - "
                 "([[https://qa.debian.org/developer.php?"
                 "login={login}|all packages]])\n".format(login=login))
-        self.mock_http_request(text=text)
+        self.mock_http_request(body=text)
 
     def test_developer_did_not_exist(self):
         """
@@ -604,7 +604,7 @@ class RetrieveDebianMaintainersTest(TestCase):
         Tests updating the DM list when a new developer is to be added.
         """
         self.mock_http_request(
-            text="Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
+            body="Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
             "Uid: Dummy Developer <dummy@debian.org>\n"
             "Allow: dummy-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E),\n"
             " second-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E)\n")
@@ -627,7 +627,7 @@ class RetrieveDebianMaintainersTest(TestCase):
         """
         UserEmail.objects.create(email='dummy@debian.org')
         self.mock_http_request(
-            text="Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
+            body="Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
             "Uid: Dummy Developer <dummy@debian.org>\n"
             "Allow: dummy-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E),\n"
             " second-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E)\n")
@@ -655,7 +655,7 @@ class RetrieveDebianMaintainersTest(TestCase):
                                          allowed_packages=['one'])
 
         self.mock_http_request(
-            text="Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
+            body="Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
             "Uid: Dummy Developer <dummy@debian.org>\n"
             "Allow: dummy-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E),\n"
             " second-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E)\n")
@@ -681,7 +681,7 @@ class RetrieveDebianMaintainersTest(TestCase):
                                          allowed_packages=['one'])
 
         self.mock_http_request(
-            text="Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
+            body="Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
             "Uid: Dummy Developer <different-developer@debian.org>\n"
             "Allow: dummy-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E),\n"
             " second-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E)\n")
@@ -698,7 +698,7 @@ class RetrieveDebianMaintainersTest(TestCase):
         in the input data.
         """
         self.mock_http_request(
-            text="Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
+            body="Fingerprint: CFC5B232C0D082CAE6B3A166F04CEFF6016CFFD0\n"
             "Uid: Dummy Developer <bad-email>\n"
             "Allow: dummy-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E),\n"
             " second-package (709F54E4ECF3195623326AE3F82E5CC04B2B2B9E)\n")
@@ -1109,7 +1109,7 @@ class UpdateLintianStatsTaskTest(TestCase):
         Tests that stats are created for a package that previously did not have
         any lintian stats.
         """
-        self.set_http_get_response(text="dummy-package 1 2 3 4 5 6")
+        self.set_http_get_response(body="dummy-package 1 2 3 4 5 6")
 
         self.run_task()
 
@@ -1126,7 +1126,7 @@ class UpdateLintianStatsTaskTest(TestCase):
         Tests that when a package already had associated linian stats, they are
         correctly updated after running the task.
         """
-        self.set_http_get_response(text="dummy-package 6 5 4 3 2 1")
+        self.set_http_get_response(body="dummy-package 6 5 4 3 2 1")
         # Create the pre-existing stats for the package
         LintianStats.objects.create(
             package=self.package_name, stats=[1, 2, 3, 4, 5, 6])
@@ -1152,7 +1152,7 @@ class UpdateLintianStatsTaskTest(TestCase):
             "dummy-package 6 5 4 3 2 1\n"
             "other-package 1 2 3 4 5 6"
         )
-        self.set_http_get_response(text=response)
+        self.set_http_get_response(body=response)
 
         self.run_task()
 
@@ -1167,7 +1167,7 @@ class UpdateLintianStatsTaskTest(TestCase):
         """
         Tests that when an unknown package is encountered, no stats are created.
         """
-        self.set_http_get_response(text="no-exist 1 2 3 4 5 6")
+        self.set_http_get_response(body="no-exist 1 2 3 4 5 6")
 
         self.run_task()
 
@@ -1185,7 +1185,7 @@ class UpdateLintianStatsTaskTest(TestCase):
             "dummy-package 6 5 4 3 2 1\n"
             "other-package 1 2 a 4 5 6"
         )
-        self.set_http_get_response(text=response)
+        self.set_http_get_response(body=response)
 
         self.run_task()
 
@@ -1214,7 +1214,7 @@ class UpdateLintianStatsTaskTest(TestCase):
         errors, warnings = 2, 0
         response = "dummy-package {err} {warn} 0 0 0 0".format(
             err=errors, warn=warnings)
-        self.set_http_get_response(text=response)
+        self.set_http_get_response(body=response)
         # Sanity check: there were no action items in the beginning
         self.assertEqual(0, ActionItem.objects.count())
 
@@ -1253,7 +1253,7 @@ class UpdateLintianStatsTaskTest(TestCase):
         errors, warnings = 2, 0
         response = "dummy-package {err} {warn} 0 0 0 0".format(
             err=errors, warn=warnings)
-        self.set_http_get_response(text=response)
+        self.set_http_get_response(body=response)
 
         self.run_task()
 
@@ -1283,7 +1283,7 @@ class UpdateLintianStatsTaskTest(TestCase):
         old_timestamp = old_item.last_updated_timestamp
         response = "dummy-package {err} {warn} 0 0 0 0".format(
             err=errors, warn=warnings)
-        self.set_http_get_response(text=response)
+        self.set_http_get_response(body=response)
 
         self.run_task()
 
@@ -1300,7 +1300,7 @@ class UpdateLintianStatsTaskTest(TestCase):
         errors, warnings = 0, 2
         response = "dummy-package {err} {warn} 0 0 0 0".format(
             err=errors, warn=warnings)
-        self.set_http_get_response(text=response)
+        self.set_http_get_response(body=response)
         # Sanity check: there were no action items in the beginning
         self.assertEqual(0, ActionItem.objects.count())
 
@@ -1325,7 +1325,7 @@ class UpdateLintianStatsTaskTest(TestCase):
         errors, warnings = 2, 2
         response = "dummy-package {err} {warn} 0 0 0 0".format(
             err=errors, warn=warnings)
-        self.set_http_get_response(text=response)
+        self.set_http_get_response(body=response)
         # Sanity check: there were no action items in the beginning
         self.assertEqual(0, ActionItem.objects.count())
 
@@ -1351,7 +1351,7 @@ class UpdateLintianStatsTaskTest(TestCase):
         warnings.
         """
         response = "dummy-package 0 0 5 4 3 2"
-        self.set_http_get_response(text=response)
+        self.set_http_get_response(body=response)
         # Sanity check: there were no action items in the beginning
         self.assertEqual(0, ActionItem.objects.count())
 
@@ -1372,7 +1372,7 @@ class UpdateLintianStatsTaskTest(TestCase):
             short_description="Short description...",
             extra_data={'errors': 1, 'warnings': 2})
         response = "dummy-package 0 0 5 4 3 2"
-        self.set_http_get_response(text=response)
+        self.set_http_get_response(body=response)
 
         self.run_task()
 
@@ -1392,7 +1392,7 @@ class UpdateLintianStatsTaskTest(TestCase):
             short_description="Short description...",
             extra_data={'errors': 1, 'warnings': 2})
         response = "some-package 0 0 5 4 3 2"
-        self.set_http_get_response(text=response)
+        self.set_http_get_response(body=response)
 
         self.run_task()
 
@@ -1415,7 +1415,7 @@ class UpdateLintianStatsTaskTest(TestCase):
                 err1=errors[0], warn1=warnings[0],
                 err2=errors[1], warn2=warnings[1])
         )
-        self.set_http_get_response(text=response)
+        self.set_http_get_response(body=response)
         # Sanity check: there were no action items in the beginning
         self.assertEqual(0, ActionItem.objects.count())
 
@@ -1450,7 +1450,7 @@ class UpdateLintianStatsTaskTest(TestCase):
         errors, warnings = 2, 0
         response = "dummy-package {err} {warn} 0 0 0 0".format(
             err=errors, warn=warnings)
-        self.set_http_get_response(text=response)
+        self.set_http_get_response(body=response)
         # Sanity check: exactly one action item in the beginning
         self.assertEqual(1, ActionItem.objects.count())
 
@@ -2701,7 +2701,7 @@ class DebianWatchFileScannerUpdateTests(TestCase):
         self.package = SourcePackageName.objects.create(name='dummy-package')
 
         self.task = DebianWatchFileScannerUpdate()
-        self.mock_http_request(text='')
+        self.mock_http_request(body='')
 
     def run_task(self):
         self.task.execute()
@@ -4380,7 +4380,7 @@ class UpdateWnppStatsTaskTests(TestCase):
                 'bug_id': bug_id,
             }]
         )])
-        self.set_http_get_response(text=content)
+        self.set_http_get_response(body=content)
 
         self.run_task()
 
@@ -4418,7 +4418,7 @@ class UpdateWnppStatsTaskTests(TestCase):
                 'bug_id': bug_id,
             }]
         )])
-        self.set_http_get_response(text=content)
+        self.set_http_get_response(body=content)
 
         self.run_task()
 
@@ -4469,7 +4469,7 @@ class UpdateWnppStatsTaskTests(TestCase):
                 'bug_id': bug_id,
             }]
         )])
-        self.set_http_get_response(text=content)
+        self.set_http_get_response(body=content)
 
         self.run_task()
 
@@ -4510,7 +4510,7 @@ class UpdateWnppStatsTaskTests(TestCase):
                 'bug_id': bug_id,
             }]
         )])
-        self.set_http_get_response(text=content)
+        self.set_http_get_response(body=content)
 
         self.run_task()
 
@@ -4538,7 +4538,7 @@ class UpdateWnppStatsTaskTests(TestCase):
                 },
             })
         # Set "new" WNPP info
-        self.set_http_get_response(text="")
+        self.set_http_get_response(body="")
 
         self.run_task()
 
@@ -4559,7 +4559,7 @@ class UpdateWnppStatsTaskTests(TestCase):
                 'bug_id': bug_id,
             }]
         )])
-        self.set_http_get_response(text=content)
+        self.set_http_get_response(body=content)
 
         self.run_task()
 
@@ -4590,7 +4590,7 @@ class UpdateWnppStatsTaskTests(TestCase):
             (package.name, [wnpp_item])
             for package, wnpp_item in zip(packages, wnpp)
         ])
-        self.set_http_get_response(text=content)
+        self.set_http_get_response(body=content)
 
         self.run_task()
 
@@ -5384,7 +5384,7 @@ class UpdateAutoRemovalsStatsTaskTest(TestCase):
         Tests that an ActionItem is created for a package reported by
         autoremovals.
         """
-        self.set_http_get_response(text=self.autoremovals_data)
+        self.set_http_get_response(body=self.autoremovals_data)
 
         self.run_task()
         self.assertEqual(1, self.dummy_package.action_items.count())
@@ -5394,7 +5394,7 @@ class UpdateAutoRemovalsStatsTaskTest(TestCase):
         Tests that no ActionItem is created for a package not reported by
         autoremovals.
         """
-        self.set_http_get_response(text=self.autoremovals_data)
+        self.set_http_get_response(body=self.autoremovals_data)
 
         self.run_task()
         self.assertEqual(0, self.other_package.action_items.count())
@@ -5405,7 +5405,7 @@ class UpdateAutoRemovalsStatsTaskTest(TestCase):
         Tests that ActionItems are dropped when a package was previousy
         reported but is now not reported anymore.
         """
-        self.set_http_get_response(text=self.autoremovals_data)
+        self.set_http_get_response(body=self.autoremovals_data)
         self.run_task()
         self.assertEqual(1, self.dummy_package.action_items.count())
 
@@ -5415,7 +5415,7 @@ class UpdateAutoRemovalsStatsTaskTest(TestCase):
             - '1234567'
             removal_date: 2014-08-22 12:21:00
         """
-        self.set_http_get_response(text=autoremovals_data)
+        self.set_http_get_response(body=autoremovals_data)
 
         self.run_task()
         self.assertEqual(0, self.dummy_package.action_items.count())
@@ -6223,7 +6223,7 @@ class UpdateDependencySatisfactionTaskTest(TestCase):
         Tests that packages without dependency satisfaction info don't claim to
         have them.
         """
-        self.set_http_get_response(text=self.data1)
+        self.set_http_get_response(body=self.data1)
         other_package = SourcePackageName.objects.create(name='other-package')
 
         self.run_task()
@@ -6236,7 +6236,7 @@ class UpdateDependencySatisfactionTaskTest(TestCase):
         Tests that DependencySatisfactionTask doesn't fail with an unknown
         package.
         """
-        self.set_http_get_response(text=self.data2)
+        self.set_http_get_response(body=self.data2)
 
         self.run_task()
 
@@ -6249,7 +6249,7 @@ class UpdateDependencySatisfactionTaskTest(TestCase):
         Tests that PackageData for a package with dependency
         satisfaction info is correct.
         """
-        self.set_http_get_response(text=self.data1)
+        self.set_http_get_response(body=self.data1)
 
         self.run_task()
 
@@ -6270,10 +6270,10 @@ class UpdateDependencySatisfactionTaskTest(TestCase):
         Tests that PackageData is dropped if dependency satisfaction
         info goes away.
         """
-        self.set_http_get_response(text=self.data1)
+        self.set_http_get_response(body=self.data1)
         self.run_task()
 
-        self.set_http_get_response(text=self.data2)
+        self.set_http_get_response(body=self.data2)
         self.run_task()
 
         with self.assertRaises(PackageData.DoesNotExist):
@@ -6285,7 +6285,7 @@ class UpdateDependencySatisfactionTaskTest(TestCase):
         Tests that PackageData for an arch:all package with dependency
         satisfaction info is correct on amd64.
         """
-        self.set_http_get_response(text=self.data3)
+        self.set_http_get_response(body=self.data3)
 
         self.run_task()
 
@@ -6306,7 +6306,7 @@ class UpdateDependencySatisfactionTaskTest(TestCase):
         Tests that PackageData for an arch:all package with dependency
         satisfaction info is not shown on a non-amd64 architecture.
         """
-        self.set_http_get_response(text=self.data4)
+        self.set_http_get_response(body=self.data4)
         self.run_task()
 
         with self.assertRaises(PackageData.DoesNotExist):
@@ -6318,7 +6318,7 @@ class UpdateDependencySatisfactionTaskTest(TestCase):
         Tests that PackageData for a package with dependency
         satisfaction info is not shown on a non-release architecture.
         """
-        self.set_http_get_response(text=self.data5)
+        self.set_http_get_response(body=self.data5)
         self.run_task()
 
         with self.assertRaises(PackageData.DoesNotExist):
@@ -6371,7 +6371,7 @@ class UpdateBuildDependencySatisfactionTaskTest(TestCase):
         Tests that packages without build dependency satisfaction info don't
         claim to have them.
         """
-        self.set_http_get_response(text=self.data1)
+        self.set_http_get_response(body=self.data1)
         other_package = SourcePackageName.objects.create(name='other-package')
 
         self.run_task()
@@ -6384,7 +6384,7 @@ class UpdateBuildDependencySatisfactionTaskTest(TestCase):
         Tests that BuildDependencySatisfactionTask doesn't fail with an unknown
         package.
         """
-        self.set_http_get_response(text=self.data2)
+        self.set_http_get_response(body=self.data2)
 
         self.run_task()
 
@@ -6397,7 +6397,7 @@ class UpdateBuildDependencySatisfactionTaskTest(TestCase):
         Tests that PackageData for a package with build dependency
         satisfaction info is correct.
         """
-        self.set_http_get_response(text=self.data1)
+        self.set_http_get_response(body=self.data1)
 
         self.run_task()
 
@@ -6418,10 +6418,10 @@ class UpdateBuildDependencySatisfactionTaskTest(TestCase):
         Tests that PackageData is dropped if build dependency satisfaction
         info goes away.
         """
-        self.set_http_get_response(text=self.data1)
+        self.set_http_get_response(body=self.data1)
         self.run_task()
 
-        self.set_http_get_response(text=self.data2)
+        self.set_http_get_response(body=self.data2)
         self.run_task()
 
         with self.assertRaises(PackageData.DoesNotExist):
@@ -6433,7 +6433,7 @@ class UpdateBuildDependencySatisfactionTaskTest(TestCase):
         Tests that PackageData for an arch:all package with build dependency
         satisfaction info is correct on amd64.
         """
-        self.set_http_get_response(text=self.data3)
+        self.set_http_get_response(body=self.data3)
 
         self.run_task()
 
@@ -6454,7 +6454,7 @@ class UpdateBuildDependencySatisfactionTaskTest(TestCase):
         Tests that PackageData for an arch:all package with build dependency
         satisfaction info is not shown on a non-amd64 architecture.
         """
-        self.set_http_get_response(text=self.data4)
+        self.set_http_get_response(body=self.data4)
         self.run_task()
 
         with self.assertRaises(PackageData.DoesNotExist):
@@ -6466,7 +6466,7 @@ class UpdateBuildDependencySatisfactionTaskTest(TestCase):
         Tests that PackageData for a package with build dependency
         satisfaction info is not shown on a non-release architecture.
         """
-        self.set_http_get_response(text=self.data5)
+        self.set_http_get_response(body=self.data5)
         self.run_task()
 
         with self.assertRaises(PackageData.DoesNotExist):
@@ -6540,7 +6540,7 @@ class UpdateDl10nStatsTaskTest(TestCase):
         """
 
         text = self._create_pkglist_entry(score_other=10, todo=True)
-        self.mock_http_request(text=text)
+        self.mock_http_request(body=text)
 
         self.run_task()
 
@@ -6566,7 +6566,7 @@ class UpdateDl10nStatsTaskTest(TestCase):
                                    value=self._create_stat(score_other=10))
 
         text = self._create_pkglist_entry(score_debian=10, todo=True)
-        self.mock_http_request(text=text)
+        self.mock_http_request(body=text)
 
         self.run_task()
 
@@ -6586,7 +6586,7 @@ class UpdateDl10nStatsTaskTest(TestCase):
         """
 
         text = 'nonexistant 1.0.0 (-,10) http://url 0'
-        self.mock_http_request(text=text)
+        self.mock_http_request(body=text)
         self.run_task()
 
         # There are no stats
@@ -6605,7 +6605,7 @@ class UpdateDl10nStatsTaskTest(TestCase):
         old_timestamp = old_item.last_updated_timestamp
 
         text = self._create_pkglist_entry(score_debian=10, todo=True)
-        self.mock_http_request(text=text)
+        self.mock_http_request(body=text)
 
         self.run_task()
 
@@ -6629,7 +6629,7 @@ class UpdateDl10nStatsTaskTest(TestCase):
         self.assertEqual(0, ActionItem.objects.count())
 
         text = self._create_pkglist_entry(score_debian=10, todo=True)
-        self.mock_http_request(text=text)
+        self.mock_http_request(body=text)
         self.run_task()
 
         # An action item is created.
@@ -6651,7 +6651,7 @@ class UpdateDl10nStatsTaskTest(TestCase):
         self.assertEqual(0, ActionItem.objects.count())
 
         text = self._create_pkglist_entry(score_debian=10, todo=False)
-        self.mock_http_request(text=text)
+        self.mock_http_request(body=text)
         self.run_task()
 
         # Still no action items.
@@ -6670,7 +6670,7 @@ class UpdateDl10nStatsTaskTest(TestCase):
             extra_data=self._create_stat(score_other=10, todo=True))
 
         text = self._create_pkglist_entry(score_debian=10, todo=False)
-        self.mock_http_request(text=text)
+        self.mock_http_request(body=text)
         self.run_task()
 
         # There are no action items any longer.
@@ -6689,7 +6689,7 @@ class UpdateDl10nStatsTaskTest(TestCase):
             extra_data=self._create_stat(score_other=10, todo=True))
 
         text = 'nonexistant 1.0.0 (-,10) http://url 0'
-        self.mock_http_request(text=text)
+        self.mock_http_request(body=text)
         self.run_task()
 
         # There are no action items any longer.
