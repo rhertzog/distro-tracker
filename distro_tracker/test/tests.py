@@ -116,83 +116,96 @@ class TestCaseHelpersTests(object):
     def _call_requests_get(self, url='http://localhost'):
         return requests.get(url)
 
-    def test_set_http_get_response_stores_answers_to_send(self):
+    def test_set_http_response_stores_answers_to_send(self):
         self.mock_http_request()
         sample_headers = {'foo': 'bar'}
         url = 'http://localhost'
 
-        self.set_http_get_response(url, body='foobar', status_code=222,
-                                   headers=sample_headers)
+        self.set_http_response(
+            url, body='foobar', status_code=222, headers=sample_headers
+        )
         response = self._call_requests_get(url)
 
         self.assertEqual(response.text, 'foobar')
         self.assertEqual(response.status_code, 222)
         self.assertEqual(response.headers["foo"], "bar")
 
-    def test_set_http_get_response_default_answer_values(self):
+    def test_set_http_response_default_answer_values(self):
         self.mock_http_request()
-        self.set_http_get_response()
+        self.set_http_response()
 
         response = self._call_requests_get()
         self.assertEqual(response.text, '')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers, {"Content-Type": "text/plain"})
 
-    def test_set_http_get_response_json_data(self):
+    def test_set_http_response_json_data(self):
         self.mock_http_request()
         data = {'foo': 'bar'}
-        self.set_http_get_response(json_data=data)
+        self.set_http_response(json_data=data)
 
         response = self._call_requests_get()
         self.assertEqual(data, json.loads(response.text))
 
-    def test_set_http_get_response_json_data_empty_list(self):
+    def test_set_http_response_json_data_empty_list(self):
         self.mock_http_request()
         data = []
-        self.set_http_get_response(json_data=data)
+        self.set_http_response(json_data=data)
 
         response = self._call_requests_get()
         self.assertEqual(data, json.loads(response.text))
 
-    def test_set_http_get_response_compressed_text_with_gzip(self):
+    def test_set_http_response_compressed_text_with_gzip(self):
         self.mock_http_request()
         text = 'Hello world!'
-        self.set_http_get_response(body=text, compress_with='gzip')
+        self.set_http_response(body=text, compress_with='gzip')
 
         response = self._call_requests_get()
         self.assertEqual(gzip.decompress(response.content),
                          bytes(text, 'utf-8'))
 
-    def test_set_http_get_response_compressed_bytes_with_gzip(self):
+    def test_set_http_response_compressed_bytes_with_gzip(self):
         self.mock_http_request()
         content = b'\x01\x02\x03'
-        self.set_http_get_response(body=content, compress_with='gzip')
+        self.set_http_response(body=content, compress_with='gzip')
 
         response = self._call_requests_get()
         self.assertEqual(gzip.decompress(response.content), content)
 
-    def test_set_http_get_response_compressed_json_with_gzip(self):
+    def test_set_http_response_compressed_json_with_gzip(self):
         self.mock_http_request()
         data = {'foo': 'bar'}
-        self.set_http_get_response(json_data=data, compress_with='gzip')
+        self.set_http_response(json_data=data, compress_with='gzip')
 
         response = self._call_requests_get()
         json_text = gzip.decompress(response.content).decode('utf-8')
         self.assertEqual(json.loads(json_text), data)
 
-    def test_set_http_get_response_compressed_text_with_xz(self):
+    def test_set_http_response_compressed_text_with_xz(self):
         self.mock_http_request()
         text = 'Hello world!'
-        self.set_http_get_response(body=text, compress_with='xz')
+        self.set_http_response(body=text, compress_with='xz')
 
         response = self._call_requests_get()
         self.assertEqual(lzma.decompress(response.content),
                          bytes(text, 'utf-8'))
 
-    def test_set_http_get_response_compress_with_invalid_method(self):
+    def test_set_http_response_compress_with_invalid_method(self):
         self.mock_http_request()
         with self.assertRaises(NotImplementedError):
-            self.set_http_get_response(body='Foobar', compress_with='bad')
+            self.set_http_response(body='Foobar', compress_with='bad')
+
+    def test_set_http_post_request(self):
+        self.mock_http_request()
+        url = "http://localhost"
+        self.set_http_response(url, method='POST', body=b'Post data')
+
+        # A GET request fails on the POST url
+        with self.assertRaises(requests.exceptions.ConnectionError):
+            self._call_requests_get()
+
+        response = requests.post(url)
+        self.assertEqual(response.content, b'Post data')
 
     def test_mocked_requests_get_no_answer_set(self):
         self.mock_http_request()
@@ -203,9 +216,9 @@ class TestCaseHelpersTests(object):
     def test_mocked_requests_get_response_has_all_attributes(self):
         self.mock_http_request()
         sample_headers = {'foo': 'bar'}
-        self.set_http_get_response(body='This is\nthe answer',
-                                   status_code=201,
-                                   headers=sample_headers)
+        self.set_http_response(
+            body='This is\nthe answer', status_code=201, headers=sample_headers
+        )
 
         response = self._call_requests_get()
 
@@ -223,7 +236,7 @@ class TestCaseHelpersTests(object):
 
     def test_mocked_requests_announces_utf8_when_required(self):
         self.mock_http_request()
-        self.set_http_get_response(body='With Unicode characters: € ±')
+        self.set_http_response(body='With Unicode characters: € ±')
 
         response = self._call_requests_get()
 
@@ -232,7 +245,7 @@ class TestCaseHelpersTests(object):
     def test_mocked_requests_get_binary_response(self):
         self.mock_http_request()
         binary_content = b'\x01\x02\x03'
-        self.set_http_get_response(body=binary_content)
+        self.set_http_response(body=binary_content)
 
         response = self._call_requests_get()
 
@@ -242,7 +255,7 @@ class TestCaseHelpersTests(object):
 
     def test_mocked_requests_get_error_response(self):
         self.mock_http_request()
-        self.set_http_get_response(status_code=403)
+        self.set_http_response(status_code=403)
 
         response = self._call_requests_get()
 
@@ -255,8 +268,8 @@ class TestCaseHelpersTests(object):
     def test_mocked_requests_get_two_different_urls(self):
         """Ensure we get the answer corresponding to the requested URL"""
         self.mock_http_request()
-        self.set_http_get_response(url='http://localhost/1', body='one')
-        self.set_http_get_response(url='http://localhost/2', body='two')
+        self.set_http_response(url='http://localhost/1', body='one')
+        self.set_http_response(url='http://localhost/2', body='two')
 
         response = self._call_requests_get('http://localhost/2')
         self.assertEqual(response.text, 'two')
@@ -266,7 +279,7 @@ class TestCaseHelpersTests(object):
 
     def test_mocked_requests_get_two_different_urls_with_default_answer(self):
         self.mock_http_request()
-        self.set_http_get_response(body='default answer')
+        self.set_http_response(body='default answer')
 
         response = self._call_requests_get('http://localhost/2')
         self.assertEqual(response.text, 'default answer')
@@ -275,7 +288,7 @@ class TestCaseHelpersTests(object):
         self.assertEqual(response.text, 'default answer')
 
     def test_mock_http_request_can_set_response(self):
-        with mock.patch.object(self, 'set_http_get_response') as mocked_set:
+        with mock.patch.object(self, 'set_http_response') as mocked_set:
             self.mock_http_request(body='the answer')
             mocked_set.assert_called_with(body='the answer')
 

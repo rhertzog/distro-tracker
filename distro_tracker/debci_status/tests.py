@@ -72,7 +72,7 @@ class UpdateDebciStatusTaskTest(TestCase):
         Tests that an ActionItem isn't created for a passing debci status.
         """
         self.json_data[0]['status'] = 'pass'
-        self.set_http_get_response(json_data=self.json_data)
+        self.set_http_response(json_data=self.json_data)
 
         self.run_task()
 
@@ -83,7 +83,7 @@ class UpdateDebciStatusTaskTest(TestCase):
         Tests that an ActionItem isn't created for a passing debci status.
         """
         self.json_data[0]['status'] = 'neutral'
-        self.set_http_get_response(json_data=self.json_data)
+        self.set_http_response(json_data=self.json_data)
 
         self.run_task()
 
@@ -94,7 +94,7 @@ class UpdateDebciStatusTaskTest(TestCase):
         Tests that an ActionItem isn't created for an unknown package.
         """
         self.json_data[0]['package'] = 'unknown-package'
-        self.set_http_get_response(json_data=self.json_data)
+        self.set_http_response(json_data=self.json_data)
 
         self.run_task()
 
@@ -105,7 +105,7 @@ class UpdateDebciStatusTaskTest(TestCase):
         Tests that a proper ActionItem is created for a failing test
         on a known package.
         """
-        self.set_http_get_response(json_data=self.json_data)
+        self.set_http_response(json_data=self.json_data)
 
         self.run_task()
 
@@ -124,7 +124,7 @@ class UpdateDebciStatusTaskTest(TestCase):
 
     def test_action_item_is_updated(self):
         """Ensure a pre-existing action item gets its attributes reset"""
-        self.set_http_get_response(json_data=self.json_data)
+        self.set_http_response(json_data=self.json_data)
         self.run_task()
         self.package.action_items.update(extra_data=[], short_description='')
 
@@ -138,10 +138,10 @@ class UpdateDebciStatusTaskTest(TestCase):
         """
         Tests that ActionItems are dropped when the test passes again.
         """
-        self.set_http_get_response(json_data=self.json_data)
+        self.set_http_response(json_data=self.json_data)
         self.run_task()
         self.json_data[0]['status'] = 'pass'
-        self.set_http_get_response(json_data=self.json_data)
+        self.set_http_response(json_data=self.json_data)
 
         self.run_task()
 
@@ -152,9 +152,9 @@ class UpdateDebciStatusTaskTest(TestCase):
         Tests that ActionItems are dropped when the debci report doesn't
         mention the package.
         """
-        self.set_http_get_response(json_data=self.json_data)
+        self.set_http_response(json_data=self.json_data)
         self.run_task()
-        self.set_http_get_response(json_data=[])
+        self.set_http_response(json_data=[])
 
         self.run_task()
 
@@ -167,7 +167,7 @@ class UpdateDebciStatusTaskTest(TestCase):
         source_package = self.create_source_package(name='libpackage')
         package = source_package.source_package_name
         self.json_data[0]['package'] = 'libpackage'
-        self.set_http_get_response(json_data=self.json_data)
+        self.set_http_response(json_data=self.json_data)
 
         self.run_task()
 
@@ -186,7 +186,7 @@ class UpdateDebciStatusTaskTest(TestCase):
         (for instance with a hidden repository), and that no ActionItem
         is created
         """
-        self.set_http_get_response(json_data=self.json_data, status_code=404)
+        self.set_http_response(json_data=self.json_data, status_code=404)
 
         self.run_task()
 
@@ -198,7 +198,7 @@ class UpdateDebciStatusTaskTest(TestCase):
         is present in the JSON data.
         """
         self.json_data.append(None)
-        self.set_http_get_response(json_data=self.json_data)
+        self.set_http_response(json_data=self.json_data)
 
         self.run_task()
 
@@ -208,7 +208,7 @@ class UpdateDebciStatusTaskTest(TestCase):
         in the JSON data.
         """
         self.json_data[0]['duration_seconds'] = None
-        self.set_http_get_response(json_data=self.json_data)
+        self.set_http_response(json_data=self.json_data)
 
         self.run_task()
 

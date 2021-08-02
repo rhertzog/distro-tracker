@@ -828,7 +828,7 @@ class HttpCacheTest(SimpleTestCase):
         url = 'http://example.com/'
         self.cache.update(url)
 
-        self.set_http_get_response(body='', status_code=304)
+        self.set_http_response(body='', status_code=304)
         # Run the update again
         response, updated = self.cache.update(url)
 
@@ -851,13 +851,13 @@ class HttpCacheTest(SimpleTestCase):
         self.mock_http_request()
         url = 'http://example.com'
         last_modified = http_date(time.time() - 3600)
-        self.set_http_get_response(
+        self.set_http_response(
             url, body='First', headers={'Last-Modified': last_modified}
         )
         self.cache.update(url)
         # Set a new Last-Modified and content value
         new_last_modified = http_date(time.time())
-        self.set_http_get_response(
+        self.set_http_response(
             url, body='Response', headers={'Last-Modified': new_last_modified}
         )
 
@@ -922,7 +922,7 @@ class HttpCacheTest(SimpleTestCase):
         self.cache.update(url)
         self.assertTrue(url in self.cache)
 
-        self.set_http_get_response(url=url, status_code=404)
+        self.set_http_response(url=url, status_code=404)
         self.cache.update(url)
 
         self.assertFalse(url in self.cache)
@@ -933,7 +933,7 @@ class HttpCacheTest(SimpleTestCase):
         self.cache.update(url)
         self.assertTrue(url in self.cache)
 
-        self.set_http_get_response(url=url, status_code=404)
+        self.set_http_response(url=url, status_code=404)
         self.cache.update(url, invalidate_cache=False)
 
         self.assertTrue(url in self.cache)
@@ -949,10 +949,10 @@ class HttpCacheTest(SimpleTestCase):
         self.mock_http_request()
         etag = '"466010a-11bf9-4e17efa8afb81"'
         url = 'http://example.com'
-        self.set_http_get_response(url, headers={'ETag': etag})
+        self.set_http_response(url, headers={'ETag': etag})
         self.cache.update(url)
 
-        self.set_http_get_response(url, status_code=304)
+        self.set_http_response(url, status_code=304)
         # Run the update again
         response, updated = self.cache.update(url)
 
@@ -973,11 +973,11 @@ class HttpCacheTest(SimpleTestCase):
         self.mock_http_request()
         etag = '"466010a-11bf9-4e17efa8afb81"'
         url = 'http://example.com'
-        self.set_http_get_response(url, body='First', headers={'ETag': etag})
+        self.set_http_response(url, body='First', headers={'ETag': etag})
         self.cache.update(url)
         # Set a new ETag and content value
         new_etag = '"57ngfhty11bf9-9t831116kn1qw1'
-        self.set_http_get_response(
+        self.set_http_response(
             url, body='Response', headers={'ETag': new_etag}
         )
 

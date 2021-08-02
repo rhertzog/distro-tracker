@@ -130,7 +130,7 @@ class TestCaseHelpersMixin(object):
         self.addCleanup(responses.reset)
 
         if kwargs:
-            self.set_http_get_response(**kwargs)
+            self.set_http_response(**kwargs)
 
     @staticmethod
     def compress(data, compression='gzip'):
@@ -143,8 +143,8 @@ class TestCaseHelpersMixin(object):
                 'compress() does not support {} as '
                 'compression method'.format(compression))
 
-    def set_http_get_response(self, url=None, body=None, status_code=200,
-                              headers=None, json_data=None, compress_with=None):
+    def set_http_response(self, url=None, method="GET", body=None, headers=None,
+                          status_code=200, json_data=None, compress_with=None):
         # Default URL is the catch-all pattern
         if url is None:
             url = re.compile(".*")
@@ -169,9 +169,9 @@ class TestCaseHelpersMixin(object):
         if body is None:
             body = ""
 
-        responses.remove(responses.GET, url)
+        responses.remove(method, url)
         responses.add(
-            method=responses.GET,
+            method=method,
             url=url,
             body=body,
             json=json_data,
