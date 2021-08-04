@@ -342,6 +342,49 @@ class DatabaseMixin(object):
         for key, value in kwargs.items():
             PackageData.objects.create(package=pkgname, key=key, value=value)
 
+    @staticmethod
+    def create_repository(
+        codename="sid",
+        name=None,
+        shorthand=None,
+        uri="http://localhost/debian",
+        suite=None,
+        components="main contrib non-free",
+        default=False,
+        optional=True,
+        binary=False,
+        source=True,
+        architectures=None,
+    ):
+        if not name:
+            name = "Repository %s" % codename
+        if not shorthand:
+            shorthand = codename[:10]
+        if not suite:
+            suite = codename
+
+        repo = Repository.objects.create(
+            name=name,
+            shorthand=shorthand,
+            uri=uri,
+            public_uri=uri,
+            codename=codename,
+            suite=suite,
+            components=components,
+            default=default,
+            optional=optional,
+            binary=binary,
+            source=source,
+        )
+
+        if not architectures:
+            architectures = ["amd64", "i386"]
+        for archname in architectures:
+            arch, _ = Architecture.objects.get_or_create(name=archname)
+            repo.architectures.add(arch)
+
+        return repo
+
 
 class SimpleTestCase(TempDirsMixin, TestCaseHelpersMixin,
                      django.test.SimpleTestCase):

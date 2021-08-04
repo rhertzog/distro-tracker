@@ -469,6 +469,51 @@ class DatabaseMixinTests(object):
         pkgdata = PackageData.objects.get(package=pkgname, key='key1')
         self.assertEqual(pkgdata.value, data)
 
+    def test_create_repository_with_default_values(self):
+        repo = self.create_repository()
+        self.assertIsInstance(repo, Repository)
+        self.assertEqual(repo.name, "Repository sid")
+        self.assertEqual(repo.shorthand, "sid")
+        self.assertEqual(repo.codename, "sid")
+        self.assertEqual(repo.suite, "sid")
+        self.assertEqual(repo.uri, "http://localhost/debian")
+        self.assertEqual(repo.public_uri, "http://localhost/debian")
+        self.assertEqual(repo.components, "main contrib non-free")
+        self.assertEqual(repo.default, False)
+        self.assertEqual(repo.optional, True)
+        self.assertEqual(repo.binary, False)
+        self.assertEqual(repo.source, True)
+        self.assertEqual(set(["amd64", "i386"]),
+                         set([a.name for a in repo.architectures.all()]))
+
+    def test_create_repository_with_custom_values(self):
+        repo = self.create_repository(
+            codename="bullseye",
+            name="Repo name",
+            shorthand="shortname",
+            uri="http://deb.debian.org/debian",
+            suite="stable",
+            components="core extra",
+            default=True,
+            optional=False,
+            binary=True,
+            source=False,
+            architectures=["arm64", "armhf"],
+        )
+        self.assertEqual(repo.name, "Repo name")
+        self.assertEqual(repo.shorthand, "shortname")
+        self.assertEqual(repo.codename, "bullseye")
+        self.assertEqual(repo.suite, "stable")
+        self.assertEqual(repo.uri, "http://deb.debian.org/debian")
+        self.assertEqual(repo.public_uri, "http://deb.debian.org/debian")
+        self.assertEqual(repo.components, "core extra")
+        self.assertEqual(repo.default, True)
+        self.assertEqual(repo.optional, False)
+        self.assertEqual(repo.binary, True)
+        self.assertEqual(repo.source, False)
+        self.assertEqual(set(["arm64", "armhf"]),
+                         set([a.name for a in repo.architectures.all()]))
+
 
 class TempDirsOnSimpleTestCase(TempDirsTests, TestCaseHelpersTests,
                                SimpleTestCase):
