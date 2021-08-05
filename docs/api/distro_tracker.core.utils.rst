@@ -1,59 +1,49 @@
-utils Package
-=============
-
-:mod:`utils` Package
---------------------
+distro_tracker.core.utils
+-------------------------
 
 .. automodule:: distro_tracker.core.utils
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
-:mod:`datastructures` Module
-----------------------------
+distro_tracker.core.utils.compression
+-------------------------------------
 
-.. automodule:: distro_tracker.core.utils.datastructures
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. automodule:: distro_tracker.core.utils.compression
 
-:mod:`email_messages` Module
-----------------------------
+distro_tracker.core.utils.email_messages
+----------------------------------------
 
 .. automodule:: distro_tracker.core.utils.email_messages
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
-:mod:`http` Module
-------------------
+distro_tracker.core.utils.http
+------------------------------
 
 .. automodule:: distro_tracker.core.utils.http
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
-:mod:`packages` Module
-----------------------
+distro_tracker.core.utils.linkify
+---------------------------------
+
+.. automodule:: distro_tracker.core.utils.linkify
+
+distro_tracker.core.utils.misc
+------------------------------
+
+.. automodule:: distro_tracker.core.utils.misc
+
+distro_tracker.core.utils.packages
+----------------------------------
 
 .. automodule:: distro_tracker.core.utils.packages
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
-:mod:`plugins` Module
----------------------
+distro_tracker.core.utils.plugins
+---------------------------------
 
 .. automodule:: distro_tracker.core.utils.plugins
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
-:mod:`verp` Module
-------------------
+distro_tracker.core.utils.urls
+------------------------------
+
+.. automodule:: distro_tracker.core.utils.urls
+
+distro_tracker.core.utils.verp
+------------------------------
 
 .. automodule:: distro_tracker.core.utils.verp
-    :members:
-    :undoc-members:
-    :show-inheritance:
-

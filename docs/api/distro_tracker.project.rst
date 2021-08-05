@@ -1,72 +1,35 @@
-project Package
-===============
-
-:mod:`project` Package
-----------------------
+distro_tracker.project
+======================
 
 .. automodule:: distro_tracker.project
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
-:mod:`urls` Module
-------------------
-
-.. automodule:: distro_tracker.project.urls
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`wsgi` Module
-------------------
-
-.. automodule:: distro_tracker.project.wsgi
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`settings` Module
-----------------------
+distro_tracker.settings
+-----------------------
 
 .. automodule:: distro_tracker.project.settings
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
-:mod:`settings.defaults` Module
--------------------------------
+distro_tracker.settings.defaults
+--------------------------------
 
 .. automodule:: distro_tracker.project.settings.defaults
-    :members:
+    :no-undoc-members:
 
-:mod:`settings.local` Module
-----------------------------
+distro_tracker.settings.local
+-----------------------------
 
 .. automodule:: distro_tracker.project.settings.local
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
-:mod:`settings.production` Module
----------------------------------
-
-.. automodule:: distro_tracker.project.settings.production
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`settings.development` Module
+distro_tracker.settings.production
 ----------------------------------
 
-.. automodule:: distro_tracker.project.settings.development
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. automodule:: distro_tracker.project.settings.production
 
-:mod:`settings.test` Module
----------------------------
+distro_tracker.settings.development
+-----------------------------------
+
+.. automodule:: distro_tracker.project.settings.development
+
+distro_tracker.settings.test
+----------------------------
 
 .. automodule:: distro_tracker.project.settings.test
-    :members:
-    :undoc-members:
-    :show-inheritance:

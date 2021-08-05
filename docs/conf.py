@@ -12,12 +12,15 @@
 # serve to show the default.
 
 import sys, os, re
+import django
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.insert(0, os.path.abspath('.'))
-sys.path.insert(0, os.path.abspath('../'))
+sys.path.insert(0, os.path.abspath('..'))
+
+os.environ['DJANGO_SETTINGS_MODULE'] = 'distro_tracker.project.settings'
+django.setup()
 
 # -- General configuration -----------------------------------------------------
 
@@ -42,7 +45,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Distro Tracker'
-copyright = u'2013-2018, The Distro Tracker Developers'
+copyright = u'2013-2021, The Distro Tracker Developers'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -95,6 +98,13 @@ highlight_language = 'python'
 # If true, keep warnings as "system message" paragraphs in the built documents.
 #keep_warnings = False
 
+autodoc_default_options = {
+    "members": True,
+    "undoc-members": True,
+    "show-inheritance": True,
+    "member-order": "bysource",
+    #"special-members": "__init__",
+}
 
 # -- Options for HTML output ---------------------------------------------------
 
@@ -129,7 +139,7 @@ html_theme = 'sphinx_rtd_theme'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+#html_static_path = ['_static']
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.

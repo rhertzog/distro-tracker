@@ -85,10 +85,12 @@ def get_compressor_factory(compression):
     lzma.open and bz2.open. You have to pass mode='wb' or mode='wt' to
     the returned function to use it in write mode.
 
-        compressor_factory = get_compressor_factory("xz")
-        compressor = compressor_factory(path, mode="wb")
-        compressor.write(b"Test")
-        compressor.close()
+    .. code-block:: python3
+
+       compressor_factory = get_compressor_factory("xz")
+       compressor = compressor_factory(path, mode="wb")
+       compressor.write(b"Test")
+       compressor.close()
 
     :param compression: The compression method to use.
     :type compression: str

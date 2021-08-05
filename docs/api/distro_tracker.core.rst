@@ -1,77 +1,74 @@
-core Package
-============
+distro_tracker.core
+===================
 
-:mod:`core` Package
--------------------
+Core internal API
+~~~~~~~~~~~~~~~~~
 
-.. automodule:: distro_tracker.core
-    :members:
-    :undoc-members:
-    :show-inheritance:
+The API in the module listed here might be useful to you if you
+want to add a new feature to distro-tracker.
 
-:mod:`admin` Module
--------------------
-
-.. automodule:: distro_tracker.core.admin
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`context_processors` Module
---------------------------------
-
-.. automodule:: distro_tracker.core.context_processors
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`models` Module
---------------------
+distro_tracker.core.models
+--------------------------
 
 .. automodule:: distro_tracker.core.models
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
-:mod:`panels` Module
---------------------
-
-.. automodule:: distro_tracker.core.panels
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`retrieve_data` Module
----------------------------
-
-.. automodule:: distro_tracker.core.retrieve_data
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`tasks` Module
--------------------
+distro_tracker.core.tasks
+-------------------------
 
 .. automodule:: distro_tracker.core.tasks
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
-:mod:`views` Module
--------------------
+distro_tracker.core.templatetags.distro_tracker_extras
+------------------------------------------------------
 
-.. automodule:: distro_tracker.core.views
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. automodule:: distro_tracker.core.templatetags.distro_tracker_extras
 
-Subpackages
------------
+distro_tracker.core.utils
+-------------------------
 
 .. toctree::
 
-    distro_tracker.core.management
-    distro_tracker.core.templatetags
-    distro_tracker.core.tests
-    distro_tracker.core.utils
+   distro_tracker.core.utils
 
+Extendable parts of the web interface
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The set of panels, package tables and package table fields can be extended
+with new class inheriting from specific classes.
+
+distro_tracker.core.panels
+--------------------------
+
+.. automodule:: distro_tracker.core.panels
+
+distro_tracker.core.package_tables
+----------------------------------
+
+.. automodule:: distro_tracker.core.package_tables
+
+Web interface implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+distro_tracker.core.admin
+-------------------------
+
+.. automodule:: distro_tracker.core.admin
+
+distro_tracker.core.context_processors
+--------------------------------------
+
+.. automodule:: distro_tracker.core.context_processors
+
+distro_tracker.core.forms
+-------------------------
+
+.. automodule:: distro_tracker.core.forms
+
+distro_tracker.core.news_feed
+-----------------------------
+
+.. automodule:: distro_tracker.core.news_feed
+
+distro_tracker.core.views
+-------------------------
+
+.. automodule:: distro_tracker.core.views

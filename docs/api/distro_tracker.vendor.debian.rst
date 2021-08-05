@@ -1,51 +1,39 @@
-debian Package
-==============
-
-:mod:`debian` Package
----------------------
+distro_tracker.vendor.debian
+============================
 
 .. automodule:: distro_tracker.vendor.debian
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
-:mod:`models` Module
---------------------
+distro_tracker.vendor.debian.models
+-----------------------------------
 
 .. automodule:: distro_tracker.vendor.debian.models
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
-:mod:`tracker_panels` Module
-------------------------
-
-.. automodule:: distro_tracker.vendor.debian.tracker_panels
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`tracker_tasks` Module
------------------------
-
-.. automodule:: distro_tracker.vendor.debian.tracker_tasks
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`rules` Module
--------------------
+distro_tracker.vendor.debian.rules
+----------------------------------
 
 .. automodule:: distro_tracker.vendor.debian.rules
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
-:mod:`tests` Module
--------------------
+distro_tracker.vendor.debian.tracker_package_tables
+---------------------------------------------------
 
-.. automodule:: distro_tracker.vendor.debian.tests
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. automodule:: distro_tracker.vendor.debian.tracker_package_tables
 
+distro_tracker.vendor.debian.tracker_panels
+-------------------------------------------
+
+.. automodule:: distro_tracker.vendor.debian.tracker_panels
+
+distro_tracker.vendor.debian.tracker_tasks
+------------------------------------------
+
+.. automodule:: distro_tracker.vendor.debian.tracker_tasks
+
+distro_tracker.vendor.debian.tracker_urls
+-----------------------------------------
+
+.. automodule:: distro_tracker.vendor.debian.tracker_urls
+
+distro_tracker.vendor.debian.views
+----------------------------------
+
+.. automodule:: distro_tracker.vendor.debian.views

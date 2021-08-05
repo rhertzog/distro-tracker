@@ -1,44 +1,29 @@
-mail Package
-============
-
-:mod:`mail` Package
--------------------
+distro_tracker.mail
+===================
 
 .. automodule:: distro_tracker.mail
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
-:mod:`dispatch` Module
-----------------------
+distro_tracker.mail.control
+---------------------------
+
+.. automodule:: distro_tracker.mail.control
+
+distro_tracker.mail.dispatch
+----------------------------
 
 .. automodule:: distro_tracker.mail.dispatch
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
-:mod:`mail_news` Module
------------------------
+distro_tracker.mail.mail_news
+-----------------------------
 
 .. automodule:: distro_tracker.mail.mail_news
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
-:mod:`models` Module
---------------------
+distro_tracker.mail.models
+--------------------------
 
 .. automodule:: distro_tracker.mail.models
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
-Subpackages
------------
+distro_tracker.mail.processor
+-----------------------------
 
-.. toctree::
-
-    distro_tracker.mail.control
-    distro_tracker.mail.management
-    distro_tracker.mail.tests
-
+.. automodule:: distro_tracker.mail.processor
