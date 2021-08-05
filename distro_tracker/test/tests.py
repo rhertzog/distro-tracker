@@ -30,6 +30,7 @@ from distro_tracker.core.models import (
     SourcePackage
 )
 from distro_tracker.test import (
+    AptRepositoryMixin,
     SimpleTestCase,
     TempDirsMixin,
     TestCase,
@@ -293,6 +294,187 @@ class TestCaseHelpersTests(object):
             mocked_set.assert_called_with(body='the answer')
 
 
+class AptRepositoryMixinTests(object):
+    def test_mock_apt_repository_overrides_release_file(self):
+        repo = self.create_repository()
+
+        self.mock_apt_repository(repo)
+        response = requests.get("http://localhost/debian/dists/sid/Release")
+
+        self.assertIn("Codename: sid\n", response.text)
+        self.assertIn("Suite: sid\n", response.text)
+        self.assertIn("Components: main contrib non-free\n", response.text)
+        self.assertIn("Acquire-By-Hash: yes\n", response.text)
+
+    def test_mock_apt_repository_overrides_inrelease_file(self):
+        repo = self.create_repository()
+
+        self.mock_apt_repository(repo)
+        response = requests.get("http://localhost/debian/dists/sid/InRelease")
+
+        self.assertIn("Codename: sid\n", response.text)
+        self.assertIn("-----BEGIN PGP SIGNED MESSAGE-----", response.text)
+        self.assertIn("-----BEGIN PGP SIGNATURE-----", response.text)
+        self.assertIn("-----END PGP SIGNATURE-----", response.text)
+
+    def test_mock_apt_repository_disable_inrelease_file(self):
+        repo = self.create_repository()
+
+        self.mock_apt_repository(repo, enable_inrelease=False)
+        response = requests.get("http://localhost/debian/dists/sid/InRelease")
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_mock_apt_repository_disable_acquire_by_hash(self):
+        repo = self.create_repository()
+
+        self.mock_apt_repository(repo, acquire_by_hash=False)
+        response = requests.get("http://localhost/debian/dists/sid/Release")
+
+        self.assertNotIn("Acquire-By-Hash: yes\n", response.text)
+
+    def _check_apt_url_content(self, repo, filename, content):
+        url = self._apt_repo_build_url(repo, filename)
+        response = requests.get(url)
+        self.assertTrue(response.ok)
+        if isinstance(content, str):
+            self.assertEqual(response.text, content)
+        else:
+            self.assertEqual(response.content, content)
+
+    def _check_apt_url_is_404(self, repo, filename):
+        url = self._apt_repo_build_url(repo, filename)
+        response = requests.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def _check_apt_url_exists(self, repo, filename):
+        url = self._apt_repo_build_url(repo, filename)
+        response = requests.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_mock_apt_repository_overrides_source_metadata(self):
+        repo = self.create_repository()
+
+        self.mock_apt_repository(repo)
+
+        self._check_apt_url_content(repo, "main/source/Sources", "")
+
+    def test_mock_apt_repository_overrides_binary_metadata(self):
+        repo = self.create_repository()
+
+        self.mock_apt_repository(repo)
+
+        for arch in ("amd64", "i386"):
+            with self.subTest(arch=arch):
+                filename = f"main/binary-{arch}/Packages"
+                self._check_apt_url_content(repo, filename, "")
+
+    def test_mock_apt_repository_no_compressed_files_by_default(self):
+        repo = self.create_repository()
+
+        self.mock_apt_repository(repo)
+
+        # All compressed files are missing, thus we get HTTP 404 errors back
+        for suffix in (".gz", ".bz2", ".xz"):
+            with self.subTest(suffix=suffix):
+                filename = f"main/source/Sources{suffix}"
+                self._check_apt_url_is_404(repo, filename)
+
+    def test_mock_apt_repository_enable_compression(self):
+        repo = self.create_repository()
+
+        self.mock_apt_repository(repo, compression_suffixes=[".xz"])
+
+        for filename in ("main/source/Sources",
+                         "main/binary-amd64/Packages",
+                         "main/binary-i386/Packages"):
+            with self.subTest(filename=filename):
+                # Uncompressed is gone
+                self._check_apt_url_is_404(repo, filename)
+
+                # Compressed is there
+                self._check_apt_url_exists(repo, f"{filename}.xz")
+
+    def test_mock_apt_repository_enable_compression_at_file_level(self):
+        repo = self.create_repository()
+
+        opts = {
+            "main/source/Sources": {
+                "compression_suffixes": [".gz", ".xz"],
+            }
+        }
+        self.mock_apt_repository(repo, metadata_options=opts)
+
+        # Uncompressed is gone
+        self._check_apt_url_is_404(repo, "main/source/Sources")
+
+        # Compressed is there
+        self._check_apt_url_exists(repo, "main/source/Sources.xz")
+        self._check_apt_url_exists(repo, "main/source/Sources.gz")
+
+        # Non-requested compressed files are missing too
+        self._check_apt_url_is_404(repo, "main/source/Sources.bz2")
+
+    def test_mock_apt_repository_override_metadata_content(self):
+        repo = self.create_repository()
+
+        opts = {
+            "main/source/Sources": {
+                "content": b"hello world",
+            }
+        }
+        self.mock_apt_repository(repo, metadata_options=opts)
+
+        self._check_apt_url_content(repo, "main/source/Sources", "hello world")
+
+    def test_mock_apt_repository_override_metadata_content_as_callable(self):
+        repo = self.create_repository()
+
+        def generate_content(repo, filename):
+            return "{} {}".format(repo.shorthand, filename).encode("utf-8")
+
+        opts = {
+            "main/source/Sources": {
+                "content": generate_content,
+            }
+        }
+        self.mock_apt_repository(repo, metadata_options=opts)
+
+        self._check_apt_url_content(
+            repo, "main/source/Sources", "sid main/source/Sources"
+        )
+
+    def test_mock_apt_repository_override_metadata_global_generator(self):
+        repo = self.create_repository()
+
+        def generate_content(repo, filename):
+            return "{} {}".format(repo.shorthand, filename).encode("utf-8")
+
+        self.mock_apt_repository(repo, content=generate_content)
+
+        self._check_apt_url_content(
+            repo, "main/binary-amd64/Packages", "sid main/binary-amd64/Packages"
+        )
+
+    def test_mock_apt_repository_override_metadata_content_with_test_data(self):
+        repo = self.create_repository()
+        test_data_filename = "sample-test-file.txt"
+        test_data_path = self.get_test_data_path(test_data_filename)
+        with open(test_data_path, 'rb') as f:
+            expected_content = f.read()
+
+        opts = {
+            "main/source/Sources": {
+                "test_content_file": test_data_filename,
+            }
+        }
+        self.mock_apt_repository(repo, metadata_options=opts)
+
+        self._check_apt_url_content(
+            repo, "main/source/Sources", expected_content
+        )
+
+
 class DatabaseMixinTests(object):
     def assert_fails(self, assert_function, *args):
         with self.assertRaises(AssertionError):
@@ -515,16 +697,19 @@ class DatabaseMixinTests(object):
                          set([a.name for a in repo.architectures.all()]))
 
 
-class TempDirsOnSimpleTestCase(TempDirsTests, TestCaseHelpersTests,
-                               SimpleTestCase):
+class TestHelpersOnSimpleTestCase(TempDirsTests, TestCaseHelpersTests,
+                                  SimpleTestCase):
     pass
 
 
-class TempDirsOnTestCase(TempDirsTests, TestCaseHelpersTests,
-                         DatabaseMixinTests, TestCase):
+class TestHelpersOnTestCase(TempDirsTests, TestCaseHelpersTests,
+                            DatabaseMixinTests, AptRepositoryMixinTests,
+                            TestCase, AptRepositoryMixin):
     pass
 
 
-class TempDirsOnTransactionTestCase(TempDirsTests, TestCaseHelpersTests,
-                                    DatabaseMixinTests, TransactionTestCase):
+class TestHelpersOnTransactionTestCase(TempDirsTests, TestCaseHelpersTests,
+                                       DatabaseMixinTests,
+                                       AptRepositoryMixinTests,
+                                       TransactionTestCase, AptRepositoryMixin):
     pass

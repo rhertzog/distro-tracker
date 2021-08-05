@@ -15,7 +15,9 @@ Distro Tracker test infrastructure.
 """
 
 import gzip
+import hashlib
 import inspect
+import io
 import json
 import lzma
 import os
@@ -43,6 +45,10 @@ from distro_tracker.core.models import (
     Repository,
     SourcePackage,
     SourcePackageName,
+)
+from distro_tracker.core.utils.compression import (
+    get_compressor_factory,
+    guess_compression_method,
 )
 from distro_tracker.core.utils.packages import package_hashdir
 
@@ -479,3 +485,174 @@ class UserAuthMixin(object):
         user_data.setdefault('main_email', '{}@example.com'.format(username))
         user_data.setdefault('password', '{}password'.format(username))
         return user_data
+
+
+class AptRepositoryMixin(object):
+    """
+    Helper method to mock an APT repository.
+    """
+
+    def mock_apt_repository(self, repo, **kwargs):
+        self.mock_http_request()
+        global_compression_suffixes = kwargs.pop("compression_suffixes", [""])
+        global_content = kwargs.pop("content", None)
+        # Mock Sources and Packages files
+        for base_filename in self._apt_repo_iter_metadata(repo):
+            metadata_options = kwargs.get("metadata_options", {}).get(
+                base_filename, {}
+            )
+            compression_suffixes = metadata_options.get(
+                "compression_suffixes", global_compression_suffixes
+            )
+            metadata_content = metadata_options.get("content", global_content)
+            test_content_file = metadata_options.get("test_content_file")
+            for suffix in ("", ".bz2", ".gz", ".xz"):
+                filename = base_filename + suffix
+                content = metadata_content
+                if callable(metadata_content):
+                    content = metadata_content(repo, filename)
+                if suffix in compression_suffixes:
+                    self.mock_apt_repository_add_metadata_file(
+                        repo,
+                        filename,
+                        content=content,
+                        test_content_file=test_content_file,
+                    )
+                else:
+                    url = self._apt_repo_build_url(repo, filename)
+                    self.set_http_response(url, status_code=404)
+        # Mock Release/InRelease files
+        self.mock_apt_repository_update_release_file(repo, **kwargs)
+
+    @staticmethod
+    def _apt_repo_build_url(repo, filename):
+        return "{}/dists/{}/{}".format(repo.uri, repo.codename, filename)
+
+    @staticmethod
+    def _apt_repo_iter_metadata(repo):
+        for component in sorted(repo.components.split()):
+            for arch in repo.architectures.all().order_by('name'):
+                yield f"{component}/binary-{arch.name}/Packages"
+            yield f"{component}/source/Sources"
+
+    def _apt_repo_init_checksums(self, repo):
+        if not hasattr(self, '_apt_repo_checksums'):
+            self._apt_repo_checksums = {}
+        self._apt_repo_checksums.setdefault(repo.shorthand, {})
+
+    def _apt_repo_iter_checksums(self, repo):
+        return self._apt_repo_checksums[repo.shorthand].items()
+
+    def _apt_repo_store_checksums(self, repo, filename, checksums):
+        self._apt_repo_checksums[repo.shorthand][filename] = checksums
+
+    def mock_apt_repository_add_metadata_file(
+        self, repo, filename, content=None, test_content_file=None,
+        compression="auto", **kwargs,
+    ):
+        self._apt_repo_init_checksums(repo)
+
+        # Load test content if required
+        if test_content_file:
+            data_path = self.get_test_data_path(test_content_file)
+            with open(data_path, 'rb') as f:
+                content = f.read()
+
+        # Generate content if required, then compress it if required
+        if content is None:
+            content = b""
+
+        # Detect compression method
+        if compression == "auto":
+            compression = guess_compression_method(filename)
+
+        if compression:
+            stream = io.BytesIO()
+            compressor = get_compressor_factory(compression)(stream, mode="wb")
+            compressor.write(content)
+            compressor.close()
+            content = stream.getvalue()
+
+        # Store checksums of metadata
+        checksums = {
+            "Size": len(content),
+            "MD5Sum": hashlib.md5(content).hexdigest(),
+            "SHA256": hashlib.sha256(content).hexdigest(),
+        }
+        self._apt_repo_store_checksums(repo, filename, checksums)
+
+        # Register the metadata in the http mock
+        url = self._apt_repo_build_url(repo, filename)
+        self.set_http_response(url, body=content)
+
+    def mock_apt_repository_update_release_file(
+        self,
+        repo,
+        enable_inrelease=True,
+        acquire_by_hash=True,
+        suite=None,
+        codename=None,
+        architectures=None,
+        components=None,
+        **kwargs,
+    ):
+        self._apt_repo_init_checksums(repo)
+
+        release_url = self._apt_repo_build_url(repo, "Release")
+        inrelease_url = self._apt_repo_build_url(repo, "InRelease")
+        if suite is None:
+            suite = repo.suite or repo.codename or ""
+        if codename is None:
+            codename = repo.codename or repo.suite or ""
+        if architectures is None:
+            architectures = " ".join([
+                a.name for a in repo.architectures.all().order_by('name')
+            ])
+        if components is None:
+            components = repo.components
+
+        # Build the content of the release file
+        text = """Origin: Debian
+Label: Debian
+Suite: {suite}
+Codename: {codename}
+Architectures: {architectures}
+Components: {components}
+""".format(
+            suite=suite,
+            codename=codename,
+            architectures=architectures,
+            components=components,
+        )
+        if acquire_by_hash:
+            text += "Acquire-By-Hash: yes\n"
+        for checksum in ("MD5Sum", "SHA256"):
+            text += "{}:\n".format(checksum)
+            for path, checksums in self._apt_repo_iter_checksums(repo):
+                if "/by-hash/" in path:
+                    continue
+                text += " {} {} {}\n".format(
+                    checksums[checksum], checksums["Size"], path
+                )
+
+        self.set_http_response(release_url, body=text)
+
+        if enable_inrelease:
+            signed_text = """-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA256
+
+"""
+            signed_text += text
+            signed_text += """-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCAAdFiEEFukLP99l7eOqfzI8BO5yN7fUU+wFAl8/gbEACgkQBO5yN7fU
+U+y4Lw/+PDhJJaxEmZWS4dFjBSJYMTgyiEPXG6eMqDpeJNr8iIoBjcBd3bv3Gexq
+8rS0ry9bPLy9ZZxImL0E6rB2oFU8OAqoAXXmRf5yt3x0SY/1deTjMHYr5w4kH6CB
+ZwZnkm12jMyB9ds/ZAvG7+ou+qEb7bZ2+7IzhBlFuLNYO747sOaDjOM3RdV700qs
+FvmSBcysOUWCAhxQNmAk/NZ585AxeKksbvSHUMczdKIRu/XN82zrTRPQhZ51eHDZ
+mY444ytopHEA6G+3rkUagKeLGE6JnwS+amhz/A==
+=H/pA
+-----END PGP SIGNATURE-----"""
+            self.set_http_response(inrelease_url, body=signed_text)
+        else:
+            self.set_http_response(inrelease_url, status_code=404)
