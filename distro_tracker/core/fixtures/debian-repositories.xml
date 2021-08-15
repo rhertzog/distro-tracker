@@ -6,7 +6,7 @@
         <field type="CharField" name="uri">https://deb.debian.org/debian</field>
         <field type="CharField" name="public_uri">https://deb.debian.org/debian</field>
         <field type="CharField" name="suite">oldstable</field>
-        <field type="CharField" name="codename">stretch</field>
+        <field type="CharField" name="codename">buster</field>
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">True</field>
@@ -21,7 +21,7 @@
         <field type="CharField" name="uri">https://deb.debian.org/debian</field>
         <field type="CharField" name="public_uri">https://deb.debian.org/debian</field>
         <field type="CharField" name="suite">stable</field>
-        <field type="CharField" name="codename">buster</field>
+        <field type="CharField" name="codename">bullseye</field>
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">False</field>
@@ -66,7 +66,7 @@
         <field type="CharField" name="uri">https://security.debian.org</field>
         <field type="CharField" name="public_uri">https://security.debian.org/</field>
         <field type="CharField" name="suite">oldstable/updates</field>
-        <field type="CharField" name="codename">stretch/updates</field>
+        <field type="CharField" name="codename">buster/updates</field>
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">True</field>
@@ -80,8 +80,8 @@
         <field type="CharField" name="shorthand">stable-sec</field>
         <field type="CharField" name="uri">https://security.debian.org</field>
         <field type="CharField" name="public_uri">https://security.debian.org/</field>
-        <field type="CharField" name="suite">stable/updates</field>
-        <field type="CharField" name="codename">buster/updates</field>
+        <field type="CharField" name="suite">stable-security</field>
+        <field type="CharField" name="codename">bullseye-security</field>
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">False</field>
@@ -96,148 +96,13 @@
         <field type="CharField" name="uri">https://deb.debian.org/debian</field>
         <field type="CharField" name="public_uri">https://deb.debian.org/debian</field>
         <field type="CharField" name="suite">testing</field>
-        <field type="CharField" name="codename">bullseye</field>
+        <field type="CharField" name="codename">bookworm</field>
         <field type="TextField" name="components">main contrib non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">False</field>
         <field type="BooleanField" name="binary">False</field>
         <field type="BooleanField" name="source">True</field>
         <field type="IntegerField" name="position">19</field>
-        <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="5"></object></field>
-    </object>
-    <object pk="8" model="core.repository">
-        <field type="CharField" name="name">Debian Testing Security</field>
-        <field type="CharField" name="shorthand">test-sec</field>
-        <field type="CharField" name="uri">https://security.debian.org</field>
-        <field type="CharField" name="public_uri">https://security.debian.org/</field>
-        <field type="CharField" name="suite">testing-security</field>
-        <field type="CharField" name="codename">buster-security</field>
-        <field type="TextField" name="components">main contrib non-free</field>
-        <field type="BooleanField" name="default">False</field>
-        <field type="BooleanField" name="optional">False</field>
-        <field type="BooleanField" name="binary">False</field>
-        <field type="BooleanField" name="source">True</field>
-        <field type="IntegerField" name="position">20</field>
-        <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="5"></object></field>
-    </object>
-    <object pk="9" model="core.repository">
-        <field type="CharField" name="name">Debian Oldstable Backports</field>
-        <field type="CharField" name="shorthand">old-bpo</field>
-        <field type="CharField" name="uri">https://deb.debian.org/debian</field>
-        <field type="CharField" name="public_uri">https://deb.debian.org/debian</field>
-        <field type="CharField" name="suite">stretch-backports</field>
-        <field type="CharField" name="codename">stretch-backports</field>
-        <field type="TextField" name="components">main contrib non-free</field>
-        <field type="BooleanField" name="default">False</field>
-        <field type="BooleanField" name="optional">True</field>
-        <field type="BooleanField" name="binary">False</field>
-        <field type="BooleanField" name="source">True</field>
-        <field type="IntegerField" name="position">10</field>
-        <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="5"></object></field>
-    </object>
-    <object pk="10" model="core.repository">
-        <field type="CharField" name="name">Debian Stable Backports</field>
-        <field type="CharField" name="shorthand">stable-bpo</field>
-        <field type="CharField" name="uri">https://deb.debian.org/debian</field>
-        <field type="CharField" name="public_uri">https://deb.debian.org/debian</field>
-        <field type="CharField" name="suite">buster-backports</field>
-        <field type="CharField" name="codename">buster-backports</field>
-        <field type="TextField" name="components">main contrib non-free</field>
-        <field type="BooleanField" name="default">False</field>
-        <field type="BooleanField" name="optional">False</field>
-        <field type="BooleanField" name="binary">False</field>
-        <field type="BooleanField" name="source">True</field>
-        <field type="IntegerField" name="position">16</field>
-        <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="5"></object></field>
-    </object>
-    <object pk="11" model="core.repository">
-        <field type="CharField" name="name">Debian Oldstable Proposed Updates</field>
-        <field type="CharField" name="shorthand">old-p-u</field>
-        <field type="CharField" name="uri">https://deb.debian.org/debian</field>
-        <field type="CharField" name="public_uri">https://deb.debian.org/debian</field>
-        <field type="CharField" name="suite">oldstable-proposed-updates</field>
-        <field type="CharField" name="codename">stretch-proposed-updates</field>
-        <field type="TextField" name="components">main contrib non-free</field>
-        <field type="BooleanField" name="default">False</field>
-        <field type="BooleanField" name="optional">True</field>
-        <field type="BooleanField" name="binary">False</field>
-        <field type="BooleanField" name="source">True</field>
-        <field type="IntegerField" name="position">13</field>
-        <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="5"></object></field>
-    </object>
-    <object pk="12" model="core.repository">
-        <field type="CharField" name="name">Debian Stable Proposed Updates</field>
-        <field type="CharField" name="shorthand">stable-p-u</field>
-        <field type="CharField" name="uri">https://deb.debian.org/debian</field>
-        <field type="CharField" name="public_uri">https://deb.debian.org/debian</field>
-        <field type="CharField" name="suite">proposed-updates</field>
-        <field type="CharField" name="codename">buster-proposed-updates</field>
-        <field type="TextField" name="components">main contrib non-free</field>
-        <field type="BooleanField" name="default">False</field>
-        <field type="BooleanField" name="optional">False</field>
-        <field type="BooleanField" name="binary">False</field>
-        <field type="BooleanField" name="source">True</field>
-        <field type="IntegerField" name="position">18</field>
-        <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="5"></object></field>
-    </object>
-    <object pk="13" model="core.repository">
-        <field type="CharField" name="name">Debian Testing Proposed Updates</field>
-        <field type="CharField" name="shorthand">test-p-u</field>
-        <field type="CharField" name="uri">https://deb.debian.org/debian</field>
-        <field type="CharField" name="public_uri">https://deb.debian.org/debian</field>
-        <field type="CharField" name="suite">testing-proposed-updates</field>
-        <field type="CharField" name="codename">bullseye-proposed-updates</field>
-        <field type="TextField" name="components">main contrib non-free</field>
-        <field type="BooleanField" name="default">False</field>
-        <field type="BooleanField" name="optional">False</field>
-        <field type="BooleanField" name="binary">False</field>
-        <field type="BooleanField" name="source">True</field>
-        <field type="IntegerField" name="position">21</field>
-        <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="5"></object></field>
-    </object>
-    <object pk="15" model="core.repository">
-        <field type="CharField" name="name">Debian Oldstable Updates</field>
-        <field type="CharField" name="shorthand">old-upd</field>
-        <field type="CharField" name="uri">https://deb.debian.org/debian</field>
-        <field type="CharField" name="public_uri">https://deb.debian.org/debian</field>
-        <field type="CharField" name="suite">oldstable-updates</field>
-        <field type="CharField" name="codename">stretch-updates</field>
-        <field type="TextField" name="components">main contrib non-free</field>
-        <field type="BooleanField" name="default">False</field>
-        <field type="BooleanField" name="optional">True</field>
-        <field type="BooleanField" name="binary">False</field>
-        <field type="BooleanField" name="source">True</field>
-        <field type="IntegerField" name="position">12</field>
-        <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="5"></object></field>
-    </object>
-    <object pk="16" model="core.repository">
-        <field type="CharField" name="name">Debian Stable Updates</field>
-        <field type="CharField" name="shorthand">stable-upd</field>
-        <field type="CharField" name="uri">https://deb.debian.org/debian</field>
-        <field type="CharField" name="public_uri">https://deb.debian.org/debian</field>
-        <field type="CharField" name="suite">stable-updates</field>
-        <field type="CharField" name="codename">buster-updates</field>
-        <field type="TextField" name="components">main contrib non-free</field>
-        <field type="BooleanField" name="default">False</field>
-        <field type="BooleanField" name="optional">False</field>
-        <field type="BooleanField" name="binary">False</field>
-        <field type="BooleanField" name="source">True</field>
-        <field type="IntegerField" name="position">17</field>
-        <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="5"></object></field>
-    </object>
-    <object pk="17" model="core.repository">
-        <field type="CharField" name="name">Debian Oldstable Backports Sloppy</field>
-        <field type="CharField" name="shorthand">old-bpo-sl</field>
-        <field type="CharField" name="uri">https://deb.debian.org/debian</field>
-        <field type="CharField" name="public_uri">https://deb.debian.org/debian</field>
-        <field type="CharField" name="suite">stretch-backports-sloppy</field>
-        <field type="CharField" name="codename">stretch-backports-sloppy</field>
-        <field type="TextField" name="components">main contrib non-free</field>
-        <field type="BooleanField" name="default">False</field>
-        <field type="BooleanField" name="optional">True</field>
-        <field type="BooleanField" name="binary">False</field>
-        <field type="BooleanField" name="source">True</field>
-        <field type="IntegerField" name="position">11</field>
         <field to="core.architecture" name="architectures" rel="ManyToManyRel"><object pk="1"></object><object pk="5"></object></field>
     </object>
 </django-objects>
