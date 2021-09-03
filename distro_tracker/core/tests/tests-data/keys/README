@@ -28,17 +28,17 @@ uid           [ unknown] PTS Tests <fake-address@domain.com>
 sub   rsa2048 2013-07-09 [E]
 
 # distro_tracker/core/tests/tests-data/keys/key2.pub
-sec  rsa3072/1AB032798A05D03F
-     created: 2019-08-31  expired: 2021-08-30  usage: SC
-     trust: ultimate      validity: expired
-ssb  rsa3072/F636E4A4BB207F6D
-     created: 2019-08-31  expired: 2021-08-30  usage: E
-[ expired] (1). John Bad <foo@bar>
-[ expired] (2)  John Doe
-[ expired] (3)  John Doe <test@ouaza.com>
-[ expired] (4)  John Debian <test@debian.org>
-[ revoked] (5)  John Revoked <revoked@ouaza.com>
-[ revoked] (6)  John Revoked <john@revoked.net>
+sec  rsa3072/E7486320E1E1E2D9
+     created: 2021-09-03  expires: never       usage: SC
+     trust: unknown       validity: unknown
+ssb  rsa3072/2EDD20002C9D2BE5
+     created: 2021-09-03  expires: never       usage: E
+[ unknown] (1). John Bad <foo@bar>
+[ revoked] (2)  John Revoked <revoked@ouaza.com>
+[ revoked] (3)  John Revoked <john@revoked.net>
+[ unknown] (4)  John Doe
+[ unknown] (5)  John Doe <test@ouaza.com>
+[ unknown] (6)  John Debian <test@debian.org>
 
 # Note: the original uid1 has a name which looks like an email address
 but no actual email address in the uid.
