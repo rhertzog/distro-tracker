@@ -1,0 +1,67 @@
+distro-tracker test keys
+========================
+
+Three public keys are used in the unit tests, with two signed messages.
+Make sure any changes to these keys abide by the following conventions:
+
+- All public keys set to never expire
+- All secret keys set to use the trivial passphrase: tracker
+- Subkeys may be set as revoked or expired, as required by the tests.
+- Keys and tests are arranged so that tests continue passing without
+  manual changes.
+- Public and secret keys to be held as ASCII files in git.
+- Test keys are not to be used for any other uses.
+- Encryption subkeys are not required, only signing subkeys are used.
+
+Recent versions of gpg will set expiry on the public key and the
+subkey if --generate-key or --gen-key is used. Either use --full-generate-key
+or edit the uid and the subkey after generation.
+
+Create the uids in the order of the existing keys - once each revoked
+uid is created, select it and revoke the uid. This maintains the
+original ordering of the uids which is important for some unit tests.
+
+# distro_tracker/core/tests/tests-data/keys/key1.pub
+pub   rsa2048 2013-07-09 [SC]
+      EF823EE0A44310D5388BBDCA1DBAA40107D1B968
+uid           [ unknown] PTS Tests <fake-address@domain.com>
+sub   rsa2048 2013-07-09 [E]
+
+# distro_tracker/core/tests/tests-data/keys/key2.pub
+sec  rsa3072/1AB032798A05D03F
+     created: 2019-08-31  expired: 2021-08-30  usage: SC
+     trust: ultimate      validity: expired
+ssb  rsa3072/F636E4A4BB207F6D
+     created: 2019-08-31  expired: 2021-08-30  usage: E
+[ expired] (1). John Bad <foo@bar>
+[ expired] (2)  John Doe
+[ expired] (3)  John Doe <test@ouaza.com>
+[ expired] (4)  John Debian <test@debian.org>
+[ revoked] (5)  John Revoked <revoked@ouaza.com>
+[ revoked] (6)  John Revoked <john@revoked.net>
+
+# Note: the original uid1 has a name which looks like an email address
+but no actual email address in the uid.
+
+# distro_tracker/core/tests/tests-data/keys/key3.pub
+sec  rsa3072/78F2BB5C8A47034C
+     created: 2019-09-04  expires: 2021-09-03  usage: SC
+     trust: ultimate      validity: ultimate
+ssb  rsa3072/9DA3AFE833C7A537
+     created: 2019-09-04  expires: 2021-09-03  usage: E
+[ultimate] (1). just-an-email@example.net
+[ultimate] (2)  Just A Name
+
+gpg no longer accepts a UID with just an email address:
+
+GnuPG needs to construct a user ID to identify your key.
+
+Real name: just-an-email@example.net
+Email address:
+You selected this USER-ID:
+    "just-an-email@example.net"
+
+Please don't put the email address into the real name or the comment
+Change (N)ame, (E)mail, or (Q)uit? n
+
+So the just-an-email@example.net has been dropped.
