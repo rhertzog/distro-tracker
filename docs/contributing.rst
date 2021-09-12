@@ -125,7 +125,7 @@ Usual workflow
       You can do this easily by visiting the distro-tracker
       project fork hosted in your own account (either through the “Branches”
       page, or through the “Merge requests” page). See `GitLab's
-      help <https://salsa.debian.org/help/gitlab-basics/add-merge-request.md>`_
+      help <https://salsa.debian.org/help/user/project/merge_requests/creating_merge_requests.md#new-merge-request-from-a-fork>`_
       if needed.
 
       Make sure to address any issue identified by the continuous
