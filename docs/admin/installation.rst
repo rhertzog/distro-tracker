@@ -16,7 +16,7 @@ Distro Tracker currently depends on the following Debian packages:
 - python3-django-debug-toolbar (in development mode only)
 - python3-django-captcha (optional)
 - python3-debian
-- python3-debianbts
+- python3-debianbts (>= 2.10)
 - python3-apt
 - python3-gpg
 - python3-yaml

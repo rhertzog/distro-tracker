@@ -247,14 +247,14 @@ class UpdatePackageBugStats(BaseTask, BugDisplayManagerMixin):
         if os.path.exists(debian_ca_bundle):
             os.environ['SSL_CERT_FILE'] = debian_ca_bundle
         if user:
-            bug_numbers = debianbts.get_usertag(user, tag).values()
+            bug_numbers = debianbts.get_usertag(user, tags=[tag]).get(tag, [])
         else:
-            bug_numbers = debianbts.get_bugs('tag', tag)
+            bug_numbers = debianbts.get_bugs(tag=tag)
 
         # Match each retrieved bug ID to a package and then find the aggregate
         # count for each package.
         bug_stats = {}
-        bugs = debianbts.get_status(*bug_numbers)
+        bugs = debianbts.get_status(bug_numbers)
         for bug in bugs:
             if bug.done or bug.fixed_versions or bug.pending == 'done':
                 continue
