@@ -617,19 +617,19 @@ class AptCache(object):
         # A reference to each AcquireFile instance must be kept
         files = []
         acquire = apt_pkg.Acquire(apt.progress.base.AcquireProgress())
-        for md5, size, path, file_type in source_records.files:
-            base = os.path.basename(path)
+        for srcfile in source_records.files:
+            base = os.path.basename(srcfile.path)
             dest_file_path = os.path.join(dest_dir_path, base)
             if debian_directory_only and package_format == self.QUILT_FORMAT:
-                if file_type != 'diff':
+                if srcfile.type != 'diff':
                     # Only retrieve the .debian.tar.* file for quilt packages
                     # when only the debian directory is wanted
                     continue
             files.append(apt_pkg.AcquireFile(
                 acquire,
-                source_records.index.archive_uri(path),
-                md5,
-                size,
+                source_records.index.archive_uri(srcfile.path),
+                srcfile.hashes,
+                srcfile.size,
                 base,
                 destfile=dest_file_path
             ))
