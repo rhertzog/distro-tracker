@@ -76,7 +76,7 @@ class LintianStats(models.Model):
 class PackageTransition(models.Model):
     package = models.ForeignKey(PackageName, related_name='package_transitions',
                                 on_delete=models.CASCADE)
-    transition_name = models.CharField(max_length=50)
+    transition_name = models.CharField(max_length=120)
     status = models.CharField(max_length=50, blank=True, null=True)
     reject = models.BooleanField(default=False)
 
