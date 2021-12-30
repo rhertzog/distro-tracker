@@ -12,30 +12,27 @@ Having all the information about packages conveniently available in a
 single place is particularly interesting for package maintainers,
 contributors, advanced users, etc.
 
-Documentation for End-Users
----------------------------
 
 .. toctree::
+   :maxdepth: 2
+   :caption: Documentation for End-Users
 
    usage/follow-packages
    usage/messages
    usage/teams
    usage/mailbot
 
-Documentation for Administrators
---------------------------------
-
 .. toctree::
+   :maxdepth: 2
+   :caption: Documentation for Administrators
 
    admin/initial-setup
    admin/email
    admin/vendor
 
-Documentation for Developers
-----------------------------
-
 .. toctree::
    :maxdepth: 3
+   :caption: Documentation for Developers
 
    contributing
    devel/design
