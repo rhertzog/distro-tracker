@@ -42,11 +42,11 @@ Usual workflow
 
   1. Create a guest account on `Salsa <https://salsa.debian.org>`_ (a GitLab
      instance run by the Debian project) by visiting this page:
-     https://signup.salsa.debian.org
+     https://salsa.debian.org/users/sign_up
 
      Follow all the steps to confirm your email, fill your profile,
      `setup your SSH keys
-     <https://salsa.debian.org/help/gitlab-basics/create-your-ssh-keys.md>`_.
+     <https://salsa.debian.org/help/ssh/README.md>`_.
 
      You might want to have a look at `Salsa's
      documentation <https://wiki.debian.org/Salsa/Doc>`_ and `GitLab's
@@ -58,13 +58,13 @@ Usual workflow
 
   2. Visit the `project's page <https://salsa.debian.org/qa/distro-tracker>`_
      and fork distro-tracker in your own account. See `GitLab's
-     help <https://salsa.debian.org/help/gitlab-basics/fork-project.md>`_.
+     help <https://salsa.debian.org/help/user/project/repository/forking_workflow.md#creating-a-fork>`_.
 
   3. Clone distro-tracker locally::
 
-       $ git clone git@salsa.debian.org:your-account-guest/distro-tracker.git
+       $ git clone git@salsa.debian.org:your-account/distro-tracker.git
 
-     Note that ``your-account-guest`` should be replaced by your Salsa's username.
+     Note that ``your-account`` should be replaced by your Salsa's username.
      If you want to clone the project without creating any account then
      use this command::
 
@@ -121,7 +121,7 @@ Usual workflow
        $ git push -u origin name-of-your-bugfix-or-feature
 
   10. Submit us your work, ideally by opening a `merge
-      request <https://salsa.debian.org/qa/distro-tracker/merge_requests/>`_.
+      request <https://salsa.debian.org/qa/distro-tracker/-/merge_requests/>`_.
       You can do this easily by visiting the distro-tracker
       project fork hosted in your own account (either through the “Branches”
       page, or through the “Merge requests” page). See `GitLab's
@@ -186,10 +186,10 @@ When you don't develop a new feature, your workflow is restricted to steps
 Conventions
 ~~~~~~~~~~~
 
-  1. In regard to coding style, we observe `PEP8\
+  1. In regard to coding style, we observe `PEP8
      <https://www.python.org/dev/peps/pep-0008/>`_ with a few exceptions.
 
-  2. Functions are documented using doctrings with `Sphinx markup
+  2. Functions are documented using docstrings with `Sphinx markup
      <https://www.sphinx-doc.org/en/master/>`_.
 
   3. Imports are sorted in multiple groups separated by one empty line:
@@ -252,7 +252,7 @@ Write access to the git repository
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 `Project (and Debian QA group) members
-<https://salsa.debian.org/qa/distro-tracker/project_members>`_ have write
+<https://salsa.debian.org/qa/distro-tracker/-/project_members>`_ have write
 access to the main git repository. They can thus clone the repository
 with this URL::
 
