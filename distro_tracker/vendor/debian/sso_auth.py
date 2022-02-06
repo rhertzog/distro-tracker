@@ -82,7 +82,7 @@ class DebianSsoUserMiddleware(RemoteUserMiddleware):
             return
 
         if request.user.is_authenticated:
-            if request.user.emails.filter(email=remote_user).exists():
+            if request.user.emails.filter(email__iexact=remote_user).exists():
                 # The currently logged in user matches the one given by the
                 # headers.
                 return
@@ -115,7 +115,9 @@ class DebianSsoUserBackend(RemoteUserBackend):
         email = remote_user
 
         try:
-            user_email, _ = UserEmail.objects.get_or_create(email=email)
+            user_email, _ = UserEmail.objects.get_or_create(
+                email__iexact=email, defaults={'email': email}
+            )
         except ValidationError:
             logger.error('remote_user="%s" is not a valid email.',
                          remote_user)

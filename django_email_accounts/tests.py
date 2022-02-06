@@ -39,6 +39,42 @@ class UserEmailTests(TestCase):
             UserEmail.objects.get_or_create(email='foobar')
 
 
+class RegisterUserTests(TestCase):
+    """Test the process of registering a new user."""
+
+    def setUp(self):
+        self.email = "user@example.net"
+
+    def get_user_data(self, email="user@example.net"):
+        return {
+            "main_email": email,
+            "first_name": "John",
+            "last_name": "Doe",
+        }
+
+    def test_create_new_user(self):
+        self.client.post(reverse('dtracker-accounts-register'),
+                         self.get_user_data())
+
+        user = User.objects.get(main_email=self.email)
+        user_email = user.emails.first()
+        self.assertEqual(user.main_email, self.email)
+        self.assertEqual(user_email.email, self.email)
+
+    def test_create_existing_user_with_different_case(self):
+        User.objects.create(main_email="User@example.net")
+
+        self.client.post(
+            reverse('dtracker-accounts-register'), self.get_user_data()
+        )
+
+        self.assertEqual(User.objects.count(), 1)
+        self.assertEqual(UserEmail.objects.count(), 1)
+        user = User.objects.first()
+        self.assertEqual(user.main_email, "User@example.net")
+        self.assertEqual(user.emails.first().email, "User@example.net")
+
+
 class LoginViewTests(TestCase):
 
     def test_login_redirect_to_next(self):
