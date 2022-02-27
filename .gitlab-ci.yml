@@ -6,7 +6,7 @@ before_script:
   - apt-get -y install python3-django
   - apt-get -y install python3-requests python3-django-jsonfield python3-django-captcha python3-debian python3-debianbts python3-apt python3-yaml python3-bs4 python3-pyinotify python3-gpg python3-django-debug-toolbar
   # Test dependencies
-  - apt-get -y install python3-coverage python3-selenium python3-responses chromium-driver xvfb python3-pip postgresql postgresql-client python3-psycopg2
+  - apt-get -y install python3-coverage python3-selenium python3-responses chromium-driver python3-pip postgresql postgresql-client python3-psycopg2
   # Dependencies to build docs
   - apt-get -y install make python3-sphinx python3-sphinx-rtd-theme
   - export LANG=C
@@ -41,7 +41,7 @@ functional-tests:
   # We have to run the tests as user nobody as chromium will not run as root
   script:
     - chown nobody data  # Grant write rights to user nobody
-    - runuser -u nobody xvfb-run python3 ./manage.py test functional_tests
+    - runuser -u nobody python3 ./manage.py test functional_tests
   after_script:
     - chown root data
   except:
