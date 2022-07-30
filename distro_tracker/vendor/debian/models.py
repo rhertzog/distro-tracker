@@ -68,7 +68,7 @@ class LintianStats(models.Model):
             return ''
 
         return (
-            'https://udd.debian.org/lintian/? {pkg}'.format(
+            'https://udd.debian.org/lintian/?packages={pkg}'.format(
                 pkg=self.package)
         )
 
