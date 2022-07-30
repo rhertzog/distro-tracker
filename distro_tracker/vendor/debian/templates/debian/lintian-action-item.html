@@ -1,6 +1,6 @@
 {% with warnings=item.extra_data.warnings %}
 {% with errors=item.extra_data.errors %}
-<a href="https://lintian.debian.org">Lintian</a> reports
+Lintian reports
 <a href="{{ item.extra_data.lintian_url }}">
 {% if errors %}
 <span>{{ errors }} error{% if errors > 1 %}s{% endif %}</span>
