@@ -1203,7 +1203,7 @@ class UpdateLintianStatsTaskTest(TestCase):
 
         # We only care about the URL used, not the headers or other arguments
         responses.assert_call_count(
-            'https://lintian.debian.org/static/qa-list.txt',
+            'https://udd.debian.org/lintian-qa-list.txt',
             1,
         )
 

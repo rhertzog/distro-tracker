@@ -571,7 +571,7 @@ class UpdateLintianStatsTask(BaseTask):
             full_description_template=self.ITEM_FULL_DESCRIPTION_TEMPLATE)
 
     def get_lintian_stats(self):
-        url = 'https://lintian.debian.org/static/qa-list.txt'
+        url = 'https://udd.debian.org/lintian-qa-list.txt'
         content = get_resource_text(url, force_update=self.force_update,
                                     only_if_updated=True)
         if content is None:
