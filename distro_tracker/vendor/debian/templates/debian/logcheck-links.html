@@ -10,8 +10,6 @@
 <span>, </span>
 <span><a title="report about issues spotted in buildd logs" href="{{ item.context.logcheck_url }}">checks</a></span>
 {% endif %}
-<span>, </span>
-<span><a title="clang compiler build log" href="https://clang.debian.net/pts.php?format=html&{{ query_string }}">clang</a></span>
 {% if item.context.has_reproducibility %}
 <span>, </span>
 <span><a title="report about build reproducibility ({{ item.context.reproducibility_status }})" href="{{ item.context.reproducibility_url }}">reproducibility</a></span>
