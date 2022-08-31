@@ -54,6 +54,7 @@ from distro_tracker.core.utils import (
 from distro_tracker.core.utils.email_messages import (
     decode_header,
     get_decoded_message_payload,
+    get_message_body,
     message_from_bytes
 )
 from distro_tracker.core.utils.linkify import linkify
@@ -1747,7 +1748,7 @@ class EmailNews(News):
         if x_dak == 'dak process-upload':
             search_result = re.search(
                 r'^Changed-By: (.*)$',
-                message.get_payload(),
+                get_message_body(message),
                 re.MULTILINE | re.IGNORECASE,
             )
             if search_result:

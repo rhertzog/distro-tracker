@@ -145,6 +145,17 @@ def message_from_bytes(message_bytes):
     return patch_message_for_django_compat(message)
 
 
+def get_message_body(msg):
+    """
+    Returns the message body, joining together all parts into one string.
+
+    :param msg: The original received package message
+    :type msg: :py:class:`email.message.Message`
+    """
+    return '\n'.join(get_decoded_message_payload(part)
+                     for part in msg.walk() if not part.is_multipart())
+
+
 class CustomEmailMessage(EmailMessage):
     """
     A subclass of :class:`django.core.mail.EmailMessage` which can be fed

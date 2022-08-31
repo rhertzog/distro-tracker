@@ -1,0 +1,118 @@
+Return-path: <envelope@ftp-master.debian.org>
+Received: from muffat.debian.org ([2607:f8f0:614:1::1274:33]:56110)
+	from C=NA,ST=NA,L=Ankh Morpork,O=Debian SMTP,OU=Debian SMTP CA,CN=muffat.debian.org,EMAIL=hostmaster@muffat.debian.org (verified)
+	by ticharich.debian.org with esmtps (TLS1.3:ECDHE_SECP256R1__RSA_PSS_RSAE_SHA256__AES_256_GCM:256)
+	(Exim 4.94.2)
+	(envelope-from <envelope@ftp-master.debian.org>)
+	id 1oS1p4-00CqqM-1s
+	for dispatch@tracker.debian.org; Sat, 27 Aug 2022 19:50:26 +0000
+Received: from [192.91.235.231] (port=56178 helo=fasolo.debian.org)
+	from C=NA,ST=NA,L=Ankh Morpork,O=Debian SMTP,OU=Debian SMTP CA,CN=fasolo.debian.org,EMAIL=hostmaster@fasolo.debian.org (verified)
+	by muffat.debian.org with esmtps (TLS1.3:ECDHE_SECP256R1__RSA_PSS_RSAE_SHA256__AES_256_GCM:256)
+	(Exim 4.94.2)
+	(envelope-from <envelope@ftp-master.debian.org>)
+	id 1oS1p3-00DKBG-9f
+	for dispatch@tracker.debian.org; Sat, 27 Aug 2022 19:50:25 +0000
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=ftp-master.debian.org; s=smtpauto.fasolo; h=Date:Message-Id:Content-Type:
+	Subject:MIME-Version:To:Reply-To:From:Cc:Content-Transfer-Encoding:Content-ID
+	:Content-Description:In-Reply-To:References;
+	bh=7kf0Jv12uRWUO9u6cCc+FW0g+x4CCGhoawhGc9Tx7hI=; b=k2R4Ul9umA7zjzAVpLCUvXrDRt
+	5K88dkL5qWwdYzQLIzk49X3TotxqF0mPAyytMapRvNVyAK/gNWo5mZaz8XeTJxXSV+69B5yELVkkP
+	X1lEs+r/cJqP+jDN65hET1aigdw+3E1UNqbdtKXeEu9xCtpahecE7jzTwr6XuqOT3pG+6LqwgDis1
+	YFpEwuBB2gYlBAivu4mzzQ4MS5j4aKLu/ea0+EU8pRKJQbMlNW615cV22TCy9CvBz4JwTBq9Y8+t5
+	Wp4FF/YiP/zdqOeWfFWtPAaNE/10vyiMV/XBR4XJBTmkUWccdi9vp6wOKoJ5C/FBbvbu+99rVuuU+
+	d5z+X15Q==;
+Received: from dak by fasolo.debian.org with local (Exim 4.94.2)
+	(envelope-from <envelope@ftp-master.debian.org>)
+	id 1oS1p0-00BEVf-FV; Sat, 27 Aug 2022 19:50:22 +0000
+From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>
+Reply-To: bap@debian.org (Barak A. Pearlmutter)
+To: debian-devel-changes@lists.debian.org
+X-DAK: dak process-upload
+X-Debian: DAK
+X-Debian-Package: hebcal
+MIME-Version: 1.0
+Subject: Accepted hebcal 4.31-1 (source) into unstable
+Content-Type: multipart/signed; micalg="pgp-sha256";
+ protocol="application/pgp-signature";
+ boundary="===============8707128677913502093=="
+Message-Id: <E1oS1p0-00BEVf-FV@fasolo.debian.org>
+Date: Sat, 27 Aug 2022 19:50:22 +0000
+Delivered-To: dispatch@tracker.debian.org
+
+--===============8707128677913502093==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Format: 1.8
+Date: Sat, 27 Aug 2022 20:10:26 +0100
+Source: hebcal
+Architecture: source
+Version: 4.31-1
+Distribution: unstable
+Urgency: medium
+Maintainer: Shaya Potter <spotter@cs.columbia.edu>
+Changed-By: Barak A. Pearlmutter <bap@debian.org>
+Changes:
+ hebcal (4.31-1) unstable; urgency=3Dmedium
+ .
+   * New upstream release
+   * Bump policy
+Checksums-Sha1:
+ c1b35cabbd56b0885c9649cfbcbb4a4c494f8949 1914 hebcal_4.31-1.dsc
+ 1d3cc76091fb1b7235b9c5442a78543416ae5eb0 353044 hebcal_4.31.orig.tar.xz
+ e9532911f69165584ec2a473ae5b7f92c92587a3 4212 hebcal_4.31-1.debian.tar.xz
+ a961ea9e94b5aebbf5058e6c11cac6da5cf9bc97 7316 hebcal_4.31-1_source.buildinfo
+Checksums-Sha256:
+ 811db2256cc31e32d28966a98163c69d14e2b426b667fe0ef575d19db4149ea3 1914 hebcal=
+_4.31-1.dsc
+ 1db546bc66029ddfdccc25fe1037bb206a7c7ff8dcd9fb4b262de80e9b63fa84 353044 hebc=
+al_4.31.orig.tar.xz
+ f594626ab81bdf47b9675c8b85ea65c4d6e75fa9c5cf38b7668bd79b6f87da05 4212 hebcal=
+_4.31-1.debian.tar.xz
+ 3d82640076d2214d05e0db664fa6d74aae64de90bc46ec59a8bc52aa23597422 7316 hebcal=
+_4.31-1_source.buildinfo
+Files:
+ fcb450cf81915f57e447f7ef1573b165 1914 utils optional hebcal_4.31-1.dsc
+ 3a296a94efc5081812ce60c4c99bf4e2 353044 utils optional hebcal_4.31.orig.tar.=
+xz
+ ae2919df68cae3bd8479adf567b31957 4212 utils optional hebcal_4.31-1.debian.ta=
+r.xz
+ d86d0aa6fba35e745803bd733d8d6c46 7316 utils optional hebcal_4.31-1_source.bu=
+ildinfo
+
+-----BEGIN PGP SIGNATURE-----
+
+iQJDBAEBCgAtFiEE+nZaz+JE7Dn2AefCmesepNIze4gFAmMKbFcPHGJhcEBkZWJp
+YW4ub3JnAAoJEJnrHqTSM3uIrAEP/3eQsbAgZX5b2ojNqZxX+n9rnNpOqJkBmoio
+2SUODynhbHFTZmojqkWROrOJHTdkmEFrFr94WV+iOfvV4c56w0kmttWG1dPLIcfv
+B/N0hZDW0ZKCX8QEKqYefMjVYQ7CXIScbBd6vkjKKb90ZYd5XxTApcEDIO8s307u
+Y/nVoe6ZXMdUdBjRmmTMCaoLlkHkALzR3bpHYxuhnna6Mx3DXZaqP3tXpdHalAzL
+7PSgsPjuxNs6nkmpEtC//D6d3WnJ0AIqM4hVULW7+QrAUs6wA6+l67VnjCpHg183
+WvVAcw6go2CEh7+cpHITYYN+NBHGli6o0Zlf1WDtbKxqF2hSZmVuBJt36PSimBGp
+4Mc/3RC+iTwiEguwD6UEUQ22SL38RJPtEaM4/vR2xz5qQmTyHZIvsv8a9ZGrR3sj
+x4tqHGJncZKAhJiOqzidccdHlDaX2l6vsw9BmKp+cIVRDM1kQyB9ih2+HEp7X0U/
+q+xuMeZAEpvgXFCwllG59DfAOQSY05Ouq+snal1sMxY6iYmsQqm/RHiBOmbNkuMr
+fXhMGJd/5iuxYY0AHh+dVSJ0bh08FsDLS+O8Ry9KLaciMnXAMuRtxUigbTznupDV
+5c1eU6bbCVna1mV+s+zeJwBIhOhMzKbiFSTdLtH2+BQsktFhEntwcwGnifiW9l0S
+MZEC/odM
+=3DWM21
+-----END PGP SIGNATURE-----
+
+
+--===============8707128677913502093==
+Content-Type: application/pgp-signature
+
+-----BEGIN PGP SIGNATURE-----
+
+iHUEABYIAB0WIQTziqJOuF8J+ZI8pJSb9qggYcy5IQUCYwp1fgAKCRCb9qggYcy5
+IVhAAP92huA5G2gzTftymKl0G9j/uWmsDwsde7tvN0BHLtpmZwD/RsNH87YBXDEY
+qDwJ1gwuqUiGwWykyDoE35vFXrbULAs=
+=oVcv
+-----END PGP SIGNATURE-----
+
+--===============8707128677913502093==--

@@ -1712,8 +1712,8 @@ class NewsTests(TestCase):
         content = """fix "a > 5" for more
         information https://www.debian.org/ thanks"""
         message.set_payload(content)
-        return(EmailNews.objects.create_email_news(message=message,
-                                                   package=self.package))
+        return (EmailNews.objects.create_email_news(message=message,
+                                                    package=self.package))
 
     def test_email_news_render_links(self):
         """
@@ -1767,6 +1767,30 @@ class NewsTests(TestCase):
         # Ensure the body is also correctly decoded as latin1
         self.assertIn('Maintainer: David Martínez Moreno',
                       renderer.context['parts'][0])
+
+    def test_email_news_get_from_email_no_multipart(self):
+        tests = [
+            {
+                'file_path': 'message-without-encoding',
+                'from_email': 'David "Martínez" Moreno <ender@debian.org>',
+            },
+            {
+                'file_path': 'multipart-signed-message-from-dak',
+                'from_email': 'Barak A. Pearlmutter <bap@debian.org>',
+            },
+        ]
+
+        for expected in tests:
+            with self.subTest(expected):
+                file_path = self.get_test_data_path(expected['file_path'])
+
+                with open(file_path, 'rb') as f:
+                    content = f.read()
+
+                from_email = EmailNews.get_from_email(
+                    message=message_from_bytes(content)
+                )
+            self.assertEqual(from_email, expected['from_email'])
 
 
 class ActionItemTests(TestCase):

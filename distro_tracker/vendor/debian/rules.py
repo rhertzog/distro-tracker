@@ -27,11 +27,13 @@ from distro_tracker.core.models import (
 )
 from distro_tracker.core.package_tables import create_table
 from distro_tracker.core.utils import get_decoded_message_payload, get_or_none
+from distro_tracker.core.utils.email_messages import get_message_body
 from distro_tracker.core.utils.http import HttpCache
 from distro_tracker.debci_status.tracker_package_tables import DebciTableField
 from distro_tracker.mail import mail_news
 from distro_tracker.vendor.common import PluginProcessingError
 from distro_tracker.vendor.debian.tracker_tasks import UpdateNewQueuePackages
+
 
 from .models import DebianBugDisplayManager, DebianContributor
 from .tracker_package_tables import UpstreamTableField
@@ -82,7 +84,7 @@ def _classify_dak_message(msg, package, keyword):
     package = msg.get('X-Debian-Package', package)
     subject = msg.get('Subject', '')
     xdak = msg.get('X-DAK', '')
-    body = _get_message_body(msg)
+    body = get_message_body(msg)
     if re.search(r'^Accepted|ACCEPTED', subject):
         if re.search(r'^Accepted.*\(.*source.*\)', subject):
             mail_news.create_news(msg, package, create_package=True)
@@ -196,17 +198,6 @@ def approve_default_message(msg):
     :type msg: :py:class:`email.message.Message`
     """
     return 'X-Bugzilla-Product' in msg
-
-
-def _get_message_body(msg):
-    """
-    Returns the message body, joining together all parts into one string.
-
-    :param msg: The original received package message
-    :type msg: :py:class:`email.message.Message`
-    """
-    return '\n'.join(get_decoded_message_payload(part)
-                     for part in msg.walk() if not part.is_multipart())
 
 
 def get_pseudo_package_list():
