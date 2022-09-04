@@ -1734,7 +1734,11 @@ class EmailNews(News):
 
     def get_signed_content(self):
         msg = message_from_bytes(self.content)
-        return get_decoded_message_payload(msg)
+        if msg.is_multipart():
+            for part in typed_subpart_iterator(msg, 'text', 'plain'):
+                return get_decoded_message_payload(part)
+        else:
+            return get_decoded_message_payload(msg)
 
     @staticmethod
     def get_from_email(message):

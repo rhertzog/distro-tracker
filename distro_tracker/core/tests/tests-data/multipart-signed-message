@@ -1,0 +1,52 @@
+Date: Sun, 4 Sep 2022 16:29:06 +0200
+From: Some User <user@domain.com>
+To: raphael@ouaza.com
+Subject: Armored message inside PGP MIME signed message
+Message-ID: <YxS2MscoFpdYZjKg@t14-buxy.home.ouaza.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha512;
+	protocol="application/pgp-signature"; boundary="SDLAMmQ45hgLZch6"
+Content-Disposition: inline
+
+
+--SDLAMmQ45hgLZch6
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+This is a test.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iQEcBAEBAgAGBQJR75bHAAoJEB26pAEH0bloSqoH/R7QIwjUk7bmU3CHcshvGCGH
+vZsdk2w4GFfkMxla9XsdVeUSvRh2leMc2FXylVxF0zAegMteGLZ3c3yqC55GCYIS
+r8l5BEGk5JYSvnU+i3hk807YQu+SEkI/fR+OXilO8OyNhvBprPTrZ6PpS40X3FpP
+7tf3ukkwgk1xC9zKQ0Uqr+jPjA69XsqV98I+zgkV8Wa9ga7/Vcc8RhNr8QF+dXZq
+LWpRWhlukKmwXtMyxp9PnjMw/g2am1rD3HBlcyTzj1MgoA3cGeIxO8Ftd4U+oK6H
+87+obg8/V1wSS7M2HwQ1cDsa7ldYcNRzOzS7ylTLGbO5e1czczU4VkGD5gIxVFc=3D
+=3Dg+pw
+-----END PGP SIGNATURE-----
+
+--=20
+Rapha=C3=ABl Hertzog
+
+--SDLAMmQ45hgLZch6
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Comment: Signed by Raphael Hertzog
+
+iQEzBAABCgAdFiEE1823g1EQnhJ1LsbSA4gdq+vCmrkFAmMUticACgkQA4gdq+vC
+mrlQhgf9HBWeVEeUFzCBU3ScTX/7qNflPLi2n4Prr/C7qBrVOiY8i789MdfghjPg
+LoRDXV6STOjJ5/7mdt+P8VGAimXsuA3vE8jtKWt+/+wr4J6rcae0NoyXIjKlwjoW
+ZSbQPx1eG70R9m2uAgFO/1yMswaIYyFgnt2bWvsQJ2R2c8kyjdTABsvzl9g1KX2C
+mLtc+fTzyv9RCDJ2fyhkp/4xsnHc1csgz7BecNrcZMakjIO0FUSJx1UYxNaoYPqu
+cXFFp29W6dGGzzJgwUnQReRvRLbZnwLH+WnXDFOCP+lGuXs4MAdObaDQCwPO4vzN
+Nuwn1TJPyBb049aXRYFhVhXZAbSPfw==
+=rK5l
+-----END PGP SIGNATURE-----
+
+--SDLAMmQ45hgLZch6--

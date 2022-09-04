@@ -1565,32 +1565,35 @@ class NewsTests(TestCase):
     def test_create_email_news_signature(self):
         """
         Tests that the signature information is correctly extracted when
-        creating a news item from an email message which was transfer encoded
-        as quoted-printable.
+        creating a news item from an email message... so where the data
+        will be encoded as quoted-printable and where it might be in a multipart
+        message.
         """
         self.import_key_into_keyring('key1.pub')
-        # The content of the test news item is found in a file
-        file_path = self.get_test_data_path(
-            'signed-message-quoted-printable')
-        with open(file_path, 'rb') as f:
-            content = f.read()
         expected_name = 'PTS Tests'
         expected_email = 'fake-address@domain.com'
         sender_name = 'Some User'
 
-        news = EmailNews.objects.create_email_news(
-            message=message_from_bytes(content),
-            package=self.package)
+        for sample_file in ('signed-message-quoted-printable',
+                            'multipart-signed-message'):
+            with self.subTest(sample_file=sample_file):
+                file_path = self.get_test_data_path(sample_file)
+                with open(file_path, 'rb') as f:
+                    content = f.read()
 
-        # The news contains a signature
-        self.assertEqual(1, news.signed_by.count())
-        # The signature information is correct?
-        signer = news.signed_by.all()[0]
-        self.assertEqual(expected_name, signer.name)
-        self.assertEqual(expected_email, signer.email)
-        # The created by field is also set, but to the sender of the
-        # email
-        self.assertEqual(sender_name, news.created_by)
+                news = EmailNews.objects.create_email_news(
+                    message=message_from_bytes(content),
+                    package=self.package)
+
+                # The news contains a signature
+                self.assertEqual(1, news.signed_by.count())
+                # The signature information is correct?
+                signer = news.signed_by.all()[0]
+                self.assertEqual(expected_name, signer.name)
+                self.assertEqual(expected_email, signer.email)
+                # The created by field is also set, but to the sender of the
+                # email
+                self.assertEqual(sender_name, news.created_by)
 
     def test_create_email_news_changed_by(self):
         """
