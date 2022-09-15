@@ -82,7 +82,7 @@ def _classify_bts_message(msg, package, keyword):
 
 def _classify_dak_message(msg, package, keyword):
     package = msg.get('X-Debian-Package', package)
-    subject = msg.get('Subject', '')
+    subject = msg.get('Subject', '').strip()
     xdak = msg.get('X-DAK', '')
     body = get_message_body(msg)
     if re.search(r'^Accepted|ACCEPTED', subject):

@@ -275,7 +275,7 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
     @mock.patch('distro_tracker.mail.mail_news.create_news')
     def test_classify_stores_dak_source_accepted_as_news(self,
                                                          mock_create_news):
-        subject = 'Accepted libosmium 2.5.3-1~exp2 (source) into experimental'
+        subject = '\n Accepted libosmium 2.5.3-1 (source) into experimental'
         self.define_dak_mail(package='pkg-a', subject=subject)
         self.run_classify()
         mock_create_news.assert_called_with(self.message, 'pkg-a',
