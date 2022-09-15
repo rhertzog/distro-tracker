@@ -1,0 +1,9 @@
+/var/log/distro-tracker/*.log {
+    weekly
+    nocompress
+    missingok
+    rotate 52
+    dateext
+    dateformat .%Y-%m-%d
+    create 640 distro-tracker distro-tracker
+}
